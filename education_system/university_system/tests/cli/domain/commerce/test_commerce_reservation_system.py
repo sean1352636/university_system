@@ -53,7 +53,7 @@ def mock_db_connection(tmp_path):
             party_size INTEGER NOT NULL,
             status TEXT DEFAULT 'Active',
             special_requests TEXT,
-            created_at TEXT,
+            created_date TEXT,
             FOREIGN KEY (table_id) REFERENCES restaurant_tables(table_id)
         )
     ''')
@@ -93,15 +93,16 @@ def mock_db_connection(tmp_path):
     ''')
 
     cursor.execute('''
-        CREATE TABLE restaurant_orders (
+        CREATE TABLE orders (
             order_id TEXT PRIMARY KEY,
             customer_id TEXT,
             table_id TEXT,
-            order_time TEXT,
+            order_date TEXT,
             total_price REAL,
             status TEXT,
             payment_method TEXT,
-            notes TEXT
+            notes TEXT,
+            source_type TEXT DEFAULT 'restaurant'
         )
     ''')
 
@@ -390,7 +391,7 @@ class TestReservationManagement:
         cursor.execute('''
             INSERT INTO restaurant_reservations
             (reservation_id, customer_id, table_id, reservation_date, reservation_time,
-             party_size, status, special_requests, created_at)
+             party_size, status, special_requests, created_date)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', ('RES001', 'CUST000001', 'T001', '2025-12-01', '19:00', 4,
               'Active', None, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
@@ -449,7 +450,7 @@ class TestReservationManagement:
         cursor.execute('''
             INSERT INTO restaurant_reservations
             (reservation_id, customer_id, table_id, reservation_date, reservation_time,
-             party_size, status, special_requests, created_at)
+             party_size, status, special_requests, created_date)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', ('RES001', 'CUST000001', 'T001', today, '19:00', 4,
               'Active', None, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
@@ -541,12 +542,12 @@ class TestQRCodeManagement:
         usage_count = cursor.fetchone()[0]
         assert usage_count == 1
 
-class TestTableAnalytics:
-    """Tests for table analytics functionality."""
+class TestTableStatusSummary:
+    """Tests for table status summary displayed by view_all_tables."""
 
     @patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.reservation_system.get_db_connection')
-    def test_table_analytics(self, mock_get_conn, mock_db_connection, capsys):
-        """Test table analytics display."""
+    def test_view_all_tables_status_summary(self, mock_get_conn, mock_db_connection, capsys):
+        """Test that view_all_tables shows status summary with multiple tables."""
         # Setup
         mock_get_conn.return_value = mock_db_connection
         cursor = mock_db_connection.cursor()
@@ -566,36 +567,19 @@ class TestTableAnalytics:
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (table_id, capacity, status, None, location, table_type,
                   datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-
-        # Add test reservations
-        cursor.execute('''
-            INSERT INTO restaurant_customers
-            (customer_id, name, email, phone, dietary_restrictions, loyalty_points,
-             loyalty_tier, birthday, registration_date, last_visit, total_spent,
-             visit_count, preferences, address, emergency_contact, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', ('CUST000001', 'Test Customer', 'test@example.com', '1234567890',
-              'None', 0, 'Bronze', None, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-              None, 0, 0, None, None, None, None))
-
-        cursor.execute('''
-            INSERT INTO restaurant_reservations
-            (reservation_id, customer_id, table_id, reservation_date, reservation_time,
-             party_size, status, special_requests, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', ('RES001', 'CUST000001', 'T001', datetime.now().strftime('%Y-%m-%d'),
-              '19:00', 2, 'Active', None, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
         mock_db_connection.commit()
 
         # Execute
-        reservation_system.table_analytics()
+        reservation_system.view_all_tables()
 
         # Verify
         captured = capsys.readouterr()
-        assert "TABLE ANALYTICS" in captured.out
-        assert "Total Tables: 4" in captured.out
-        assert "Total Capacity: 16" in captured.out
-        assert "Available" in captured.out or "Occupied" in captured.out or "Reserved" in captured.out
+        assert "TABLE STATUS" in captured.out
+        assert "Total tables: 4" in captured.out
+        assert "Table Status Summary" in captured.out
+        assert "Available" in captured.out
+        assert "Occupied" in captured.out
+        assert "Reserved" in captured.out
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v'])

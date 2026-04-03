@@ -10,26 +10,26 @@ gui_logger = logging.getLogger(__name__)
 
 class RecurringEventDialog:
     """Dialog for creating recurring events"""
-    
+
     def __init__(self, parent, calendar_manager, callback=None):
         self.calendar_manager = calendar_manager
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.recurring_events.title"))
         self.dialog.geometry("550x750")
         self.dialog.minsize(500, 650)
         self.dialog.transient(parent)
         safe_grab_set(self.dialog, parent)
-        
+
         self._create_widgets()
         self._center_dialog()
-    
+
     def _create_widgets(self):
         """Create dialog widgets"""
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(main_frame, text=_("academic_calendar.dialogs.recurring_events.header"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
@@ -40,7 +40,7 @@ class RecurringEventDialog:
         ttk.Label(details_frame, text=_("academic_calendar.labels.event_name_required")).pack(anchor=tk.W)
         self.name_var = tk.StringVar()
         ttk.Entry(details_frame, textvariable=self.name_var, width=50).pack(fill=tk.X, pady=(5, 15))
-        
+
         ttk.Label(details_frame, text=_("academic_calendar.labels.start_date_format_required")).pack(anchor=tk.W)
         self.date_var = tk.StringVar()
         ttk.Entry(details_frame, textvariable=self.date_var, width=50).pack(fill=tk.X, pady=(5, 15))
@@ -54,7 +54,7 @@ class RecurringEventDialog:
         type_combo = ttk.Combobox(details_frame, textvariable=self.type_var, width=47,
                                 values=["Academic", "Holiday", "Administrative", "Social", "Sports", "Trip", "Deadline"])
         type_combo.pack(fill=tk.X, pady=(5, 0))
-        
+
         # Recurrence pattern
         pattern_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.labels.recurrence_pattern"), padding=10)
         pattern_frame.pack(fill=tk.X, pady=(0, 15))
@@ -68,7 +68,7 @@ class RecurringEventDialog:
         freq_combo = ttk.Combobox(freq_frame, textvariable=self.frequency_var, width=15,
                                 values=["daily", "weekly", "monthly", "yearly"])
         freq_combo.pack(side=tk.LEFT, padx=(5, 15))
-        
+
         ttk.Label(freq_frame, text=_("academic_calendar.labels.every")).pack(side=tk.LEFT)
         self.interval_var = tk.StringVar(value="1")
         ttk.Entry(freq_frame, textvariable=self.interval_var, width=5).pack(side=tk.LEFT, padx=(5, 0))
@@ -87,21 +87,21 @@ class RecurringEventDialog:
 
         ttk.Radiobutton(end_frame, text=_("academic_calendar.labels.end_after_occurrences"), variable=self.end_type_var,
                        value="count", command=self._toggle_end_fields).pack(anchor=tk.W)
-        
+
         self.count_var = tk.StringVar(value="10")
         self.count_entry = ttk.Entry(end_frame, textvariable=self.count_var, width=10)
         self.count_entry.pack(anchor=tk.W, padx=(20, 0), pady=(5, 0))
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(20, 0))
-        
+
         ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
         ttk.Button(button_frame, text=_("academic_calendar.buttons.create_recurring_event"), command=self._create_recurring_event).pack(side=tk.RIGHT)
-        
+
         # Initialize field states
         self._toggle_end_fields()
-    
+
     def _toggle_end_fields(self):
         """Toggle end condition fields based on selection"""
         if self.end_type_var.get() == "date":
@@ -110,18 +110,18 @@ class RecurringEventDialog:
         else:
             self.end_date_entry.config(state="disabled")
             self.count_entry.config(state="normal")
-    
+
     def _create_recurring_event(self):
         """Create the recurring event"""
         try:
             # Validate required fields
             name = self.name_var.get().strip()
             date = self.date_var.get().strip()
-            
+
             if not name or not date:
                 messagebox.showerror(_("common.error"), _("academic_calendar.messages.event_name_date_required"))
                 return
-            
+
             # Build base event data
             base_event = {
                 'name': name,
@@ -129,13 +129,13 @@ class RecurringEventDialog:
                 'description': self.description_text.get(1.0, tk.END).strip(),
                 'event_type': self.type_var.get()
             }
-            
+
             # Build recurrence pattern
             pattern = {
                 'frequency': self.frequency_var.get(),
                 'interval': int(self.interval_var.get()) if self.interval_var.get().strip() else 1
             }
-            
+
             if self.end_type_var.get() == "date":
                 end_date = self.end_date_var.get().strip()
                 if end_date:
@@ -144,10 +144,10 @@ class RecurringEventDialog:
                 count = self.count_var.get().strip()
                 if count:
                     pattern['occurrence_count'] = min(int(count), 100)  # Limit for safety
-            
+
             # Create recurring event
             success, message = self.calendar_manager.recurring_events.create_recurring_event(base_event, pattern)
-            
+
             if success:
                 messagebox.showinfo(_("common.success"), message)
                 if self.callback:
@@ -160,7 +160,7 @@ class RecurringEventDialog:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.invalid_numeric_values"))
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_create_recurring", error=str(e)))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()

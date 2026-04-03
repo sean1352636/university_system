@@ -1460,22 +1460,22 @@ class AdminMixin:
         """Perform bulk status update from ticket list"""
         print("\n📊 BULK STATUS UPDATE FROM LIST")
         print("="*40)
-        
+
         # Status selection
         print("\nNew Status:")
         for i, status in enumerate(TICKET_STATUSES, 1):
             print(f"{i}. {status}")
-        
+
         status_choice = input(f"Select new status (1-{len(TICKET_STATUSES)}): ").strip()
         if not status_choice.isdigit() or not 1 <= int(status_choice) <= len(TICKET_STATUSES):
             print("❌ Invalid status choice.")
             return
-        
+
         new_status = TICKET_STATUSES[int(status_choice) - 1]
-        
+
         # Get ticket IDs to update
         ticket_ids_input = input("Enter ticket numbers to update (comma-separated) or 'all' for all tickets: ").strip()
-        
+
         if ticket_ids_input.lower() == 'all':
             ticket_ids = [t['ticket_id'] for t in tickets]
         else:
@@ -1487,15 +1487,15 @@ class AdminMixin:
             except ValueError:
                 print("❌ Invalid ticket IDs.")
                 return
-        
+
         if not ticket_ids:
             print("❌ No valid ticket IDs provided.")
             return
-        
+
         # Confirm operation
         print(f"\n📋 Updating {len(ticket_ids)} tickets to status '{new_status}'")
         confirm = input("Confirm bulk status update? (y/n): ").lower()
-        
+
         if confirm == 'y':
             try:
                 updates = {'status': new_status}
@@ -1512,31 +1512,31 @@ class AdminMixin:
             # Switch to create ticket tab with template pre-filled
             self.selected_template_data = template
             self.show_create_ticket()
-            
+
             # Pre-fill the form
             if hasattr(self, 'title_entry'):
                 self.title_entry.delete(0, tk.END)
                 self.title_entry.insert(0, template['title_template'])
-            
+
             if hasattr(self, 'description_text'):
                 self.description_text.delete(1.0, tk.END)
                 self.description_text.insert(1.0, template['description_template'])
-            
+
             if hasattr(self, 'category_var'):
                 self.category_var.set(template['category'])
-            
+
             if hasattr(self, 'priority_var'):
                 self.priority_var.set(template['priority'])
-            
+
             messagebox.showinfo("Template Loaded", f"Template '{template['name']}' has been loaded. You can customize it before submitting.")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Could not use template: {e}")
 
     def show_ticket_templates(self):
         """Show ticket templates for students"""
         self.clear_content()
-        
+
         templates_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(templates_frame, text="📄 Templates")
 

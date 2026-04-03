@@ -96,6 +96,7 @@ def mock_db_connection(tmp_path):
             response_text TEXT,
             response_date TEXT,
             category TEXT,
+            status TEXT DEFAULT 'active',
             FOREIGN KEY (customer_id) REFERENCES restaurant_customers(customer_id)
         )
     ''')
@@ -458,8 +459,8 @@ class TestFeedbackManagement:
 class TestCustomerAnalytics:
     """Tests for customer analytics functions."""
 
-    def test_loyalty_analytics(self, mock_db_connection, capsys):
-        """Test loyalty program analytics."""
+    def test_view_loyalty_tiers_with_analytics(self, mock_db_connection, capsys):
+        """Test viewing loyalty tiers shows tier distribution (analytics-like data)."""
         # Setup
         with patch('education_system.university_system.modules.domain.commerce.services.restaurant.customer.loyalty_program.get_db_connection') as mock_get_conn:
             mock_get_conn.return_value = mock_db_connection
@@ -486,14 +487,15 @@ class TestCustomerAnalytics:
                       None, None, None, None))
             mock_db_connection.commit()
 
-            # Execute
-            loyalty_program.loyalty_analytics()
+            # Execute view_loyalty_tiers which shows tier information
+            loyalty_program.view_loyalty_tiers()
 
             # Verify
             captured = capsys.readouterr()
-            assert "LOYALTY PROGRAM ANALYTICS" in captured.out
-            assert "Total Customers: 4" in captured.out
+            assert "LOYALTY TIER INFORMATION" in captured.out
             assert "Bronze" in captured.out
+            assert "Silver" in captured.out
+            assert "Gold" in captured.out
             assert "Platinum" in captured.out
 
 if __name__ == '__main__':

@@ -54,7 +54,7 @@ except ImportError:
     TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
     SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
     ROOM_TYPES = ['Lecture Hall', 'Lab', 'Tutorial Room', 'Seminar Room', 'Workshop Room', 'Computer Lab', 'Other']
-    
+
     # Import the ModuleScheduler class from the document
     try:
         from education_system.university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
@@ -67,7 +67,7 @@ class AddScheduleDialog:
         self.scheduler = scheduler
         self.gui = gui
         self.result = False
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Add New Schedule")
         self.dialog.geometry("550x700")
@@ -83,7 +83,7 @@ class AddScheduleDialog:
         except tk.TclError:
             # If grab fails, continue without it - dialog will still work
             pass
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -141,7 +141,7 @@ class AddScheduleDialog:
         # Store all rooms for filtering
         self.all_rooms = []
         self.load_all_rooms()
-        
+
         # Instructor
         ttk.Label(main_frame, text="Instructor:").grid(row=6, column=0, sticky=tk.W, pady=5)
         self.instructor_var = tk.StringVar()
@@ -411,7 +411,7 @@ class AddScheduleDialog:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save schedule: {str(e)}", parent=self.dialog)
-    
+
     def center_window(self):
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
@@ -423,7 +423,7 @@ class AddRoomDialog:
         self.parent = parent
         self.scheduler = scheduler
         self.result = False
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Add New Room")
         self.dialog.geometry("400x500")
@@ -439,7 +439,7 @@ class AddRoomDialog:
         except tk.TclError:
             # If grab fails, continue without it - dialog will still work
             pass
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
@@ -459,37 +459,37 @@ class AddRoomDialog:
         building_combo = ttk.Combobox(main_frame, textvariable=self.building_var,
                                       values=buildings, width=27, state='normal')
         building_combo.grid(row=1, column=1, pady=5)
-        
+
         # Capacity
         ttk.Label(main_frame, text="Capacity:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.capacity_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.capacity_var, width=30).grid(row=2, column=1, pady=5)
-        
+
         # Room type
         ttk.Label(main_frame, text="Room Type:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.room_type_var = tk.StringVar()
         ttk.Combobox(main_frame, textvariable=self.room_type_var, values=ROOM_TYPES, width=27).grid(row=3, column=1, pady=5)
-        
+
         # Equipment
         ttk.Label(main_frame, text="Equipment:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.equipment_var = tk.StringVar()
         equipment_entry = tk.Text(main_frame, width=30, height=3)
         equipment_entry.grid(row=4, column=1, pady=5)
         self.equipment_text = equipment_entry
-        
+
         # Notes
         ttk.Label(main_frame, text="Notes:").grid(row=5, column=0, sticky=tk.W, pady=5)
         notes_entry = tk.Text(main_frame, width=30, height=3)
         notes_entry.grid(row=5, column=1, pady=5)
         self.notes_text = notes_entry
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=6, column=0, columnspan=2, pady=20)
-        
+
         ttk.Button(button_frame, text="Save", command=self.save_room).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
-    
+
     def get_buildings_from_db(self):
         """Fetch list of buildings from facilities management database"""
         try:
@@ -549,7 +549,7 @@ class AddRoomDialog:
             messagebox.showerror("Error", "Capacity must be a number.", parent=self.dialog)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save room: {str(e)}", parent=self.dialog)
-    
+
     def center_window(self):
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
@@ -561,7 +561,7 @@ class AddInstructorDialog:
         self.parent = parent
         self.scheduler = scheduler
         self.result = False
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Add New Instructor")
         self.dialog.geometry("500x550")
@@ -577,7 +577,7 @@ class AddInstructorDialog:
         except tk.TclError:
             # If grab fails, continue without it - dialog will still work
             pass
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
@@ -638,7 +638,7 @@ class AddInstructorDialog:
 
         ttk.Button(button_frame, text="Add Instructor", command=self.save_instructor).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def save_instructor(self):
         try:
             # Validate inputs
@@ -705,7 +705,7 @@ class AddInstructorDialog:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save instructor: {str(e)}", parent=self.dialog)
-    
+
     def center_window(self):
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
@@ -719,7 +719,7 @@ class EditScheduleDialog:
         self.gui = gui
         self.schedule_id = schedule_id
         self.result = False
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Edit Schedule")
         self.dialog.geometry("500x600")
@@ -736,7 +736,7 @@ class EditScheduleDialog:
         except tk.TclError:
             # If grab fails, continue without it - dialog will still work
             pass
-    
+
     def load_current_data(self):
         """Load current schedule data"""
         try:
@@ -750,7 +750,7 @@ class EditScheduleDialog:
                 ''', (self.schedule_id,))
 
                 schedule = cursor.fetchone()
-            
+
             if schedule:
                 self.current_data = {
                     'module_code': schedule[0],
@@ -767,47 +767,47 @@ class EditScheduleDialog:
         except (CourseNotFoundError, sqlite3.Error) as e:
             messagebox.showerror("Error", f"Failed to load schedule data: {str(e)}", parent=self.dialog)
             self.dialog.destroy()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Module selection
         ttk.Label(main_frame, text="Module Code:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.module_var = tk.StringVar(value=self.current_data['module_code'])
         module_combo = ttk.Combobox(main_frame, textvariable=self.module_var, width=30)
-        
+
         # Load modules
         try:
             modules = self.scheduler._get_known_modules()
             module_combo['values'] = list(modules.keys())
         except (AttributeError, Exception):
             pass
-        
+
         module_combo.grid(row=0, column=1, pady=5, sticky=tk.W)
-        
+
         # Day of week
         ttk.Label(main_frame, text="Day of Week:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.day_var = tk.StringVar(value=self.current_data['day_of_week'])
         day_combo = ttk.Combobox(main_frame, textvariable=self.day_var, values=DAYS_OF_WEEK, width=30)
         day_combo.grid(row=1, column=1, pady=5, sticky=tk.W)
-        
+
         # Time
         ttk.Label(main_frame, text="Start Time:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.start_time_var = tk.StringVar(value=self.current_data['start_time'])
         start_combo = ttk.Combobox(main_frame, textvariable=self.start_time_var, values=TIME_SLOTS, width=30)
         start_combo.grid(row=2, column=1, pady=5, sticky=tk.W)
-        
+
         ttk.Label(main_frame, text="End Time:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.end_time_var = tk.StringVar(value=self.current_data['end_time'])
         end_combo = ttk.Combobox(main_frame, textvariable=self.end_time_var, values=TIME_SLOTS, width=30)
         end_combo.grid(row=3, column=1, pady=5, sticky=tk.W)
-        
+
         # Room
         ttk.Label(main_frame, text="Room:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.room_var = tk.StringVar()
         room_combo = ttk.Combobox(main_frame, textvariable=self.room_var, width=30)
-        
+
         # Load rooms and set current
         try:
             from education_system.university_system.infrastructure.database.db import sqlite3
@@ -815,10 +815,10 @@ class EditScheduleDialog:
                 cursor = conn.cursor()
                 cursor.execute('SELECT id, building, room_number FROM rooms WHERE is_active = 1')
                 rooms = cursor.fetchall()
-            
+
             room_values = [f"{room[0]} - {room[1]}-{room[2]}" for room in rooms]
             room_combo['values'] = room_values
-            
+
             # Set current room
             for room in rooms:
                 if room[0] == self.current_data['room_id']:
@@ -826,14 +826,14 @@ class EditScheduleDialog:
                     break
         except Exception:
             pass
-        
+
         room_combo.grid(row=4, column=1, pady=5, sticky=tk.W)
-        
+
         # Instructor
         ttk.Label(main_frame, text="Instructor:").grid(row=5, column=0, sticky=tk.W, pady=5)
         self.instructor_var = tk.StringVar()
         instructor_combo = ttk.Combobox(main_frame, textvariable=self.instructor_var, width=30)
-        
+
         # Load instructors and set current
         try:
             from education_system.university_system.infrastructure.database.db import sqlite3
@@ -841,10 +841,10 @@ class EditScheduleDialog:
                 cursor = conn.cursor()
                 cursor.execute("SELECT id, first_name, last_name FROM instructors WHERE CASE WHEN status = 'Active' THEN 1 ELSE COALESCE(is_active, 1) END = 1")
                 instructors = cursor.fetchall()
-            
+
             instructor_values = [f"{inst[0]} - {inst[1]} {inst[2]}" for inst in instructors]
             instructor_combo['values'] = instructor_values
-            
+
             # Set current instructor
             for inst in instructors:
                 if inst[0] == self.current_data['instructor_id']:
@@ -852,22 +852,22 @@ class EditScheduleDialog:
                     break
         except Exception:
             pass
-        
+
         instructor_combo.grid(row=5, column=1, pady=5, sticky=tk.W)
-        
+
         # Session type
         ttk.Label(main_frame, text="Session Type:").grid(row=6, column=0, sticky=tk.W, pady=5)
         self.session_type_var = tk.StringVar(value=self.current_data['session_type'])
         session_combo = ttk.Combobox(main_frame, textvariable=self.session_type_var, values=SESSION_TYPES, width=30)
         session_combo.grid(row=6, column=1, pady=5, sticky=tk.W)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=7, column=0, columnspan=2, pady=20)
-        
+
         ttk.Button(button_frame, text="Update", command=self.update_schedule).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
-    
+
     def update_schedule(self):
         try:
             # Get new values
@@ -971,7 +971,7 @@ class EditScheduleDialog:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update schedule: {str(e)}", parent=self.dialog)
-    
+
     def center_window(self):
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
@@ -984,7 +984,7 @@ class EditRoomDialog:
         self.scheduler = scheduler
         self.room_id = room_id
         self.result = False
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Edit Room")
         self.dialog.geometry("400x500")
@@ -1001,7 +1001,7 @@ class EditRoomDialog:
         except tk.TclError:
             # If grab fails, continue without it - dialog will still work
             pass
-    
+
     def load_current_data(self):
         """Load current room data"""
         try:
@@ -1011,7 +1011,7 @@ class EditRoomDialog:
 
                 cursor.execute('SELECT * FROM rooms WHERE id = ?', (self.room_id,))
                 room = cursor.fetchone()
-            
+
             if room:
                 self.current_data = {
                     'room_number': room[1],
@@ -1027,50 +1027,50 @@ class EditRoomDialog:
         except (CourseNotFoundError, sqlite3.Error) as e:
             messagebox.showerror("Error", f"Failed to load room data: {str(e)}", parent=self.dialog)
             self.dialog.destroy()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Room number (read-only)
         ttk.Label(main_frame, text="Room Number:").grid(row=0, column=0, sticky=tk.W, pady=5)
         room_label = ttk.Label(main_frame, text=self.current_data['room_number'], font=('Arial', 10, 'bold'))
         room_label.grid(row=0, column=1, sticky=tk.W, pady=5)
-        
+
         # Building (read-only)
         ttk.Label(main_frame, text="Building:").grid(row=1, column=0, sticky=tk.W, pady=5)
         building_label = ttk.Label(main_frame, text=self.current_data['building'], font=('Arial', 10, 'bold'))
         building_label.grid(row=1, column=1, sticky=tk.W, pady=5)
-        
+
         # Capacity
         ttk.Label(main_frame, text="Capacity:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.capacity_var = tk.StringVar(value=str(self.current_data['capacity']))
         ttk.Entry(main_frame, textvariable=self.capacity_var, width=30).grid(row=2, column=1, pady=5)
-        
+
         # Room type
         ttk.Label(main_frame, text="Room Type:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.room_type_var = tk.StringVar(value=self.current_data['room_type'])
         ttk.Combobox(main_frame, textvariable=self.room_type_var, values=ROOM_TYPES, width=27).grid(row=3, column=1, pady=5)
-        
+
         # Equipment
         ttk.Label(main_frame, text="Equipment:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.equipment_text = tk.Text(main_frame, width=30, height=3)
         self.equipment_text.grid(row=4, column=1, pady=5)
         self.equipment_text.insert(1.0, self.current_data['equipment'])
-        
+
         # Notes
         ttk.Label(main_frame, text="Notes:").grid(row=5, column=0, sticky=tk.W, pady=5)
         self.notes_text = tk.Text(main_frame, width=30, height=3)
         self.notes_text.grid(row=5, column=1, pady=5)
         self.notes_text.insert(1.0, self.current_data['notes'])
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=6, column=0, columnspan=2, pady=20)
-        
+
         ttk.Button(button_frame, text="Update", command=self.update_room).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
-    
+
     def update_room(self):
         try:
             new_capacity = int(self.capacity_var.get())
@@ -1086,16 +1086,16 @@ class EditRoomDialog:
                 ''', (new_capacity, new_equipment, new_notes, self.room_id))
 
                 conn.commit()
-            
+
             self.result = True
             self.dialog.destroy()
             messagebox.showinfo("Success", "Room updated successfully.", parent=self.dialog)
-            
+
         except ValueError:
             messagebox.showerror("Error", "Capacity must be a number.", parent=self.dialog)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update room: {str(e)}", parent=self.dialog)
-    
+
     def center_window(self):
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
@@ -1108,7 +1108,7 @@ class EditInstructorDialog:
         self.scheduler = scheduler
         self.instructor_id = instructor_id
         self.result = False
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Edit Instructor")
         self.dialog.geometry("400x500")
@@ -1125,7 +1125,7 @@ class EditInstructorDialog:
         except tk.TclError:
             # If grab fails, continue without it - dialog will still work
             pass
-    
+
     def load_current_data(self):
         """Load current instructor data"""
         try:
@@ -1140,7 +1140,7 @@ class EditInstructorDialog:
                 FROM instructors WHERE id = ?
                 ''', (self.instructor_id,))
                 instructor = cursor.fetchone()
-            
+
             if instructor:
                 self.current_data = {
                     'first_name': instructor[1],
@@ -1157,49 +1157,49 @@ class EditInstructorDialog:
         except (CourseNotFoundError, sqlite3.Error) as e:
             messagebox.showerror("Error", f"Failed to load instructor data: {str(e)}", parent=self.dialog)
             self.dialog.destroy()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Name (read-only)
         ttk.Label(main_frame, text="Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        name_label = ttk.Label(main_frame, text=f"{self.current_data['first_name']} {self.current_data['last_name']}", 
+        name_label = ttk.Label(main_frame, text=f"{self.current_data['first_name']} {self.current_data['last_name']}",
                               font=('Arial', 10, 'bold'))
         name_label.grid(row=0, column=1, sticky=tk.W, pady=5)
-        
+
         # Email
         ttk.Label(main_frame, text="Email:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.email_var = tk.StringVar(value=self.current_data['email'])
         ttk.Entry(main_frame, textvariable=self.email_var, width=30).grid(row=1, column=1, pady=5)
-        
+
         # Department
         ttk.Label(main_frame, text="Department:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.department_var = tk.StringVar(value=self.current_data['department'])
         ttk.Entry(main_frame, textvariable=self.department_var, width=30).grid(row=2, column=1, pady=5)
-        
+
         # Max hours
         ttk.Label(main_frame, text="Max Hours/Week:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.max_hours_var = tk.StringVar(value=str(self.current_data['max_hours_per_week']))
         ttk.Entry(main_frame, textvariable=self.max_hours_var, width=30).grid(row=3, column=1, pady=5)
-        
+
         # Preferred days
         ttk.Label(main_frame, text="Preferred Days:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.preferred_days_var = tk.StringVar(value=self.current_data['preferred_days'])
         ttk.Entry(main_frame, textvariable=self.preferred_days_var, width=30).grid(row=4, column=1, pady=5)
-        
+
         # Preferred times
         ttk.Label(main_frame, text="Preferred Times:").grid(row=5, column=0, sticky=tk.W, pady=5)
         self.preferred_times_var = tk.StringVar(value=self.current_data['preferred_times'])
         ttk.Entry(main_frame, textvariable=self.preferred_times_var, width=30).grid(row=5, column=1, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=6, column=0, columnspan=2, pady=20)
-        
+
         ttk.Button(button_frame, text="Update", command=self.update_instructor).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
-    
+
     def update_instructor(self):
         try:
             new_email = self.email_var.get()
@@ -1239,16 +1239,16 @@ class EditInstructorDialog:
                     ''', (new_email, new_department, new_preferred_days, new_preferred_times, self.instructor_id))
 
                 conn.commit()
-            
+
             self.result = True
             self.dialog.destroy()
             messagebox.showinfo("Success", "Instructor updated successfully.", parent=self.dialog)
-            
+
         except ValueError:
             messagebox.showerror("Error", "Max hours must be a number.", parent=self.dialog)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update instructor: {str(e)}", parent=self.dialog)
-    
+
     def center_window(self):
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
@@ -1260,7 +1260,7 @@ class AddHolidayDialog:
         self.parent = parent
         self.scheduler = scheduler
         self.result = False
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Add Holiday")
         self.dialog.geometry("400x350")
@@ -1276,44 +1276,44 @@ class AddHolidayDialog:
         except tk.TclError:
             # If grab fails, continue without it - dialog will still work
             pass
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Holiday name
         ttk.Label(main_frame, text="Holiday Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.name_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.name_var, width=30).grid(row=0, column=1, pady=5)
-        
+
         # Start date
         ttk.Label(main_frame, text="Start Date:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.start_date_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.start_date_var, width=30).grid(row=1, column=1, pady=5)
         ttk.Label(main_frame, text="(YYYY-MM-DD format)", font=('Arial', 8)).grid(row=1, column=2, sticky=tk.W)
-        
+
         # End date
         ttk.Label(main_frame, text="End Date:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.end_date_var = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.end_date_var, width=30).grid(row=2, column=1, pady=5)
         ttk.Label(main_frame, text="(leave blank if same as start)", font=('Arial', 8)).grid(row=2, column=2, sticky=tk.W)
-        
+
         # Description
         ttk.Label(main_frame, text="Description:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.description_text = tk.Text(main_frame, width=30, height=3)
         self.description_text.grid(row=3, column=1, pady=5)
-        
+
         # Recurring
         self.recurring_var = tk.BooleanVar()
         ttk.Checkbutton(main_frame, text="Recurring annually", variable=self.recurring_var).grid(row=4, column=1, sticky=tk.W, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=5, column=0, columnspan=3, pady=20)
-        
+
         ttk.Button(button_frame, text="Save", command=self.save_holiday).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
-    
+
     def save_holiday(self):
         try:
             name = self.name_var.get()
@@ -1321,11 +1321,11 @@ class AddHolidayDialog:
             end_date = self.end_date_var.get() or start_date
             description = self.description_text.get(1.0, tk.END).strip()
             recurring = self.recurring_var.get()
-            
+
             if not all([name, start_date]):
                 messagebox.showerror("Error", "Please fill in name and start date.", parent=self.dialog)
                 return
-            
+
             # Validate date format
             try:
                 datetime.strptime(start_date, "%Y-%m-%d")
@@ -1334,16 +1334,16 @@ class AddHolidayDialog:
             except ValueError:
                 messagebox.showerror("Error", "Invalid date format. Use YYYY-MM-DD.", parent=self.dialog)
                 return
-            
+
             self.scheduler.add_holiday(name, start_date, end_date, description, recurring)
-            
+
             self.result = True
             self.dialog.destroy()
             messagebox.showinfo("Success", "Holiday added successfully.", parent=self.dialog)
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save holiday: {str(e)}", parent=self.dialog)
-    
+
     def center_window(self):
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
@@ -1354,49 +1354,49 @@ class GridViewWindow:
     def __init__(self, parent, scheduler):
         self.parent = parent
         self.scheduler = scheduler
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title("Schedule Grid View")
         self.window.geometry("1200x800")
         self.window.transient(parent)
-        
+
         self.create_grid_view()
         self.center_window()
-    
+
     def create_grid_view(self):
         main_frame = ttk.Frame(self.window, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Title
         title_label = ttk.Label(main_frame, text="Weekly Schedule Grid View", font=('Arial', 16, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Create grid frame with scrollbars
         grid_frame = ttk.Frame(main_frame)
         grid_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Canvas for scrolling
         canvas = tk.Canvas(grid_frame)
         v_scrollbar = ttk.Scrollbar(grid_frame, orient=tk.VERTICAL, command=canvas.yview)
         h_scrollbar = ttk.Scrollbar(grid_frame, orient=tk.HORIZONTAL, command=canvas.xview)
         scrollable_frame = ttk.Frame(canvas)
-        
+
         scrollable_frame.bind(
             "<Configure>",
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
-        
+
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-        
+
         # Create the actual grid
         self.create_schedule_grid(scrollable_frame)
-        
+
         # Pack scrollbars and canvas
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
-    
+
     def create_schedule_grid(self, parent_frame):
         """Create the schedule grid with proper boxes"""
         try:
@@ -1531,7 +1531,7 @@ class GridViewWindow:
         except Exception as e:
             error_label = ttk.Label(parent_frame, text=f"Error creating grid: {str(e)}")
             error_label.pack(pady=20)
-    
+
     def center_window(self):
         self.window.update_idletasks()
         x = (self.window.winfo_screenwidth() // 2) - (self.window.winfo_width() // 2)

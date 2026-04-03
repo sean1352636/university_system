@@ -67,10 +67,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -122,7 +122,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -138,7 +138,7 @@ def init_basic_database():
             status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -152,7 +152,7 @@ def init_basic_database():
             year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -166,7 +166,7 @@ def init_basic_database():
             UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -186,11 +186,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -200,7 +200,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -215,7 +215,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -228,7 +228,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -247,7 +247,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -346,83 +346,83 @@ class ModuleDialog:
         self.dialog.title(title)
         self.dialog.geometry("500x400")
         safe_grab_set(self.dialog)
-        
+
         self.setup_dialog(data)
-        
+
     def setup_dialog(self, data):
         # Title
-        ttk.Label(self.dialog, text=self.dialog.title(), 
+        ttk.Label(self.dialog, text=self.dialog.title(),
                  font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         # Form frame
         form_frame = ttk.Frame(self.dialog)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
+
         # Module Code
         ttk.Label(form_frame, text="Module Code:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.module_code_var = tk.StringVar(value=data[0] if data else "")
         ttk.Entry(form_frame, textvariable=self.module_code_var, width=30).grid(row=0, column=1, pady=5)
-        
+
         # Module Name
         ttk.Label(form_frame, text="Module Name:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.module_name_var = tk.StringVar(value=data[1] if data else "")
         ttk.Entry(form_frame, textvariable=self.module_name_var, width=30).grid(row=1, column=1, pady=5)
-        
+
         # Module Type
         ttk.Label(form_frame, text="Module Type:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.module_type_var = tk.StringVar(value=data[2] if data else "")
         type_combo = ttk.Combobox(form_frame, textvariable=self.module_type_var, width=27)
         type_combo['values'] = ("Core", "Elective", "General", "Laboratory", "Seminar")
         type_combo.grid(row=2, column=1, pady=5)
-        
+
         # Credits
         ttk.Label(form_frame, text="Credits:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.credits_var = tk.StringVar(value=str(data[3]) if data else "3")
         ttk.Spinbox(form_frame, textvariable=self.credits_var, from_=1, to=12, width=28).grid(row=3, column=1, pady=5)
-        
+
         # Description
         ttk.Label(form_frame, text="Description:").grid(row=4, column=0, sticky=tk.NW, pady=5)
         self.description_text = tk.Text(form_frame, height=4, width=30)
         self.description_text.grid(row=4, column=1, pady=5)
         if data and len(data) > 4:
             self.description_text.insert(1.0, data[4])
-        
+
         # Prerequisites
         ttk.Label(form_frame, text="Prerequisites:").grid(row=5, column=0, sticky=tk.W, pady=5)
         self.prerequisites_var = tk.StringVar(value=data[5] if data and len(data) > 5 else "")
         ttk.Entry(form_frame, textvariable=self.prerequisites_var, width=30).grid(row=5, column=1, pady=5)
-        
+
         # Semester
         ttk.Label(form_frame, text="Semester:").grid(row=6, column=0, sticky=tk.W, pady=5)
         self.semester_var = tk.StringVar(value=data[6] if data and len(data) > 6 else "")
         semester_combo = ttk.Combobox(form_frame, textvariable=self.semester_var, width=27)
         semester_combo['values'] = ("Fall", "Spring", "Summer", "Winter")
         semester_combo.grid(row=6, column=1, pady=5)
-        
+
         # Academic Year
         ttk.Label(form_frame, text="Academic Year:").grid(row=7, column=0, sticky=tk.W, pady=5)
         self.year_var = tk.StringVar(value=data[7] if data and len(data) > 7 else str(datetime.now().year))
         ttk.Entry(form_frame, textvariable=self.year_var, width=30).grid(row=7, column=1, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=20)
-        
+
         ttk.Button(button_frame, text="Save", command=self.save_module).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
-    
+
     def save_module(self):
-        if not all([self.module_code_var.get(), self.module_name_var.get(), 
+        if not all([self.module_code_var.get(), self.module_name_var.get(),
                    self.module_type_var.get(), self.credits_var.get()]):
             messagebox.showerror("Error", "Please fill in all required fields")
             return
-        
+
         try:
             credits = int(self.credits_var.get())
         except ValueError:
             messagebox.showerror("Error", "Credits must be a number")
             return
-        
+
         self.result = (
             self.module_code_var.get().strip(),
             self.module_name_var.get().strip(),

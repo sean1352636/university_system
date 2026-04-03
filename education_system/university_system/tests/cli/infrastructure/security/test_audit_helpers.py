@@ -28,7 +28,7 @@ from education_system.university_system.infrastructure.security.audit_helpers im
 class TestSafeLogSecurityEvent:
     def test_returns_true_on_success(self):
         with patch(
-            "university_system.infrastructure.security.immutable_audit_log.log_security_event",
+            "education_system.university_system.infrastructure.security.immutable_audit_log.log_security_event",
         ) as mock_log_fn:
             result = safe_log_security_event(action="LOGIN_SUCCESS", user_id="admin")
             assert result is True
@@ -37,12 +37,12 @@ class TestSafeLogSecurityEvent:
     def test_returns_false_on_import_error(self):
         """If immutable_audit_log can't be imported, should return False."""
         with patch(
-            "university_system.infrastructure.security.audit_helpers.safe_log_security_event",
+            "education_system.university_system.infrastructure.security.audit_helpers.safe_log_security_event",
             wraps=safe_log_security_event,
         ):
             # Force ImportError by patching the import path
             with patch.dict("sys.modules", {
-                "university_system.infrastructure.security.immutable_audit_log": None,
+                "education_system.university_system.infrastructure.security.immutable_audit_log": None,
             }):
                 result = safe_log_security_event(action="TEST")
                 assert result is False
@@ -50,7 +50,7 @@ class TestSafeLogSecurityEvent:
     def test_returns_false_on_exception(self):
         """If log_security_event raises, should catch and return False."""
         with patch(
-            "university_system.infrastructure.security.immutable_audit_log.log_security_event",
+            "education_system.university_system.infrastructure.security.immutable_audit_log.log_security_event",
             side_effect=RuntimeError("DB error"),
         ):
             result = safe_log_security_event(action="TEST")
@@ -59,7 +59,7 @@ class TestSafeLogSecurityEvent:
     def test_never_raises(self):
         """The whole point: it should NEVER raise."""
         with patch(
-            "university_system.infrastructure.security.immutable_audit_log.log_security_event",
+            "education_system.university_system.infrastructure.security.immutable_audit_log.log_security_event",
             side_effect=Exception("catastrophic"),
         ):
             # Should not raise
@@ -68,7 +68,7 @@ class TestSafeLogSecurityEvent:
 
     def test_passes_all_params(self):
         with patch(
-            "university_system.infrastructure.security.immutable_audit_log.log_security_event",
+            "education_system.university_system.infrastructure.security.immutable_audit_log.log_security_event",
         ) as mock_fn:
             safe_log_security_event(
                 action="DATA_VIEW",
@@ -99,7 +99,7 @@ class TestSafeLogSecurityEvent:
 class TestGetGuiContext:
     def test_returns_none_none_on_import_error(self):
         with patch.dict("sys.modules", {
-            "university_system.infrastructure.shared_context": None,
+            "education_system.university_system.infrastructure.shared_context": None,
         }):
             user_id, session_id = get_gui_context()
             assert user_id is None
@@ -109,7 +109,7 @@ class TestGetGuiContext:
         mock_auth = MagicMock()
         mock_auth.is_logged_in.return_value = False
         with patch(
-            "university_system.infrastructure.security.audit_helpers.get_gui_context"
+            "education_system.university_system.infrastructure.security.audit_helpers.get_gui_context"
         ) as mock_fn:
             mock_fn.return_value = (None, None)
             user_id, session_id = mock_fn()
@@ -124,7 +124,7 @@ class TestGetGuiContext:
         mock_module.get_auth.return_value = mock_auth
 
         with patch.dict("sys.modules", {
-            "university_system.infrastructure.shared_context": mock_module,
+            "education_system.university_system.infrastructure.shared_context": mock_module,
         }):
             user_id, session_id = get_gui_context()
             assert user_id == "42"
@@ -134,7 +134,7 @@ class TestGetGuiContext:
         mock_module = MagicMock()
         mock_module.get_auth.side_effect = RuntimeError("bad")
         with patch.dict("sys.modules", {
-            "university_system.infrastructure.shared_context": mock_module,
+            "education_system.university_system.infrastructure.shared_context": mock_module,
         }):
             user_id, session_id = get_gui_context()
             assert user_id is None
@@ -213,7 +213,7 @@ class TestGetApiContext:
 class TestGetCurrentUserId:
     def test_returns_gui_user_id_first(self):
         with patch(
-            "university_system.infrastructure.security.audit_helpers.get_gui_context",
+            "education_system.university_system.infrastructure.security.audit_helpers.get_gui_context",
             return_value=("42", "sess"),
         ):
             uid = get_current_user_id()
@@ -221,7 +221,7 @@ class TestGetCurrentUserId:
 
     def test_returns_none_when_no_context(self):
         with patch(
-            "university_system.infrastructure.security.audit_helpers.get_gui_context",
+            "education_system.university_system.infrastructure.security.audit_helpers.get_gui_context",
             return_value=(None, None),
         ):
             # Also need to prevent Flask g fallback
@@ -231,7 +231,7 @@ class TestGetCurrentUserId:
 
     def test_never_raises(self):
         with patch(
-            "university_system.infrastructure.security.audit_helpers.get_gui_context",
+            "education_system.university_system.infrastructure.security.audit_helpers.get_gui_context",
             side_effect=Exception("broken"),
         ):
             uid = get_current_user_id()

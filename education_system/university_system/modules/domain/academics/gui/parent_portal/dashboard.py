@@ -91,34 +91,34 @@ def show_dashboard(self):
     # Create dashboard widgets
     dashboard_container = ttk.Frame(self.content_frame)
     dashboard_container.pack(fill=tk.BOTH, expand=True, padx=20)
-    
+
     # Quick stats cards
     self.create_stats_cards(dashboard_container)
-    
+
     # Recent activity and alerts
     activity_frame = ttk.Frame(dashboard_container)
     activity_frame.pack(fill=tk.BOTH, expand=True, pady=20)
-    
+
     # Left column - Recent alerts
     left_column = ttk.Frame(activity_frame)
     left_column.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 10))
-    
+
     alerts_label = ttk.Label(left_column, text="Recent Alerts", style='Heading.TLabel')
     alerts_label.pack(anchor='w')
-    
+
     alerts_text = scrolledtext.ScrolledText(left_column, height=15, width=40)
     alerts_text.pack(fill=tk.BOTH, expand=True, pady=5)
-    
+
     # Right column - Children overview
     right_column = ttk.Frame(activity_frame)
     right_column.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(10, 0))
-    
+
     children_label = ttk.Label(right_column, text="My Students", style='Heading.TLabel')
     children_label.pack(anchor='w')
-    
+
     children_frame = ttk.Frame(right_column)
     children_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-    
+
     # Load dashboard data
     self.load_dashboard_data(alerts_text, children_frame)
 ParentPortalGUI.show_dashboard = show_dashboard
@@ -194,23 +194,23 @@ ParentPortalGUI.load_dashboard_data = load_dashboard_data
 def create_child_card(self, parent, child):
     """Create a card widget for a child"""
     card = ttk.LabelFrame(parent, text=f"{child[1]} {child[3]}", padding=10)
-    
+
     info_text = f"ID: {child[0]}\nCourse: {child[4]}\nRelationship: {child[5]}"
     info_label = ttk.Label(card, text=info_text, style='Info.TLabel')
     info_label.pack(anchor='w')
-    
+
     # Quick action buttons
     btn_frame = ttk.Frame(card)
     btn_frame.pack(fill=tk.X, pady=5)
-    
-    view_grades_btn = ttk.Button(btn_frame, text="Grades", 
+
+    view_grades_btn = ttk.Button(btn_frame, text="Grades",
                                command=lambda c=child: self.view_child_grades(c))
     view_grades_btn.pack(side=tk.LEFT, padx=2)
-    
-    view_attendance_btn = ttk.Button(btn_frame, text="Attendance", 
+
+    view_attendance_btn = ttk.Button(btn_frame, text="Attendance",
                                    command=lambda c=child: self.view_child_attendance(c))
     view_attendance_btn.pack(side=tk.LEFT, padx=2)
-    
+
     return card
 ParentPortalGUI.create_child_card = create_child_card
 
@@ -218,13 +218,13 @@ def show_quick_actions(self):
     """Show quick actions menu"""
     self.clear_content()
     self.update_status("Quick Actions")
-    
+
     title = ttk.Label(self.content_frame, text="Quick Actions", style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
-    
+
     actions_frame = ttk.Frame(self.content_frame)
     actions_frame.pack(fill=tk.BOTH, expand=True, padx=20)
-    
+
     # Quick action buttons
     actions = [
         ("📝 Report Absence", self.quick_absence_report),
@@ -233,7 +233,7 @@ def show_quick_actions(self):
         ("💳 Check Meal Balance", self.check_meal_balance),
         ("📨 View Urgent Messages", self.view_urgent_messages),
     ]
-    
+
     for i, (text, command) in enumerate(actions):
         row = i // 2
         col = i % 2
@@ -245,7 +245,7 @@ def show_quick_actions(self):
             width=30
         )
         btn.grid(row=row, column=col, padx=10, pady=10, sticky='ew')
-    
+
     actions_frame.grid_columnconfigure(0, weight=1)
     actions_frame.grid_columnconfigure(1, weight=1)
 ParentPortalGUI.show_quick_actions = show_quick_actions

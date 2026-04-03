@@ -20,9 +20,17 @@ from education_system.university_system.modules.domain.academics.services.virtua
 
 @pytest.fixture
 def temp_db():
-    """Create a temporary test database."""
+    """Create a temporary test database with prerequisite tables."""
     with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as f:
         db_path = f.name
+    # Create stub tables referenced by virtual_classroom FK constraints
+    conn = sqlite3.connect(db_path)
+    conn.execute("CREATE TABLE IF NOT EXISTS instructors (id INTEGER PRIMARY KEY)")
+    conn.execute("CREATE TABLE IF NOT EXISTS courses (id INTEGER PRIMARY KEY)")
+    conn.execute("INSERT INTO instructors (id) VALUES (1)")
+    conn.execute("INSERT INTO courses (id) VALUES (1)")
+    conn.commit()
+    conn.close()
     yield db_path
     os.unlink(db_path)
 

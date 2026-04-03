@@ -59,56 +59,56 @@ class ComposeEmailDialog:
         # Pre-fill recipient if provided
         if self.recipient:
             self.to_entry.insert(0, self.recipient)
-        
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Recipients
         ttk.Label(main_frame, text="To:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.to_entry = ttk.Entry(main_frame, width=50)
         self.to_entry.grid(row=0, column=1, columnspan=2, sticky=tk.EW, pady=5)
-        
+
         ttk.Button(main_frame, text="Select Recipients", command=self.select_recipients).grid(row=0, column=3, padx=5)
-        
+
         # CC
         ttk.Label(main_frame, text="CC:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.cc_entry = ttk.Entry(main_frame, width=50)
         self.cc_entry.grid(row=1, column=1, columnspan=2, sticky=tk.EW, pady=5)
-        
+
         # Subject
         ttk.Label(main_frame, text="Subject:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.subject_entry = ttk.Entry(main_frame, width=50)
         self.subject_entry.grid(row=2, column=1, columnspan=2, sticky=tk.EW, pady=5)
-        
+
         # Template
         ttk.Label(main_frame, text="Template:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.template_var = tk.StringVar()
         self.template_combo = ttk.Combobox(main_frame, textvariable=self.template_var, width=30)
         self.template_combo.grid(row=3, column=1, sticky=tk.W, pady=5)
-        
+
         ttk.Button(main_frame, text="Load Template", command=self.load_template).grid(row=3, column=2, padx=5)
-        
+
         # Body
         ttk.Label(main_frame, text="Message:").grid(row=4, column=0, sticky=tk.NW, pady=5)
         self.body_text = scrolledtext.ScrolledText(main_frame, width=60, height=15)
         self.body_text.grid(row=4, column=1, columnspan=3, sticky=tk.NSEW, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=5, column=0, columnspan=4, pady=10)
-        
+
         ttk.Button(button_frame, text="Send", command=self.send_email).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Save Draft", command=self.save_draft).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
-        
+
         # Configure grid weights
         main_frame.columnconfigure(1, weight=1)
         main_frame.rowconfigure(4, weight=1)
-        
+
         # Load available templates
         self.load_templates()
-    
+
     def load_templates(self):
         """Load available templates"""
         try:
@@ -118,11 +118,11 @@ class ComposeEmailDialog:
                 self.template_combo['values'] = template_names
         except Exception as e:
             print(f"Error loading templates: {e}")
-    
+
     def select_recipients(self):
         """Open recipient selection dialog"""
         RecipientSelectorDialog(self.dialog, self.to_entry)
-    
+
     def load_template(self):
         """Load selected template"""
         template_name = self.template_var.get()
@@ -132,12 +132,12 @@ class ComposeEmailDialog:
                 if template_data:
                     self.subject_entry.delete(0, tk.END)
                     self.subject_entry.insert(0, template_data['subject'])
-                    
+
                     self.body_text.delete(1.0, tk.END)
                     self.body_text.insert(1.0, template_data['body'])
             except Exception as e:
                 messagebox.showerror("Error", f"Error loading template: {e}")
-    
+
     def send_email(self):
         """Send the composed email"""
         try:
@@ -145,19 +145,19 @@ class ComposeEmailDialog:
             cc = [r.strip() for r in self.cc_entry.get().split(',') if r.strip()] if self.cc_entry.get() else None
             subject = self.subject_entry.get()
             body = self.body_text.get(1.0, tk.END).strip()
-            
+
             if not recipients:
                 messagebox.showerror("Error", "Please enter at least one recipient")
                 return
-            
+
             if not subject:
                 messagebox.showerror("Error", "Please enter a subject")
                 return
-            
+
             if not body:
                 messagebox.showerror("Error", "Please enter a message")
                 return
-            
+
             # Send emails via university email service
             from education_system.university_system.infrastructure.email.email_service import send_email
 
@@ -189,10 +189,10 @@ class ComposeEmailDialog:
                 self.dialog.destroy()
             else:
                 messagebox.showerror("Error", "Failed to send emails:\n" + "\n".join(errors))
-                
+
         except Exception as e:
             messagebox.showerror("Error", f"Error sending email: {e}")
-    
+
     def save_draft(self):
         """Save email as draft"""
         try:
@@ -251,47 +251,47 @@ class RecipientSelectorDialog:
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
-        
+
         self.selected_recipients = []
         self.create_widgets()
         self.load_users()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Search
         search_frame = ttk.Frame(main_frame)
         search_frame.pack(fill=tk.X, pady=(0, 10))
-        
+
         ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT)
         self.search_entry = ttk.Entry(search_frame, width=30)
         self.search_entry.pack(side=tk.LEFT, padx=5)
         self.search_entry.bind('<KeyRelease>', self.on_search)
-        
+
         # Users list
         list_frame = ttk.Frame(main_frame)
         list_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         self.users_tree = ttk.Treeview(list_frame, columns=("Name", "Email", "Role"), show="headings", selectmode=tk.EXTENDED)
-        
+
         for col in ["Name", "Email", "Role"]:
             self.users_tree.heading(col, text=col)
-        
+
         scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.users_tree.yview)
         self.users_tree.configure(yscrollcommand=scrollbar.set)
-        
+
         self.users_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Add Selected", command=self.add_selected).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="OK", command=self.confirm_selection).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def load_users(self):
         """Load users into the tree from database"""
         try:
@@ -320,7 +320,7 @@ class RecipientSelectorDialog:
             # Log error without fallback - database should be properly initialized
             import traceback
             traceback.print_exc()
-    
+
     def on_search(self, event):
         """Handle search input"""
         search_term = self.search_entry.get().lower()
@@ -358,7 +358,7 @@ class RecipientSelectorDialog:
             # Log error without fallback - database should be properly initialized
             import traceback
             traceback.print_exc()
-    
+
     def add_selected(self):
         """Add selected users to recipients"""
         selection = self.users_tree.selection()
@@ -367,7 +367,7 @@ class RecipientSelectorDialog:
             email = values[1]
             if email not in self.selected_recipients:
                 self.selected_recipients.append(email)
-    
+
     def confirm_selection(self):
         """Confirm recipient selection"""
         if self.selected_recipients:
@@ -376,10 +376,10 @@ class RecipientSelectorDialog:
                 new_text = current_text + ", " + ", ".join(self.selected_recipients)
             else:
                 new_text = ", ".join(self.selected_recipients)
-            
+
             self.entry_widget.delete(0, tk.END)
             self.entry_widget.insert(0, new_text)
-        
+
         self.dialog.destroy()
 
 
@@ -392,30 +392,30 @@ class BulkEmailDialog:
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
-        
+
         self.create_widgets()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Target audience
         ttk.Label(main_frame, text="Target Audience:").grid(row=0, column=0, sticky=tk.W, pady=5)
-        
+
         self.audience_var = tk.StringVar(value="all")
         audience_frame = ttk.Frame(main_frame)
         audience_frame.grid(row=0, column=1, sticky=tk.W, pady=5)
-        
+
         ttk.Radiobutton(audience_frame, text="All Users", variable=self.audience_var, value="all").pack(side=tk.LEFT)
         ttk.Radiobutton(audience_frame, text="Students", variable=self.audience_var, value="students").pack(side=tk.LEFT, padx=10)
         ttk.Radiobutton(audience_frame, text="Staff", variable=self.audience_var, value="staff").pack(side=tk.LEFT)
         ttk.Radiobutton(audience_frame, text="Instructors", variable=self.audience_var, value="instructors").pack(side=tk.LEFT, padx=10)
-        
+
         # Subject
         ttk.Label(main_frame, text="Subject:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.subject_entry = ttk.Entry(main_frame, width=50)
         self.subject_entry.grid(row=1, column=1, sticky=tk.EW, pady=5)
-        
+
         # Template
         ttk.Label(main_frame, text="Template:").grid(row=2, column=0, sticky=tk.W, pady=5)
         template_frame = ttk.Frame(main_frame)
@@ -431,19 +431,19 @@ class BulkEmailDialog:
         ttk.Label(main_frame, text="Message:").grid(row=3, column=0, sticky=tk.NW, pady=5)
         self.body_text = scrolledtext.ScrolledText(main_frame, width=60, height=15)
         self.body_text.grid(row=3, column=1, sticky=tk.NSEW, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=4, column=0, columnspan=2, pady=10)
-        
+
         ttk.Button(button_frame, text="Send Bulk Email", command=self.send_bulk).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Preview", command=self.preview_email).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
-        
+
         # Configure grid weights
         main_frame.columnconfigure(1, weight=1)
         main_frame.rowconfigure(3, weight=1)
-        
+
         # Load templates
         self.load_templates()
 
@@ -492,15 +492,15 @@ class BulkEmailDialog:
             audience = self.audience_var.get()
             subject = self.subject_entry.get()
             body = self.body_text.get(1.0, tk.END).strip()
-            
+
             if not subject or not body:
                 messagebox.showerror("Error", "Please enter subject and message")
                 return
-            
+
             # Confirm sending
             if not messagebox.askyesno("Confirm", f"Send bulk email to {audience}?"):
                 return
-            
+
             # Use existing bulk send functionality
             if 'send_batch_announcement' in globals():
                 # Create filter criteria based on audience
@@ -511,34 +511,34 @@ class BulkEmailDialog:
                     filter_criteria = {'role': 'staff'}
                 elif audience == "instructors":
                     filter_criteria = {'role': 'instructor'}
-                
+
                 success, failed, total = send_batch_announcement(subject, body, filter_criteria)
-                
-                messagebox.showinfo("Result", 
+
+                messagebox.showinfo("Result",
                     f"Bulk email completed:\n"
                     f"Total: {total}\n"
                     f"Success: {success}\n"
                     f"Failed: {failed}")
-                
+
                 if success > 0:
                     self.dialog.destroy()
             else:
                 messagebox.showerror("Error", "Bulk email functionality not available")
-                
+
         except Exception as e:
             messagebox.showerror("Error", f"Error sending bulk email: {e}")
-    
+
     def preview_email(self):
         """Preview the email"""
         subject = self.subject_entry.get()
         body = self.body_text.get(1.0, tk.END).strip()
-        
+
         preview_text = f"Subject: {subject}\n\nMessage:\n{body}"
-        
+
         preview_dialog = tk.Toplevel(self.dialog)
         preview_dialog.title("Email Preview")
         preview_dialog.geometry("500x400")
-        
+
         text_widget = scrolledtext.ScrolledText(preview_dialog, wrap=tk.WORD)
         text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         text_widget.insert(1.0, preview_text)
@@ -955,100 +955,100 @@ class EmailConfigDialog:
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
-        
+
         self.create_widgets()
         self.load_config()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Mode selection
         mode_frame = ttk.LabelFrame(main_frame, text="Email Mode", padding=10)
         mode_frame.pack(fill=tk.X, pady=5)
-        
+
         self.mode_var = tk.StringVar()
         ttk.Radiobutton(mode_frame, text="Database Only Mode", variable=self.mode_var, value="database").pack(anchor=tk.W)
         ttk.Radiobutton(mode_frame, text="SMTP Sending Mode", variable=self.mode_var, value="smtp").pack(anchor=tk.W)
-        
+
         # SMTP settings
         smtp_frame = ttk.LabelFrame(main_frame, text="SMTP Settings", padding=10)
         smtp_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(smtp_frame, text="SMTP Server:").grid(row=0, column=0, sticky=tk.W, pady=2)
         self.smtp_server_entry = ttk.Entry(smtp_frame, width=30)
         self.smtp_server_entry.grid(row=0, column=1, sticky=tk.W, pady=2)
-        
+
         ttk.Label(smtp_frame, text="SMTP Port:").grid(row=1, column=0, sticky=tk.W, pady=2)
         self.smtp_port_entry = ttk.Entry(smtp_frame, width=10)
         self.smtp_port_entry.grid(row=1, column=1, sticky=tk.W, pady=2)
-        
+
         ttk.Label(smtp_frame, text="Username:").grid(row=2, column=0, sticky=tk.W, pady=2)
         self.username_entry = ttk.Entry(smtp_frame, width=30)
         self.username_entry.grid(row=2, column=1, sticky=tk.W, pady=2)
-        
+
         ttk.Label(smtp_frame, text="Password:").grid(row=3, column=0, sticky=tk.W, pady=2)
         self.password_entry = ttk.Entry(smtp_frame, width=30, show="*")
         self.password_entry.grid(row=3, column=1, sticky=tk.W, pady=2)
-        
+
         # Sender settings
         sender_frame = ttk.LabelFrame(main_frame, text="Sender Information", padding=10)
         sender_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(sender_frame, text="Sender Email:").grid(row=0, column=0, sticky=tk.W, pady=2)
         self.sender_email_entry = ttk.Entry(sender_frame, width=40)
         self.sender_email_entry.grid(row=0, column=1, sticky=tk.W, pady=2)
-        
+
         ttk.Label(sender_frame, text="Sender Name:").grid(row=1, column=0, sticky=tk.W, pady=2)
         self.sender_name_entry = ttk.Entry(sender_frame, width=40)
         self.sender_name_entry.grid(row=1, column=1, sticky=tk.W, pady=2)
-        
+
         # Options
         options_frame = ttk.LabelFrame(main_frame, text="Options", padding=10)
         options_frame.pack(fill=tk.X, pady=5)
-        
+
         self.use_tls_var = tk.BooleanVar()
         ttk.Checkbutton(options_frame, text="Use TLS", variable=self.use_tls_var).pack(anchor=tk.W)
-        
+
         self.use_auth_var = tk.BooleanVar()
         ttk.Checkbutton(options_frame, text="Use Authentication", variable=self.use_auth_var).pack(anchor=tk.W)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Save", command=self.save_config).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Test", command=self.test_config).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def load_config(self):
         """Load current configuration"""
         try:
             if 'config' in globals():
                 cfg = config
-                
+
                 # Set mode
                 if cfg.get('database_only_mode', True):
                     self.mode_var.set("database")
                 else:
                     self.mode_var.set("smtp")
-                
+
                 # Set SMTP settings
                 self.smtp_server_entry.insert(0, cfg.get('smtp_server', ''))
                 self.smtp_port_entry.insert(0, str(cfg.get('smtp_port', 587)))
                 self.username_entry.insert(0, cfg.get('username', ''))
-                
+
                 # Set sender settings
                 self.sender_email_entry.insert(0, cfg.get('sender_email', ''))
                 self.sender_name_entry.insert(0, cfg.get('sender_name', ''))
-                
+
                 # Set options
                 self.use_tls_var.set(cfg.get('use_tls', True))
                 self.use_auth_var.set(cfg.get('use_authentication', True))
-                
+
         except Exception as e:
             print(f"Error loading config: {e}")
-    
+
     def save_config(self):
         """Save configuration"""
         try:
@@ -1062,22 +1062,22 @@ class EmailConfigDialog:
                 config['sender_name'] = self.sender_name_entry.get()
                 config['use_tls'] = self.use_tls_var.get()
                 config['use_authentication'] = self.use_auth_var.get()
-                
+
                 if self.password_entry.get():
                     config['password'] = self.password_entry.get()
-                
+
                 # Save to file
                 if 'save_config' in globals():
                     save_config()
-                
+
                 messagebox.showinfo("Success", "Configuration saved successfully")
                 self.dialog.destroy()
             else:
                 messagebox.showerror("Error", "Configuration system not available")
-                
+
         except Exception as e:
             messagebox.showerror("Error", f"Error saving configuration: {e}")
-    
+
     def test_config(self):
         """Test email configuration"""
         try:
@@ -1103,21 +1103,21 @@ class EmailDetailsDialog:
 
         # Set grab after window is fully initialized and visible
         self.dialog.after(100, self.dialog.grab_set)
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Details display
         self.details_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, state=tk.DISABLED)
         self.details_text.pack(fill=tk.BOTH, expand=True)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def load_email_details(self):
         """Load email details"""
         try:
@@ -1130,17 +1130,17 @@ class EmailDetailsDialog:
                 FROM stored_emails WHERE id = ?
                 ''', (self.email_id,))
                 return cursor.fetchone()
-            
+
             if 'execute_db_operation' in globals():
                 email_data = execute_db_operation(_get_email_details)
-                
+
                 if email_data:
                     details = f"Email ID: {email_data[0]}\n"
                     details += f"To: {email_data[1]}\n"
                     details += f"From: {email_data[5]} <{email_data[4]}>\n"
                     details += f"Subject: {email_data[2]}\n"
                     details += f"Date: {email_data[9]}\n"
-                    
+
                     if email_data[6]:  # CC
                         details += f"CC: {email_data[6]}\n"
                     if email_data[7]:  # BCC
@@ -1149,10 +1149,10 @@ class EmailDetailsDialog:
                         details += f"Attachments: {email_data[8]}\n"
                     if email_data[10]:  # Template
                         details += f"Template: {email_data[10]}\n"
-                    
+
                     details += "\n" + "-" * 50 + "\n\n"
                     details += email_data[3]  # Body
-                    
+
                     self.details_text.config(state=tk.NORMAL)
                     self.details_text.insert(1.0, details)
                     self.details_text.config(state=tk.DISABLED)
@@ -1160,7 +1160,7 @@ class EmailDetailsDialog:
                     self.details_text.config(state=tk.NORMAL)
                     self.details_text.insert(1.0, "Email not found")
                     self.details_text.config(state=tk.DISABLED)
-            
+
         except Exception as e:
             self.details_text.config(state=tk.NORMAL)
             self.details_text.insert(1.0, f"Error loading email details: {e}")
@@ -1177,67 +1177,67 @@ class TemplateEditor:
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
-        
+
         self.create_widgets()
         if template_name:
             self.load_template()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Template info
         info_frame = ttk.Frame(main_frame)
         info_frame.pack(fill=tk.X, pady=(0, 10))
-        
+
         ttk.Label(info_frame, text="Name:").grid(row=0, column=0, sticky=tk.W)
         self.name_entry = ttk.Entry(info_frame, width=30)
         self.name_entry.grid(row=0, column=1, sticky=tk.W, padx=5)
-        
+
         # Subject
         ttk.Label(main_frame, text="Subject:").pack(anchor=tk.W)
         self.subject_entry = ttk.Entry(main_frame, width=80)
         self.subject_entry.pack(fill=tk.X, pady=5)
-        
+
         # Body with variable hints
         body_frame = ttk.Frame(main_frame)
         body_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Variables panel
         vars_frame = ttk.LabelFrame(body_frame, text="Available Variables", padding=5)
         vars_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=(10, 0))
-        
+
         variables = [
-            "$student_id", "$email_address", "$title", "$first_name", 
+            "$student_id", "$email_address", "$title", "$first_name",
             "$last_name", "$course", "$modules_list", "$signature"
         ]
-        
+
         for var in variables:
             btn = ttk.Button(vars_frame, text=var, width=15,
                            command=lambda v=var: self.insert_variable(v))
             btn.pack(fill=tk.X, pady=1)
-        
+
         # Body editor
         editor_frame = ttk.Frame(body_frame)
         editor_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(editor_frame, text="Body:").pack(anchor=tk.W)
         self.body_text = scrolledtext.ScrolledText(editor_frame, wrap=tk.WORD)
         self.body_text.pack(fill=tk.BOTH, expand=True)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Save", command=self.save_template).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Preview", command=self.preview_template).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def insert_variable(self, variable):
         """Insert variable at cursor position"""
         self.body_text.insert(tk.INSERT, variable)
         self.body_text.focus()
-    
+
     def load_template(self):
         """Load existing template"""
         if self.template_name and 'load_template' in globals():
@@ -1249,18 +1249,18 @@ class TemplateEditor:
                     self.body_text.insert(1.0, template_data['body'])
             except Exception as e:
                 messagebox.showerror("Error", f"Error loading template: {e}")
-    
+
     def save_template(self):
         """Save template"""
         try:
             name = self.name_entry.get().strip()
             subject = self.subject_entry.get().strip()
             body = self.body_text.get(1.0, tk.END).strip()
-            
+
             if not name or not subject or not body:
                 messagebox.showerror("Error", "Please fill in all fields")
                 return
-            
+
             if 'create_template' in globals():
                 if create_template(name, subject, body):
                     messagebox.showinfo("Success", f"Template '{name}' saved successfully")
@@ -1269,15 +1269,15 @@ class TemplateEditor:
                     messagebox.showerror("Error", "Failed to save template")
             else:
                 messagebox.showerror("Error", "Template system not available")
-                
+
         except Exception as e:
             messagebox.showerror("Error", f"Error saving template: {e}")
-    
+
     def preview_template(self):
         """Preview template with sample data"""
         subject = self.subject_entry.get()
         body = self.body_text.get(1.0, tk.END).strip()
-        
+
         # Sample template variables
         sample_vars = {
             'student_id': 'STU12345',
@@ -1289,32 +1289,32 @@ class TemplateEditor:
             'modules_list': '- CS101: Programming\n- CS102: Data Structures',
             'signature': '\n\nBest regards,\nUniversity Administration'
         }
-        
+
         # Simple variable substitution
         preview_subject = subject
         preview_body = body
-        
+
         for var, value in sample_vars.items():
             preview_subject = preview_subject.replace(f'${var}', str(value))
             preview_body = preview_body.replace(f'${var}', str(value))
-        
+
         # Show preview
         preview_dialog = tk.Toplevel(self.dialog)
         preview_dialog.title("Template Preview")
         preview_dialog.geometry("500x400")
-        
+
         preview_frame = ttk.Frame(preview_dialog, padding=10)
         preview_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(preview_frame, text=f"Subject: {preview_subject}", font=('Arial', 10, 'bold')).pack(anchor=tk.W, pady=5)
-        
+
         preview_text = scrolledtext.ScrolledText(preview_frame, wrap=tk.WORD, state=tk.DISABLED)
         preview_text.pack(fill=tk.BOTH, expand=True)
-        
+
         preview_text.config(state=tk.NORMAL)
         preview_text.insert(1.0, preview_body)
         preview_text.config(state=tk.DISABLED)
-        
+
         ttk.Button(preview_frame, text="Close", command=preview_dialog.destroy).pack(pady=10)
 
 

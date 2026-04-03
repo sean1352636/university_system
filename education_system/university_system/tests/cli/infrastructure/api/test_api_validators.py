@@ -219,8 +219,8 @@ class TestStudentValidators:
         })
 
     def test_create_missing_student_id(self):
-        with pytest.raises(ValidationError, match="Missing required fields.*student_id"):
-            validate_student_create({"first_name": "A", "last_name": "B"})
+        # student_id is not a required field; first_name + last_name suffice
+        validate_student_create({"first_name": "A", "last_name": "B"})
 
     def test_create_missing_first_name(self):
         with pytest.raises(ValidationError, match="Missing required fields.*first_name"):

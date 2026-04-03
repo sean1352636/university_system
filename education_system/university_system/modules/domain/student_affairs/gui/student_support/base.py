@@ -171,7 +171,7 @@ class StudentSupportGUIBase:
         else:
             global auth
             self.auth = auth if 'auth' in globals() and auth is not None else None
-        
+
         # Initialize support system
         self.config = None
         try:
@@ -183,10 +183,10 @@ class StudentSupportGUIBase:
         except Exception as e:
             messagebox.showerror("Initialization Error", f"Failed to initialize support system: {e}")
             self.support = None
-        
+
         # Theme configuration
         self.setup_theme()
-        
+
         # GUI state
         self.current_ticket = None
         self.search_results = {}
@@ -201,7 +201,7 @@ class StudentSupportGUIBase:
         self._kb_last_search = ''
         self.resource_records: Dict[int, Dict[str, Any]] = {}
         self.template_records: Dict[int, Dict[str, Any]] = {}
-        
+
         # Setup current user from existing authentication system
         self.setup_current_user()
 
@@ -352,7 +352,7 @@ class StudentSupportGUIBase:
     def setup_theme(self):
         """Setup modern theme and styling"""
         style = ttk.Style()
-        
+
         # Configure colors
         self.colors = {
             'primary': '#2563eb',
@@ -365,14 +365,14 @@ class StudentSupportGUIBase:
             'text': '#1e293b',
             'text_secondary': '#64748b'
         }
-        
+
         # Configure styles
         style.configure('Title.TLabel', font=('Segoe UI', 16, 'bold'), foreground=self.colors['text'])
         style.configure('Heading.TLabel', font=('Segoe UI', 12, 'bold'), foreground=self.colors['text'])
         style.configure('Card.TFrame', relief='solid', borderwidth=1, background=self.colors['surface'])
         style.configure('Primary.TButton', font=('Segoe UI', 10))
         style.configure('Success.TButton', font=('Segoe UI', 10))
-        
+
         # Configure root background
         self.root.configure(bg=self.colors['background'])
 
@@ -478,20 +478,20 @@ class StudentSupportGUIBase:
         # User info section
         user_frame = ttk.Frame(self.sidebar, padding="10")
         user_frame.pack(fill="x", pady=(0, 10))
-        
+
         if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
             username = getattr(self.auth.current_user, 'username', 'Unknown') if hasattr(self.auth.current_user, 'username') else self.auth.current_user.get('username', 'Unknown')
             role = getattr(self.auth.current_user, 'role', 'user') if hasattr(self.auth.current_user, 'role') else self.auth.current_user.get('role', 'user')
             user_info = f"👤 {username}\n📋 {role.title()}"
         else:
             user_info = "👤 Not logged in"
-        
+
         ttk.Label(user_frame, text=user_info, font=('Segoe UI', 10)).pack()
-        
+
         # Navigation buttons
         self.nav_frame = ttk.Frame(self.sidebar, padding="10")
         self.nav_frame.pack(fill="both", expand=True)
-        
+
         # Dashboard
         self.create_nav_button(_t("student_support.nav.dashboard"), self.show_dashboard)
 
@@ -500,11 +500,11 @@ class StudentSupportGUIBase:
         self.create_nav_button(_t("student_support.nav.faqs"), self.show_faqs)
         self.create_nav_button(_t("student_support.nav.knowledge_base"), self.show_knowledge_base)
         self.create_nav_button(_t("student_support.nav.resources"), self.show_resources)
-        
+
         # Role-based features
         if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
             user_role = getattr(self.auth.current_user, 'role', 'user') if hasattr(self.auth.current_user, 'role') else self.auth.current_user.get('role', 'user')
-            
+
             if user_role == 'student':
                 ttk.Separator(self.nav_frame, orient='horizontal').pack(fill="x", pady=10)
                 self.create_nav_button(_t("student_support.nav.create_ticket"), self.show_create_ticket)
@@ -556,7 +556,7 @@ class StudentSupportGUIBase:
         content_container.grid(row=0, column=1, sticky="nsew")
         content_container.rowconfigure(0, weight=1)
         content_container.columnconfigure(0, weight=1)
-        
+
 
         # Create canvas and scrollbar for content area
         self.content_canvas = tk.Canvas(content_container, highlightthickness=0)
@@ -567,21 +567,21 @@ class StudentSupportGUIBase:
             "<Configure>",
             lambda e: self.content_canvas.configure(scrollregion=self.content_canvas.bbox("all"))
         )
-        
+
         # Put content_frame inside the canvas and keep a reference
         self.content_window = self.content_canvas.create_window((0, 0), window=self.content_frame, anchor="nw")
-        
+
         # Keep content_frame size in sync with the canvas size
         def _on_content_canvas_configure(event):
             self.content_canvas.itemconfig(self.content_window, width=event.width, height=event.height)
 
         self.content_canvas.bind("<Configure>", _on_content_canvas_configure)
-        
+
         self.content_canvas.configure(yscrollcommand=content_scrollbar.set)
-        
+
         self.content_canvas.pack(side="left", fill="both", expand=True)
         content_scrollbar.pack(side="right", fill="y")
-        
+
         self.content_frame.columnconfigure(0, weight=1)
         self.content_frame.rowconfigure(0, weight=1)
 
@@ -589,7 +589,7 @@ class StudentSupportGUIBase:
         # Create notebook for multiple views within the scrollable content
         self.notebook = ttk.Notebook(self.content_frame)
         self.notebook.grid(row=0, column=0, sticky="nsew", padx=2, pady=2)
-        
+
         # Initialize with dashboard
         self.show_dashboard()
 

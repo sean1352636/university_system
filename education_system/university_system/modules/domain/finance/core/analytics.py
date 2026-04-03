@@ -138,8 +138,8 @@ def view_overdue_accounts():
         print(f"\nOverdue Analysis:")
 
         cursor.execute('''
-        SELECT 
-            CASE 
+        SELECT
+            CASE
                 WHEN MAX(julianday('now') - julianday(sf.due_date)) <= 30 THEN '1-30 days'
                 WHEN MAX(julianday('now') - julianday(sf.due_date)) <= 60 THEN '31-60 days'
                 WHEN MAX(julianday('now') - julianday(sf.due_date)) <= 90 THEN '61-90 days'
@@ -157,8 +157,8 @@ def view_overdue_accounts():
 
         # Re-execute with proper grouping
         cursor.execute('''
-        SELECT 
-            CASE 
+        SELECT
+            CASE
                 WHEN days_overdue <= 30 THEN '1-30 days'
                 WHEN days_overdue <= 60 THEN '31-60 days'
                 WHEN days_overdue <= 90 THEN '61-90 days'
@@ -178,7 +178,7 @@ def view_overdue_accounts():
             HAVING total_overdue > 0
         ) overdue_summary
         GROUP BY overdue_period
-        ORDER BY 
+        ORDER BY
             CASE overdue_period
                 WHEN '1-30 days' THEN 1
                 WHEN '31-60 days' THEN 2
@@ -244,7 +244,7 @@ def assign_case_to_agency(case_id):
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         cursor.execute('''
-        UPDATE collection_cases 
+        UPDATE collection_cases
         SET agency_id = ?, case_status = 'assigned', assigned_date = ?, updated_at = ?
         WHERE case_id = ?
         ''', (agency_id, now, now, case_id))
@@ -294,7 +294,7 @@ def generate_enrollment_projections():
 
         # Get current enrollment by course
         cursor.execute('''
-        SELECT course, COUNT(*) as current_enrollment, 
+        SELECT course, COUNT(*) as current_enrollment,
                AVG(CASE WHEN sf.amount IS NOT NULL THEN sf.amount ELSE 0 END) as avg_fees
         FROM students s
         LEFT JOIN student_fees sf ON s.student_id = sf.student_id
@@ -482,8 +482,8 @@ def generate_risk_analysis():
 
         # 3. Collection Risk by Age
         cursor.execute('''
-        SELECT 
-            CASE 
+        SELECT
+            CASE
                 WHEN julianday('now') - julianday(sf.due_date) <= 30 THEN 'Low Risk (0-30 days)'
                 WHEN julianday('now') - julianday(sf.due_date) <= 90 THEN 'Medium Risk (31-90 days)'
                 ELSE 'High Risk (90+ days)'
@@ -516,7 +516,7 @@ def generate_risk_analysis():
 
         # 4. Revenue Concentration Risk
         cursor.execute('''
-        SELECT s.course, 
+        SELECT s.course,
                SUM(sf.amount) as course_revenue,
                COUNT(DISTINCT s.student_id) as students
         FROM students s
@@ -713,8 +713,8 @@ def recovery_rate_analysis():
         print("-" * 40)
 
         cursor.execute('''
-        SELECT 
-            CASE 
+        SELECT
+            CASE
                 WHEN julianday('now') - julianday(created_at) <= 30 THEN '0-30 days'
                 WHEN julianday('now') - julianday(created_at) <= 60 THEN '31-60 days'
                 WHEN julianday('now') - julianday(created_at) <= 90 THEN '61-90 days'
@@ -725,7 +725,7 @@ def recovery_rate_analysis():
             SUM(amount_collected) as collected
         FROM collection_cases
         GROUP BY age_range
-        ORDER BY 
+        ORDER BY
             CASE age_range
                 WHEN '0-30 days' THEN 1
                 WHEN '31-60 days' THEN 2
@@ -756,7 +756,7 @@ def update_actual_amounts(budget_id):
 
         # Get revenue actuals from payments
         cursor.execute('''
-        UPDATE budget_line_items 
+        UPDATE budget_line_items
         SET actual_amount = (
             SELECT COALESCE(SUM(p.amount), 0)
             FROM payments p
@@ -770,9 +770,9 @@ def update_actual_amounts(budget_id):
         ),
         variance = actual_amount - budgeted_amount,
         updated_at = ?
-        WHERE budget_id = ? 
+        WHERE budget_id = ?
         AND category_id IN (
-            SELECT category_id FROM budget_categories 
+            SELECT category_id FROM budget_categories
             WHERE category_type = 'revenue'
         )
         ''', (budget_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), budget_id))

@@ -23,6 +23,9 @@ def get_report_palette(n: Optional[int] = None) -> List[str]:
     except Exception:
         pass
 
+    if not palette:
+        palette = DEFAULT_PALETTE
+
     if n and n > 0:
         k = len(palette)
         if k == 0:

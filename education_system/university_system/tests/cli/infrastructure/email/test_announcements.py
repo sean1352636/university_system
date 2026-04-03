@@ -451,9 +451,9 @@ class TestDisplayAnnouncementsMenu:
 
             announcements.display_announcements_menu(mock_dashboard)
 
-            # Should display invalid choice message
+            # Should display invalid choice message (may be translated)
             calls = [str(call) for call in mock_print.call_args_list]
-            assert any('Invalid choice' in str(call) for call in calls)
+            assert any('Invalid choice' in str(call) or 'invalid_choice' in str(call).lower() or '無効' in str(call) for call in calls)
 
 
 class TestCreateAnnouncementSafe:

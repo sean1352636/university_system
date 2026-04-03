@@ -149,37 +149,14 @@ class TestDatabaseSetup:
 
     def test_setup_alumni_permissions(self, setup_alumni_database):
         """Test permissions setup"""
-        conn = get_connection()
-        try:
-            cursor = conn.cursor()
-            # Ensure permissions and roles tables exist
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS permissions (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    permission_name TEXT UNIQUE NOT NULL,
-                    description TEXT,
-                    created_at TEXT
-                )
-            """)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS roles (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    role_name TEXT UNIQUE NOT NULL
-                )
-            """)
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS role_permissions (
-                    role_id INTEGER,
-                    permission_id INTEGER,
-                    FOREIGN KEY (role_id) REFERENCES roles(id),
-                    FOREIGN KEY (permission_id) REFERENCES permissions(id)
-                )
-            """)
-            conn.commit()
-        finally:
-            conn.close()
-
-        setup_alumni_permissions()
+        # setup_alumni_permissions() uses get_db_connection() from core module,
+        # which has a hardcoded DB_PATH evaluated at import time. We need to
+        # patch it so it connects to the same temp DB that conftest provides.
+        with patch(
+            'education_system.university_system.modules.domain.student_affairs.services.alumni_management.core.get_db_connection',
+            side_effect=lambda: get_connection(),
+        ):
+            setup_alumni_permissions()
 
         conn = get_connection()
         try:
@@ -198,41 +175,59 @@ class TestAlumniRegistration:
 
     def test_register_alumni_basic(self, setup_alumni_database, mock_auth):
         """Test basic alumni registration"""
+        # Seed a student record so the FK on alumni.student_id is satisfied.
+        conn = get_connection()
+        try:
+            _ensure_student(conn.cursor(), 'S99999', 'Test', 'User', 'test@email.com')
+            conn.commit()
+        finally:
+            conn.close()
+
+        # The register_alumni function auto-generates the alumni_id (A000001),
+        # so no alumni_id input is needed.  The actual input sequence is:
+        #   student_id, continue_anyway(y/n), title, first_name, middle_name,
+        #   last_name, email, gender(1-4), dob, graduation_year, degree,
+        #   employer, job_title, industry, address, city, country, phone,
+        #   linkedin, bio, skills, achievements,
+        #   is_donor(y/n), is_mentor(y/n), is_board_member(y/n),
+        #   is_ambassador(y/n), privacy_level(1/2/3)
         with patch('builtins.input', side_effect=[
-            'ALU999',           # alumni_id
-            'S99999',          # student_id
-            'test@email.com',  # email
+            'S99999',          # student_id (exists in DB)
             'Mr',              # title
             'Test',            # first_name
             '',                # middle_name
             'User',            # last_name
-            'Male',            # gender
+            'test@email.com',  # email_address
+            '1',               # gender selection (1=Male)
             '1990-01-01',      # dob
             '2020',            # graduation_year
-            'BSc Test',        # degree
-            'TestCorp',        # employer
+            'BSc Test',        # degree_earned
+            'TestCorp',        # current_employer
             'Tester',          # job_title
             'Testing',         # industry
             '123 Test St',     # address
             'TestCity',        # city
             'TestCountry',     # country
             '1234567890',      # phone
-            'linkedin.com/test',  # linkedin
-            '',                # skills
+            'linkedin.com/test',  # linkedin_url
             '',                # bio
-            '',                # social_media
-            'n',               # privacy
-            'n'                # ambassador
+            '',                # skills
+            '',                # achievements
+            'n',               # is_donor
+            'n',               # is_mentor
+            'n',               # is_board_member
+            'n',               # is_ambassador
+            '1',               # privacy_level (1=Public)
         ]):
             with patch('education_system.university_system.modules.domain.student_affairs.services.alumni_management.profiles.auth', mock_auth):
                 from education_system.university_system.modules.domain.student_affairs.services.alumni_management import register_alumni
                 register_alumni()
 
-                # Verify alumni was created
+                # Verify alumni was created (auto-generated ID is A000001)
                 conn = get_connection()
                 try:
                     cursor = conn.cursor()
-                    cursor.execute('SELECT * FROM alumni WHERE alumni_id = ?', ('ALU999',))
+                    cursor.execute('SELECT * FROM alumni WHERE alumni_id = ?', ('A000001',))
                     result = cursor.fetchone()
                     assert result is not None
                 finally:

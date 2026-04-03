@@ -378,8 +378,8 @@ class TestGeneratePerformanceDashboard:
     """Tests for generate_performance_dashboard function"""
 
     @patch('education_system.university_system.modules.domain.academics.grading.performance_analytics.display_performance_dashboard')
-    @patch('education_system.university_system.modules.domain.academics.grading.performance_analytics.generate_dashboard_report')
-    @patch('education_system.university_system.modules.domain.academics.grading.performance_analytics.create_dashboard_visualizations')
+    @patch('education_system.university_system.modules.domain.academics.grading.performance_analytics.generate_dashboard_report', create=True)
+    @patch('education_system.university_system.modules.domain.academics.grading.performance_analytics.create_dashboard_visualizations', create=True)
     @patch('builtins.print')
     def test_generate_performance_dashboard(self, mock_print, mock_viz, mock_report, mock_display, sample_data):
         """Test generating performance dashboard"""

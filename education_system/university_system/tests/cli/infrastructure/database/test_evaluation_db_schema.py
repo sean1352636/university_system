@@ -29,9 +29,7 @@ class TestEvaluationDatabaseSchema:
     def db_connection(self, temp_db, monkeypatch):
         """Mock database connection for testing"""
         from education_system.university_system.infrastructure.database import db
-
-        # Mock transaction context manager to use temp database
-        original_transaction = db.transaction
+        from education_system.university_system.modules.domain.academics.services.evaluation import db_schema as eval_schema
 
         class MockTransaction:
             def __init__(self):
@@ -49,11 +47,12 @@ class TestEvaluationDatabaseSchema:
                 self.conn.close()
                 return False
 
-        monkeypatch.setattr(db, 'transaction', lambda: MockTransaction())
+        mock_transaction = lambda: MockTransaction()
+        # Patch both the db module and the already-imported reference in db_schema
+        monkeypatch.setattr(db, 'transaction', mock_transaction)
+        monkeypatch.setattr(eval_schema, 'transaction', mock_transaction)
 
         yield temp_db
-
-        monkeypatch.setattr(db, 'transaction', original_transaction)
 
     def test_initialize_evaluation_database(self, db_connection):
         """Test that evaluation database is initialized correctly"""
@@ -379,6 +378,7 @@ class TestEvaluationDatabaseIntegration:
     def initialized_db(self, temp_db, monkeypatch):
         """Initialize database and return connection"""
         from education_system.university_system.infrastructure.database import db
+        from education_system.university_system.modules.domain.academics.services.evaluation import db_schema as eval_schema
 
         class MockTransaction:
             def __init__(self):
@@ -396,7 +396,9 @@ class TestEvaluationDatabaseIntegration:
                 self.conn.close()
                 return False
 
-        monkeypatch.setattr(db, 'transaction', lambda: MockTransaction())
+        mock_transaction = lambda: MockTransaction()
+        monkeypatch.setattr(db, 'transaction', mock_transaction)
+        monkeypatch.setattr(eval_schema, 'transaction', mock_transaction)
         initialize_evaluation_database()
 
         yield temp_db

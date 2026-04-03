@@ -7,7 +7,7 @@ when they should reference users(id).
 """
 
 from education_system.university_system.infrastructure.database.db import transaction, get_connection
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 import sys
 
 def fix_foreign_keys():

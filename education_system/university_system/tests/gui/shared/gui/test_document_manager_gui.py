@@ -17,6 +17,7 @@ Tests cover:
 
 import unittest
 import tkinter as tk
+from tkinter import ttk
 from unittest.mock import Mock, patch, MagicMock, call
 from education_system.university_system.infrastructure.database.db import sqlite3
 import os
@@ -43,6 +44,42 @@ def _create_test_tables(db_path):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.executescript("""
+        CREATE TABLE IF NOT EXISTS documents (
+            document_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_type TEXT NOT NULL DEFAULT 'general',
+            source_document_id INTEGER,
+            owner_id TEXT,
+            owner_type TEXT,
+            reference_type TEXT,
+            reference_id TEXT,
+            type_id INTEGER,
+            document_type TEXT,
+            document_name TEXT,
+            file_path TEXT,
+            file_content TEXT,
+            file_size INTEGER,
+            file_hash TEXT,
+            original_filename TEXT,
+            upload_date TEXT,
+            expiry_date TEXT,
+            issue_date TEXT,
+            status TEXT DEFAULT 'active',
+            verification_status TEXT,
+            verification_date TEXT,
+            verification_notes TEXT,
+            verified_by TEXT,
+            version_number INTEGER DEFAULT 1,
+            parent_document_id INTEGER,
+            is_current_version INTEGER DEFAULT 1,
+            workflow_status TEXT,
+            priority INTEGER,
+            tags TEXT,
+            notes TEXT,
+            uploaded_by TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT
+        );
+
         CREATE TABLE IF NOT EXISTS student_documents (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             student_id TEXT,
@@ -111,10 +148,18 @@ def _create_test_tables(db_path):
         );
 
         CREATE TABLE IF NOT EXISTS document_types (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT,
+            type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type_name TEXT,
             description TEXT,
-            is_required INTEGER DEFAULT 0
+            is_required INTEGER DEFAULT 0,
+            has_expiry INTEGER DEFAULT 0,
+            expiry_reminder_days INTEGER,
+            max_file_size_mb INTEGER DEFAULT 10,
+            allowed_formats TEXT DEFAULT 'pdf,jpg,jpeg,png,doc,docx',
+            requires_approval INTEGER DEFAULT 1,
+            category TEXT,
+            sort_order INTEGER DEFAULT 0,
+            is_active INTEGER DEFAULT 1
         );
 
         CREATE TABLE IF NOT EXISTS users (
@@ -134,6 +179,7 @@ def _create_test_tables(db_path):
             first_name TEXT,
             last_name TEXT,
             email TEXT,
+            email_address TEXT,
             course TEXT,
             year INTEGER,
             enrollment_date TEXT,
@@ -152,23 +198,23 @@ def _create_test_tables(db_path):
     cursor.execute("SELECT COUNT(*) FROM document_types")
     if cursor.fetchone()[0] == 0:
         cursor.execute(
-            "INSERT INTO document_types (name, description, is_required) "
-            "VALUES ('Transcript', 'Academic transcript', 1)"
+            "INSERT INTO document_types (type_name, description, is_required, is_active, max_file_size_mb, allowed_formats) "
+            "VALUES ('Transcript', 'Academic transcript', 1, 1, 10, 'pdf,jpg,jpeg,png,doc,docx')"
         )
         cursor.execute(
-            "INSERT INTO document_types (name, description, is_required) "
-            "VALUES ('ID Card', 'Student identification', 1)"
+            "INSERT INTO document_types (type_name, description, is_required, is_active, max_file_size_mb, allowed_formats) "
+            "VALUES ('ID Card', 'Student identification', 1, 1, 10, 'pdf,jpg,jpeg,png,doc,docx')"
         )
 
     cursor.execute("SELECT COUNT(*) FROM students")
     if cursor.fetchone()[0] == 0:
         cursor.execute(
-            "INSERT INTO students (student_id, first_name, last_name, email, course, status) "
-            "VALUES ('12345', 'Jane', 'Smith', 'jane@test.edu', 'Computer Science', 'Active')"
+            "INSERT INTO students (student_id, first_name, last_name, email, email_address, course, status) "
+            "VALUES ('12345', 'Jane', 'Smith', 'jane@test.edu', 'jane@test.edu', 'Computer Science', 'Active')"
         )
         cursor.execute(
-            "INSERT INTO students (student_id, first_name, last_name, email, course, status) "
-            "VALUES ('67890', 'Bob', 'Brown', 'bob@test.edu', 'Mathematics', 'Active')"
+            "INSERT INTO students (student_id, first_name, last_name, email, email_address, course, status) "
+            "VALUES ('67890', 'Bob', 'Brown', 'bob@test.edu', 'bob@test.edu', 'Mathematics', 'Active')"
         )
 
     conn.commit()
@@ -200,10 +246,14 @@ class TestDocumentManagerGUI(unittest.TestCase):
         # already in place.
         _create_test_tables(self.test_db)
 
-        # Mock database path
+        # Mock database path – patch both the canonical constant and the
+        # copy that ``get_connection`` (in db.py) actually reads at runtime.
         self.patcher = patch('education_system.university_system.modules.shared.constants.paths.DEFAULT_DB_PATH',
                             self.test_db)
         self.patcher.start()
+        self.patcher_db = patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH',
+                                self.test_db)
+        self.patcher_db.start()
 
         # Create GUI instance
         with patch('tkinter.messagebox.showinfo'):
@@ -216,6 +266,7 @@ class TestDocumentManagerGUI(unittest.TestCase):
         except (OSError, IOError):
             pass
         self.patcher.stop()
+        self.patcher_db.stop()
 
         # Clean up test database
         if os.path.exists(self.test_db):
@@ -273,10 +324,9 @@ class TestDocumentManagerGUI(unittest.TestCase):
         self.assertIsInstance(doc_types, list)
         self.assertGreater(len(doc_types), 0, "No document types returned")
 
-        # Check structure of first document type
+        # get_document_types returns a list of type_name strings
         if doc_types:
-            self.assertIn('id', doc_types[0])
-            self.assertIn('name', doc_types[0])
+            self.assertIsInstance(doc_types[0], str)
 
     def test_upload_document_validation(self):
         """Test document upload validation"""
@@ -289,30 +339,39 @@ class TestDocumentManagerGUI(unittest.TestCase):
         with patch('tkinter.filedialog.askopenfilename', return_value=test_file):
             with patch('tkinter.simpledialog.askstring', side_effect=['12345', 'Test Document']):
                 with patch('tkinter.messagebox.showinfo'):
-                    # Test that validation occurs
+                    # validate_file returns True when file passes validation
                     result = self.gui.validate_file(test_file, 1)
-                    self.assertIsInstance(result, dict)
+                    self.assertTrue(result)
 
     def test_load_documents_data(self):
         """Test loading documents from database"""
-        # Insert test document
+        # Insert test document into the 'documents' table used by the source
         conn = sqlite3.connect(self.test_db)
         cursor = conn.cursor()
 
         cursor.execute("""
-            INSERT INTO student_documents
-            (student_id, document_type_id, file_name, file_path, upload_date, status)
-            VALUES (?, ?, ?, ?, ?, ?)
+            INSERT INTO documents
+            (owner_id, type_id, document_name, file_path, upload_date,
+             verification_status, source_type, is_current_version, version_number)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, ('12345', 1, 'test.pdf', '/path/to/test.pdf',
-              datetime.now().isoformat(), 'Approved'))
+              datetime.now().isoformat(), 'Approved', 'student', 1, 1))
         conn.commit()
         conn.close()
 
-        # Load documents
-        documents = self.gui.load_documents_data()
+        # Use a MagicMock treeview since the conftest replaces the Tk
+        # interpreter with a mock (headless mode).
+        mock_tree = MagicMock()
+        mock_tree.get_children.return_value = []
+        self.gui.docs_tree = mock_tree
 
-        self.assertIsInstance(documents, list)
-        self.assertGreater(len(documents), 0, "No documents loaded")
+        # load_documents_data populates the treeview; it does not return a value
+        with patch('tkinter.messagebox.showerror'):
+            result = self.gui.load_documents_data()
+        self.assertIsNone(result)
+
+        # Verify the treeview's insert method was called (data was loaded)
+        mock_tree.insert.assert_called()
 
     def test_delete_document(self):
         """Test document deletion"""
@@ -392,11 +451,19 @@ class TestDocumentManagerGUI(unittest.TestCase):
 
     def test_load_students_data(self):
         """Test loading students from database"""
-        students = self.gui.load_students_data()
+        # Use a MagicMock treeview since the conftest replaces the Tk
+        # interpreter with a mock (headless mode).
+        mock_tree = MagicMock()
+        mock_tree.get_children.return_value = []
+        self.gui.students_tree = mock_tree
 
-        self.assertIsInstance(students, list)
-        # Should have default students from initialization
-        self.assertGreater(len(students), 0, "No students loaded")
+        # load_students_data populates the treeview; it does not return a value
+        with patch('tkinter.messagebox.showerror'):
+            result = self.gui.load_students_data()
+        self.assertIsNone(result)
+
+        # Verify the treeview's insert method was called (data was loaded)
+        mock_tree.insert.assert_called()
 
     def test_search_students(self):
         """Test student search functionality"""
@@ -666,9 +733,9 @@ class TestDocumentManagerGUI(unittest.TestCase):
 
         # Get documents for export
         cursor.execute("""
-            SELECT d.*, dt.name as doc_type_name, s.first_name, s.last_name
+            SELECT d.*, dt.type_name as doc_type_name, s.first_name, s.last_name
             FROM student_documents d
-            LEFT JOIN document_types dt ON d.document_type_id = dt.id
+            LEFT JOIN document_types dt ON d.document_type_id = dt.type_id
             LEFT JOIN students s ON d.student_id = s.student_id
             LIMIT 10
         """)

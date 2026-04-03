@@ -91,17 +91,33 @@ last_full_backup = None
 encryption_key = None
 
 
+def _active_config() -> dict:
+    import sys
+
+    package = sys.modules.get("education_system.university_system.infrastructure.database.data_backup")
+    package_config = getattr(package, "config", None)
+    if isinstance(package_config, dict):
+        return package_config
+    return config
+
+
+def _config_path() -> Path:
+    return Path(DATA_DIR) / "backup_config.json"
+
+
 def load_config():
     """Load backup configuration from file"""
     global config
 
-    config_path = DATA_DIR / "backup_config.json"
+    active_config = _active_config()
+    config_path = _config_path()
     if config_path.exists():
         try:
             with open(config_path, "r") as f:
                 loaded_config = json.load(f)
                 # Update default config with loaded values
-                config.update(loaded_config)
+                active_config.update(loaded_config)
+                config = active_config
             logger.info("Backup configuration loaded successfully")
         except json.JSONDecodeError as e:
             logger.error(f"Invalid JSON in backup configuration: {e}")
@@ -117,9 +133,9 @@ def load_config():
 def save_config():
     """Save current backup configuration to file"""
     try:
-        config_path = DATA_DIR / "backup_config.json"
+        config_path = _config_path()
         with open(config_path, "w") as f:
-            json.dump(config, f, indent=4)
+            json.dump(_active_config(), f, indent=4)
         logger.info("Backup configuration saved successfully")
     except (OSError, IOError) as e:
         logger.error(f"Error writing backup configuration file: {e}")

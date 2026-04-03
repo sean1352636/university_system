@@ -157,9 +157,12 @@ def setup_test_db():
 
     yield
 
-    # Cleanup
+    # Cleanup — delete children before parents to avoid FK constraint violations
     with transaction() as conn:
         cursor = conn.cursor()
+        cursor.execute("DELETE FROM virtual_recordings WHERE session_id IN (SELECT session_id FROM virtual_sessions WHERE classroom_id IN (SELECT classroom_id FROM virtual_classrooms WHERE session_name LIKE 'TEST_%'))")
+        cursor.execute("DELETE FROM session_participants WHERE session_id IN (SELECT session_id FROM virtual_sessions WHERE classroom_id IN (SELECT classroom_id FROM virtual_classrooms WHERE session_name LIKE 'TEST_%'))")
+        cursor.execute("DELETE FROM virtual_sessions WHERE classroom_id IN (SELECT classroom_id FROM virtual_classrooms WHERE session_name LIKE 'TEST_%')")
         cursor.execute("DELETE FROM virtual_classrooms WHERE session_name LIKE 'TEST_%'")
         cursor.execute("DELETE FROM instructors WHERE email = 'test_instructor_vc@test.edu'")
 

@@ -99,10 +99,10 @@ def init_database(self):
             except (NameError, AttributeError):
                 # Function doesn't exist, fall back to our implementation
                 pass
-        
+
         # Use our fallback implementation
         self.init_fallback_database()
-        
+
     except Exception as e:
         # Don't crash the app, just show an error and continue
         print(_("course_management.errors.db_init", error=str(e)))
@@ -321,7 +321,7 @@ def create_minimal_database(self):
 
             conn.commit()
         self.update_status(_("course_management.status.minimal_database_created"), error=True)
-        
+
     except Exception as e:
         self.update_status(_("course_management.status.database_creation_failed").format(error=e), error=True)
 
@@ -335,7 +335,7 @@ def insert_sample_data(self, cursor):
         ('HIST150', 'World History', 'Survey of world civilizations', 15, 'Undergraduate', 'History', 3.0, 3, '', '', '', 0.0, 0, 1, 35, 0, 'Active', 'General Education', '', 'Fall,Spring'),
         ('BIO101', 'General Biology', 'Introduction to biological sciences with lab', 15, 'Undergraduate', 'Biology', 4.0, 6, '', '', '', 50.0, 1, 0, 28, 0, 'Active', 'Core', 'science,lab', 'Fall,Spring')
     ]
-    
+
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     import uuid
 

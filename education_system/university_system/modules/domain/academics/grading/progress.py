@@ -42,7 +42,7 @@ def student_progress_tracking():
 
         # Get grades over time
         cursor.execute('''
-        SELECT g.score / a.max_points * 100 as percentage, 
+        SELECT g.score / a.max_points * 100 as percentage,
                g.letter_grade, g.submission_date, a.assessment_name,
                a.module_code, a.assessment_type
         FROM grades g
@@ -421,7 +421,7 @@ def collect_dashboard_data(cursor):
 
     # 4. Course Performance
     cursor.execute('''
-    SELECT s.course, 
+    SELECT s.course,
            COUNT(DISTINCT s.student_id) as students,
            AVG(mg.final_score) as avg_score
     FROM students s
@@ -485,7 +485,7 @@ def create_progress_visualization(grades, student_id, first_name, last_name):
     plt.figure(figsize=(14, 8))
 
     # Main progress line
-    plt.plot(range(len(percentages)), percentages, 'b-', marker='o', 
+    plt.plot(range(len(percentages)), percentages, 'b-', marker='o',
              markersize=6, linewidth=2, label='Performance')
 
     # Add trend line
@@ -493,7 +493,7 @@ def create_progress_visualization(grades, student_id, first_name, last_name):
         x = np.arange(len(percentages))
         z = np.polyfit(x, percentages, 1)
         p = np.poly1d(z)
-        plt.plot(x, p(x), "r--", alpha=0.8, linewidth=2, 
+        plt.plot(x, p(x), "r--", alpha=0.8, linewidth=2,
                 label=f'Trend: {z[0]:.2f}%/assessment')
 
     # Add moving average
@@ -507,11 +507,11 @@ def create_progress_visualization(grades, student_id, first_name, last_name):
         # Plot moving average
         start_idx = window_size - 1
         x_avg = range(start_idx, start_idx + len(moving_avg))
-        plt.plot(x_avg, moving_avg, 'g-', alpha=0.7, linewidth=2, 
+        plt.plot(x_avg, moving_avg, 'g-', alpha=0.7, linewidth=2,
                 label=f'{window_size}-Assessment Moving Average')
 
     # Formatting
-    plt.title(f'Academic Progress: {first_name} {last_name}', 
+    plt.title(f'Academic Progress: {first_name} {last_name}',
               fontsize=16, fontweight='bold')
     plt.xlabel('Assessment Number', fontsize=12)
     plt.ylabel('Performance (%)', fontsize=12)
@@ -584,5 +584,5 @@ def save_intervention_recommendations(cursor, recommendations):
                     INSERT INTO recommended_interventions
                     (risk_assessment_id, intervention_type_id, priority, notes)
                     VALUES (?, ?, ?, ?)
-                    ''', (risk_assessment_id, intervention_type[0], 
+                    ''', (risk_assessment_id, intervention_type[0],
                           intervention['priority'], intervention['description']))

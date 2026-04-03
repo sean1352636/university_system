@@ -120,8 +120,8 @@ class TestFinanceAuth:
 
 class TestFees:
 
-    @patch("shared.api.university.routes.finance_routes.log_activity")
-    @patch("shared.api.university.routes.finance_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.finance_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.finance_routes.get_connection")
     def test_list_fees_success(self, mock_conn, mock_log, client):
         student_row = _FakeRow({"1": 1})
         fee_row = _FakeRow({
@@ -144,7 +144,7 @@ class TestFees:
         resp = client.get("/api/finance/fees", headers=_headers())
         assert resp.status_code == 400
 
-    @patch("shared.api.university.routes.finance_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.finance_routes.get_connection")
     def test_fees_student_not_found(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = None
@@ -161,8 +161,8 @@ class TestFees:
 
 class TestListPayments:
 
-    @patch("shared.api.university.routes.finance_routes.log_activity")
-    @patch("shared.api.university.routes.finance_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.finance_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.finance_routes.get_connection")
     def test_list_all_payments(self, mock_conn, mock_log, client):
         payment_row = _FakeRow({"payment_id": 1, "student_id": "S1", "amount": 500})
         count_row = MagicMock()
@@ -179,8 +179,8 @@ class TestListPayments:
         assert "items" in data
         assert "pagination" in data
 
-    @patch("shared.api.university.routes.finance_routes.log_activity")
-    @patch("shared.api.university.routes.finance_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.finance_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.finance_routes.get_connection")
     def test_list_payments_by_student(self, mock_conn, mock_log, client):
         student_row = _FakeRow({"1": 1})
         payment_row = _FakeRow({"payment_id": 2, "student_id": "S1", "amount": 200})
@@ -195,7 +195,7 @@ class TestListPayments:
         resp = client.get("/api/finance/payments?student_id=S1", headers=_headers())
         assert resp.status_code == 200
 
-    @patch("shared.api.university.routes.finance_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.finance_routes.get_connection")
     def test_list_payments_student_not_found(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = None
@@ -212,9 +212,9 @@ class TestListPayments:
 
 class TestCreatePayment:
 
-    @patch("shared.api.university.routes.finance_routes.log_activity")
-    @patch("shared.api.university.routes.finance_routes.transaction")
-    @patch("shared.api.university.routes.finance_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.finance_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.finance_routes.transaction")
+    @patch("education_system.shared.api.university.routes.finance_routes.get_connection")
     def test_create_success(self, mock_conn, mock_tx, mock_log, client):
         student_row = _FakeRow({"1": 1})
         new_row = _FakeRow({
@@ -300,8 +300,8 @@ class TestCreatePayment:
 
 class TestScholarships:
 
-    @patch("shared.api.university.routes.finance_routes.log_activity")
-    @patch("shared.api.university.routes.finance_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.finance_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.finance_routes.get_connection")
     def test_list_scholarships(self, mock_conn, mock_log, client):
         row = _FakeRow({"scholarship_id": 1, "scholarship_name": "Merit", "status": "active"})
         count_row = MagicMock()
@@ -318,8 +318,8 @@ class TestScholarships:
         assert "items" in data
         assert "pagination" in data
 
-    @patch("shared.api.university.routes.finance_routes.log_activity")
-    @patch("shared.api.university.routes.finance_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.finance_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.finance_routes.get_connection")
     def test_scholarships_empty(self, mock_conn, mock_log, client):
         count_row = MagicMock()
         count_row.__getitem__ = lambda self, i: 0
@@ -340,8 +340,8 @@ class TestScholarships:
 
 class TestStudentAccount:
 
-    @patch("shared.api.university.routes.finance_routes.log_activity")
-    @patch("shared.api.university.routes.finance_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.finance_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.finance_routes.get_connection")
     def test_account_success(self, mock_conn, mock_log, client):
         student_row = _FakeRow({"1": 1})
         fees_sum = MagicMock()
@@ -361,7 +361,7 @@ class TestStudentAccount:
         assert data["total_payments"] == 3000.0
         assert data["balance"] == 2000.0
 
-    @patch("shared.api.university.routes.finance_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.finance_routes.get_connection")
     def test_account_student_not_found(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = None
@@ -371,8 +371,8 @@ class TestStudentAccount:
         resp = client.get("/api/finance/account/NOEXIST", headers=_headers())
         assert resp.status_code == 404
 
-    @patch("shared.api.university.routes.finance_routes.log_activity")
-    @patch("shared.api.university.routes.finance_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.finance_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.finance_routes.get_connection")
     def test_account_zero_balance(self, mock_conn, mock_log, client):
         student_row = _FakeRow({"1": 1})
         fees_sum = MagicMock()
@@ -388,8 +388,8 @@ class TestStudentAccount:
         assert resp.status_code == 200
         assert resp.get_json()["balance"] == 0.0
 
-    @patch("shared.api.university.routes.finance_routes.log_activity")
-    @patch("shared.api.university.routes.finance_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.finance_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.finance_routes.get_connection")
     def test_account_negative_balance(self, mock_conn, mock_log, client):
         """Overpayment results in negative balance."""
         student_row = _FakeRow({"1": 1})

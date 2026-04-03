@@ -258,7 +258,7 @@ def write_review_dialog(self):
     rating_frame.pack(anchor='w', pady=(0, 10))
 
     for i in range(1, 6):
-        ttk.Radiobutton(rating_frame, text=f"{i} Star{'s' if i > 1 else ''}", 
+        ttk.Radiobutton(rating_frame, text=f"{i} Star{'s' if i > 1 else ''}",
                        variable=rating_var, value=str(i)).pack(side=tk.LEFT, padx=5)
 
     # Review text
@@ -319,7 +319,7 @@ def submit_review_database(self, book_id, rating, review_text):
 
         # Check if user already reviewed this book
         user_id = get_current_user_id()
-        cursor.execute('SELECT review_id FROM book_reviews WHERE book_id = ? AND user_id = ?', 
+        cursor.execute('SELECT review_id FROM book_reviews WHERE book_id = ? AND user_id = ?',
                       (book_id, user_id))
 
         if cursor.fetchone():

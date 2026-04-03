@@ -10,6 +10,7 @@ Classes:
 from typing import Optional, List, Dict
 import logging
 import re
+import sys
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import sqlite3
@@ -25,6 +26,12 @@ except ImportError:
     IMMUTABLE_AUDIT_AVAILABLE = False
 
 __all__ = ['PermissionManager']
+
+# Legacy import path compatibility for older tests and callers.
+sys.modules.setdefault(
+    'university_system.infrastructure.auth.managers.permission_manager',
+    sys.modules[__name__],
+)
 
 
 class PermissionManager:

@@ -361,35 +361,35 @@ def view_all_meal_transactions(self, child):
     """View all meal account transactions for a child"""
     self.clear_content()
     self.update_status(f"All Meal Transactions - {child[1]} {child[3]}")
-    
-    title = ttk.Label(self.content_frame, text=f"All Meal Transactions - {child[1]} {child[3]}", 
+
+    title = ttk.Label(self.content_frame, text=f"All Meal Transactions - {child[1]} {child[3]}",
                      style='Title.TLabel', font=('Arial', 18, 'bold'))
     title.pack(pady=20)
-    
+
     # Transactions table
     trans_frame = ttk.Frame(self.content_frame)
     trans_frame.pack(fill=tk.BOTH, expand=True, padx=20)
-    
+
     columns = ('Date', 'Type', 'Amount', 'Description', 'Balance After')
     tree = ttk.Treeview(trans_frame, columns=columns, show='headings', height=15)
-    
+
     for col in columns:
         tree.heading(col, text=col)
         tree.column(col, width=120)
-    
+
     # Sample transaction data
     transactions = [
         ('2024-01-20', 'Credit', '£20.00', 'Parent top-up', '£25.50'),
         ('2024-01-19', 'Debit', '£3.50', 'Lunch purchase', '£5.50'),
         ('2024-01-18', 'Debit', '£2.75', 'Snack purchase', '£9.00'),
     ]
-    
+
     for transaction in transactions:
         tree.insert('', tk.END, values=transaction)
-    
+
     scrollbar = ttk.Scrollbar(trans_frame, orient=tk.VERTICAL, command=tree.yview)
     tree.configure(yscrollcommand=scrollbar.set)
-    
+
     tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 ParentPortalGUI.view_all_meal_transactions = view_all_meal_transactions

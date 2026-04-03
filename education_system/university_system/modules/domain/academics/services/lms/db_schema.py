@@ -142,6 +142,25 @@ def initialize_lms_database():
             )
         ''')
 
+        # Gradebook Table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS lms_gradebook (
+                entry_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                lms_course_id INTEGER NOT NULL,
+                student_id TEXT NOT NULL,
+                assignment_type TEXT NOT NULL,
+                assignment_id INTEGER,
+                score REAL,
+                max_score REAL,
+                weight REAL DEFAULT 1.0,
+                feedback TEXT,
+                graded_by TEXT,
+                graded_at TEXT,
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY (lms_course_id) REFERENCES lms_courses(lms_course_id) ON DELETE CASCADE
+            )
+        ''')
+
         # Student Course Enrollment (for LMS tracking)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS lms_student_enrollment (
@@ -173,6 +192,11 @@ def initialize_lms_database():
             ON lms_discussion_forums(lms_course_id)
         ''')
 
+
+        cursor.execute('''
+            CREATE INDEX IF NOT EXISTS idx_lms_gradebook
+            ON lms_gradebook(lms_course_id, student_id)
+        ''')
 
         cursor.execute('''
             CREATE INDEX IF NOT EXISTS idx_lms_enrollment

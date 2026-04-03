@@ -10,7 +10,7 @@ Tests the DashboardManager class including:
 
 import pytest
 import tkinter as tk
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch, MagicMock, PropertyMock
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.domain.finance.gui.finance.dashboard import DashboardManager
@@ -109,14 +109,17 @@ def test_db_with_dashboard_data():
     conn.commit()
     yield conn
 
-    # Cleanup — only delete test-specific records to avoid FK issues
-    cursor.execute("DELETE FROM payment_allocations")
-    cursor.execute("DELETE FROM payments WHERE student_id IN ('STU001', 'STU002')")
-    cursor.execute("DELETE FROM student_fees WHERE student_id IN ('STU001', 'STU002')")
-    cursor.execute("DELETE FROM student_payment_plans WHERE student_id IN ('STU001', 'STU002')")
-    cursor.execute("DELETE FROM students WHERE student_id IN ('STU001', 'STU002')")
-    conn.commit()
-    conn.close()
+    # Cleanup — the _isolate_db autouse fixture handles DB teardown,
+    # so we only need to clean up if the connection is still open.
+    try:
+        cursor.execute("DELETE FROM payment_allocations")
+        cursor.execute("DELETE FROM payments WHERE student_id IN ('STU001', 'STU002')")
+        cursor.execute("DELETE FROM student_fees WHERE student_id IN ('STU001', 'STU002')")
+        cursor.execute("DELETE FROM student_payment_plans WHERE student_id IN ('STU001', 'STU002')")
+        cursor.execute("DELETE FROM students WHERE student_id IN ('STU001', 'STU002')")
+        conn.commit()
+    except Exception:
+        pass  # Connection may already be closed by _isolate_db teardown
 
 class TestDashboardManagerInit:
     """Test DashboardManager initialization"""
@@ -133,9 +136,13 @@ class TestDashboardManagerInit:
         """Test that initialization stores database connection"""
         assert dashboard_manager.conn == mock_gui.conn
 
-    def test_init_handles_missing_finance_system(self, mock_gui):
+    def test_init_handles_missing_finance_system(self):
         """Test that initialization handles missing finance_system gracefully"""
-        manager = DashboardManager(mock_gui)
+        # Create a gui mock with spec to prevent auto-creating finance_system
+        gui = MagicMock(spec=['root', 'conn', 'layout', 'transactions'])
+        gui.root = Mock(spec=tk.Tk)
+        gui.conn = get_connection()
+        manager = DashboardManager(gui)
         assert manager.finance_system is None
 
 class TestDashboardRefresh:
@@ -201,10 +208,12 @@ class TestStatCardCreation:
 
     def test_create_stat_card(self, dashboard_manager):
         """Test creating a statistics card"""
-        parent = Mock(spec=tk.Frame)
+        parent = Mock()
         parent.grid_columnconfigure = Mock()
 
-        dashboard_manager.create_stat_card(parent, "Test Title", "100", "#28a745", 0, 0)
+        with patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.tk.Frame'), \
+             patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.tk.Label'):
+            dashboard_manager.create_stat_card(parent, "Test Title", "100", "#28a745", 0, 0)
 
         # Verify grid_columnconfigure was called
         parent.grid_columnconfigure.assert_called()
@@ -317,7 +326,7 @@ class TestQuickActions:
         # Should show info message
         mock_info.assert_called()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.launch_financial_gui')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance_reporting.launch_financial_gui')
     def test_launch_reporting_gui(self, mock_launch, dashboard_manager):
         """Test launching reporting GUI"""
         dashboard_manager.launch_reporting_gui()
@@ -325,25 +334,24 @@ class TestQuickActions:
         # Verify launch was called
         mock_launch.assert_called_with(dashboard_manager.root)
 
-    @patch('tkinter.messagebox.showerror')
-    def test_launch_reporting_gui_handles_errors(self, mock_error, dashboard_manager, monkeypatch):
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.messagebox')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance_reporting.launch_financial_gui')
+    def test_launch_reporting_gui_handles_errors(self, mock_launch, mock_messagebox, dashboard_manager):
         """Test that launch_reporting_gui handles errors"""
-        def mock_launch(*args):
-            raise Exception("Launch error")
-
-        monkeypatch.setattr('university_system.modules.domain.finance.gui.finance.dashboard.launch_financial_gui',
-                           mock_launch)
+        mock_launch.side_effect = Exception("Launch error")
 
         dashboard_manager.launch_reporting_gui()
 
         # Should show error
-        mock_error.assert_called()
+        mock_messagebox.showerror.assert_called()
 
 class TestUpdateQuickStats:
     """Test quick stats updates"""
 
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.tk.Label')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.tk.Frame')
     @patch('education_system.university_system.modules.domain.finance.gui.finance.dashboard.get_connection')
-    def test_update_quick_stats(self, mock_conn, dashboard_manager, test_db_with_dashboard_data):
+    def test_update_quick_stats(self, mock_conn, mock_frame, mock_label, dashboard_manager, test_db_with_dashboard_data):
         """Test updating quick statistics display"""
         mock_conn.return_value = test_db_with_dashboard_data
 

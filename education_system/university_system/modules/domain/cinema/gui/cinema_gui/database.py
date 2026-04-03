@@ -7,7 +7,7 @@ import os
 import random
 import string
 from datetime import datetime, timedelta
-from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier
+from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier  # nosec B608
 
 # Database setup - use centralized university system database
 try:

@@ -37,3 +37,9 @@ def parent_portal_service(db_path):
 def parents_evening_service(db_path):
     from education_system.college_system.modules.domain.parents_evening.services.parents_evening_service import ParentsEveningService
     return ParentsEveningService(db_path)
+
+
+@pytest.fixture
+def early_warning_service(db_path):
+    from education_system.college_system.modules.domain.early_warning.services.early_warning_service import EarlyWarningService
+    return EarlyWarningService(db_path)

@@ -43,17 +43,17 @@ class LayoutManager:
         """Header on top; left sidebar; right content."""
         root.grid_rowconfigure(1, weight=1)
         root.grid_columnconfigure(1, weight=1)
-    
+
         # Top header (full width)
         header_holder = ttk.Frame(root)
         header_holder.grid(row=0, column=0, columnspan=2, sticky="ew", padx=10, pady=10)
         self.create_header(header_holder)
-    
+
         # Left sidebar
         sidebar_holder = ttk.Frame(root)
         sidebar_holder.grid(row=1, column=0, sticky="nsw", padx=(10, 5), pady=(0, 10))
         self.create_sidebar(sidebar_holder)
-    
+
         # Right content
         content_holder = ttk.Frame(root)
         content_holder.grid(row=1, column=1, sticky="nsew", padx=(5, 10), pady=(0, 10))
@@ -61,7 +61,7 @@ class LayoutManager:
 
         # Start on dashboard
         self.gui.show_dashboard()
-    
+
 
     def configure_styles(self):
         """Configure custom styles for the interface"""
@@ -81,63 +81,63 @@ class LayoutManager:
         self.style.configure('Accent.TButton', font=('Arial', 10, 'bold'))
         self.style.map('Accent.TButton',
                       background=[('active', '#e0e0e0'), ('pressed', '#d0d0d0')])
-        
+
 
     def create_main_interface(self):
         """Create the main GUI interface"""
         # Main container
         main_container = ttk.Frame(self.root)
         main_container.pack(fill='both', expand=True)
-    
+
         # Toolbar
         toolbar = ttk.Frame(main_container, padding=(10, 8))
         toolbar.pack(fill='x')
         ttk.Button(toolbar, text="Return to Main Menu", command=self.return_to_main_menu).pack(side='left')
-    
+
         # Header frame
         header_holder = ttk.Frame(main_container)
         header_holder.pack(fill='x', padx=10)
         self.create_header(header_holder)
-    
+
         # Main content area with sidebar and content
         content_frame = ttk.Frame(main_container)
         content_frame.pack(fill='both', expand=True, pady=(10, 0))
-        
+
         # Sidebar
         self.create_sidebar(content_frame)
-    
+
         # Main content area with scrollbar
         self.create_scrollable_content_area(content_frame)
 
         # Show dashboard by default
         self.gui.show_dashboard()
-        
+
 
     def create_header(self, parent):
         """Create the header with user info and notifications"""
         header_frame = ttk.Frame(parent, style='Header.TFrame')
         header_frame.pack(fill='x', pady=(0, 10))
-        
+
         # Title
-        title_label = ttk.Label(header_frame, text="Assignment Management System", 
+        title_label = ttk.Label(header_frame, text="Assignment Management System",
                                style='Title.TLabel')
         title_label.pack(side='left')
-        
+
         # User info and controls
         user_frame = ttk.Frame(header_frame)
         user_frame.pack(side='right')
         ttk.Button(user_frame, text="Return to Main Menu", command=self.return_to_main_menu).pack(side='right', padx=(0, 10))
-    
+
         # Notifications button
         self.notification_btn = ttk.Button(user_frame, text="🔔 Notifications (0)",
                                           command=self.gui.show_notifications)
         self.notification_btn.pack(side='right', padx=(0, 10))
-        
+
         # User info
         user_info = f"Welcome, {self.auth.current_user.get('username', 'User')} ({self.auth.current_user.get('role', 'user')})"
         user_label = ttk.Label(user_frame, text=user_info)
         user_label.pack(side='right', padx=(0, 10))
-    
+
 
     def return_to_main_menu(self):
         """Close this window so the launcher regains focus."""
@@ -145,7 +145,7 @@ class LayoutManager:
             self.root.destroy()
         except Exception:
             self.root.quit()
-        
+
 
     def create_sidebar(self, parent):
         """Create the navigation sidebar (scrollable, Linux-friendly)"""
@@ -153,7 +153,7 @@ class LayoutManager:
         sidebar_container = ttk.Frame(parent, width=250)
         sidebar_container.pack(side='left', fill='y', padx=(0, 10))
         sidebar_container.pack_propagate(False)
-    
+
         # Canvas + scrollbar
         self.sidebar_canvas = tk.Canvas(sidebar_container, highlightthickness=0, bg='#f0f0f0', width=230)
         self.sidebar_scrollbar = ttk.Scrollbar(
@@ -166,22 +166,22 @@ class LayoutManager:
         self.sidebar_canvas.configure(yscrollcommand=self.sidebar_scrollbar.set)
         self.sidebar_canvas.pack(side='left', fill='both', expand=True)
         self.sidebar_scrollbar.pack(side='right', fill='y')
-    
+
         # Keep inner width synced with canvas
         def _on_canvas_configure(e):
             self.sidebar_canvas.itemconfig(self.sidebar_window, width=e.width)
             self.sidebar_canvas.configure(scrollregion=self.sidebar_canvas.bbox("all"))
         self.sidebar_canvas.bind("<Configure>", _on_canvas_configure)
-    
+
         # Update scrollregion when content changes
         def _on_inner_configure(e):
             self.sidebar_canvas.configure(scrollregion=self.sidebar_canvas.bbox("all"))
             self._update_sidebar_scrollbar_visibility()
         self.sidebar_inner.bind("<Configure>", _on_inner_configure)
-    
+
         # Header
         ttk.Label(self.sidebar_inner, text="Navigation", style='Header.TLabel').pack(anchor='w', pady=(0, 10))
-    
+
         # Sections/buttons
         for section_name, buttons in self.get_navigation_sections():
             ttk.Label(self.sidebar_inner, text=section_name, font=('Arial', 10, 'bold')).pack(anchor='w', pady=(10, 5))
@@ -193,11 +193,11 @@ class LayoutManager:
                     btn.pack(anchor='w', pady=4, padx=(10, 0))  # Extra padding for prominence
                 else:
                     ttk.Button(self.sidebar_inner, text=text, command=cmd, width=30).pack(anchor='w', pady=2, padx=(10, 0))
-    
+
         # Force scroll region update after all navigation content is added
         self.sidebar_inner.update_idletasks()
         self.sidebar_canvas.configure(scrollregion=self.sidebar_canvas.bbox("all"))
-    
+
         def _wheel(event):
             if getattr(event, "delta", 0):
                 self.sidebar_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
@@ -206,11 +206,11 @@ class LayoutManager:
                     self.sidebar_canvas.yview_scroll(-1, "units")
                 elif getattr(event, "num", None) == 5:
                     self.sidebar_canvas.yview_scroll(1, "units")
-    
+
         self.sidebar_canvas.bind("<MouseWheel>", _wheel)   # Win/Mac
         self.sidebar_canvas.bind("<Button-4>", _wheel)     # Linux up
         self.sidebar_canvas.bind("<Button-5>", _wheel)     # Linux down
-    
+
 
     def _update_sidebar_scrollbar_visibility(self):
         """
@@ -227,7 +227,7 @@ class LayoutManager:
         """
         # Intentionally empty - scrollbar remains always visible
         pass
-            
+
 
     def get_navigation_sections(self):
         """Get navigation sections based on user role"""
@@ -299,44 +299,44 @@ class LayoutManager:
             sections.append(("ADMIN", admin_buttons))
 
         return sections
-    
+
 
     def create_scrollable_content_area(self, parent):
         """Create a scrollable main content area"""
         # Container frame for the scrollable area
         content_container = ttk.Frame(parent)
         content_container.pack(side='right', fill='both', expand=True, padx=(10, 0))
-    
+
         # Create canvas and scrollbar
         self.content_canvas = tk.Canvas(content_container, highlightthickness=0)
         self.content_scrollbar = ttk.Scrollbar(content_container, orient="vertical", command=self.content_canvas.yview)
         self.scrollable_frame = ttk.Frame(self.content_canvas)
-    
+
         # Configure the scrollable frame
         self.scrollable_frame.bind(
             "<Configure>",
             lambda e: self.update_scroll_region()
         )
-    
+
         # Create the window in the canvas
         self.canvas_frame = self.content_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
-    
+
         # Configure canvas scrolling
         self.content_canvas.configure(yscrollcommand=self.content_scrollbar.set)
-    
+
         # Pack canvas and scrollbar
         self.content_canvas.pack(side="left", fill="both", expand=True)
         self.content_scrollbar.pack(side="right", fill="y")
-    
+
         # Bind mousewheel scrolling
         self.bind_mousewheel_to_canvas()
-    
+
         # Configure canvas to resize content frame width
         self.content_canvas.bind('<Configure>', self.on_canvas_configure)
-    
+
         # Set content_area to the scrollable frame for compatibility
         self.content_area = self.scrollable_frame
-    
+
 
     def bind_mousewheel_to_canvas(self):
         """Bind mouse wheel scrolling to the content canvas (Win/Mac/Linux)."""
@@ -374,7 +374,7 @@ class LayoutManager:
                 self.content_canvas.yview_moveto(0)
             elif k == 'End':
                 self.content_canvas.yview_moveto(1)
-    
+
         def _bind_all(_):
             # Mouse wheel
             self.content_canvas.bind_all("<MouseWheel>", _on_mousewheel)   # Win/Mac
@@ -383,47 +383,47 @@ class LayoutManager:
             # Keys
             self.content_canvas.bind_all("<Key>", _on_keypress)
             self.content_canvas.focus_set()
-    
+
         def _unbind_all(_):
             self.content_canvas.unbind_all("<MouseWheel>")
             self.content_canvas.unbind_all("<Button-4>")
             self.content_canvas.unbind_all("<Button-5>")
             self.content_canvas.unbind_all("<Key>")
-    
+
         # Activate bindings on focus/hover (prevents global hijack)
         self.content_canvas.bind('<Enter>', _bind_all)
         self.content_canvas.bind('<Leave>', _unbind_all)
         self.content_canvas.bind('<FocusIn>', _bind_all)
         self.content_canvas.bind('<FocusOut>', _unbind_all)
-    
-                
+
+
 
     def _bind_sidebar_scroll_events(self):
         """Linux + cross-platform scrolling and keyboard navigation"""
         c = self.sidebar_canvas
         inner = self.sidebar_inner
-    
+
         try:
             c.configure(takefocus=1)
         except Exception:
             pass
-    
+
         def scroll_units(n):
             c.yview_scroll(n, "units")
-    
+
         # Mouse wheel
         def on_wheel_linux(event):
             if event.num == 4:
                 scroll_units(-3)
             elif event.num == 5:
                 scroll_units(+3)
-    
+
         def on_wheel_generic(event):
             if event.delta > 0:
                 scroll_units(-3)
             elif event.delta < 0:
                 scroll_units(+3)
-    
+
         # Keyboard
         def on_key(event):
             k = event.keysym
@@ -439,7 +439,7 @@ class LayoutManager:
                 c.yview_moveto(0)
             elif k == 'End':
                 c.yview_moveto(1)
-    
+
         # Bind on both canvas and inner frame
         for w in (c, inner):
             w.bind("<Enter>", lambda e: c.focus_set())
@@ -447,13 +447,13 @@ class LayoutManager:
             w.bind("<Button-5>", on_wheel_linux)     # Linux down
             w.bind("<MouseWheel>", on_wheel_generic) # Mac/Windows
             w.bind("<Key>", on_key)
-    
+
         # smoother wheel increments
         try:
             c.configure(yscrollincrement=20)
         except Exception:
             pass
-    
+
         def _on_keypress(event):
             if self.sidebar_scrollbar.winfo_viewable():
                 if event.keysym == 'Up':
@@ -468,7 +468,7 @@ class LayoutManager:
                     self.sidebar_canvas.yview_moveto(0)
                 elif event.keysym == 'End':
                     self.sidebar_canvas.yview_moveto(1)
-    
+
         def bind_all_events(_):
             # Windows/Mac wheel
             self.sidebar_canvas.bind_all("<MouseWheel>", on_wheel_generic)
@@ -477,23 +477,23 @@ class LayoutManager:
             self.sidebar_canvas.bind_all("<Button-5>", on_wheel_linux)
             self.sidebar_canvas.bind_all("<Key>", _on_keypress)
             self.sidebar_canvas.focus_set()
-    
+
         def unbind_all_events(_):
             self.sidebar_canvas.unbind_all("<MouseWheel>")
             self.sidebar_canvas.unbind_all("<Button-4>")
             self.sidebar_canvas.unbind_all("<Button-5>")
             self.sidebar_canvas.unbind_all("<Key>")
-    
+
         self.sidebar_canvas.bind("<Enter>", bind_all_events)
         self.sidebar_canvas.bind("<Leave>", unbind_all_events)
         self.sidebar_canvas.bind("<FocusIn>", bind_all_events)
         self.sidebar_canvas.bind("<FocusOut>", unbind_all_events)
-    
-    
+
+
 
     def _bind_content_scroll_events(self):
         """Bind mouse wheel and keys to content scrolling"""
-    
+
         def _on_mousewheel(event):
             # Only scroll if bar is visible (i.e., content taller than viewport)
             if self.content_scrollbar.winfo_viewable():
@@ -504,7 +504,7 @@ class LayoutManager:
                         self.content_canvas.yview_scroll(-1, "units")
                     elif event.num == 5:
                         self.content_canvas.yview_scroll(1, "units")
-    
+
         def _on_keypress(event):
             # Handle keyboard scrolling
             if self.content_scrollbar.winfo_viewable():
@@ -520,39 +520,39 @@ class LayoutManager:
                     self.content_canvas.yview_moveto(0)
                 elif event.keysym == 'End':
                     self.content_canvas.yview_moveto(1)
-    
+
         def bind_to_mousewheel(event):
             # Bind mouse wheel events
             self.content_canvas.bind_all("<MouseWheel>", _on_mousewheel)  # Windows
             self.content_canvas.bind_all("<Button-4>", _on_mousewheel)    # Linux scroll up
             self.content_canvas.bind_all("<Button-5>", _on_mousewheel)    # Linux scroll down
-    
+
             # Bind keyboard events
             self.content_canvas.bind_all("<Key>", _on_keypress)
             # Make sure the canvas can receive focus for keyboard events
             self.content_canvas.focus_set()
-    
+
         def unbind_from_mousewheel(event):
             self.content_canvas.unbind_all("<MouseWheel>")
             self.content_canvas.unbind_all("<Button-4>")
             self.content_canvas.unbind_all("<Button-5>")
             self.content_canvas.unbind_all("<Key>")
-    
+
         # Bind when mouse enters canvas area
         self.content_canvas.bind('<Enter>', bind_to_mousewheel)
         self.content_canvas.bind('<Leave>', unbind_from_mousewheel)
-    
+
         # Also bind focus events
         self.content_canvas.bind('<FocusIn>', bind_to_mousewheel)
         self.content_canvas.bind('<FocusOut>', unbind_from_mousewheel)
-        
+
 
     def on_canvas_configure(self, event):
         """Handle canvas configuration changes"""
         # Update the scrollable frame width to match canvas width
         canvas_width = event.width
         self.content_canvas.itemconfig(self.canvas_frame, width=canvas_width)
-    
+
 
     def clear_content_area(self):
         """Clear the current content area"""
@@ -560,28 +560,28 @@ class LayoutManager:
             widget.destroy()
         # Scroll to top when content changes
         self.scroll_to_top()
-    
+
 
     def update_scroll_region(self):
         """Update the scroll region and manage scrollbar visibility"""
         if hasattr(self, 'content_canvas') and hasattr(self, 'content_scrollbar'):
             # Update scroll region
             self.content_canvas.configure(scrollregion=self.content_canvas.bbox("all"))
-    
+
             # Auto-hide scrollbar when not needed
             canvas_height = self.content_canvas.winfo_height()
             content_height = self.content_canvas.bbox("all")[3] if self.content_canvas.bbox("all") else 0
-    
+
             if content_height > canvas_height:
                 # Content is larger than canvas, show scrollbar
                 self.content_scrollbar.pack(side="right", fill="y")
             else:
                 # Content fits in canvas, hide scrollbar
                 self.content_scrollbar.pack_forget()
-    
+
 
     def scroll_to_top(self):
         """Scroll the content area to the top"""
         if hasattr(self, 'content_canvas'):
             self.content_canvas.yview_moveto(0)
-    
+

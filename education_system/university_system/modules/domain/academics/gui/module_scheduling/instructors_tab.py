@@ -54,7 +54,7 @@ except ImportError:
     TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
     SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
     ROOM_TYPES = ['Lecture Hall', 'Lab', 'Tutorial Room', 'Seminar Room', 'Workshop Room', 'Computer Lab', 'Other']
-    
+
     # Import the ModuleScheduler class from the document
     try:
         from education_system.university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
@@ -68,11 +68,11 @@ def create_instructors_tab(self):
     """Create the instructors management tab"""
     instructors_frame = ttk.Frame(self.notebook)
     self.notebook.add(instructors_frame, text=_t("scheduling.tabs.instructors"))
-    
+
     # Controls frame
     controls_frame = ttk.Frame(instructors_frame)
     controls_frame.pack(fill=tk.X, padx=10, pady=5)
-    
+
     ttk.Button(controls_frame, text=_t("scheduling.buttons.add_instructor"),
               command=self.show_add_instructor_dialog).pack(side=tk.LEFT, padx=5)
     ttk.Button(controls_frame, text=_t("common.edit_selected"),
@@ -90,14 +90,14 @@ def create_instructors_tab(self):
     self.instructor_search_var = tk.StringVar()
     self.instructor_search_var.trace('w', self.filter_instructors)
     ttk.Entry(search_frame, textvariable=self.instructor_search_var, width=20).pack(side=tk.LEFT, padx=5)
-    
+
     # Instructors treeview
     tree_frame = ttk.Frame(instructors_frame)
     tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-    
+
     columns = ("ID", "Name", "Email", "Department", "Max Hours", "Current Hours", "Status")
     self.instructors_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", style='Data.Treeview')
-    
+
     for col in columns:
         self.instructors_tree.heading(col, text=col)
         if col == "ID":
@@ -106,14 +106,14 @@ def create_instructors_tab(self):
             self.instructors_tree.column(col, width=150)
         else:
             self.instructors_tree.column(col, width=100)
-    
+
     # Scrollbars
     v_scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.instructors_tree.yview)
     self.instructors_tree.configure(yscrollcommand=v_scrollbar.set)
-    
+
     self.instructors_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    
+
     self.instructors_tree.bind("<Double-1>", lambda e: self.edit_selected_instructor())
 
 ModuleSchedulingGUI.create_instructors_tab = create_instructors_tab
@@ -124,7 +124,7 @@ def refresh_instructors(self):
         # Clear existing items
         for item in self.instructors_tree.get_children():
             self.instructors_tree.delete(item)
-        
+
         from education_system.university_system.infrastructure.database.db import sqlite3
         with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
             cursor = conn.cursor()
@@ -145,17 +145,17 @@ def refresh_instructors(self):
             ''')
 
             instructors = cursor.fetchall()
-        
+
         for instructor in instructors:
             instructor_id, first_name, last_name, email, department, max_hours, is_active, current_hours = instructor
             full_name = f"{first_name} {last_name}"
             status = "Active" if is_active else "Inactive"
             current_hours = round(current_hours or 0, 1)
-            
+
             self.instructors_tree.insert("", tk.END, values=(
                 instructor_id, full_name, email, department, max_hours, current_hours, status
             ))
-            
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to refresh instructors: {str(e)}", parent=self.root)
 
@@ -164,15 +164,15 @@ ModuleSchedulingGUI.refresh_instructors = refresh_instructors
 def filter_instructors(self, *args):
     """Filter instructors based on search term"""
     search_term = self.instructor_search_var.get().lower()
-    
+
     # Clear current items
     for item in self.instructors_tree.get_children():
         self.instructors_tree.delete(item)
-    
+
     if not search_term:
         self.refresh_instructors()
         return
-    
+
     try:
         from education_system.university_system.infrastructure.database.db import sqlite3
         with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
@@ -198,17 +198,17 @@ def filter_instructors(self, *args):
             ''', [f'%{search_term}%'] * 4)
 
             instructors = cursor.fetchall()
-        
+
         for instructor in instructors:
             instructor_id, first_name, last_name, email, department, max_hours, is_active, current_hours = instructor
             full_name = f"{first_name} {last_name}"
             status = "Active" if is_active else "Inactive"
             current_hours = round(current_hours or 0, 1)
-            
+
             self.instructors_tree.insert("", tk.END, values=(
                 instructor_id, full_name, email, department, max_hours, current_hours, status
             ))
-            
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to filter instructors: {str(e)}", parent=self.root)
 
@@ -230,10 +230,10 @@ def edit_selected_instructor(self):
     if not selected:
         messagebox.showwarning("Warning", "Please select an instructor to edit.", parent=self.root)
         return
-    
+
     instructor_data = self.instructors_tree.item(selected[0])['values']
     instructor_id = instructor_data[0]
-    
+
     dialog = EditInstructorDialog(self.root, self.scheduler, instructor_id)
     if dialog.result:
         self.refresh_instructors()

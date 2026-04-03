@@ -54,79 +54,79 @@ except (ImportError, ModuleNotFoundError):
     student_union_cli = None
     init_student_union_db = None
     CLI_AVAILABLE = False
-    
+
 
 class EventRegistrationDialog:
     """Dialog for event registration"""
-    
+
     def __init__(self, parent, auth_manager):
         self.parent = parent
         self.auth = auth_manager
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Register for Event")
         self.dialog.geometry("700x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.load_events()
-    
+
     def create_widgets(self):
         """Create dialog widgets"""
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
-        
+
         # Title
         title_label = ttk.Label(main_frame, text="Register for Event", font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
-        
+
         # Events list
         list_frame = ttk.LabelFrame(main_frame, text="Upcoming Events")
         list_frame.pack(fill='both', expand=True, pady=(0, 10))
-        
+
         # Treeview for events
         columns = ('ID', 'Name', 'Date', 'Time', 'Location', 'Organizer', 'Capacity')
         self.events_tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=12)
-        
+
         for col in columns:
             self.events_tree.heading(col, text=col)
             self.events_tree.column(col, width=100)
-        
+
         scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.events_tree.yview)
         self.events_tree.configure(yscrollcommand=scrollbar.set)
-        
+
         self.events_tree.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
-        
+
         # Event details
         details_frame = ttk.LabelFrame(main_frame, text="Event Details")
         details_frame.pack(fill='x', pady=(0, 10))
-        
+
         self.details_text = tk.Text(details_frame, height=5, wrap=tk.WORD)
         self.details_text.pack(fill='x', padx=5, pady=5)
-        
+
         # Bind selection event
         self.events_tree.bind('<<TreeviewSelect>>', self.on_event_selected)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(10, 0))
-        
-        ttk.Button(button_frame, text="Register for Selected Event", 
+
+        ttk.Button(button_frame, text="Register for Selected Event",
                   command=self.register_for_event).pack(side='left', padx=(0, 10))
-        ttk.Button(button_frame, text="Cancel", 
+        ttk.Button(button_frame, text="Cancel",
                   command=self.cancel).pack(side='left')
-    
+
     def load_events(self):
         """Load upcoming events"""
         try:
             conn = student_union_cli.get_connection()
             cursor = conn.cursor()
-            
+
             current_date = datetime.now().strftime('%Y-%m-%d')
-            
+
             cursor.execute('''
             SELECT e.event_id, e.event_name, e.event_date, e.start_time, e.location,
                    c.club_name, e.max_attendees, e.current_attendees, e.description
@@ -135,50 +135,50 @@ class EventRegistrationDialog:
             WHERE e.event_date >= ? AND e.status = 'upcoming'
             ORDER BY e.event_date, e.start_time
             ''', (current_date,))
-            
+
             events = cursor.fetchall()
-            
+
             for event in events:
                 capacity = f"{event[7]}/{event[6]}" if event[6] > 0 else f"{event[7]}/∞"
                 self.events_tree.insert('', 'end', values=(
                     event[0], event[1], event[2], event[3], event[4], event[5], capacity
                 ), tags=(event[8],))  # Store description in tags
-            
+
             conn.close()
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to load events: {str(e)}")
-    
+
     def on_event_selected(self, event=None):
         """Handle event selection"""
         selection = self.events_tree.selection()
         if not selection:
             return
-        
+
         item = self.events_tree.item(selection[0])
         values = item['values']
         description = item['tags'][0] if item['tags'] else "No description available"
-        
+
         details = f"Event: {values[1]}\n"
         details += f"Date: {values[2]} at {values[3]}\n"
         details += f"Location: {values[4]}\n"
         details += f"Organizer: {values[5]}\n"
         details += f"Capacity: {values[6]}\n\n"
         details += f"Description: {description}"
-        
+
         self.details_text.delete(1.0, tk.END)
         self.details_text.insert(1.0, details)
-    
+
     def register_for_event(self):
         """Register for the selected event"""
         selection = self.events_tree.selection()
         if not selection:
             messagebox.showwarning("Warning", "Please select an event to register for.")
             return
-        
+
         item = self.events_tree.item(selection[0])
         event_id = item['values'][0]
         event_name = item['values'][1]
-        
+
         if messagebox.askyesno("Confirm", f"Do you want to register for {event_name}?"):
             try:
                 self.result = {'event_id': event_id, 'event_name': event_name}
@@ -186,7 +186,7 @@ class EventRegistrationDialog:
                 self.dialog.destroy()
             except (tk.TclError, AttributeError) as e:
                 messagebox.showerror("Error", f"Failed to register for event: {str(e)}")
-    
+
     def cancel(self):
         """Cancel the dialog"""
         self.dialog.destroy()

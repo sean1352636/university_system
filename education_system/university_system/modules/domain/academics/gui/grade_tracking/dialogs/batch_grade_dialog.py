@@ -67,10 +67,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -122,7 +122,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -138,7 +138,7 @@ def init_basic_database():
             status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -152,7 +152,7 @@ def init_basic_database():
             year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -166,7 +166,7 @@ def init_basic_database():
             UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -186,11 +186,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -200,7 +200,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -215,7 +215,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -228,7 +228,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -247,7 +247,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -348,67 +348,67 @@ class BatchGradeDialog:
         self.dialog.title("Batch Grade Entry")
         self.dialog.geometry("900x700")
         safe_grab_set(self.dialog)
-        
+
         self.setup_dialog()
-        
+
     def setup_dialog(self):
         # Title
-        ttk.Label(self.dialog, text="Batch Grade Entry", 
+        ttk.Label(self.dialog, text="Batch Grade Entry",
                  font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         # Assessment selection
         select_frame = ttk.LabelFrame(self.dialog, text="Select Assessment")
         select_frame.pack(fill=tk.X, padx=20, pady=10)
-        
+
         self.assessment_var = tk.StringVar()
         assessment_combo = ttk.Combobox(select_frame, textvariable=self.assessment_var, width=50)
         assessment_combo.pack(side=tk.LEFT, padx=10, pady=10)
-        
-        ttk.Button(select_frame, text="Load Assessments", 
+
+        ttk.Button(select_frame, text="Load Assessments",
                   command=lambda: self.load_assessments(assessment_combo)).pack(side=tk.LEFT, padx=10)
-        ttk.Button(select_frame, text="Load Students", 
+        ttk.Button(select_frame, text="Load Students",
                   command=self.load_students).pack(side=tk.LEFT, padx=10)
-        
+
         # Students frame
         students_frame = ttk.LabelFrame(self.dialog, text="Students and Grades")
         students_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
+
         # Treeview for students
         columns = ('Student ID', 'Name', 'Current Score', 'New Score', 'Grade', 'Comments')
         self.students_tree = ttk.Treeview(students_frame, columns=columns, show='headings')
-        
+
         for col in columns:
             self.students_tree.heading(col, text=col)
             self.students_tree.column(col, width=120)
-        
+
         scrollbar = ttk.Scrollbar(students_frame, orient=tk.VERTICAL, command=self.students_tree.yview)
         self.students_tree.configure(yscrollcommand=scrollbar.set)
-        
+
         self.students_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Quick grade entry
         quick_frame = ttk.LabelFrame(self.dialog, text="Quick Grade Entry")
         quick_frame.pack(fill=tk.X, padx=20, pady=10)
-        
+
         ttk.Label(quick_frame, text="Apply to all selected:").pack(side=tk.LEFT, padx=5)
         self.quick_score_var = tk.StringVar()
         ttk.Entry(quick_frame, textvariable=self.quick_score_var, width=10).pack(side=tk.LEFT, padx=5)
         ttk.Button(quick_frame, text="Apply Score", command=self.apply_quick_score).pack(side=tk.LEFT, padx=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=10)
-        
+
         ttk.Button(button_frame, text="Save All Grades", command=self.save_all_grades).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
-        
+
         # Bind double-click to edit
         self.students_tree.bind('<Double-1>', self.edit_individual_grade)
-        
+
         self.assessment_id = None
         self.max_points = 0
-    
+
     def load_assessments(self, combo):
         """Load assessments into combobox"""
         try:
@@ -418,26 +418,26 @@ class BatchGradeDialog:
             messagebox.showinfo("Success", f"Loaded {len(assessments)} assessments")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load assessments: {e}")
-    
+
     def load_students(self):
         """Load students for selected assessment"""
         if not self.assessment_var.get():
             messagebox.showwarning("Warning", "Please select an assessment first")
             return
-        
+
         try:
             self.assessment_id = int(self.assessment_var.get().split(' - ')[0])
-            
+
             # Get assessment details
-            self.cursor.execute("SELECT max_points, module_code FROM assessments WHERE assessment_id = ?", 
+            self.cursor.execute("SELECT max_points, module_code FROM assessments WHERE assessment_id = ?",
                               (self.assessment_id,))
             result = self.cursor.fetchone()
             if not result:
                 messagebox.showerror("Error", "Assessment not found")
                 return
-            
+
             self.max_points, module_code = result
-            
+
             # Get enrolled students
             self.cursor.execute('''
             SELECT s.student_id, s.first_name, s.last_name
@@ -446,147 +446,147 @@ class BatchGradeDialog:
             WHERE sm.module_code = ?
             ORDER BY s.last_name, s.first_name
             ''', (module_code,))
-            
+
             students = self.cursor.fetchall()
-            
+
             # Clear existing data
             for item in self.students_tree.get_children():
                 self.students_tree.delete(item)
-            
+
             # Load students with existing grades
             for student in students:
                 student_id, first_name, last_name = student
                 full_name = f"{first_name} {last_name}"
-                
+
                 # Check for existing grade
                 self.cursor.execute('''
                 SELECT score, letter_grade, comments
                 FROM grades
                 WHERE student_id = ? AND assessment_id = ?
                 ''', (student_id, self.assessment_id))
-                
+
                 existing = self.cursor.fetchone()
                 current_score = existing[0] if existing else ""
-                
+
                 self.students_tree.insert('', 'end', values=(
                     student_id, full_name, current_score, "", "", ""
                 ))
-            
+
             messagebox.showinfo("Success", f"Loaded {len(students)} students")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load students: {e}")
-    
+
     def apply_quick_score(self):
         """Apply quick score to selected students"""
         if not self.quick_score_var.get():
             messagebox.showwarning("Warning", "Please enter a score")
             return
-        
+
         try:
             score = float(self.quick_score_var.get())
             if score < 0 or score > self.max_points:
                 messagebox.showerror("Error", f"Score must be between 0 and {self.max_points}")
                 return
-            
+
             # Calculate letter grade
             percentage = (score / self.max_points) * 100
             letter_grade = percentage_to_letter(percentage)
-            
+
             # Apply to selected items (or all if none selected)
             selected_items = self.students_tree.selection()
             if not selected_items:
                 selected_items = self.students_tree.get_children()
-            
+
             for item in selected_items:
                 values = list(self.students_tree.item(item, 'values'))
                 values[3] = str(score)  # New Score
                 values[4] = letter_grade  # Grade
                 self.students_tree.item(item, values=values)
-            
+
         except ValueError:
             messagebox.showerror("Error", "Please enter a valid numeric score")
-    
+
     def edit_individual_grade(self, event):
         """Edit individual student grade"""
         selection = self.students_tree.selection()
         if not selection:
             return
-        
+
         item = selection[0]
         values = self.students_tree.item(item, 'values')
         student_id = values[0]
         student_name = values[1]
         current_new_score = values[3]
         current_comments = values[5]
-        
+
         # Simple edit dialog
         edit_dialog = tk.Toplevel(self.dialog)
         edit_dialog.title(f"Edit Grade - {student_name}")
         edit_dialog.geometry("300x200")
         safe_grab_set(edit_dialog)
-        
+
         ttk.Label(edit_dialog, text=f"Score (max {self.max_points}):").pack(pady=5)
         score_var = tk.StringVar(value=current_new_score)
         ttk.Entry(edit_dialog, textvariable=score_var, width=20).pack(pady=5)
-        
+
         ttk.Label(edit_dialog, text="Comments:").pack(pady=5)
         comments_text = tk.Text(edit_dialog, height=4, width=30)
         comments_text.pack(pady=5)
         comments_text.insert(1.0, current_comments)
-        
+
         def save_edit():
             try:
                 score = float(score_var.get()) if score_var.get() else 0
                 if score < 0 or score > self.max_points:
                     messagebox.showerror("Error", f"Score must be between 0 and {self.max_points}")
                     return
-                
+
                 percentage = (score / self.max_points) * 100
                 letter_grade = percentage_to_letter(percentage)
                 comments = comments_text.get(1.0, tk.END).strip()
-                
+
                 # Update treeview
                 new_values = list(values)
                 new_values[3] = str(score)
                 new_values[4] = letter_grade
                 new_values[5] = comments
                 self.students_tree.item(item, values=new_values)
-                
+
                 edit_dialog.destroy()
-                
+
             except ValueError:
                 messagebox.showerror("Error", "Please enter a valid numeric score")
-        
+
         ttk.Button(edit_dialog, text="Save", command=save_edit).pack(side=tk.LEFT, padx=10, pady=10)
         ttk.Button(edit_dialog, text="Cancel", command=edit_dialog.destroy).pack(side=tk.LEFT, padx=10, pady=10)
-    
+
     def save_all_grades(self):
         """Save all grades to database"""
         if not self.assessment_id:
             messagebox.showwarning("Warning", "Please select an assessment first")
             return
-        
+
         try:
             saved_count = 0
             submission_date = datetime.now().strftime('%Y-%m-%d')
-            
+
             for item in self.students_tree.get_children():
                 values = self.students_tree.item(item, 'values')
                 student_id = values[0]
                 new_score = values[3]
                 letter_grade = values[4]
                 comments = values[5]
-                
+
                 if new_score and letter_grade:  # Only save if score entered
                     # Check if grade exists
                     self.cursor.execute('''
                     SELECT grade_id FROM grades
                     WHERE student_id = ? AND assessment_id = ?
                     ''', (student_id, self.assessment_id))
-                    
+
                     existing = self.cursor.fetchone()
-                    
+
                     if existing:
                         # Update existing
                         self.cursor.execute('''
@@ -600,14 +600,14 @@ class BatchGradeDialog:
                         INSERT INTO grades (student_id, assessment_id, score, letter_grade, submission_date, comments)
                         VALUES (?, ?, ?, ?, ?, ?)
                         ''', (student_id, self.assessment_id, float(new_score), letter_grade, submission_date, comments))
-                    
+
                     saved_count += 1
-            
+
             self.conn.commit()
             messagebox.showinfo("Success", f"Saved {saved_count} grades successfully")
             self.result = True
             self.dialog.destroy()
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save grades: {e}")
 

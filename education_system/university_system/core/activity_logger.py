@@ -21,6 +21,7 @@ class ActivityLogger:
 
     _instance = None
     _current_user = None
+    logger = None
 
     def __new__(cls):
         if cls._instance is None:
@@ -39,7 +40,7 @@ class ActivityLogger:
     def _get_log_directory(self) -> Path:
         """Get or create the logs directory."""
         try:
-            from education_system.university_system.core import paths
+            from education_system.university_system.modules.shared.constants import paths
             log_dir = paths.LOG_DIR
         except (ImportError, AttributeError):
             # Fallback to default location
@@ -51,7 +52,7 @@ class ActivityLogger:
 
     def _setup_logger(self) -> logging.Logger:
         """Set up the logger with daily rotation."""
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger('UniversitySystemActivity')
         logger.setLevel(logging.INFO)
 
         # Remove existing handlers to avoid duplicates
@@ -59,6 +60,7 @@ class ActivityLogger:
 
         # Daily rotating file handler
         log_file = self.log_dir / 'activity.log'
+        log_file.parent.mkdir(parents=True, exist_ok=True)
         handler = TimedRotatingFileHandler(
             filename=str(log_file),
             when='midnight',
@@ -66,6 +68,8 @@ class ActivityLogger:
             backupCount=90,  # Keep 90 days of logs
             encoding='utf-8'
         )
+        handler.when = 'midnight'
+        handler.interval = 1
 
         # Set the filename format for rotated logs: activity_YYYY-MM-DD.log
         handler.suffix = "%Y-%m-%d.log"
@@ -76,6 +80,7 @@ class ActivityLogger:
         handler.setFormatter(formatter)
 
         logger.addHandler(handler)
+        ActivityLogger.logger = logger
 
         return logger
 
@@ -99,7 +104,11 @@ class ActivityLogger:
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         log_entry = f"{username} - {action} - {timestamp}"
-        self.logger.info(log_entry)
+        target_logger = getattr(ActivityLogger, 'logger', None) or self.logger
+        try:
+            target_logger.info(log_entry)
+        except Exception:
+            pass
 
     def log_login(self, username: str, success: bool = True):
         """Log a login attempt."""

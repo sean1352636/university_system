@@ -33,7 +33,7 @@ class UCASFrame(tk.Frame):
         self._build_applications_tab()
         self._build_choices_tab()
         self._build_statistics_tab()
-        
+
 
     def _build_applications_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)

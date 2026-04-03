@@ -1,13 +1,25 @@
 from education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management._imports import (
-    datetime, sqlite3, get_connection, send_confirmation_email,
+    datetime, sqlite3, send_confirmation_email, get_auth,
 )
 import education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management._imports as _state
-from education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management.clubs import view_clubs
+from education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management import clubs as _clubs
+
+def _view_clubs():
+    try:
+        import sys
+        pkg = sys.modules.get(
+            "education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management"
+        )
+        if pkg is not None and hasattr(pkg, "view_clubs"):
+            return pkg.view_clubs()
+    except Exception:
+        pass
+    return _clubs.view_clubs()
 
 
 def join_club():
     """Join a club/society"""
-    auth = _state.auth
+    auth = get_auth()
 
     if not auth or not auth.current_user:
         print("You must be logged in to join a club.")
@@ -19,7 +31,7 @@ def join_club():
 
     # Get the student ID associated with the current user
     try:
-        conn = get_connection()
+        conn = _state.resolve_get_connection()()
         cursor = conn.cursor()
 
         cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
@@ -33,7 +45,7 @@ def join_club():
         student_id = result[0]
 
         # First show available clubs
-        view_clubs()
+        _view_clubs()
 
         club_id = input("\nEnter the ID of the club you want to join: ").strip()
         if not club_id.isdigit():
@@ -75,8 +87,11 @@ def join_club():
         print(f"You have successfully joined {club[0]}!")
 
         # Send confirmation email
-        send_confirmation_email(student_id, f"Club Membership: {club[0]}",
-                               f"You have successfully joined the {club[0]} club. Welcome!")
+        _state.resolve_send_confirmation_email()(
+            student_id,
+            f"Club Membership: {club[0]}",
+            f"You have successfully joined the {club[0]} club. Welcome!"
+        )
 
         conn.close()
     except sqlite3.Error as e:
@@ -85,14 +100,14 @@ def join_club():
 
 def view_my_clubs():
     """View clubs I am a member of"""
-    auth = _state.auth
+    auth = get_auth()
 
     if not auth or not auth.current_user:
         print("You must be logged in to view your clubs.")
         return
 
     try:
-        conn = get_connection()
+        conn = _state.resolve_get_connection()()
         cursor = conn.cursor()
 
         # Get student ID
@@ -140,14 +155,14 @@ def view_my_clubs():
 
 def club_member_directory():
     """View club member directory with contact info"""
-    auth = _state.auth
+    auth = get_auth()
 
     if not auth or not auth.current_user:
         print("You must be logged in to view member directory.")
         return
 
     try:
-        conn = get_connection()
+        conn = _state.resolve_get_connection()()
         cursor = conn.cursor()
 
         # Get student ID

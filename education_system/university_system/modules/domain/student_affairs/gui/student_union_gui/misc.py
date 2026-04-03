@@ -66,15 +66,15 @@ def _get_event_attendance_dialog():
 def main():
     """Main entry point"""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='Student Union Management System')
     parser.add_argument('--mode', choices=['gui', 'cli', 'auto'], default='auto',
                        help='Interface mode (default: auto)')
     parser.add_argument('--db-path', default=str(DEFAULT_DB_PATH),
                        help='Database file path (default: student_records.db)')
-    
+
     args = parser.parse_args()
-    
+
     if args.mode == 'cli':
         if CLI_AVAILABLE:
             launch_cli()
@@ -146,11 +146,11 @@ def capture_cli_output(self, func, *args, **kwargs):
     """Capture output from CLI functions by redirecting stdout"""
     import sys
     from io import StringIO
-    
+
     # Save original stdout
     old_stdout = sys.stdout
     sys.stdout = captured_output = StringIO()
-    
+
     try:
         # Call the function
         result = func(*args, **kwargs)
@@ -169,12 +169,12 @@ def call_cli_function(self, function_name: str, text_widget, status_message: str
         text_widget.delete(1.0, tk.END)
         text_widget.insert(tk.END, f"Function {function_name} not available")
         return
-    
+
     if status_message:
         self.update_status(status_message)
-    
+
     func = getattr(student_union_cli, function_name)
-    
+
     try:
         output, result = self.capture_cli_output(func)
         text_widget.delete(1.0, tk.END)
@@ -197,30 +197,30 @@ def run_in_thread(self, func, callback=None, *args, **kwargs):
             error_msg = f"Error: {str(e)}"
             if callback:
                 self.master.after(0, callback, error_msg, None)
-    
+
     thread = threading.Thread(target=thread_worker)
     thread.daemon = True
     thread.start()
 
 # Club Management GUI Methods
 
-def call_cli_function(self, function_name: str, text_widget: scrolledtext.ScrolledText, 
+def call_cli_function(self, function_name: str, text_widget: scrolledtext.ScrolledText,
                      status_message: str = None):
     """Generic method to call CLI functions and display results"""
     if not hasattr(student_union_cli, function_name):
         messagebox.showerror(_t("common.error"), _t("student_union.cli.function_not_found", function=function_name))
         return
-    
+
     if status_message:
         self.update_status(status_message)
-    
+
     func = getattr(student_union_cli, function_name)
-    
+
     def callback(output, result):
         self.display_result(text_widget, output)
         if status_message:
             self.update_status(f"{status_message} - Complete")
-    
+
     self.run_in_thread(func, callback)
 
 # GUI methods for advanced features

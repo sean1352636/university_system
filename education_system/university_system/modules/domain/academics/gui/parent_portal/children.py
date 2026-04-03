@@ -80,7 +80,7 @@ def show_children(self):
         no_children_label = ttk.Label(self.content_frame, text="No students linked to your guardian account.\n\nAs an authorized family member, you can view academic information\nfor students who have granted you access.")
         no_children_label.pack(pady=50)
         return
-    
+
     # Children list with detailed cards - paginated to reduce X resource usage
     children_container = ttk.Frame(self.content_frame)
     children_container.pack(fill=tk.BOTH, expand=True, padx=20)
@@ -143,24 +143,24 @@ ParentPortalGUI.show_children = show_children
 def create_detailed_child_card(self, parent, child):
     """Create a detailed card for a child"""
     card = ttk.LabelFrame(parent, text=f"{child[1]} {child[3]}", padding=15)
-    
+
     # Child info section
     info_frame = ttk.Frame(card)
     info_frame.pack(fill=tk.X, pady=5)
-    
+
     left_info = ttk.Frame(info_frame)
     left_info.pack(side=tk.LEFT, fill=tk.X, expand=True)
-    
+
     ttk.Label(left_info, text=f"Student ID: {child[0]}", style='Info.TLabel').pack(anchor='w')
     ttk.Label(left_info, text=f"Course: {child[4] if len(child) > 4 else 'N/A'}", style='Info.TLabel').pack(anchor='w')
     ttk.Label(left_info, text=f"Relationship: {child[5] if len(child) > 5 else 'N/A'}", style='Info.TLabel').pack(anchor='w')
     if len(child) > 6:
         ttk.Label(left_info, text=f"Access Level: {child[6]}", style='Info.TLabel').pack(anchor='w')
-    
+
     # Action buttons
     btn_frame = ttk.Frame(card)
     btn_frame.pack(fill=tk.X, pady=10)
-    
+
     buttons = [
         ("📊 View Grades", lambda c=child: self.view_child_grades(c)),
         ("📅 Attendance", lambda c=child: self.view_child_attendance(c)),
@@ -168,14 +168,14 @@ def create_detailed_child_card(self, parent, child):
         ("📋 Reports", lambda c=child: self.view_teacher_reports(c)),
         ("💬 Message Instructors", lambda c=child: self.message_teachers(c)),
     ]
-    
+
     for i, (text, command) in enumerate(buttons):
         btn = ttk.Button(btn_frame, text=text, command=command)
         btn.grid(row=i//3, column=i%3, padx=5, pady=2, sticky='ew')
-    
+
     for i in range(3):
         btn_frame.grid_columnconfigure(i, weight=1)
-    
+
     return card
 ParentPortalGUI.create_detailed_child_card = create_detailed_child_card
 

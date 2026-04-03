@@ -358,15 +358,15 @@ def show_user_preferences(self):
     prefs_notebook.add(interface_frame, text="Interface")
 
     self.confirm_actions_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(interface_frame, text="Confirm dangerous actions", 
+    ttk.Checkbutton(interface_frame, text="Confirm dangerous actions",
                    variable=self.confirm_actions_var).pack(anchor='w', pady=5)
 
     self.auto_save_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(interface_frame, text="Auto-save form data", 
+    ttk.Checkbutton(interface_frame, text="Auto-save form data",
                    variable=self.auto_save_var).pack(anchor='w', pady=5)
 
     self.show_tooltips_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(interface_frame, text="Show tooltips", 
+    ttk.Checkbutton(interface_frame, text="Show tooltips",
                    variable=self.show_tooltips_var).pack(anchor='w', pady=5)
 
     # Notification preferences
@@ -374,11 +374,11 @@ def show_user_preferences(self):
     prefs_notebook.add(notification_frame, text="Notifications")
 
     self.desktop_notifications_var = tk.BooleanVar(value=True)
-    ttk.Checkbutton(notification_frame, text="Desktop notifications", 
+    ttk.Checkbutton(notification_frame, text="Desktop notifications",
                    variable=self.desktop_notifications_var).pack(anchor='w', pady=5)
 
     self.sound_alerts_var = tk.BooleanVar(value=False)
-    ttk.Checkbutton(notification_frame, text="Sound alerts", 
+    ttk.Checkbutton(notification_frame, text="Sound alerts",
                    variable=self.sound_alerts_var).pack(anchor='w', pady=5)
 
     # Buttons
@@ -410,12 +410,12 @@ def save_user_preferences(self, dialog):
                 user_id = get_current_user_id()
 
                 cursor.execute('''
-                INSERT OR REPLACE INTO user_preferences 
-                (user_id, preferred_categories, preferred_authors, reading_level, 
+                INSERT OR REPLACE INTO user_preferences
+                (user_id, preferred_categories, preferred_authors, reading_level,
                  notification_preferences, privacy_settings, reading_goals, language_preference)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
-                    user_id, 
+                    user_id,
                     json.dumps([]),  # preferred_categories
                     json.dumps([]),  # preferred_authors
                     'Unknown',       # reading_level

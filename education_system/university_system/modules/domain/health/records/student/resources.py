@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 def student_health_resources(auth):
     """Student-specific health resources"""
     print("\n===== Student Health Resources =====")
-    
+
     resources = {
         "Campus Health Services": [
             "Student Health Center - Building A, Room 150",
@@ -37,12 +37,12 @@ def student_health_resources(auth):
             "Health tracking apps"
         ]
     }
-    
+
     for category, items in resources.items():
         print(f"\n📋 {category}:")
         for item in items:
             print(f"   • {item}")
-    
+
     print(f"\n🔗 Quick Links:")
     print("   • Student Health Portal: health.university.edu")
     print("   • Mental Health Resources: counseling.university.edu")
@@ -54,7 +54,7 @@ def student_health_resources(auth):
 def view_health_resources(auth):
     """Display health resources and educational materials"""
     print("\n===== Health Resources =====")
-    
+
     resources = {
         "Emergency Information": [
             "Campus Emergency: 911",
@@ -88,12 +88,12 @@ def view_health_resources(auth):
             "Prescription Refills"
         ]
     }
-    
+
     for category, items in resources.items():
         print(f"\n{category}:")
         for item in items:
             print(f"  • {item}")
-    
+
     print("\n" + "="*50)
     print("For more information, visit the Student Health Center")
     print("or call (555) 123-4567")

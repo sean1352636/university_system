@@ -54,7 +54,7 @@ except (ImportError, ModuleNotFoundError):
     student_union_cli = None
     init_student_union_db = None
     CLI_AVAILABLE = False
-    
+
 
 def join_selected_club(self):
     """Join the selected club"""
@@ -62,27 +62,27 @@ def join_selected_club(self):
     if not selection:
         messagebox.showwarning(_t("common.warning"), _t("student_union.clubs.select_to_join"))
         return
-    
+
     # Get club name from selection
     club_text = self.clubs_listbox.get(selection[0])
     club_name = club_text.split(' (')[0]  # Extract name before member count
-    
+
     response = messagebox.askyesno(_t("student_union.clubs.join_club"), _t("student_union.clubs.confirm_join", name=club_name))
     if response:
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             # Get club_id from the selected club
             cursor.execute('SELECT club_id FROM student_clubs WHERE club_name = ? AND status = "active"', (club_name,))
             club = cursor.fetchone()
-            
+
             if club:
                 club_id = club[0]
                 # Get current user's student_id
                 cursor.execute('SELECT s.student_id FROM students s JOIN users u ON s.student_id = u.username WHERE u.id = ?', (self.current_user['id'],))
                 student = cursor.fetchone()
-                
+
                 if student:
                     student_id = student[0]
                     # Insert membership
@@ -104,13 +104,13 @@ def join_selected_club(self):
                     messagebox.showinfo(_t("common.success"), _t("student_union.clubs.join_success", name=club_name))
                     # Show club integration buttons
                     self.add_integration_buttons_to_club_view(club_name)
-                    
+
         except sqlite3.Error as e:
             messagebox.showerror(_t("common.error"), _t("student_union.clubs.join_failed", error=str(e)))
         finally:
             if 'conn' in locals() and conn:
                 conn.close()
-            
+
 
 def create_club_dialog(self):
     """Show dialog to create a new club"""
@@ -119,17 +119,17 @@ def create_club_dialog(self):
     create_window.geometry("500x600")
     create_window.transient(self.root)
     create_window.grab_set()
-    
+
     # Create club form
     form_frame = ttk.Frame(create_window)
     form_frame.pack(padx=20, pady=20, fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(form_frame, text=_t("student_union.clubs.create_header"),
              font=('Arial', 14, 'bold')).pack(pady=10)
-    
+
     # Form fields
     fields = {}
-    
+
     ttk.Label(form_frame, text=_t("student_union.clubs.club_name")).pack(anchor=tk.W, pady=(10,0))
     fields['name'] = ttk.Entry(form_frame, width=50)
     fields['name'].pack(fill=tk.X, pady=(0,10))
@@ -143,36 +143,36 @@ def create_club_dialog(self):
     ttk.Label(form_frame, text=_t("common.description")).pack(anchor=tk.W)
     fields['description'] = scrolledtext.ScrolledText(form_frame, height=8, width=50)
     fields['description'].pack(fill=tk.BOTH, expand=True, pady=(0,10))
-    
+
     # Buttons
     button_frame = ttk.Frame(form_frame)
     button_frame.pack(pady=20)
-    
+
     def create_club():
         name = fields['name'].get().strip()
         category = fields['category'].get().strip()
         description = fields['description'].get(1.0, tk.END).strip()
-        
+
         if not name:
             messagebox.showerror(_t("common.error"), _t("student_union.clubs.name_required"))
             return
-        
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             # Check if club name already exists
             cursor.execute('SELECT COUNT(*) FROM student_clubs WHERE club_name = ?', (name,))
             if cursor.fetchone()[0] > 0:
                 messagebox.showerror(_t("common.error"), _t("student_union.clubs.name_exists"))
                 return
-            
+
             # Insert new club
             cursor.execute('''
                 INSERT INTO student_clubs (club_name, description, category, created_date, status)
                 VALUES (?, ?, ?, ?, ?)
             ''', (name, description, category, datetime.now().strftime('%Y-%m-%d'), 'active'))
-            
+
             conn.commit()
             conn.close()
             # Send new club announcement to all students
@@ -183,10 +183,10 @@ def create_club_dialog(self):
 
         except sqlite3.Error as e:
             messagebox.showerror(_t("common.error"), _t("student_union.clubs.create_failed", error=str(e)))
-    
+
     ttk.Button(button_frame, text=_t("student_union.clubs.create_btn"), command=create_club).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("common.cancel"), command=create_window.destroy).pack(side=tk.LEFT, padx=5)
-    
+
     fields['name'].focus()
 
 
@@ -194,7 +194,7 @@ def join_club_gui(self):
     """GUI for joining a club"""
     dialog = ClubJoinDialog(self.master, self.auth)
     self.master.wait_window(dialog.dialog)
-    
+
     if dialog.result:
         self.update_status("Joined club successfully")
         # Refresh club list
@@ -205,7 +205,7 @@ def create_club_gui(self):
     """GUI for creating a club"""
     dialog = ClubCreateDialog(self.master, self.auth)
     self.master.wait_window(dialog.dialog)
-    
+
     if dialog.result:
         self.update_status("Club created successfully")
         # Refresh club list

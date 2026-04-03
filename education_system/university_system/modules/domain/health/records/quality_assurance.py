@@ -38,17 +38,17 @@ def generate_quality_metrics_report(auth, start_date, end_date):
     """Generate quality metrics report"""
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     report_content = []
     report_content.append("QUALITY METRICS REPORT")
     report_content.append("=" * 22)
     report_content.append(f"Period: {start_date} to {end_date}")
     report_content.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     report_content.append("")
-    
+
     # Appointment completion rates
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(*) as total_appointments,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
         SUM(CASE WHEN status = 'no-show' THEN 1 ELSE 0 END) as no_shows,
@@ -56,85 +56,85 @@ def generate_quality_metrics_report(auth, start_date, end_date):
     FROM health_appointments
     WHERE appointment_date BETWEEN ? AND ?
     ''', (start_date, end_date))
-    
+
     apt_data = cursor.fetchone()
-    
+
     if apt_data and apt_data[0] > 0:
         total, completed, no_shows, cancelled = apt_data
         completion_rate = (completed / total * 100)
         no_show_rate = (no_shows / total * 100)
         cancellation_rate = (cancelled / total * 100)
-        
+
         report_content.append("APPOINTMENT QUALITY METRICS")
         report_content.append("-" * 27)
         report_content.append(f"Total Appointments: {total}")
         report_content.append(f"Completion Rate: {completion_rate:.1f}%")
         report_content.append(f"No-Show Rate: {no_show_rate:.1f}%")
         report_content.append(f"Cancellation Rate: {cancellation_rate:.1f}%")
-    
+
     # Documentation quality
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(*) as total_records,
         SUM(CASE WHEN provider IS NOT NULL AND provider != '' THEN 1 ELSE 0 END) as with_provider,
         SUM(CASE WHEN description IS NOT NULL AND LENGTH(description) > 10 THEN 1 ELSE 0 END) as adequate_description
     FROM health_records
     WHERE record_date BETWEEN ? AND ?
     ''', (start_date, end_date))
-    
+
     doc_data = cursor.fetchone()
-    
+
     if doc_data and doc_data[0] > 0:
         total_records, with_provider, adequate_desc = doc_data
         provider_documentation = (with_provider / total_records * 100)
         description_quality = (adequate_desc / total_records * 100)
-        
+
         report_content.append("")
         report_content.append("DOCUMENTATION QUALITY")
         report_content.append("-" * 20)
         report_content.append(f"Total Records: {total_records}")
         report_content.append(f"Provider Documentation: {provider_documentation:.1f}%")
         report_content.append(f"Adequate Descriptions: {description_quality:.1f}%")
-    
+
     # Display report
     for line in report_content:
         print(line)
-    
+
     conn.close()
 
 def clinical_quality_indicators(auth):
     if not auth.check_permission('view_any_health_record'):
         print("You don't have permission to view clinical quality indicators.")
         return
-    
+
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     print("\n===== Clinical Quality Indicators =====")
-    
+
     # Preventive care indicators
     print("PREVENTIVE CARE INDICATORS")
     print("-" * 30)
-    
+
     # Vaccination coverage rates
     cursor.execute("SELECT COUNT(DISTINCT student_id) FROM students")
     total_students = cursor.fetchone()[0]
-    
+
     # Common vaccines coverage
     common_vaccines = ['COVID-19', 'Influenza (Flu)', 'Hepatitis B', 'MMR']
-    
+
     for vaccine in common_vaccines:
         cursor.execute('''
-        SELECT COUNT(DISTINCT student_id) 
-        FROM vaccination_records 
+        SELECT COUNT(DISTINCT student_id)
+        FROM vaccination_records
         WHERE vaccine_name = ? AND verified = 1
         ''', (vaccine,))
-        
+
         vaccinated = cursor.fetchone()[0]
         coverage_rate = (vaccinated / total_students * 100) if total_students > 0 else 0
-        
+
         print(f"{vaccine} Coverage: {vaccinated}/{total_students} ({coverage_rate:.1f}%)")
-        
+
         # Quality threshold check
         if coverage_rate >= 90:
             print("  ✅ Excellent coverage")
@@ -144,84 +144,84 @@ def clinical_quality_indicators(auth):
             print("  🟠 Fair coverage")
         else:
             print("  🔴 Poor coverage - Action needed")
-    
+
     # Care coordination indicators
     print("\nCARE COORDINATION INDICATORS")
     print("-" * 30)
-    
+
     # Students with chronic conditions having care plans
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(DISTINCT mc.student_id) as total_chronic,
         COUNT(DISTINCT cp.student_id) as with_care_plans
     FROM medical_conditions mc
     LEFT JOIN care_plans cp ON mc.student_id = cp.student_id AND cp.status = 'active'
-    WHERE mc.status = 'active' AND mc.condition_name IN 
+    WHERE mc.status = 'active' AND mc.condition_name IN
         ('Diabetes', 'Hypertension', 'Asthma', 'Depression', 'Anxiety')
     ''')
-    
+
     care_coord = cursor.fetchone()
     if care_coord[0] > 0:
         care_plan_rate = (care_coord[1] / care_coord[0] * 100)
         print(f"Chronic Conditions with Care Plans: {care_coord[1]}/{care_coord[0]} ({care_plan_rate:.1f}%)")
-        
+
         if care_plan_rate >= 80:
             print("  ✅ Excellent care coordination")
         elif care_plan_rate >= 60:
             print("  🟡 Good care coordination")
         else:
             print("  🔴 Poor care coordination - Improve care planning")
-    
+
     # Follow-up compliance
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(*) as total_appointments,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
         SUM(CASE WHEN status = 'no-show' THEN 1 ELSE 0 END) as no_shows
     FROM health_appointments
     WHERE appointment_date >= date('now', '-30 days')
     ''')
-    
+
     appt_data = cursor.fetchone()
     if appt_data[0] > 0:
         completion_rate = (appt_data[1] / appt_data[0] * 100)
         no_show_rate = (appt_data[2] / appt_data[0] * 100)
-        
+
         print(f"Appointment Completion Rate: {completion_rate:.1f}%")
         print(f"No-Show Rate: {no_show_rate:.1f}%")
-        
+
         if completion_rate >= 85:
             print("  ✅ Excellent follow-up compliance")
         elif completion_rate >= 75:
             print("  🟡 Good follow-up compliance")
         else:
             print("  🔴 Poor follow-up compliance")
-    
+
     # Documentation quality
     print("\nDOCUMENTATION QUALITY")
     print("-" * 20)
-    
+
     # Health records with provider documentation
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(*) as total_records,
         SUM(CASE WHEN provider IS NOT NULL AND provider != '' THEN 1 ELSE 0 END) as with_provider
     FROM health_records
     WHERE record_date >= date('now', '-30 days')
     ''')
-    
+
     doc_data = cursor.fetchone()
     if doc_data[0] > 0:
         provider_documentation = (doc_data[1] / doc_data[0] * 100)
         print(f"Records with Provider Documentation: {provider_documentation:.1f}%")
-        
+
         if provider_documentation >= 95:
             print("  ✅ Excellent documentation")
         elif provider_documentation >= 85:
             print("  🟡 Good documentation")
         else:
             print("  🔴 Poor documentation quality")
-    
+
     conn.close()
 
 def quality_assurance_menu(auth):
@@ -229,7 +229,7 @@ def quality_assurance_menu(auth):
     if not auth.check_permission('view_any_health_record'):
         print("You don't have permission to access quality assurance.")
         return
-    
+
     while True:
         print("\n===== Quality Assurance =====")
         print("1. Data Quality Metrics")
@@ -238,9 +238,9 @@ def quality_assurance_menu(auth):
         print("4. Performance Improvement")
         print("5. Compliance Monitoring")
         print("6. Return to Main Menu")
-        
+
         choice = input("\nEnter your choice (1-6): ")
-        
+
         if choice == '1':
             data_quality_metrics(auth)
         elif choice == '2':
@@ -260,129 +260,129 @@ def data_quality_metrics(auth):
     """Show data quality metrics"""
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     print("\n===== Data Quality Metrics =====")
-    
+
     # Completeness metrics
     cursor.execute("SELECT COUNT(*) FROM students")
     total_students = cursor.fetchone()[0]
-    
+
     # Students with complete emergency contacts
     cursor.execute('''
     SELECT COUNT(DISTINCT student_id) FROM emergency_contacts
     ''')
     students_with_emergency_contacts = cursor.fetchone()[0]
     emergency_completeness = (students_with_emergency_contacts / total_students * 100) if total_students > 0 else 0
-    
+
     # Students with insurance information
     cursor.execute('''
     SELECT COUNT(DISTINCT student_id) FROM insurance_information
     ''')
     students_with_insurance = cursor.fetchone()[0]
     insurance_completeness = (students_with_insurance / total_students * 100) if total_students > 0 else 0
-    
+
     # Vaccination verification rate
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(*) as total_vaccinations,
         SUM(CASE WHEN verified = 1 THEN 1 ELSE 0 END) as verified_count
     FROM vaccination_records
     ''')
     vax_data = cursor.fetchone()
     vaccination_verification = (vax_data[1] / vax_data[0] * 100) if vax_data[0] > 0 else 0
-    
+
     # Health records with provider information
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(*) as total_records,
         SUM(CASE WHEN provider IS NOT NULL AND provider != '' THEN 1 ELSE 0 END) as with_provider
     FROM health_records
     ''')
     provider_data = cursor.fetchone()
     provider_completeness = (provider_data[1] / provider_data[0] * 100) if provider_data[0] > 0 else 0
-    
+
     print(f"Emergency Contact Completeness: {emergency_completeness:.1f}%")
     print(f"Insurance Information Completeness: {insurance_completeness:.1f}%")
     print(f"Vaccination Verification Rate: {vaccination_verification:.1f}%")
     print(f"Health Records with Provider Info: {provider_completeness:.1f}%")
-    
+
     # Data freshness metrics
     thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
     cursor.execute('''
     SELECT COUNT(*) FROM health_records WHERE record_date >= ?
     ''', (thirty_days_ago,))
     recent_health_records = cursor.fetchone()[0]
-    
+
     cursor.execute('''
     SELECT COUNT(*) FROM vital_signs WHERE measurement_date >= ?
     ''', (thirty_days_ago,))
     recent_vital_signs = cursor.fetchone()[0]
-    
+
     print(f"\nData Freshness (Last 30 Days):")
     print(f"Health Records: {recent_health_records}")
     print(f"Vital Signs: {recent_vital_signs}")
-    
+
     conn.close()
 
 def show_quality_metrics(auth):
     """Show quality metrics and performance indicators"""
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     print("\n===== Quality Metrics =====")
-    
+
     # Patient satisfaction would require a separate table, but we can show other metrics
-    
+
     # Vaccination verification rate
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(*) as total_vaccinations,
         SUM(CASE WHEN verified = 1 THEN 1 ELSE 0 END) as verified_count
     FROM vaccination_records
     ''')
-    
+
     vax_verification = cursor.fetchone()
     if vax_verification and vax_verification[0] > 0:
         verification_rate = (vax_verification[1] / vax_verification[0]) * 100
         print(f"Vaccination Verification Rate: {vax_verification[1]}/{vax_verification[0]} ({verification_rate:.1f}%)")
-    
+
     # Appointment completion rate
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(*) as total_appointments,
         SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed_count
     FROM health_appointments
     WHERE appointment_date < ?
     ''', (datetime.now().strftime('%Y-%m-%d'),))
-    
+
     appointment_completion = cursor.fetchone()
     if appointment_completion and appointment_completion[0] > 0:
         completion_rate = (appointment_completion[1] / appointment_completion[0]) * 100
         print(f"Appointment Completion Rate: {appointment_completion[1]}/{appointment_completion[0]} ({completion_rate:.1f}%)")
-    
+
     # Follow-up care tracking
     cursor.execute('''
     SELECT COUNT(*) FROM care_plans WHERE status = 'active'
     ''')
     active_care_plans = cursor.fetchone()[0]
     print(f"Active Care Plans: {active_care_plans}")
-    
+
     # Data completeness metrics
     cursor.execute('''
-    SELECT 
+    SELECT
         COUNT(*) as total_students,
         SUM(CASE WHEN EXISTS (SELECT 1 FROM emergency_contacts WHERE emergency_contacts.student_id = students.student_id) THEN 1 ELSE 0 END) as with_emergency_contacts,
         SUM(CASE WHEN EXISTS (SELECT 1 FROM insurance_information WHERE insurance_information.student_id = students.student_id) THEN 1 ELSE 0 END) as with_insurance
     FROM students
     ''')
-    
+
     completeness = cursor.fetchone()
     if completeness and completeness[0] > 0:
         emergency_completeness = (completeness[1] / completeness[0]) * 100
         insurance_completeness = (completeness[2] / completeness[0]) * 100
         print(f"Emergency Contact Completeness: {completeness[1]}/{completeness[0]} ({emergency_completeness:.1f}%)")
         print(f"Insurance Information Completeness: {completeness[2]}/{completeness[0]} ({insurance_completeness:.1f}%)")
-    
+
     conn.close()
 
 def patient_safety_metrics(auth):

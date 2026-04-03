@@ -103,13 +103,13 @@ class SecurityManager:
         """Check if user session has timed out"""
         if not auth or not auth.current_user:
             return True
-        
+
         # Get session timeout from security settings
         try:
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute('''
-            SELECT setting_value FROM security_settings 
+            SELECT setting_value FROM security_settings
             WHERE setting_name = 'session_timeout_minutes'
             ''')
             result = cursor.fetchone()
@@ -161,7 +161,7 @@ def init_enhanced_health_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Original tables (keeping existing structure)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS health_records (
@@ -177,9 +177,9 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Enhanced tables for new features
-        
+
         # Audit trail table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS audit_trail (
@@ -196,19 +196,19 @@ def init_enhanced_health_db():
             session_id TEXT
         )
         ''')
-        
+
         # Data retention policies - FIXED COLUMN NAME
         # First check if table exists and has wrong column name
         cursor.execute("PRAGMA table_info(data_retention_policies)")
         existing_columns = cursor.fetchall()
-        
+
         if existing_columns:
             # Check if table has wrong column name
             column_names = [col[1] for col in existing_columns]
             if 'retention_period_days' not in column_names:
                 # Drop and recreate table with correct schema
                 cursor.execute('DROP TABLE IF EXISTS data_retention_policies')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS data_retention_policies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -219,7 +219,7 @@ def init_enhanced_health_db():
             created_at TEXT
         )
         ''')
-        
+
         # Security settings
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS security_settings (
@@ -230,7 +230,7 @@ def init_enhanced_health_db():
             updated_by TEXT
         )
         ''')
-        
+
         # Allergies and medical conditions
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS allergies (
@@ -246,7 +246,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS medical_conditions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -262,7 +262,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Prescriptions
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS prescriptions (
@@ -282,7 +282,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Vital signs
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS vital_signs (
@@ -302,7 +302,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Care plans
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS care_plans (
@@ -322,7 +322,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (condition_id) REFERENCES medical_conditions (id)
         )
         ''')
-        
+
         # Referrals
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS referrals (
@@ -341,7 +341,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Health metrics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS health_metrics (
@@ -355,7 +355,7 @@ def init_enhanced_health_db():
             calculated_at TEXT
         )
         ''')
-        
+
         # Health screening schedules
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS screening_schedules (
@@ -372,7 +372,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Risk assessments
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS risk_assessments (
@@ -389,7 +389,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Emergency contacts (enhanced)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS emergency_contacts (
@@ -407,7 +407,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Provider schedules and availability
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS provider_schedules (
@@ -423,7 +423,7 @@ def init_enhanced_health_db():
             created_at TEXT
         )
         ''')
-        
+
         # Health campaigns and programs
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS health_campaigns (
@@ -441,7 +441,7 @@ def init_enhanced_health_db():
             created_at TEXT
         )
         ''')
-        
+
         # Wellness program participation
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS wellness_participation (
@@ -457,7 +457,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Disease surveillance
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS disease_surveillance (
@@ -477,7 +477,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Lab results
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS lab_results (
@@ -517,7 +517,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Create vaccination_records table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS vaccination_records (
@@ -539,7 +539,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Create health_advisories table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS health_advisories (
@@ -556,7 +556,7 @@ def init_enhanced_health_db():
             created_at TEXT
         )
         ''')
-        
+
         # Create insurance_information table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS insurance_information (
@@ -573,7 +573,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Quality metrics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS quality_metrics (
@@ -589,7 +589,7 @@ def init_enhanced_health_db():
             created_at TEXT
         )
         ''')
-        
+
         # Check if data retention policies need to be populated
         cursor.execute("SELECT COUNT(*) FROM data_retention_policies")
         if cursor.fetchone()[0] == 0:
@@ -602,14 +602,14 @@ def init_enhanced_health_db():
                 ('lab_results', 2555, 1, 0),  # 7 years
                 ('vital_signs', 1095, 1, 0),  # 3 years
             ]
-            
+
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             for policy in policies:
                 cursor.execute(
                     'INSERT INTO data_retention_policies (data_type, retention_period_days, auto_archive, auto_delete, created_at) VALUES (?, ?, ?, ?, ?)',
                     (*policy, timestamp)
                 )
-        
+
         # Check if security settings need to be populated
         cursor.execute("SELECT COUNT(*) FROM security_settings")
         if cursor.fetchone()[0] == 0:
@@ -623,18 +623,18 @@ def init_enhanced_health_db():
                 ('ip_restriction_enabled', '0'),
                 ('allowed_ip_ranges', ''),
             ]
-            
+
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             for setting in settings:
                 cursor.execute(
                     'INSERT INTO security_settings (setting_name, setting_value, updated_at) VALUES (?, ?, ?)',
                     (*setting, timestamp)
                 )
-        
+
         conn.commit()
         conn.close()
         print("Enhanced health portal database initialized successfully!")
-        
+
     except sqlite3.Error as e:
         print(f"An error occurred while initializing the enhanced health database: {e}")
         if conn:
@@ -686,7 +686,7 @@ def display_health_portal_menu(auth=None):
     init_enhanced_health_db()
     # Add health permissions to authentication system
     setup_health_permissions(auth)
-    
+
     while True:
         # Check if user is logged in
         if not auth or not auth.current_user:
@@ -701,115 +701,115 @@ def display_health_portal_menu(auth=None):
 
         print(f"\n===== {get_text('health.title', default='Enhanced University Health Portal')} =====")
         print(get_text('health.logged_in', default='Logged in as: {username} ({role})').format(username=auth.current_user['username'], role=auth.current_user['role']))
-        
+
         # Display menu options based on user role/permissions
         menu_options = []
-        
+
         # Health Records section (enhanced)
         if auth.check_permission('manage_health_records') or auth.check_permission('view_own_health_record') or auth.check_permission('view_any_health_record'):
             print("\n📋 Health Records & Clinical Data:")
-            
+
             if auth.check_permission('manage_health_records'):
                 print(f"{len(menu_options) + 1}. Manage Health Records")
                 # FIX: Use direct function reference instead of lambda
                 menu_options.append(("Manage Health Records", manage_health_records_enhanced))
-            
+
             if auth.check_permission('view_any_health_record') or auth.check_permission('view_own_health_record'):
                 print(f"{len(menu_options) + 1}. View Health Records")
                 menu_options.append(("View Health Records", view_health_records))
-            
+
             print(f"{len(menu_options) + 1}. Allergy Management")
             menu_options.append(("Allergy Management", manage_allergies))
-            
+
             print(f"{len(menu_options) + 1}. Prescription Management")
             menu_options.append(("Prescription Management", manage_prescriptions))
-            
+
             print(f"{len(menu_options) + 1}. Vital Signs Management")
             menu_options.append(("Vital Signs Management", manage_vital_signs))
-            
+
             print(f"{len(menu_options) + 1}. Lab Results Management")
             menu_options.append(("Lab Results Management", manage_lab_results))
-        
+
         # Provider-specific menus
         if auth.check_permission('manage_health_records'):
             print(f"{len(menu_options) + 1}. Provider Dashboard")
             menu_options.append(("Provider Dashboard", provider_dashboard))
-            
+
             print(f"{len(menu_options) + 1}. Provider Schedule Management")
             menu_options.append(("Provider Schedule Management", manage_provider_schedules))
-            
+
             print(f"{len(menu_options) + 1}. Referral Management")
             menu_options.append(("Referral Management", manage_referrals))
-        
+
         # Student-specific menu
         if auth.current_user['role'] == 'student':
             print(f"{len(menu_options) + 1}. Personal Health Dashboard")
             menu_options.append(("Personal Health Dashboard", student_health_dashboard))
-        
+
         # Appointments section
         if auth.check_permission('manage_health_appointments') or auth.check_permission('schedule_health_appointment') or auth.check_permission('view_own_appointments'):
             print("\n📅 Appointments & Scheduling:")
-            
+
             if auth.check_permission('schedule_health_appointment') or auth.check_permission('manage_health_appointments'):
                 print(f"{len(menu_options) + 1}. Schedule Appointment")
                 menu_options.append(("Schedule Appointment", schedule_appointment))
-            
+
             if auth.check_permission('view_own_appointments') or auth.check_permission('manage_health_appointments'):
                 print(f"{len(menu_options) + 1}. View Appointments")
                 menu_options.append(("View Appointments", view_appointments))
-            
+
             if auth.check_permission('cancel_own_appointment') or auth.check_permission('manage_health_appointments'):
                 print(f"{len(menu_options) + 1}. Update Appointment Status")
                 menu_options.append(("Update Appointment Status", update_appointment_status))
-        
+
         # Vaccinations section
         if auth.check_permission('manage_vaccinations') or auth.check_permission('view_own_vaccinations') or auth.check_permission('verify_vaccinations'):
             print("\n💉 Vaccinations & Immunizations:")
-            
+
             if auth.check_permission('manage_vaccinations'):
                 print(f"{len(menu_options) + 1}. Record Vaccination")
                 menu_options.append(("Record Vaccination", record_vaccination))
-            
+
             if auth.check_permission('view_own_vaccinations') or auth.check_permission('manage_vaccinations') or auth.check_permission('view_any_health_record'):
                 print(f"{len(menu_options) + 1}. View Vaccination Records")
                 menu_options.append(("View Vaccination Records", view_vaccinations))
-            
+
             if auth.check_permission('verify_vaccinations'):
                 print(f"{len(menu_options) + 1}. Verify Vaccination Record")
                 menu_options.append(("Verify Vaccination Record", verify_vaccination))
-        
+
         # Care Plans & Clinical Management
         if auth.check_permission('manage_health_records'):
             print("\n🏥 Care Plans & Clinical Management:")
-            
+
             print(f"{len(menu_options) + 1}. Care Plan Management")
             menu_options.append(("Care Plan Management", manage_care_plans))
-            
+
             print(f"{len(menu_options) + 1}. Health Risk Assessment")
             menu_options.append(("Health Risk Assessment", health_risk_assessment))
-        
+
         # Emergency & Safety
         print("\n🚨 Emergency & Safety:")
-        
+
         print(f"{len(menu_options) + 1}. Emergency Contact Management")
         menu_options.append(("Emergency Contact Management", manage_emergency_contacts))
-        
+
         if auth.check_permission('issue_health_advisories'):
             print(f"{len(menu_options) + 1}. Disease Surveillance System")
             menu_options.append(("Disease Surveillance System", disease_surveillance_system))
-        
+
         # Health Advisory section
         if auth.check_permission('issue_health_advisories') or auth.check_permission('view_health_advisories'):
             print("\n📢 Health Advisories & Communications:")
-            
+
             if auth.check_permission('issue_health_advisories'):
                 print(f"{len(menu_options) + 1}. Add Health Advisory")
                 menu_options.append(("Add Health Advisory", add_health_advisory))
-            
+
             if auth.check_permission('view_health_advisories') or auth.check_permission('issue_health_advisories'):
                 print(f"{len(menu_options) + 1}. View Health Advisories")
                 menu_options.append(("View Health Advisories", view_health_advisories))
-        
+
         # Wellness & Prevention (including Mental Health)
         print("\n🌟 Wellness & Prevention:")
 
@@ -843,57 +843,57 @@ def display_health_portal_menu(auth=None):
 
         print(f"{len(menu_options) + 1}. Track Wellness Progress")
         menu_options.append(("Track Wellness Progress", lambda auth: _mental_health_placeholder(auth, "Wellness Progress")))
-        
+
         # Insurance Information section
         if auth.check_permission('update_insurance_info') or auth.current_user['role'] in ['admin', 'health_provider']:
             print("\n💳 Insurance & Financial:")
-            
+
             print(f"{len(menu_options) + 1}. View Insurance Information")
             menu_options.append(("View Insurance Information", view_insurance_info))
-            
+
             print(f"{len(menu_options) + 1}. Update Insurance Information")
             menu_options.append(("Update Insurance Information", update_insurance_info))
-        
+
         # Analytics & Reporting
         if auth.check_permission('view_any_health_record'):
             print("\n📊 Analytics & Reporting:")
-            
+
             print(f"{len(menu_options) + 1}. Health Analytics Dashboard")
             menu_options.append(("Health Analytics Dashboard", health_analytics_dashboard))
-            
+
             print(f"{len(menu_options) + 1}. Generate Health Report")
             menu_options.append(("Generate Health Report", generate_health_report))
-            
+
             print(f"{len(menu_options) + 1}. Quality Assurance")
             menu_options.append(("Quality Assurance", quality_assurance_menu))
-        
+
         # Screening Management
         if auth.check_permission('manage_health_records'):
             print(f"{len(menu_options) + 1}. Screening Schedule Management")
             menu_options.append(("Screening Schedule Management", manage_screening_schedules))
-            
+
             print(f"{len(menu_options) + 1}. Enhanced Record Templates")
             menu_options.append(("Enhanced Record Templates", enhanced_health_record_templates))
-        
+
         # Data Management & Security
         if auth.current_user['role'] in ['admin']:
             print("\n🔒 Data Management & Security:")
-            
+
             print(f"{len(menu_options) + 1}. Data Retention Management")
             menu_options.append(("Data Retention Management", data_retention_management))
-            
+
             print(f"{len(menu_options) + 1}. Security Audit")
             menu_options.append(("Security Audit", security_audit_menu))
-            
+
             print(f"{len(menu_options) + 1}. Advanced Security Management")
             menu_options.append(("Advanced Security Management", advanced_security_menu))
-            
+
             print(f"{len(menu_options) + 1}. Integration Management")
             menu_options.append(("Integration Management", integration_management))
-            
+
             print(f"{len(menu_options) + 1}. System Backup & Recovery")
             menu_options.append(("System Backup & Recovery", backup_recovery_menu))
-        
+
         # Main menu options
         print(f"\n⚙️ {get_text('health.system_options', default='System Options')}:")
         print(f"{len(menu_options) + 1}. {get_text('health.menu.language', default='Language')}")

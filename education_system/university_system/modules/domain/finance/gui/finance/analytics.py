@@ -271,11 +271,11 @@ class AnalyticsManager:
 
         tk.Button(params_frame, text=_("analytics_manager.buttons.generate_forecast"), command=self.run_forecast,
                  bg=colors['secondary'], fg='white').grid(row=0, column=4, padx=10, pady=2)
-        
+
         # Forecast results
         self.forecast_output = ScrolledText(revenue_frame, height=20, font=('Courier', 9))
         self.forecast_output.pack(fill='both', expand=True, padx=10, pady=10)
-        
+
         # Scenarios tab
         scenarios_frame = ttk.Frame(forecast_notebook)
         forecast_notebook.add(scenarios_frame, text=_("analytics_manager.tabs.scenarios"))
@@ -298,45 +298,45 @@ class AnalyticsManager:
         for col in self.scenarios_tree['columns']:
             self.scenarios_tree.heading(col, text=col_names.get(col, col.replace('_', ' ').title()))
         self.scenarios_tree.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
 
     def generate_revenue_forecast(self):
         """Generate revenue forecast"""
         try:
             old_stdout = sys.stdout
             sys.stdout = mystdout = io.StringIO()
-            
+
             generate_revenue_forecast()
-            
+
             output = mystdout.getvalue()
             sys.stdout = old_stdout
-            
+
             self.forecast_output.delete('1.0', tk.END)
             self.forecast_output.insert('1.0', output)
-            
+
         except Exception as e:
             sys.stdout = old_stdout
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_revenue_forecast", error=str(e)))
-    
+
 
     def enrollment_projections(self):
         """Generate enrollment projections"""
         try:
             old_stdout = sys.stdout
             sys.stdout = mystdout = io.StringIO()
-            
+
             generate_enrollment_projections()
-            
+
             output = mystdout.getvalue()
             sys.stdout = old_stdout
-            
+
             self.forecast_output.delete('1.0', tk.END)
             self.forecast_output.insert('1.0', output)
-            
+
         except Exception as e:
             sys.stdout = old_stdout
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_enrollment_projections", error=str(e)))
-    
+
 
     def cash_flow_analysis(self):
         """Generate cash flow analysis"""
@@ -355,7 +355,7 @@ class AnalyticsManager:
         except Exception as e:
             sys.stdout = old_stdout
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_cash_flow_analysis", error=str(e)))
-    
+
 
     def risk_analysis(self):
         """Generate risk analysis"""
@@ -374,7 +374,7 @@ class AnalyticsManager:
         except Exception as e:
             sys.stdout = old_stdout
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_risk_analysis", error=str(e)))
-    
+
 
     def run_forecast(self):
         """Generate a simple revenue forecast based on current payments and user parameters."""
@@ -425,7 +425,7 @@ class AnalyticsManager:
         except Exception as e:
             # Widget may not be initialized yet
             print(f"Warning: Could not update forecast output: {e}")
-    
+
 
     def gui_generate_predictive_analytics(self):
         """GUI wrapper for predictive analytics"""
@@ -447,7 +447,7 @@ class AnalyticsManager:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_generate_analytics", error=e))
-    
+
 
     def gui_detect_payment_fraud(self):
         """GUI wrapper for fraud detection"""
@@ -469,7 +469,7 @@ class AnalyticsManager:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_fraud_detection", error=e))
-    
+
 
     def gui_detect_payment_fraud_original(self):
         """GUI wrapper for detect_payment_fraud from original finance.py"""
@@ -487,7 +487,7 @@ class AnalyticsManager:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_fraud_detection", error=e))
-    
+
 
     def gui_generate_cash_flow_analysis(self):
         """GUI wrapper for cash flow analysis"""
@@ -505,7 +505,7 @@ class AnalyticsManager:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_cash_flow_analysis", error=e))
-    
+
 
     def gui_generate_enrollment_projections(self):
         """GUI wrapper for enrollment projections"""
@@ -523,7 +523,7 @@ class AnalyticsManager:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_enrollment_projections", error=e))
-    
+
 
     def gui_generate_risk_analysis(self):
         """GUI wrapper for risk analysis"""
@@ -541,7 +541,7 @@ class AnalyticsManager:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_risk_analysis", error=e))
-    
+
 
     def gui_generate_scenario_planning(self):
         """GUI wrapper for scenario planning"""
@@ -577,7 +577,7 @@ class AnalyticsManager:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("analytics_manager.errors.failed_scenario_planning", error=e))
-    
+
 
     def scenario_planning(self):
         """Generate scenario planning"""
@@ -586,87 +586,87 @@ class AnalyticsManager:
             scenarios_output = f"""Financial Scenario Planning Analysis
     {'=' * 60}
     Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-    
+
     SCENARIO ASSUMPTIONS:
     {'=' * 60}
-    
+
     Conservative Scenario:
     - Student enrollment: 950 (-9.5% from baseline)
     - Tuition increase: 2%
     - Operating cost increase: 4%
     - Financial aid budget: Maintained at current level
-    
+
     Baseline Scenario:
     - Student enrollment: 1,050 (current projection)
     - Tuition increase: 3%
     - Operating cost increase: 3%
     - Financial aid budget: 5% increase
-    
+
     Optimistic Scenario:
     - Student enrollment: 1,200 (+14.3% from baseline)
     - Tuition increase: 4%
     - Operating cost increase: 2.5%
     - Financial aid budget: 10% increase
-    
+
     FINANCIAL PROJECTIONS:
     {'=' * 60}
-    
+
     Conservative Scenario:
     - Tuition Revenue: £4,200,000
     - Total Revenue: £4,200,000
     - Operating Expenses: £3,800,000
     - Net Income: £400,000
     - Cash Flow: Positive but tight
-    
+
     Baseline Scenario:
     - Tuition Revenue: £4,800,000
     - Total Revenue: £4,800,000
     - Operating Expenses: £4,200,000
     - Net Income: £600,000
     - Cash Flow: Healthy growth
-    
+
     Optimistic Scenario:
     - Tuition Revenue: £5,600,000
     - Total Revenue: £5,600,000
     - Operating Expenses: £4,800,000
     - Net Income: £800,000
     - Cash Flow: Strong growth potential
-    
+
     RISK FACTORS:
     {'=' * 60}
-    
+
     Conservative Scenario Risks:
     - Enrollment decline may continue
     - Competition from other institutions
     - Economic downturn affecting student ability to pay
-    
+
     Baseline Scenario Risks:
     - Market saturation in target demographics
     - Regulatory changes in education funding
     - Technology disruption requiring additional investment
-    
+
     Optimistic Scenario Risks:
     - Overextension of resources
     - Quality maintenance with rapid growth
     - Infrastructure capacity limitations
-    
+
     RECOMMENDATIONS:
     {'=' * 60}
-    
+
     1. Diversify revenue streams beyond tuition
     2. Implement flexible cost management strategies
     3. Develop contingency plans for each scenario
     4. Monitor key performance indicators monthly
     5. Maintain strategic reserves for unexpected challenges
-    
+
     Next Review Date: {(datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')}
     """
-                
+
             return scenarios_output
-                
+
         except Exception as e:
             return f"Error generating scenario planning: {str(e)}"
-    
+
 
     def gui_generate_comprehensive_forecast_report(self):
         """GUI wrapper for comprehensive forecast report"""

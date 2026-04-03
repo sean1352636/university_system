@@ -48,29 +48,29 @@ def view_child_attendance(self, child):
     """View attendance for a specific child"""
     self.clear_content()
     self.update_status(f"Viewing attendance for {child[1]} {child[3]}")
-    
-    title = ttk.Label(self.content_frame, text=f"Attendance for {child[1]} {child[3]}", 
+
+    title = ttk.Label(self.content_frame, text=f"Attendance for {child[1]} {child[3]}",
                      style='Title.TLabel', font=('Arial', 18, 'bold'))
     title.pack(pady=20)
-    
+
     # Attendance summary
     summary_frame = ttk.LabelFrame(self.content_frame, text="Attendance Summary", padding=15)
     summary_frame.pack(fill=tk.X, padx=20, pady=10)
-    
+
     ttk.Label(summary_frame, text="Overall Attendance: 95.5%", style='Heading.TLabel').pack()
     ttk.Label(summary_frame, text="Days Present: 87 | Days Absent: 4", style='Info.TLabel').pack()
-    
+
     # Recent attendance
     recent_frame = ttk.LabelFrame(self.content_frame, text="Recent Attendance", padding=15)
     recent_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-    
+
     columns = ('Date', 'Status', 'Module', 'Reason')
     tree = ttk.Treeview(recent_frame, columns=columns, show='headings', height=10)
-    
+
     for col in columns:
         tree.heading(col, text=col)
         tree.column(col, width=150)
-    
+
     # Load real attendance data from database
     child_id = child[0]  # Assuming child[0] is the student_id
     try:
@@ -330,16 +330,16 @@ def show_attendance_interface(self):
     """Show attendance interface"""
     self.clear_content()
     self.update_status("Attendance Records")
-    
+
     title = ttk.Label(self.content_frame, text="Attendance Records", style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
-    
+
     if self.children:
         for child in self.children:
             child_frame = ttk.LabelFrame(self.content_frame, text=f"{child[1]} {child[3]}", padding=15)
             child_frame.pack(fill=tk.X, padx=20, pady=10)
-            
-            view_btn = ttk.Button(child_frame, text="View Attendance", 
+
+            view_btn = ttk.Button(child_frame, text="View Attendance",
                                  command=lambda c=child: self.view_child_attendance(c))
             view_btn.pack(pady=5)
     else:
@@ -522,13 +522,13 @@ def show_absence_interface(self):
     """Show absence reporting interface"""
     self.clear_content()
     self.update_status("Report Absence")
-    
+
     title = ttk.Label(self.content_frame, text="Report Student Absence", style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
-    
+
     absence_frame = ttk.LabelFrame(self.content_frame, text="Absence Details", padding=20)
     absence_frame.pack(fill=tk.X, padx=20, pady=20)
-    
+
     # Child selection
     ttk.Label(absence_frame, text="Select Student:").pack(anchor='w')
     child_var = tk.StringVar()
@@ -537,27 +537,27 @@ def show_absence_interface(self):
         child_combo['values'] = [f"{child[1]} {child[3]}" for child in self.children]
         child_combo.set(child_combo['values'][0] if child_combo['values'] else "")
     child_combo.pack(fill=tk.X, pady=5)
-    
+
     # Date selection
     ttk.Label(absence_frame, text="Absence Date:").pack(anchor='w', pady=(10, 0))
     date_var = tk.StringVar(value=datetime.datetime.now().strftime('%Y-%m-%d'))
     date_entry = ttk.Entry(absence_frame, textvariable=date_var)
     date_entry.pack(fill=tk.X, pady=5)
-    
+
     # Reason
     ttk.Label(absence_frame, text="Reason:").pack(anchor='w', pady=(10, 0))
     reason_text = scrolledtext.ScrolledText(absence_frame, height=5)
     reason_text.pack(fill=tk.X, pady=5)
-    
+
     def submit_absence():
         if not child_var.get() or not reason_text.get(1.0, tk.END).strip():
             messagebox.showwarning("Missing Information", "Please select a child and provide a reason.")
             return
-        
+
         # In real implementation, this would save to database
         messagebox.showinfo("Success", "Absence report submitted successfully.")
         reason_text.delete(1.0, tk.END)
-    
+
     submit_btn = ttk.Button(absence_frame, text="Submit Absence Report", command=submit_absence)
     submit_btn.pack(pady=20)
 ParentPortalGUI.show_absence_interface = show_absence_interface

@@ -10,11 +10,11 @@ gui_logger = logging.getLogger(__name__)
 
 class ResourceManagementDialog:
     """Dialog for managing resources (rooms, equipment, etc.)"""
-    
+
     def __init__(self, parent, calendar_manager, callback=None):
         self.calendar_manager = calendar_manager
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.resource_management.title"))
         self.dialog.geometry("800x600")
@@ -43,44 +43,44 @@ class ResourceManagementDialog:
                   command=self._book_resource).pack(side=tk.LEFT, padx=5)
         ttk.Button(action_frame, text=_("academic_calendar.buttons.refresh"),
                   command=self._load_resources).pack(side=tk.RIGHT, padx=5)
-        
+
         # Resources tree
-        self.resources_tree = ttk.Treeview(main_frame, 
+        self.resources_tree = ttk.Treeview(main_frame,
                                          columns=('Type', 'Capacity', 'Location', 'Status'),
                                          show='tree headings')
         self.resources_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
-        
+
         # Configure columns
         self.resources_tree.heading('#0', text=_("academic_calendar.columns.resource_name"))
         self.resources_tree.heading('Type', text=_("academic_calendar.columns.type"))
         self.resources_tree.heading('Capacity', text=_("academic_calendar.columns.capacity"))
         self.resources_tree.heading('Location', text=_("academic_calendar.columns.location"))
         self.resources_tree.heading('Status', text=_("academic_calendar.columns.status"))
-        
+
         # Scrollbar
         scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=self.resources_tree.yview)
         self.resources_tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Close button
         ttk.Button(main_frame, text=_("common.close"), command=self.dialog.destroy).pack(pady=(15, 0))
-    
+
     def _load_resources(self):
         """Load resources into tree"""
         try:
             # Clear existing items
             for item in self.resources_tree.get_children():
                 self.resources_tree.delete(item)
-            
+
             # Get resources from database
             resources = self.calendar_manager.db_manager.execute_query(
                 "SELECT * FROM resources ORDER BY type, name"
             )
-            
+
             for resource in resources:
                 self.resources_tree.insert('', 'end',
                                          text=resource['name'],
-                                         values=(resource['type'], 
+                                         values=(resource['type'],
                                                resource['capacity'] or 'N/A',
                                                resource['location'] or 'N/A',
                                                resource['status']))
@@ -99,7 +99,7 @@ class ResourceManagementDialog:
             BookResourceDialog(self.dialog, self.calendar_manager, resource_name, self._load_resources)
         else:
             messagebox.showwarning(_("academic_calendar.messages.selection_required"), _("academic_calendar.messages.select_resource_to_book"))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -110,11 +110,11 @@ class ResourceManagementDialog:
 
 class AddResourceDialog:
     """Dialog for adding new resources"""
-    
+
     def __init__(self, parent, calendar_manager, callback=None):
         self.calendar_manager = calendar_manager
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.resource_management.add_title"))
         self.dialog.geometry("400x350")
@@ -160,13 +160,13 @@ class AddResourceDialog:
 
         ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
         ttk.Button(button_frame, text=_("academic_calendar.buttons.add_resource"), command=self._add_resource).pack(side=tk.RIGHT)
-    
+
     def _add_resource(self):
         """Add the resource"""
         try:
             name = self.name_var.get().strip()
             resource_type = self.type_var.get().strip()
-            
+
             if not name or not resource_type:
                 messagebox.showerror(_("common.error"), _("academic_calendar.messages.name_type_required"))
                 return
@@ -197,7 +197,7 @@ class AddResourceDialog:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.capacity_must_be_number"))
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_add_resource", error=str(e)))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -423,11 +423,11 @@ class BookResourceDialog:
 
 class CourseManagementDialog:
     """Dialog for managing courses"""
-    
+
     def __init__(self, parent, calendar_manager, callback=None):
         self.calendar_manager = calendar_manager
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.course_management.title"))
         self.dialog.geometry("900x600")
@@ -456,48 +456,48 @@ class CourseManagementDialog:
                   command=self._link_to_event).pack(side=tk.LEFT, padx=5)
         ttk.Button(action_frame, text=_("academic_calendar.buttons.refresh"),
                   command=self._load_courses).pack(side=tk.RIGHT, padx=5)
-        
+
         # Courses tree
-        self.courses_tree = ttk.Treeview(main_frame, 
+        self.courses_tree = ttk.Treeview(main_frame,
                                        columns=('Code', 'Credits', 'Department', 'Status'),
                                        show='tree headings')
         self.courses_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
-        
+
         # Configure columns
         self.courses_tree.heading('#0', text=_("academic_calendar.columns.course_name"))
         self.courses_tree.heading('Code', text=_("academic_calendar.columns.code"))
         self.courses_tree.heading('Credits', text=_("academic_calendar.columns.credits"))
         self.courses_tree.heading('Department', text=_("academic_calendar.columns.department"))
         self.courses_tree.heading('Status', text=_("academic_calendar.columns.status"))
-        
+
         # Scrollbars
         v_scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=self.courses_tree.yview)
         h_scrollbar = ttk.Scrollbar(main_frame, orient=tk.HORIZONTAL, command=self.courses_tree.xview)
-        
+
         self.courses_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-        
+
         v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
-        
+
         # Close button
         ttk.Button(main_frame, text=_("common.close"), command=self.dialog.destroy).pack(pady=(15, 0))
-    
+
     def _load_courses(self):
         """Load courses into tree"""
         try:
             # Clear existing items
             for item in self.courses_tree.get_children():
                 self.courses_tree.delete(item)
-            
+
             # Get courses from database
             courses = self.calendar_manager.db_manager.execute_query(
                 "SELECT * FROM courses ORDER BY department, code"
             )
-            
+
             for course in courses:
                 self.courses_tree.insert('', 'end',
                                        text=course['name'],
-                                       values=(course['code'], 
+                                       values=(course['code'],
                                              course['credits'] or 'N/A',
                                              course['department'] or 'N/A',
                                              course['status']))
@@ -516,7 +516,7 @@ class CourseManagementDialog:
             LinkCourseEventDialog(self.dialog, self.calendar_manager, course_name, self._load_courses)
         else:
             messagebox.showwarning(_("academic_calendar.messages.selection_required"), _("academic_calendar.messages.select_course_to_link"))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -539,14 +539,14 @@ class AddCourseDialog:
 
         credits = simpledialog.askinteger(_("academic_calendar.messages.add_course_dialog.title"), _("academic_calendar.messages.add_course_dialog.credits"), initialvalue=3) or 3
         department = simpledialog.askstring(_("academic_calendar.messages.add_course_dialog.title"), _("academic_calendar.messages.add_course_dialog.department")) or None
-        
+
         course_data = {
             'code': code,
             'name': name,
             'credits': credits,
             'department': department
         }
-        
+
         try:
             success, message = calendar_manager.courses.create_course(course_data)
             if success:

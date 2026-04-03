@@ -51,7 +51,7 @@ class AidApplicationDialog:
         self.parent = parent
         self.result = False
         self.create_dialog()
-    
+
     def create_dialog(self):
         """Create aid application dialog"""
         self.dialog = tk.Toplevel(self.parent)
@@ -59,7 +59,7 @@ class AidApplicationDialog:
         self.dialog.geometry("600x500")
         self.dialog.transient(self.parent)
         self.dialog.grab_set()
-        
+
         # Add dialog content here
         ttk.Label(self.dialog, text=_("finance_reporting.dialogs.aid_application_pending")).pack(pady=20)
 
@@ -69,12 +69,12 @@ class AidApplicationDialog:
 
         ttk.Button(button_frame, text=_("common.submit"), command=self.submit_application).pack(side='left', padx=10)
         ttk.Button(button_frame, text=_("common.cancel"), command=self.cancel).pack(side='left', padx=10)
-    
+
     def submit_application(self):
         """Submit application"""
         self.result = True
         self.dialog.destroy()
-    
+
     def cancel(self):
         """Cancel dialog"""
         self.result = False
@@ -88,7 +88,7 @@ class BudgetPlanDialog:
         self.budget_id = budget_id
         self.result = False
         self.create_dialog()
-    
+
     def create_dialog(self):
         """Create budget plan dialog"""
         self.dialog = tk.Toplevel(self.parent)
@@ -106,12 +106,12 @@ class BudgetPlanDialog:
 
         ttk.Button(button_frame, text=_("common.save"), command=self.save_budget).pack(side='left', padx=10)
         ttk.Button(button_frame, text=_("common.cancel"), command=self.cancel).pack(side='left', padx=10)
-    
+
     def save_budget(self):
         """Save budget plan"""
         self.result = True
         self.dialog.destroy()
-    
+
     def cancel(self):
         """Cancel dialog"""
         self.result = False
@@ -124,7 +124,7 @@ class AidDisbursementDialog:
         self.parent = parent
         self.result = False
         self.create_dialog()
-    
+
     def create_dialog(self):
         """Create aid disbursement dialog"""
         self.dialog = tk.Toplevel(self.parent)
@@ -142,12 +142,12 @@ class AidDisbursementDialog:
 
         ttk.Button(button_frame, text=_("finance_reporting.dialogs.disburse"), command=self.disburse_aid).pack(side='left', padx=10)
         ttk.Button(button_frame, text=_("common.cancel"), command=self.cancel).pack(side='left', padx=10)
-    
+
     def disburse_aid(self):
         """Disburse aid"""
         self.result = True
         self.dialog.destroy()
-    
+
     def cancel(self):
         """Cancel dialog"""
         self.result = False

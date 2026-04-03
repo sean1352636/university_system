@@ -316,13 +316,13 @@ class ReportsExportMixin:
         """Refresh all data"""
         try:
             self.update_status("Refreshing data...")
-            
+
             # Reload dashboard data
             self.load_dashboard()
-            
+
             # Refresh current view
             current_tab = self.notebook.tab(self.notebook.select(), "text")
-            
+
             if "Dashboard" in current_tab:
                 self.show_dashboard()
             elif "My Tickets" in current_tab:
@@ -340,9 +340,9 @@ class ReportsExportMixin:
             elif "Notifications" in current_tab:
                 if hasattr(self, 'load_notifications'):
                     self.load_notifications()
-            
+
             self.update_status("Data refreshed")
-            
+
         except Exception as e:
             self.update_status(f"Refresh failed: {e}")
 
@@ -351,38 +351,38 @@ class ReportsExportMixin:
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
             messagebox.showerror("Error", "Staff access required")
             return
-        
+
         export_dialog = tk.Toplevel(self.root)
         export_dialog.title("Export Data")
         export_dialog.geometry("1300x800")
         export_dialog.transient(self.root)
         export_dialog.grab_set()
-        
+
         form_frame = ttk.Frame(export_dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
-        
+
         ttk.Label(form_frame, text="Export Data", style='Title.TLabel').pack(pady=(0, 20))
-        
+
         # Export type
         ttk.Label(form_frame, text="Export Type:").pack(anchor="w")
         export_type_var = tk.StringVar(value="tickets")
-        
+
         export_options = [
             ("Tickets", "tickets"),
-            ("Responses", "responses"), 
+            ("Responses", "responses"),
             ("Metrics", "metrics"),
             ("User Data", "users"),
             ("System Logs", "logs")
         ]
-        
+
         for text, value in export_options:
-            ttk.Radiobutton(form_frame, text=text, variable=export_type_var, 
+            ttk.Radiobutton(form_frame, text=text, variable=export_type_var,
                            value=value).pack(anchor="w", pady=2)
-        
+
         # Date range
         date_frame = ttk.LabelFrame(form_frame, text="Date Range (Optional)", padding="10")
         date_frame.pack(fill="x", pady=(10, 0))
-        
+
         ttk.Label(date_frame, text="From:").grid(row=0, column=0, sticky="w")
         from_date = ttk.Entry(date_frame, width=12)
         from_date.grid(row=0, column=1, padx=(5, 10))
@@ -392,34 +392,34 @@ class ReportsExportMixin:
         to_date = ttk.Entry(date_frame, width=12)
         to_date.grid(row=0, column=3, padx=(5, 0))
         to_date.insert(0, datetime.now().strftime('%Y-%m-%d'))
-        
+
         # Format
         format_frame = ttk.LabelFrame(form_frame, text="Format", padding="10")
         format_frame.pack(fill="x", pady=(10, 0))
-        
+
         format_var = tk.StringVar(value="csv")
         ttk.Radiobutton(format_frame, text="CSV", variable=format_var, value="csv").pack(side="left")
         ttk.Radiobutton(format_frame, text="JSON", variable=format_var, value="json").pack(side="left", padx=(10, 0))
         ttk.Radiobutton(format_frame, text="Excel", variable=format_var, value="xlsx").pack(side="left", padx=(10, 0))
-        
+
         def start_export():
             export_type = export_type_var.get()
             format_type = format_var.get()
             date_from = from_date.get().strip() or None
             date_to = to_date.get().strip() or None
-            
+
             filters = {}
             if date_from:
                 filters['date_from'] = date_from
             if date_to:
                 filters['date_to'] = date_to
-            
+
             export_dialog.destroy()
             self.perform_enhanced_export(export_type, filters, format_type)
-        
+
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x", pady=(20, 0))
-        
+
         ttk.Button(btn_frame, text="Export", command=start_export).pack(side="left", padx=(0, 10))
         ttk.Button(btn_frame, text="Cancel", command=export_dialog.destroy).pack(side="left")
 
@@ -428,31 +428,31 @@ class ReportsExportMixin:
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'admin':
             messagebox.showerror("Error", "Admin access required")
             return
-        
+
         self.clear_content()
-        
+
         user_mgmt_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(user_mgmt_frame, text="User Management")
 
         # Configure frame to expand
         user_mgmt_frame.rowconfigure(0, weight=1)
         user_mgmt_frame.columnconfigure(0, weight=1)
-        
-        ttk.Label(user_mgmt_frame, text="User Management", 
+
+        ttk.Label(user_mgmt_frame, text="User Management",
                  style='Title.TLabel').pack(pady=(0, 20))
-        
+
         # User list
         users_frame = ttk.LabelFrame(user_mgmt_frame, text="System Users", padding="10")
         users_frame.pack(fill="both", expand=True)
-        
+
         # Create treeview for users
         columns = ('ID', 'Username', 'Role', 'Student ID', 'Status', 'Last Login')
         user_tree = ttk.Treeview(users_frame, columns=columns, show='headings', height=15)
-        
+
         for col in columns:
             user_tree.heading(col, text=col)
             user_tree.column(col, width=100)
-        
+
         # Load users
         try:
             from education_system.university_system.infrastructure.database.db import get_connection
@@ -461,20 +461,20 @@ class ReportsExportMixin:
             cursor.execute('SELECT id, username, role, student_id FROM users ORDER BY username')
             users = cursor.fetchall()
             conn.close()
-            
+
             for user in users:
                 user_tree.insert('', 'end', values=(
                     user[0], user[1], user[2], user[3] or 'N/A', 'Active', 'N/A'
                 ))
         except Exception as e:
             ttk.Label(users_frame, text=f"Error loading users: {e}").pack()
-        
+
         user_tree.pack(fill="both", expand=True, pady=(0, 10))
-        
+
         # User actions
         actions_frame = ttk.Frame(users_frame)
         actions_frame.pack(fill="x")
-        
+
         ttk.Button(actions_frame, text="Reset Password",
                   command=lambda: self.reset_user_password(user_tree)).pack(side="left", padx=(0, 5))
         ttk.Button(actions_frame, text="Change Role",
@@ -490,12 +490,12 @@ class ReportsExportMixin:
         if not selection:
             messagebox.showwarning("Warning", "Please select a user")
             return
-        
+
         user_data = user_tree.item(selection[0])['values']
         username = user_data[1]
         user_id, admin_username = self._get_current_user_identity()
         permissions = self.auth.current_user.get('permissions', []) if self.auth and self.auth.current_user else []
-        
+
         if self.auth and self.auth.current_user:
             if 'manage_users' not in permissions and self.auth.current_user['username'] != admin_username:
                 messagebox.showerror("Permission Denied", "You do not have permission to reset passwords.")
@@ -503,7 +503,7 @@ class ReportsExportMixin:
         else:
             messagebox.showerror("Error", "Authentication required to reset passwords.")
             return
-        
+
         if messagebox.askyesno("Confirm", f"Reset password for user '{username}'?"):
             try:
                 if not hasattr(self.auth, '_generate_temp_password') or not hasattr(self.auth, '_hash_password'):
@@ -557,28 +557,28 @@ class ReportsExportMixin:
         if not selection:
             messagebox.showwarning("Warning", "Please select a user")
             return
-        
+
         user_data = user_tree.item(selection[0])['values']
         user_id = user_data[0]
         username = user_data[1]
         current_role = user_data[2]
-        
+
         role_dialog = tk.Toplevel(self.root)
         role_dialog.title(f"Change Role - {username}")
         role_dialog.geometry("800x500")
         role_dialog.transient(self.root)
         role_dialog.grab_set()
-        
+
         form_frame = ttk.Frame(role_dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
-        
+
         ttk.Label(form_frame, text=f"Change role for {username}:").pack(pady=(0, 10))
         ttk.Label(form_frame, text=f"Current role: {current_role}").pack(pady=(0, 10))
-        
+
         role_var = tk.StringVar(value=current_role)
         for role in ['student', 'staff', 'admin']:
             ttk.Radiobutton(form_frame, text=role.title(), variable=role_var, value=role).pack(anchor="w")
-        
+
         def save_role():
             new_role = role_var.get()
             if new_role == current_role:
@@ -615,10 +615,10 @@ class ReportsExportMixin:
                 self.show_user_management()  # Refresh
             except Exception as e:
                 messagebox.showerror("Error", f"Could not change role: {e}")
-        
+
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x", pady=(20, 0))
-        
+
         ttk.Button(btn_frame, text="Save", command=save_role).pack(side="left", padx=(0, 10))
         ttk.Button(btn_frame, text="Cancel", command=role_dialog.destroy).pack(side="left")
 
@@ -755,21 +755,21 @@ class ReportsExportMixin:
                 defaultextension=f".{format_type}",
                 filetypes=[(f"{format_type.upper()} files", f"*.{format_type}"), ("All files", "*.*")]
             )
-            
+
             if not filename:
                 return
-            
+
             self.update_status(f"Exporting {export_type} data...")
-            
+
             # Use existing export functionality
             exported_data = self.support.export_data(export_type, filters, format_type)
-            
+
             with open(filename, 'w') as f:
                 f.write(exported_data)
-            
+
             messagebox.showinfo("Export Complete", f"Data exported to {filename}")
             self.update_status("Export completed")
-            
+
         except Exception as e:
             messagebox.showerror("Export Error", f"Failed to export data: {e}")
             self.update_status("Export failed")
@@ -780,7 +780,7 @@ class ReportsExportMixin:
         help_dialog.title("📖 User Guide")
         help_dialog.geometry("1400x850")
         help_dialog.transient(self.root)
-        
+
         # Help content
         help_content = """
 🎓 Enhanced Student Support Portal - User Guide
@@ -824,14 +824,14 @@ class ReportsExportMixin:
 
 For additional help, contact the support team.
         """
-        
+
         text_widget = scrolledtext.ScrolledText(help_dialog, wrap=tk.WORD, state='disabled', padding=10)
         text_widget.pack(fill="both", expand=True, padx=10, pady=10)
-        
+
         text_widget.config(state='normal')
         text_widget.insert(1.0, help_content)
         text_widget.config(state='disabled')
-        
+
         # Close button
         ttk.Button(help_dialog, text="❌ Close", command=help_dialog.destroy).pack(pady=10)
 
@@ -852,30 +852,30 @@ Features:
 
 © 2024 Student Support System
         """
-        
+
         messagebox.showinfo("About", about_text)
 
     def show_reports(self):
         """Show reports interface (staff only)"""
         self.clear_content()
-        
+
         reports_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(reports_frame, text="📊 Reports")
 
         # Configure frame to expand
         reports_frame.rowconfigure(0, weight=1)
         reports_frame.columnconfigure(0, weight=1)
-        
+
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
-            ttk.Label(reports_frame, text="❌ Staff access required", 
+            ttk.Label(reports_frame, text="❌ Staff access required",
                      style='Title.TLabel').pack(pady=20)
             return
-        
+
         # Reports interface
-        ttk.Label(reports_frame, text="📊 Support Reports", 
+        ttk.Label(reports_frame, text="📊 Support Reports",
                  style='Title.TLabel').pack(pady=(0, 20))
-        
+
         # Report types
         report_types = [
             ("📊 Ticket Summary Report", "ticket_summary"),
@@ -883,14 +883,14 @@ Features:
             ("⭐ Satisfaction Report", "satisfaction"),
             ("📂 Category Analysis", "category_analysis")
         ]
-        
+
         for name, report_type in report_types:
             btn_frame = ttk.Frame(reports_frame)
             btn_frame.pack(fill="x", pady=5)
-            
-            ttk.Button(btn_frame, text=name, 
+
+            ttk.Button(btn_frame, text=name,
                       command=lambda rt=report_type: self.generate_report(rt)).pack(side="left")
-            
+
             # Add description
             descriptions = {
                 "ticket_summary": "Overview of tickets by status, category, and priority",
@@ -898,8 +898,8 @@ Features:
                 "satisfaction": "Customer satisfaction ratings and feedback",
                 "category_analysis": "Analysis of tickets by support category"
             }
-            
-            ttk.Label(btn_frame, text=descriptions.get(report_type, ""), 
+
+            ttk.Label(btn_frame, text=descriptions.get(report_type, ""),
                      foreground=self.colors['text_secondary']).pack(side="left", padx=(10, 0))
 
     def generate_report(self, report_type):
@@ -910,35 +910,35 @@ Features:
         date_dialog.geometry("900x550")
         date_dialog.transient(self.root)
         date_dialog.grab_set()
-        
+
         # Date range form
         form_frame = ttk.Frame(date_dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
-        
+
         ttk.Label(form_frame, text="Select Report Date Range", style='Heading.TLabel').pack(pady=(0, 20))
-        
+
         # Start date
         ttk.Label(form_frame, text="Start Date (YYYY-MM-DD):").pack(anchor="w")
         start_date_var = tk.StringVar(value=(datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d'))
         start_entry = ttk.Entry(form_frame, textvariable=start_date_var, width=20)
         start_entry.pack(fill="x", pady=(5, 10))
-        
+
         # End date
         ttk.Label(form_frame, text="End Date (YYYY-MM-DD):").pack(anchor="w")
         end_date_var = tk.StringVar(value=datetime.now().strftime('%Y-%m-%d'))
         end_entry = ttk.Entry(form_frame, textvariable=end_date_var, width=20)
         end_entry.pack(fill="x", pady=(5, 20))
-        
+
         # Buttons
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x")
-        
+
         def generate():
             start_date = start_date_var.get()
             end_date = end_date_var.get()
             date_dialog.destroy()
             self.run_report_generation(report_type, start_date, end_date)
-        
+
         ttk.Button(btn_frame, text="📊 Generate Report", command=generate).pack(side="left", padx=(0, 10))
         ttk.Button(btn_frame, text="❌ Cancel", command=date_dialog.destroy).pack(side="left")
 
@@ -947,17 +947,17 @@ Features:
         def generate_in_background():
             try:
                 self.update_status(f"Generating {report_type} report...")
-                
+
                 date_range = {'start': start_date, 'end': end_date}
                 report_data = self.support.generate_reports(report_type, date_range)
-                
+
                 # Show report in new window
                 self.root.after(0, lambda: self.show_report_window(report_type, report_data, date_range))
-                
+
             except Exception as e:
                 self.root.after(0, lambda _e=e: messagebox.showerror("Report Error", f"Failed to generate report: {_e}"))
                 self.root.after(0, lambda: self.update_status("Report generation failed"))
-        
+
         # Run in background thread
         threading.Thread(target=generate_in_background, daemon=True).start()
 
@@ -1011,11 +1011,11 @@ Features:
         # Title
         title_text = f"📊 {report_type.replace('_', ' ').title()} Report"
         ttk.Label(parent, text=title_text, style='Title.TLabel').pack(pady=(0, 10))
-        
+
         # Date range
         date_text = f"📅 Period: {date_range['start']} to {date_range['end']}"
         ttk.Label(parent, text=date_text, font=('Segoe UI', 10)).pack(pady=(0, 20))
-        
+
         # Key metrics based on report type
         if report_type == 'ticket_summary':
             metrics = [
@@ -1040,23 +1040,23 @@ Features:
             ]
         else:
             metrics = []
-        
+
         # Display metrics in a grid
         if metrics:
             metrics_frame = ttk.LabelFrame(parent, text="📈 Key Metrics", padding="15")
             metrics_frame.pack(fill="x", pady=(0, 20))
-            
+
             metrics_grid = ttk.Frame(metrics_frame)
             metrics_grid.pack()
-            
+
             for i, (label, value) in enumerate(metrics):
                 row, col = i // 2, i % 2
-                
+
                 metric_frame = ttk.Frame(metrics_grid)
                 metric_frame.grid(row=row, column=col, padx=20, pady=10, sticky="w")
-                
+
                 ttk.Label(metric_frame, text=label, font=('Segoe UI', 10)).pack()
-                ttk.Label(metric_frame, text=value, font=('Segoe UI', 14, 'bold'), 
+                ttk.Label(metric_frame, text=value, font=('Segoe UI', 14, 'bold'),
                          foreground=self.colors['primary']).pack()
 
     def create_report_data_view(self, parent, report_data):
@@ -1064,7 +1064,7 @@ Features:
         # Create scrollable text area for JSON data
         data_text = scrolledtext.ScrolledText(parent, wrap=tk.WORD, state='disabled')
         data_text.pack(fill="both", expand=True)
-        
+
         # Format and display data
         data_text.config(state='normal')
         data_text.insert(1.0, json.dumps(report_data, indent=2, default=str))
@@ -1099,17 +1099,17 @@ Features:
     def export_report_data(self, report_type, report_data):
         """Export report data to file"""
         format_type = self.export_format_var.get().lower()
-        
+
         # File dialog
         filename = filedialog.asksaveasfilename(
             title="Save Report",
             defaultextension=f".{format_type}",
             filetypes=[(f"{format_type.upper()} files", f"*.{format_type}"), ("All files", "*.*")]
         )
-        
+
         if not filename:
             return
-        
+
         try:
             if format_type == "json":
                 with open(filename, 'w') as f:
@@ -1124,7 +1124,7 @@ Features:
                     f.write(f"Report: {report_type}\n")
                     f.write("=" * 50 + "\n")
                     f.write(json.dumps(report_data, indent=2, default=str))
-            
+
             messagebox.showinfo("Export Complete", f"Report exported to {filename}")
 
         except Exception as e:

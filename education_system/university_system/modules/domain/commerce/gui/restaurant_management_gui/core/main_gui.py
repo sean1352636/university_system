@@ -100,9 +100,9 @@ def init_db():
         conn = get_db_connection()
         if not conn:
             return False
-            
+
         cursor = conn.cursor()
-        
+
         # Create basic tables if they don't exist
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS menu_items (
@@ -117,9 +117,9 @@ def init_db():
                 available BOOLEAN DEFAULT 1
             )
         ''')
-        
+
         # restaurant_orders table removed - now using unified 'orders' table with source_type='restaurant'
-        
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS restaurant_customers (
                 customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -131,7 +131,7 @@ def init_db():
                 total_spent REAL DEFAULT 0
             )
         ''')
-        
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS restaurant_tables (
                 table_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -141,7 +141,7 @@ def init_db():
                 table_type TEXT DEFAULT 'Standard'
             )
         ''')
-        
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS restaurant_staff (
                 staff_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -152,7 +152,7 @@ def init_db():
                 performance_score REAL
             )
         ''')
-        
+
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS restaurant_inventory (
                 item_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -163,7 +163,7 @@ def init_db():
                 reorder_level REAL DEFAULT 0
             )
         ''')
-        
+
         conn.commit()
         conn.close()
         return True

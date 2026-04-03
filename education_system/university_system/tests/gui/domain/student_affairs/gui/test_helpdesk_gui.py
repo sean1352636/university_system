@@ -77,11 +77,13 @@ class TestHelpdeskGUI:
     @patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base.init_helpdesk_db')
     @patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
     @patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base.get_auth')
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base.get_global_auth')
     @patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base.messagebox')
-    def test_initialization_without_auth(self, mock_messagebox, mock_get_auth, mock_permissions,
-                                        mock_init_db, mock_root):
+    def test_initialization_without_auth(self, mock_messagebox, mock_get_global_auth, mock_get_auth,
+                                        mock_permissions, mock_init_db, mock_root):
         """Test GUI initialization without authentication"""
         mock_get_auth.return_value = None
+        mock_get_global_auth.return_value = None
 
         with patch.object(HelpdeskGUI, 'ensure_subject_column'):
             gui = HelpdeskGUI(mock_root, None)
@@ -94,7 +96,7 @@ class TestHelpdeskGUI:
     @patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
     def test_ensure_subject_column(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test database migration for subject column"""
-        with patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base.get_connection') as mock_conn:
+        with patch('education_system.university_system.infrastructure.database.db.get_connection') as mock_conn:
             mock_db = Mock()
             mock_cursor = Mock()
             mock_conn.return_value = mock_db
@@ -153,14 +155,16 @@ class TestHelpdeskGUI:
 
     @patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base.init_helpdesk_db')
     @patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
-    def test_setup_main_window(self, mock_permissions, mock_init_db, mock_root, mock_auth):
+    @patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base._t', side_effect=lambda key, **kw: kw.get('default', key))
+    def test_setup_main_window(self, mock_t, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test main window setup"""
         with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
              patch.object(HelpdeskGUI, 'setup_current_user'), \
              patch.object(HelpdeskGUI, 'setup_styles'), \
              patch.object(HelpdeskGUI, 'create_menu_bar'), \
              patch.object(HelpdeskGUI, 'show_main_dashboard'), \
-             patch.object(HelpdeskGUI, 'center_window'):
+             patch.object(HelpdeskGUI, 'center_window'), \
+             patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base.ttk.Frame'):
 
             gui = HelpdeskGUI(mock_root, mock_auth)
 
@@ -204,7 +208,7 @@ class TestHelpdeskGUI:
 
     @patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base.init_helpdesk_db')
     @patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base.setup_enhanced_helpdesk_permissions')
-    @patch('education_system.university_system.modules.domain.student_affairs.gui.helpdesk.base.get_connection')
+    @patch('education_system.university_system.infrastructure.database.db.get_connection')
     def test_database_operations_use_context_manager(self, mock_conn, mock_permissions,
                                                      mock_init_db, mock_root, mock_auth):
         """Test that database operations use context manager"""
@@ -214,8 +218,7 @@ class TestHelpdeskGUI:
         mock_db.cursor.return_value = mock_cursor
         mock_cursor.fetchall.return_value = []
 
-        with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
-             patch.object(HelpdeskGUI, 'setup_current_user'), \
+        with patch.object(HelpdeskGUI, 'setup_current_user'), \
              patch.object(HelpdeskGUI, 'setup_styles'), \
              patch.object(HelpdeskGUI, 'setup_main_window'), \
              patch.object(HelpdeskGUI, 'create_menu_bar'), \
@@ -251,7 +254,6 @@ class TestHelpdeskGUI:
     def test_authentication_integration(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test authentication system integration"""
         with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
-             patch.object(HelpdeskGUI, 'setup_current_user'), \
              patch.object(HelpdeskGUI, 'setup_styles'), \
              patch.object(HelpdeskGUI, 'setup_main_window'), \
              patch.object(HelpdeskGUI, 'create_menu_bar'), \
@@ -268,7 +270,6 @@ class TestHelpdeskGUI:
     def test_role_based_access(self, mock_permissions, mock_init_db, mock_root, mock_auth):
         """Test role-based access control"""
         with patch.object(HelpdeskGUI, 'ensure_subject_column'), \
-             patch.object(HelpdeskGUI, 'setup_current_user'), \
              patch.object(HelpdeskGUI, 'setup_styles'), \
              patch.object(HelpdeskGUI, 'setup_main_window'), \
              patch.object(HelpdeskGUI, 'create_menu_bar'), \

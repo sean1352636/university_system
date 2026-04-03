@@ -50,9 +50,9 @@ def sample_candidates():
 class TestRankedChoiceVoting:
     """Tests for ranked_choice_voting function."""
 
-    @patch('builtins.input', side_effect=['1', '1', '2', '3', '0', 'y'])
+    @patch('builtins.input', side_effect=['1', '1', '2', '3', 'y'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context.auth')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.union_context.auth')
     def test_ranked_vote_success(self, mock_auth, mock_print, mock_input,
                                  mock_cursor, mock_conn, sample_elections, sample_candidates):
         """Test successfully casting ranked choice vote."""
@@ -73,7 +73,7 @@ class TestRankedChoiceVoting:
         mock_conn.commit.assert_called()
 
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context.auth')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.union_context.auth')
     def test_ranked_vote_no_elections(self, mock_auth, mock_print, mock_cursor, mock_conn):
         """Test ranked voting when no elections available."""
         mock_auth.current_user = {'id': 1}
@@ -86,9 +86,9 @@ class TestRankedChoiceVoting:
         # Should indicate no elections
         assert any('No elections' in str(call) for call in mock_print.call_args_list)
 
-    @patch('builtins.input', side_effect=['1', '0', 'y'])
+    @patch('builtins.input', side_effect=['1', '0', '0', '0'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context.auth')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.union_context.auth')
     def test_ranked_vote_no_preferences(self, mock_auth, mock_print, mock_input,
                                         mock_cursor, mock_conn, sample_elections, sample_candidates):
         """Test ranked voting with no preferences selected."""
@@ -108,7 +108,7 @@ class TestConfigureVotingMethods:
 
     @patch('builtins.input', side_effect=['100'])  # Exit choice
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context.auth')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.union_context.auth')
     def test_configure_initializes_defaults(self, mock_auth, mock_print, mock_input,
                                             mock_cursor, mock_conn):
         """Test that configuration initializes with defaults."""
@@ -128,7 +128,7 @@ class TestConfigureVotingMethods:
 
     @patch('builtins.input', side_effect=['100'])  # Exit
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context.auth')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.union_context.auth')
     def test_configure_displays_settings(self, mock_auth, mock_print, mock_input,
                                          mock_cursor, mock_conn):
         """Test that configuration displays current settings."""
@@ -179,8 +179,9 @@ class TestHelperFunctions:
         assert any('Spending' in str(call) or 'expense' in str(call).lower()
                   for call in mock_print.call_args_list)
 
+    @patch('builtins.input', return_value='')
     @patch('builtins.print')
-    def test_access_control_review(self, mock_print, mock_cursor):
+    def test_access_control_review(self, mock_print, mock_input, mock_cursor):
         """Test access control review."""
         admin_users = [
             (1, 'admin1', 'admin', '2024-01-01', '2024-11-15'),
@@ -197,7 +198,7 @@ class TestHelperFunctions:
 class TestLogConfigurationChange:
     """Tests for log_configuration_change function."""
 
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context.auth')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.union_context.auth')
     def test_log_change_creates_audit_table(self, mock_auth, mock_cursor, mock_conn):
         """Test that logging creates audit table."""
         mock_auth.current_user = {'id': 1}
@@ -220,9 +221,11 @@ class TestEmailNotifications:
 
     @patch('builtins.input', return_value='test@example.com')
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context.auth')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.union_context.auth')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.voting.render_template',
+           return_value=('Test Subject', 'Test Body'))
     @patch('education_system.university_system.infrastructure.email.queue_email', return_value=True)
-    def test_email_notification_success(self, mock_email, mock_auth, mock_print,
+    def test_email_notification_success(self, mock_email, mock_render, mock_auth, mock_print,
                                         mock_input, mock_cursor, mock_conn):
         """Test sending email notification."""
         mock_auth.current_user = {'id': 1, 'username': 'testuser'}

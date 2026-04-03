@@ -127,7 +127,7 @@ class AdvancedSearchDialog:
         ttk.Button(button_frame, text=_("common.clear"), command=self._clear_search).pack(side=tk.LEFT, padx=(10, 0))
         ttk.Button(button_frame, text=_("academics.calendar.export_results"), command=self._export_results).pack(side=tk.LEFT, padx=(10, 0))
         ttk.Button(button_frame, text=_("common.close"), command=self.dialog.destroy).pack(side=tk.RIGHT)
-    
+
     def _perform_search(self):
         """Perform the search"""
         try:
@@ -239,7 +239,7 @@ class AdvancedSearchDialog:
                 messagebox.showinfo(_("academics.calendar.export_complete"), _("academics.calendar.results_exported", filename=filename), parent=self.dialog)
             except Exception as e:
                 messagebox.showerror(_("academics.calendar.export_error"), _("academics.calendar.export_failed", error=str(e)), parent=self.dialog)
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()

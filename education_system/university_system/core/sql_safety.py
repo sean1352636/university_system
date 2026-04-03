@@ -647,6 +647,11 @@ def validate_identifier(identifier: str, identifier_type: str = "identifier") ->
             f"{identifier_type.capitalize()}s must start with a letter or underscore "
             "and contain only alphanumeric characters and underscores."
         )
+    if identifier.endswith("_"):
+        raise SQLIdentifierError(
+            f"Invalid {identifier_type} format: {identifier!r}. "
+            f"{identifier_type.capitalize()}s must not end with an underscore."
+        )
     return identifier
 
 def get_valid_tables(conn: Optional[sqlite3.Connection] = None) -> Set[str]:

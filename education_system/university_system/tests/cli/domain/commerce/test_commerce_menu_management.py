@@ -81,20 +81,21 @@ def mock_db_connection(tmp_path):
     ''')
 
     cursor.execute('''
-        CREATE TABLE restaurant_orders (
+        CREATE TABLE orders (
             order_id TEXT PRIMARY KEY,
             customer_id TEXT,
             table_id TEXT,
-            order_time TEXT,
-            total_price REAL,
-            status TEXT,
+            order_date TEXT,
+            total_amount REAL,
+            order_status TEXT,
             payment_method TEXT,
-            notes TEXT
+            notes TEXT,
+            source_type TEXT DEFAULT 'restaurant'
         )
     ''')
 
     cursor.execute('''
-        CREATE TABLE restaurant_order_items (
+        CREATE TABLE order_items (
             order_item_id TEXT PRIMARY KEY,
             order_id TEXT,
             item_id TEXT,
@@ -102,7 +103,7 @@ def mock_db_connection(tmp_path):
             unit_price REAL,
             subtotal REAL,
             special_instructions TEXT,
-            FOREIGN KEY (order_id) REFERENCES restaurant_orders(order_id),
+            FOREIGN KEY (order_id) REFERENCES orders(order_id),
             FOREIGN KEY (item_id) REFERENCES menu_items(item_id)
         )
     ''')
@@ -441,14 +442,14 @@ class TestMenuAnalytics:
 
         # Add orders
         cursor.execute('''
-            INSERT INTO restaurant_orders
-            (order_id, customer_id, table_id, order_time, total_price, status, payment_method, notes)
+            INSERT INTO orders
+            (order_id, customer_id, table_id, order_date, total_amount, order_status, payment_method, notes)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', ('ORD001', 'CUST001', 'T001', datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
               25.97, 'Completed', 'Card', None))
 
         cursor.execute('''
-            INSERT INTO restaurant_order_items
+            INSERT INTO order_items
             (order_item_id, order_id, item_id, quantity, unit_price, subtotal, special_instructions)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', ('OI001', 'ORD001', 'M001', 2, 12.99, 25.98, None))
@@ -528,17 +529,17 @@ class TestOrderAnalytics:
 
         # Add test orders
         for i in range(3):
-            order_time = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d %H:%M:%S')
+            order_date = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d %H:%M:%S')
             cursor.execute('''
-                INSERT INTO restaurant_orders
-                (order_id, customer_id, table_id, order_time, total_price, status, payment_method, notes)
+                INSERT INTO orders
+                (order_id, customer_id, table_id, order_date, total_amount, order_status, payment_method, notes)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (f'ORD00{i+1}', 'CUST001', 'T001', order_time, 25.99 * (i+1),
+            ''', (f'ORD00{i+1}', 'CUST001', 'T001', order_date, 25.99 * (i+1),
                   'Completed', 'Card', None))
         mock_db_connection.commit()
 
-        # Mock user input
-        mock_input.side_effect = ['1']  # Daily summary
+        # Mock user input: '1' for daily summary, '6' to go back
+        mock_input.side_effect = ['1', '6']
 
         # Execute
         menu_management.order_analytics()

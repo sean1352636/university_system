@@ -117,7 +117,7 @@ class VirtualClassroomManager:
                 if active_only:
                     query += " AND is_active = 1"
 
-                query += " ORDER BY created_at DESC"
+                query += " ORDER BY created_at DESC, classroom_id DESC"
 
                 cursor.execute(query, params)
                 return [self._row_to_dict(cursor, row) for row in cursor.fetchall()]
@@ -218,7 +218,7 @@ class VirtualClassroomManager:
                 query = "SELECT * FROM virtual_classrooms"
                 if active_only:
                     query += " WHERE is_active = 1"
-                query += " ORDER BY created_at DESC"
+                query += " ORDER BY created_at DESC, classroom_id DESC"
 
                 cursor.execute(query)
                 return [self._row_to_dict(cursor, row) for row in cursor.fetchall()]

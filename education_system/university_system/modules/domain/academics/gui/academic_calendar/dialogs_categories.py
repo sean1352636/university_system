@@ -10,11 +10,11 @@ gui_logger = logging.getLogger(__name__)
 
 class EventCategoriesDialog:
     """Dialog for managing event categories"""
-    
+
     def __init__(self, parent, calendar_manager, callback=None):
         self.calendar_manager = calendar_manager
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.categories.dialog_title"))
         self.dialog.geometry("700x500")
@@ -72,32 +72,32 @@ class EventCategoriesDialog:
                   command=self._add_tag).pack(side=tk.LEFT, padx=5)
         ttk.Button(tag_action_frame, text=_("academic_calendar.categories.assign_to_event"),
                   command=self._assign_tag).pack(side=tk.LEFT, padx=5)
-        
+
         # Tags listbox
         self.tags_listbox = tk.Listbox(tags_frame)
         self.tags_listbox.pack(fill=tk.BOTH, expand=True)
-        
+
         # Close button
         ttk.Button(main_frame, text=_("common.close"), command=self.dialog.destroy).pack(pady=(15, 0))
-    
+
     def _load_categories(self):
         """Load categories into tree"""
         try:
             # Clear existing items
             for item in self.categories_tree.get_children():
                 self.categories_tree.delete(item)
-            
+
             # Get categories from database
             categories = self.calendar_manager.db_manager.execute_query(
                 "SELECT * FROM event_categories ORDER BY name"
             )
-            
+
             for category in categories:
                 self.categories_tree.insert('', 'end',
                                           text=category['name'],
                                           values=(category['color_code'] or 'N/A',
                                                 category['description'] or ''))
-            
+
             # Load tags
             self.tags_listbox.delete(0, tk.END)
             tags = self.calendar_manager.db_manager.execute_query(
@@ -105,22 +105,22 @@ class EventCategoriesDialog:
             )
             for tag in tags:
                 self.tags_listbox.insert(tk.END, tag['name'])
-                
+
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.categories.load_failed", error=e))
-    
+
     def _add_category(self):
         """Add new category"""
         AddCategoryDialog(self.dialog, self.calendar_manager, self._load_categories)
-    
+
     def _add_tag(self):
         """Add new tag"""
         AddTagDialog(self.dialog, self.calendar_manager, self._load_categories)
-    
+
     def _assign_tag(self):
         """Assign tag to event"""
         AssignTagDialog(self.dialog, self.calendar_manager, self._load_categories)
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()

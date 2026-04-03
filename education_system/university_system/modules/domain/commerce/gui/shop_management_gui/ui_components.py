@@ -85,20 +85,20 @@ def show_about(self):
 
     # Make it modal
     about_window.transient(self.root)
-    
+
     main_frame = ttk.Frame(about_window, padding="20")
     main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-    
+
     # About content
-    ttk.Label(main_frame, text="University Shop Management System", 
+    ttk.Label(main_frame, text="University Shop Management System",
              style='Title.TLabel').grid(row=0, column=0, pady=10)
-    
+
     ttk.Label(main_frame, text="GUI Version with CLI Compatibility").grid(row=1, column=0, pady=5)
     ttk.Label(main_frame, text="Built with Python & Tkinter").grid(row=2, column=0, pady=5)
-    
+
     info_text = """
-This GUI application provides a modern interface for the 
-University Shop Management System while maintaining full 
+This GUI application provides a modern interface for the
+University Shop Management System while maintaining full
 backward compatibility with the original CLI version.
 
 Features:
@@ -110,10 +110,10 @@ Features:
 • Discount management
 • Full CLI function integration
 
-All original CLI functions remain available and can be 
+All original CLI functions remain available and can be
 called directly for automation or scripting purposes.
     """
-    
+
     text_widget = tk.Text(main_frame, height=15, width=60, wrap=tk.WORD, state='disabled')
     text_widget.grid(row=3, column=0, pady=10)
     text_widget.configure(state='normal')
@@ -125,17 +125,17 @@ called directly for automation or scripting purposes.
     # Now that window is fully created, make it modal
     about_window.update_idletasks()
     about_window.grab_set()
-    
+
 # Additional management functions
 
 def show_progress(self):
     """Show progress bar"""
     self.progress_bar.grid()
-    
+
 
 def hide_progress(self):
     """Hide progress bar"""
     self.progress_bar.grid_remove()
-    
+
 # Additional utility functions for CLI compatibility
 

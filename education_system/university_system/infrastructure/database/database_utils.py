@@ -40,7 +40,7 @@ class DatabaseManager:
         self.retry_delay: float = retry_delay
         self.conn = None  # type: Optional[sqlite3.Connection]
         self.cursor = None  # type: Optional[sqlite3.Cursor]
-    
+
     def __enter__(self):
         for attempt in range(self.max_retries):
             try:
@@ -55,7 +55,7 @@ class DatabaseManager:
                     self.retry_delay *= 2  # Exponential backoff
                 else:
                     raise
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.conn:
             if exc_type is None:
@@ -64,18 +64,18 @@ class DatabaseManager:
                 self.conn.rollback()
             self.conn.close()
         return False
-    
+
     def execute(self, query, params=None):
         if params:
             return self.cursor.execute(query, params)
         return self.cursor.execute(query)
-    
+
     def executemany(self, query, params):
         return self.cursor.executemany(query, params)
-    
+
     def fetchone(self):
         return self.cursor.fetchone()
-    
+
     def fetchall(self):
         return self.cursor.fetchall()
 

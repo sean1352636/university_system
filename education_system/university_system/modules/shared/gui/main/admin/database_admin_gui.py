@@ -5,7 +5,7 @@ import logging
 
 # Alias for translation function
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
-from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier
+from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier  # nosec B608
 
 # Import GUI availability flags and classes
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import (

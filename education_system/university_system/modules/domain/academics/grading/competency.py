@@ -274,7 +274,7 @@ def record_student_competencies():
 
         # Get current competency assessments
         cursor.execute('''
-        SELECT sc.id, c.competency_id, c.name, c.category, 
+        SELECT sc.id, c.competency_id, c.name, c.category,
                cl.level_id, cl.level_name, sc.assessment_date
         FROM student_competencies sc
         JOIN competencies c ON sc.competency_id = c.competency_id

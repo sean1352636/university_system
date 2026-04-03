@@ -5,7 +5,10 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Union
 
-import psutil
+try:
+    import psutil
+except ImportError:  # pragma: no cover - optional dependency
+    psutil = None
 
 from education_system.university_system.modules.shared.utils.simple_activity_logger.storage import DatabaseLogger
 
@@ -120,6 +123,19 @@ class AnalyticsEngine:
     def get_system_health_metrics(self) -> Dict[str, Any]:
         """Get system health and performance metrics"""
         try:
+            if psutil is None:
+                return {
+                    'cpu_usage': 0,
+                    'memory_usage': 0,
+                    'disk_usage': 0,
+                    'active_connections': 0,
+                    'uptime': 0,
+                    'load_average': [0, 0, 0],
+                    'available_memory': 0,
+                    'total_memory': 0,
+                    'disk_io': {},
+                    'network_io': {},
+                }
             return {
                 'cpu_usage': psutil.cpu_percent(interval=1),
                 'memory_usage': psutil.virtual_memory().percent,

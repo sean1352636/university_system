@@ -94,7 +94,7 @@ def create_adversarial_detection_view(self, parent):
     ttk.Checkbutton(methods_frame, text="Spacing Anomalies", variable=self.detect_spacing_anomalies_var).pack(anchor='w')
 
     # Test button
-    ttk.Button(adversarial_card, text="Test Evasion Detection", 
+    ttk.Button(adversarial_card, text="Test Evasion Detection",
               command=self.test_adversarial_detection).pack(pady=15)
 
 
@@ -154,13 +154,13 @@ def show_adversarial_results(self, result):
         risk_level = result.risk_level.value if hasattr(result.risk_level, 'value') else str(result.risk_level)
         evidence = result.evidence
 
-        ttk.Label(results_frame, text=f"Evasion Score: {score:.1%}", 
+        ttk.Label(results_frame, text=f"Evasion Score: {score:.1%}",
                  font=('Segoe UI', 12)).pack(anchor='w', padx=15, pady=5)
-        ttk.Label(results_frame, text=f"Risk Level: {risk_level}", 
+        ttk.Label(results_frame, text=f"Risk Level: {risk_level}",
                  font=('Segoe UI', 12)).pack(anchor='w', padx=15, pady=5)
 
         if evidence:
-            ttk.Label(results_frame, text="Evidence Found:", 
+            ttk.Label(results_frame, text="Evidence Found:",
                      font=('Segoe UI', 10, 'bold')).pack(anchor='w', padx=15, pady=(10, 5))
             for key, value in evidence.items():
                 ttk.Label(results_frame, text=f"  {key}: {value}").pack(anchor='w', padx=25, pady=2)
@@ -225,11 +225,11 @@ def create_blockchain_audit_view(self, parent):
     controls_frame = ttk.Frame(blockchain_card)
     controls_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(controls_frame, text="Mine Pending Block", 
+    ttk.Button(controls_frame, text="Mine Pending Block",
               command=self.mine_blockchain_block).pack(side='left', padx=(0, 10))
-    ttk.Button(controls_frame, text="Verify Chain Integrity", 
+    ttk.Button(controls_frame, text="Verify Chain Integrity",
               command=self.verify_blockchain_integrity).pack(side='left', padx=(0, 10))
-    ttk.Button(controls_frame, text="View Chain History", 
+    ttk.Button(controls_frame, text="View Chain History",
               command=self.view_blockchain_history).pack(side='left')
 
 
@@ -635,11 +635,11 @@ def create_benchmarking_view(self, parent):
 
     ttk.Label(input_frame, text="Period:").pack(side='left')
     self.benchmark_period_var = tk.StringVar(value="1_month")
-    period_combo = ttk.Combobox(input_frame, textvariable=self.benchmark_period_var, 
+    period_combo = ttk.Combobox(input_frame, textvariable=self.benchmark_period_var,
                                values=["1_month", "3_months", "1_year"], width=15)
     period_combo.pack(side='left', padx=(5, 15))
 
-    ttk.Button(input_frame, text="Generate Report", 
+    ttk.Button(input_frame, text="Generate Report",
               command=self.generate_benchmark_report).pack(side='right')
 
     # Results display
@@ -673,7 +673,7 @@ def display_benchmark_report(self, report):
         widget.destroy()
 
     if 'error' in report:
-        ttk.Label(self.benchmark_results_frame, text=f"Error: {report['error']}", 
+        ttk.Label(self.benchmark_results_frame, text=f"Error: {report['error']}",
                  style='Subtitle.TLabel').pack(anchor='w', padx=10, pady=10)
         return
 
@@ -707,7 +707,7 @@ def display_benchmark_report(self, report):
             indicator_frame.pack(fill='x')
 
             ttk.Label(indicator_frame, text=f"{key.replace('_', ' ').title()}:").pack(side='left')
-            status_label = tk.Label(indicator_frame, text=value.replace('_', ' ').title(), 
+            status_label = tk.Label(indicator_frame, text=value.replace('_', ' ').title(),
                                   fg=color, bg=self.colors['bg_tertiary'])
             status_label.pack(side='left', padx=(10, 0))
 

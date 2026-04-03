@@ -175,7 +175,7 @@ def show_empty_results(self):
     for widget in self.results_container.winfo_children():
         widget.destroy()
 
-    empty_label = ttk.Label(self.results_container, 
+    empty_label = ttk.Label(self.results_container,
                           text="Enter text and click 'Analyze Text' to see results",
                           style='Subtitle.TLabel')
     empty_label.pack(expand=True)
@@ -328,11 +328,11 @@ def create_score_display(self, parent, result):
     risk_color = self.get_risk_color(ai_score)
     risk_text = self.get_risk_text(ai_score)
 
-    risk_indicator = tk.Label(header_frame, text="●", font=('Arial', 20), 
+    risk_indicator = tk.Label(header_frame, text="●", font=('Arial', 20),
                             fg=risk_color, bg=self.colors['bg_tertiary'])
     risk_indicator.pack(side='left')
 
-    ttk.Label(header_frame, text=f"{risk_text} Risk", 
+    ttk.Label(header_frame, text=f"{risk_text} Risk",
              font=('Segoe UI', 14, 'bold')).pack(side='left', padx=(10, 0))
 
     # Score display
@@ -340,7 +340,7 @@ def create_score_display(self, parent, result):
     score_display_frame.pack(fill='x', padx=15, pady=(0, 15))
 
     # AI Score
-    score_label = ttk.Label(score_display_frame, text=f"{ai_score:.1%}", 
+    score_label = ttk.Label(score_display_frame, text=f"{ai_score:.1%}",
                            font=('Segoe UI', 32, 'bold'))
     score_label.pack(side='left')
 
@@ -348,11 +348,11 @@ def create_score_display(self, parent, result):
     details_frame = ttk.Frame(score_display_frame)
     details_frame.pack(side='left', padx=(20, 0), fill='y')
 
-    ttk.Label(details_frame, text="AI Generated Probability", 
+    ttk.Label(details_frame, text="AI Generated Probability",
              style='Subtitle.TLabel').pack(anchor='w')
-    ttk.Label(details_frame, text=f"Confidence: {confidence:.1%}", 
+    ttk.Label(details_frame, text=f"Confidence: {confidence:.1%}",
              style='Subtitle.TLabel').pack(anchor='w')
-    ttk.Label(details_frame, text=f"Status: {'AI Generated' if is_ai_generated else 'Human Written'}", 
+    ttk.Label(details_frame, text=f"Status: {'AI Generated' if is_ai_generated else 'Human Written'}",
              style='Subtitle.TLabel').pack(anchor='w')
 
 
@@ -361,7 +361,7 @@ def create_detailed_analysis(self, parent, result):
     details_frame = ttk.Frame(parent, style='Card.TFrame')
     details_frame.pack(fill='both', expand=True, pady=(0, 10))
 
-    ttk.Label(details_frame, text="Detailed Analysis", 
+    ttk.Label(details_frame, text="Detailed Analysis",
              style='Title.TLabel').pack(anchor='w', padx=15, pady=(15, 10))
 
     # Analysis notebook
@@ -413,7 +413,7 @@ def create_pattern_tab(self, notebook, result):
 
     # If no patterns, show default
     if not patterns:
-        ttk.Label(scrollable_frame, text="No specific patterns detected", 
+        ttk.Label(scrollable_frame, text="No specific patterns detected",
                  style='Subtitle.TLabel').pack(pady=20)
 
     canvas.pack(side="left", fill="both", expand=True)
@@ -429,7 +429,7 @@ def create_pattern_indicator(self, parent, pattern_name, pattern_data):
     header_frame = ttk.Frame(pattern_frame)
     header_frame.pack(fill='x', padx=10, pady=10)
 
-    ttk.Label(header_frame, text=pattern_name.replace('_', ' ').title(), 
+    ttk.Label(header_frame, text=pattern_name.replace('_', ' ').title(),
              font=('Segoe UI', 10, 'bold')).pack(side='left')
 
     # Score and bar
@@ -452,7 +452,7 @@ def create_pattern_indicator(self, parent, pattern_name, pattern_data):
 
     # Additional info
     if matches > 0:
-        ttk.Label(pattern_frame, text=f"Matches found: {matches}", 
+        ttk.Label(pattern_frame, text=f"Matches found: {matches}",
                  style='Subtitle.TLabel').pack(anchor='w', padx=10, pady=(0, 10))
 
 
@@ -509,12 +509,12 @@ def create_sentence_tab(self, notebook, result):
         ttk.Label(legend_frame, text="Legend:").pack(side='left')
 
         for color, label in [('high_risk', 'High Risk'), ('medium_risk', 'Medium Risk'), ('low_risk', 'Low Risk')]:
-            legend_item = tk.Label(legend_frame, text=f"● {label}", fg=self.colors['danger'] if color == 'high_risk' 
+            legend_item = tk.Label(legend_frame, text=f"● {label}", fg=self.colors['danger'] if color == 'high_risk'
                                  else self.colors['warning'] if color == 'medium_risk' else self.colors['success'],
                                  bg=self.colors['bg_primary'])
             legend_item.pack(side='left', padx=(10, 0))
     else:
-        ttk.Label(sentence_frame, text="Sentence analysis not available", 
+        ttk.Label(sentence_frame, text="Sentence analysis not available",
                  style='Subtitle.TLabel').pack(expand=True)
 
 
@@ -547,7 +547,7 @@ def create_advanced_analysis_tab(self, notebook, result):
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
     else:
-        ttk.Label(advanced_frame, text="Advanced analysis not available", 
+        ttk.Label(advanced_frame, text="Advanced analysis not available",
                  style='Subtitle.TLabel').pack(expand=True)
 
 
@@ -571,7 +571,7 @@ def create_recommendations(self, parent, result):
     rec_frame = ttk.Frame(parent, style='Card.TFrame')
     rec_frame.pack(fill='x')
 
-    ttk.Label(rec_frame, text="Recommendations", 
+    ttk.Label(rec_frame, text="Recommendations",
              style='Title.TLabel').pack(anchor='w', padx=15, pady=(15, 10))
 
     # Get recommendations

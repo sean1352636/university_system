@@ -23,6 +23,43 @@ def log_activity(user_id, username, role, action, module, details=None, status="
 
 
 # Helper functions for backward compatibility
+def enhanced_log_activity(*args, **kwargs):
+    """Alias to the logger instance for compatibility with older helpers."""
+    return logger.log_activity(*args, **kwargs)
+
+
+def log_create(*args, **kwargs):
+    return enhanced_log_activity(*args, **kwargs)
+
+
+def log_read(*args, **kwargs):
+    return enhanced_log_activity(*args, **kwargs)
+
+
+def log_update(*args, **kwargs):
+    return enhanced_log_activity(*args, **kwargs)
+
+
+def log_delete(*args, **kwargs):
+    return enhanced_log_activity(*args, **kwargs)
+
+
+def log_search(*args, **kwargs):
+    return enhanced_log_activity(*args, **kwargs)
+
+
+def log_export(*args, **kwargs):
+    return enhanced_log_activity(*args, **kwargs)
+
+
+def log_admin_action(*args, **kwargs):
+    return enhanced_log_activity(*args, **kwargs)
+
+
+def log_menu_navigation(*args, **kwargs):
+    return enhanced_log_activity(*args, **kwargs)
+
+
 def log_login(user_id, username, role, status="success", details=None):
     """Log a user login attempt"""
     return logger.log_activity(

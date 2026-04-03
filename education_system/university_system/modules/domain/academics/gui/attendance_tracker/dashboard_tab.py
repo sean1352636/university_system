@@ -23,7 +23,7 @@ def create_sample_charts(self):
         """Create sample charts when no data is available"""
         # Sample trend data
         self.trend_ax.clear()
-        dates = pd.date_range(start=datetime.date.today()-datetime.timedelta(days=30), 
+        dates = pd.date_range(start=datetime.date.today()-datetime.timedelta(days=30),
                              end=datetime.date.today(), freq='D')
         rates = [85 + (i % 10) - 5 for i in range(len(dates))]
 
@@ -216,9 +216,9 @@ def update_dashboard_charts(self):
 
             # Trend data - last 30 days
             trend_query = '''
-            SELECT date, 
+            SELECT date,
                    AVG(CASE WHEN status IN ('Present', 'Late') THEN 1.0 ELSE 0.0 END) * 100 as rate
-            FROM attendance_records 
+            FROM attendance_records
             WHERE date >= date('now', '-30 days')
             GROUP BY date
             ORDER BY date

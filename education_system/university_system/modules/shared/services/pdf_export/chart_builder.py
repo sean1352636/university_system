@@ -13,18 +13,27 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 
 logger = logging.getLogger(__name__)
 
-# Try to import matplotlib
-try:
-    import matplotlib
+plt = None
+Figure = None
 
-    matplotlib.use("Agg")  # Use non-interactive backend for PDF generation
-    import matplotlib.pyplot as plt
-    from matplotlib.figure import Figure
 
-    MATPLOTLIB_AVAILABLE = True
-except ImportError:
-    MATPLOTLIB_AVAILABLE = False
-    logger.warning("matplotlib not available - charts will be text-based")
+def _ensure_matplotlib() -> bool:
+    """Import matplotlib lazily so chart generation works in test environments."""
+    global plt, Figure
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as _plt
+        from matplotlib.figure import Figure as _Figure
+        plt = _plt
+        Figure = _Figure
+        return True
+    except Exception as exc:
+        logger.warning("matplotlib not available - charts will be text-based: %s", exc)
+        return False
+
+
+MATPLOTLIB_AVAILABLE = _ensure_matplotlib()
 
 
 class ChartBuilder:
@@ -46,7 +55,7 @@ class ChartBuilder:
 
     def __init__(self):
         """Initialize the chart builder."""
-        self.matplotlib_available = MATPLOTLIB_AVAILABLE
+        self.matplotlib_available = MATPLOTLIB_AVAILABLE or _ensure_matplotlib()
 
     def create_pie_chart(
         self,

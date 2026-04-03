@@ -74,29 +74,29 @@ def view_inventory_gui(self):
         if not conn:
             messagebox.showerror("Error", "Database connection failed")
             return
-            
+
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT item_id, name, quantity, unit, cost_per_unit, reorder_level 
-            FROM restaurant_inventory 
+            SELECT item_id, name, quantity, unit, cost_per_unit, reorder_level
+            FROM restaurant_inventory
             ORDER BY name
         ''')
         items = cursor.fetchall()
-        
+
         for item in self.inventory_tree.get_children():
             self.inventory_tree.delete(item)
-            
+
         for item in items:
             cost_str = f"£{item[4]:.2f}" if item[4] else "N/A"
             reorder_str = f"{item[5]:.1f}" if item[5] else "N/A"
-            
+
             self.inventory_tree.insert('', 'end', values=(
                 item[0], item[1], f"{item[2]:.1f}", item[3], cost_str, reorder_str
             ))
-            
+
         conn.close()
         messagebox.showinfo("Success", f"Loaded {len(items)} inventory items")
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Error", f"Failed to load inventory: {str(e)}")
 

@@ -47,12 +47,12 @@ try:
 except ImportError:
     # If helpdesk.py is not available, we'll define minimal stubs
     print("Warning: helpdesk.py not found. Running in standalone mode.")
-    
+
     def init_helpdesk_db():
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Create support_tickets table with enhanced fields
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS support_tickets (
@@ -118,7 +118,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_attachments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_attachments (
@@ -138,7 +138,7 @@ except ImportError:
                 FOREIGN KEY (uploaded_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_assignments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_assignments (
@@ -153,7 +153,7 @@ except ImportError:
                 FOREIGN KEY (assigned_to) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_templates table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_templates (
@@ -174,7 +174,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create sla_policies table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS sla_policies (
@@ -193,7 +193,7 @@ except ImportError:
                 updated_at TEXT
             )
             ''')
-            
+
             # Create ticket_workflows table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_workflows (
@@ -210,7 +210,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_time_tracking table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_time_tracking (
@@ -227,7 +227,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_escalations table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_escalations (
@@ -244,7 +244,7 @@ except ImportError:
                 FOREIGN KEY (escalated_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_links table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_links (
@@ -259,7 +259,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_audit_log table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_audit_log (
@@ -276,7 +276,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create knowledge_base table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS knowledge_base (
@@ -296,7 +296,7 @@ except ImportError:
                 FOREIGN KEY (author_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create departments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS departments (
@@ -313,7 +313,7 @@ except ImportError:
                 FOREIGN KEY (sla_policy_id) REFERENCES sla_policies (sla_id)
             )
             ''')
-            
+
             # Create organizations table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS organizations (
@@ -328,7 +328,7 @@ except ImportError:
                 updated_at TEXT
             )
             ''')
-            
+
             # Create saved_searches table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS saved_searches (
@@ -344,13 +344,13 @@ except ImportError:
             conn.commit()
             conn.close()
             print("Enhanced helpdesk database initialized successfully!")
-            
+
             # Initialize default data
             init_default_data()
-            
+
         except sqlite3.Error as e:
             print(f"An error occurred while initializing the helpdesk database: {e}")
-        
+
     def setup_enhanced_helpdesk_permissions():
         """
         Setup enhanced helpdesk permissions
@@ -441,7 +441,7 @@ def create_analytics_tab(self):
     canvas.configure(yscrollcommand=scrollbar.set)
 
     # Title
-    ttk.Label(scrollable_frame, text="Analytics Dashboard", 
+    ttk.Label(scrollable_frame, text="Analytics Dashboard",
          style='Title.TLabel').pack(pady=10)
 
     # Time period selector
@@ -476,18 +476,18 @@ def refresh_analytics(self):
         # Clear existing content
         for widget in self.analytics_content_frame.winfo_children():
             widget.destroy()
-        
+
         # Get analytics data
         period = self.analytics_period_var.get()
         analytics_data = self.get_analytics_data(period)
-        
+
         # Overall statistics
         stats_frame = ttk.LabelFrame(self.analytics_content_frame, text=f"Overview ({period})")
         stats_frame.pack(fill='x', pady=5)
-        
+
         stats_grid = ttk.Frame(stats_frame)
         stats_grid.pack(fill='x', padx=10, pady=10)
-        
+
         # Display key metrics
         metrics = [
             ("Total Tickets", analytics_data.get('total_tickets', 0)),
@@ -497,58 +497,58 @@ def refresh_analytics(self):
             ("Avg Resolution Time", f"{analytics_data.get('avg_resolution_hours', 0):.1f}h"),
             ("Customer Satisfaction", f"{analytics_data.get('avg_satisfaction', 0):.1f}/5.0")
         ]
-        
+
         for i, (label, value) in enumerate(metrics):
             row = i // 3
             col = (i % 3) * 2
-            
+
             ttk.Label(stats_grid, text=f"{label}:", style='Heading.TLabel').grid(
                 row=row, column=col, sticky='w', padx=5, pady=2)
             ttk.Label(stats_grid, text=str(value)).grid(
                 row=row, column=col+1, sticky='w', padx=20, pady=2)
-        
+
         # Category breakdown
         if analytics_data.get('categories'):
             category_frame = ttk.LabelFrame(self.analytics_content_frame, text="Tickets by Category")
             category_frame.pack(fill='x', pady=5)
-            
-            category_tree = ttk.Treeview(category_frame, columns=('Category', 'Count', 'Percentage'), 
+
+            category_tree = ttk.Treeview(category_frame, columns=('Category', 'Count', 'Percentage'),
                                        show='headings', height=6)
             category_tree.heading('Category', text='Category')
             category_tree.heading('Count', text='Count')
             category_tree.heading('Percentage', text='Percentage')
-            
+
             for category, count in analytics_data['categories'].items():
                 percentage = (count / analytics_data.get('total_tickets', 1)) * 100
                 category_tree.insert('', 'end', values=(category, count, f"{percentage:.1f}%"))
-            
+
             category_tree.pack(fill='x', padx=5, pady=5)
-        
+
         # Staff performance
         if analytics_data.get('staff_performance'):
             staff_frame = ttk.LabelFrame(self.analytics_content_frame, text="Staff Performance")
             staff_frame.pack(fill='x', pady=5)
-            
-            staff_tree = ttk.Treeview(staff_frame, columns=('Staff', 'Assigned', 'Resolved', 'Rate'), 
+
+            staff_tree = ttk.Treeview(staff_frame, columns=('Staff', 'Assigned', 'Resolved', 'Rate'),
                                     show='headings', height=6)
             staff_tree.heading('Staff', text='Staff')
             staff_tree.heading('Assigned', text='Assigned')
             staff_tree.heading('Resolved', text='Resolved')
             staff_tree.heading('Rate', text='Resolution Rate')
-            
+
             for staff_data in analytics_data['staff_performance']:
                 rate = (staff_data['resolved'] / staff_data['assigned'] * 100) if staff_data['assigned'] > 0 else 0
                 staff_tree.insert('', 'end', values=(
-                    staff_data['username'], 
-                    staff_data['assigned'], 
-                    staff_data['resolved'], 
+                    staff_data['username'],
+                    staff_data['assigned'],
+                    staff_data['resolved'],
                     f"{rate:.1f}%"
                 ))
-            
+
             staff_tree.pack(fill='x', padx=5, pady=5)
-        
+
     except Exception as e:
-        ttk.Label(self.analytics_content_frame, text=f"Error loading analytics: {str(e)}", 
+        ttk.Label(self.analytics_content_frame, text=f"Error loading analytics: {str(e)}",
                  style='Error.TLabel').pack()
 
 # Attach method to HelpdeskGUI class
@@ -560,28 +560,28 @@ def get_analytics_data(self, period):
         from education_system.university_system.infrastructure.database.db import get_connection
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Calculate date range
         days_map = {'7d': 7, '30d': 30, '90d': 90, '1y': 365}
         days = days_map.get(period, 30)
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
-        
+
         analytics_data = {}
-        
+
         # Overall statistics
         cursor.execute('''
-        SELECT 
+        SELECT
             COUNT(*) as total_tickets,
             COUNT(CASE WHEN status = 'open' THEN 1 END) as open_tickets,
             COUNT(CASE WHEN status IN ('resolved', 'closed') THEN 1 END) as resolved_tickets,
-            AVG(CASE WHEN resolved_at IS NOT NULL 
-                THEN (julianday(resolved_at) - julianday(created_at)) * 24 
+            AVG(CASE WHEN resolved_at IS NOT NULL
+                THEN (julianday(resolved_at) - julianday(created_at)) * 24
                 ELSE NULL END) as avg_resolution_hours,
             AVG(satisfaction_rating) as avg_satisfaction
         FROM support_tickets
         WHERE created_at >= ?
         ''', (start_date,))
-        
+
         result = cursor.fetchone()
         if result:
             total = result[0]
@@ -593,7 +593,7 @@ def get_analytics_data(self, period):
                 'avg_resolution_hours': result[3] or 0,
                 'avg_satisfaction': result[4] or 0
             })
-        
+
         # Category breakdown
         cursor.execute('''
         SELECT category, COUNT(*) as count
@@ -602,12 +602,12 @@ def get_analytics_data(self, period):
         GROUP BY category
         ORDER BY count DESC
         ''', (start_date,))
-        
+
         analytics_data['categories'] = dict(cursor.fetchall())
-        
+
         # Staff performance
         cursor.execute('''
-        SELECT 
+        SELECT
             u.username,
             COUNT(t.ticket_id) as assigned,
             COUNT(CASE WHEN t.status IN ('resolved', 'closed') THEN 1 END) as resolved
@@ -618,7 +618,7 @@ def get_analytics_data(self, period):
         HAVING assigned > 0
         ORDER BY resolved DESC
         ''', (start_date,))
-        
+
         staff_data = []
         for row in cursor.fetchall():
             staff_data.append({
@@ -626,12 +626,12 @@ def get_analytics_data(self, period):
                 'assigned': row[1],
                 'resolved': row[2]
             })
-        
+
         analytics_data['staff_performance'] = staff_data
-        
+
         conn.close()
         return analytics_data
-        
+
     except Exception as e:
         return {'error': str(e)}
 
@@ -644,40 +644,40 @@ def show_analytics_dashboard(self):
     analytics_window.title("Analytics Dashboard")
     analytics_window.geometry("1000x700")
     analytics_window.transient(self.root)
-    
+
     # Create scrollable frame
     canvas = tk.Canvas(analytics_window)
     scrollbar = ttk.Scrollbar(analytics_window, orient="vertical", command=canvas.yview)
     scrollable_frame = ttk.Frame(canvas)
-    
+
     scrollable_frame.bind(
         "<Configure>",
         lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
     )
-    
+
     canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.configure(yscrollcommand=scrollbar.set)
-    
+
     ttk.Label(scrollable_frame, text="Analytics Dashboard", style='Title.TLabel').pack(pady=10)
-    
+
     # Time period selector
     period_frame = ttk.Frame(scrollable_frame)
     period_frame.pack(fill='x', padx=10, pady=5)
-    
+
     ttk.Label(period_frame, text="Time Period:").pack(side='left')
     period_var = tk.StringVar(value="30d")
     period_combo = ttk.Combobox(period_frame, textvariable=period_var,
                                values=["7d", "30d", "90d", "1y"], state="readonly", width=10)
     period_combo.pack(side='left', padx=5)
-    
+
     def refresh_analytics():
         self.load_analytics_data(scrollable_frame, period_var.get())
-    
+
     ttk.Button(period_frame, text="Refresh", command=refresh_analytics).pack(side='left', padx=5)
-    
+
     # Initial load
     self.load_analytics_data(scrollable_frame, "30d")
-    
+
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
@@ -689,42 +689,42 @@ def load_analytics_data(self, parent, period):
     # Clear existing analytics content (but keep header and controls)
     for widget in parent.winfo_children()[2:]:  # Skip title and period frame
         widget.destroy()
-    
+
     try:
         from education_system.university_system.infrastructure.database.db import get_connection
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Calculate date range
         days_map = {'7d': 7, '30d': 30, '90d': 90, '1y': 365}
         days = days_map.get(period, 30)
         start_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
-        
+
         # Overall statistics
         stats_frame = ttk.LabelFrame(parent, text=f"Overview ({period.upper()})")
         stats_frame.pack(fill='x', padx=10, pady=5)
-        
+
         cursor.execute('''
-        SELECT 
+        SELECT
             COUNT(*) as total_tickets,
             COUNT(CASE WHEN status = 'open' THEN 1 END) as open_tickets,
             COUNT(CASE WHEN status IN ('resolved', 'closed') THEN 1 END) as resolved_tickets,
-            AVG(CASE WHEN resolved_at IS NOT NULL 
-                THEN (julianday(resolved_at) - julianday(created_at)) * 24 
+            AVG(CASE WHEN resolved_at IS NOT NULL
+                THEN (julianday(resolved_at) - julianday(created_at)) * 24
                 ELSE NULL END) as avg_resolution_hours,
             AVG(satisfaction_rating) as avg_satisfaction
         FROM support_tickets
         WHERE created_at >= ?
         ''', (start_date,))
-        
+
         result = cursor.fetchone()
         if result:
             total = result[0]
             resolution_rate = (result[2] / total * 100) if total > 0 else 0
-            
+
             stats_grid = ttk.Frame(stats_frame)
             stats_grid.pack(fill='x', padx=10, pady=10)
-            
+
             metrics = [
                 ("Total Tickets", total),
                 ("Open Tickets", result[1]),
@@ -733,20 +733,20 @@ def load_analytics_data(self, parent, period):
                 ("Avg Resolution Time", f"{result[3] or 0:.1f}h"),
                 ("Customer Satisfaction", f"{result[4] or 0:.1f}/5.0")
             ]
-            
+
             for i, (label, value) in enumerate(metrics):
                 row = i // 3
                 col = (i % 3) * 2
-                
+
                 ttk.Label(stats_grid, text=f"{label}:", style='Heading.TLabel').grid(
                     row=row, column=col, sticky='w', padx=5, pady=2)
                 ttk.Label(stats_grid, text=str(value)).grid(
                     row=row, column=col+1, sticky='w', padx=20, pady=2)
-        
+
         conn.close()
-        
+
     except Exception as e:
-        ttk.Label(parent, text=f"Error loading analytics: {str(e)}", 
+        ttk.Label(parent, text=f"Error loading analytics: {str(e)}",
                  style='Error.TLabel').pack(pady=20)
 
 # Attach method to HelpdeskGUI class
@@ -777,49 +777,49 @@ def create_reports_tab(self, parent):
     """Create reports tab"""
     reports_frame = ttk.Frame(parent)
     parent.add(reports_frame, text="Reports")
-    
+
     # Report generation options
     options_frame = ttk.LabelFrame(reports_frame, text="Report Generation")
     options_frame.pack(fill='x', padx=10, pady=10)
-    
+
     # Report types
     report_grid = ttk.Frame(options_frame)
     report_grid.pack(fill='x', padx=10, pady=10)
-    
+
     # Configure grid weights for better spacing
     for i in range(3):
         report_grid.grid_columnconfigure(i, weight=1)
-    
-    ttk.Button(report_grid, text="Executive Summary", 
+
+    ttk.Button(report_grid, text="Executive Summary",
               command=lambda: self.generate_report('executive')).grid(row=0, column=0, padx=5, pady=5, sticky='ew')
-    ttk.Button(report_grid, text="Staff Performance", 
+    ttk.Button(report_grid, text="Staff Performance",
               command=lambda: self.generate_report('staff')).grid(row=0, column=1, padx=5, pady=5, sticky='ew')
-    ttk.Button(report_grid, text="SLA Compliance", 
+    ttk.Button(report_grid, text="SLA Compliance",
               command=lambda: self.generate_report('sla')).grid(row=0, column=2, padx=5, pady=5, sticky='ew')
-    
-    ttk.Button(report_grid, text="Customer Satisfaction", 
+
+    ttk.Button(report_grid, text="Customer Satisfaction",
               command=lambda: self.generate_report('satisfaction')).grid(row=1, column=0, padx=5, pady=5, sticky='ew')
-    ttk.Button(report_grid, text="Trend Analysis", 
+    ttk.Button(report_grid, text="Trend Analysis",
               command=lambda: self.generate_report('trends')).grid(row=1, column=1, padx=5, pady=5, sticky='ew')
-    ttk.Button(report_grid, text="Custom Report", 
+    ttk.Button(report_grid, text="Custom Report",
               command=lambda: self.generate_report('custom')).grid(row=1, column=2, padx=5, pady=5, sticky='ew')
-    
+
     # Export options
     export_frame = ttk.LabelFrame(reports_frame, text="Data Export")
     export_frame.pack(fill='x', padx=10, pady=10)
-    
+
     export_grid = ttk.Frame(export_frame)
     export_grid.pack(fill='x', padx=10, pady=10)
-    
+
     # Configure grid weights for export section
     for i in range(3):
         export_grid.grid_columnconfigure(i, weight=1)
-    
-    ttk.Button(export_grid, text="Export Tickets (CSV)", 
+
+    ttk.Button(export_grid, text="Export Tickets (CSV)",
               command=self.export_tickets_csv).grid(row=0, column=0, padx=5, pady=5, sticky='ew')
-    ttk.Button(export_grid, text="Export Users (CSV)", 
+    ttk.Button(export_grid, text="Export Users (CSV)",
               command=self.export_users_csv).grid(row=0, column=1, padx=5, pady=5, sticky='ew')
-    ttk.Button(export_grid, text="Export Analytics (JSON)", 
+    ttk.Button(export_grid, text="Export Analytics (JSON)",
               command=self.export_analytics_json).grid(row=0, column=2, padx=5, pady=5, sticky='ew')
 
 # Attach method to HelpdeskGUI class

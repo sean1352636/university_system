@@ -68,11 +68,11 @@ def create_compliance_view(self, parent):
     privacy_frame = ttk.LabelFrame(compliance_card, text="Privacy Controls", padding=15)
     privacy_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(privacy_frame, text="Generate Compliance Report", 
+    ttk.Button(privacy_frame, text="Generate Compliance Report",
               command=self.generate_compliance_report).pack(side='left', padx=(0, 10))
-    ttk.Button(privacy_frame, text="Data Retention Status", 
+    ttk.Button(privacy_frame, text="Data Retention Status",
               command=self.show_data_retention_status).pack(side='left', padx=(0, 10))
-    ttk.Button(privacy_frame, text="Consent Management", 
+    ttk.Button(privacy_frame, text="Consent Management",
               command=self.show_consent_management).pack(side='left')
 
 
@@ -158,7 +158,7 @@ def create_bias_detection_view(self, parent):
     self.bias_institution_var = tk.StringVar()
     ttk.Entry(institution_frame, textvariable=self.bias_institution_var, width=20).pack(side='left', padx=(5, 15))
 
-    ttk.Button(institution_frame, text="Analyze Bias", 
+    ttk.Button(institution_frame, text="Analyze Bias",
               command=self.analyze_institutional_bias).pack(side='right')
 
     # Results display
@@ -218,16 +218,16 @@ def create_predictive_analytics_view(self, parent):
     self.risk_student_var = tk.StringVar()
     ttk.Entry(risk_frame, textvariable=self.risk_student_var, width=20).pack(side='left', padx=(5, 15))
 
-    ttk.Button(risk_frame, text="Predict Risk", 
+    ttk.Button(risk_frame, text="Predict Risk",
               command=self.predict_student_risk).pack(side='right')
 
     # Model training
     training_frame = ttk.LabelFrame(predictive_card, text="Model Training", padding=15)
     training_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(training_frame, text="Train Risk Prediction Model", 
+    ttk.Button(training_frame, text="Train Risk Prediction Model",
               command=self.train_risk_model).pack(side='left', padx=(0, 10))
-    ttk.Button(training_frame, text="Model Performance", 
+    ttk.Button(training_frame, text="Model Performance",
               command=self.show_model_performance).pack(side='left')
 
     # Results display
@@ -268,11 +268,11 @@ def display_risk_prediction(self, prediction):
     risk_frame = ttk.Frame(self.risk_results_frame, style='Card.TFrame')
     risk_frame.pack(fill='x', padx=10, pady=10)
 
-    risk_indicator = tk.Label(risk_frame, text="●", font=('Arial', 20), 
+    risk_indicator = tk.Label(risk_frame, text="●", font=('Arial', 20),
                              fg=risk_color, bg=self.colors['bg_tertiary'])
     risk_indicator.pack(side='left', padx=15, pady=15)
 
-    risk_text = ttk.Label(risk_frame, text=f"Risk Level: {risk_level.title()}\nRisk Score: {risk_score:.1%}", 
+    risk_text = ttk.Label(risk_frame, text=f"Risk Level: {risk_level.title()}\nRisk Score: {risk_score:.1%}",
                          font=('Segoe UI', 12))
     risk_text.pack(side='left', padx=(10, 15), pady=15)
 
@@ -337,7 +337,7 @@ def create_student_self_check_view(self, parent):
     self.self_check_text.pack(fill='both', expand=True, padx=15, pady=(0, 15))
 
     # Check button
-    ttk.Button(self_check_card, text="Preview Analysis", 
+    ttk.Button(self_check_card, text="Preview Analysis",
               command=self.run_self_check, style='Accent.TButton').pack(pady=(0, 15))
 
 
@@ -375,7 +375,7 @@ def show_self_check_results(self, result):
     assessment_frame = ttk.Frame(results_window, style='Card.TFrame')
     assessment_frame.pack(fill='x', padx=20, pady=(0, 20))
 
-    ttk.Label(assessment_frame, text=f"Overall Assessment: {assessment.replace('_', ' ').title()}", 
+    ttk.Label(assessment_frame, text=f"Overall Assessment: {assessment.replace('_', ' ').title()}",
              font=('Segoe UI', 12, 'bold')).pack(padx=15, pady=15)
 
     # Suggestions
@@ -384,7 +384,7 @@ def show_self_check_results(self, result):
         suggestions_frame.pack(fill='both', expand=True, padx=20, pady=(0, 20))
 
         for i, suggestion in enumerate(suggestions, 1):
-            ttk.Label(suggestions_frame, text=f"{i}. {suggestion}", 
+            ttk.Label(suggestions_frame, text=f"{i}. {suggestion}",
                      wraplength=500).pack(anchor='w', pady=2)
 
 

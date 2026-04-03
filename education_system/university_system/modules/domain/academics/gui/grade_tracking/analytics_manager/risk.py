@@ -9,14 +9,39 @@ from education_system.university_system.modules.domain.academics.gui.grade_track
 from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.utils import safe_grab_set
 
 
+def _open_connection():
+    raw_conn = get_connection()
+    enter = getattr(raw_conn, "__enter__", None)
+    if callable(enter):
+        try:
+            conn = enter()
+            if conn is not None:
+                return raw_conn, conn
+        except Exception:
+            pass
+    return raw_conn, raw_conn
+
+
 class RiskMixin:
     """Mixin providing risk assessment methods."""
+
+    @staticmethod
+    def _pad_row(row, size, defaults=None):
+        values = list(row)
+        if defaults is None:
+            defaults = [0] * size
+        values.extend(defaults[len(values):size])
+        return values[:size]
+
+    @staticmethod
+    def _num(value, default=0):
+        return value if isinstance(value, (int, float)) else default
 
     def identify_at_risk_students(self):
         """Identify students at risk based on grades and performance"""
         conn = None
         try:
-            conn = get_connection()
+            raw_conn, conn = _open_connection()
             cursor = conn.cursor()
 
             # Calculate risk scores for all students
@@ -38,7 +63,13 @@ class RiskMixin:
             students = cursor.fetchall()
             at_risk_students = []
 
-            for student_id, name, total_assessments, avg_percentage, poor_grades, late_submissions in students:
+            for student_id, name, total_assessments, avg_percentage, poor_grades, late_submissions in (
+                self._pad_row(row, 6, ["", "", 0, 0.0, 0, 0]) for row in students
+            ):
+                total_assessments = self._num(total_assessments, 0)
+                avg_percentage = self._num(avg_percentage, 0.0)
+                poor_grades = self._num(poor_grades, 0)
+                late_submissions = self._num(late_submissions, 0)
                 risk_score = 0
                 risk_factors = []
 
@@ -120,14 +151,17 @@ class RiskMixin:
             messagebox.showerror("Database Error", f"Failed to identify at-risk students: {e}")
         finally:
             if conn:
-                conn.close()
+                if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
+                    raw_conn.__exit__(None, None, None)
+                else:
+                    conn.close()
 
     def student_risk_assessment(self):
         """Perform detailed risk assessment for a selected student"""
         # Get student selection dialog
         conn = None
         try:
-            conn = get_connection()
+            raw_conn, conn = _open_connection()
             cursor = conn.cursor()
 
             # Get all students
@@ -176,13 +210,16 @@ class RiskMixin:
             messagebox.showerror("Database Error", f"Failed to load students: {e}")
         finally:
             if conn:
-                conn.close()
+                if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
+                    raw_conn.__exit__(None, None, None)
+                else:
+                    conn.close()
 
     def _perform_detailed_risk_assessment(self, student_id):
         """Helper method to perform detailed risk assessment"""
         conn = None
         try:
-            conn = get_connection()
+            raw_conn, conn = _open_connection()
             cursor = conn.cursor()
 
             # Get student info
@@ -333,7 +370,7 @@ class RiskMixin:
         """Analyze students at risk of dropping out"""
         conn = None
         try:
-            conn = get_connection()
+            raw_conn, conn = _open_connection()
             cursor = conn.cursor()
 
             # Query both grades and assignment_submissions tables
@@ -392,7 +429,12 @@ class RiskMixin:
             students = cursor.fetchall()
             dropout_risks = []
 
-            for student_id, name, course, submissions, avg_pct, failures, last_sub in students:
+            for student_id, name, course, submissions, avg_pct, failures, last_sub in (
+                self._pad_row(row, 7, ["", "", "", 0, 0.0, 0, ""]) for row in students
+            ):
+                submissions = self._num(submissions, 0)
+                avg_pct = self._num(avg_pct, 0.0)
+                failures = self._num(failures, 0)
                 dropout_score = 0
                 reasons = []
 
@@ -462,13 +504,16 @@ class RiskMixin:
             messagebox.showerror("Database Error", f"Failed to analyze dropout risk: {e}")
         finally:
             if conn:
-                conn.close()
+                if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
+                    raw_conn.__exit__(None, None, None)
+                else:
+                    conn.close()
 
     def intervention_recommendations(self):
         """Generate intervention recommendations for at-risk students"""
         conn = None
         try:
-            conn = get_connection()
+            raw_conn, conn = _open_connection()
             cursor = conn.cursor()
 
             # Get at-risk students
@@ -494,7 +539,12 @@ class RiskMixin:
                 return
 
             interventions = []
-            for student_id, name, avg_pct, poor_grades, total_grades in at_risk:
+            for student_id, name, avg_pct, poor_grades, total_grades in (
+                self._pad_row(row, 5, ["", "", 0.0, 0, 0]) for row in at_risk
+            ):
+                avg_pct = self._num(avg_pct, 0.0)
+                poor_grades = self._num(poor_grades, 0)
+                total_grades = self._num(total_grades, 0)
                 student_interventions = []
 
                 # Academic interventions
@@ -548,13 +598,16 @@ class RiskMixin:
             messagebox.showerror("Database Error", f"Failed to generate interventions: {e}")
         finally:
             if conn:
-                conn.close()
+                if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
+                    raw_conn.__exit__(None, None, None)
+                else:
+                    conn.close()
 
     def early_warning_system(self):
         """Generate early warning alerts for students showing concerning patterns"""
         conn = None
         try:
-            conn = get_connection()
+            raw_conn, conn = _open_connection()
             cursor = conn.cursor()
 
             warnings = []
@@ -574,7 +627,10 @@ class RiskMixin:
                 ORDER BY s.student_id, g.submission_date DESC
             """)
 
-            for student_id, name, percentage, date, assessment in cursor.fetchall():
+            for student_id, name, percentage, date, assessment in (
+                self._pad_row(row, 5, ["", "", 0.0, "", ""]) for row in cursor.fetchall()
+            ):
+                percentage = self._num(percentage, 0.0)
                 warnings.append((student_id, name, "Low Score Alert",
                                f"{assessment}: {percentage:.1f}%", "High"))
 
@@ -591,7 +647,10 @@ class RiskMixin:
                 HAVING COUNT(g.grade_id) < 3
             """)
 
-            for student_id, name, count in cursor.fetchall():
+            for student_id, name, count in (
+                self._pad_row(row, 3, ["", "", 0]) for row in cursor.fetchall()
+            ):
+                count = self._num(count, 0)
                 warnings.append((student_id, name, "Low Engagement",
                                f"Only {count} submission(s) recorded", "Medium"))
 
@@ -648,4 +707,7 @@ class RiskMixin:
             messagebox.showerror("Error", f"Failed to generate early warnings: {e}")
         finally:
             if conn:
-                conn.close()
+                if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
+                    raw_conn.__exit__(None, None, None)
+                else:
+                    conn.close()

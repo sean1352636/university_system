@@ -14,6 +14,7 @@ import re
 import threading
 import time
 
+from education_system.university_system.infrastructure.database import db as _db_module
 from education_system.university_system.infrastructure.database.db import (
     sqlite3,
     get_connection,
@@ -51,6 +52,11 @@ _DB_READY = False
 # =============================================================================
 
 CURRENT_SCHEMA_VERSION = 2  # Increment this when adding new migrations
+
+
+def _get_db_path() -> str:
+    """Resolve the active database path dynamically for test monkeypatches."""
+    return os.fspath(_db_module.DEFAULT_DB_PATH)
 
 
 def _ensure_migrations_table(cursor) -> None:
@@ -453,7 +459,7 @@ def get_unified_connection():
     Raises:
         DatabaseConnectionError: If unable to connect to database.
     """
-    return get_connection(db_path=DB_PATH, row_factory=True)
+    return get_connection(db_path=_get_db_path(), row_factory=True)
 
 
 def execute_db_operation(operation_func, *args, max_retries=None, **kwargs):
@@ -480,7 +486,7 @@ def execute_db_operation(operation_func, *args, max_retries=None, **kwargs):
     for attempt in range(max_retries):
         try:
             # Use centralized DatabaseManager with automatic retry and transaction handling
-            with DatabaseManager(DB_PATH) as db:
+            with DatabaseManager(_get_db_path()) as db:
                 return operation_func(db.cursor, *args, **kwargs)
 
         except sqlite3.OperationalError as e:
@@ -523,7 +529,7 @@ class SimpleDBManager:
     """
 
     def __init__(self, db_path=None):
-        self.db_path = db_path or DB_PATH
+        self.db_path = db_path or _get_db_path()
         ensure_parent_dir(self.db_path)
         self._lock = threading.RLock()
         import warnings
@@ -592,7 +598,7 @@ def get_db_manager():
 @handle_exception
 def initialize_email_db():
     """Simplified email database initialization"""
-    
+
     def _init_tables(cursor):
         # Stored emails table
         cursor.execute('''
@@ -613,7 +619,7 @@ def initialize_email_db():
             student_id TEXT
         )
         ''')
-        
+
         # Email log table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS email_log (
@@ -634,7 +640,7 @@ def initialize_email_db():
             template_vars TEXT
         )
         ''')
-        
+
         # Messages table - align schema with communication admin expectations
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS messages (
@@ -710,7 +716,7 @@ def initialize_email_db():
             clicked_count INTEGER DEFAULT 0
         )
         ''')
-        
+
         # Scheduled emails table - handle both legacy and new schemas
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='scheduled_emails'")
         scheduled_exists = cursor.fetchone()
@@ -846,7 +852,7 @@ def migrate_email_log_table():
             cursor.execute("PRAGMA table_info(email_log)")
             columns = cursor.fetchall()
             existing_columns = [column[1] for column in columns]
-            
+
             # List of columns that should exist
             required_columns = [
                 ('sender_email', 'TEXT'),
@@ -857,7 +863,7 @@ def migrate_email_log_table():
                 ('template_name', 'TEXT'),
                 ('template_vars', 'TEXT')
             ]
-            
+
             # Add missing columns
             for column_name, column_type in required_columns:
                 if column_name not in existing_columns:
@@ -868,14 +874,14 @@ def migrate_email_log_table():
                         log_event('warning', f"Invalid column definition for {column_name}: {e}")
                     except Exception as e:
                         log_event('warning', f"Could not add column {column_name}: {e}")
-            
+
             log_event('info', "Email log table migration completed")
             return True
-            
+
         except Exception as e:
             log_event('error', f"Error during email_log table migration: {e}")
             return False
-    
+
     return execute_db_operation(_migrate_table)
 
 
@@ -893,11 +899,11 @@ def optimize_database():
         # Run SQLite optimization
         cursor.execute("PRAGMA optimize")
         cursor.execute("PRAGMA wal_checkpoint(FULL)")
-        
+
         # Analyze tables for better query planning
         cursor.execute("ANALYZE")
         return True
-    
+
     try:
         result = execute_db_operation(_optimize_db)
         if result:

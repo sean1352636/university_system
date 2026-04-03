@@ -509,22 +509,22 @@ def launch_financial_gui(auth_instance=None):
         from education_system.university_system.modules.domain.finance.gui.finance_reporting.main import FinancialManagementGUI
         root = tk.Tk()
         app = FinancialManagementGUI(root, auth)
-        
+
         # Load saved settings
         app.load_settings()
-        
+
         print("Enhanced Financial Management GUI launched successfully!")
         print("GUI Window opened - check your screen.")
-        
+
         # Start GUI main loop
         root.mainloop()
-        
+
     except ImportError as e:
         print(f"GUI libraries not available: {e}")
         print("Please install required packages: pip install tkinter")
         print("Falling back to console interface...")
         display_enhanced_finance_menu()
-        
+
     except Exception as e:
         print(f"Error launching GUI: {e}")
         print("Falling back to console interface...")
@@ -560,37 +560,37 @@ def display_finance_menu(auth_instance=None):
     elif not auth:
         print("⚠️ Authentication system not available. Some features may be limited.")
 
-    
+
     while True:
         print("\n" + "="*60)
         print("FINANCIAL MANAGEMENT SYSTEM")
         print("="*60)
-        
+
         print("\n🖥️  INTERFACE OPTIONS")
         print("1.  Launch Enhanced GUI Interface (Recommended)")
         print("2.  Enhanced Console Interface")
         print("3.  Original Console Interface")
-        
+
         print("\n📊 QUICK ACCESS")
         print("4.  Financial Dashboard")
         print("5.  Generate Quick Report")
         print("6.  View Alerts")
         print("7.  System Health Check")
-        
+
         print("\n⚙️  SYSTEM")
         print("8.  Initialize Enhanced Database")
         print("9.  Export System Data")
         print("10. Return to Main Menu")
-        
+
         choice = input("\nEnter your choice (1-10): ").strip()
-        
+
         try:
             if choice == '1':
                 launch_financial_gui(auth)
-            
+
             elif choice == '2':
                 display_enhanced_finance_menu()
-            
+
             elif choice == '3':
                 # Original console interface
                 print("\nOriginal Financial Management Features:")
@@ -598,9 +598,9 @@ def display_finance_menu(auth_instance=None):
                 print("2. Generate Budget Variance Report")
                 print("3. Financial Dashboard")
                 print("4. Back to main finance menu")
-                
+
                 orig_choice = input("Select option (1-4): ").strip()
-                
+
                 if orig_choice == '1':
                     generate_financial_forecasting()
                 elif orig_choice == '2':
@@ -609,27 +609,27 @@ def display_finance_menu(auth_instance=None):
                     financial_dashboard()
                 elif orig_choice == '4':
                     continue
-            
+
             elif choice == '4':
                 # Quick dashboard
                 try:
                     from education_system.university_system.infrastructure.database.db import get_connection
                     conn = get_connection()
                     cursor = conn.cursor()
-                    
+
                     print("\n" + "="*50)
                     print("FINANCIAL DASHBOARD - QUICK VIEW")
                     print("="*50)
-                    
+
                     # Quick metrics
                     cursor.execute('''
-                    SELECT 
+                    SELECT
                         SUM(sf.amount) as total_expected,
                         SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END) as total_collected,
                         COUNT(DISTINCT sf.student_id) as student_count
                     FROM student_fees sf
                     ''')
-                    
+
                     data = cursor.fetchone()
                     if data:
                         collection_rate = (data[1] / data[0] * 100) if data[0] else 0
@@ -637,38 +637,38 @@ def display_finance_menu(auth_instance=None):
                         print(f"Total Collected: £{data[1] or 0:,.2f}")
                         print(f"Collection Rate: {collection_rate:.1f}%")
                         print(f"Active Students: {data[2] or 0:,}")
-                    
+
                     # Today's activity
                     today = datetime.now().strftime('%Y-%m-%d')
                     cursor.execute('SELECT COUNT(*), SUM(amount) FROM payments WHERE payment_date = ?', (today,))
                     today_data = cursor.fetchone()
                     print(f"Today's Payments: {today_data[0] or 0} transactions, £{today_data[1] or 0:,.2f}")
-                    
+
                     conn.close()
-                    
+
                 except Exception as e:
                     print(f"Error displaying dashboard: {e}")
-            
+
             elif choice == '5':
                 # Generate quick report
                 try:
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M')
                     filename = f"quick_financial_summary_{timestamp}.txt"
-                    
+
                     from education_system.university_system.infrastructure.database.db import get_connection
                     conn = get_connection()
                     cursor = conn.cursor()
-                    
+
                     cursor.execute('''
-                    SELECT 
+                    SELECT
                         SUM(sf.amount) as total_expected,
                         SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END) as total_collected,
                         COUNT(DISTINCT sf.student_id) as student_count
                     FROM student_fees sf
                     ''')
-                    
+
                     data = cursor.fetchone()
-                    
+
                     with open(filename, 'w') as f:
                         f.write(f"Quick Financial Summary - {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
                         f.write("=" * 60 + "\n\n")
@@ -677,13 +677,13 @@ def display_finance_menu(auth_instance=None):
                         f.write(f"Collection Rate: {(data[1] / data[0] * 100) if data[0] else 0:.1f}%\n")
                         f.write(f"Active Students: {data[2] or 0:,}\n\n")
                         f.write("Generated by Enhanced Financial Management System\n")
-                    
+
                     conn.close()
                     print(f"Quick report generated: {filename}")
-                    
+
                 except Exception as e:
                     print(f"Error generating quick report: {e}")
-            
+
             elif choice == '6':
                 # View alerts
                 try:
@@ -693,10 +693,10 @@ def display_finance_menu(auth_instance=None):
                     alert_system.check_daily_payments()
                     alert_system.check_large_payments()
                     print("Alert checks completed. Check console output above.")
-                    
+
                 except Exception as e:
                     print(f"Error checking alerts: {e}")
-            
+
             elif choice == '7':
                 # System health check
                 try:
@@ -705,44 +705,44 @@ def display_finance_menu(auth_instance=None):
                     healthy_count = sum(health_status.values())
                     total_count = len(health_status)
                     print(f"Operational Components: {healthy_count}/{total_count}")
-                    
+
                     if healthy_count == total_count:
                         print("Overall Status: ✓ ALL SYSTEMS OPERATIONAL")
                     else:
                         print("Overall Status: ⚠ ATTENTION REQUIRED")
-                    
+
                 except Exception as e:
                     print(f"Error running health check: {e}")
-            
+
             elif choice == '8':
                 # Initialize enhanced database
                 try:
                     initialize_enhanced_database()
                     print("Enhanced database initialized successfully!")
-                    
+
                 except Exception as e:
                     print(f"Error initializing database: {e}")
-            
+
             elif choice == '9':
                 # Export system data
                 try:
                     advanced_export_system()
-                    
+
                 except Exception as e:
                     print(f"Error in export system: {e}")
-            
+
             elif choice == '10':
                 return
-            
+
             else:
                 print("Invalid choice. Please try again.")
-                
+
         except KeyboardInterrupt:
             print("\n\nOperation cancelled by user.")
         except Exception as e:
             print(f"\nError: {e}")
             print("Please try again or contact system administrator.")
-        
+
         if choice not in ['1', '2']:  # Don't pause for GUI or enhanced console
             input("\nPress Enter to continue...")
 
@@ -758,71 +758,71 @@ def financial_dashboard():
     if not hasattr(auth, 'check_permission') or not auth.check_permission('manage_finances'):
         print("You don't have permission to access the financial dashboard.")
         return
-    
+
     print("\nFinancial Dashboard")
     print("=" * 50)
-    
+
     try:
         from education_system.university_system.infrastructure.database.db import get_connection
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Current financial metrics
         cursor.execute('''
-        SELECT 
+        SELECT
             SUM(sf.amount) as total_expected,
             SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END) as total_collected,
             COUNT(DISTINCT sf.student_id) as student_count
         FROM student_fees sf
         ''')
-        
+
         dashboard_data = cursor.fetchone()
-        
+
         if dashboard_data:
             total_expected = dashboard_data[0] or 0
             total_collected = dashboard_data[1] or 0
             student_count = dashboard_data[2] or 0
             collection_rate = (total_collected / total_expected * 100) if total_expected > 0 else 0
-            
+
             print(f"Total Expected Revenue: £{total_expected:,.2f}")
             print(f"Total Collected: £{total_collected:,.2f}")
             print(f"Collection Rate: {collection_rate:.1f}%")
             print(f"Active Students: {student_count:,}")
             print(f"Average Revenue per Student: £{total_expected / student_count if student_count > 0 else 0:,.2f}")
-        
+
         # Recent payment activity
         print(f"\nRecent Payment Activity:")
         cursor.execute('''
         SELECT payment_date, COUNT(*) as payment_count, SUM(amount) as daily_total
-        FROM payments 
+        FROM payments
         WHERE payment_date >= date('now', '-7 days')
         GROUP BY payment_date
         ORDER BY payment_date DESC
         LIMIT 7
         ''')
-        
+
         recent_payments = cursor.fetchall()
         if recent_payments:
             for payment_date, count, total in recent_payments:
                 print(f"  {payment_date}: {count} payments, £{total:,.2f}")
         else:
             print("  No recent payment activity")
-        
+
         # Outstanding balances
         cursor.execute('''
-        SELECT COUNT(*), SUM(amount) 
-        FROM student_fees 
+        SELECT COUNT(*), SUM(amount)
+        FROM student_fees
         WHERE status != 'paid'
         ''')
-        
+
         outstanding_data = cursor.fetchone()
         if outstanding_data:
             print(f"\nOutstanding Balances:")
             print(f"  Unpaid Items: {outstanding_data[0] or 0}")
             print(f"  Outstanding Amount: £{outstanding_data[1] or 0:,.2f}")
-        
+
         conn.close()
-        
+
     except Exception as e:
         print(f"Error generating dashboard: {e}")
 
@@ -838,18 +838,18 @@ def generate_financial_forecasting():
     if not hasattr(auth, 'check_permission') or not auth.check_permission('manage_finances'):
         print("You don't have permission to generate financial forecasting.")
         return
-    
+
     print("\nGenerating Financial Forecasting Report...")
     print("=" * 50)
-    
+
     try:
         from education_system.university_system.infrastructure.database.db import get_connection
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Get historical payment data
         cursor.execute('''
-        SELECT 
+        SELECT
             strftime('%Y-%m', payment_date) as month,
             SUM(amount) as monthly_total
         FROM payments
@@ -857,20 +857,20 @@ def generate_financial_forecasting():
         GROUP BY month
         ORDER BY month
         ''')
-        
+
         historical_data = cursor.fetchall()
-        
+
         if historical_data:
             print("Historical Monthly Revenue:")
             total_historical = 0
             for month, total in historical_data:
                 print(f"  {month}: £{total:,.2f}")
                 total_historical += total
-            
+
             # Simple forecasting
             average_monthly = total_historical / len(historical_data)
             print(f"\nAverage Monthly Revenue: £{average_monthly:,.2f}")
-            
+
             # 6-month forecast
             print(f"\n6-Month Revenue Forecast:")
             forecast_total = 0
@@ -880,16 +880,16 @@ def generate_financial_forecasting():
                 forecast_amount = average_monthly * 1.05  # 5% growth assumption
                 forecast_total += forecast_amount
                 print(f"  {month_str}: £{forecast_amount:,.2f}")
-            
+
             print(f"\nTotal 6-Month Forecast: £{forecast_total:,.2f}")
-            
+
             # Generate simple chart
             try:
                 import matplotlib.pyplot as plt
-                
+
                 months = [item[0] for item in historical_data]
                 amounts = [item[1] for item in historical_data]
-                
+
                 plt.figure(figsize=(12, 6))
                 plt.plot(months, amounts, marker='o', linewidth=2, label='Historical')
                 plt.title('Monthly Revenue Trend')
@@ -900,17 +900,17 @@ def generate_financial_forecasting():
                 plt.tight_layout()
                 plt.savefig('financial_forecast.png', dpi=300, bbox_inches='tight')
                 plt.close()
-                
+
                 print("Forecast chart saved as 'financial_forecast.png'")
-                
+
             except ImportError:
                 print("Matplotlib not available for chart generation")
-        
+
         else:
             print("No historical payment data available for forecasting")
-        
+
         conn.close()
-        
+
     except Exception as e:
         print(f"Error generating forecast: {e}")
 
@@ -926,18 +926,18 @@ def generate_budget_variance_report():
     if not hasattr(auth, 'check_permission') or not auth.check_permission('manage_finances'):
         print("You don't have permission to generate budget variance report.")
         return
-    
+
     print("\nBudget Variance Report")
     print("=" * 50)
-    
+
     try:
         from education_system.university_system.infrastructure.database.db import get_connection
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Get budget vs actual by fee type
         cursor.execute('''
-        SELECT 
+        SELECT
             ft.fee_name,
             SUM(sf.amount) as budgeted_amount,
             SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END) as actual_collected,
@@ -947,31 +947,31 @@ def generate_budget_variance_report():
         GROUP BY ft.fee_name
         ORDER BY budgeted_amount DESC
         ''')
-        
+
         variance_data = cursor.fetchall()
-        
+
         if variance_data:
             print(f"{'Fee Type':<20} {'Budgeted':<12} {'Actual':<12} {'Variance':<12} {'Rate':<8}")
             print("-" * 70)
-            
+
             total_budgeted = 0
             total_actual = 0
-            
+
             for fee_name, budgeted, actual, count in variance_data:
                 variance = actual - budgeted
                 rate = (actual / budgeted * 100) if budgeted > 0 else 0
-                
+
                 total_budgeted += budgeted
                 total_actual += actual
-                
+
                 print(f"{fee_name:<20} £{budgeted:<11,.0f} £{actual:<11,.0f} £{variance:<11,.0f} {rate:<7.1f}%")
-            
+
             print("-" * 70)
             total_variance = total_actual - total_budgeted
             total_rate = (total_actual / total_budgeted * 100) if total_budgeted > 0 else 0
-            
+
             print(f"{'TOTAL':<20} £{total_budgeted:<11,.0f} £{total_actual:<11,.0f} £{total_variance:<11,.0f} {total_rate:<7.1f}%")
-            
+
             # Variance analysis
             print(f"\nVariance Analysis:")
             if total_variance > 0:
@@ -980,12 +980,12 @@ def generate_budget_variance_report():
                 print(f"⚠ Negative variance of £{abs(total_variance):,.2f} ({100 - total_rate:.1f}% below budget)")
             else:
                 print("✓ On budget")
-        
+
         else:
             print("No budget data available for analysis")
-        
+
         conn.close()
-        
+
     except Exception as e:
         print(f"Error generating budget variance report: {e}")
 
@@ -1745,9 +1745,9 @@ def display_enhanced_finance_menu():
     print("\n🖥️  Would you like to use the GUI or console interface?")
     print("1. Launch GUI Interface (Recommended)")
     print("2. Use Console Interface")
-    
+
     choice = input("Select interface (1-2): ").strip()
-    
+
     if choice == '1':
         launch_financial_gui(auth)
     else:

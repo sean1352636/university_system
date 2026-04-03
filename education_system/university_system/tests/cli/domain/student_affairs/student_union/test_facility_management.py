@@ -410,7 +410,7 @@ class TestFacilityBooking:
     @patch('builtins.input', side_effect=[
         '1', '2024-02-01', '10:00', '12:00', 'n', 'Meeting', ''
     ])
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.view_facilities')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.view_facilities', create=True)
     @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.send_confirmation_email')
     @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.get_connection')
     def test_request_facility_booking_success(self, mock_get_conn, mock_email, mock_view, mock_input, mock_auth):
@@ -434,7 +434,7 @@ class TestFacilityBooking:
     @patch('builtins.input', side_effect=[
         '1', '2024-02-01', '10:00', '12:00', 'y', '1', 'Meeting', ''
     ])
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.view_facilities')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.view_facilities', create=True)
     @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.send_confirmation_email')
     @patch('education_system.university_system.modules.domain.student_affairs.student_union.facilities.facility_management.get_connection')
     def test_request_booking_for_club(self, mock_get_conn, mock_email, mock_view, mock_input, mock_auth):

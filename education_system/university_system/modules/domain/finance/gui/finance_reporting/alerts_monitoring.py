@@ -111,10 +111,10 @@ def show_alerts(self):
         alerts_tree.delete(*alerts_tree.get_children()), load_alerts()
     ]).pack(side=tk.LEFT, padx=(0, 5))
 
-    ttk.Button(button_frame, text="Run Alert Check", 
+    ttk.Button(button_frame, text="Run Alert Check",
               command=self.run_alert_check).pack(side=tk.LEFT, padx=5)
 
-    ttk.Button(button_frame, text="Close", 
+    ttk.Button(button_frame, text="Close",
               command=alerts_window.destroy).pack(side=tk.RIGHT)
 
 def run_alert_check(self):
@@ -185,7 +185,7 @@ def show_system_health(self):
     run_health_check()
 
     # Refresh button
-    ttk.Button(main_frame, text="🔄 Run Health Check", 
+    ttk.Button(main_frame, text="🔄 Run Health Check",
               command=run_health_check).pack(pady=5)
 
 def run_background_health_check(self):
@@ -520,7 +520,7 @@ def run_comprehensive_health_check(self):
     buttons_frame.pack(fill=tk.X, pady=(10, 0))
 
     ttk.Button(buttons_frame, text="Re-run Check", command=run_health_check).pack(side=tk.LEFT, padx=(0, 5))
-    ttk.Button(buttons_frame, text="Export Report", 
+    ttk.Button(buttons_frame, text="Export Report",
                command=lambda: messagebox.showinfo("Export", "Health report exported")).pack(side=tk.LEFT, padx=5)
     ttk.Button(buttons_frame, text="Close", command=health_window.destroy).pack(side=tk.RIGHT)
 
@@ -533,7 +533,7 @@ def run_system_performance_monitoring(self):
     main_frame = ttk.Frame(monitoring_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Real-Time Performance Monitoring", 
+    ttk.Label(main_frame, text="Real-Time Performance Monitoring",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Metrics display
@@ -581,10 +581,10 @@ def run_system_performance_monitoring(self):
         else:
             self.stop_performance_monitoring()
 
-    ttk.Checkbutton(control_frame, text="Real-time Monitoring", 
+    ttk.Checkbutton(control_frame, text="Real-time Monitoring",
                    variable=self.monitoring_active, command=toggle_monitoring).pack(side=tk.LEFT)
 
-    ttk.Button(control_frame, text="Clear Log", 
+    ttk.Button(control_frame, text="Clear Log",
                command=lambda: self.monitoring_log.delete(1.0, tk.END)).pack(side=tk.LEFT, padx=(10, 0))
 
     ttk.Button(control_frame, text="Export Log",

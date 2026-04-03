@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -121,7 +121,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -132,7 +132,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -260,7 +260,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -882,25 +882,25 @@ class AdvancedSearchGUI:
         self.master.title(_t("advanced_search.window_title"))
         self.master.geometry("1200x800")
         self.master.configure(bg='#f0f0f0')
-        
+
         # Initialize variables
         self.search_results = []
         self.current_page = 0
         self.results_per_page = 10
         self.output_queue = queue.Queue()
-        
+
         # Style configuration
         self.setup_styles()
-        
+
         # Create main layout
         self.create_main_layout()
 
         # Ensure supporting tables exist before we begin interacting with them
         self._ensure_support_tables()
-        
+
         # Initialize database
         self.init_database()
-        
+
         # Start output monitor
         self.monitor_output()
     def _current_user_id(self) -> str:
@@ -973,7 +973,7 @@ class AdvancedSearchGUI:
         """Configure ttk styles for better appearance"""
         style = ttk.Style()
         style.theme_use('clam')
-        
+
         # Configure custom styles
         style.configure('Header.TLabel', font=('Arial', 14, 'bold'), background='#f0f0f0')
         style.configure('Title.TLabel', font=('Arial', 16, 'bold'), background='#f0f0f0')
@@ -983,13 +983,13 @@ class AdvancedSearchGUI:
         # Main container
         main_frame = ttk.Frame(self.master, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
+
         # Configure grid weights
         self.master.columnconfigure(0, weight=1)
         self.master.rowconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=1)
         main_frame.rowconfigure(1, weight=1)
-        
+
         # Title and Return Home Button Frame
         title_frame = ttk.Frame(main_frame)
         title_frame.grid(row=0, column=0, columnspan=2, pady=(0, 20), sticky=(tk.W, tk.E))
@@ -1003,13 +1003,13 @@ class AdvancedSearchGUI:
             return_button = ttk.Button(title_frame, text=f"🏠 {_t('advanced_search.return_to_menu')}",
                                       command=self.return_to_main_menu)
             return_button.pack(side=tk.RIGHT, padx=10)
-        
+
         # Left sidebar - Menu
         self.create_sidebar(main_frame)
-        
+
         # Right main area - Content
         self.create_main_content(main_frame)
-        
+
         # Bottom status bar
         self.create_status_bar(main_frame)
     def create_sidebar(self, parent):
@@ -1088,10 +1088,10 @@ class AdvancedSearchGUI:
                 (_t("advanced_search.system_statistics"), self.show_system_stats),
             ]),
         ]
-                
+
         # (optional) make buttons expand horizontally
         # scrollable_frame.grid_columnconfigure(0, weight=1)
-        
+
         row = 0
         for category_name, items in categories:
             category_label = ttk.Label(scrollable_frame, text=category_name, style='Header.TLabel')
@@ -1107,17 +1107,17 @@ class AdvancedSearchGUI:
         self.content_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S))
         self.content_frame.columnconfigure(0, weight=1)
         self.content_frame.rowconfigure(0, weight=1)
-        
+
         # Notebook for tabbed interface
         self.notebook = ttk.Notebook(self.content_frame)
         self.notebook.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
+
         # Welcome tab
         self.create_welcome_tab()
-        
+
         # Search results tab
         self.create_results_tab()
-        
+
         # Output/Console tab
         self.create_output_tab()
     def create_welcome_tab(self):
@@ -1276,10 +1276,10 @@ class AdvancedSearchGUI:
         """Capture output from original CLI functions"""
         import io
         import sys
-        
+
         old_stdout = sys.stdout
         sys.stdout = captured_output = io.StringIO()
-        
+
         try:
             result = func(*args, **kwargs)
             output = captured_output.getvalue()

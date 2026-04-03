@@ -19,7 +19,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.modules.shared.constants import paths
 from education_system.university_system.infrastructure.email.template_utils import render_template
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 from collections import deque
 
 # Try to import desktop notification library
@@ -144,28 +144,28 @@ class NotificationManager:
         notif_window.title("Notifications")
         notif_window.geometry("600x400")
         notif_window.configure(bg='#f0f0f0')
-        
+
         # Notifications list
         notif_frame = ttk.LabelFrame(notif_window, text="Your Notifications", padding=10)
         notif_frame.pack(fill='both', expand=True, padx=10, pady=10)
-        
+
         # Treeview for notifications
         notif_tree = ttk.Treeview(notif_frame, columns=('Title', 'Message', 'Date', 'Read'), show='headings')
-        
+
         for col in ['Title', 'Message', 'Date', 'Read']:
             notif_tree.heading(col, text=col)
             if col == 'Message':
                 notif_tree.column(col, width=300)
             else:
                 notif_tree.column(col, width=100)
-        
+
         notif_tree.pack(fill='both', expand=True)
-        
+
         # Load notifications
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             user_id = self.auth.current_user['id']
             # Use notification_id if id column doesn't exist (legacy schema compatibility)
             cursor.execute("PRAGMA table_info(notifications)")
@@ -181,53 +181,53 @@ class NotificationManager:
             ORDER BY [''' + safe_date_col + '''] DESC
             LIMIT 50
             ''', (user_id,))
-            
+
             notifications = cursor.fetchall()
-            
+
             for notif in notifications:
                 read_status = "Yes" if notif[3] else "No"
                 tags = [] if notif[3] else ['unread']
                 notif_tree.insert('', 'end', values=(notif[0], notif[1], notif[2], read_status), tags=tags)
-            
+
             notif_tree.tag_configure('unread', background='#fff3cd')
-            
+
             conn.close()
-            
+
         except Exception as e:
             ttk.Label(notif_frame, text=f"Error loading notifications: {e}").pack()
-        
+
         # Buttons
         btn_frame = ttk.Frame(notif_window)
         btn_frame.pack(fill='x', padx=10, pady=10)
-        
-        ttk.Button(btn_frame, text="Mark All Read", 
+
+        ttk.Button(btn_frame, text="Mark All Read",
                   command=lambda: self.mark_notifications_read(notif_tree)).pack(side='left')
         ttk.Button(btn_frame, text="Close", command=notif_window.destroy).pack(side='right')
-    
+
 
     def mark_notifications_read(self, tree):
         """Mark all notifications as read"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             user_id = self.auth.current_user['id']
             cursor.execute('UPDATE notifications SET is_read = 1 WHERE user_id = ?', (user_id,))
-            
+
             conn.commit()
             conn.close()
-            
+
             # Update tree view
             for item in tree.get_children():
                 tree.set(item, 'Read', 'Yes')
                 tree.item(item, tags=[])
-            
+
             # Update notification count
             self.update_notifications()
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to mark notifications as read: {e}")
-    
+
 
     def update_notifications(self):
         """Update notification count in header"""
@@ -254,32 +254,32 @@ class NotificationManager:
             self.gui.notification_count = 0
             if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'notification_btn'):
                 self.gui.layout.notification_btn.configure(text="\U0001f514 Notifications (0)")
-    
+
 
     def run_due_date_reminders(self, *args, **kwargs):
         """Trigger the due-date reminder runner from CLI."""
         self._launch_gui_feature(self.run_due_date_reminders_ui, "due date reminders")
-    
-    
+
+
 
     def _get_unread_notification_count(self, user_id):
         """Get count of unread notifications"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-    
+
             cursor.execute('''
                 SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0
             ''', (user_id,))
-    
+
             count = cursor.fetchone()[0]
             conn.close()
-    
+
             return count
         except Exception as e:
             print(f"Error getting unread count: {e}")
             return 0
-    
+
 
     def _refresh_notifications(self, tree, user_id, type_filter="all", status_filter="all", search_text=""):
         """Refresh notifications list"""
@@ -348,26 +348,26 @@ class NotificationManager:
                     formatted_date = date_obj.strftime("%Y-%m-%d %H:%M")
                 except (ValueError, TypeError):
                     formatted_date = created_datetime
-    
+
                 # Insert into tree
                 item_id = tree.insert('', 'end', text=notif_id,
                                      values=(status, notif_type, title or "No title",
                                             display_message, formatted_date),
                                      tags=(f'type_{notif_type}', 'unread' if not is_read else 'read'))
-    
+
             # Configure tags
             tree.tag_configure('unread', font=('TkDefaultFont', 10, 'bold'))
             tree.tag_configure('read', foreground='#666666')
-    
+
             for ntype, color in type_colors.items():
                 tree.tag_configure(f'type_{ntype}', foreground=color)
-    
+
             conn.close()
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load notifications: {str(e)}")
             print(f"Error refreshing notifications: {e}")
-    
+
 
     def _view_notification_details(self, tree, user_id):
         """View notification details"""
@@ -411,28 +411,28 @@ class NotificationManager:
                 conn.commit()
 
             conn.close()
-    
+
             # Create detail window
             detail_window = tk.Toplevel(self.root)
             detail_window.title("Notification Details")
             detail_window.geometry("700x500")
             detail_window.configure(bg='#f0f0f0')
-    
+
             # Info frame
             info_frame = ttk.LabelFrame(detail_window, text="Notification Information", padding=10)
             info_frame.pack(fill='x', padx=10, pady=10)
-    
+
             # Type
             ttk.Label(info_frame, text="Type:").grid(row=0, column=0, sticky='w', padx=5, pady=2)
             type_label = ttk.Label(info_frame, text=notification[4], font=('TkDefaultFont', 10, 'bold'))
             type_label.grid(row=0, column=1, sticky='w', padx=5, pady=2)
-    
+
             # Title
             ttk.Label(info_frame, text="Title:").grid(row=1, column=0, sticky='w', padx=5, pady=2)
             title_label = ttk.Label(info_frame, text=notification[2] or "No title",
                                    font=('TkDefaultFont', 10, 'bold'))
             title_label.grid(row=1, column=1, sticky='w', padx=5, pady=2)
-    
+
             # Date
             ttk.Label(info_frame, text="Date:").grid(row=2, column=0, sticky='w', padx=5, pady=2)
             try:
@@ -441,34 +441,34 @@ class NotificationManager:
             except (ValueError, TypeError):
                 formatted_date = notification[6]
             ttk.Label(info_frame, text=formatted_date).grid(row=2, column=1, sticky='w', padx=5, pady=2)
-    
+
             # Assignment reference (if any)
             if notification[7]:  # assignment_id
                 ttk.Label(info_frame, text="Assignment:").grid(row=3, column=0, sticky='w', padx=5, pady=2)
                 ttk.Label(info_frame, text=f"ID: {notification[7]}").grid(row=3, column=1, sticky='w', padx=5, pady=2)
-    
+
             # Message content frame
             content_frame = ttk.LabelFrame(detail_window, text="Message", padding=10)
             content_frame.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
             message_text = scrolledtext.ScrolledText(content_frame, width=60, height=15, wrap=tk.WORD)
             message_text.pack(fill='both', expand=True)
             message_text.insert('1.0', notification[3])
             message_text.config(state='disabled')
-    
+
             # Button frame
             button_frame = ttk.Frame(detail_window)
             button_frame.pack(fill='x', padx=10, pady=10)
-    
+
             ttk.Button(button_frame, text="Close", command=detail_window.destroy).pack(side='right', padx=5)
-    
+
             # Refresh the tree to show updated read status
             self._refresh_notifications(tree, user_id)
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to view notification: {str(e)}")
             print(f"Error viewing notification: {e}")
-    
+
 
     def _mark_notification_read(self, tree, user_id, is_read):
         """Mark notification as read or unread"""
@@ -505,7 +505,7 @@ class NotificationManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update notification: {str(e)}")
             print(f"Error marking notification: {e}")
-    
+
 
     def _delete_notification(self, tree, user_id):
         """Delete selected notification"""
@@ -544,64 +544,64 @@ class NotificationManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to delete notification: {str(e)}")
             print(f"Error deleting notification: {e}")
-    
+
 
     def _mark_all_notifications_read(self, tree, user_id):
         """Mark all notifications as read"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-    
+
             cursor.execute('''
                 UPDATE notifications SET is_read = 1 WHERE user_id = ? AND is_read = 0
             ''', (user_id,))
-    
+
             rows_updated = cursor.rowcount
             conn.commit()
             conn.close()
-    
+
             # Refresh the tree
             self._refresh_notifications(tree, user_id)
-    
+
             messagebox.showinfo("Success", f"Marked {rows_updated} notification(s) as read")
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to mark notifications as read: {str(e)}")
             print(f"Error marking all as read: {e}")
-    
+
 
     def _clear_read_notifications(self, tree, user_id):
         """Delete all read notifications"""
         if not messagebox.askyesno("Confirm Clear",
                                    "Are you sure you want to delete all read notifications?"):
             return
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-    
+
             cursor.execute('''
                 DELETE FROM notifications WHERE user_id = ? AND is_read = 1
             ''', (user_id,))
-    
+
             rows_deleted = cursor.rowcount
             conn.commit()
             conn.close()
-    
+
             # Refresh the tree
             self._refresh_notifications(tree, user_id)
-    
+
             messagebox.showinfo("Success", f"Cleared {rows_deleted} read notification(s)")
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to clear read notifications: {str(e)}")
             print(f"Error clearing read notifications: {e}")
-    
-    
+
+
 
     def manage_notifications(self, *args, **kwargs):
         """Manage notifications for the current user.
-    
+
         Features:
         - Display all notifications with type, message, timestamp
         - Show read/unread status
@@ -616,97 +616,97 @@ class NotificationManager:
             notif_window.title("Notification Management")
             notif_window.geometry("1000x700")
             notif_window.configure(bg='#f0f0f0')
-    
+
             # Get current user ID
             user_id = self.auth.current_user.get('id')
             if not user_id:
                 messagebox.showerror("Error", "User not authenticated")
                 notif_window.destroy()
                 return
-    
+
             # Ensure notifications table exists
             self.gui.db._ensure_notifications_table()
-    
+
             # Header frame
             header_frame = ttk.Frame(notif_window)
             header_frame.pack(fill='x', padx=10, pady=10)
-    
+
             ttk.Label(header_frame, text="Notifications",
                      font=('TkDefaultFont', 16, 'bold')).pack(side='left')
-    
+
             # Get unread count
             unread_count = self._get_unread_notification_count(user_id)
             ttk.Label(header_frame, text=f"({unread_count} unread)",
                      font=('TkDefaultFont', 12)).pack(side='left', padx=10)
-    
+
             # Filter frame
             filter_frame = ttk.LabelFrame(notif_window, text="Filters", padding=10)
             filter_frame.pack(fill='x', padx=10, pady=5)
-    
+
             # Type filter
             ttk.Label(filter_frame, text="Type:").pack(side='left', padx=5)
             type_var = tk.StringVar(value="all")
-    
+
             ttk.Radiobutton(filter_frame, text="All", variable=type_var, value="all").pack(side='left', padx=5)
             ttk.Radiobutton(filter_frame, text="Info", variable=type_var, value="info").pack(side='left', padx=5)
             ttk.Radiobutton(filter_frame, text="Warning", variable=type_var, value="warning").pack(side='left', padx=5)
             ttk.Radiobutton(filter_frame, text="Success", variable=type_var, value="success").pack(side='left', padx=5)
             ttk.Radiobutton(filter_frame, text="Error", variable=type_var, value="error").pack(side='left', padx=5)
-    
+
             # Status filter
             ttk.Separator(filter_frame, orient='vertical').pack(side='left', fill='y', padx=10)
             ttk.Label(filter_frame, text="Status:").pack(side='left', padx=5)
             status_var = tk.StringVar(value="all")
-    
+
             ttk.Radiobutton(filter_frame, text="All", variable=status_var, value="all").pack(side='left', padx=5)
             ttk.Radiobutton(filter_frame, text="Unread", variable=status_var, value="unread").pack(side='left', padx=5)
             ttk.Radiobutton(filter_frame, text="Read", variable=status_var, value="read").pack(side='left', padx=5)
-    
+
             # Search
             ttk.Separator(filter_frame, orient='vertical').pack(side='left', fill='y', padx=10)
             ttk.Label(filter_frame, text="Search:").pack(side='left', padx=5)
             search_var = tk.StringVar()
             search_entry = ttk.Entry(filter_frame, textvariable=search_var, width=20)
             search_entry.pack(side='left', padx=5)
-    
+
             # Apply filter button
             ttk.Button(filter_frame, text="Apply Filters",
                       command=lambda: self._refresh_notifications(tree, user_id, type_var.get(),
                                                                  status_var.get(), search_var.get())).pack(side='left', padx=10)
-    
+
             # Notifications list
             list_frame = ttk.Frame(notif_window)
             list_frame.pack(fill='both', expand=True, padx=10, pady=5)
-    
+
             # Treeview for notifications
             columns = ('Status', 'Type', 'Title', 'Message', 'Date')
             tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
-    
+
             tree.heading('#0', text='ID')
             tree.heading('Status', text='Status')
             tree.heading('Type', text='Type')
             tree.heading('Title', text='Title')
             tree.heading('Message', text='Message')
             tree.heading('Date', text='Date')
-    
+
             tree.column('#0', width=50)
             tree.column('Status', width=80)
             tree.column('Type', width=80)
             tree.column('Title', width=150)
             tree.column('Message', width=400)
             tree.column('Date', width=150)
-    
+
             # Scrollbar
             scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=tree.yview)
             tree.configure(yscrollcommand=scrollbar.set)
-    
+
             tree.pack(side='left', fill='both', expand=True)
             scrollbar.pack(side='right', fill='y')
-    
+
             # Action buttons
             button_frame = ttk.Frame(notif_window)
             button_frame.pack(fill='x', padx=10, pady=10)
-    
+
             ttk.Button(button_frame, text="View Details",
                       command=lambda: self._view_notification_details(tree, user_id)).pack(side='left', padx=5)
             ttk.Button(button_frame, text="Mark as Read",
@@ -715,24 +715,24 @@ class NotificationManager:
                       command=lambda: self._mark_notification_read(tree, user_id, False)).pack(side='left', padx=5)
             ttk.Button(button_frame, text="Delete Selected",
                       command=lambda: self._delete_notification(tree, user_id)).pack(side='left', padx=5)
-    
+
             ttk.Separator(button_frame, orient='vertical').pack(side='left', fill='y', padx=10)
-    
+
             ttk.Button(button_frame, text="Mark All as Read",
                       command=lambda: self._mark_all_notifications_read(tree, user_id)).pack(side='left', padx=5)
             ttk.Button(button_frame, text="Clear All Read",
                       command=lambda: self._clear_read_notifications(tree, user_id)).pack(side='left', padx=5)
-    
+
             ttk.Button(button_frame, text="Refresh",
                       command=lambda: self._refresh_notifications(tree, user_id, type_var.get(),
                                                                  status_var.get(), search_var.get())).pack(side='right', padx=5)
-    
+
             # Load notifications
             self._refresh_notifications(tree, user_id, type_var.get(), status_var.get(), search_var.get())
-    
+
             # Bind double-click to view details
             tree.bind('<Double-1>', lambda e: self._view_notification_details(tree, user_id))
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load notifications: {str(e)}")
             print(f"Error in manage_notifications: {e}")

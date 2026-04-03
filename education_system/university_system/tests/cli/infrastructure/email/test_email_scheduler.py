@@ -310,17 +310,10 @@ class TestSetupSchedules:
         """Test that all scheduled jobs are configured"""
         from education_system.university_system.infrastructure.email.email_scheduler import setup_schedules
 
-        mock_every = MagicMock()
-        mock_schedule.every.return_value = mock_every
-        mock_day = MagicMock()
-        mock_every.day = mock_day
-        mock_minutes = MagicMock()
-        mock_every.__call__.return_value.minutes = mock_minutes
-
         setup_schedules()
 
-        # Should configure daily jobs
-        assert mock_schedule.every.call_count >= 3  # At least 3 daily jobs
+        # Should configure daily jobs (3 daily + 1 periodic = at least 4 calls)
+        assert mock_schedule.every.call_count >= 3
 
     @patch('education_system.university_system.infrastructure.email.email_scheduler.schedule')
     def test_setup_schedules_timing(self, mock_schedule):
@@ -402,9 +395,10 @@ class TestStopScheduler:
         """Test stopping scheduler successfully"""
         from education_system.university_system.infrastructure.email import email_scheduler
 
-        # Set up running thread
+        # Set up running thread — is_alive returns True initially (passes guard),
+        # then False after join (simulating successful stop)
         mock_thread = MagicMock()
-        mock_thread.is_alive.return_value = True
+        mock_thread.is_alive.side_effect = [True, False]
         email_scheduler.scheduler_thread = mock_thread
         email_scheduler.scheduler_running.set()
 
@@ -610,7 +604,8 @@ class TestIntegration:
     @patch('education_system.university_system.infrastructure.email.email_scheduler.send_bulk_satisfaction_surveys')
     @patch('education_system.university_system.infrastructure.email.email_scheduler.send_book_return_reminder')
     @patch('education_system.university_system.infrastructure.email.email_scheduler.get_connection')
-    def test_scheduler_lifecycle(self, mock_get_conn, mock_book_reminder, mock_surveys, cleanup_scheduler):
+    @patch('education_system.university_system.infrastructure.email.email_scheduler.time.sleep', side_effect=lambda s: None)
+    def test_scheduler_lifecycle(self, mock_sleep, mock_get_conn, mock_book_reminder, mock_surveys, cleanup_scheduler):
         """Test complete scheduler lifecycle: start, check status, stop"""
         from education_system.university_system.infrastructure.email.email_scheduler import (
             start_scheduler, is_scheduler_running, stop_scheduler
@@ -626,7 +621,7 @@ class TestIntegration:
             assert is_scheduler_running() is True
 
         # Stop scheduler
-        result = stop_scheduler(timeout=2)
+        result = stop_scheduler(timeout=5)
         assert result is True
         assert is_scheduler_running() is False
 

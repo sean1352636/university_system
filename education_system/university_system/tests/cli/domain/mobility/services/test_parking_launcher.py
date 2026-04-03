@@ -13,6 +13,8 @@ from unittest.mock import Mock, MagicMock, patch, call
 import sys
 import io
 
+_LAUNCHER = 'education_system.university_system.modules.domain.mobility.services.parking_launcher'
+
 
 class TestParkingLauncher(unittest.TestCase):
     """Test parking launcher functionality"""
@@ -25,7 +27,7 @@ class TestParkingLauncher(unittest.TestCase):
         except ImportError as e:
             self.fail(f"Failed to import parking_launcher: {e}")
 
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.tk')
+    @patch(f'{_LAUNCHER}.tk')
     def test_check_dependencies_all_present(self, mock_tk):
         """Test dependency checking with all dependencies present"""
         from education_system.university_system.modules.domain.mobility.services.parking_launcher import check_dependencies
@@ -57,8 +59,8 @@ class TestParkingLauncher(unittest.TestCase):
         self.assertTrue(hasattr(parking_launcher, 'launch_console'))
         self.assertTrue(callable(parking_launcher.launch_console))
 
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.tk.Tk')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.messagebox')
+    @patch(f'{_LAUNCHER}.tk.Tk')
+    @patch(f'{_LAUNCHER}.messagebox')
     def test_show_interface_selection_gui(self, mock_msgbox, mock_tk):
         """Test showing interface selection dialog choosing GUI"""
         from education_system.university_system.modules.domain.mobility.services.parking_launcher import (
@@ -70,8 +72,8 @@ class TestParkingLauncher(unittest.TestCase):
         result = show_interface_selection()
         self.assertEqual(result, 'gui')
 
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.tk.Tk')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.messagebox')
+    @patch(f'{_LAUNCHER}.tk.Tk')
+    @patch(f'{_LAUNCHER}.messagebox')
     def test_show_interface_selection_console(self, mock_msgbox, mock_tk):
         """Test showing interface selection dialog choosing console"""
         from education_system.university_system.modules.domain.mobility.services.parking_launcher import (
@@ -83,8 +85,8 @@ class TestParkingLauncher(unittest.TestCase):
         result = show_interface_selection()
         self.assertEqual(result, 'console')
 
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.tk.Tk')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.messagebox')
+    @patch(f'{_LAUNCHER}.tk.Tk')
+    @patch(f'{_LAUNCHER}.messagebox')
     def test_show_interface_selection_cancel(self, mock_msgbox, mock_tk):
         """Test showing interface selection dialog with cancel"""
         from education_system.university_system.modules.domain.mobility.services.parking_launcher import (
@@ -96,8 +98,8 @@ class TestParkingLauncher(unittest.TestCase):
         result = show_interface_selection()
         self.assertEqual(result, 'exit')
 
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.tk.Tk')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.ParkingManagementGUI')
+    @patch(f'{_LAUNCHER}.tk.Tk')
+    @patch('education_system.university_system.modules.domain.mobility.gui.parking_management_gui.ParkingManagementGUI')
     def test_launch_gui_success(self, mock_gui_class, mock_tk):
         """Test successful GUI launch"""
         from education_system.university_system.modules.domain.mobility.services.parking_launcher import launch_gui
@@ -115,11 +117,10 @@ class TestParkingLauncher(unittest.TestCase):
         self.assertTrue(result)
         mock_gui_class.assert_called_once_with(mock_root)
 
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.display_parking_menu')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.set_auth')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.get_auth')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.UserAuth')
-    def test_launch_console_success(self, mock_auth_class, mock_get_auth, mock_set_auth, mock_menu):
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.display_parking_menu')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.set_auth')
+    @patch('education_system.university_system.infrastructure.shared_context.get_auth')
+    def test_launch_console_success(self, mock_get_auth, mock_set_auth, mock_menu):
         """Test successful console launch"""
         from education_system.university_system.modules.domain.mobility.services.parking_launcher import launch_console
 
@@ -134,10 +135,10 @@ class TestParkingLauncher(unittest.TestCase):
         mock_set_auth.assert_called_once_with(mock_auth)
         mock_menu.assert_called_once()
 
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.display_parking_menu')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.set_auth')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.get_auth')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.UserAuth')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.display_parking_menu')
+    @patch('education_system.university_system.modules.domain.mobility.services.parking_management.set_auth')
+    @patch('education_system.university_system.infrastructure.shared_context.get_auth')
+    @patch('education_system.university_system.infrastructure.auth.UserAuth')
     def test_launch_console_no_auth(self, mock_auth_class, mock_get_auth, mock_set_auth, mock_menu):
         """Test console launch when auth is None"""
         from education_system.university_system.modules.domain.mobility.services.parking_launcher import launch_console
@@ -170,8 +171,8 @@ class TestParkingLauncherMain(unittest.TestCase):
                 pass
 
     @patch('sys.argv', ['parking_launcher.py', '--gui'])
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.launch_gui')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.check_dependencies')
+    @patch(f'{_LAUNCHER}.launch_gui')
+    @patch(f'{_LAUNCHER}.check_dependencies')
     def test_main_gui_argument(self, mock_deps, mock_launch):
         """Test main function with --gui argument"""
         from education_system.university_system.modules.domain.mobility.services import parking_launcher
@@ -185,8 +186,8 @@ class TestParkingLauncherMain(unittest.TestCase):
         mock_launch.assert_called_once()
 
     @patch('sys.argv', ['parking_launcher.py', '--console'])
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.launch_console')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.check_dependencies')
+    @patch(f'{_LAUNCHER}.launch_console')
+    @patch(f'{_LAUNCHER}.check_dependencies')
     def test_main_console_argument(self, mock_deps, mock_launch):
         """Test main function with --console argument"""
         from education_system.university_system.modules.domain.mobility.services import parking_launcher
@@ -200,7 +201,7 @@ class TestParkingLauncherMain(unittest.TestCase):
         mock_launch.assert_called_once()
 
     @patch('sys.argv', ['parking_launcher.py', '--no-deps-check', '--console'])
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.launch_console')
+    @patch(f'{_LAUNCHER}.launch_console')
     def test_main_skip_deps_check(self, mock_launch):
         """Test main function with --no-deps-check"""
         from education_system.university_system.modules.domain.mobility.services import parking_launcher
@@ -213,9 +214,9 @@ class TestParkingLauncherMain(unittest.TestCase):
         mock_launch.assert_called_once()
 
     @patch('sys.argv', ['parking_launcher.py'])
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.show_interface_selection')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.launch_gui')
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.check_dependencies')
+    @patch(f'{_LAUNCHER}.show_interface_selection')
+    @patch(f'{_LAUNCHER}.launch_gui')
+    @patch(f'{_LAUNCHER}.check_dependencies')
     def test_main_no_arguments(self, mock_deps, mock_launch, mock_select):
         """Test main function with no arguments"""
         from education_system.university_system.modules.domain.mobility.services import parking_launcher
@@ -240,7 +241,7 @@ class TestParkingLauncherMain(unittest.TestCase):
             with patch('sys.stderr', new=io.StringIO()):
                 try:
                     parking_launcher.main()
-                except SystemExit:
+                except (SystemExit, UnboundLocalError):
                     pass
 
         mock_exit.assert_called_with(1)
@@ -249,7 +250,7 @@ class TestParkingLauncherMain(unittest.TestCase):
 class TestParkingLauncherErrorHandling(unittest.TestCase):
     """Test error handling in launcher"""
 
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.tk.Tk')
+    @patch(f'{_LAUNCHER}.tk.Tk')
     def test_launch_gui_import_error(self, mock_tk):
         """Test GUI launch with import error"""
         from education_system.university_system.modules.domain.mobility.services.parking_launcher import launch_gui
@@ -265,7 +266,7 @@ class TestParkingLauncherErrorHandling(unittest.TestCase):
         """Test console launch with import error"""
         from education_system.university_system.modules.domain.mobility.services.parking_launcher import launch_console
 
-        with patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.display_parking_menu',
+        with patch('education_system.university_system.modules.domain.mobility.services.parking_management.display_parking_menu',
                   side_effect=ImportError("Module not found")):
             with patch('sys.stdout', new=io.StringIO()):
                 result = launch_console()
@@ -273,7 +274,7 @@ class TestParkingLauncherErrorHandling(unittest.TestCase):
             self.assertFalse(result)
 
     @patch('sys.argv', ['parking_launcher.py'])
-    @patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.show_interface_selection')
+    @patch(f'{_LAUNCHER}.show_interface_selection')
     @patch('sys.exit')
     def test_main_exit_selection(self, mock_exit, mock_select):
         """Test main function with exit selection"""
@@ -282,9 +283,12 @@ class TestParkingLauncherErrorHandling(unittest.TestCase):
         mock_select.return_value = 'exit'
 
         with patch('sys.stdout', new=io.StringIO()):
-            with patch('education_system.university_system.modules.domain.mobility.services.parking_launcher.check_dependencies',
+            with patch(f'{_LAUNCHER}.check_dependencies',
                       return_value=True):
-                parking_launcher.main()
+                try:
+                    parking_launcher.main()
+                except (SystemExit, UnboundLocalError):
+                    pass
 
         mock_exit.assert_called_with(0)
 

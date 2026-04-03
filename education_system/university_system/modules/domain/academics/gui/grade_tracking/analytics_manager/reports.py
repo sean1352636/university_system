@@ -30,6 +30,19 @@ except ImportError:
 class ReportsMixin:
     """Mixin providing reporting methods."""
 
+    @staticmethod
+    def _open_connection():
+        raw_conn = get_connection()
+        enter = getattr(raw_conn, "__enter__", None)
+        if callable(enter):
+            try:
+                conn = enter()
+                if conn is not None:
+                    return raw_conn, conn
+            except Exception:
+                pass
+        return raw_conn, raw_conn
+
     def _display_report(self, title, sections, footer=None):
         """Render report content in a separate window with email option."""
         # Create separate window for report
@@ -78,7 +91,7 @@ class ReportsMixin:
         def email_to_admin():
             try:
                 # Get admin email from database - try multiple tables/columns
-                conn = get_connection()
+                raw_conn, conn = self._open_connection()
                 cursor = conn.cursor()
 
                 admin_email = None
@@ -111,7 +124,10 @@ class ReportsMixin:
                     except sqlite3.Error:
                         pass
 
-                conn.close()
+                if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
+                    raw_conn.__exit__(None, None, None)
+                else:
+                    conn.close()
 
                 if not admin_email:
                     messagebox.showwarning("No Admin", "No administrator email found in the database.\nPlease ensure an admin user exists with a valid email address.")
@@ -192,7 +208,7 @@ class ReportsMixin:
 
         conn = None
         try:
-            conn = get_connection()
+            raw_conn, conn = self._open_connection()
             cursor = conn.cursor()
 
             # Query both data sources
@@ -256,7 +272,10 @@ class ReportsMixin:
             messagebox.showerror("Database Error", f"Failed to show trends: {e}")
         finally:
             if conn:
-                conn.close()
+                if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
+                    raw_conn.__exit__(None, None, None)
+                else:
+                    conn.close()
 
     def student_progress_charts(self):
         """Show student progress charts"""

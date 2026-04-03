@@ -956,22 +956,22 @@ class PaymentDialog:
     def __init__(self, parent, order_id):
         self.result = False
         self.order_id = order_id
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Process Payment")
         self.dialog.geometry("400x300")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
-        
+
     def create_widgets(self):
         """Create dialog widgets"""
         main_frame = ttk.Frame(self.dialog, padding="20")
         main_frame.pack(fill='both', expand=True)
-        
+
         ttk.Label(main_frame, text=f"Order ID: {self.order_id}").pack(pady=10)
-        
+
         try:
             conn = get_db_connection()
             if conn:
@@ -980,15 +980,15 @@ class PaymentDialog:
                 result = cursor.fetchone()
                 total = result[0] if result else 0
                 conn.close()
-                
+
                 ttk.Label(main_frame, text=f"Total: £{total:.2f}").pack(pady=5)
             else:
                 ttk.Label(main_frame, text="Total: Unknown").pack(pady=5)
         except sqlite3.Error:
             ttk.Label(main_frame, text="Total: Unknown").pack(pady=5)
-            
+
         ttk.Label(main_frame, text="Payment Method:").pack(pady=5)
-        
+
         self.payment_var = tk.StringVar()
         payment_combo = ttk.Combobox(main_frame, textvariable=self.payment_var,
                                     values=['Cash', 'Card', 'Meal Plan', 'Finance Account'])
@@ -999,14 +999,14 @@ class PaymentDialog:
         self.student_id_var = tk.StringVar()
         self.student_id_entry = ttk.Entry(main_frame, textvariable=self.student_id_var)
         self.student_id_entry.pack(pady=5)
-        
+
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=20)
 
         ttk.Button(button_frame, text="Process", command=self.process_payment).pack(side='left', padx=10)
         ttk.Button(button_frame, text="💳 Finance System", command=self.open_finance_system).pack(side='left', padx=10)
         ttk.Button(button_frame, text="Cancel", command=self.cancel).pack(side='left', padx=10)
-        
+
     def process_payment(self):
         """Process the payment"""
         payment_method = self.payment_var.get()

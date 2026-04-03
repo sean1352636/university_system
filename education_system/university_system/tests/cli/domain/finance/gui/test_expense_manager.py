@@ -23,6 +23,10 @@ except ImportError as e:
 
 pytestmark = pytest.mark.skipif(not IMPORT_SUCCESS, reason="Finance GUI modules not available in headless environment")
 
+# Submodule patch paths — methods live in fee_assignment.py and late_fees.py
+FA_MOD = 'education_system.university_system.modules.domain.finance.gui.finance.expense_manager.fee_assignment'
+LF_MOD = 'education_system.university_system.modules.domain.finance.gui.finance.expense_manager.late_fees'
+
 
 class MockGUI:
     """Mock GUI for testing"""
@@ -72,9 +76,10 @@ class TestExpenseManagerInit:
 class TestFeeAssignment:
     """Test fee assignment operations"""
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.messagebox')
-    def test_gui_assign_fees_to_student_success(self, mock_msgbox, mock_get_conn, expense_manager):
+    @patch(f'{FA_MOD}.tk.Toplevel')
+    @patch(f'{FA_MOD}.get_connection')
+    @patch(f'{FA_MOD}.messagebox')
+    def test_gui_assign_fees_to_student_success(self, mock_msgbox, mock_get_conn, mock_toplevel, expense_manager):
         """Test successful fee assignment to student"""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -95,9 +100,10 @@ class TestFeeAssignment:
         # Verify connection was made
         mock_get_conn.assert_called()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.messagebox')
-    def test_gui_assign_fees_to_student_db_error(self, mock_msgbox, mock_get_conn, expense_manager):
+    @patch(f'{FA_MOD}.tk.Toplevel')
+    @patch(f'{FA_MOD}.get_connection')
+    @patch(f'{FA_MOD}.messagebox')
+    def test_gui_assign_fees_to_student_db_error(self, mock_msgbox, mock_get_conn, mock_toplevel, expense_manager):
         """Test fee assignment with database error"""
         mock_get_conn.side_effect = Exception("Database error")
 
@@ -105,14 +111,14 @@ class TestFeeAssignment:
 
         mock_msgbox.showerror.assert_called_once()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.messagebox')
+    @patch(f'{FA_MOD}.messagebox')
     def test_bulk_assign_fees_cancelled(self, mock_msgbox, expense_manager):
         """Test bulk fee assignment cancelled by user"""
         mock_msgbox.askyesno.return_value = False
         expense_manager.bulk_assign_fees()
         mock_msgbox.askyesno.assert_called_once()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.messagebox')
+    @patch(f'{FA_MOD}.messagebox')
     def test_bulk_assign_fees_confirmed(self, mock_msgbox, expense_manager):
         """Test bulk fee assignment confirmed"""
         mock_msgbox.askyesno.return_value = True
@@ -127,7 +133,7 @@ class TestFeeAssignment:
 class TestLateFees:
     """Test late fee operations"""
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.get_connection')
+    @patch(f'{LF_MOD}.get_connection')
     def test_calculate_late_fees_backend_success(self, mock_get_conn, expense_manager):
         """Test late fee calculation backend"""
         mock_conn = MagicMock()
@@ -151,15 +157,15 @@ class TestLateFees:
         mock_conn.commit.assert_called_once()
         mock_conn.close.assert_called_once()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.messagebox')
+    @patch(f'{LF_MOD}.messagebox')
     def test_calculate_late_fees_cancelled(self, mock_msgbox, expense_manager):
         """Test late fee calculation cancelled"""
         mock_msgbox.askyesno.return_value = False
         expense_manager.calculate_late_fees()
         mock_msgbox.askyesno.assert_called_once()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.threading.Thread')
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.messagebox')
+    @patch(f'{LF_MOD}.threading.Thread')
+    @patch(f'{LF_MOD}.messagebox')
     def test_gui_calculate_late_fees_confirmed(self, mock_msgbox, mock_thread, expense_manager):
         """Test GUI late fee calculation confirmed"""
         mock_msgbox.askyesno.return_value = True
@@ -169,7 +175,7 @@ class TestLateFees:
 
         mock_thread.assert_called_once()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.get_connection')
+    @patch(f'{LF_MOD}.get_connection')
     def test_refresh_late_fees(self, mock_get_conn, expense_manager):
         """Test refreshing late fees display"""
         mock_conn = MagicMock()
@@ -195,7 +201,7 @@ class TestLateFees:
 class TestLateFeeWaiver:
     """Test late fee waiver operations"""
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.get_connection')
+    @patch(f'{LF_MOD}.get_connection')
     def test_gui_waive_late_fee(self, mock_get_conn, expense_manager):
         """Test waiving late fee dialog creation"""
         mock_conn = MagicMock()
@@ -214,7 +220,7 @@ class TestLateFeeWaiver:
 class TestLateFeeReport:
     """Test late fee reporting"""
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.get_connection')
+    @patch(f'{LF_MOD}.get_connection')
     def test_gui_late_fee_report(self, mock_get_conn, expense_manager):
         """Test late fee report generation"""
         mock_conn = MagicMock()
@@ -240,8 +246,8 @@ class TestLateFeeReport:
         expense_manager.report_text.insert.assert_called_once()
         mock_conn.close.assert_called_once()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.messagebox')
+    @patch(f'{LF_MOD}.get_connection')
+    @patch(f'{LF_MOD}.messagebox')
     def test_gui_late_fee_report_no_fees(self, mock_msgbox, mock_get_conn, expense_manager):
         """Test late fee report with no fees"""
         mock_conn = MagicMock()
@@ -265,8 +271,9 @@ class TestLateFeeReport:
 class TestBulkFeeAssignment:
     """Test bulk fee assignment operations"""
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.get_connection')
-    def test_bulk_assign_fees_to_course(self, mock_get_conn, expense_manager):
+    @patch(f'{FA_MOD}.tk.Toplevel')
+    @patch(f'{FA_MOD}.get_connection')
+    def test_bulk_assign_fees_to_course(self, mock_get_conn, mock_toplevel, expense_manager):
         """Test bulk fee assignment to course dialog"""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -276,11 +283,7 @@ class TestBulkFeeAssignment:
         # Mock available courses
         mock_cursor.fetchall.return_value = [('CS101',), ('ENG201',)]
 
-        try:
-            expense_manager.bulk_assign_fees_to_course()
-        except Exception:
-            # Dialog creation may fail in test environment
-            pass
+        expense_manager.bulk_assign_fees_to_course()
 
         # Verify connection was attempted
         mock_get_conn.assert_called()
@@ -289,8 +292,7 @@ class TestBulkFeeAssignment:
 class TestFeeRefresh:
     """Test fee data refresh operations"""
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.get_connection')
-    def test_refresh_fees_stub(self, mock_get_conn, expense_manager):
+    def test_refresh_fees_stub(self, expense_manager):
         """Test fee refresh (as defined in ExpenseManager)"""
         # The refresh_fees method in ExpenseManager is nested in create_fees_tab
         # which isn't directly callable. Just verify the imports work.
@@ -300,8 +302,8 @@ class TestFeeRefresh:
 class TestFeeDialogs:
     """Test fee-related dialog operations"""
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.simpledialog')
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.messagebox')
+    @patch(f'{FA_MOD}.simpledialog')
+    @patch(f'{FA_MOD}.messagebox')
     def test_add_fee_type_cancelled(self, mock_msgbox, mock_simpledialog, expense_manager):
         """Test add fee type cancelled"""
         mock_simpledialog.askstring.return_value = None
@@ -310,8 +312,8 @@ class TestFeeDialogs:
         # Note: This may not be directly testable without refactoring
         pass
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.simpledialog')
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.messagebox')
+    @patch(f'{FA_MOD}.simpledialog')
+    @patch(f'{FA_MOD}.messagebox')
     def test_assign_fee_to_student_cancelled(self, mock_msgbox, mock_simpledialog, expense_manager):
         """Test assign fee to student cancelled"""
         mock_simpledialog.askstring.return_value = None
@@ -321,7 +323,7 @@ class TestFeeDialogs:
 class TestLateFeePolicyHandling:
     """Test late fee policy calculations"""
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.get_connection')
+    @patch(f'{LF_MOD}.get_connection')
     def test_calculate_late_fees_backend_fixed_method(self, mock_get_conn, expense_manager):
         """Test late fee calculation with fixed method"""
         mock_conn = MagicMock()
@@ -339,7 +341,7 @@ class TestLateFeePolicyHandling:
 
         assert result['count'] >= 0
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.get_connection')
+    @patch(f'{LF_MOD}.get_connection')
     def test_calculate_late_fees_backend_percentage_method(self, mock_get_conn, expense_manager):
         """Test late fee calculation with percentage method"""
         mock_conn = MagicMock()
@@ -357,7 +359,7 @@ class TestLateFeePolicyHandling:
 
         assert result['count'] >= 0
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.get_connection')
+    @patch(f'{LF_MOD}.get_connection')
     def test_calculate_late_fees_backend_daily_method(self, mock_get_conn, expense_manager):
         """Test late fee calculation with daily method"""
         mock_conn = MagicMock()
@@ -375,7 +377,7 @@ class TestLateFeePolicyHandling:
 
         assert result['count'] >= 0
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.expense_manager.get_connection')
+    @patch(f'{LF_MOD}.get_connection')
     def test_calculate_late_fees_backend_with_grace_period(self, mock_get_conn, expense_manager):
         """Test late fee calculation with grace period"""
         mock_conn = MagicMock()

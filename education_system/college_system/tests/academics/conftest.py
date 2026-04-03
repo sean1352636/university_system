@@ -11,6 +11,9 @@ from education_system.college_system.modules.domain.markbook.services.markbook_s
 from education_system.college_system.modules.domain.academic_year.services.academic_year_service import AcademicYearService
 from education_system.college_system.modules.domain.lesson_plans.services.lesson_plans_service import LessonPlanService
 from education_system.college_system.modules.domain.exams.services.exams_service import ExamsService
+from education_system.college_system.modules.domain.apprenticeships.services.apprenticeships_service import ApprenticeshipService
+from education_system.college_system.modules.domain.baseline_assessment.services.baseline_assessment_service import BaselineAssessmentService
+from education_system.college_system.modules.domain.functional_skills.services.functional_skills_service import FunctionalSkillsService
 
 
 @pytest.fixture
@@ -56,3 +59,18 @@ def lesson_plans_service(db_path):
 @pytest.fixture
 def exams_service(db_path):
     return ExamsService(db_path)
+
+
+@pytest.fixture
+def apprenticeships_service(db_path):
+    return ApprenticeshipService(db_path)
+
+
+@pytest.fixture
+def baseline_assessment_service(db_path):
+    return BaselineAssessmentService(db_path)
+
+
+@pytest.fixture
+def functional_skills_service(db_path):
+    return FunctionalSkillsService(db_path)

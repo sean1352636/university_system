@@ -237,8 +237,8 @@ class TestPaymentPlanCreation:
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '1', 'y']), \
-             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.student_exists', return_value=True), \
-             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.send_payment_plan_notification'):
+             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.student_exists', return_value=True, create=True), \
+             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.send_payment_plan_notification', create=True):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -265,8 +265,8 @@ class TestPaymentPlanCreation:
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001', '1', 'y']), \
-             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.student_exists', return_value=True), \
-             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.send_payment_plan_notification'):
+             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.student_exists', return_value=True, create=True), \
+             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.send_payment_plan_notification', create=True):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -295,7 +295,7 @@ class TestPaymentPlanCreation:
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU002']), \
-             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.student_exists', return_value=True):
+             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.student_exists', return_value=True, create=True):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -578,7 +578,7 @@ class TestPaymentPlanCancellation:
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['1', 'Student withdrawal', 'y']), \
-             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.log_audit_action'):
+             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.log_audit_action', create=True):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -642,7 +642,7 @@ class TestEdgeCases:
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU999']), \
-             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.student_exists', return_value=False):
+             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.student_exists', return_value=False, create=True):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -671,7 +671,7 @@ class TestEdgeCases:
         """Test handling of overpayments"""
         with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.billing.payment_plans.auth', mock_auth), \
-             patch('builtins.input', side_effect=['1', '2000.00']):
+             patch('builtins.input', side_effect=['1', '2000.00', '1828.33']):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -704,10 +704,10 @@ class TestNotifications:
 
     def test_send_payment_plan_notification(self, sample_data):
         """Test sending payment plan notification"""
-        with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_student_name', return_value='John Doe'), \
-             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_student_email', return_value='john@test.com'), \
-             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.render_template', return_value=('Subject', 'Body')), \
-             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.send_email_notification', return_value=True):
+        with patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_student_name', return_value='John Doe', create=True), \
+             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.get_student_email', return_value='john@test.com', create=True), \
+             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.render_template', return_value=('Subject', 'Body'), create=True), \
+             patch('education_system.university_system.modules.domain.finance.billing.payment_plans.send_email_notification', return_value=True, create=True):
 
             # Should send notification successfully
             payment_plans.send_payment_plan_notification('STU001', 1, 'payment_plan_setup')

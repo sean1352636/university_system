@@ -54,7 +54,7 @@ except (ImportError, ModuleNotFoundError):
     student_union_cli = None
     init_student_union_db = None
     CLI_AVAILABLE = False
-    
+
 
 class MentorshipBrowseDialog:
     """Dialog for finding a mentor or becoming one"""
@@ -731,27 +731,27 @@ def create_mentorship_tab(self):
     """Create mentorship tab"""
     mentorship_frame = ttk.Frame(self.notebook)
     self.notebook.add(mentorship_frame, text="Mentorship")
-    
+
     # Left panel
     left_panel = ttk.LabelFrame(mentorship_frame, text="Mentorship Actions")
     left_panel.pack(side='left', fill='y', padx=5, pady=5, ipadx=5, ipady=5)
-    
-    ttk.Button(left_panel, text="Find a Mentor", 
+
+    ttk.Button(left_panel, text="Find a Mentor",
               command=self.find_mentor_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Become a Mentor", 
+    ttk.Button(left_panel, text="Become a Mentor",
               command=self.become_mentor_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="My Relationships", 
+    ttk.Button(left_panel, text="My Relationships",
               command=self.view_my_mentorship_relationships).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Schedule Session", 
+    ttk.Button(left_panel, text="Schedule Session",
               command=self.schedule_mentorship_session_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="View Sessions", 
+    ttk.Button(left_panel, text="View Sessions",
               command=self.view_mentorship_sessions).pack(fill='x', pady=2)
-    
+
     # Right panel
     right_panel = ttk.LabelFrame(mentorship_frame, text="Mentorship Information")
     right_panel.pack(side='right', fill='both', expand=True, padx=5, pady=5)
-    
-    self.mentorship_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD, 
+
+    self.mentorship_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD,
                                                     height=30, width=80)
     self.mentorship_text.pack(fill='both', expand=True, padx=5, pady=5)
 

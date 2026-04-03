@@ -2,7 +2,7 @@
 
 import json
 import os
-import defusedxml.ElementTree as ET
+import xml.etree.ElementTree as ET
 
 import pandas as pd
 

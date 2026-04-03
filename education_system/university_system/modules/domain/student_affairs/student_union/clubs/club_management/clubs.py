@@ -1,12 +1,12 @@
 from education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management._imports import (
-    datetime, sqlite3, get_connection, auth,
+    datetime, sqlite3, get_auth,
 )
 import education_system.university_system.modules.domain.student_affairs.student_union.clubs.club_management._imports as _state
 
 
 def create_club():
     """Create a new student club/society"""
-    auth = _state.auth
+    auth = get_auth()
 
     if not auth or not auth.current_user:
         print("You must be logged in to create a club.")
@@ -25,7 +25,7 @@ def create_club():
     category = input("Enter club category (e.g., Sports, Academic, Cultural): ").strip()
 
     try:
-        conn = get_connection()
+        conn = _state.resolve_get_connection()()
         cursor = conn.cursor()
 
         # Check if club name already exists
@@ -83,14 +83,14 @@ def create_club():
 
 def view_clubs():
     """View available clubs/societies"""
-    auth = _state.auth
+    auth = get_auth()
 
     if not auth or not auth.current_user:
         print("You must be logged in to view clubs.")
         return
 
     try:
-        conn = get_connection()
+        conn = _state.resolve_get_connection()()
         cursor = conn.cursor()
 
         # Fetch all active clubs
@@ -126,7 +126,7 @@ def view_clubs():
 
 def manage_club():
     """Manage a club (for club officers)"""
-    auth = _state.auth
+    auth = get_auth()
 
     if not auth or not auth.current_user:
         print("You must be logged in to manage a club.")
@@ -137,7 +137,7 @@ def manage_club():
         return
 
     try:
-        conn = get_connection()
+        conn = _state.resolve_get_connection()()
         cursor = conn.cursor()
 
         # Get student ID

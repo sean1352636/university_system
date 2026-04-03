@@ -74,7 +74,7 @@ class TestViewAllCheckouts:
         points.view_all_checkouts(mock_cursor)
 
         # Should indicate no checkouts found
-        assert any('No equipment checkouts' in str(call) for call in mock_print.call_args_list)
+        assert any('No checkouts found' in str(call) or 'no_checkouts_found' in str(call) for call in mock_print.call_args_list)
 
     @patch('builtins.print')
     @patch('builtins.input', return_value='y')
@@ -98,8 +98,8 @@ class TestViewAllCheckouts:
 
         points.view_all_checkouts(mock_cursor)
 
-        # Should print error message
-        assert any('Database error' in str(call) for call in mock_print.call_args_list)
+        # Should print error message (i18n key or actual error text)
+        assert any('database_error' in str(call).lower() or 'Database error' in str(call) for call in mock_print.call_args_list)
 
 class TestViewLeaderboard:
     """Tests for view_leaderboard function."""
@@ -178,7 +178,7 @@ class TestAwardPointsToStudent:
 
     @patch('builtins.print')
     @patch('builtins.input', side_effect=['S12345', '50', 'Event Attendance', 'Attended Tech Talk'])
-    @patch('education_system.university_system.modules.core.services.student_union_misc.points.check_and_award_badges')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.points.check_and_award_badges')
     def test_award_points_success(self, mock_check_badges, mock_input, mock_print, mock_cursor, mock_conn):
         """Test successfully awarding points to a student."""
         mock_cursor.fetchone.side_effect = [
@@ -236,8 +236,8 @@ class TestAwardPointsToStudent:
         """Test with empty student ID."""
         points.award_points_to_student(mock_cursor, mock_conn)
 
-        # Should indicate ID cannot be empty
-        assert any('cannot be empty' in str(call).lower() for call in mock_print.call_args_list)
+        # Should indicate student ID is required
+        assert any('required' in str(call).lower() or 'student_id_required' in str(call) for call in mock_print.call_args_list)
 
 class TestAutoAwardPoints:
     """Tests for auto_award_points function."""

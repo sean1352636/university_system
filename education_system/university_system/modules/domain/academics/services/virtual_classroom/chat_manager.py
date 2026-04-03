@@ -171,7 +171,7 @@ class ChatManager:
                 if not include_deleted:
                     query += " AND is_deleted = 0"
 
-                query += " ORDER BY timestamp DESC LIMIT ?"
+                query += " ORDER BY timestamp DESC, message_id DESC LIMIT ?"
                 params.append(limit)
 
                 cursor.execute(query, params)

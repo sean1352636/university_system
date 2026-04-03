@@ -43,9 +43,9 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         print("Initializing basic database tables...")
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -61,7 +61,7 @@ def init_basic_database():
             status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -75,7 +75,7 @@ def init_basic_database():
             year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -89,7 +89,7 @@ def init_basic_database():
             UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -105,12 +105,12 @@ def init_basic_database():
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         conn.commit()
         conn.close()
         print("✅ Basic database tables created successfully!")
         return True
-        
+
     except sqlite3.Error as e:
         print(f"❌ Database error: {e}")
         return False
@@ -120,7 +120,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -135,7 +135,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -148,7 +148,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # 1. Grade Curve Analysis Tables
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -167,7 +167,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -179,7 +179,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (grade_id) REFERENCES grades (grade_id)
         )
         ''')
-        
+
         # 2. Learning Outcome Tracking Tables
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS learning_outcomes (
@@ -191,7 +191,7 @@ def init_enhanced_grades_db():
             importance INTEGER
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessment_outcomes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -202,7 +202,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (outcome_id) REFERENCES learning_outcomes (outcome_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS outcome_results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -215,7 +215,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (outcome_id) REFERENCES learning_outcomes (outcome_id)
         )
         ''')
-        
+
         # 3. Competency-Based Assessment Tables
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS competencies (
@@ -225,7 +225,7 @@ def init_enhanced_grades_db():
             category TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS competency_levels (
             level_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -236,7 +236,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (competency_id) REFERENCES competencies (competency_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessment_competencies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -247,7 +247,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (competency_id) REFERENCES competencies (competency_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_competencies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -261,7 +261,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (level_id) REFERENCES competency_levels (level_id)
         )
         ''')
-        
+
         # 4. Predictive Analytics Tables
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS risk_factors (
@@ -271,7 +271,7 @@ def init_enhanced_grades_db():
             weight REAL
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_risk_assessment (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -284,7 +284,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS risk_details (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -296,7 +296,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (factor_id) REFERENCES risk_factors (factor_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS intervention_types (
             type_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -304,7 +304,7 @@ def init_enhanced_grades_db():
             description TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS recommended_interventions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -316,7 +316,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (intervention_type_id) REFERENCES intervention_types (type_id)
         )
         ''')
-        
+
         # Insert default risk factors if they don't exist
         cursor.execute('SELECT COUNT(*) FROM risk_factors')
         if cursor.fetchone()[0] == 0:
@@ -332,7 +332,7 @@ def init_enhanced_grades_db():
             INSERT INTO risk_factors (name, description, weight)
             VALUES (?, ?, ?)
             ''', risk_factors)
-        
+
         # Insert default intervention types if they don't exist
         cursor.execute('SELECT COUNT(*) FROM intervention_types')
         if cursor.fetchone()[0] == 0:
@@ -348,7 +348,7 @@ def init_enhanced_grades_db():
             INSERT INTO intervention_types (name, description)
             VALUES (?, ?)
             ''', intervention_types)
-            
+
         conn.commit()
         conn.close()
         return True
@@ -424,9 +424,9 @@ def grade_curve_analysis_menu():
         print("4. Apply Grading Curve")
         print("5. Generate Statistical Report")
         print("6. Return to Grade Menu")
-        
+
         choice = input("Enter your choice (1-6): ")
-        
+
         if choice == '1':
             calculate_assessment_statistics()
         elif choice == '2':
@@ -453,9 +453,9 @@ def learning_outcome_menu():
         print("4. View Student Outcome Achievement")
         print("5. Generate Outcome Report")
         print("6. Return to Grade Menu")
-        
+
         choice = input("Enter your choice (1-6): ")
-        
+
         if choice == '1':
             manage_learning_outcomes()
         elif choice == '2':
@@ -483,9 +483,9 @@ def competency_assessment_menu():
         print("5. View Student Competency Profile")
         print("6. Generate Competency Report")
         print("7. Return to Grade Menu")
-        
+
         choice = input("Enter your choice (1-7): ")
-        
+
         if choice == '1':
             manage_competencies()
         elif choice == '2':
@@ -518,9 +518,9 @@ def predictive_analytics_menu():
         print("8. Trend Forecasting")
         print("9. Generate Risk Report")
         print("10. Return to Grade Menu")
-        
+
         choice = input("Enter your choice (1-10): ")
-        
+
         if choice == '1':
             student_risk_assessment()
         elif choice == '2':
@@ -558,9 +558,9 @@ def performance_analysis_menu():
         print("7. Performance Trends Over Time")
         print("8. Generate Performance Dashboard")
         print("9. Return to Grade Menu")
-        
+
         choice = input("Enter your choice (1-9): ")
-        
+
         if choice == '1':
             identify_at_risk_students()
         elif choice == '2':

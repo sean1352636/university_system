@@ -2,7 +2,7 @@ from __future__ import annotations
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import get_connection, sqlite3
 from education_system.university_system.core.i18n import get_text as _t, init_i18n
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 # Initialize i18n
 init_i18n()

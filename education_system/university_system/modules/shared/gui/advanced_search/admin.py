@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -122,7 +122,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -133,7 +133,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -261,7 +261,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -883,78 +883,78 @@ def show_user_permissions_manager(self):
     dialog.geometry("700x500")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.admin.user_permissions_manager'), style='Title.TLabel').pack(pady=(0, 20))
-    
+
     # Users and permissions notebook
     notebook = ttk.Notebook(frame)
     notebook.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     # Current permissions tab
     current_frame = ttk.Frame(notebook, padding="10")
     notebook.add(current_frame, text=_t('advanced_search.admin.current_permissions'))
-    
+
     # Permissions tree
     perm_columns = ('User', 'Role', 'Search', 'Export', 'Admin', 'Reports')
     self.permissions_tree = ttk.Treeview(current_frame, columns=perm_columns, show='headings', height=12)
-    
+
     for col in perm_columns:
         self.permissions_tree.heading(col, text=col)
         self.permissions_tree.column(col, width=100)
-    
+
     perm_scrollbar = ttk.Scrollbar(current_frame, orient=tk.VERTICAL, command=self.permissions_tree.yview)
     self.permissions_tree.configure(yscrollcommand=perm_scrollbar.set)
-    
+
     self.permissions_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     perm_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    
+
     # Load current permissions
     self.load_user_permissions()
-    
+
     # Permission actions
     perm_actions = ttk.Frame(current_frame)
     perm_actions.pack(fill=tk.X, pady=(10, 0))
-    
+
     ttk.Button(perm_actions, text=_t('advanced_search.admin.modify_permissions'),
               command=self.modify_user_permissions_dialog).pack(side=tk.LEFT, padx=(0, 10))
     ttk.Button(perm_actions, text=_t('advanced_search.admin.remove_user'),
               command=self.remove_user_permissions_dialog).pack(side=tk.LEFT)
-    
+
     # Add user tab
     add_user_frame = ttk.Frame(notebook, padding="10")
     notebook.add(add_user_frame, text=_t('advanced_search.admin.add_user'))
-    
+
     ttk.Label(add_user_frame, text=_t('advanced_search.admin.add_new_user_permissions'), style='Header.TLabel').pack(pady=(0, 20))
-    
+
     # Add user form
     add_form = ttk.LabelFrame(add_user_frame, text=_t('advanced_search.admin.user_details'), padding="10")
     add_form.pack(fill=tk.X, pady=(0, 20))
-    
+
     ttk.Label(add_form, text=_t('advanced_search.admin.username_label')).pack(anchor='w')
     username_var = tk.StringVar()
     ttk.Entry(add_form, textvariable=username_var, width=30).pack(anchor='w', pady=(0, 10))
-    
+
     ttk.Label(add_form, text=_t('advanced_search.admin.role_label')).pack(anchor='w')
     role_var = tk.StringVar(value="user")
-    role_combo = ttk.Combobox(add_form, textvariable=role_var, 
+    role_combo = ttk.Combobox(add_form, textvariable=role_var,
                              values=["admin", "teacher", "analyst", "user"], width=20)
     role_combo.pack(anchor='w', pady=(0, 10))
-    
+
     # Permissions checkboxes
     permissions_frame = ttk.LabelFrame(add_form, text=_t('advanced_search.admin.permissions'), padding="10")
     permissions_frame.pack(fill=tk.X, pady=(10, 0))
-    
+
     perm_vars = {}
     permissions_list = ["search", "export", "admin", "reports", "bulk_operations", "user_management"]
-    
+
     for i, perm in enumerate(permissions_list):
         perm_vars[perm] = tk.BooleanVar()
-        ttk.Checkbutton(permissions_frame, text=perm.replace('_', ' ').title(), 
+        ttk.Checkbutton(permissions_frame, text=perm.replace('_', ' ').title(),
                        variable=perm_vars[perm]).grid(row=i//2, column=i%2, sticky='w', padx=10, pady=2)
-    
+
     def add_user_permissions():
         username = username_var.get().strip()
         if not username:
@@ -967,15 +967,15 @@ def show_user_permissions_manager(self):
         self.add_user_permissions_to_db(username, role, selected_perms)
         self.load_user_permissions()
         messagebox.showinfo(_t('advanced_search.admin.user_added_title'), _t('advanced_search.admin.user_added_msg', username=username, role=role))
-        
+
         # Clear form
         username_var.set("")
         role_var.set("user")
         for var in perm_vars.values():
             var.set(False)
-    
+
     ttk.Button(add_form, text=_t('advanced_search.admin.add_user'), command=add_user_permissions).pack(pady=10)
-    
+
     ttk.Button(frame, text=_t('advanced_search.close_button'), command=dialog.destroy).pack()
 AdvancedSearchGUI.show_user_permissions_manager = show_user_permissions_manager
 
@@ -1033,32 +1033,32 @@ def modify_user_permissions_dialog(self):
     mod_dialog.geometry("400x400")
     mod_dialog.transient(self.master)
     mod_dialog.grab_set()
-    
+
     mod_frame = ttk.Frame(mod_dialog, padding="20")
     mod_frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(mod_frame, text=_t('advanced_search.admin.modify_permissions_for', username=username)).pack(pady=(0, 20))
-    
+
     # Role modification
     ttk.Label(mod_frame, text=_t('advanced_search.admin.role_label')).pack(anchor='w')
     new_role_var = tk.StringVar(value=current_role)
-    role_combo = ttk.Combobox(mod_frame, textvariable=new_role_var, 
+    role_combo = ttk.Combobox(mod_frame, textvariable=new_role_var,
                              values=["Administrator", "Teacher", "Analyst", "User", "Guest"])
     role_combo.pack(anchor='w', pady=(0, 20))
-    
+
     # Permissions modification
     perm_frame = ttk.LabelFrame(mod_frame, text=_t('advanced_search.admin.permissions'), padding="10")
     perm_frame.pack(fill=tk.X, pady=(0, 20))
-    
+
     # Get current permissions
     current_perms = item['values'][2:]  # Skip username and role
     perm_labels = ["Search", "Export", "Admin", "Reports"]
-    
+
     perm_vars = {}
     for i, (label, current) in enumerate(zip(perm_labels, current_perms)):
         perm_vars[label.lower()] = tk.BooleanVar(value=(current == "Yes"))
         ttk.Checkbutton(perm_frame, text=label, variable=perm_vars[label.lower()]).pack(anchor='w')
-    
+
     def save_modifications():
         new_role = new_role_var.get()
         new_perms = {perm: var.get() for perm, var in perm_vars.items()}
@@ -1082,10 +1082,10 @@ def modify_user_permissions_dialog(self):
             mod_dialog.destroy()
         except Exception as exc:
             messagebox.showerror(_t('advanced_search.admin.update_failed_title'), _t('advanced_search.admin.update_failed_msg', error=exc))
-    
+
     button_frame = ttk.Frame(mod_frame)
     button_frame.pack(fill=tk.X)
-    
+
     ttk.Button(button_frame, text=_t('advanced_search.admin.save_changes'), command=save_modifications).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=_t('advanced_search.cancel_button'), command=mod_dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.modify_user_permissions_dialog = modify_user_permissions_dialog
@@ -1147,7 +1147,7 @@ def show_custom_reports(self):
     """Show custom reports generator"""
     self.update_status(_t('advanced_search.admin.loading_custom_reports'))
     self.start_progress()
-    
+
     def run_custom_reports():
         try:
             result = self.capture_function_output(generate_custom_reports)
@@ -1156,7 +1156,7 @@ def show_custom_reports(self):
             self.output_queue.put(("error", _t('advanced_search.admin.error_custom_reports', error=str(e))))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_custom_reports, daemon=True).start()
 AdvancedSearchGUI.show_custom_reports = show_custom_reports
 
@@ -1164,7 +1164,7 @@ def show_permissions(self):
     """Show user permissions management"""
     self.update_status(_t('advanced_search.admin.loading_user_permissions'))
     self.start_progress()
-    
+
     def run_permissions():
         try:
             result = self.capture_function_output(manage_user_permissions)
@@ -1173,7 +1173,7 @@ def show_permissions(self):
             self.output_queue.put(("error", _t('advanced_search.admin.error_loading_permissions', error=str(e))))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_permissions, daemon=True).start()
 AdvancedSearchGUI.show_permissions = show_permissions
 
@@ -1181,7 +1181,7 @@ def show_scheduled_reports(self):
     """Show scheduled reports management"""
     self.update_status(_t('advanced_search.admin.loading_scheduled_reports'))
     self.start_progress()
-    
+
     def run_scheduled_reports():
         try:
             result = self.capture_function_output(manage_scheduled_reports)
@@ -1190,6 +1190,6 @@ def show_scheduled_reports(self):
             self.output_queue.put(("error", _t('advanced_search.admin.error_scheduled_reports', error=str(e))))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_scheduled_reports, daemon=True).start()
 AdvancedSearchGUI.show_scheduled_reports = show_scheduled_reports

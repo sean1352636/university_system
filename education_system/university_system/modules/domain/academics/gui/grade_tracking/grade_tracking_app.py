@@ -69,10 +69,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -123,7 +123,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -139,7 +139,7 @@ def init_basic_database():
             status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -153,7 +153,7 @@ def init_basic_database():
             year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -167,7 +167,7 @@ def init_basic_database():
             UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -187,11 +187,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -201,7 +201,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -216,7 +216,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -233,7 +233,7 @@ def init_enhanced_grades_db():
 
         # Ensure grade_points column exists for legacy databases
         ensure_column_exists(cursor, 'module_grades', 'grade_points', 'REAL')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -252,7 +252,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -464,7 +464,7 @@ class GradeTrackingApp:
             nationality TEXT
         )
         ''')
-        
+
         # Modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -479,7 +479,7 @@ class GradeTrackingApp:
             academic_year TEXT
         )
         ''')
-    
+
         # Assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -495,9 +495,9 @@ class GradeTrackingApp:
             FOREIGN KEY (module_code) REFERENCES modules(module_code)
         )
         ''')
-    
+
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         # Grades table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -512,7 +512,7 @@ class GradeTrackingApp:
             FOREIGN KEY (assessment_id) REFERENCES assessments(assessment_id)
         )
         ''')
-        
+
         # Student modules enrollment table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -525,7 +525,7 @@ class GradeTrackingApp:
             FOREIGN KEY (module_code) REFERENCES modules(module_code)
         )
         ''')
-        
+
         # Module grades table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
@@ -540,7 +540,7 @@ class GradeTrackingApp:
             FOREIGN KEY (module_code) REFERENCES modules(module_code)
         )
         ''')
-        
+
         # Learning outcomes table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS learning_outcomes (
@@ -551,7 +551,7 @@ class GradeTrackingApp:
             level INTEGER
         )
         ''')
-        
+
         # Assessment outcomes mapping table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessment_outcomes (
@@ -563,7 +563,7 @@ class GradeTrackingApp:
             FOREIGN KEY (outcome_id) REFERENCES learning_outcomes(outcome_id)
         )
         ''')
-        
+
         # Outcome results table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS outcome_results (
@@ -577,7 +577,7 @@ class GradeTrackingApp:
             FOREIGN KEY (outcome_id) REFERENCES learning_outcomes(outcome_id)
         )
         ''')
-        
+
         # Competencies table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS competencies (
@@ -587,7 +587,7 @@ class GradeTrackingApp:
             category TEXT
         )
         ''')
-        
+
         # Competency levels table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS competency_levels (
@@ -599,7 +599,7 @@ class GradeTrackingApp:
             FOREIGN KEY (competency_id) REFERENCES competencies(competency_id)
         )
         ''')
-        
+
         # Assessment competencies mapping table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessment_competencies (
@@ -611,7 +611,7 @@ class GradeTrackingApp:
             FOREIGN KEY (competency_id) REFERENCES competencies(competency_id)
         )
         ''')
-        
+
         # Student competencies table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_competencies (
@@ -626,7 +626,7 @@ class GradeTrackingApp:
             FOREIGN KEY (level_id) REFERENCES competency_levels(level_id)
         )
         ''')
-        
+
         # Risk assessment table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_risk_assessment (
@@ -640,9 +640,9 @@ class GradeTrackingApp:
             FOREIGN KEY (student_id) REFERENCES students(student_id)
         )
         ''')
-        
+
         self.conn.commit()
-    
+
 
     def populate_initial_data(self):
         """Populate database with initial sample data if empty"""
@@ -656,11 +656,11 @@ class GradeTrackingApp:
         cursor.execute("SELECT COUNT(*) FROM students")
         if cursor.fetchone()[0] > 0:
             return
-        
+
         # Sample students
         # Note: Sample student data insertion removed - students must be created via main GUI or CLI
         # for centralized management
-        
+
         # Sample modules
         sample_modules = [
             ('CS101', 'Introduction to Programming', 'Core', 3, 'Basic programming concepts and problem-solving techniques', '', 'Fall', '2024'),
@@ -669,12 +669,12 @@ class GradeTrackingApp:
             ('ENG101', 'Technical Writing', 'General', 2, 'Professional communication and technical documentation', '', 'Fall', '2024'),
             ('PHYS101', 'Physics I', 'Core', 4, 'Mechanics and thermodynamics', 'MATH101', 'Spring', '2024')
         ]
-        
+
         cursor.executemany('''
         INSERT INTO modules (module_code, module_name, module_type, credits, description, prerequisites, semester, academic_year)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', sample_modules)
-        
+
         # Sample assessments
         sample_assessments = [
             ('Programming Assignment 1', 'Assignment', 'CS101', 100, 20, '2024-10-15', 'Basic programming exercises', ''),
@@ -685,12 +685,12 @@ class GradeTrackingApp:
             ('Essay Assignment', 'Assignment', 'ENG101', 100, 30, '2024-10-30', 'Technical writing essay', ''),
             ('Lab Report 1', 'Lab', 'PHYS101', 75, 25, '2024-09-30', 'Mechanics laboratory report', '')
         ]
-        
+
         cursor.executemany('''
         INSERT INTO assessments (assessment_name, assessment_type, module_code, max_points, weight, due_date, description, rubric)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', sample_assessments)
-        
+
         # Enroll students in modules
         enrollments = [
             ('STU001', 'CS101', '2024-09-01', 'Enrolled'),
@@ -705,17 +705,17 @@ class GradeTrackingApp:
             ('STU005', 'CS101', '2024-09-01', 'Enrolled'),
             ('STU005', 'MATH101', '2024-09-01', 'Enrolled')
         ]
-        
+
         cursor.executemany('''
         INSERT INTO student_modules (student_id, module_code, enrollment_date, status)
         VALUES (?, ?, ?, ?)
         ''', enrollments)
-        
+
         # Sample grades
         import random
         assessment_ids = [1, 2, 3, 4, 5, 6, 7]
         student_ids = ['STU001', 'STU002', 'STU003', 'STU004', 'STU005']
-        
+
         sample_grades = []
         for student_id in student_ids:
             for assessment_id in assessment_ids:
@@ -724,22 +724,22 @@ class GradeTrackingApp:
                     # Get max points for this assessment
                     cursor.execute('SELECT max_points FROM assessments WHERE assessment_id = ?', (assessment_id,))
                     max_points = cursor.fetchone()[0]
-                    
+
                     # Generate a realistic score (70-95% range with some variation)
                     percentage = random.uniform(0.7, 0.95)
                     score = max_points * percentage
                     letter_grade = self.percentage_to_letter(percentage * 100)
-                    
+
                     sample_grades.append((
                         student_id, assessment_id, round(score, 2), letter_grade,
                         '2024-10-01', 'Good work'
                     ))
-        
+
         cursor.executemany('''
         INSERT INTO grades (student_id, assessment_id, score, letter_grade, submission_date, comments)
         VALUES (?, ?, ?, ?, ?, ?)
         ''', sample_grades)
-        
+
         # Sample competencies
         sample_competencies = [
             ('Programming Fundamentals', 'Basic programming concepts and syntax', 'Technical'),
@@ -748,12 +748,12 @@ class GradeTrackingApp:
             ('Teamwork', 'Collaboration and interpersonal skills', 'Soft Skills'),
             ('Mathematical Reasoning', 'Quantitative analysis and mathematical thinking', 'Technical')
         ]
-        
+
         cursor.executemany('''
         INSERT INTO competencies (name, description, category)
         VALUES (?, ?, ?)
         ''', sample_competencies)
-        
+
         # Sample competency levels
         competency_levels = [
             (1, 'Beginner', 1, 'Basic understanding and application'),
@@ -765,15 +765,15 @@ class GradeTrackingApp:
             (2, 'Proficient', 3, 'Solves complex problems systematically'),
             (2, 'Advanced', 4, 'Creates innovative solutions'),
         ]
-        
+
         for comp_id, level_name, level_value, description in competency_levels:
             cursor.execute('''
             INSERT INTO competency_levels (competency_id, level_name, level_value, description)
             VALUES (?, ?, ?, ?)
             ''', (comp_id, level_name, level_value, description))
-        
+
         self.conn.commit()
-    
+
 
     def refresh_all_data(self):
         """Refresh all data displays"""
@@ -790,7 +790,7 @@ class GradeTrackingApp:
             self.refresh_competencies()
         if hasattr(self, 'refresh_competency_mappings'):
             self.refresh_competency_mappings()
-    
+
 
     def populate_filter_combos(self):
         """Populate filter comboboxes with current data"""
@@ -798,20 +798,20 @@ class GradeTrackingApp:
         try:
             conn = get_connection()
             cursor = conn.cursor()
-    
+
             # Always fetch raw values so counts reflect database state even if widgets are not yet created
             cursor.execute(
                 "SELECT DISTINCT course FROM students WHERE course IS NOT NULL AND course != '' ORDER BY course"
             )
             course_results = cursor.fetchall()
             courses = ['All'] + [row[0] for row in course_results if row[0]]
-    
+
             cursor.execute(
                 "SELECT DISTINCT module_code FROM modules WHERE module_code IS NOT NULL AND module_code != '' ORDER BY module_code"
             )
             module_results = cursor.fetchall()
             modules = ['All'] + [row[0] for row in module_results if row[0]]
-    
+
             cursor.execute(
                 """
                 SELECT student_id, first_name || ' ' || last_name AS full_name
@@ -822,7 +822,7 @@ class GradeTrackingApp:
             )
             students_data = cursor.fetchall()
             students = ['All'] + [f"{row[0]} - {row[1]}" for row in students_data if row[0] and row[1]]
-    
+
             cursor.execute(
                 """
                 SELECT assessment_id, assessment_name || ' (' || module_code || ')' AS full_name
@@ -833,7 +833,7 @@ class GradeTrackingApp:
             )
             assessments_data = cursor.fetchall()
             assessments = ['All'] + [f"{row[0]} - {row[1]}" for row in assessments_data if row[0] and row[1]]
-    
+
             # Cache for later use when widgets are created asynchronously
             self._filter_cache = {
                 'courses': courses,
@@ -841,27 +841,27 @@ class GradeTrackingApp:
                 'students': students,
                 'assessments': assessments,
             }
-    
+
             if self._widget_exists(getattr(self, 'course_filter_combo', None)):
                 self.course_filter_combo['values'] = courses
                 self.course_filter_var.set('All')
-    
+
             if self._widget_exists(getattr(self, 'assessment_module_combo', None)):
                 self.assessment_module_combo['values'] = modules
                 self.assessment_module_filter_var.set('All')
-    
+
             if self._widget_exists(getattr(self, 'grade_student_combo', None)):
                 self.grade_student_combo['values'] = students
                 self.grade_student_filter_var.set('All')
-    
+
             if self._widget_exists(getattr(self, 'grade_assessment_combo', None)):
                 self.grade_assessment_combo['values'] = assessments
                 self.grade_assessment_filter_var.set('All')
-    
+
             if self._widget_exists(getattr(self, 'comp_student_combo', None)):
                 self.comp_student_combo['values'] = students
                 self.comp_student_filter_var.set('All')
-    
+
             course_count = max(len(courses) - 1, 0)
             module_count = max(len(modules) - 1, 0)
             student_count = max(len(students) - 1, 0)
@@ -870,54 +870,54 @@ class GradeTrackingApp:
                 "Filter combos populated: "
                 f"{course_count} courses, {module_count} modules, {student_count} students, {assessment_count} assessments"
             )
-    
+
         except sqlite3.Error as e:
             if conn:
                 conn.rollback()
             print(f"Database error populating filter combos: {e}")
             # Set default values to prevent blank dropdowns
             self._set_default_combo_values()
-    
+
         except Exception as e:
             if conn:
                 conn.rollback()
             print(f"Error populating filter combos: {e}")
             # Set default values to prevent blank dropdowns
             self._set_default_combo_values()
-    
+
         finally:
             if conn:
                 conn.close()
-    
+
 
     def _set_default_combo_values(self):
         """Set default values for combos when data loading fails"""
         try:
             default_values = ['All', 'No Data Available']
-    
+
             if self._widget_exists(getattr(self, 'course_filter_combo', None)):
                 self.course_filter_combo['values'] = default_values
                 self.course_filter_var.set('All')
-    
+
             if self._widget_exists(getattr(self, 'assessment_module_combo', None)):
                 self.assessment_module_combo['values'] = default_values
                 self.assessment_module_filter_var.set('All')
-    
+
             if self._widget_exists(getattr(self, 'grade_student_combo', None)):
                 self.grade_student_combo['values'] = default_values
                 self.grade_student_filter_var.set('All')
-    
+
             if self._widget_exists(getattr(self, 'grade_assessment_combo', None)):
                 self.grade_assessment_combo['values'] = default_values
                 self.grade_assessment_filter_var.set('All')
-    
+
             if self._widget_exists(getattr(self, 'comp_student_combo', None)):
                 self.comp_student_combo['values'] = default_values
                 self.comp_student_filter_var.set('All')
-    
+
         except Exception as e:
             print(f"Error setting default combo values: {e}")
-    
+
 
     def percentage_to_letter(self, percentage):
         """Convert percentage to letter grade"""
@@ -947,7 +947,7 @@ class GradeTrackingApp:
             return 'D-'
         else:
             return 'F'
-    
+
 
     def letter_to_gpa(self, letter_grade):
         """Convert letter grade to GPA points"""
@@ -959,7 +959,7 @@ class GradeTrackingApp:
             'F': 0.0
         }
         return grade_map.get(letter_grade, 0.0)
-    
+
 
     def _widget_exists(self, widget):
         """Return True if widget exists and is not destroyed."""
@@ -969,7 +969,7 @@ class GradeTrackingApp:
             return bool(widget.winfo_exists())
         except Exception:
             return False
-    
+
 
     def update_status(self, message):
         """Update status bar message"""
@@ -977,7 +977,7 @@ class GradeTrackingApp:
             self.status_var.set(message)
             if hasattr(self, 'root'):
                 self.root.update_idletasks()
-    
+
 
     def return_to_main_menu(self):
         """Return to main menu"""

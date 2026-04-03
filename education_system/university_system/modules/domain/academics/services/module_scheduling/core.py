@@ -44,6 +44,20 @@ class ModuleScheduler(
         with get_connection(self.db_path, row_factory=False) as conn:
             cursor = conn.cursor()
 
+            # Modules reference table (needed for foreign keys and lookups)
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS modules (
+                module_code TEXT PRIMARY KEY,
+                module_name TEXT NOT NULL,
+                module_type TEXT,
+                credits INTEGER DEFAULT 1,
+                description TEXT,
+                course TEXT,
+                semester TEXT,
+                year INTEGER
+            )
+            ''')
+
             # Existing tables (keeping your original structure)
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS module_schedule (
@@ -295,14 +309,17 @@ class ModuleScheduler(
                 return modules_dict
 
             # Fallback: Get unique modules from student_modules
-            cursor.execute('''
-            SELECT DISTINCT module_code, module_name
-            FROM student_modules
-            WHERE module_code IS NOT NULL AND module_name IS NOT NULL
-            ORDER BY module_code
-            ''')
-
-            modules_from_enrollments = cursor.fetchall()
+            modules_from_enrollments = []
+            try:
+                cursor.execute('''
+                SELECT DISTINCT module_code, module_name
+                FROM student_modules
+                WHERE module_code IS NOT NULL AND module_name IS NOT NULL
+                ORDER BY module_code
+                ''')
+                modules_from_enrollments = cursor.fetchall()
+            except Exception:
+                pass
 
             # Also get from existing schedules
             cursor.execute('''

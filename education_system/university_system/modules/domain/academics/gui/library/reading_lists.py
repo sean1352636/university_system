@@ -408,7 +408,7 @@ def create_reading_list_dialog(self):
 
         try:
             if ORIGINAL_LIBRARY_AVAILABLE:
-                success = self.create_reading_list_database(name, description, category, 
+                success = self.create_reading_list_database(name, description, category,
                                                           is_public_var.get(), is_collaborative_var.get())
                 if success:
                     messagebox.showinfo(_("common.success"), f"Reading list '{name}' created successfully!")
@@ -437,7 +437,7 @@ def create_reading_list_database(self, name, description, category, is_public, i
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         cursor.execute('''
-        INSERT INTO reading_lists 
+        INSERT INTO reading_lists
         (name, description, creator_id, created_date, is_public, is_collaborative, category)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (name, description, get_current_user_id(), now, is_public, is_collaborative, category))

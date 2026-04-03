@@ -54,7 +54,7 @@ except ImportError:
     TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
     SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
     ROOM_TYPES = ['Lecture Hall', 'Lab', 'Tutorial Room', 'Seminar Room', 'Workshop Room', 'Computer Lab', 'Other']
-    
+
     # Import the ModuleScheduler class from the document
     try:
         from education_system.university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
@@ -67,11 +67,11 @@ def create_analytics_tab(self):
     """Create the analytics and reporting tab"""
     analytics_frame = ttk.Frame(self.notebook)
     self.notebook.add(analytics_frame, text=_t("scheduling.tabs.analytics"))
-    
+
     # Controls frame
     controls_frame = ttk.Frame(analytics_frame)
     controls_frame.pack(fill=tk.X, padx=10, pady=5)
-    
+
     ttk.Button(controls_frame, text=_t("scheduling.room_utilization"),
               command=self.show_room_utilization).pack(side=tk.LEFT, padx=5)
     ttk.Button(controls_frame, text=_t("scheduling.instructor_workload"),
@@ -84,7 +84,7 @@ def create_analytics_tab(self):
     # Analytics display area
     display_frame = ttk.LabelFrame(analytics_frame, text=_t("scheduling.analytics_results"), padding=10)
     display_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-    
+
     self.analytics_text = scrolledtext.ScrolledText(display_frame, font=('Courier', 10))
     self.analytics_text.pack(fill=tk.BOTH, expand=True)
 

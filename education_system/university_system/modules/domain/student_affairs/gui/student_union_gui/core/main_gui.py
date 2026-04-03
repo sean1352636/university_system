@@ -488,7 +488,7 @@ class StudentUnionGUI:
         # Show dashboard only if standalone
         if not parent:
             self.show_main_dashboard()
-    
+
     # ------------------------------------------------------------------ helpers
     def _safe_db_call(self, operation_func, *args, **kwargs):
         """
@@ -518,7 +518,7 @@ class StudentUnionGUI:
                     conn.close()
                 except sqlite3.Error:
                     pass
-        
+
     def setup_database(self):
         """Initialize database connection and tables"""
         try:
@@ -663,7 +663,7 @@ class StudentUnionGUI:
                 conn.commit()
             finally:
                 conn.close()
-            
+
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to initialize database: {e}")
             sys.exit(1)
@@ -685,13 +685,13 @@ class StudentUnionGUI:
         """Setup GUI for embedded use in parent window"""
         self.root = parent_window
         self.setup_gui()
-        
+
         # Override the window close behavior to not exit the entire application
         def on_closing():
             self.root.destroy()
-        
+
         self.root.protocol("WM_DELETE_WINDOW", on_closing)
-    
+
     def setup_gui(self):
         """Setup the main GUI structure with sidebar navigation"""
         # Configure style
@@ -888,7 +888,7 @@ class StudentUnionGUI:
             self.content_frame.destroy()
         self.content_frame = ttk.Frame(self.main_frame)
         self.content_frame.pack(fill=tk.BOTH, expand=True)
-    
+
     def update_status(self, message: str):
         """Update status bar message"""
         timestamp = datetime.now().strftime('%H:%M:%S')
@@ -937,10 +937,10 @@ class StudentUnionGUI:
                     self.root.quit()
             except (tk.TclError, AttributeError):
                 pass
-    
+
     def update_status(self, message: str):
         """Update status bar message"""
         self.status_label.config(text=message)
         self.master.update_idletasks()
-    
+
 

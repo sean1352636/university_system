@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -121,7 +121,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -132,7 +132,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -260,7 +260,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -894,19 +894,19 @@ def show_cache_management(self):
     dialog.geometry("900x700")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text="Search Cache Management", style='Title.TLabel').pack(pady=(0, 20))
-    
+
     # Cache info
     cache_size = len(getattr(self, 'search_cache', {}))
     ttk.Label(frame, text=f"Current cache size: {cache_size} entries").pack(pady=(0, 20))
-    
+
     # Cache operations
     ttk.Button(frame, text=_t('advanced_search.clear_cache'), command=self.clear_search_cache, width=20).pack(pady=5)
-    
+
     ttk.Button(frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack(pady=(20, 0))
 AdvancedSearchGUI.show_cache_management = show_cache_management
 
@@ -922,7 +922,7 @@ def show_repeat_last_search(self):
     confirm = messagebox.askyesno(_t("advanced_search.search_history.repeat_search"),
                                  f"Repeat last search ({search_type})?\n"
                                  f"Criteria: {criteria.get('data', 'N/A')}")
-    
+
     if confirm:
         self.repeat_last_search()
 AdvancedSearchGUI.show_repeat_last_search = show_repeat_last_search
@@ -931,7 +931,7 @@ def show_cache_statistics(self):
     """Show cache statistics and management"""
     cache_size = len(getattr(self, 'search_cache', {}))
     cache_memory = sum(len(str(v)) for v in getattr(self, 'search_cache', {}).values())
-    
+
     stats_text = f"""SEARCH CACHE STATISTICS
 
 Cache Entries: {cache_size}
@@ -940,24 +940,24 @@ Cache Hit Rate: {"N/A" if not hasattr(self, 'cache_hits') else f"{getattr(self, 
 
 Cache helps speed up repeated searches by storing results temporarily.
 """
-    
+
     dialog = tk.Toplevel(self.master)
     dialog.title(_t('advanced_search.cache_statistics_dialog_title'))
     dialog.geometry("900x700")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text="Cache Statistics", style='Title.TLabel').pack(pady=(0, 20))
-    
+
     stats_label = tk.Label(frame, text=stats_text, justify=tk.LEFT, font=('Courier', 10))
     stats_label.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
-    
+
     ttk.Button(button_frame, text=_t('advanced_search.clear_cache'), command=self.clear_search_cache).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=_t('advanced_search.close_button'), command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.show_cache_statistics = show_cache_statistics
@@ -969,26 +969,26 @@ def show_search_history_detailed(self):
     dialog.geometry("700x500")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text="Search History & Management", style='Title.TLabel').pack(pady=(0, 20))
-    
+
     # History tree
     columns = ('Time', 'Type', 'Criteria', 'Results', 'Duration')
     history_tree = ttk.Treeview(frame, columns=columns, show='headings', height=15)
-    
+
     for col in columns:
         history_tree.heading(col, text=col)
         history_tree.column(col, width=120)
-    
+
     history_scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=history_tree.yview)
     history_tree.configure(yscrollcommand=history_scrollbar.set)
-    
+
     history_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     history_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    
+
     # Load search history from database
     try:
         conn = get_connection()
@@ -1006,47 +1006,47 @@ def show_search_history_detailed(self):
             time_display = search_datetime[:16] if search_datetime else 'N/A'
             duration_display = f"{duration:.2f}s" if duration else 'N/A'
             criteria_display = criteria[:30] + "..." if len(criteria) > 30 else criteria
-            
+
             history_tree.insert('', 'end', values=(
                 time_display, search_type, criteria_display, results, duration_display
             ))
-    
+
     except Exception as e:
         self.log_output(f"Error loading search history: {str(e)}")
-    
+
     # Actions
     actions_frame = ttk.Frame(frame)
     actions_frame.pack(fill=tk.X, pady=(10, 0))
-    
+
     def repeat_selected_search():
         selection = history_tree.selection()
         if not selection:
             messagebox.showwarning(_t('advanced_search.no_selection'), "Please select a search to repeat.")
             return
-        
+
         item = history_tree.item(selection[0])
         search_type = item['values'][1]
-        
+
         messagebox.showinfo(_t("advanced_search.search_history.repeat_search"), f"Repeating {search_type} search...")
         # In a full implementation, would parse criteria and re-execute
-    
+
     def export_history():
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"search_history_{timestamp}.csv"
-        
+
         try:
             with open(filename, 'w', newline='') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(['Time', 'Type', 'Criteria', 'Results', 'Duration'])
-                
+
                 for child in history_tree.get_children():
                     values = history_tree.item(child)['values']
                     writer.writerow(values)
-            
+
             messagebox.showinfo(_t("advanced_search.search_history.export_complete"), f"Search history exported to {filename}")
         except Exception as e:
             messagebox.showerror(_t("advanced_search.search_history.export_failed"), f"Could not export history: {str(e)}")
-    
+
     def clear_history():
         if messagebox.askyesno("Confirm Clear", "Clear all search history? This cannot be undone."):
             try:
@@ -1055,15 +1055,15 @@ def show_search_history_detailed(self):
                 cursor.execute("DELETE FROM search_analytics")
                 conn.commit()
                 conn.close()
-                
+
                 # Clear tree
                 for item in history_tree.get_children():
                     history_tree.delete(item)
-                
+
                 messagebox.showinfo(_t("advanced_search.search_history.history_cleared"), "Search history has been cleared.")
             except Exception as e:
                 messagebox.showerror(_t("advanced_search.search_history.clear_failed"), f"Could not clear history: {str(e)}")
-    
+
     ttk.Button(actions_frame, text=_t('advanced_search.repeat_search_btn'), command=repeat_selected_search).pack(side=tk.LEFT, padx=(0, 10))
     ttk.Button(actions_frame, text=_t('advanced_search.export_history'), command=export_history).pack(side=tk.LEFT, padx=(0, 10))
     ttk.Button(actions_frame, text=_t('advanced_search.clear_history'), command=clear_history).pack(side=tk.LEFT, padx=(0, 10))
@@ -1075,7 +1075,7 @@ def save_last_search_results(self):
     if not self.search_results:
         messagebox.showwarning(_t("advanced_search.search_history.no_results"), _t("advanced_search.search_history.no_results_to_save"))
         return
-    
+
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     default_name = f"last_search_results_{timestamp}.json"
     filename = filedialog.asksaveasfilename(
@@ -1086,7 +1086,7 @@ def save_last_search_results(self):
     )
     if not filename:
         return
-    
+
     try:
         results_data = {
             "timestamp": datetime.now().isoformat(),
@@ -1094,7 +1094,7 @@ def save_last_search_results(self):
             "search_criteria": self._collect_search_criteria(),
             "results": []
         }
-        
+
         for student in self.search_results:
             student_dict = {
                 "student_id": student[0],
@@ -1110,7 +1110,7 @@ def save_last_search_results(self):
                 "registration_datetime": student[10]
             }
             results_data["results"].append(student_dict)
-        
+
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(results_data, f, indent=2, default=str)
 
@@ -1154,30 +1154,30 @@ def log_search_operation(self, search_type, criteria, result_count):
             "user": "current_user",  # In real implementation, get from auth
             "ip_address": "127.0.0.1"  # In real implementation, get actual IP
         }
-        
+
         # Append to search log file
         log_filename = "search_audit_log.json"
-        
+
         # Load existing log or create new
         try:
             with open(log_filename, 'r', encoding='utf-8') as f:
                 log_data = json.load(f)
         except FileNotFoundError:
             log_data = {"searches": []}
-        
+
         log_data["searches"].append(log_entry)
-        
+
         # Keep only last 1000 entries
         if len(log_data["searches"]) > 1000:
             log_data["searches"] = log_data["searches"][-1000:]
-        
+
         # Save updated log
         with open(log_filename, 'w', encoding='utf-8') as f:
             json.dump(log_data, f, indent=2)
-            
+
     except Exception as e:
         self.log_output(f"Warning: Could not log search operation: {str(e)}")
-    
+
     # Attempt to add entry to search_analytics table for dashboard parity
     try:
         conn = get_connection()
@@ -1207,7 +1207,7 @@ def repeat_last_search(self):
 
     self.update_status(f"Repeating last search ({search_type})...")
     self.start_progress()
-    
+
     def run_repeat_search():
         try:
             # Execute based on search type
@@ -1215,27 +1215,27 @@ def repeat_last_search(self):
                 results = self.perform_database_search(criteria.get('data', {}))
             elif search_type == "fuzzy":
                 results = self.perform_fuzzy_search(
-                    criteria.get('term', ''), 
-                    criteria.get('threshold', 0.6), 
+                    criteria.get('term', ''),
+                    criteria.get('threshold', 0.6),
                     criteria.get('algorithm', '1')
                 )
             elif search_type == "text":
                 results = self.perform_text_search(
-                    criteria.get('pattern', ''), 
-                    criteria.get('search_type', 'wildcard'), 
+                    criteria.get('pattern', ''),
+                    criteria.get('search_type', 'wildcard'),
                     criteria.get('field', 'first_name')
                 )
             else:
                 results = []
-            
+
             self.output_queue.put(("search_results", results))
             self.output_queue.put(("log", f"Repeated {search_type} search. Found {len(results)} results."))
-            
+
         except Exception as e:
             self.output_queue.put(("error", f"Repeat search error: {str(e)}"))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_repeat_search, daemon=True).start()
 AdvancedSearchGUI.repeat_last_search = repeat_last_search
 
@@ -1246,17 +1246,17 @@ def clear_search_history(self):
             # Clear search audit log
             log_filename = "search_audit_log.json"
             empty_log = {"searches": []}
-            
+
             with open(log_filename, 'w', encoding='utf-8') as f:
                 json.dump(empty_log, f, indent=2)
-            
+
             # Clear any cached search data
             if hasattr(self, 'last_search_criteria'):
                 delattr(self, 'last_search_criteria')
-            
+
             messagebox.showinfo(_t("advanced_search.search_history.history_cleared"), "Search history cleared successfully.")
             self.log_output("Search history cleared")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to clear search history: {str(e)}")
 AdvancedSearchGUI.clear_search_history = clear_search_history
@@ -1268,22 +1268,22 @@ def show_search_history(self):
     dialog.geometry("600x400")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text="Search History & Favorites", style='Title.TLabel').pack(pady=(0, 20))
-    
+
     # History list
     columns = ('Time', 'Type', 'Criteria', 'Results')
     history_tree = ttk.Treeview(frame, columns=columns, show='headings', height=15)
-    
+
     for col in columns:
         history_tree.heading(col, text=col)
         history_tree.column(col, width=120)
-    
+
     history_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     # Sample history data
     history_data = [
         ("14:30:25", "Multi-Criteria", "CS students, age > 20", "15"),
@@ -1291,17 +1291,17 @@ def show_search_history(self):
         ("14:20:05", "Module Search", "CS101", "25"),
         ("14:15:30", "Date Range", "Last 30 days", "8"),
     ]
-    
+
     for time, search_type, criteria, results in history_data:
         history_tree.insert('', 'end', values=(time, search_type, criteria, results))
-    
+
     # Buttons
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
-    
-    ttk.Button(button_frame, text="🔄 Repeat", 
+
+    ttk.Button(button_frame, text="🔄 Repeat",
               command=lambda: messagebox.showinfo("Repeat", "Search would be repeated")).pack(side=tk.LEFT)
-    ttk.Button(button_frame, text="⭐ Favorite", 
+    ttk.Button(button_frame, text="⭐ Favorite",
               command=lambda: messagebox.showinfo("Favorite", "Search added to favorites")).pack(side=tk.LEFT, padx=(10, 0))
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.show_search_history = show_search_history

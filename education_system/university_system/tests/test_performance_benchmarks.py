@@ -530,6 +530,9 @@ class TestPropertyBasedTesting:
 
         try:
             with transaction() as conn:
+                # Clean up any leftover data from previous hypothesis examples
+                conn.execute("DELETE FROM enrollments WHERE course_id = ?", (course_id,))
+
                 # Create course
                 conn.execute("""
                     INSERT OR IGNORE INTO courses (

@@ -99,11 +99,11 @@ class TestLaunchGUI:
     def test_launch_gui_creates_root(self, mock_tk):
         """Test GUI launcher creates Tk root"""
         service_launcher = launcher.ServiceLauncher()
-        
+
         # Create a mock module
         mock_module = Mock()
         mock_module.HealthPortalGUI = Mock()
-        
+
         try:
             service_launcher._launch_gui(mock_module, 'health_portal')
         except Exception:
@@ -112,8 +112,16 @@ class TestLaunchGUI:
     def test_launch_gui_handles_no_tkinter(self):
         """Test GUI launcher handles missing tkinter"""
         service_launcher = launcher.ServiceLauncher()
-        
-        with patch('importlib.import_module', side_effect=ImportError('No tkinter')):
+
+        import builtins
+        _real_import = builtins.__import__
+
+        def _fake_import(name, *args, **kwargs):
+            if name == 'tkinter':
+                raise ImportError('No tkinter')
+            return _real_import(name, *args, **kwargs)
+
+        with patch('builtins.__import__', side_effect=_fake_import):
             mock_module = Mock()
             result = service_launcher._launch_gui(mock_module, 'test_service')
             assert result is False
@@ -125,22 +133,22 @@ class TestLaunchCLI:
     def test_launch_cli_finds_menu_function(self):
         """Test CLI launcher finds menu function"""
         service_launcher = launcher.ServiceLauncher()
-        
+
         # Create mock module with menu function
         mock_module = Mock()
         mock_module.display_health_portal_menu = Mock()
-        
+
         result = service_launcher._launch_cli(mock_module, 'health_portal')
         # Should have attempted to call the function
 
     def test_launch_cli_passes_auth(self):
         """Test CLI launcher passes auth parameter"""
         service_launcher = launcher.ServiceLauncher()
-        
+
         mock_module = Mock()
         mock_func = Mock()
         mock_module.main = mock_func
-        
+
         mock_auth = Mock()
         service_launcher._launch_cli(mock_module, 'test_service', auth=mock_auth)
 
@@ -151,12 +159,12 @@ class TestLaunchAPI:
     def test_launch_api_finds_app(self):
         """Test API launcher finds Flask app"""
         service_launcher = launcher.ServiceLauncher()
-        
+
         # Create mock module with Flask app
         mock_module = Mock()
         mock_module.app = Mock()
         mock_module.app.run = Mock()
-        
+
         try:
             service_launcher._launch_api(mock_module, 'test_service')
         except Exception:
@@ -165,10 +173,10 @@ class TestLaunchAPI:
     def test_launch_api_finds_run_api_function(self):
         """Test API launcher finds run_api function"""
         service_launcher = launcher.ServiceLauncher()
-        
+
         mock_module = Mock()
         mock_module.run_api = Mock()
-        
+
         try:
             service_launcher._launch_api(mock_module, 'test_service')
         except Exception:
@@ -227,7 +235,7 @@ class TestErrorHandling:
     def test_handles_import_error(self):
         """Test handling of import errors"""
         service_launcher = launcher.ServiceLauncher()
-        
+
         with patch('importlib.import_module', side_effect=ImportError('Test error')):
             result = service_launcher.launch_service('test_service', 'gui')
             assert result is False
@@ -235,11 +243,11 @@ class TestErrorHandling:
     def test_handles_missing_class(self):
         """Test handling when GUI class not found"""
         service_launcher = launcher.ServiceLauncher()
-        
+
         mock_module = Mock()
         # Module exists but doesn't have expected class
         delattr(mock_module, 'TestServiceGUI')
-        
+
         result = service_launcher._launch_gui(mock_module, 'test_service')
         assert result is False
 

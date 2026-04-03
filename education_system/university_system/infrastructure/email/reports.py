@@ -42,11 +42,11 @@ def log_email_metrics(status):
     def _log_metrics(cursor):
         _ensure_metrics_table(cursor)
         today = datetime.now().strftime('%Y-%m-%d')
-        
+
         # Check if today's record exists
         cursor.execute('SELECT id FROM email_metrics WHERE date = ?', (today,))
         record = cursor.fetchone()
-        
+
         if record:
             # Update existing record
             if status == 'sent':
@@ -57,14 +57,14 @@ def log_email_metrics(status):
             # Create new record
             sent_count = 1 if status == 'sent' else 0
             failed_count = 1 if status == 'failed' else 0
-            
+
             cursor.execute('''
             INSERT INTO email_metrics (date, sent_count, failed_count, opened_count, clicked_count)
             VALUES (?, ?, ?, ?, ?)
             ''', (today, sent_count, failed_count, 0, 0))
-        
+
         return True
-    
+
     try:
         return execute_db_operation(_log_metrics)
     except Exception as e:
@@ -88,7 +88,7 @@ def generate_report(start_date=None, end_date=None, output_format='json'):
             end_dt = datetime.strptime(effective_end, '%Y-%m-%d')
             start_dt = end_dt - timedelta(days=30)
             effective_start = start_dt.strftime('%Y-%m-%d')
-        
+
         # Get metrics for date range
         cursor.execute('''
         SELECT date, sent_count, failed_count, opened_count, clicked_count
@@ -102,7 +102,7 @@ def generate_report(start_date=None, end_date=None, output_format='json'):
         if not records:
             log_event('warning', f"No metrics found for date range {effective_start} to {effective_end}")
             return {'data': [], 'totals': {}}
-        
+
         # Prepare report data
         report_data = []
         totals = {
@@ -111,10 +111,10 @@ def generate_report(start_date=None, end_date=None, output_format='json'):
             'opened': 0,
             'clicked': 0
         }
-        
+
         for record in records:
             date, sent, failed, opened, clicked = record
-            
+
             report_data.append({
                 'date': date,
                 'sent': sent,
@@ -125,51 +125,51 @@ def generate_report(start_date=None, end_date=None, output_format='json'):
                 'open_rate': (opened / sent) * 100 if sent > 0 else 0,
                 'click_rate': (clicked / opened) * 100 if opened > 0 else 0
             })
-            
+
             totals['sent'] += sent
             totals['failed'] += failed
             totals['opened'] += opened
             totals['clicked'] += clicked
-        
+
         # Calculate overall rates
         if totals['sent'] + totals['failed'] > 0:
             totals['success_rate'] = (totals['sent'] / (totals['sent'] + totals['failed'])) * 100
         else:
             totals['success_rate'] = 0
-        
+
         if totals['sent'] > 0:
             totals['open_rate'] = (totals['opened'] / totals['sent']) * 100
         else:
             totals['open_rate'] = 0
-        
+
         if totals['opened'] > 0:
             totals['click_rate'] = (totals['clicked'] / totals['opened']) * 100
         else:
             totals['click_rate'] = 0
-        
+
         return {
             'data': report_data,
             'totals': totals,
             'start_date': effective_start,
             'end_date': effective_end
         }
-    
+
     try:
         report = execute_db_operation(_generate_report)
-        
+
         # Generate report in requested format
         if output_format.lower() == 'csv':
             # Create CSV file
             csv_path = f"email_report_{report['start_date']}_to_{report['end_date']}.csv"
-            
+
             with open(csv_path, 'w', newline='') as csvfile:
                 fieldnames = ['date', 'sent', 'failed', 'opened', 'clicked', 'success_rate', 'open_rate', 'click_rate']
                 writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                
+
                 writer.writeheader()
                 for row in report['data']:
                     writer.writerow(row)
-                
+
                 # Add totals row
                 writer.writerow({
                     'date': 'TOTALS',
@@ -181,13 +181,13 @@ def generate_report(start_date=None, end_date=None, output_format='json'):
                     'open_rate': report['totals']['open_rate'],
                     'click_rate': report['totals']['click_rate']
                 })
-            
+
             log_event('info', f"Email report generated as CSV: {csv_path}")
             return {'file_path': csv_path}
         else:
             # Return JSON data
             return report
-            
+
     except Exception as e:
         log_event('error', f"Error generating report: {e}")
         return {'data': [], 'totals': {}}
@@ -210,9 +210,9 @@ def generate_report_form():
     print(f"4. {_t('email.reports.custom_range')}")
 
     choice = input(_t("email.common.enter_choice") + " (1-4): ")
-    
+
     end_date = today
-    
+
     if choice == '1':
         # Last 7 days
         start_dt = datetime.now() - timedelta(days=7)
@@ -266,10 +266,10 @@ def generate_report_form():
     else:
         print(_t("email.reports.invalid_using_json"))
         output_format = 'json'
-    
+
     # Generate the report
     report = generate_report(start_date, end_date, output_format)
-    
+
     if output_format == 'json':
         # Display report on screen
         print(f"\n{_t('email.reports.report_for', start=start_date, end=end_date)}:")
@@ -303,48 +303,48 @@ def get_user_communication_stats(dashboard, user_id=None):
     """Get communication statistics for a user"""
     if not dashboard.auth or not dashboard.auth.current_user:
         return None
-    
+
     target_user_id = user_id or dashboard.auth.current_user['id']
-    
+
     def _get_stats(cursor):
         stats = {}
-        
+
         # Message stats
         cursor.execute('''
         SELECT COUNT(*) FROM messages WHERE sender_id = ?
         ''', (target_user_id,))
         stats['messages_sent'] = cursor.fetchone()[0]
-        
+
         cursor.execute('''
         SELECT COUNT(*) FROM messages WHERE recipient_id = ?
         ''', (target_user_id,))
         stats['messages_received'] = cursor.fetchone()[0]
-        
+
         cursor.execute('''
-        SELECT COUNT(*) FROM messages 
+        SELECT COUNT(*) FROM messages
         WHERE recipient_id = ? AND is_read = 0
         ''', (target_user_id,))
         stats['unread_messages'] = cursor.fetchone()[0]
-        
+
         # Announcement stats (if user can create them)
         cursor.execute('''
         SELECT COUNT(*) FROM announcements WHERE creator_id = ?
         ''', (target_user_id,))
         stats['announcements_created'] = cursor.fetchone()[0]
-        
+
         # Chat room stats
         cursor.execute('''
         SELECT COUNT(*) FROM chat_room_members WHERE user_id = ?
         ''', (target_user_id,))
         stats['chat_rooms_joined'] = cursor.fetchone()[0]
-        
+
         cursor.execute('''
         SELECT COUNT(*) FROM chat_rooms WHERE created_by = ?
         ''', (target_user_id,))
         stats['chat_rooms_created'] = cursor.fetchone()[0]
-        
+
         return stats
-    
+
     try:
         return execute_db_operation(_get_stats)
     except Exception as e:
@@ -358,9 +358,9 @@ def get_recent_communication_activity(dashboard, limit=10):
     """Get recent communication activity for the current user"""
     if not dashboard.auth or not dashboard.auth.current_user:
         return []
-    
+
     user_id = dashboard.auth.current_user['id']
-    
+
     def _get_activity(cursor):
         cursor.execute('''
         SELECT action_type, action_details, performed_at
@@ -369,7 +369,7 @@ def get_recent_communication_activity(dashboard, limit=10):
         ORDER BY performed_at DESC
         LIMIT ?
         ''', (user_id, limit))
-        
+
         activities = []
         for row in cursor.fetchall():
             activities.append({
@@ -377,9 +377,9 @@ def get_recent_communication_activity(dashboard, limit=10):
                 'details': row[1],
                 'performed_at': row[2]
             })
-        
+
         return activities
-    
+
     try:
         return execute_db_operation(_get_activity)
     except Exception as e:
@@ -401,26 +401,26 @@ def get_system_health_info():
         'queue_size': 0,
         'last_check': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
-    
+
     try:
         # Check email queue
         if not config.get('database_only_mode', True):
             health_info['queue_size'] = email_queue.qsize()
-            
+
             # Check if workers are running
             if not worker_threads:
                 health_info['email_system'] = 'degraded'
-        
+
         # Test database connection
         def _test_db(cursor):
             cursor.execute('SELECT 1')
             return cursor.fetchone() is not None
-        
+
         if not execute_db_operation(_test_db):
             health_info['database_status'] = 'error'
-        
+
     except Exception as e:
         log_event('error', f"Error checking system health: {e}")
         health_info['database_status'] = 'error'
-    
+
     return health_info

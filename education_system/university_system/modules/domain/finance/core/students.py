@@ -61,7 +61,7 @@ def create_sample_students():
         ]
 
         cursor.executemany('''
-        INSERT INTO students 
+        INSERT INTO students
         (student_id, first_name, last_name, email_address, phone_number, course, enrollment_date, status)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', sample_students)
@@ -87,7 +87,7 @@ def view_student_credits():
             return
 
         cursor.execute('''
-        SELECT credit_id, credit_amount, remaining_amount, credit_source, description, 
+        SELECT credit_id, credit_amount, remaining_amount, credit_source, description,
                expiry_date, status, created_at
         FROM student_credits
         WHERE student_id = ? AND status = 'active'
@@ -185,8 +185,8 @@ def add_student_credit():
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         cursor.execute('''
-        INSERT INTO student_credits 
-        (student_id, credit_amount, remaining_amount, credit_source, description, 
+        INSERT INTO student_credits
+        (student_id, credit_amount, remaining_amount, credit_source, description,
          expiry_date, created_by, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (student_id, credit_amount, credit_amount, credit_source, description,
@@ -225,7 +225,7 @@ def view_credit_history():
             return
 
         cursor.execute('''
-        SELECT credit_id, credit_amount, remaining_amount, credit_source, 
+        SELECT credit_id, credit_amount, remaining_amount, credit_source,
                description, status, created_at, expiry_date
         FROM student_credits
         WHERE student_id = ?
@@ -301,7 +301,7 @@ def api_get_student_financial_summary(student_id):
 
         # Get student financial data
         cursor.execute('''
-        SELECT 
+        SELECT
             (SELECT SUM(amount) FROM student_fees WHERE student_id = ?) as total_fees,
             (SELECT SUM(amount) FROM payments WHERE student_id = ?) as total_paid,
             (SELECT COUNT(*) FROM student_fees WHERE student_id = ? AND status = 'unpaid') as unpaid_fees,
@@ -360,7 +360,7 @@ def apply_credit_to_fees():
 
         # Get outstanding fees
         cursor.execute('''
-        SELECT sf.student_fee_id, ft.fee_name, sf.amount, 
+        SELECT sf.student_fee_id, ft.fee_name, sf.amount,
                COALESCE(SUM(pa.amount), 0) as paid_amount,
                sf.amount - COALESCE(SUM(pa.amount), 0) as outstanding
         FROM student_fees sf
@@ -418,7 +418,7 @@ def apply_credit_to_fees():
 
             # Create a payment record for the credit application
             cursor.execute('''
-            INSERT INTO payments 
+            INSERT INTO payments
             (student_id, amount, payment_method, payment_date, notes, created_by, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (student_id, application_amount, 'Credit Application',
@@ -430,7 +430,7 @@ def apply_credit_to_fees():
 
             # Create payment allocation
             cursor.execute('''
-            INSERT INTO payment_allocations 
+            INSERT INTO payment_allocations
             (payment_id, student_fee_id, amount, created_at)
             VALUES (?, ?, ?, ?)
             ''', (payment_id, fee_id, application_amount, now))
@@ -440,7 +440,7 @@ def apply_credit_to_fees():
             new_status = 'paid' if new_paid_amount >= total_amt else 'partial'
 
             cursor.execute('''
-            UPDATE student_fees 
+            UPDATE student_fees
             SET status = ?, updated_at = ?
             WHERE student_fee_id = ?
             ''', (new_status, now, fee_id))
@@ -460,7 +460,7 @@ def apply_credit_to_fees():
             new_status = 'used' if new_remaining <= 0 else 'active'
 
             cursor.execute('''
-            UPDATE student_credits 
+            UPDATE student_credits
             SET remaining_amount = ?, status = ?, updated_at = ?
             WHERE credit_id = ?
             ''', (new_remaining, new_status, now, credit_id))

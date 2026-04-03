@@ -316,7 +316,7 @@ def cleanup_expired_reservations(self):
             if conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                UPDATE book_reservations 
+                UPDATE book_reservations
                 SET status = 'expired'
                 WHERE status = 'active' AND expiry_date < datetime('now')
                 ''')
@@ -342,7 +342,7 @@ def update_overdue_status(self):
             if conn:
                 cursor = conn.cursor()
                 cursor.execute('''
-                UPDATE book_loans 
+                UPDATE book_loans
                 SET status = 'overdue'
                 WHERE status = 'active' AND due_date < datetime('now')
                 ''')
@@ -374,7 +374,7 @@ def calculate_fines(self):
                 fine_per_day = float(setting[0]) if setting else 0.50
 
                 cursor.execute('''
-                UPDATE book_loans 
+                UPDATE book_loans
                 SET fine_amount = (julianday('now') - julianday(due_date)) * ?
                 WHERE status = 'overdue' AND due_date < datetime('now')
                 ''', (fine_per_day,))

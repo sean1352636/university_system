@@ -59,27 +59,27 @@ class FilePreviewManager:
         # Calendar frame
         calendar_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Upcoming Assignments", padding=10)
         calendar_frame.pack(fill='both', expand=True)
-        
+
         # Calendar tree view
         calendar_tree = ttk.Treeview(calendar_frame, columns=('Date', 'Time', 'Assignment', 'Module', 'Status'), show='headings')
-        
+
         for col in ['Date', 'Time', 'Assignment', 'Module', 'Status']:
             calendar_tree.heading(col, text=col)
             calendar_tree.column(col, width=120)
-        
+
         calendar_tree.pack(fill='both', expand=True)
-        
+
         # Load calendar data
         try:
             student_id = self.assignment_system._get_student_id()
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             if student_id:
                 # Student view
                 cursor.execute('''
                 SELECT a.due_date, a.title, a.module_code,
-                       CASE 
+                       CASE
                            WHEN s.id IS NOT NULL THEN 'Submitted'
                            WHEN a.due_date < datetime('now') THEN 'Overdue'
                            ELSE 'Pending'
@@ -99,14 +99,14 @@ class FilePreviewManager:
                 WHERE is_active = 1 AND due_date >= date('now', '-7 days')
                 ORDER BY due_date
                 ''')
-            
+
             assignments = cursor.fetchall()
-            
+
             for assignment in assignments:
                 due_datetime = datetime.strptime(assignment[0], '%Y-%m-%d %H:%M:%S')
                 date_str = due_datetime.strftime('%Y-%m-%d')
                 time_str = due_datetime.strftime('%H:%M')
-                
+
                 # Color code based on status
                 tags = []
                 if len(assignment) > 3:
@@ -114,21 +114,21 @@ class FilePreviewManager:
                         tags = ['overdue']
                     elif assignment[3] == 'Submitted':
                         tags = ['submitted']
-                
-                calendar_tree.insert('', 'end', 
-                                   values=(date_str, time_str, assignment[1], assignment[2], 
-                                          assignment[3] if len(assignment) > 3 else 'Active'), 
+
+                calendar_tree.insert('', 'end',
+                                   values=(date_str, time_str, assignment[1], assignment[2],
+                                          assignment[3] if len(assignment) > 3 else 'Active'),
                                    tags=tags)
-            
+
             # Configure tags
             calendar_tree.tag_configure('overdue', background='#ffebee')
             calendar_tree.tag_configure('submitted', background='#e8f5e8')
-            
+
             conn.close()
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load calendar: {e}")
-    
+
 
     def prev_month(self):
         """Navigate to previous month"""
@@ -137,7 +137,7 @@ class FilePreviewManager:
         else:
             self.current_month = self.current_month.replace(month=self.current_month.month - 1)
         self.update_calendar()
-    
+
 
     def next_month(self):
         """Navigate to next month"""
@@ -146,28 +146,28 @@ class FilePreviewManager:
         else:
             self.current_month = self.current_month.replace(month=self.current_month.month + 1)
         self.update_calendar()
-    
+
 
     def create_calendar_grid(self):
         """Create the calendar grid"""
         # Clear existing calendar
         for widget in self.calendar_frame.winfo_children():
             widget.destroy()
-        
+
         # Calendar header
         header_frame = ttk.Frame(self.calendar_frame)
         header_frame.pack(fill='x', pady=(0, 10))
-        
+
         days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
         for i, day in enumerate(days):
-            ttk.Label(header_frame, text=day, font=('Arial', 10, 'bold'), 
+            ttk.Label(header_frame, text=day, font=('Arial', 10, 'bold'),
                      background='lightgray').grid(row=0, column=i, sticky='ew', padx=1, pady=1)
             header_frame.grid_columnconfigure(i, weight=1)
-        
+
         # Calendar body
         self.calendar_body = ttk.Frame(self.calendar_frame)
         self.calendar_body.pack(fill='both', expand=True)
-        
+
         # Create 6x7 grid for calendar days
         self.day_frames = {}
         for week in range(6):
@@ -177,46 +177,46 @@ class FilePreviewManager:
                 self.calendar_body.grid_rowconfigure(week, weight=1)
                 self.calendar_body.grid_columnconfigure(day, weight=1)
                 self.day_frames[(week, day)] = day_frame
-    
+
 
     def update_calendar(self):
         """Update calendar with current month data"""
         # Update month label
         month_name = self.current_month.strftime('%B %Y')
         self.month_label.config(text=month_name)
-        
+
         # Clear existing content
         for frame in self.day_frames.values():
             for widget in frame.winfo_children():
                 widget.destroy()
-        
+
         # Get calendar data
         calendar_data = self.get_calendar_data()
-        
+
         # Calculate first day of month and number of days
         import calendar
         month_calendar = calendar.monthcalendar(self.current_month.year, self.current_month.month)
-        
+
         # Fill calendar grid
         for week_num, week in enumerate(month_calendar):
             for day_num, day in enumerate(week):
                 if day == 0:  # Empty cell
                     continue
-                
+
                 frame = self.day_frames[(week_num, day_num)]
-                
+
                 # Day number
                 day_label = ttk.Label(frame, text=str(day), font=('Arial', 12, 'bold'))
                 day_label.pack(anchor='nw')
-                
+
                 # Add assignments for this day
                 date_key = f"{self.current_month.year}-{self.current_month.month:02d}-{day:02d}"
                 if date_key in calendar_data:
                     assignments = calendar_data[date_key]
-                    
+
                     for assignment in assignments[:3]:  # Show max 3 assignments
                         title_text = assignment['title'][:15] + "..." if len(assignment['title']) > 15 else assignment['title']
-                        
+
                         # Color code by status
                         if assignment['status'] == 'overdue':
                             bg_color = '#ffcdd2'
@@ -224,37 +224,37 @@ class FilePreviewManager:
                             bg_color = '#c8e6c9'
                         else:
                             bg_color = '#fff3e0'
-                        
-                        assignment_label = tk.Label(frame, text=title_text, 
+
+                        assignment_label = tk.Label(frame, text=title_text,
                                                    font=('Arial', 8), background=bg_color,
                                                    wraplength=80)
                         assignment_label.pack(fill='x', pady=1)
-                    
+
                     if len(assignments) > 3:
                         more_label = tk.Label(frame, text=f"+{len(assignments) - 3} more",
                                             font=('Arial', 7), foreground='gray')
                         more_label.pack()
-    
+
 
     def get_calendar_data(self):
         """Get assignment data for calendar display"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             # Calculate month range
             start_date = self.current_month.strftime('%Y-%m-01')
             if self.current_month.month == 12:
                 end_date = self.current_month.replace(year=self.current_month.year + 1, month=1).strftime('%Y-%m-01')
             else:
                 end_date = self.current_month.replace(month=self.current_month.month + 1).strftime('%Y-%m-01')
-            
+
             if self.calendar_view_var.get() == "my_assignments":
                 student_id = self.assignment_system._get_student_id()
                 if student_id:
                     cursor.execute('''
                     SELECT a.title, a.due_date, a.module_code,
-                           CASE 
+                           CASE
                                WHEN s.id IS NOT NULL THEN 'submitted'
                                WHEN a.due_date < datetime('now') THEN 'overdue'
                                ELSE 'pending'
@@ -276,67 +276,67 @@ class FilePreviewManager:
                 AND date(due_date) >= ? AND date(due_date) < ?
                 ORDER BY due_date
                 ''', (start_date, end_date))
-            
+
             assignments = cursor.fetchall()
             conn.close()
-            
+
             # Group by date
             calendar_data = {}
             for title, due_date, module, status in assignments:
                 due_dt = datetime.strptime(due_date, '%Y-%m-%d %H:%M:%S')
                 date_key = due_dt.strftime('%Y-%m-%d')
-                
+
                 if date_key not in calendar_data:
                     calendar_data[date_key] = []
-                
+
                 calendar_data[date_key].append({
                     'title': title,
                     'module': module,
                     'time': due_dt.strftime('%H:%M'),
                     'status': status
                 })
-            
+
             return calendar_data
-            
+
         except Exception as e:
             print(f"Error loading calendar data: {e}")
             return {}
-    
+
 
     def load_assignments_for_preview(self, combo):
         """Load assignments for preview filter"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             cursor.execute('SELECT id, title FROM assignments WHERE is_active = 1 ORDER BY due_date DESC')
             assignments = cursor.fetchall()
-            
+
             assignment_list = ["All Assignments"] + [f"{aid}: {title}" for aid, title in assignments]
             combo['values'] = assignment_list
             combo.set("All Assignments")
-            
+
             # Create mapping
             self.preview_assignment_map = {"All Assignments": None}
             for aid, title in assignments:
                 self.preview_assignment_map[f"{aid}: {title}"] = aid
-            
+
             conn.close()
-            
+
         except Exception as e:
             print(f"Error loading assignments: {e}")
-    
+
 
     def load_preview_files(self):
         """Load files for preview"""
         # Clear existing data
         for item in self.preview_files_tree.get_children():
             self.preview_files_tree.delete(item)
-        
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             # Build query with filters
             query = '''
             SELECT s.id, s.file_name, st.first_name, st.last_name, a.title, s.file_path, s.file_size
@@ -345,87 +345,87 @@ class FilePreviewManager:
             JOIN students st ON s.student_id = st.student_id
             WHERE s.file_path IS NOT NULL
             '''
-            
+
             params = []
-            
+
             # Apply filters
             file_type = self.preview_file_type_var.get()
             if file_type != "All":
                 query += " AND s.file_name LIKE ?"
                 params.append(f"%{escape_like(file_type)}")
-            
+
             assignment_filter = self.preview_assignment_var.get()
             assignment_id = self.preview_assignment_map.get(assignment_filter)
             if assignment_id:
                 query += " AND s.assignment_id = ?"
                 params.append(assignment_id)
-            
+
             query += " ORDER BY s.submission_date DESC LIMIT 100"
-            
+
             cursor.execute(query, params)
             files = cursor.fetchall()
-            
+
             for file_info in files:
                 sid, filename, fname, lname, assignment, filepath, size = file_info
                 student_name = f"{fname} {lname}"
                 file_ext = os.path.splitext(filename)[1]
                 file_size_kb = f"{size // 1024} KB" if size else "Unknown"
-                
-                self.preview_files_tree.insert('', 'end', 
+
+                self.preview_files_tree.insert('', 'end',
                                               values=(sid, filename, student_name, assignment, file_ext, file_size_kb))
-            
+
             conn.close()
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load files: {e}")
-    
+
 
     def on_preview_file_select(self, event):
         """Handle file selection for preview"""
         selection = self.preview_files_tree.selection()
         if not selection:
             return
-        
+
         item = self.preview_files_tree.item(selection[0])
         submission_id = item['values'][0]
-        
+
         self.show_file_preview_content(submission_id)
-    
+
 
     def show_file_preview_content(self, submission_id):
         """Show file preview content"""
         # Clear existing preview
         for widget in self.preview_content_frame.winfo_children():
             widget.destroy()
-        
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             cursor.execute('SELECT file_path, file_name FROM assignment_submissions WHERE id = ?', (submission_id,))
             result = cursor.fetchone()
-            
+
             if not result:
                 ttk.Label(self.preview_content_frame, text="File not found").pack()
                 return
-            
+
             file_path, file_name = result
-            
+
             if not os.path.exists(file_path):
                 ttk.Label(self.preview_content_frame, text="File not found on disk").pack()
                 return
-            
+
             # File info
             info_frame = ttk.Frame(self.preview_content_frame)
             info_frame.pack(fill='x', pady=(0, 10))
-            
+
             ttk.Label(info_frame, text=f"File: {file_name}", font=('Arial', 12, 'bold')).pack(anchor='w')
             ttk.Label(info_frame, text=f"Size: {os.path.getsize(file_path)} bytes").pack(anchor='w')
             ttk.Label(info_frame, text=f"Modified: {datetime.fromtimestamp(os.path.getmtime(file_path))}").pack(anchor='w')
-            
+
             # Preview content based on file type
             file_ext = os.path.splitext(file_name)[1].lower()
-            
+
             if file_ext in ['.txt', '.py', '.java', '.cpp', '.c', '.js', '.html', '.css', '.md']:
                 self.show_text_preview(file_path)
             elif file_ext == '.pdf':
@@ -434,31 +434,31 @@ class FilePreviewManager:
                 self.show_image_preview(file_path)
             else:
                 self.show_generic_preview(file_path, file_ext)
-            
+
             # Action buttons
             action_frame = ttk.Frame(self.preview_content_frame)
             action_frame.pack(fill='x', pady=(10, 0))
-            
-            ttk.Button(action_frame, text="Download File", 
+
+            ttk.Button(action_frame, text="Download File",
                       command=lambda: self.download_preview_file(file_path, file_name)).pack(side='left', padx=(0, 10))
-            ttk.Button(action_frame, text="Open in External App", 
+            ttk.Button(action_frame, text="Open in External App",
                       command=lambda: self.open_external(file_path)).pack(side='left')
-            
+
             conn.close()
-            
+
         except Exception as e:
             ttk.Label(self.preview_content_frame, text=f"Error loading preview: {e}").pack()
-    
+
 
     def show_text_preview(self, file_path):
         """Show text file preview"""
         try:
             preview_frame = ttk.LabelFrame(self.preview_content_frame, text="Text Preview", padding=5)
             preview_frame.pack(fill='both', expand=True)
-            
+
             text_widget = scrolledtext.ScrolledText(preview_frame, wrap=tk.WORD, state='disabled')
             text_widget.pack(fill='both', expand=True)
-            
+
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                 content = f.read(5000)  # Limit to first 5000 characters
                 text_widget.config(state='normal')
@@ -466,66 +466,66 @@ class FilePreviewManager:
                 if len(content) == 5000:
                     text_widget.insert(tk.END, "\n\n... (Preview truncated)")
                 text_widget.config(state='disabled')
-                
+
         except Exception as e:
             ttk.Label(self.preview_content_frame, text=f"Error reading text file: {e}").pack()
-    
+
 
     def show_pdf_preview(self, file_path):
         """Show PDF preview (basic info)"""
         preview_frame = ttk.LabelFrame(self.preview_content_frame, text="PDF Preview", padding=5)
         preview_frame.pack(fill='both', expand=True)
-        
+
         ttk.Label(preview_frame, text="PDF File Detected").pack(pady=20)
         ttk.Label(preview_frame, text="Use 'Open in External App' to view content").pack()
-        
+
         # Try to get basic PDF info
         try:
             file_size = os.path.getsize(file_path)
             ttk.Label(preview_frame, text=f"File size: {file_size:,} bytes").pack(pady=5)
         except (OSError, IOError):
             pass
-    
+
 
     def show_image_preview(self, file_path):
         """Show image preview"""
         try:
             from PIL import Image, ImageTk
-            
+
             preview_frame = ttk.LabelFrame(self.preview_content_frame, text="Image Preview", padding=5)
             preview_frame.pack(fill='both', expand=True)
-            
+
             # Load and resize image
             image = Image.open(file_path)
-            
+
             # Calculate size to fit in preview (max 400x400)
             max_size = 400
             if image.width > max_size or image.height > max_size:
                 image.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
-            
+
             photo = ImageTk.PhotoImage(image)
-            
+
             # Display image
             image_label = ttk.Label(preview_frame, image=photo)
             image_label.image = photo  # Keep a reference
             image_label.pack(pady=10)
-            
+
             # Image info
             ttk.Label(preview_frame, text=f"Dimensions: {image.width} x {image.height}").pack()
-            
+
         except Exception as e:
             ttk.Label(self.preview_content_frame, text=f"Error loading image: {e}").pack()
-    
+
 
     def show_generic_preview(self, file_path, file_ext):
         """Show generic file preview"""
         preview_frame = ttk.LabelFrame(self.preview_content_frame, text="File Info", padding=5)
         preview_frame.pack(fill='both', expand=True)
-        
+
         ttk.Label(preview_frame, text=f"File Type: {file_ext.upper()} file").pack(pady=20)
         ttk.Label(preview_frame, text="Preview not available for this file type").pack()
         ttk.Label(preview_frame, text="Use download or external app to view").pack()
-    
+
 
     def download_preview_file(self, file_path, file_name):
         """Download file from preview"""
@@ -535,14 +535,14 @@ class FilePreviewManager:
                 initialfile=file_name,
                 filetypes=[("All files", "*.*")]
             )
-            
+
             if save_path:
                 shutil.copy2(file_path, save_path)
                 messagebox.showinfo("Success", f"File saved to: {save_path}")
-                
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to download file: {e}")
-    
+
 
     def open_external(self, file_path):
         """Open file in external application"""
@@ -582,7 +582,7 @@ class FilePreviewManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open file: {e}\n\nPlease install a PDF viewer (evince, okular, etc.) or open the file manually.")
-    
+
     # SYSTEM UTILITIES (missing from GUI)
 
     def show_file_preview(self):
@@ -637,13 +637,13 @@ class FilePreviewManager:
 
         # Load initial file list
         self.load_preview_files()
-    
+
 
     def preview_submission_file(self, *args, **kwargs):
         """Launch the enhanced submission preview tool."""
         self._launch_gui_feature(self.show_file_preview, "submission preview")
-    
-    
+
+
 
     def launch_academic_calendar(self):
         """Launch the full academic calendar GUI"""

@@ -230,7 +230,7 @@ class DatabaseManager:
 
     def create_database_tables(self, cursor):
         """Create all required database tables"""
-        
+
         # Users table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -246,7 +246,7 @@ class DatabaseManager:
             updated_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
         ''')
-        
+
         # Students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -260,7 +260,7 @@ class DatabaseManager:
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
         ''')
-        
+
         # Modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -274,7 +274,7 @@ class DatabaseManager:
             FOREIGN KEY (instructor_id) REFERENCES users (id)
         )
         ''')
-        
+
         # Student modules
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -288,7 +288,7 @@ class DatabaseManager:
             UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Assignments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assignments (
@@ -317,7 +317,7 @@ class DatabaseManager:
             FOREIGN KEY (created_by) REFERENCES users (id)
         )
         ''')
-        
+
         # Assignment submissions table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assignment_submissions (
@@ -343,7 +343,7 @@ class DatabaseManager:
             FOREIGN KEY (graded_by) REFERENCES users (id)
         )
         ''')
-        
+
         # Notifications table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS notifications (
@@ -364,7 +364,7 @@ class DatabaseManager:
             FOREIGN KEY (assignment_id) REFERENCES assignments (id)
         )
         ''')
-        
+
         # Extension requests table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS extension_requests (
@@ -384,7 +384,7 @@ class DatabaseManager:
             FOREIGN KEY (reviewed_by) REFERENCES users (id)
         )
         ''')
-    
+
         # Peer reviews table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS peer_reviews (
@@ -402,7 +402,7 @@ class DatabaseManager:
             FOREIGN KEY (reviewee_id) REFERENCES students (student_id)
         )
         ''')
-    
+
         # Peer review criteria table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS peer_review_criteria (
@@ -414,7 +414,7 @@ class DatabaseManager:
             FOREIGN KEY (review_id) REFERENCES peer_reviews (id)
         )
         ''')
-    
+
         # Peer review assignments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS peer_review_assignments (
@@ -432,7 +432,7 @@ class DatabaseManager:
             FOREIGN KEY (submission_id) REFERENCES assignment_submissions (id)
         )
         ''')
-    
+
         # Rubrics table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS rubrics (
@@ -446,7 +446,7 @@ class DatabaseManager:
             FOREIGN KEY (created_by) REFERENCES users (id)
         )
         ''')
-    
+
         # Rubric criteria table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS rubric_criteria (
@@ -460,7 +460,7 @@ class DatabaseManager:
             FOREIGN KEY (rubric_id) REFERENCES rubrics (id) ON DELETE CASCADE
         )
         ''')
-    
+
         # Messages table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS messages (
@@ -485,7 +485,7 @@ class DatabaseManager:
             FOREIGN KEY (reply_to) REFERENCES messages (id)
         )
         ''')
-    
+
         # Analytics cache table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS analytics_cache (
@@ -496,7 +496,7 @@ class DatabaseManager:
             expires_at TEXT NOT NULL
         )
         ''')
-    
+
         # Audit log table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS audit_log (
@@ -512,53 +512,53 @@ class DatabaseManager:
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
         ''')
-    
+
         # Database tables created - ready to use existing data
         # Note: Sample data insertion removed - using actual database data only
-    
+
 
     def insert_sample_data(self, cursor):
         """Insert sample data for testing"""
-        
+
         # Sample users
         cursor.execute('''
         INSERT OR IGNORE INTO users (id, username, email, password_hash, role, first_name, last_name)
         VALUES (1, 'admin', 'admin@university.edu', 'admin_hash', 'admin', 'System', 'Administrator')
         ''')
-        
+
         cursor.execute('''
         INSERT OR IGNORE INTO users (id, username, email, password_hash, role, first_name, last_name)
         VALUES (2, 'instructor1', 'instructor1@university.edu', 'inst_hash', 'instructor', 'John', 'Smith')
         ''')
-        
+
         # Sample students
         cursor.execute('''
         INSERT OR IGNORE INTO students (student_id, user_id, first_name, last_name, email, enrollment_date)
         VALUES ('STU001', 1, 'Test', 'Student', 'student@university.edu', '2024-01-15')
         ''')
-        
+
         # Sample modules
         cursor.execute('''
         INSERT OR IGNORE INTO modules (module_code, module_name, description, credits, instructor_id)
         VALUES ('CS101', 'Introduction to Computer Science', 'Basic programming concepts', 3, 2)
         ''')
-        
+
         cursor.execute('''
         INSERT OR IGNORE INTO modules (module_code, module_name, description, credits, instructor_id)
         VALUES ('CS201', 'Data Structures', 'Advanced programming topics', 4, 2)
         ''')
-        
+
         # Sample enrollment
         cursor.execute('''
         INSERT OR IGNORE INTO student_modules (student_id, module_code)
         VALUES ('STU001', 'CS101')
         ''')
-        
+
         cursor.execute('''
         INSERT OR IGNORE INTO student_modules (student_id, module_code)
         VALUES ('STU001', 'CS201')
         ''')
-    
+
 
     def _ensure_notifications_table(self):
         """Ensure notifications table exists and has required columns"""
@@ -629,14 +629,14 @@ class DatabaseManager:
             conn.close()
         except Exception as e:
             print(f"Error ensuring notifications table: {e}")
-    
+
 
     def _ensure_messages_table(self):
         """Ensure messages table exists in the database"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-    
+
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -660,9 +660,9 @@ class DatabaseManager:
                 FOREIGN KEY (reply_to) REFERENCES messages (id)
             )
             ''')
-    
+
             conn.commit()
             conn.close()
         except Exception as e:
             print(f"Error ensuring messages table: {e}")
-    
+

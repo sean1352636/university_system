@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import escape_like, validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import escape_like, validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -121,7 +121,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -132,7 +132,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -260,7 +260,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -937,18 +937,18 @@ def create_search_form(self):
         (_t('advanced_search.min_age'), "min_age"),
         (_t('advanced_search.max_age'), "max_age")
     ]
-    
+
     for i, (label, var_name) in enumerate(fields):
         row = i // 2
         col = (i % 2) * 2
-        
+
         ttk.Label(criteria_frame, text=f"{label}:").grid(row=row, column=col, sticky=tk.W, padx=(0, 5), pady=2)
-        
+
         if var_name in ["gender", "course"]:
             # Dropdown for specific fields
             self.search_vars[var_name] = tk.StringVar()
             values = ["", "male", "female", "other"] if var_name == "gender" else ["", "CS", "DS"]
-            combo = ttk.Combobox(criteria_frame, textvariable=self.search_vars[var_name], 
+            combo = ttk.Combobox(criteria_frame, textvariable=self.search_vars[var_name],
                                values=values, width=15, state='readonly')
             combo.grid(row=row, column=col+1, sticky=(tk.W, tk.E), padx=(0, 10), pady=2)
         else:
@@ -956,11 +956,11 @@ def create_search_form(self):
             self.search_vars[var_name] = tk.StringVar()
             entry = ttk.Entry(criteria_frame, textvariable=self.search_vars[var_name], width=18)
             entry.grid(row=row, column=col+1, sticky=(tk.W, tk.E), padx=(0, 10), pady=2)
-    
+
     # Configure grid weights
     for i in range(2):
         criteria_frame.columnconfigure(i*2+1, weight=1)
-    
+
     # Buttons frame
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X)
@@ -983,7 +983,7 @@ def execute_search(self, search_window):
     if not any(criteria.values()):
         messagebox.showwarning(_t('advanced_search.no_criteria'), _t('advanced_search.enter_criteria'))
         return
-    
+
     search_window.destroy()
     self.update_status(_t("advanced_search.searching"))
     self.start_progress()
@@ -998,7 +998,7 @@ def execute_search(self, search_window):
             self.output_queue.put(("error", f"Search error: {str(e)}"))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_search, daemon=True).start()
 AdvancedSearchGUI.execute_search = execute_search
 
@@ -1009,10 +1009,10 @@ def show_date_search(self):
     dialog.geometry("400x350")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.search_basic.date_range_search_title'), style='Title.TLabel').pack(pady=(0, 20))
 
     # Preset options
@@ -1128,17 +1128,17 @@ def execute_search_with_logging(self, search_window):
         value = var.get().strip()
         if value:
             criteria[key] = value
-    
+
     if not any(criteria.values()):
         messagebox.showwarning(_t('advanced_search.search_basic.no_criteria'), _t('advanced_search.search_basic.enter_at_least_one_criterion'))
         return
-    
+
     # Store for repeat functionality
     self.last_search_criteria = {
         'type': 'multi_criteria',
         'data': criteria
     }
-    
+
     search_window.destroy()
     self.update_status(_t("advanced_search.searching"))
     self.start_progress()
@@ -1149,14 +1149,14 @@ def execute_search_with_logging(self, search_window):
 
             # Log the search operation
             self.log_search_operation("multi_criteria", criteria, len(results))
-            
+
             self.output_queue.put(("search_results", results))
             self.output_queue.put(("log", f"Search completed. Found {len(results)} results."))
         except Exception as e:
             self.output_queue.put(("error", f"Search error: {str(e)}"))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_search, daemon=True).start()
 AdvancedSearchGUI.execute_search_with_logging = execute_search_with_logging
 
@@ -1165,11 +1165,11 @@ def perform_database_search(self, criteria):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Build query
         query = "SELECT * FROM students WHERE 1=1"
         params = []
-        
+
         for key, value in criteria.items():
             if key in ['student_id', 'first_name', 'last_name', 'email']:
                 query += f" AND LOWER({key}) LIKE LOWER(?)"
@@ -1183,13 +1183,13 @@ def perform_database_search(self, criteria):
             elif key == 'max_age':
                 query += " AND age <= ?"
                 params.append(int(value))
-        
+
         cursor.execute(query, params)
         results = cursor.fetchall()
         conn.close()
-        
+
         return results
-        
+
     except Exception as e:
         raise Exception(f"Database error: {str(e)}")
 AdvancedSearchGUI.perform_database_search = perform_database_search
@@ -1207,10 +1207,10 @@ def show_date_search(self):
     dialog.geometry("400x350")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.search_basic.date_range_search_title'), style='Title.TLabel').pack(pady=(0, 20))
 
     # Preset options
@@ -1262,7 +1262,7 @@ def show_date_search(self):
 
         dialog.destroy()
         self.update_status(_t("advanced_search.search_basic.searching_date_range"))
-        
+
         def run_date_search():
             try:
                 results = self.perform_date_search(start_date, end_date)
@@ -1270,12 +1270,12 @@ def show_date_search(self):
                 self.output_queue.put(("log", f"Date range search completed. Found {len(results)} results."))
             except Exception as e:
                 self.output_queue.put(("error", f"Date search error: {str(e)}"))
-        
+
         threading.Thread(target=run_date_search, daemon=True).start()
-    
+
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X, pady=(20, 0))
-    
+
     ttk.Button(button_frame, text=_t('advanced_search.search_basic.search'), command=execute_date_search).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=_t('advanced_search.cancel_button'), command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.show_date_search = show_date_search
@@ -1286,12 +1286,12 @@ def perform_date_search(self, start_date, end_date):
         conn = get_connection()
         if not conn:
             raise Exception("Database connection failed")
-        
+
         cursor = conn.cursor()
-        
+
         query = "SELECT * FROM students WHERE 1=1"
         params = []
-        
+
         if start_date:
             try:
                 datetime.strptime(start_date, "%Y-%m-%d")
@@ -1299,7 +1299,7 @@ def perform_date_search(self, start_date, end_date):
                 params.append(start_date + " 00:00:00")
             except ValueError:
                 raise Exception("Invalid start date format. Use YYYY-MM-DD.")
-        
+
         if end_date:
             try:
                 datetime.strptime(end_date, "%Y-%m-%d")
@@ -1307,13 +1307,13 @@ def perform_date_search(self, start_date, end_date):
                 params.append(end_date + " 23:59:59")
             except ValueError:
                 raise Exception("Invalid end date format. Use YYYY-MM-DD.")
-        
+
         cursor.execute(query, params)
         results = cursor.fetchall()
         conn.close()
-        
+
         return results
-        
+
     except Exception as e:
         raise Exception(f"Date search error: {str(e)}")
 AdvancedSearchGUI.perform_date_search = perform_date_search
@@ -1565,58 +1565,58 @@ def show_text_search(self):
     dialog.geometry("1000x750")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.search_basic.advanced_text_search_title'), style='Title.TLabel').pack(pady=(0, 20))
-    
+
     # Search type
     ttk.Label(frame, text=f"{_t('advanced_search.search_basic.search_type')}:").pack(anchor='w')
     search_type_var = tk.StringVar(value="wildcard")
-    
+
     search_types = [
         (_t("advanced_search.search_basic.wildcard_pattern_search"), "wildcard"),
         (_t("advanced_search.search_basic.regex_search_type"), "regex"),
         (_t("advanced_search.search_basic.search_all_fields_type"), "all_fields"),
         (_t("advanced_search.search_basic.phonetic_search_type"), "phonetic")
     ]
-    
+
     for text, value in search_types:
         ttk.Radiobutton(frame, text=text, variable=search_type_var, value=value).pack(anchor='w')
-    
+
     # Search input
     ttk.Label(frame, text=f"{_t('advanced_search.search_basic.search_pattern')}:").pack(anchor='w', pady=(20, 0))
     pattern_var = tk.StringVar()
     ttk.Entry(frame, textvariable=pattern_var, width=50).pack(fill=tk.X, pady=(0, 10))
-    
+
     # Field selection (for some search types)
     field_frame = ttk.Frame(frame)
     field_frame.pack(fill=tk.X, pady=(10, 20))
-    
+
     ttk.Label(field_frame, text=_t('advanced_search.search_basic.search_field')).pack(side=tk.LEFT)
     field_var = tk.StringVar(value="first_name")
-    field_combo = ttk.Combobox(field_frame, textvariable=field_var, 
-                              values=["first_name", "last_name", "email", "student_id"], 
+    field_combo = ttk.Combobox(field_frame, textvariable=field_var,
+                              values=["first_name", "last_name", "email", "student_id"],
                               state='readonly', width=15)
     field_combo.pack(side=tk.LEFT, padx=(10, 0))
-    
+
     def execute_text_search():
         pattern = pattern_var.get().strip()
         if not pattern:
             messagebox.showwarning(_t("advanced_search.search_basic.missing_pattern"), _t("advanced_search.search_basic.enter_search_pattern"))
             return
-        
+
         search_type = search_type_var.get()
         field = field_var.get()
-        
+
         dialog.destroy()
-        
+
         # Route to specific search function
         if search_type == "regex":
             self.update_status(_t("advanced_search.search_basic.performing_regex_search"))
             self.start_progress()
-            
+
             def run_search():
                 try:
                     results = self.perform_regex_search(pattern, field)
@@ -1626,11 +1626,11 @@ def show_text_search(self):
                     self.output_queue.put(("error", f"Search error: {str(e)}"))
                 finally:
                     self.output_queue.put(("stop_progress", None))
-            
+
         elif search_type == "wildcard":
             self.update_status(_t("advanced_search.search_basic.performing_wildcard_search"))
             self.start_progress()
-            
+
             def run_search():
                 try:
                     results = self.perform_wildcard_search(pattern, field)
@@ -1640,11 +1640,11 @@ def show_text_search(self):
                     self.output_queue.put(("error", f"Search error: {str(e)}"))
                 finally:
                     self.output_queue.put(("stop_progress", None))
-            
+
         elif search_type == "all_fields":
             self.update_status(_t("advanced_search.search_basic.searching_all_fields"))
             self.start_progress()
-            
+
             def run_search():
                 try:
                     results = self.perform_search_all_fields(pattern)
@@ -1654,11 +1654,11 @@ def show_text_search(self):
                     self.output_queue.put(("error", f"Search error: {str(e)}"))
                 finally:
                     self.output_queue.put(("stop_progress", None))
-            
+
         elif search_type == "phonetic":
             self.update_status(_t("advanced_search.search_basic.performing_phonetic_search"))
             self.start_progress()
-            
+
             def run_search():
                 try:
                     results = self.perform_phonetic_search(pattern)
@@ -1668,12 +1668,12 @@ def show_text_search(self):
                     self.output_queue.put(("error", f"Search error: {str(e)}"))
                 finally:
                     self.output_queue.put(("stop_progress", None))
-        
+
         threading.Thread(target=run_search, daemon=True).start()
-    
+
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
-    
+
     ttk.Button(button_frame, text=f"🔍 {_t('advanced_search.search_button')}", command=execute_text_search).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.cancel_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.show_text_search = show_text_search

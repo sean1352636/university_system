@@ -61,8 +61,16 @@ class ScholarshipManagerGUI:
             Valid parent frame/window
         """
         try:
-            if self.parent_frame and self.parent_frame.winfo_exists():
-                return self.parent_frame
+            if self.parent_frame is not None:
+                master = getattr(self.parent_frame, 'master', None)
+                name = getattr(self.parent_frame, '_name', None)
+                if (
+                    master is not None and
+                    name and
+                    getattr(master, 'children', {}).get(name) is self.parent_frame and
+                    int(self.parent_frame.tk.call('winfo', 'exists', str(self.parent_frame))) == 1
+                ):
+                    return self.parent_frame
         except Exception:
             pass
 

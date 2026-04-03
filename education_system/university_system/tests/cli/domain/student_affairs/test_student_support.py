@@ -341,6 +341,12 @@ class TestSatisfactionRatings:
         conn = get_connection()
         cursor = conn.cursor()
 
+        # Insert a matching user so the ownership check passes
+        cursor.execute('''
+            INSERT OR IGNORE INTO users (id, username, student_id, role)
+            VALUES (?, ?, ?, ?)
+        ''', (1, 'test_user', 'S12345', 'student'))
+
         # Create resolved ticket
         cursor.execute('''
             INSERT INTO support_tickets (student_id, subject, message, category, status)
@@ -350,9 +356,12 @@ class TestSatisfactionRatings:
         conn.commit()
         conn.close()
 
-        # Set auth
+        # Set auth on the package and on the auth submodule (metrics.py reads _auth_mod.auth)
+        import sys
         from education_system.university_system.modules.domain.student_affairs.services import student_support
+        _auth_submod = sys.modules['education_system.university_system.modules.domain.student_affairs.services.student_support.auth']
         student_support.auth = mock_auth
+        _auth_submod.auth = mock_auth
 
         # Submit rating
         result = support_system.submit_satisfaction_rating(
@@ -503,7 +512,7 @@ class TestKnowledgeBase:
         conn.close()
 
         assert article is not None
-        assert article[6] == 'published'
+        assert article[7] == 'published'
 
     def test_search_articles(self, setup_database):
         """Test searching knowledge base"""
@@ -615,7 +624,7 @@ class TestIntegrationScenarios:
         conn.close()
 
         assert ticket[5] == 'Resolved'
-        assert ticket[11] == 5
+        assert ticket[10] == 5
         assert notification is not None
 
 if __name__ == '__main__':

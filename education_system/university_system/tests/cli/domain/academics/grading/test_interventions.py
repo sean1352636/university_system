@@ -69,6 +69,27 @@ def setup_intervention_tables():
             )
         """)
 
+        # Create assignment_submissions and assignments tables (needed for GPA calculation)
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS assignments (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                module_code TEXT,
+                title TEXT,
+                FOREIGN KEY (module_code) REFERENCES modules (module_code)
+            )
+        """)
+
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS assignment_submissions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                assignment_id INTEGER,
+                student_id TEXT,
+                grade REAL,
+                FOREIGN KEY (assignment_id) REFERENCES assignments (id),
+                FOREIGN KEY (student_id) REFERENCES students (student_id)
+            )
+        """)
+
         # Create student_risk_assessment table if not exists
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS student_risk_assessment (
@@ -170,9 +191,12 @@ def setup_test_data(setup_intervention_tables):
 
     yield
 
-    # Cleanup
+    # Cleanup - delete from child tables first to avoid FK constraint failures
     with transaction() as conn:
         cursor = conn.cursor()
+        cursor.execute("DELETE FROM recommended_interventions")
+        cursor.execute("DELETE FROM student_risk_assessment WHERE student_id LIKE 'INTV%'")
+        cursor.execute("DELETE FROM assignment_submissions WHERE student_id LIKE 'INTV%'")
         cursor.execute("DELETE FROM module_grades WHERE student_id LIKE 'INTV%'")
         cursor.execute("DELETE FROM modules WHERE module_code = 'INTV101'")
         cursor.execute("DELETE FROM students WHERE student_id LIKE 'INTV%'")
@@ -212,7 +236,7 @@ class TestInterventionRecommendations:
 
     def test_intervention_recommendations_database_error(self, capsys):
         """Test database error handling"""
-        with mock.patch('education_system.university_system.modules.domain.academics.grade_misc.interventions.get_connection') as mock_conn:
+        with mock.patch('education_system.university_system.modules.domain.academics.grading.interventions.get_connection') as mock_conn:
             mock_conn.side_effect = sqlite3.Error("Database error")
 
             intervention_recommendations()
@@ -455,7 +479,7 @@ class TestEdgeCases:
 
     def test_intervention_plan_with_null_gpa(self, setup_test_data):
         """Test generating plan when GPA cannot be calculated"""
-        with transaction() as conn:
+        with get_connection() as conn:
             cursor = conn.cursor()
 
             # Create student with no grades
@@ -463,6 +487,7 @@ class TestEdgeCases:
                 INSERT OR IGNORE INTO students (student_id, first_name, last_name, email_address, course)
                 VALUES ('INTV999', 'Test', 'NoGrades', 'test@test.com', 'CS')
             """)
+            conn.commit()
 
             try:
                 plan = generate_intervention_plan(
@@ -479,7 +504,7 @@ class TestEdgeCases:
                 # Should still generate interventions even without GPA
             finally:
                 cursor.execute("DELETE FROM students WHERE student_id = 'INTV999'")
-                conn.rollback()
+                conn.commit()
 
     def test_intervention_plan_boundary_risk_scores(self, setup_test_data):
         """Test with boundary risk scores"""

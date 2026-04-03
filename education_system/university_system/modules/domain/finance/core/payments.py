@@ -32,7 +32,7 @@ def manual_rate_update(cursor, base_currency):
             current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
             cursor.execute('''
-            INSERT OR REPLACE INTO exchange_rates 
+            INSERT OR REPLACE INTO exchange_rates
             (from_currency, to_currency, exchange_rate, rate_date, source, created_at)
             VALUES (?, ?, ?, ?, ?, ?)
             ''', (base_currency, currency, rate, current_date, 'manual', current_time))

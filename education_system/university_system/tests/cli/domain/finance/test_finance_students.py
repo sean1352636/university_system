@@ -469,7 +469,23 @@ class TestAPIFinancialSummary:
     @patch('education_system.university_system.modules.domain.finance.core.security_automation.verify_jwt_in_request')
     def test_api_get_student_financial_summary_returns_data(self, mock_jwt, test_db_connection, student_with_financial_data):
         """Test that API returns financial summary correctly"""
-        result = students.api_get_student_financial_summary(student_with_financial_data)
+        # Create missing student_scholarships table needed by the query
+        cursor = test_db_connection.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS student_scholarships (
+                scholarship_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT,
+                amount REAL,
+                status TEXT DEFAULT 'active'
+            )
+        ''')
+        test_db_connection.commit()
+
+        # api_get_student_financial_summary uses Flask's jsonify, which requires an app context
+        from flask import Flask
+        app = Flask(__name__)
+        with app.app_context():
+            result = students.api_get_student_financial_summary(student_with_financial_data)
 
         # The function returns a Flask jsonify object, we can access the data
         # In testing, we just verify it doesn't error

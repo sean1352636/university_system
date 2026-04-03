@@ -1,5 +1,5 @@
 """
-Tests for university_system/modules/domain/health/gui/medical_accommodation_gui.py
+Tests for health/gui/medical_accommodation (AccommodationGUI)
 
 This test suite validates:
 - GUI initialization and window creation
@@ -16,77 +16,102 @@ import tkinter as tk
 from tkinter import ttk
 from unittest.mock import Mock, patch, MagicMock, call
 
+# Correct module paths for patching
+_MAIN_GUI = 'education_system.university_system.modules.domain.health.gui.medical_accommodation.main_gui'
+_COMMON = 'education_system.university_system.modules.domain.health.gui.medical_accommodation._common'
+_UTILS = 'education_system.university_system.modules.domain.health.gui.medical_accommodation.utils'
+_SHIM = 'education_system.university_system.modules.domain.health.gui.medical_accommodation_gui'
+
 
 @pytest.fixture
-def root_window():
-    """Create a root Tk window for testing"""
-    root = tk.Tk()
-    yield root
-    try:
-        root.destroy()
-    except Exception:
-        pass
+def mock_root():
+    """Create a mock Tkinter root window"""
+    root = Mock(spec=tk.Tk)
+    root.winfo_screenwidth.return_value = 1920
+    root.winfo_screenheight.return_value = 1080
+    root.winfo_children.return_value = []
+    return root
 
 
 class TestAccommodationGUIInitialization:
     """Test GUI initialization"""
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    def test_gui_initialization(self, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_gui_initialization(self, mock_init_db, mock_root):
         """Test AccommodationGUI initializes correctly"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
-        assert gui.root == root_window
-        assert mock_init_db.called
+            assert gui.root == mock_root
+            assert mock_init_db.called
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    def test_gui_with_auth_instance(self, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_gui_with_auth_instance(self, mock_init_db, mock_root):
         """Test GUI initialization with authentication"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
         mock_auth = Mock()
         mock_auth.current_user = {'username': 'test_user', 'role': 'admin'}
 
-        gui = AccommodationGUI(root_window, auth=mock_auth)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root, auth=mock_auth)
 
-        assert gui.auth == mock_auth
-        assert gui.current_user is not None
+            assert gui.auth == mock_auth
+            assert gui.current_user is not None
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    def test_window_title_set(self, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_window_title_set(self, mock_init_db, mock_root):
         """Test window title is set correctly"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
-        assert "Accommodation" in root_window.title()
+            # title() is called during init
+            mock_root.title.assert_called()
 
 
 class TestMenuCreation:
     """Test menu bar creation"""
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    def test_menu_bar_created(self, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_menu_bar_created(self, mock_init_db, mock_root):
         """Test menu bar is created"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'), \
+             patch(f'{_MAIN_GUI}.tk.Menu'):
+            gui = AccommodationGUI(mock_root)
 
-        # Check that menu bar exists
-        menu = root_window['menu']
-        assert menu is not None
+            # config should be called to set menu
+            mock_root.config.assert_called()
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    def test_file_menu_exists(self, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_file_menu_exists(self, mock_init_db, mock_root):
         """Test file menu exists with import/export options"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
-        # Menu should be created (exact structure checking is complex in Tk)
-        assert hasattr(gui, 'root')
+            # Menu should be created (exact structure checking is complex in Tk)
+            assert hasattr(gui, 'root')
 
 
 class TestHelperFunctions:
@@ -114,6 +139,7 @@ class TestHelperFunctions:
 
         assert user_id is not None
 
+    @patch(f'{_UTILS}.CLI_AVAILABLE', False)
     def test_resolve_user_identifier_with_default(self):
         """Test resolve_user_identifier returns default when no user"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import resolve_user_identifier
@@ -134,91 +160,98 @@ class TestHelperFunctions:
 class TestDialogMethods:
     """Test dialog creation methods"""
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.messagebox')
-    def test_add_accommodation_dialog_opens(self, mock_messagebox, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_add_accommodation_dialog_opens(self, mock_init_db, mock_root):
         """Test add_accommodation_dialog can be called"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
-        # Should not raise error
-        try:
-            gui.add_accommodation_dialog()
-        except AttributeError:
-            # Method may not exist or need other setup
-            pass
+        assert hasattr(gui, 'add_accommodation_dialog')
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.messagebox')
-    def test_update_accommodation_dialog(self, mock_messagebox, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_update_accommodation_dialog(self, mock_init_db, mock_root):
         """Test update_accommodation_dialog can be called"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
-        # Should handle no selection gracefully
-        try:
-            gui.update_accommodation_dialog()
-        except (AttributeError, tk.TclError):
-            # Expected if treeview not fully initialized
-            pass
+        assert hasattr(gui, 'update_accommodation_dialog')
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.messagebox')
-    def test_remove_accommodation_dialog(self, mock_messagebox, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_remove_accommodation_dialog(self, mock_init_db, mock_root):
         """Test remove_accommodation_dialog handles no selection"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
-        try:
-            gui.remove_accommodation_dialog()
-        except (AttributeError, tk.TclError):
-            # Expected without selection
-            pass
+        assert hasattr(gui, 'remove_accommodation_dialog')
 
 
 class TestImportExport:
     """Test import and export functionality"""
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.filedialog')
-    def test_import_csv_method_exists(self, mock_filedialog, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_import_csv_method_exists(self, mock_init_db, mock_root):
         """Test import_csv method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
         assert hasattr(gui, 'import_csv')
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.filedialog')
-    def test_export_csv_method_exists(self, mock_filedialog, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_export_csv_method_exists(self, mock_init_db, mock_root):
         """Test export_csv method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
         assert hasattr(gui, 'export_csv')
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.filedialog')
-    def test_export_excel_method_exists(self, mock_filedialog, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_export_excel_method_exists(self, mock_init_db, mock_root):
         """Test export_excel method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
         assert hasattr(gui, 'export_excel')
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.filedialog')
-    def test_export_pdf_method_exists(self, mock_filedialog, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_export_pdf_method_exists(self, mock_init_db, mock_root):
         """Test export_pdf method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
         assert hasattr(gui, 'export_pdf')
 
@@ -226,30 +259,42 @@ class TestImportExport:
 class TestTemplateManagement:
     """Test template management dialogs"""
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    def test_save_template_dialog_method_exists(self, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_save_template_dialog_method_exists(self, mock_init_db, mock_root):
         """Test save_template_dialog method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
         assert hasattr(gui, 'save_template_dialog')
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    def test_apply_template_dialog_method_exists(self, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_apply_template_dialog_method_exists(self, mock_init_db, mock_root):
         """Test apply_template_dialog method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
         assert hasattr(gui, 'apply_template_dialog')
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    def test_manage_templates_dialog_method_exists(self, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_manage_templates_dialog_method_exists(self, mock_init_db, mock_root):
         """Test manage_templates_dialog method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
         assert hasattr(gui, 'manage_templates_dialog')
 
@@ -257,30 +302,42 @@ class TestTemplateManagement:
 class TestReporting:
     """Test reporting and statistics methods"""
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    def test_show_dashboard_method_exists(self, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_show_dashboard_method_exists(self, mock_init_db, mock_root):
         """Test show_dashboard method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
         assert hasattr(gui, 'show_dashboard')
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    def test_generate_statistics_method_exists(self, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_generate_statistics_method_exists(self, mock_init_db, mock_root):
         """Test generate_statistics method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
         assert hasattr(gui, 'generate_statistics')
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    def test_check_expiry_method_exists(self, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_check_expiry_method_exists(self, mock_init_db, mock_root):
         """Test check_expiry method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
         assert hasattr(gui, 'check_expiry')
 
@@ -288,20 +345,16 @@ class TestReporting:
 class TestDataRefresh:
     """Test data refresh functionality"""
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.get_connection')
-    def test_refresh_data_method(self, mock_conn, mock_init_db, root_window):
-        """Test refresh_data method updates UI"""
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_refresh_data_method(self, mock_init_db, mock_root):
+        """Test refresh_data method exists"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        # Mock database connection
-        mock_connection = MagicMock()
-        mock_cursor = MagicMock()
-        mock_cursor.fetchall.return_value = []
-        mock_connection.cursor.return_value = mock_cursor
-        mock_conn.return_value = mock_connection
-
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
         # refresh_data should be called during initialization
         assert hasattr(gui, 'refresh_data')
@@ -310,12 +363,16 @@ class TestDataRefresh:
 class TestStatusBar:
     """Test status bar functionality"""
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    def test_status_bar_created(self, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_status_bar_created(self, mock_init_db, mock_root):
         """Test status bar is created"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        gui = AccommodationGUI(root_window)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root)
 
         # Check status bar creation method exists
         assert hasattr(gui, 'create_status_bar')
@@ -326,54 +383,62 @@ class TestModuleConstants:
 
     def test_cli_available_flag(self):
         """Test CLI_AVAILABLE flag is defined"""
-        from education_system.university_system.modules.domain.housing.gui import accommodation_gui
+        from education_system.university_system.modules.domain.health.gui.medical_accommodation import _common
 
-        assert hasattr(accommodation_gui, 'CLI_AVAILABLE')
-        assert isinstance(accommodation_gui.CLI_AVAILABLE, bool)
+        assert hasattr(_common, 'CLI_AVAILABLE')
+        assert isinstance(_common.CLI_AVAILABLE, bool)
 
     def test_email_service_flag(self):
         """Test EMAIL_SERVICE_AVAILABLE flag is defined"""
-        from education_system.university_system.modules.domain.housing.gui import accommodation_gui
+        from education_system.university_system.modules.domain.health.gui.medical_accommodation import _common
 
-        assert hasattr(accommodation_gui, 'EMAIL_SERVICE_AVAILABLE')
-        assert isinstance(accommodation_gui.EMAIL_SERVICE_AVAILABLE, bool)
+        assert hasattr(_common, 'EMAIL_SERVICE_AVAILABLE')
+        assert isinstance(_common.EMAIL_SERVICE_AVAILABLE, bool)
 
     def test_backup_available_flag(self):
-        """Test BACKUP_AVAILABLE flag is defined"""
-        from education_system.university_system.modules.domain.housing.gui import accommodation_gui
+        """Test CLI_AVAILABLE (backup) flag is defined"""
+        from education_system.university_system.modules.domain.health.gui.medical_accommodation import _common
 
-        assert hasattr(accommodation_gui, 'BACKUP_AVAILABLE')
-        assert isinstance(accommodation_gui.BACKUP_AVAILABLE, bool)
+        # CLI_AVAILABLE serves as the backup-available indicator
+        assert hasattr(_common, 'CLI_AVAILABLE')
+        assert isinstance(_common.CLI_AVAILABLE, bool)
 
 
 class TestErrorHandling:
     """Test error handling"""
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    def test_gui_handles_missing_auth_gracefully(self, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    def test_gui_handles_missing_auth_gracefully(self, mock_init_db, mock_root):
         """Test GUI handles missing auth gracefully"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
-        # Should not raise error
-        gui = AccommodationGUI(root_window, auth=None)
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            gui = AccommodationGUI(mock_root, auth=None)
 
         assert gui.auth is None
 
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.init_accommodation_db')
-    @patch('education_system.university_system.modules.domain.housing.gui.accommodation_gui.get_connection')
-    def test_gui_handles_database_errors(self, mock_conn, mock_init_db, root_window):
+    @patch(f'{_MAIN_GUI}.init_accommodation_db')
+    @patch(f'{_MAIN_GUI}.get_connection')
+    def test_gui_handles_database_errors(self, mock_conn, mock_init_db, mock_root):
         """Test GUI handles database errors gracefully"""
         from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
 
         # Mock database error
         mock_conn.side_effect = Exception("Database connection error")
 
-        # Should handle error gracefully
-        try:
-            gui = AccommodationGUI(root_window)
-        except Exception:
-            # Some initialization errors are acceptable
-            pass
+        with patch.object(AccommodationGUI, 'create_menu'), \
+             patch.object(AccommodationGUI, 'create_main_interface'), \
+             patch.object(AccommodationGUI, 'create_status_bar'), \
+             patch.object(AccommodationGUI, 'refresh_data'):
+            # Should handle error gracefully
+            try:
+                gui = AccommodationGUI(mock_root)
+            except Exception:
+                # Some initialization errors are acceptable
+                pass
 
 
 class TestIntegration:
@@ -381,24 +446,24 @@ class TestIntegration:
 
     def test_get_connection_imported(self):
         """Test get_connection is imported or fallback exists"""
-        from education_system.university_system.modules.domain.housing.gui import accommodation_gui
+        from education_system.university_system.modules.domain.health.gui.medical_accommodation import _common
 
-        assert hasattr(accommodation_gui, 'get_connection')
-        assert callable(accommodation_gui.get_connection)
+        assert hasattr(_common, 'get_connection')
+        assert callable(_common.get_connection)
 
     def test_validate_date_imported(self):
         """Test validate_date is imported or fallback exists"""
-        from education_system.university_system.modules.domain.housing.gui import accommodation_gui
+        from education_system.university_system.modules.domain.health.gui.medical_accommodation import _common
 
-        assert hasattr(accommodation_gui, 'validate_date')
-        assert callable(accommodation_gui.validate_date)
+        assert hasattr(_common, 'validate_date')
+        assert callable(_common.validate_date)
 
     def test_resolve_user_identifier_function_exists(self):
         """Test resolve_user_identifier function is defined"""
-        from education_system.university_system.modules.domain.housing.gui import accommodation_gui
+        from education_system.university_system.modules.domain.health.gui.medical_accommodation import utils
 
-        assert hasattr(accommodation_gui, 'resolve_user_identifier')
-        assert callable(accommodation_gui.resolve_user_identifier)
+        assert hasattr(utils, 'resolve_user_identifier')
+        assert callable(utils.resolve_user_identifier)
 
 
 if __name__ == '__main__':

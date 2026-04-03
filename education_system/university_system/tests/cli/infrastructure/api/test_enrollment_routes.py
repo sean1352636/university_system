@@ -123,8 +123,8 @@ class TestEnrollmentAuth:
 
 class TestListEnrollments:
 
-    @patch("shared.api.university.routes.enrollment_routes.log_activity")
-    @patch("shared.api.university.routes.enrollment_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.get_connection")
     def test_list_all(self, mock_conn, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = [_enrollment_row()]
@@ -137,8 +137,8 @@ class TestListEnrollments:
         assert data["total"] == 1
         assert data["items"][0]["student_id"] == "S1"
 
-    @patch("shared.api.university.routes.enrollment_routes.log_activity")
-    @patch("shared.api.university.routes.enrollment_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.get_connection")
     def test_list_filter_student(self, mock_conn, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = []
@@ -150,8 +150,8 @@ class TestListEnrollments:
         call_args = conn.execute.call_args
         assert "student_id = ?" in call_args[0][0]
 
-    @patch("shared.api.university.routes.enrollment_routes.log_activity")
-    @patch("shared.api.university.routes.enrollment_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.get_connection")
     def test_list_filter_module(self, mock_conn, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = []
@@ -163,8 +163,8 @@ class TestListEnrollments:
         call_args = conn.execute.call_args
         assert "module_code = ?" in call_args[0][0]
 
-    @patch("shared.api.university.routes.enrollment_routes.log_activity")
-    @patch("shared.api.university.routes.enrollment_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.get_connection")
     def test_list_filter_both(self, mock_conn, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = []
@@ -179,8 +179,8 @@ class TestListEnrollments:
         assert "student_id = ?" in sql
         assert "module_code = ?" in sql
 
-    @patch("shared.api.university.routes.enrollment_routes.log_activity")
-    @patch("shared.api.university.routes.enrollment_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.get_connection")
     def test_list_empty(self, mock_conn, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = []
@@ -199,9 +199,9 @@ class TestListEnrollments:
 
 class TestEnroll:
 
-    @patch("shared.api.university.routes.enrollment_routes.log_activity")
-    @patch("shared.api.university.routes.enrollment_routes.transaction")
-    @patch("shared.api.university.routes.enrollment_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.transaction")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.get_connection")
     def test_enroll_success(self, mock_conn, mock_tx, mock_log, client):
         conn = MagicMock()
         # student exists, module exists, no duplicate
@@ -244,7 +244,7 @@ class TestEnroll:
         resp = client.post("/api/enrollments", json={}, headers=_headers())
         assert resp.status_code == 400
 
-    @patch("shared.api.university.routes.enrollment_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.get_connection")
     def test_enroll_student_not_found(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = None
@@ -258,7 +258,7 @@ class TestEnroll:
         )
         assert resp.status_code == 404
 
-    @patch("shared.api.university.routes.enrollment_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.get_connection")
     def test_enroll_module_not_found(self, mock_conn, client):
         conn = MagicMock()
         student_check = _FakeRow({"1": 1})
@@ -273,9 +273,9 @@ class TestEnroll:
         )
         assert resp.status_code == 404
 
-    @patch("shared.api.university.routes.enrollment_routes.AlreadyEnrolledError",
+    @patch("education_system.shared.api.university.routes.enrollment_routes.AlreadyEnrolledError",
            side_effect=lambda msg: type("AlreadyEnrolledError", (Exception,), {})(msg))
-    @patch("shared.api.university.routes.enrollment_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.get_connection")
     def test_enroll_already_enrolled(self, mock_conn, mock_exc, client):
         """When duplicate enrollment is detected, route raises AlreadyEnrolledError."""
         conn = MagicMock()
@@ -304,9 +304,9 @@ class TestEnroll:
 
 class TestDropEnrollment:
 
-    @patch("shared.api.university.routes.enrollment_routes.log_activity")
-    @patch("shared.api.university.routes.enrollment_routes.transaction")
-    @patch("shared.api.university.routes.enrollment_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.transaction")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.get_connection")
     def test_drop_success(self, mock_conn, mock_tx, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = _enrollment_row(id=10)
@@ -321,7 +321,7 @@ class TestDropEnrollment:
         assert resp.status_code == 200
         assert "dropped" in resp.get_json()["message"].lower()
 
-    @patch("shared.api.university.routes.enrollment_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.enrollment_routes.get_connection")
     def test_drop_nonexistent(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = None

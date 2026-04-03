@@ -26,7 +26,7 @@ class TestManageLiveStreaming:
     def test_live_streaming_setup(self, mock_print, mock_input, mock_cursor):
         """Test live streaming setup process."""
         events.manage_live_streaming(mock_cursor)
-        
+
         # Verify setup messages displayed
         assert any('Live Streaming' in str(call) for call in mock_print.call_args_list)
         assert any('YouTube Live' in str(call) for call in mock_print.call_args_list)
@@ -36,7 +36,7 @@ class TestManageLiveStreaming:
     def test_custom_rtmp_stream(self, mock_print, mock_input, mock_cursor):
         """Test custom RTMP stream configuration."""
         events.manage_live_streaming(mock_cursor)
-        
+
         # Verify RTMP configuration
         assert any('RTMP' in str(call) for call in mock_print.call_args_list)
         assert any('Custom stream configured' in str(call) for call in mock_print.call_args_list)
@@ -48,7 +48,7 @@ class TestInteractiveVirtualFeatures:
     def test_virtual_features_display(self, mock_print, mock_cursor):
         """Test virtual features display."""
         events.interactive_virtual_features(mock_cursor)
-        
+
         # Verify interactive features shown
         assert any('Interactive' in str(call) for call in mock_print.call_args_list)
 

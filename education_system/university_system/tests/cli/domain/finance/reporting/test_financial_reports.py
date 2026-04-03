@@ -25,7 +25,7 @@ class TestAuthSetup:
         mock_auth = Mock()
         set_auth(mock_auth)
 
-        from education_system.university_system.modules.domain.finance.reporting.financial_reports import auth
+        from education_system.university_system.modules.domain.finance.reporting.financial_reports._common import auth
         assert auth == mock_auth
 
 
@@ -54,7 +54,7 @@ class TestFinancialAlertSystem:
         # Should not raise exception
         alert_system.check_collection_rate_alert()
 
-    @patch('education_system.university_system.modules.domain.finance.reporting.financial_reports.get_connection')
+    @patch('education_system.university_system.modules.domain.finance.reporting.financial_reports.alerts.get_connection')
     def test_log_alert(self, mock_get_conn):
         """Test log_alert method"""
         alert_system = FinancialAlertSystem()

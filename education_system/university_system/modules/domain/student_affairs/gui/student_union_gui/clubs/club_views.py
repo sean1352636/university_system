@@ -54,7 +54,7 @@ except (ImportError, ModuleNotFoundError):
     student_union_cli = None
     init_student_union_db = None
     CLI_AVAILABLE = False
-    
+
 
 def show_clubs_content(self):
     """Display clubs in main content area"""
@@ -118,24 +118,24 @@ def show_clubs_tab(self):
 def refresh_clubs_list(self):
     """Refresh the clubs list"""
     self.clubs_listbox.delete(0, tk.END)
-    
+
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         cursor.execute('''
             SELECT club_id, club_name, member_count, status
-            FROM student_clubs 
+            FROM student_clubs
             WHERE status = 'active'
             ORDER BY club_name
         ''')
-        
+
         clubs = cursor.fetchall()
-        
+
         for club in clubs:
             display_text = f"{club[1]} ({club[2]} members)"
             self.clubs_listbox.insert(tk.END, display_text)
-            
+
         conn.close()
         self.update_status(_t("student_union.clubs.loaded_clubs", count=len(clubs)))
 
@@ -148,11 +148,11 @@ def on_club_select(self, event):
     selection = self.clubs_listbox.curselection()
     if not selection:
         return
-    
+
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         cursor.execute('''
             SELECT c.club_name, c.description, c.category, c.member_count, c.status,
                    c.created_date, p.first_name || ' ' || p.last_name as president,
@@ -160,15 +160,15 @@ def on_club_select(self, event):
                    s.first_name || ' ' || s.last_name as secretary
             FROM student_clubs c
             LEFT JOIN students p ON c.president_id = p.student_id
-            LEFT JOIN students t ON c.treasurer_id = t.student_id  
+            LEFT JOIN students t ON c.treasurer_id = t.student_id
             LEFT JOIN students s ON c.secretary_id = s.student_id
             WHERE c.status = 'active'
             ORDER BY c.club_name
             LIMIT 1 OFFSET ?
         ''', (selection[0],))
-        
+
         club = cursor.fetchone()
-        
+
         if club:
             details = f"{_t('student_union.clubs.club_name_label')}: {club[0]}\n"
             details += f"{_t('student_union.clubs.category_label')}: {club[2] or _t('common.not_specified')}\n"
@@ -180,12 +180,12 @@ def on_club_select(self, event):
             details += f"  {_t('student_union.clubs.treasurer_label')}: {club[7] or _t('student_union.clubs.vacant')}\n"
             details += f"  {_t('student_union.clubs.secretary_label')}: {club[8] or _t('student_union.clubs.vacant')}\n\n"
             details += f"{_t('student_union.clubs.description_label')}:\n{club[1] or _t('student_union.clubs.no_description')}"
-            
+
             self.club_details_text.delete(1.0, tk.END)
             self.club_details_text.insert(1.0, details)
-        
+
         conn.close()
-        
+
     except sqlite3.Error as e:
         messagebox.showerror(_t("common.database_error"), _t("student_union.clubs.load_details_failed", error=str(e)))
 
@@ -233,7 +233,7 @@ def view_clubs(self):
     def callback(output, result):
         self.display_result(self.clubs_text, output)
         self.update_status(_t("student_union.clubs.clubs_loaded"))
-    
+
     self.run_in_thread(student_union_cli.view_clubs, callback)
 
 
@@ -244,7 +244,7 @@ def view_my_clubs(self):
     def callback(output, result):
         self.display_result(self.clubs_text, output)
         self.update_status(_t("student_union.clubs.my_clubs_loaded"))
-    
+
     self.run_in_thread(student_union_cli.view_my_clubs, callback)
 
 

@@ -19,10 +19,10 @@ def temp_db():
     """Create temporary database"""
     fd, path = tempfile.mkstemp(suffix='.db')
     os.close(fd)
-    
+
     conn = sqlite3.connect(path)
     cursor = conn.cursor()
-    
+
     # Create required tables
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS integration_catalog (
@@ -41,7 +41,7 @@ def temp_db():
             documentation_url TEXT
         )
     """)
-    
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS installed_integrations (
             install_id INTEGER PRIMARY KEY,
@@ -56,7 +56,7 @@ def temp_db():
             configuration TEXT
         )
     """)
-    
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS integration_credentials (
             credential_id INTEGER PRIMARY KEY,
@@ -70,7 +70,7 @@ def temp_db():
             token_expiry TIMESTAMP
         )
     """)
-    
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS integration_sync_logs (
             log_id INTEGER PRIMARY KEY,
@@ -83,7 +83,7 @@ def temp_db():
             error_details TEXT
         )
     """)
-    
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS integration_data_mappings (
             mapping_id INTEGER PRIMARY KEY,
@@ -94,7 +94,7 @@ def temp_db():
             is_active INTEGER
         )
     """)
-    
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS integration_webhooks (
             webhook_id INTEGER PRIMARY KEY,
@@ -107,7 +107,7 @@ def temp_db():
             created_at TIMESTAMP
         )
     """)
-    
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS integration_usage_analytics (
             analytics_id INTEGER PRIMARY KEY,
@@ -117,19 +117,19 @@ def temp_db():
             measurement_date TIMESTAMP
         )
     """)
-    
+
     # Insert test data
     cursor.execute("""
-        INSERT INTO integration_catalog 
+        INSERT INTO integration_catalog
         (integration_name, provider_name, category, integration_type, version, is_official, is_active)
         VALUES ('Test Integration', 'Test Provider', 'LMS', 'API', '1.0.0', 1, 1)
     """)
-    
+
     conn.commit()
     conn.close()
-    
+
     yield path
-    
+
     try:
         os.unlink(path)
     except (OSError, IOError):
@@ -174,7 +174,7 @@ class TestIntegrationMarketplaceGUIInitialization:
     def test_gui_initializes_database(self, root_window, mock_auth, temp_db):
         """Test database initialization"""
         with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
-            with patch('education_system.university_system.infrastructure.database.schemas.init_integration_marketplace_system_db') as mock_init:
+            with patch('education_system.university_system.modules.services.gui.integration_marketplace_gui.main.init_integration_marketplace_system_db') as mock_init:
                 try:
                     gui = integration_marketplace_gui.IntegrationMarketplaceGUI(root_window, mock_auth)
                     mock_init.assert_called_once()

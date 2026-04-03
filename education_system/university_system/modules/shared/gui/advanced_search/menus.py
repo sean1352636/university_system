@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -121,7 +121,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -132,7 +132,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -260,7 +260,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -900,10 +900,10 @@ def show_advanced_text_search_menu(self):
     dialog.geometry("400x350")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.menus.text_search_options'), style='Title.TLabel').pack(pady=(0, 20))
 
     search_options = [
@@ -913,7 +913,7 @@ def show_advanced_text_search_menu(self):
         (f"🔊 {_t('advanced_search.menus.phonetic_search')}", self.show_phonetic_search),
         (f"📝 {_t('advanced_search.menus.combined_text_search')}", self.show_text_search)
     ]
-    
+
     for text, command in search_options:
         def _on_search_click(cmd=command):
             dialog.destroy()
@@ -931,10 +931,10 @@ def show_admin_features_menu(self):
     dialog.geometry("400x350")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.menus.admin_features'), style='Title.TLabel').pack(pady=(0, 20))
 
     admin_options = [
@@ -943,28 +943,28 @@ def show_admin_features_menu(self):
         (f"💾 {_t('advanced_search.menus.cache_management')}", self.show_cache_management),
         (f"🛠️ {_t('advanced_search.menus.system_maintenance')}", self.show_system_maintenance)
     ]
-    
+
     for text, command in admin_options:
         def _on_click(cmd=command):
             dialog.destroy()
             self.master.after(50, cmd)
         ttk.Button(frame, text=text, command=_on_click,
                   width=30).pack(pady=5)
-    
+
     ttk.Button(frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack(pady=(20, 0))
 AdvancedSearchGUI.show_admin_features_menu = show_admin_features_menu
 
 def show_smart_features_menu(self):
-    """Show smart features submenu"""  
+    """Show smart features submenu"""
     dialog = tk.Toplevel(self.master)
     dialog.title(f"⚡ {_t('advanced_search.smart_features_dialog_title')}")
     dialog.geometry("400x350")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.menus.smart_features'), style='Title.TLabel').pack(pady=(0, 20))
 
     smart_options = [
@@ -973,14 +973,14 @@ def show_smart_features_menu(self):
         (f"🔮 {_t('advanced_search.menus.predictive_analytics')}", self.show_predictive_analytics),
         (f"🎓 {_t('advanced_search.menus.graduation_forecast')}", self.show_graduation_timeline_forecast)
     ]
-    
+
     for text, command in smart_options:
         def _on_smart_click(cmd=command):
             dialog.destroy()
             self.master.after(50, cmd)
         ttk.Button(frame, text=text, command=_on_smart_click,
                   width=30).pack(pady=5)
-    
+
     ttk.Button(frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack(pady=(20, 0))
 AdvancedSearchGUI.show_smart_features_menu = show_smart_features_menu
 
@@ -991,10 +991,10 @@ def show_enhanced_import_export_menu(self):
     dialog.geometry("1100x800")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.menus.import_export_system'), style='Title.TLabel').pack(pady=(0, 20))
 
     # Import section
@@ -1008,10 +1008,10 @@ def show_enhanced_import_export_menu(self):
         (_t('advanced_search.menus.import_modules'), lambda: self.import_data("csv", "modules")),
         (f"🏠 {_t('advanced_search.menus.return_menu')}", self.return_to_main_menu)
     ]
-    
+
     for text, command in import_options:
         ttk.Button(import_frame, text=text, command=command, width=30).pack(pady=2)
-    
+
     # Export section
     export_frame = ttk.LabelFrame(frame, text=_t('advanced_search.menus.export_options'), padding="10")
     export_frame.pack(fill=tk.X, pady=(0, 20))
@@ -1023,10 +1023,10 @@ def show_enhanced_import_export_menu(self):
         (_t('advanced_search.menus.export_stats'), lambda: self.export_all_data("stats")),
         (f"🏠 {_t('advanced_search.menus.return_menu')}", self.return_to_main_menu)
     ]
-    
+
     for text, command in export_options:
         ttk.Button(export_frame, text=text, command=command, width=30).pack(pady=2)
-    
+
     ttk.Button(frame, text=_t('advanced_search.close_button'), command=dialog.destroy).pack(pady=(20, 0))
 AdvancedSearchGUI.show_enhanced_import_export_menu = show_enhanced_import_export_menu
 

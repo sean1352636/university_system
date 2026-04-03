@@ -33,8 +33,8 @@ def intervention_recommendations():
         recommendations = []
 
         for student_id, first_name, last_name, course, risk_score, risk_level in students:
-            student_recommendations = generate_intervention_plan(cursor, student_id, 
-                                                               first_name, last_name, 
+            student_recommendations = generate_intervention_plan(cursor, student_id,
+                                                               first_name, last_name,
                                                                course, risk_score, risk_level)
             recommendations.append(student_recommendations)
 
@@ -69,7 +69,7 @@ def generate_intervention_plan(cursor, student_id, first_name, last_name, course
         })
 
     # Intervention 2: Tutoring
-    if gpa and gpa < 2.5:
+    if gpa is not None and gpa < 2.5:
         interventions.append({
             'type': 'Tutoring',
             'priority': 1,
@@ -105,7 +105,7 @@ def generate_intervention_plan(cursor, student_id, first_name, last_name, course
         })
 
     # Intervention 6: Course Load Adjustment
-    if gpa and gpa < 2.0:
+    if gpa is not None and gpa < 2.0:
         interventions.append({
             'type': 'Modified Schedule',
             'priority': 1,

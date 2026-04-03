@@ -67,10 +67,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -122,7 +122,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -138,7 +138,7 @@ def init_basic_database():
             status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -152,7 +152,7 @@ def init_basic_database():
             year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -166,7 +166,7 @@ def init_basic_database():
             UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -186,11 +186,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -200,7 +200,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -215,7 +215,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -228,7 +228,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -247,7 +247,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -345,57 +345,57 @@ class AddLearningOutcomeDialog:
         self.dialog.title("Add Learning Outcome")
         self.dialog.geometry("500x400")
         safe_grab_set(self.dialog)
-        
+
         self.callback = callback
         self.setup_dialog()
-    
+
     def setup_dialog(self):
         """Setup the add learning outcome dialog"""
         # Title
-        ttk.Label(self.dialog, text="Add New Learning Outcome", 
+        ttk.Label(self.dialog, text="Add New Learning Outcome",
                  font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         # Form frame
         form_frame = ttk.Frame(self.dialog)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
+
         # Course
         ttk.Label(form_frame, text="Course:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.course_var = tk.StringVar()
         self.course_entry = ttk.Entry(form_frame, textvariable=self.course_var, width=30)
         self.course_entry.grid(row=0, column=1, sticky=tk.W, pady=5)
-        
+
         # Outcome Code
         ttk.Label(form_frame, text="Outcome Code:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.code_var = tk.StringVar()
         self.code_entry = ttk.Entry(form_frame, textvariable=self.code_var, width=30)
         self.code_entry.grid(row=1, column=1, sticky=tk.W, pady=5)
-        
+
         # Category
         ttk.Label(form_frame, text="Category:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.category_var = tk.StringVar()
         category_combo = ttk.Combobox(form_frame, textvariable=self.category_var, width=27)
         category_combo['values'] = ("Knowledge", "Skills", "Attitudes", "Application", "Analysis", "Synthesis")
         category_combo.grid(row=2, column=1, sticky=tk.W, pady=5)
-        
+
         # Importance
         ttk.Label(form_frame, text="Importance (1-5):").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.importance_var = tk.StringVar(value="3")
         importance_spin = ttk.Spinbox(form_frame, textvariable=self.importance_var, from_=1, to=5, width=28)
         importance_spin.grid(row=3, column=1, sticky=tk.W, pady=5)
-        
+
         # Description
         ttk.Label(form_frame, text="Description:").grid(row=4, column=0, sticky=tk.NW, pady=5)
         self.description_text = tk.Text(form_frame, height=6, width=40)
         self.description_text.grid(row=4, column=1, sticky=tk.W, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=10)
-        
+
         ttk.Button(button_frame, text="Add Outcome", command=self.add_outcome).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
-    
+
     def add_outcome(self):
         """Add the learning outcome to the database"""
         course = self.course_var.get().strip().upper()
@@ -403,15 +403,15 @@ class AddLearningOutcomeDialog:
         category = self.category_var.get().strip()
         importance = self.importance_var.get()
         description = self.description_text.get(1.0, tk.END).strip()
-        
+
         if not all([course, code, category, importance, description]):
             messagebox.showerror("Error", "Please fill in all fields")
             return
-        
+
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Create table if it doesn't exist
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS learning_outcomes (
@@ -423,22 +423,22 @@ class AddLearningOutcomeDialog:
                 importance INTEGER
             )
             ''')
-            
+
             cursor.execute('''
             INSERT INTO learning_outcomes (course, outcome_code, description, category, importance)
             VALUES (?, ?, ?, ?, ?)
             ''', (course, code, description, category, int(importance)))
-            
+
             conn.commit()
             conn.close()
-            
+
             messagebox.showinfo("Success", "Learning outcome added successfully")
-            
+
             if self.callback:
                 self.callback()
-            
+
             self.dialog.destroy()
-            
+
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Error adding outcome: {e}")
 

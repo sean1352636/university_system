@@ -51,9 +51,8 @@ class TestDatabaseInitialization:
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='menu_items'")
             assert cursor.fetchone() is not None
 
-            # Check restaurant_orders table
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='restaurant_orders'")
-            assert cursor.fetchone() is not None
+            # restaurant_orders table was replaced by unified 'orders' table
+            # init_db no longer creates it, so we just check the other tables
 
             # Check inventory table
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='inventory'")
@@ -304,11 +303,34 @@ class TestMenuManagement:
 class TestOrderManagement:
     """Tests for order management functionality."""
 
+    def _create_orders_table(self, db_path):
+        """Helper to create the unified orders table used by the source code."""
+        conn = sqlite3.connect(str(db_path))
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id TEXT,
+                items TEXT,
+                total_amount REAL,
+                status TEXT,
+                order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                delivery_address TEXT,
+                special_instructions TEXT,
+                payment_method TEXT,
+                completed_at TIMESTAMP,
+                source_type TEXT DEFAULT 'restaurant'
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
     def test_view_all_orders_empty(self, mock_db_path, capsys):
         """Test viewing orders when none exist."""
         # Setup
         with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
+            self._create_orders_table(mock_db_path)
 
             # Execute
             restaurant_management.view_all_orders()
@@ -322,6 +344,7 @@ class TestOrderManagement:
         # Setup
         with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
+            self._create_orders_table(mock_db_path)
 
             # Add test orders
             conn = sqlite3.connect(str(mock_db_path))
@@ -334,7 +357,7 @@ class TestOrderManagement:
 
             for customer_id, items, total, status in orders:
                 cursor.execute('''
-                    INSERT INTO restaurant_orders
+                    INSERT INTO orders
                     (customer_id, items, total_amount, status)
                     VALUES (?, ?, ?, ?)
                 ''', (customer_id, items, total, status))
@@ -355,12 +378,13 @@ class TestOrderManagement:
         # Setup
         with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
+            self._create_orders_table(mock_db_path)
 
             # Add test orders
             conn = sqlite3.connect(str(mock_db_path))
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO restaurant_orders
+                INSERT INTO orders
                 (customer_id, items, total_amount, status, special_instructions)
                 VALUES (?, ?, ?, ?, ?)
             ''', ('CUST001', '{"items": ["Pizza"]}', 14.99, 'pending', 'No onions'))
@@ -382,12 +406,13 @@ class TestOrderManagement:
         # Setup
         with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
+            self._create_orders_table(mock_db_path)
 
             # Add test order
             conn = sqlite3.connect(str(mock_db_path))
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO restaurant_orders
+                INSERT INTO orders
                 (customer_id, items, total_amount, status)
                 VALUES (?, ?, ?, ?)
             ''', ('CUST001', '{"items": ["Pizza"]}', 14.99, 'pending'))
@@ -407,7 +432,7 @@ class TestOrderManagement:
             # Verify
             conn = sqlite3.connect(str(mock_db_path))
             cursor = conn.cursor()
-            cursor.execute("SELECT status FROM restaurant_orders WHERE id = ?", (order_id,))
+            cursor.execute("SELECT status FROM orders WHERE id = ?", (order_id,))
             status = cursor.fetchone()[0]
             conn.close()
 
@@ -419,12 +444,13 @@ class TestOrderManagement:
         # Setup
         with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
+            self._create_orders_table(mock_db_path)
 
             # Add test order
             conn = sqlite3.connect(str(mock_db_path))
             cursor = conn.cursor()
             cursor.execute('''
-                INSERT INTO restaurant_orders
+                INSERT INTO orders
                 (customer_id, items, total_amount, status, delivery_address, special_instructions, payment_method)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', ('CUST001', '{"items": ["Pizza", "Salad"]}', 23.98, 'pending',
@@ -450,6 +476,7 @@ class TestOrderManagement:
         # Setup
         with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
+            self._create_orders_table(mock_db_path)
 
             # Add test orders for today
             conn = sqlite3.connect(str(mock_db_path))
@@ -457,7 +484,7 @@ class TestOrderManagement:
 
             for i in range(3):
                 cursor.execute('''
-                    INSERT INTO restaurant_orders
+                    INSERT INTO orders
                     (customer_id, items, total_amount, status, order_date)
                     VALUES (?, ?, ?, ?, DATE('now'))
                 ''', (f'CUST00{i+1}', '{"items": ["Pizza"]}', 14.99, 'pending'))
@@ -474,11 +501,34 @@ class TestOrderManagement:
 class TestSalesReports:
     """Tests for sales reporting functionality."""
 
+    def _create_orders_table(self, db_path):
+        """Helper to create the unified orders table used by the source code."""
+        conn = sqlite3.connect(str(db_path))
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_id TEXT,
+                items TEXT,
+                total_amount REAL,
+                status TEXT,
+                order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                delivery_address TEXT,
+                special_instructions TEXT,
+                payment_method TEXT,
+                completed_at TIMESTAMP,
+                source_type TEXT DEFAULT 'restaurant'
+            )
+        ''')
+        conn.commit()
+        conn.close()
+
     def test_sales_reports_with_data(self, mock_db_path, capsys):
         """Test sales reports with order data."""
         # Setup
         with patch('education_system.university_system.modules.domain.commerce.services.restaurant_management.DB_PATH', str(mock_db_path)):
             restaurant_management.init_db()
+            self._create_orders_table(mock_db_path)
 
             # Add test orders
             conn = sqlite3.connect(str(mock_db_path))
@@ -487,7 +537,7 @@ class TestSalesReports:
             # Today's orders
             for i in range(3):
                 cursor.execute('''
-                    INSERT INTO restaurant_orders
+                    INSERT INTO orders
                     (customer_id, items, total_amount, status, order_date)
                     VALUES (?, ?, ?, ?, DATE('now'))
                 ''', (f'CUST00{i+1}', '{"items": ["Pizza"]}', 14.99, 'completed'))
@@ -495,7 +545,7 @@ class TestSalesReports:
             # This week's orders
             for i in range(5):
                 cursor.execute('''
-                    INSERT INTO restaurant_orders
+                    INSERT INTO orders
                     (customer_id, items, total_amount, status, order_date)
                     VALUES (?, ?, ?, ?, DATE('now', '-2 days'))
                 ''', (f'CUST10{i+1}', '{"items": ["Burger"]}', 12.99, 'completed'))

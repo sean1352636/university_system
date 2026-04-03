@@ -67,10 +67,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -122,7 +122,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -138,7 +138,7 @@ def init_basic_database():
             status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -152,7 +152,7 @@ def init_basic_database():
             year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -166,7 +166,7 @@ def init_basic_database():
             UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -186,11 +186,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -200,7 +200,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -215,7 +215,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -228,7 +228,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -247,7 +247,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -345,132 +345,132 @@ class UpdateGradesDialog:
         self.dialog.title("Update Existing Grades")
         self.dialog.geometry("900x600")
         safe_grab_set(self.dialog)
-        
+
         self.setup_dialog()
-        
+
     def setup_dialog(self):
         """Setup the update grades dialog"""
         # Title
-        ttk.Label(self.dialog, text="Update Existing Grades", 
+        ttk.Label(self.dialog, text="Update Existing Grades",
                  font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         # Student selection frame
         student_frame = ttk.LabelFrame(self.dialog, text="Select Student")
         student_frame.pack(fill=tk.X, padx=20, pady=10)
-        
+
         self.student_var = tk.StringVar()
         self.student_combo = ttk.Combobox(student_frame, textvariable=self.student_var, width=50)
         self.student_combo.pack(side=tk.LEFT, padx=10, pady=10)
-        
-        ttk.Button(student_frame, text="Load Students", 
+
+        ttk.Button(student_frame, text="Load Students",
                   command=self.load_students).pack(side=tk.LEFT, padx=10)
-        ttk.Button(student_frame, text="Select", 
+        ttk.Button(student_frame, text="Select",
                   command=self.select_student).pack(side=tk.LEFT, padx=10)
-        
+
         # Grades frame
         grades_frame = ttk.LabelFrame(self.dialog, text="Existing Grades")
         grades_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
+
         # Treeview for grades
         columns = ('Grade ID', 'Assessment', 'Module', 'Score', 'Max Points', 'Grade', 'Date')
         self.grades_tree = ttk.Treeview(grades_frame, columns=columns, show='headings')
-        
+
         for col in columns:
             self.grades_tree.heading(col, text=col)
             self.grades_tree.column(col, width=100)
-        
+
         scrollbar = ttk.Scrollbar(grades_frame, orient=tk.VERTICAL, command=self.grades_tree.yview)
         self.grades_tree.configure(yscrollcommand=scrollbar.set)
-        
+
         self.grades_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=10)
-        
-        ttk.Button(button_frame, text="Edit Selected Grade", 
+
+        ttk.Button(button_frame, text="Edit Selected Grade",
                   command=self.edit_selected_grade).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Close", 
+        ttk.Button(button_frame, text="Close",
                   command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
-        
+
         # Bind double-click event
         self.grades_tree.bind('<Double-1>', self.edit_selected_grade)
-        
+
         self.student_id = None
-        
+
     def load_students(self):
         """Load students into the combobox"""
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             cursor.execute('''
                 SELECT student_id, first_name, last_name
                 FROM students
                 ORDER BY last_name, first_name
             ''')
-            
+
             students = cursor.fetchall()
-            
+
             # Format for display
             student_list = [f"{s[0]} - {s[1]} {s[2]}" for s in students]
-            
+
             self.student_combo['values'] = student_list
-            
+
             conn.close()
-            
+
             if student_list:
                 messagebox.showinfo("Success", f"Loaded {len(student_list)} students")
             else:
                 messagebox.showwarning("Warning", "No students found")
-                
+
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Error loading students: {e}")
-    
+
     def select_student(self):
         """Select a student and load their grades"""
         if not self.student_var.get():
             messagebox.showwarning("Warning", "Please select a student first")
             return
-        
+
         # Extract student ID
         self.student_id = self.student_var.get().split(' - ')[0]
-        
+
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Get grades for this student
             cursor.execute('''
-            SELECT g.grade_id, a.assessment_name, a.module_code, 
+            SELECT g.grade_id, a.assessment_name, a.module_code,
                    g.score, a.max_points, g.letter_grade, g.submission_date
             FROM grades g
             JOIN assessments a ON g.assessment_id = a.assessment_id
             WHERE g.student_id = ?
             ORDER BY g.submission_date DESC
             ''', (self.student_id,))
-            
+
             grades = cursor.fetchall()
-            
+
             # Clear existing data
             for item in self.grades_tree.get_children():
                 self.grades_tree.delete(item)
-            
+
             # Load grades
             for grade in grades:
                 self.grades_tree.insert('', 'end', values=grade)
-            
+
             conn.close()
-            
+
             if grades:
                 messagebox.showinfo("Success", f"Loaded {len(grades)} grades")
             else:
                 messagebox.showinfo("Info", "No grades found for this student")
-            
+
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Error loading grades: {e}")
-    
+
     def edit_selected_grade(self, event=None):  # Move this method out and fix indentation
         """Edit the selected grade"""
         if not hasattr(self, 'grades_tree') or not self.grades_tree:
@@ -481,15 +481,15 @@ class UpdateGradesDialog:
         if not selection:
             messagebox.showwarning("Warning", "Please select a grade to edit")
             return
-        
+
         item = selection[0]
         values = self.grades_tree.item(item, 'values')
         grade_id = values[0]
-        
+
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Get full grade details
             cursor.execute('''
             SELECT g.student_id, g.assessment_id, g.score, g.letter_grade,
@@ -498,20 +498,20 @@ class UpdateGradesDialog:
             JOIN assessments a ON g.assessment_id = a.assessment_id
             WHERE g.grade_id = ?
             ''', (grade_id,))
-            
+
             grade_data = cursor.fetchone()
             conn.close()
-            
+
             if not grade_data:
                 messagebox.showerror("Error", "Grade not found")
                 return
-            
+
             student_id, assessment_id, score, letter_grade, date, feedback, max_points = grade_data
-            
+
             # Open edit dialog
-            dialog = EditGradeDialog(self.dialog, grade_id, student_id, assessment_id, 
+            dialog = EditGradeDialog(self.dialog, grade_id, student_id, assessment_id,
                                    score, letter_grade, max_points, feedback, self.refresh_student_grades)
-            
+
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Error loading grade: {e}")
 

@@ -88,12 +88,12 @@ def show_analytics_dashboard(self):
 
     # Title
     ttk.Label(self.content_frame, text=_t("shop_management.titles.analytics_dashboard"), style='Title.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 20))
-    
+
     # Create main dashboard frame
     dash_frame = ttk.Frame(self.content_frame)
     dash_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
     dash_frame.columnconfigure((0, 1), weight=1)
-    
+
     # Sales analytics
     sales_frame = ttk.LabelFrame(dash_frame, text=_t("shop_management.labels.sales_analytics"), padding="10")
     sales_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N), padx=(0, 10))
@@ -125,11 +125,11 @@ def show_analytics_dashboard(self):
                      style='Warning.TLabel').grid(row=3, column=0, sticky=tk.W, pady=2)
     except Exception:
         ttk.Label(inventory_frame, text=_t("shop_management.messages.inventory_unavailable")).grid(row=0, column=0, sticky=tk.W, pady=2)
-    
+
     # Action buttons
     action_frame = ttk.Frame(dash_frame)
     action_frame.grid(row=1, column=0, columnspan=2, pady=20)
-    
+
     ttk.Button(action_frame, text=_t("shop_management.buttons.view_customer_analytics"),
               command=self.show_customer_analytics).grid(row=0, column=0, padx=5)
     ttk.Button(action_frame, text=_t("shop_management.buttons.generate_reports"),
@@ -198,12 +198,12 @@ def show_dashboard(self):
 
     # Title
     ttk.Label(self.content_frame, text=_t("shop_management.titles.dashboard"), style='Title.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 20))
-    
+
     # Create main dashboard frame
     dash_frame = ttk.Frame(self.content_frame)
     dash_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=10)
     dash_frame.columnconfigure(1, weight=1)
-    
+
     # Quick stats cards
     stats_frame = ttk.LabelFrame(dash_frame, text=_t("shop_management.labels.quick_stats"), padding="10")
     stats_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
@@ -257,15 +257,15 @@ def show_dashboard(self):
     alerts_frame.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(10, 0))
     alerts_frame.columnconfigure(0, weight=1)
     alerts_frame.rowconfigure(0, weight=1)
-    
+
     # Scrollable text widget for alerts
     alerts_text = tk.Text(alerts_frame, height=10, wrap=tk.WORD, state='disabled')
     alerts_scrollbar = ttk.Scrollbar(alerts_frame, orient='vertical', command=alerts_text.yview)
     alerts_text.configure(yscrollcommand=alerts_scrollbar.set)
-    
+
     alerts_text.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
     alerts_scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
-    
+
     # Add sample alerts
     alerts_text.configure(state='normal')
     alerts_text.insert(tk.END, "📢 " + _t("shop_management.alerts.welcome") + "\n\n")
@@ -278,19 +278,19 @@ def show_dashboard(self):
     alerts_text.configure(state='disabled')
 
     self.update_status(_t("shop_management.status.dashboard_loaded"))
-    
+
 
 def create_stat_card(self, parent, title, value, row, col, style=None):
     """Create a statistics card widget"""
     card_frame = ttk.Frame(parent, relief='ridge', borderwidth=1, padding="10")
     card_frame.grid(row=row, column=col, padx=5, pady=5, sticky=(tk.W, tk.E))
-    
+
     ttk.Label(card_frame, text=title, font=('Arial', 10)).grid(row=0, column=0)
-    
+
     value_style = f'{style}.TLabel' if style else 'TLabel'
-    ttk.Label(card_frame, text=str(value), font=('Arial', 14, 'bold'), 
+    ttk.Label(card_frame, text=str(value), font=('Arial', 14, 'bold'),
              style=value_style).grid(row=1, column=0)
-    
+
 
 def show_club_merchandise_selection(self):
     """Display page to select which club to buy merchandise for"""
@@ -451,15 +451,15 @@ def get_dashboard_stats(self):
     try:
         # Use original functions if available
         stats = {}
-        
+
         if 'get_connection' in globals():
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Total products
             cursor.execute("SELECT COUNT(*) FROM products WHERE source_type = 'shop' AND is_active = 1")
             stats['total_products'] = cursor.fetchone()[0]
-            
+
             # Low stock items
             cursor.execute("""
                 SELECT COUNT(*) FROM products p
@@ -467,14 +467,14 @@ def get_dashboard_stats(self):
                 WHERE p.source_type = 'shop' AND p.is_active = 1 AND i.quantity <= i.restock_threshold
             """)
             stats['low_stock'] = cursor.fetchone()[0]
-            
+
             # Recent sales (30 days)
             cursor.execute("""
                 SELECT COUNT(*) FROM transactions
                 WHERE source_type = 'shop' AND created_at >= date('now', '-30 days')
             """)
             stats['recent_sales'] = cursor.fetchone()[0]
-            
+
             conn.close()
         else:
             # Fallback stats
@@ -483,12 +483,12 @@ def get_dashboard_stats(self):
                 'low_stock': 2,
                 'recent_sales': 15
             }
-            
+
         return stats
-        
+
     except Exception as e:
         return {'error': str(e)}
-        
+
 
 def toggle_discount_status(self):
     """Toggle the status of the selected discount"""
@@ -527,32 +527,32 @@ def get_monthly_stats(self, year, month):
     try:
         if 'get_connection' not in globals():
             return {'total_sales': 0, 'transaction_count': 0, 'avg_order': 0, 'items_sold': 0}
-        
+
         # Calculate month boundaries
         first_day = datetime(year, month, 1)
         if month == 12:
             last_day = datetime(year + 1, 1, 1) - timedelta(days=1)
         else:
             last_day = datetime(year, month + 1, 1) - timedelta(days=1)
-        
+
         start_str = first_day.strftime('%Y-%m-%d 00:00:00')
         end_str = last_day.strftime('%Y-%m-%d 23:59:59')
-        
+
         conn = get_connection()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
+
         # Basic stats
         cursor.execute("""
-            SELECT COUNT(*) as transaction_count, 
+            SELECT COUNT(*) as transaction_count,
                    SUM(total_amount) as total_sales,
                    AVG(total_amount) as avg_order
             FROM transactions
             WHERE source_type = 'shop' AND created_at BETWEEN ? AND ?
         """, [start_str, end_str])
-        
+
         basic_stats = cursor.fetchone()
-        
+
         # Items sold
         cursor.execute("""
             SELECT SUM(ti.quantity) as items_sold
@@ -560,36 +560,36 @@ def get_monthly_stats(self, year, month):
             JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
             WHERE t.created_at BETWEEN ? AND ?
         """, [start_str, end_str])
-        
+
         items_result = cursor.fetchone()
-        
+
         # Weekly breakdown
         weekly_breakdown = []
         current_week = first_day
         week_num = 1
-        
+
         while current_week <= last_day:
             week_end = min(current_week + timedelta(days=6), last_day)
-            
+
             cursor.execute("""
                 SELECT COUNT(*) as count, SUM(total_amount) as amount
                 FROM transactions
                 WHERE source_type = 'shop' AND created_at BETWEEN ? AND ?
-            """, [current_week.strftime('%Y-%m-%d 00:00:00'), 
+            """, [current_week.strftime('%Y-%m-%d 00:00:00'),
                   week_end.strftime('%Y-%m-%d 23:59:59')])
-            
+
             week_data = cursor.fetchone()
             weekly_breakdown.append({
                 'week': week_num,
                 'count': week_data['count'] or 0,
                 'amount': week_data['amount'] or 0
             })
-            
+
             current_week = week_end + timedelta(days=1)
             week_num += 1
-        
+
         conn.close()
-        
+
         return {
             'total_sales': basic_stats['total_sales'] or 0,
             'transaction_count': basic_stats['transaction_count'] or 0,
@@ -597,7 +597,7 @@ def get_monthly_stats(self, year, month):
             'items_sold': items_result['items_sold'] or 0,
             'weekly_breakdown': weekly_breakdown
         }
-        
+
     except Exception as e:
         return {'error': str(e)}
 
@@ -607,30 +607,30 @@ def get_weekly_stats(self):
     try:
         if 'get_connection' not in globals():
             return {'total_sales': 0, 'transaction_count': 0, 'avg_order': 0, 'items_sold': 0}
-        
+
         # Calculate week boundaries (Monday to Sunday)
         today = datetime.now()
         start_of_week = today - timedelta(days=today.weekday())
         end_of_week = start_of_week + timedelta(days=6)
-        
+
         start_str = start_of_week.strftime('%Y-%m-%d 00:00:00')
         end_str = end_of_week.strftime('%Y-%m-%d 23:59:59')
-        
+
         conn = get_connection()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
+
         # Basic stats
         cursor.execute("""
-            SELECT COUNT(*) as transaction_count, 
+            SELECT COUNT(*) as transaction_count,
                    SUM(total_amount) as total_sales,
                    AVG(total_amount) as avg_order
             FROM transactions
             WHERE source_type = 'shop' AND created_at BETWEEN ? AND ?
         """, [start_str, end_str])
-        
+
         basic_stats = cursor.fetchone()
-        
+
         # Items sold
         cursor.execute("""
             SELECT SUM(ti.quantity) as items_sold
@@ -638,32 +638,32 @@ def get_weekly_stats(self):
             JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
             WHERE t.created_at BETWEEN ? AND ?
         """, [start_str, end_str])
-        
+
         items_result = cursor.fetchone()
-        
+
         # Daily breakdown
         daily_breakdown = {}
         current_day = start_of_week
-        
+
         while current_day <= end_of_week:
             day_str = current_day.strftime('%Y-%m-%d')
-            
+
             cursor.execute("""
                 SELECT COUNT(*) as count, SUM(total_amount) as amount
                 FROM transactions
                 WHERE source_type = 'shop' AND DATE(created_at) = ?
             """, [day_str])
-            
+
             day_data = cursor.fetchone()
             daily_breakdown[day_str] = {
                 'count': day_data['count'] or 0,
                 'amount': day_data['amount'] or 0
             }
-            
+
             current_day += timedelta(days=1)
-        
+
         conn.close()
-        
+
         return {
             'total_sales': basic_stats['total_sales'] or 0,
             'transaction_count': basic_stats['transaction_count'] or 0,
@@ -671,7 +671,7 @@ def get_weekly_stats(self):
             'items_sold': items_result['items_sold'] or 0,
             'daily_breakdown': daily_breakdown
         }
-        
+
     except Exception as e:
         return {'error': str(e)}
 
@@ -681,36 +681,36 @@ def show_sales_summary_report(self, start_date, end_date):
     # Clear report display
     for widget in self.report_display_frame.winfo_children():
         widget.destroy()
-    
+
     try:
         # Get sales data
         sales_data = self.get_sales_summary_data(start_date, end_date)
-        
+
         # Report title
-        ttk.Label(self.report_display_frame, text=f"Sales Summary: {start_date} to {end_date}", 
+        ttk.Label(self.report_display_frame, text=f"Sales Summary: {start_date} to {end_date}",
                  style='Heading.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 10))
-        
+
         # Summary stats
         stats_frame = ttk.Frame(self.report_display_frame)
         stats_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=10)
         stats_frame.columnconfigure((0, 1, 2, 3), weight=1)
-        
+
         self.create_stat_card(stats_frame, "Total Revenue", f"£{sales_data.get('total_revenue', 0):.2f}", 0, 0)
         self.create_stat_card(stats_frame, "Transactions", sales_data.get('transaction_count', 0), 0, 1)
         self.create_stat_card(stats_frame, "Avg Order", f"£{sales_data.get('avg_order_value', 0):.2f}", 0, 2)
         self.create_stat_card(stats_frame, "Items Sold", sales_data.get('total_items', 0), 0, 3)
-        
+
         # Daily trend if available
         if sales_data.get('daily_trend'):
             trend_frame = ttk.LabelFrame(self.report_display_frame, text="Daily Sales Trend", padding="10")
             trend_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=10)
-            
+
             for date, amount in sales_data['daily_trend'].items():
                 ttk.Label(trend_frame, text=f"{date}: £{amount:.2f}").grid(
                     row=len(trend_frame.winfo_children()), column=0, sticky=tk.W, pady=1)
-        
+
     except Exception as e:
-        ttk.Label(self.report_display_frame, text=f"Error loading sales summary: {e}", 
+        ttk.Label(self.report_display_frame, text=f"Error loading sales summary: {e}",
                  style='Error.TLabel').grid(row=1, column=0)
 
 
@@ -735,7 +735,7 @@ def get_sales_summary_data(self, start_date, end_date):
         # Basic summary
         cursor.execute(
             """
-            SELECT 
+            SELECT
                 COUNT(*) AS transaction_count,
                 COALESCE(SUM(total_amount), 0) AS total_revenue,
                 COALESCE(AVG(total_amount), 0) AS avg_order_value
@@ -764,8 +764,8 @@ def get_sales_summary_data(self, start_date, end_date):
         # Daily trend
         cursor.execute(
             """
-            SELECT 
-                DATE(created_at) AS d, 
+            SELECT
+                DATE(created_at) AS d,
                 COALESCE(SUM(total_amount), 0) AS daily_total
             FROM transactions
             WHERE source_type = 'shop' AND DATE(created_at) BETWEEN ? AND ?
@@ -795,19 +795,19 @@ def toggle_product_status(self):
     """Toggle active status of selected product"""
     if not hasattr(self, 'mgmt_products_tree'):
         return
-        
+
     selection = self.mgmt_products_tree.selection()
     if not selection:
         messagebox.showwarning("Warning", "Please select a product")
         return
-    
+
     item = self.mgmt_products_tree.item(selection[0])
     values = item['values']
     product_id = values[0]
     current_status = values[5]
-    
+
     new_status = "Inactive" if current_status == "Active" else "Active"
-    
+
     if messagebox.askyesno("Confirm", f"Change product status to {new_status}?"):
         try:
             self.update_product_status(product_id, new_status == "Active")
@@ -815,7 +815,7 @@ def toggle_product_status(self):
             self.update_status(f"Product {product_id} status changed to {new_status}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update status: {e}")
-            
+
 
 def update_product_status(self, product_id, is_active):
     """Update product active status"""
@@ -823,42 +823,42 @@ def update_product_status(self, product_id, is_active):
         if 'get_connection' in globals():
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             cursor.execute("""
                 UPDATE products
                 SET is_active = ?, updated_at = ?
                 WHERE source_type = 'shop' AND source_product_id = ?
             """, [is_active, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), product_id])
-            
+
             conn.commit()
             conn.close()
-            
+
     except Exception as e:
         if 'conn' in locals():
             conn.rollback()
             conn.close()
         raise Exception(f"Database error: {e}")
-        
+
 
 def get_daily_stats(self, date):
     """Get daily sales statistics"""
     try:
-        
+
         conn = get_connection()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
+
         # Basic stats
         cursor.execute("""
-            SELECT COUNT(*) as transaction_count, 
+            SELECT COUNT(*) as transaction_count,
                    SUM(total_amount) as total_sales,
                    AVG(total_amount) as avg_order
             FROM transactions
             WHERE source_type = 'shop' AND DATE(created_at) = ?
         """, [date])
-        
+
         basic_stats = cursor.fetchone()
-        
+
         # Items sold
         cursor.execute("""
             SELECT SUM(ti.quantity) as items_sold
@@ -866,9 +866,9 @@ def get_daily_stats(self, date):
             JOIN transactions t ON ti.transaction_id = t.source_transaction_id AND t.source_type = 'shop'
             WHERE DATE(t.created_at) = ?
         """, [date])
-        
+
         items_result = cursor.fetchone()
-        
+
         # Top products
         cursor.execute("""
             SELECT p.name, SUM(ti.quantity) as quantity
@@ -880,11 +880,11 @@ def get_daily_stats(self, date):
             ORDER BY quantity DESC
             LIMIT 5
         """, [date])
-        
+
         top_products = cursor.fetchall()
-        
+
         conn.close()
-        
+
         return {
             'total_sales': basic_stats['total_sales'] or 0,
             'transaction_count': basic_stats['transaction_count'] or 0,
@@ -892,10 +892,10 @@ def get_daily_stats(self, date):
             'items_sold': items_result['items_sold'] or 0,
             'top_products': [dict(product) for product in top_products]
         }
-        
+
     except Exception as e:
         return {'error': str(e)}
-        
+
 
 def show_low_stock_report(self):
     """Show low stock report"""
@@ -942,7 +942,7 @@ def show_low_stock_report(self):
 
     except Exception as e:
         messagebox.showerror("Report Error", f"Error loading low stock report:\n{str(e)}")
-        
+
 
 def get_low_stock_items(self):
     """Get list of low stock items"""
@@ -950,7 +950,7 @@ def get_low_stock_items(self):
         conn = get_connection()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
+
         cursor.execute("""
             SELECT p.source_product_id as product_id, p.name, p.category, i.quantity, i.restock_threshold
             FROM products p
@@ -958,20 +958,20 @@ def get_low_stock_items(self):
             WHERE p.source_type = 'shop' AND p.is_active = 1 AND i.quantity <= i.restock_threshold * 1.2
             ORDER BY (i.quantity * 1.0 / i.restock_threshold), p.name
         """)
-        
+
         items = cursor.fetchall()
         conn.close()
-        
+
         return [dict(item) for item in items]
-        
+
     except Exception as e:
         return []
-        
+
 
 def update_status(self, message):
     """Update the status bar"""
     if self.status_label:
         self.status_label.config(text=message)
         self.root.update_idletasks()
-    
+
 

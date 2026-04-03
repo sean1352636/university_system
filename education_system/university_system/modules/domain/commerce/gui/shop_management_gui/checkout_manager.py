@@ -81,43 +81,43 @@ def show_payment_methods_report(self, start_date, end_date):
     # Clear report display
     for widget in self.report_display_frame.winfo_children():
         widget.destroy()
-    
+
     try:
         # Get payment methods data
         payment_data = self.get_payment_methods_data(start_date, end_date)
-        
+
         # Report title
-        ttk.Label(self.report_display_frame, text=f"Payment Methods Analysis: {start_date} to {end_date}", 
+        ttk.Label(self.report_display_frame, text=f"Payment Methods Analysis: {start_date} to {end_date}",
                  style='Heading.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 10))
-        
+
         # Payment methods table
         payment_frame = ttk.Frame(self.report_display_frame)
         payment_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=10)
         payment_frame.columnconfigure(0, weight=1)
         payment_frame.rowconfigure(0, weight=1)
-        
+
         columns = ('Payment Method', 'Transactions', 'Total Amount', 'Avg Transaction', 'Usage %', 'Revenue %')
         pay_tree = ttk.Treeview(payment_frame, columns=columns, show='headings', height=8)
-        
+
         for col in columns:
             pay_tree.heading(col, text=col)
-        
+
         pay_scrollbar = ttk.Scrollbar(payment_frame, orient='vertical', command=pay_tree.yview)
         pay_tree.configure(yscrollcommand=pay_scrollbar.set)
-        
+
         pay_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         pay_scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
-        
+
         # Calculate totals for percentages
         total_transactions = sum(method['transaction_count'] for method in payment_data)
         total_amount = sum(method['total_amount'] for method in payment_data)
-        
+
         # Populate payment data
         for method in payment_data:
             avg_transaction = method['total_amount'] / method['transaction_count'] if method['transaction_count'] > 0 else 0
             usage_pct = (method['transaction_count'] / total_transactions * 100) if total_transactions > 0 else 0
             revenue_pct = (method['total_amount'] / total_amount * 100) if total_amount > 0 else 0
-            
+
             pay_tree.insert('', 'end', values=(
                 method['payment_method'],
                 method['transaction_count'],
@@ -126,9 +126,9 @@ def show_payment_methods_report(self, start_date, end_date):
                 f"{usage_pct:.1f}%",
                 f"{revenue_pct:.1f}%"
             ))
-        
+
     except Exception as e:
-        ttk.Label(self.report_display_frame, text=f"Error loading payment methods: {e}", 
+        ttk.Label(self.report_display_frame, text=f"Error loading payment methods: {e}",
                  style='Error.TLabel').grid(row=1, column=0)
 
 
@@ -137,11 +137,11 @@ def get_payment_methods_data(self, start_date, end_date):
     try:
         if 'get_connection' not in globals():
             return []
-        
+
         conn = get_connection()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
+
         cursor.execute("""
             SELECT payment_method,
                    COUNT(*) as transaction_count,
@@ -151,12 +151,12 @@ def get_payment_methods_data(self, start_date, end_date):
             GROUP BY payment_method
             ORDER BY total_amount DESC
         """, [start_date, end_date])
-        
+
         methods = cursor.fetchall()
         conn.close()
-        
+
         return [dict(method) for method in methods]
-        
+
     except Exception as e:
         return []
 
@@ -166,40 +166,40 @@ def show_checkout(self):
     if not self.cart_items:
         messagebox.showwarning("Warning", "Cart is empty")
         return
-    
+
     # Create checkout window
     checkout_window = tk.Toplevel(self.root)
     checkout_window.title("Checkout")
     checkout_window.geometry("600x500")
     checkout_window.resizable(False, False)
-    
+
     # Make it modal
     checkout_window.transient(self.root)
     checkout_window.grab_set()
-    
+
     main_frame = ttk.Frame(checkout_window, padding="20")
     main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-    
+
     # Order summary
     summary_frame = ttk.LabelFrame(main_frame, text="Order Summary", padding="10")
     summary_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
-    
+
     total = 0
     for i, item in enumerate(self.cart_items):
         ttk.Label(summary_frame, text=f"{item['name']} x {item['quantity']}").grid(row=i, column=0, sticky=tk.W)
         ttk.Label(summary_frame, text=f"£{item['subtotal']:.2f}").grid(row=i, column=1, sticky=tk.E)
         total += item['subtotal']
-    
+
     ttk.Separator(summary_frame, orient='horizontal').grid(row=len(self.cart_items), column=0, columnspan=2, sticky=(tk.W, tk.E), pady=5)
     ttk.Label(summary_frame, text="Total:", font=('Arial', 12, 'bold')).grid(row=len(self.cart_items)+1, column=0, sticky=tk.W)
     ttk.Label(summary_frame, text=f"£{total:.2f}", font=('Arial', 12, 'bold')).grid(row=len(self.cart_items)+1, column=1, sticky=tk.E)
-    
+
     summary_frame.columnconfigure(0, weight=1)
-    
+
     # Payment method
     payment_frame = ttk.LabelFrame(main_frame, text="Payment Method", padding="10")
     payment_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
-    
+
     payment_var = tk.StringVar(value="Credit/Debit Card")
     ttk.Radiobutton(payment_frame, text="Credit/Debit Card", variable=payment_var,
                    value="Credit/Debit Card").grid(row=0, column=0, sticky=tk.W, pady=2)
@@ -214,19 +214,19 @@ def show_checkout(self):
     # Customer info
     info_frame = ttk.LabelFrame(main_frame, text="Customer Information", padding="10")
     info_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
-    
+
     ttk.Label(info_frame, text="Name:").grid(row=0, column=0, sticky=tk.W, pady=2)
     name_var = tk.StringVar(value=self.current_user.get('username', ''))
     ttk.Entry(info_frame, textvariable=name_var, width=30).grid(row=0, column=1, padx=(10, 0), pady=2)
-    
+
     ttk.Label(info_frame, text="Email:").grid(row=1, column=0, sticky=tk.W, pady=2)
     email_var = tk.StringVar(value=self.current_user.get('email', ''))
     ttk.Entry(info_frame, textvariable=email_var, width=30).grid(row=1, column=1, padx=(10, 0), pady=2)
-    
+
     # Buttons
     button_frame = ttk.Frame(main_frame)
     button_frame.grid(row=3, column=0, pady=20)
-    
+
     def complete_checkout():
         try:
             # Process checkout
@@ -250,11 +250,11 @@ def show_checkout(self):
 
         except Exception as e:
             messagebox.showerror("Error", f"Checkout failed: {e}")
-    
-    ttk.Button(button_frame, text="Complete Order", command=complete_checkout, 
+
+    ttk.Button(button_frame, text="Complete Order", command=complete_checkout,
               style='Success.TButton').grid(row=0, column=0, padx=5)
     ttk.Button(button_frame, text="Cancel", command=checkout_window.destroy).grid(row=0, column=1, padx=5)
-    
+
 
 def process_checkout(self, payment_method, customer_name, customer_email):
     """Process the checkout and create transaction"""
@@ -262,14 +262,14 @@ def process_checkout(self, payment_method, customer_name, customer_email):
         if 'get_connection' in globals():
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Generate transaction ID
             transaction_id = f"T{int(time.time())}"
             transaction_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
+
             # Calculate total
             total = sum(item['subtotal'] for item in self.cart_items)
-            
+
             # Process Student Account payment via finance system
             if payment_method == "Student Account":
                 # Get user identifier for finance account lookup
@@ -331,7 +331,7 @@ def process_checkout(self, payment_method, customer_name, customer_email):
                 transaction_status,
                 f"GUI Checkout - {customer_name}"
             ])
-            
+
             # Create transaction items and update inventory
             for item in self.cart_items:
                 cursor.execute("""
@@ -345,14 +345,14 @@ def process_checkout(self, payment_method, customer_name, customer_email):
                     item['price'],
                     item['subtotal']
                 ])
-                
+
                 # Update inventory
                 cursor.execute("""
                     UPDATE shop_inventory
                     SET quantity = quantity - ?
                     WHERE product_id = ?
                 """, [item['quantity'], item['product_id']])
-            
+
             conn.commit()
             conn.close()
 
@@ -369,13 +369,13 @@ def process_checkout(self, payment_method, customer_name, customer_email):
         else:
             # Fallback - just return a mock transaction ID
             return f"T{int(time.time())}"
-            
+
     except Exception as e:
         if 'conn' in locals():
             conn.rollback()
             conn.close()
         raise Exception(f"Checkout processing failed: {e}")
-        
+
 
 def _process_student_account_payment(self, student_id, total_amount, transaction_id, customer_name):
     """Process payment through student's finance account balance"""

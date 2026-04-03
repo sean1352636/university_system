@@ -8,7 +8,7 @@ from contextlib import contextmanager
 def suppress_alsa_warnings():
     """
     Context manager to suppress ALSA and JACK warnings during PyAudio initialization.
-    
+
     Usage:
         with suppress_alsa_warnings():
             import pyaudio
@@ -28,10 +28,10 @@ def suppress_alsa_warnings():
 def init_pyaudio_quietly():
     """
     Initialize PyAudio with all warnings suppressed.
-    
+
     Returns:
         pyaudio.PyAudio: Initialized PyAudio instance
-        
+
     Example:
         p = init_pyaudio_quietly()
         # Use p normally

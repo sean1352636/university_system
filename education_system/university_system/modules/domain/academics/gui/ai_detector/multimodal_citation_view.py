@@ -83,9 +83,9 @@ def create_multi_modal_analysis_view(self, parent):
     image_frame = ttk.LabelFrame(multimodal_card, text="Image Analysis", padding=15)
     image_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(image_frame, text="📁 Upload Images", 
+    ttk.Button(image_frame, text="📁 Upload Images",
               command=self.upload_images_for_analysis).pack(side='left', padx=(0, 10))
-    ttk.Button(image_frame, text="📝 Analyze Image-Text Consistency", 
+    ttk.Button(image_frame, text="📝 Analyze Image-Text Consistency",
               command=self.analyze_image_text_consistency).pack(side='left')
 
     # Code analysis section
@@ -98,7 +98,7 @@ def create_multi_modal_analysis_view(self, parent):
                                  values=["python", "java", "javascript", "cpp", "c"], width=15)
     language_combo.pack(side='left', padx=(5, 15))
 
-    ttk.Button(code_frame, text="💻 Analyze Code", 
+    ttk.Button(code_frame, text="💻 Analyze Code",
               command=self.analyze_code_submission).pack(side='right')
 
     # Code input area
@@ -187,11 +187,11 @@ def show_multimodal_results(self, result):
         results_frame = ttk.Frame(results_window, style='Card.TFrame')
         results_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(results_frame, text=f"Consistency Score: {score:.1%}", 
+        ttk.Label(results_frame, text=f"Consistency Score: {score:.1%}",
                  font=('Segoe UI', 12)).pack(anchor='w', padx=15, pady=5)
 
         if evidence:
-            ttk.Label(results_frame, text="Analysis Details:", 
+            ttk.Label(results_frame, text="Analysis Details:",
                      font=('Segoe UI', 10, 'bold')).pack(anchor='w', padx=15, pady=(10, 5))
             for key, value in evidence.items():
                 ttk.Label(results_frame, text=f"  {key}: {value}").pack(anchor='w', padx=25, pady=2)
@@ -214,11 +214,11 @@ def show_code_analysis_results(self, result):
         results_frame = ttk.Frame(results_window, style='Card.TFrame')
         results_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-        ttk.Label(results_frame, text=f"AI Generation Score: {score:.1%}", 
+        ttk.Label(results_frame, text=f"AI Generation Score: {score:.1%}",
                  font=('Segoe UI', 12)).pack(anchor='w', padx=15, pady=5)
 
         if evidence:
-            ttk.Label(results_frame, text="Patterns Found:", 
+            ttk.Label(results_frame, text="Patterns Found:",
                      font=('Segoe UI', 10, 'bold')).pack(anchor='w', padx=15, pady=(10, 5))
 
             patterns_found = evidence.get('patterns_found', [])
@@ -294,7 +294,7 @@ def create_citation_verification_view(self, parent):
     ttk.Checkbutton(options_frame, text="Check Publication Dates", variable=self.check_dates_var).pack(side='left', padx=(15, 0))
 
     # Verify button
-    ttk.Button(citation_card, text="🔍 Verify Citations", 
+    ttk.Button(citation_card, text="🔍 Verify Citations",
               command=self.verify_citations, style='Accent.TButton').pack(pady=(0, 15))
 
 
@@ -346,7 +346,7 @@ def show_citation_results(self, result):
         summary_frame = ttk.Frame(scrollable_frame, style='Card.TFrame')
         summary_frame.pack(fill='x', padx=20, pady=10)
 
-        ttk.Label(summary_frame, text=f"Suspicious Citation Score: {score:.1%}", 
+        ttk.Label(summary_frame, text=f"Suspicious Citation Score: {score:.1%}",
                  font=('Segoe UI', 12, 'bold')).pack(anchor='w', padx=15, pady=15)
 
         # Citation details
@@ -365,10 +365,10 @@ def show_citation_results(self, result):
                 status_color = self.colors['success'] if exists and not suspicious else self.colors['danger']
                 status_text = "✓ Valid" if exists and not suspicious else "⚠ Suspicious"
 
-                ttk.Label(citation_frame, text=f"{i}. {citation_text}", 
+                ttk.Label(citation_frame, text=f"{i}. {citation_text}",
                          font=('Segoe UI', 10)).pack(anchor='w', padx=10, pady=5)
 
-                status_label = tk.Label(citation_frame, text=status_text, 
+                status_label = tk.Label(citation_frame, text=status_text,
                                       fg=status_color, bg=self.colors['bg_tertiary'])
                 status_label.pack(anchor='w', padx=20, pady=(0, 5))
 
@@ -425,7 +425,7 @@ def create_temporal_analysis_view(self, parent):
     self.word_count_display = ttk.Label(input_frame, text="0")
     self.word_count_display.pack(side='left', padx=(5, 15))
 
-    ttk.Button(input_frame, text="📊 Analyze Writing Speed", 
+    ttk.Button(input_frame, text="📊 Analyze Writing Speed",
               command=self.analyze_writing_speed).pack(side='right')
 
     # Student submission patterns
@@ -436,7 +436,7 @@ def create_temporal_analysis_view(self, parent):
     self.temporal_student_var = tk.StringVar()
     ttk.Entry(patterns_frame, textvariable=self.temporal_student_var, width=20).pack(side='left', padx=(5, 15))
 
-    ttk.Button(patterns_frame, text="📈 Analyze Patterns", 
+    ttk.Button(patterns_frame, text="📈 Analyze Patterns",
               command=self.analyze_submission_patterns).pack(side='right')
 
     # Results display
@@ -502,7 +502,7 @@ def show_temporal_results(self, result):
         evidence = result.evidence
         risk_level = result.risk_level.value if hasattr(result.risk_level, 'value') else str(result.risk_level)
 
-        ttk.Label(results_frame, text="Writing Speed Analysis Results", 
+        ttk.Label(results_frame, text="Writing Speed Analysis Results",
                  font=('Segoe UI', 12, 'bold')).pack(anchor='w', padx=15, pady=(15, 5))
 
         ttk.Label(results_frame, text=f"Anomaly Score: {score:.1%}").pack(anchor='w', padx=15, pady=2)
@@ -515,7 +515,7 @@ def show_temporal_results(self, result):
             ttk.Label(results_frame, text=f"Text complexity: {complexity:.2f}").pack(anchor='w', padx=15, pady=2)
 
             if 'anomaly' in evidence:
-                ttk.Label(results_frame, text=f"Issue: {evidence['anomaly']}", 
+                ttk.Label(results_frame, text=f"Issue: {evidence['anomaly']}",
                          foreground=self.colors['warning']).pack(anchor='w', padx=15, pady=5)
 
 
@@ -528,14 +528,14 @@ def show_submission_patterns(self, patterns):
     patterns_frame = ttk.Frame(self.temporal_results_frame, style='Card.TFrame')
     patterns_frame.pack(fill='x', pady=10)
 
-    ttk.Label(patterns_frame, text="Submission Patterns Analysis", 
+    ttk.Label(patterns_frame, text="Submission Patterns Analysis",
              font=('Segoe UI', 12, 'bold')).pack(anchor='w', padx=15, pady=(15, 5))
 
     if 'error' in patterns:
-        ttk.Label(patterns_frame, text=f"Error: {patterns['error']}", 
+        ttk.Label(patterns_frame, text=f"Error: {patterns['error']}",
                  foreground=self.colors['danger']).pack(anchor='w', padx=15, pady=5)
     elif 'insufficient_data' in patterns:
-        ttk.Label(patterns_frame, text="Insufficient data for pattern analysis", 
+        ttk.Label(patterns_frame, text="Insufficient data for pattern analysis",
                  style='Subtitle.TLabel').pack(anchor='w', padx=15, pady=5)
     else:
         # Display pattern metrics
@@ -551,10 +551,10 @@ def show_submission_patterns(self, patterns):
 
         # Warnings for suspicious patterns
         if suspicious_ratio > 0.3:
-            ttk.Label(patterns_frame, text="Warning: High frequency of late-night submissions", 
+            ttk.Label(patterns_frame, text="Warning: High frequency of late-night submissions",
                      foreground=self.colors['warning']).pack(anchor='w', padx=15, pady=5)
         if regular_intervals > 3:
-            ttk.Label(patterns_frame, text="Warning: Unusually regular submission intervals", 
+            ttk.Label(patterns_frame, text="Warning: Unusually regular submission intervals",
                      foreground=self.colors['warning']).pack(anchor='w', padx=15, pady=5)
 
 

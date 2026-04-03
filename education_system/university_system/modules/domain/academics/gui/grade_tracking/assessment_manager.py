@@ -70,10 +70,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -124,7 +124,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -140,7 +140,7 @@ def init_basic_database():
         status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -154,7 +154,7 @@ def init_basic_database():
         year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -168,7 +168,7 @@ def init_basic_database():
         UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -188,11 +188,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -202,7 +202,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -217,7 +217,7 @@ def init_enhanced_grades_db():
         FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -230,7 +230,7 @@ def init_enhanced_grades_db():
         FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -249,7 +249,7 @@ def init_enhanced_grades_db():
         FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -359,7 +359,7 @@ class AssessmentManager:
         # Assessment management controls
         control_frame = ttk.Frame(self.content_frame)
         control_frame.pack(fill='x', padx=10, pady=5)
-            
+
         ttk.Button(control_frame, text="Add Assessment",
                   command=self.add_assessment_dialog).pack(side='left', padx=5)
         ttk.Button(control_frame, text="Edit Assessment",
@@ -372,45 +372,45 @@ class AssessmentManager:
                   command=self.refresh_assessments).pack(side='left', padx=5)
         ttk.Button(control_frame, text="🔄 Load from Assignments",
                   command=self.sync_from_assignments).pack(side='right', padx=5)
-            
+
         # Filter frame
         filter_frame = ttk.Frame(self.content_frame)
         filter_frame.pack(fill='x', padx=10, pady=5)
-            
+
         ttk.Label(filter_frame, text="Filter by Module:").pack(side='left', padx=5)
         self.assessment_module_filter_var = tk.StringVar()
-        self.assessment_module_combo = ttk.Combobox(filter_frame, 
-                                                   textvariable=self.assessment_module_filter_var, 
+        self.assessment_module_combo = ttk.Combobox(filter_frame,
+                                                   textvariable=self.assessment_module_filter_var,
                                                    width=20, state='readonly')
         self.assessment_module_combo.pack(side='left', padx=5)
         self.assessment_module_combo.bind('<<ComboboxSelected>>', self.filter_assessments)
-            
+
         # Assessment list
         list_frame = ttk.Frame(self.content_frame)
         list_frame.pack(fill='both', expand=True, padx=10, pady=5)
-            
+
         columns = ('ID', 'Name', 'Type', 'Module', 'Max Points', 'Weight %', 'Due Date')
         self.assessment_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=25)
-            
+
         for col in columns:
             self.assessment_tree.heading(col, text=col)
             self.assessment_tree.column(col, width=120, anchor='center')
-            
+
         # Scrollbars
         v_scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.assessment_tree.yview)
         h_scrollbar = ttk.Scrollbar(list_frame, orient='horizontal', command=self.assessment_tree.xview)
         self.assessment_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-            
+
         self.assessment_tree.pack(side='left', fill='both', expand=True)
         v_scrollbar.pack(side='right', fill='y')
         h_scrollbar.pack(side='bottom', fill='x')
-    
+
         # Load assessment data
         self.refresh_assessments()
-    
+
         # Populate filter combos now that they exist
         self.populate_filter_combos()
-    
+
 
     def generate_assessment_analysis(self):
         """Generate assessment analysis"""
@@ -418,9 +418,9 @@ class AssessmentManager:
         try:
             conn = get_connection()
             cursor = conn.cursor()
-    
+
             cursor.execute('''
-            SELECT 
+            SELECT
                 a.assessment_id,
                 a.assessment_name,
                 a.module_code,
@@ -428,9 +428,9 @@ class AssessmentManager:
                 a.max_points,
                 COUNT(g.grade_id) AS submissions,
                 AVG(
-                    CASE 
-                        WHEN a.max_points IS NOT NULL AND a.max_points > 0 
-                        THEN (g.score / a.max_points) * 100 
+                    CASE
+                        WHEN a.max_points IS NOT NULL AND a.max_points > 0
+                        THEN (g.score / a.max_points) * 100
                     END
                 ) AS avg_percentage,
                 SUM(CASE WHEN g.letter_grade = 'F' THEN 1 ELSE 0 END) AS fail_count
@@ -439,7 +439,7 @@ class AssessmentManager:
             GROUP BY a.assessment_id, a.assessment_name, a.module_code, a.assessment_type, a.max_points
             ''')
             assessment_rows = cursor.fetchall()
-    
+
             if not assessment_rows:
                 self._display_report(
                     "Assessment Analysis Report",
@@ -447,7 +447,7 @@ class AssessmentManager:
                     None
                 )
                 return
-    
+
             summary_lines = [
                 f"Total Assessments: {len(assessment_rows)}",
                 f"Assessments With Submitted Grades: {sum(1 for row in assessment_rows if row[5] > 0)}",
@@ -457,49 +457,49 @@ class AssessmentManager:
                 f"{(sum(row[6] for row in assessment_rows if row[6] is not None) / max(1, sum(1 for row in assessment_rows if row[6] is not None))):.1f}%"
                 if any(row[6] is not None for row in assessment_rows) else "Average Assessment Score: N/A"
             ]
-    
+
             top_assessments = sorted(
                 [row for row in assessment_rows if row[6] is not None],
                 key=lambda r: r[6],
                 reverse=True
             )[:5]
-    
+
             top_lines = [
                 f"{idx + 1}. {row[1]} [{row[2]}] - Avg Score {row[6]:.1f}% "
                 f"(Submissions: {row[5]})"
                 for idx, row in enumerate(top_assessments)
             ]
-    
+
             challenging_assessments = sorted(
                 [row for row in assessment_rows if row[6] is not None and row[5] > 0],
                 key=lambda r: (r[6], -r[5])
             )[:5]
-    
+
             challenging_lines = [
                 f"{idx + 1}. {row[1]} [{row[2]}] - Avg Score {row[6]:.1f}% "
                 f"(Fail Count: {row[7]})"
                 for idx, row in enumerate(challenging_assessments)
             ]
-    
+
             missing_lines = [
                 f"{row[1]} [{row[2]}] - No submissions recorded"
                 for row in assessment_rows if row[5] == 0
             ][:5]
-    
+
             sections = [
                 ("Assessment Overview", summary_lines),
                 ("High Performing Assessments", top_lines),
                 ("Assessments Requiring Review", challenging_lines),
                 ("Assessments Awaiting Grades", missing_lines)
             ]
-    
+
             footer = (
                 "Consider reviewing assessments with low average scores or high failure counts to adjust support "
                 "resources or re-examine assessment design."
             )
-    
+
             self._display_report("Assessment Analysis Report", sections, footer)
-    
+
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to generate assessment analysis: {e}")
         except Exception as e:

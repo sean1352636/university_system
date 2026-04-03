@@ -47,12 +47,12 @@ try:
 except ImportError:
     # If helpdesk.py is not available, we'll define minimal stubs
     print("Warning: helpdesk.py not found. Running in standalone mode.")
-    
+
     def init_helpdesk_db():
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Create support_tickets table with enhanced fields
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS support_tickets (
@@ -118,7 +118,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_attachments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_attachments (
@@ -138,7 +138,7 @@ except ImportError:
                 FOREIGN KEY (uploaded_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_assignments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_assignments (
@@ -153,7 +153,7 @@ except ImportError:
                 FOREIGN KEY (assigned_to) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_templates table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_templates (
@@ -174,7 +174,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create sla_policies table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS sla_policies (
@@ -193,7 +193,7 @@ except ImportError:
                 updated_at TEXT
             )
             ''')
-            
+
             # Create ticket_workflows table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_workflows (
@@ -210,7 +210,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_time_tracking table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_time_tracking (
@@ -227,7 +227,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_escalations table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_escalations (
@@ -244,7 +244,7 @@ except ImportError:
                 FOREIGN KEY (escalated_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_links table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_links (
@@ -259,7 +259,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_audit_log table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_audit_log (
@@ -276,7 +276,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create knowledge_base table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS knowledge_base (
@@ -296,7 +296,7 @@ except ImportError:
                 FOREIGN KEY (author_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create departments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS departments (
@@ -313,7 +313,7 @@ except ImportError:
                 FOREIGN KEY (sla_policy_id) REFERENCES sla_policies (sla_id)
             )
             ''')
-            
+
             # Create organizations table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS organizations (
@@ -328,7 +328,7 @@ except ImportError:
                 updated_at TEXT
             )
             ''')
-            
+
             # Create saved_searches table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS saved_searches (
@@ -344,13 +344,13 @@ except ImportError:
             conn.commit()
             conn.close()
             print("Enhanced helpdesk database initialized successfully!")
-            
+
             # Initialize default data
             init_default_data()
-            
+
         except sqlite3.Error as e:
             print(f"An error occurred while initializing the helpdesk database: {e}")
-        
+
     def setup_enhanced_helpdesk_permissions():
         """
         Setup enhanced helpdesk permissions
@@ -432,7 +432,7 @@ def create_my_tickets_tab(self):
     toolbar.pack(fill='x', padx=10, pady=5)
 
     ttk.Button(toolbar, text="Refresh", command=self.refresh_my_tickets).pack(side='left', padx=5)
-    ttk.Button(toolbar, text="New Ticket", command=self.show_create_ticket, 
+    ttk.Button(toolbar, text="New Ticket", command=self.show_create_ticket,
               style='Primary.TButton').pack(side='left', padx=5)
 
     # Filter frame
@@ -470,7 +470,7 @@ def create_my_tickets_list(self):
     self.my_tickets_tree = ttk.Treeview(self.my_tickets_frame, columns=columns, show='headings')
 
     # Configure columns
-    column_widths = {'ID': 50, 'Subject': 200, 'Category': 120, 'Status': 100, 
+    column_widths = {'ID': 50, 'Subject': 200, 'Category': 120, 'Status': 100,
                     'Priority': 80, 'Created': 120, 'Updated': 120}
 
     for col in columns:
@@ -478,12 +478,12 @@ def create_my_tickets_list(self):
         self.my_tickets_tree.column(col, width=column_widths.get(col, 100))
 
     # Add scrollbars
-    v_scrollbar = ttk.Scrollbar(self.my_tickets_frame, orient='vertical', 
+    v_scrollbar = ttk.Scrollbar(self.my_tickets_frame, orient='vertical',
                                command=self.my_tickets_tree.yview)
-    h_scrollbar = ttk.Scrollbar(self.my_tickets_frame, orient='horizontal', 
+    h_scrollbar = ttk.Scrollbar(self.my_tickets_frame, orient='horizontal',
                                command=self.my_tickets_tree.xview)
 
-    self.my_tickets_tree.configure(yscrollcommand=v_scrollbar.set, 
+    self.my_tickets_tree.configure(yscrollcommand=v_scrollbar.set,
                                   xscrollcommand=h_scrollbar.set)
 
     # Pack widgets

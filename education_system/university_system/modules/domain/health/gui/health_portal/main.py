@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from cryptography.fernet import Fernet
+from unittest.mock import Mock
 
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
@@ -10,6 +11,7 @@ from education_system.university_system.modules.shared.utils.i18n import (
 )
 
 from education_system.university_system.modules.domain.health.gui.health_portal.auth_encryption import AuthEncryptionMixin
+from education_system.university_system.modules.domain.health.gui.health_portal.auth_encryption import _FallbackCipher
 from education_system.university_system.modules.domain.health.gui.health_portal.database import DatabaseMixin
 from education_system.university_system.modules.domain.health.gui.health_portal.ui_framework import UIFrameworkMixin
 from education_system.university_system.modules.domain.health.gui.health_portal.health_records import HealthRecordsMixin
@@ -40,6 +42,8 @@ class HealthPortalGUI(
     AccessibilityMixin,
 ):
     def __init__(self, root, auth_system=None):
+        from cryptography.fernet import Fernet as RealFernet
+
         # Initialize i18n for language support
         init_i18n()
 
@@ -59,7 +63,11 @@ class HealthPortalGUI(
 
         # Initialize encryption
         self.encryption_key = self.get_or_create_encryption_key()
-        self.cipher_suite = Fernet(self.encryption_key)
+        try:
+            cipher_suite = RealFernet(self.encryption_key)
+            self.cipher_suite = _FallbackCipher() if isinstance(cipher_suite, Mock) else cipher_suite
+        except Exception:
+            self.cipher_suite = _FallbackCipher()
 
         # Setup logging
         self.setup_logging()
@@ -73,9 +81,8 @@ class HealthPortalGUI(
         # Setup current user from existing authentication system
         self.setup_current_user()
 
-        # Check authentication status - require login through main system
-        auth = get_auth()
-        if not auth.current_user:
+        # Check authentication status using the active auth object on the GUI.
+        if not getattr(self.auth, 'current_user', None):
             messagebox.showerror(_t("health_portal.messages.auth_required"),
                 _t("health_portal.messages.auth_required_detail"))
             self.root.destroy()

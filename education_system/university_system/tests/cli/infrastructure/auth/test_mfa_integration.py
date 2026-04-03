@@ -403,7 +403,7 @@ class TestGUIIntegrationHelpers:
     """Test GUI integration helper functions"""
 
     @patch('education_system.university_system.infrastructure.auth.mfa_integration.MFAIntegration')
-    @patch('education_system.university_system.infrastructure.auth.mfa_integration.show_mfa_verification')
+    @patch('education_system.university_system.infrastructure.auth.mfa_gui.show_mfa_verification')
     def test_show_mfa_for_login_success(self, mock_show_verification, mock_integration_class):
         """Test show_mfa_for_login with successful verification"""
         # Setup mock integration
@@ -460,7 +460,7 @@ class TestGUIIntegrationHelpers:
 
         assert verified is False
 
-    @patch('education_system.university_system.infrastructure.auth.mfa_integration.show_mfa_setup')
+    @patch('education_system.university_system.infrastructure.auth.mfa_gui.show_mfa_setup')
     def test_show_mfa_setup_for_login_success(self, mock_show_setup):
         """Test show_mfa_setup_for_login with successful setup"""
         # Mock setup dialog
@@ -477,7 +477,7 @@ class TestGUIIntegrationHelpers:
 
         assert completed is True
 
-    @patch('education_system.university_system.infrastructure.auth.mfa_integration.show_mfa_setup')
+    @patch('education_system.university_system.infrastructure.auth.mfa_gui.show_mfa_setup')
     def test_show_mfa_setup_for_login_cancelled(self, mock_show_setup):
         """Test show_mfa_setup_for_login when user cancels"""
         # Mock setup dialog - don't call on_complete
@@ -490,7 +490,7 @@ class TestGUIIntegrationHelpers:
 
         assert completed is False
 
-    @patch('education_system.university_system.infrastructure.auth.mfa_integration.show_mfa_setup')
+    @patch('education_system.university_system.infrastructure.auth.mfa_gui.show_mfa_setup')
     def test_show_mfa_setup_for_login_error(self, mock_show_setup):
         """Test show_mfa_setup_for_login when error occurs"""
         # Mock setup dialog to raise exception

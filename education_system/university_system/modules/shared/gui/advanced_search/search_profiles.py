@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import escape_like, validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import escape_like, validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -122,7 +122,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -133,7 +133,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -261,7 +261,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -935,41 +935,41 @@ def show_search_profile_manager(self):
     dialog.geometry("800x600")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.search_profiles.search_profile_manager_label'), style='Title.TLabel').pack(pady=(0, 20))
-    
+
     # Profile management notebook
     notebook = ttk.Notebook(frame)
     notebook.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     # Saved profiles tab
     profiles_frame = ttk.Frame(notebook, padding="10")
     notebook.add(profiles_frame, text=_t('advanced_search.search_profiles.saved_profiles_tab'))
-    
+
     # Profile list
     columns = ('ID', 'Name', 'Type', 'Created', 'Last Used', 'Shared')
     self.profiles_tree = ttk.Treeview(profiles_frame, columns=columns, show='headings', height=12)
-    
+
     for col in columns:
         self.profiles_tree.heading(col, text=col)
         self.profiles_tree.column(col, width=100)
-    
+
     profiles_scrollbar = ttk.Scrollbar(profiles_frame, orient=tk.VERTICAL, command=self.profiles_tree.yview)
     self.profiles_tree.configure(yscrollcommand=profiles_scrollbar.set)
-    
+
     self.profiles_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     profiles_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    
+
     # Load profiles
     self.load_search_profiles()
-    
+
     # Profile actions
     profile_actions = ttk.Frame(profiles_frame)
     profile_actions.pack(fill=tk.X, pady=(10, 0))
-    
+
     ttk.Button(profile_actions, text=_t('advanced_search.search_profiles.load_profile_button'),
               command=self.load_selected_profile).pack(side=tk.LEFT, padx=(0, 10))
     ttk.Button(profile_actions, text=_t('advanced_search.search_profiles.delete_profile_button'),
@@ -978,45 +978,45 @@ def show_search_profile_manager(self):
               command=self.share_selected_profile).pack(side=tk.LEFT, padx=(0, 10))
     ttk.Button(profile_actions, text=_t('advanced_search.search_profiles.export_profile_button'),
               command=self.export_selected_profile).pack(side=tk.LEFT)
-    
+
     # Create new profile tab
     create_frame = ttk.Frame(notebook, padding="10")
     notebook.add(create_frame, text=_t('advanced_search.search_profiles.create_profile_tab'))
-    
+
     ttk.Label(create_frame, text=_t('advanced_search.search_profiles.create_new_profile_header'), style='Header.TLabel').pack(pady=(0, 20))
-    
+
     # Profile creation form
     create_form = ttk.LabelFrame(create_frame, text=_t('advanced_search.search_profiles.profile_details_frame'), padding="10")
     create_form.pack(fill=tk.X, pady=(0, 20))
-    
+
     ttk.Label(create_form, text=_t('advanced_search.search_profiles.profile_name_label')).pack(anchor='w')
     profile_name_var = tk.StringVar()
     ttk.Entry(create_form, textvariable=profile_name_var, width=40).pack(fill=tk.X, pady=(0, 10))
-    
+
     ttk.Label(create_form, text=_t('advanced_search.search_profiles.description_label')).pack(anchor='w')
     profile_desc_text = tk.Text(create_form, height=4, wrap=tk.WORD)
     profile_desc_text.pack(fill=tk.X, pady=(0, 10))
-    
+
     profile_shared_var = tk.BooleanVar()
     ttk.Checkbutton(create_form, text=_t('advanced_search.search_profiles.share_with_users_checkbox'),
                    variable=profile_shared_var).pack(anchor='w')
-    
+
     def save_current_as_profile():
         name = profile_name_var.get().strip()
         if not name:
             messagebox.showwarning(_t('advanced_search.search_profiles.missing_name_title'), _t('advanced_search.search_profiles.missing_name_msg'))
             return
-        
+
         description = profile_desc_text.get(1.0, tk.END).strip()
         is_shared = profile_shared_var.get()
-        
+
         self.save_search_profile_to_db(name, description, is_shared)
         self.load_search_profiles()
         messagebox.showinfo(_t('advanced_search.search_profiles.profile_saved_title'), _t('advanced_search.search_profiles.profile_saved_msg', name=name))
-    
+
     ttk.Button(create_form, text=_t('advanced_search.search_profiles.save_current_as_profile_button'),
               command=save_current_as_profile).pack(pady=10)
-    
+
     ttk.Button(frame, text=_t('advanced_search.close_button'), command=dialog.destroy).pack()
 AdvancedSearchGUI.show_search_profile_manager = show_search_profile_manager
 
@@ -1050,7 +1050,7 @@ def load_search_profiles(self):
         print_error(f"Failed to load saved profiles: {exc}")
         messagebox.showerror(_t('advanced_search.search_profiles.load_error_title'), _t('advanced_search.search_profiles.load_error_msg', error=exc))
         return
-    
+
     for row in rows:
         try:
             payload = json.loads(row["search_criteria"]) if row["search_criteria"] else {}
@@ -1164,12 +1164,12 @@ def share_selected_profile(self):
     ttk.Label(share_frame, text=_t('advanced_search.search_profiles.share_with_users_label')).pack(anchor='w')
     users_listbox = tk.Listbox(share_frame, selectmode=tk.MULTIPLE, height=8)
     users_listbox.pack(fill=tk.BOTH, expand=True, pady=(5, 20))
-    
+
     # Sample users
     sample_users = ["admin", "teacher1", "teacher2", "analyst", "manager"]
     for user in sample_users:
         users_listbox.insert(tk.END, user)
-    
+
     def confirm_share():
         selected_users = [users_listbox.get(i) for i in users_listbox.curselection()]
         if selected_users:
@@ -1192,10 +1192,10 @@ def share_selected_profile(self):
             share_dialog.destroy()
         else:
             messagebox.showwarning(_t('advanced_search.search_profiles.no_users_selected_title'), _t('advanced_search.search_profiles.no_users_selected_msg'))
-    
+
     button_frame = ttk.Frame(share_frame)
     button_frame.pack(fill=tk.X)
-    
+
     ttk.Button(button_frame, text=_t('advanced_search.search_profiles.share_button'), command=confirm_share).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=_t('advanced_search.cancel_button'), command=share_dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.share_selected_profile = share_selected_profile
@@ -1206,16 +1206,16 @@ def export_selected_profile(self):
     if not selection:
         messagebox.showwarning(_t('advanced_search.search_profiles.no_selection_title'), _t('advanced_search.search_profiles.select_profile_to_export'))
         return
-    
+
     item = self.profiles_tree.item(selection[0])
     profile_id = item['values'][0]
-    
+
     filename = filedialog.asksaveasfilename(
         defaultextension=".json",
         filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
         initialfile=f"search_profile_{item['values'][1].replace(' ', '_')}.json"
     )
-    
+
     if filename:
         try:
             conn = get_connection()
@@ -1261,28 +1261,28 @@ def show_saved_searches(self):
     dialog.geometry("700x500")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.search_profiles.saved_search_profiles_label'), style='Title.TLabel').pack(pady=(0, 20))
 
     # Saved searches list
     list_frame = ttk.LabelFrame(frame, text=_t('advanced_search.search_profiles.saved_searches_frame'), padding="10")
     list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     columns = ('ID', 'Name', 'Created', 'Shared')
     self.saved_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=12)
-    
+
     for col in columns:
         self.saved_tree.heading(col, text=col)
         self.saved_tree.column(col, width=120)
-    
+
     self.saved_tree.pack(fill=tk.BOTH, expand=True)
-    
+
     # Load saved searches
     self.load_saved_searches()
-    
+
     # Buttons
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)

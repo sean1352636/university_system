@@ -128,7 +128,7 @@ class LibraryGUI:
 
         # Use provided auth or create new one if not provided
         self.auth = auth if auth else None
-        
+
         # Cross-platform window maximization
         try:
             # Try Windows-specific maximization first
@@ -144,24 +144,24 @@ class LibraryGUI:
             except tk.TclError:
                 # Final fallback - just use the default size
                 self.master.geometry("1400x900")
-        
+
         # Set up styling
         self.setup_styles()
-        
+
         # Initialize variables
         self.search_results = []
         self.current_book_details = None
-        
+
         # Initialize GUI components
         self.setup_gui()
-        
+
         # Initialize database and auth if original library is available
         if ORIGINAL_LIBRARY_AVAILABLE:
             self.initialize_library_system()
 
         # Setup authentication - use provided auth or initialize if needed
         self.setup_shared_authentication()
-        
+
         # Setup event handlers
         self.setup_event_handlers()
 
@@ -249,7 +249,7 @@ class LibraryGUI:
                 return original_get_db_connection()
             except ImportError:
                 pass
-        
+
         # Fallback implementation
         try:
             from education_system.university_system.infrastructure.database.db import sqlite3
@@ -262,7 +262,7 @@ class LibraryGUI:
         """Configure GUI styling"""
         style = ttk.Style()
         style.theme_use('clam')
-        
+
         # Configure custom styles
         style.configure('Title.TLabel', font=('Arial', 16, 'bold'))
         style.configure('Heading.TLabel', font=('Arial', 12, 'bold'))
@@ -283,13 +283,13 @@ class LibraryGUI:
         # Create main frame with sidebar and content area
         self.main_frame = ttk.Frame(self.master)
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
+
         # Create sidebar for navigation
         self.create_sidebar()
-        
+
         # Create main content area
         self.create_content_area()
-        
+
         # Create status bar
         self.create_status_bar()
 
@@ -483,7 +483,7 @@ class LibraryGUI:
 
         # Bind mouse wheel scrolling for sidebar
         self._bind_sidebar_scroll_events()
-        
+
         # Title
         title_label = ttk.Label(self.sidebar, text=_("library.sidebar.title"), style='Title.TLabel')
         title_label.pack(pady=(10, 20))
@@ -520,7 +520,7 @@ class LibraryGUI:
             (_("library.nav.reports"), self.show_reports),
             (_("library.nav.settings"), self.show_settings),
         ]
-        
+
         self.nav_buttons = {}
         for text, command in nav_items:
             btn = ttk.Button(nav_frame, text=text, command=command, width=30)
@@ -733,11 +733,11 @@ class LibraryGUI:
     def update_status(self, message, status_type="info"):
         """Update the status bar"""
         self.status_label.config(text=message)
-        
+
         # Color coding based on status type
         colors = {
             "info": "black",
-            "success": "green", 
+            "success": "green",
             "warning": "orange",
             "error": "red"
         }
@@ -769,7 +769,7 @@ class LibraryGUI:
                 log_audit_event(get_current_user_id(), "GUI: Application exit", "system")
         except (ValueError, TypeError, AttributeError):
             pass
-        
+
         if restart:
             # Restart the application
             import sys

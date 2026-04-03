@@ -214,7 +214,7 @@ class TestSelectAssessment:
     ):
         """Test when required columns are missing"""
         mock_first_table.return_value = 'assessments'
-        mock_first_col.side_effect = [None, None]  # No id or name column
+        mock_first_col.side_effect = [None, None, None]  # No id, name, or date column
         cursor = Mock()
 
         with patch('builtins.print') as mock_print:
@@ -434,8 +434,9 @@ class TestIntegration:
         result = select_assessment(cursor=cursor, allow_cancel=False)
 
         assert result is not None
-        assert result['id'] == 1
-        assert result['name'] == 'Midterm'
+        # Option 1 in the displayed list (sorted by date desc) is "Final"
+        assert result['id'] == 2
+        assert result['name'] == 'Final'
         assert result['table'] == 'assessments'
         assert result['id_col'] == 'assessment_id'
         assert result['name_col'] == 'assessment_name'

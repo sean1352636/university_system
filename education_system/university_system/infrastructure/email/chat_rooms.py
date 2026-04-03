@@ -30,13 +30,13 @@ def initialize_chat_tables():
             FOREIGN KEY (invited_by) REFERENCES users (id)
         )
         ''')
-        
+
         # Create index for faster queries
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_invitation_user ON chat_room_invitations(user_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_invitation_room ON chat_room_invitations(room_id)')
-        
+
         return True
-    
+
     try:
         result = execute_db_operation(_init_chat_tables)
         if result:

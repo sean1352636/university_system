@@ -75,32 +75,32 @@ from education_system.university_system.modules.domain.academics.grading.perform
 def apply_grading_curve():
     """Apply a grading curve to an assessment"""
     print("\nApply Grading Curve")
-    
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Get assessment to curve
         assessment_id = select_assessment(cursor)
         if not assessment_id:
             conn.close()
             return
-        
+
         # Get the assessment details
         cursor.execute('''
         SELECT assessment_name, module_code, max_points
         FROM assessments
         WHERE assessment_id = ?
         ''', (assessment_id,))
-        
+
         assessment = cursor.fetchone()
         if not assessment:
             print("Assessment not found.")
             conn.close()
             return
-        
+
         assessment_name, module_code, max_points = assessment
-        
+
         # Get all grades for this assessment
         cursor.execute('''
         SELECT g.grade_id, g.student_id, s.first_name, s.last_name, g.score, g.letter_grade
@@ -108,21 +108,21 @@ def apply_grading_curve():
         JOIN students s ON g.student_id = s.student_id
         WHERE g.assessment_id = ?
         ''', (assessment_id,))
-        
+
         grades = cursor.fetchall()
-        
+
         if not grades:
             print(f"No grades found for assessment {assessment_name}.")
             conn.close()
             return
-        
+
         # Extract data
         grade_ids = [g[0] for g in grades]
         student_ids = [g[1] for g in grades]
         student_names = [f"{g[2]} {g[3]}" for g in grades]
         scores = [g[4] for g in grades]
         letter_grades = [g[5] for g in grades]
-        
+
         # Choose curve method
         print("\nCurving Methods:")
         print("1. Add points to all scores")
@@ -130,28 +130,28 @@ def apply_grading_curve():
         print("3. Set highest score to maximum points")
         print("4. Adjust to target mean")
         print("5. Set grade boundaries")
-        
+
         method = input("Select curving method (1-5): ")
-        
+
         curved_scores = []
         curved_letters = []
-        
+
         if method == "1":
             # Add points
             points_to_add = float(input("Enter points to add to all scores: "))
-            
+
             # Apply curve
             curved_scores = [min(score + points_to_add, max_points) for score in scores]
             curved_letters = [percentage_to_letter((score / max_points) * 100) for score in curved_scores]
-            
+
         elif method == "2":
             # Multiply by factor
             factor = float(input("Enter multiplication factor: "))
-            
+
             # Apply curve
             curved_scores = [min(score * factor, max_points) for score in scores]
             curved_letters = [percentage_to_letter((score / max_points) * 100) for score in curved_scores]
-            
+
         elif method == "3":
             # Set highest score to maximum
             high_score = max(scores)
@@ -159,74 +159,74 @@ def apply_grading_curve():
                 print("Cannot apply curve: highest score is zero or negative.")
                 conn.close()
                 return
-            
+
             factor = max_points / high_score
-            
+
             # Apply curve
             curved_scores = [min(score * factor, max_points) for score in scores]
             curved_letters = [percentage_to_letter((score / max_points) * 100) for score in curved_scores]
-            
+
         elif method == "4":
             # Adjust to target mean
             current_mean = sum(scores) / len(scores)
             target_mean = float(input(f"Current mean is {current_mean:.2f}. Enter target mean: "))
             target_mean = min(target_mean, max_points)
-            
+
             shift = target_mean - current_mean
-            
+
             # Apply curve
             curved_scores = [min(score + shift, max_points) for score in scores]
             curved_letters = [percentage_to_letter((score / max_points) * 100) for score in curved_scores]
-            
+
         elif method == "5":
             # Set grade boundaries
             print("\nSet minimum percentage for each grade:")
-            
+
             grade_boundaries = {}
             grades_list = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"]
-            
+
             for grade in grades_list:
                 if grade == "F":
                     grade_boundaries[grade] = 0
                 else:
                     boundary = float(input(f"Minimum percentage for {grade}: "))
                     grade_boundaries[grade] = boundary
-            
+
             # Apply curve
             curved_scores = []
             curved_letters = []
-            
+
             for score in scores:
                 percentage = (score / max_points) * 100
-                
+
                 # Find appropriate grade
                 assigned_grade = "F"
                 for grade, boundary in sorted(grade_boundaries.items(), key=lambda x: x[1], reverse=True):
                     if percentage >= boundary:
                         assigned_grade = grade
                         break
-                
+
                 curved_letters.append(assigned_grade)
-                
+
                 # Keep original score
                 curved_scores.append(score)
-        
+
         else:
             print("Invalid method.")
             conn.close()
             return
-        
+
         # Display the results
         print("\nCurving Results:")
         print(f"{'Student':<30} {'Original Score':<15} {'Original Grade':<15} {'Curved Score':<15} {'Curved Grade':<15}")
         print("-" * 90)
-        
+
         for i in range(len(grades)):
             print(f"{student_names[i]:<30} {scores[i]:<15.2f} {letter_grades[i]:<15} {curved_scores[i]:<15.2f} {curved_letters[i]:<15}")
-        
+
         # Apply the curve?
         apply = input("\nApply this curve to the database? (y/n): ").strip().lower()
-        
+
         if apply == 'y':
             # Update grades
             for i in range(len(grades)):
@@ -235,16 +235,16 @@ def apply_grading_curve():
                 SET score = ?, letter_grade = ?
                 WHERE grade_id = ?
                 ''', (curved_scores[i], curved_letters[i], grade_ids[i]))
-            
+
             # Update module grades for affected students
             for student_id in set(student_ids):
                 update_module_grade(cursor, student_id, module_code)
-            
+
             conn.commit()
             print("Curve applied successfully.")
-        
+
         conn.close()
-        
+
     except sqlite3.Error as e:
         print(f"Database error: {e}")
     except Exception as e:
@@ -263,9 +263,9 @@ def performance_analysis_menu():
         print("7. Performance Trends Over Time")
         print("8. Generate Performance Dashboard")
         print("9. Return to Grade Menu")
-        
+
         choice = input("Enter your choice (1-9): ")
-        
+
         if choice == '1':
             identify_at_risk_students()
         elif choice == '2':
@@ -291,11 +291,11 @@ def performance_analysis_menu():
 def comparative_performance_analysis():
     """Compare performance across different groups"""
     print("\nComparative Performance Analysis")
-    
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         print("\nComparison Options:")
         print("1. Compare by Course")
         print("2. Compare by Gender")
@@ -303,9 +303,9 @@ def comparative_performance_analysis():
         print("4. Compare by Assessment Type")
         print("5. Compare by Academic Year/Term")
         print("6. Custom Group Comparison")
-        
+
         choice = input("Enter your choice (1-6): ").strip()
-        
+
         if choice == '1':
             compare_by_course(cursor)
         elif choice == '2':
@@ -320,29 +320,29 @@ def comparative_performance_analysis():
             custom_group_comparison(cursor)
         else:
             print("Invalid choice. Returning to menu.")
-        
+
         conn.close()
-        
+
     except sqlite3.Error as e:
         print(f"Database error: {e}")
 
 def performance_trends_analysis():
     """Analyze performance trends over time"""
     print("\nPerformance Trends Analysis")
-    
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         print("\nTrend Analysis Options:")
         print("1. Overall Grade Trends")
         print("2. Individual Student Trends")
         print("3. Course Performance Trends")
         print("4. Assessment Performance Trends")
         print("5. Seasonal/Time-based Trends")
-        
+
         choice = input("Enter your choice (1-5): ").strip()
-        
+
         if choice == '1':
             analyze_overall_grade_trends(cursor)
         elif choice == '2':
@@ -355,16 +355,16 @@ def performance_trends_analysis():
             analyze_seasonal_trends(cursor)
         else:
             print("Invalid choice. Returning to menu.")
-        
+
         conn.close()
-        
+
     except sqlite3.Error as e:
         print(f"Database error: {e}")
 
 def analyze_distribution_by_course(cursor):
     """Analyze grade distribution by course"""
     print("\nGrade Distribution by Course")
-    
+
     cursor.execute('''
     SELECT s.course, mg.final_grade, COUNT(*) as count
     FROM students s
@@ -372,42 +372,42 @@ def analyze_distribution_by_course(cursor):
     GROUP BY s.course, mg.final_grade
     ORDER BY s.course, mg.final_grade
     ''')
-    
+
     distribution_data = cursor.fetchall()
-    
+
     if not distribution_data:
         print("No grade distribution data found.")
         return
-    
+
     # Organize data by course
     course_distributions = {}
     for course, grade, count in distribution_data:
         if course not in course_distributions:
             course_distributions[course] = {}
         course_distributions[course][grade] = count
-    
+
     # Display results
     print("\nGrade Distribution by Course:")
     print("="*100)
-    
+
     for course, grade_dist in course_distributions.items():
         print(f"\n{course}:")
         print("-" * 60)
-        
+
         total_grades = sum(grade_dist.values())
-        sorted_grades = sorted(grade_dist.items(), 
+        sorted_grades = sorted(grade_dist.items(),
                               key=lambda x: letter_to_gpa(x[0]), reverse=True)
-        
+
         for grade, count in sorted_grades:
             percentage = (count / total_grades) * 100
             print(f"  {grade}: {count} ({percentage:.1f}%)")
-        
+
         print(f"  Total: {total_grades} grades")
 
 def analyze_distribution_by_module_type(cursor):
     """Analyze grade distribution by module type"""
     print("\nGrade Distribution by Module Type")
-    
+
     cursor.execute('''
     SELECT m.module_type, mg.final_grade, COUNT(*) as count
     FROM modules m
@@ -415,42 +415,42 @@ def analyze_distribution_by_module_type(cursor):
     GROUP BY m.module_type, mg.final_grade
     ORDER BY m.module_type, mg.final_grade
     ''')
-    
+
     distribution_data = cursor.fetchall()
-    
+
     if not distribution_data:
         print("No grade distribution data found.")
         return
-    
+
     # Organize data by module type
     type_distributions = {}
     for module_type, grade, count in distribution_data:
         if module_type not in type_distributions:
             type_distributions[module_type] = {}
         type_distributions[module_type][grade] = count
-    
+
     # Display results
     print("\nGrade Distribution by Module Type:")
     print("="*100)
-    
+
     for module_type, grade_dist in type_distributions.items():
         print(f"\n{module_type}:")
         print("-" * 60)
-        
+
         total_grades = sum(grade_dist.values())
-        sorted_grades = sorted(grade_dist.items(), 
+        sorted_grades = sorted(grade_dist.items(),
                               key=lambda x: letter_to_gpa(x[0]), reverse=True)
-        
+
         for grade, count in sorted_grades:
             percentage = (count / total_grades) * 100
             print(f"  {grade}: {count} ({percentage:.1f}%)")
-        
+
         print(f"  Total: {total_grades} grades")
 
 def analyze_overall_distribution(cursor):
     """Analyze overall grade distribution"""
     print("\nOverall Grade Distribution Analysis")
-    
+
     # Module grades distribution
     cursor.execute('''
     SELECT final_grade, COUNT(*) as count
@@ -458,9 +458,9 @@ def analyze_overall_distribution(cursor):
     GROUP BY final_grade
     ORDER BY final_grade
     ''')
-    
+
     module_grade_dist = cursor.fetchall()
-    
+
     # Assessment grades distribution
     cursor.execute('''
     SELECT letter_grade, COUNT(*) as count
@@ -468,55 +468,55 @@ def analyze_overall_distribution(cursor):
     GROUP BY letter_grade
     ORDER BY letter_grade
     ''')
-    
+
     assessment_grade_dist = cursor.fetchall()
-    
+
     # Display module grades
     if module_grade_dist:
         print("\nModule Final Grades Distribution:")
         print("-" * 60)
-        
+
         total_module_grades = sum(count for _, count in module_grade_dist)
-        sorted_grades = sorted(module_grade_dist, 
+        sorted_grades = sorted(module_grade_dist,
                               key=lambda x: letter_to_gpa(x[0]), reverse=True)
-        
+
         for grade, count in sorted_grades:
             percentage = (count / total_module_grades) * 100
             print(f"  {grade}: {count} ({percentage:.1f}%)")
-        
+
         print(f"  Total Module Grades: {total_module_grades}")
-    
+
     # Display assessment grades
     if assessment_grade_dist:
         print("\nAssessment Grades Distribution:")
         print("-" * 60)
-        
+
         total_assessment_grades = sum(count for _, count in assessment_grade_dist)
-        sorted_grades = sorted(assessment_grade_dist, 
+        sorted_grades = sorted(assessment_grade_dist,
                               key=lambda x: letter_to_gpa(x[0]), reverse=True)
-        
+
         for grade, count in sorted_grades:
             percentage = (count / total_assessment_grades) * 100
             print(f"  {grade}: {count} ({percentage:.1f}%)")
-        
+
         print(f"  Total Assessment Grades: {total_assessment_grades}")
 
 def dropout_risk_analysis():
     """Analyze dropout risk factors"""
     print("\nDropout Risk Analysis")
-    
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         print("\nDropout Risk Analysis Options:")
         print("1. Identify High Dropout Risk Students")
         print("2. Analyze Dropout Risk Factors")
         print("3. Dropout Risk Prediction Model")
         print("4. Early Intervention Recommendations")
-        
+
         choice = input("Enter your choice (1-4): ").strip()
-        
+
         if choice == '1':
             identify_high_dropout_risk(cursor)
         elif choice == '2':
@@ -527,8 +527,8 @@ def dropout_risk_analysis():
             generate_dropout_interventions(cursor)
         else:
             print("Invalid choice. Returning to menu.")
-        
+
         conn.close()
-        
+
     except sqlite3.Error as e:
         print(f"Database error: {e}")

@@ -67,10 +67,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -122,7 +122,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -138,7 +138,7 @@ def init_basic_database():
             status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -152,7 +152,7 @@ def init_basic_database():
             year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -166,7 +166,7 @@ def init_basic_database():
             UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -186,11 +186,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -200,7 +200,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -215,7 +215,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -228,7 +228,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -247,7 +247,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -357,55 +357,55 @@ class GradeEditDialog:
         except tk.TclError:
             # If grab fails, continue without modal behavior
             pass
-        
+
     def setup_dialog(self, student_name, current_score, current_grade, current_comments):
         """Setup the grade edit dialog"""
         # Title
-        ttk.Label(self.dialog, text=f"Edit Grade for {student_name}", 
+        ttk.Label(self.dialog, text=f"Edit Grade for {student_name}",
                  font=('Arial', 12, 'bold')).pack(pady=10)
-        
+
         # Score entry
         score_frame = ttk.Frame(self.dialog)
         score_frame.pack(pady=10)
-        
+
         ttk.Label(score_frame, text=f"Score (max {self.max_points}):").pack(side=tk.LEFT, padx=5)
-        
+
         self.score_var = tk.StringVar(value=current_score)
         self.score_entry = ttk.Entry(score_frame, textvariable=self.score_var, width=10)
         self.score_entry.pack(side=tk.LEFT, padx=5)
-        
-        ttk.Button(score_frame, text="Calculate Grade", 
+
+        ttk.Button(score_frame, text="Calculate Grade",
                   command=self.calculate_grade).pack(side=tk.LEFT, padx=5)
-        
+
         # Grade entry
         grade_frame = ttk.Frame(self.dialog)
         grade_frame.pack(pady=10)
-        
+
         ttk.Label(grade_frame, text="Letter Grade:").pack(side=tk.LEFT, padx=5)
-        
+
         self.grade_var = tk.StringVar(value=current_grade)
         grade_values = list(GRADE_SYSTEMS["letter"].keys())
-        self.grade_combo = ttk.Combobox(grade_frame, textvariable=self.grade_var, 
+        self.grade_combo = ttk.Combobox(grade_frame, textvariable=self.grade_var,
                                        values=grade_values, width=5)
         self.grade_combo.pack(side=tk.LEFT, padx=5)
-        
+
         # Comments entry
         comments_frame = ttk.LabelFrame(self.dialog, text="Comments")
         comments_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
+
         self.comments_text = tk.Text(comments_frame, height=6)
         self.comments_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.comments_text.insert(1.0, current_comments)
-        
+
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=10)
-        
-        ttk.Button(button_frame, text="Save", 
+
+        ttk.Button(button_frame, text="Save",
                   command=self.save_grade).pack(side=tk.LEFT, padx=10)
-        ttk.Button(button_frame, text="Cancel", 
+        ttk.Button(button_frame, text="Cancel",
                   command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
-    
+
     def calculate_grade(self):
         """Calculate letter grade from score"""
         try:
@@ -418,33 +418,33 @@ class GradeEditDialog:
                 messagebox.showerror("Error", f"Score must be between 0 and {self.max_points}")
         except ValueError:
             messagebox.showerror("Error", "Please enter a valid numeric score")
-    
+
     def save_grade(self):
         """Save the grade"""
         try:
             score = self.score_var.get()
             letter_grade = self.grade_var.get()
             comments = self.comments_text.get(1.0, tk.END).strip()
-            
+
             if not score or not letter_grade:
                 messagebox.showerror("Error", "Please enter both score and letter grade")
                 return
-            
+
             # Validate score
             score_float = float(score)
             if not (0 <= score_float <= self.max_points):
                 messagebox.showerror("Error", f"Score must be between 0 and {self.max_points}")
                 return
-            
+
             # Validate grade
             if letter_grade not in GRADE_SYSTEMS["letter"]:
                 messagebox.showerror("Error", "Please select a valid letter grade")
                 return
-            
+
             # Call callback to update parent
             self.callback(self.student_id, score, letter_grade, comments)
             self.dialog.destroy()
-            
+
         except ValueError:
             messagebox.showerror("Error", "Please enter a valid numeric score")
 

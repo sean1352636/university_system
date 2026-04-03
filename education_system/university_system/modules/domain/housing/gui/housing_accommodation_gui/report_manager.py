@@ -17,18 +17,18 @@ from education_system.university_system.modules.domain.housing.gui.housing_accom
 def show_reports(self):
         """Show reports and analytics interface"""
         self.clear_content()
-        
-        ttk.Label(self.content_frame, text="Reports & Analytics", 
+
+        ttk.Label(self.content_frame, text="Reports & Analytics",
                  font=('Arial', 16, 'bold')).pack(pady=(0, 20))
-        
+
         # Reports menu
         reports_frame = ttk.Frame(self.content_frame)
         reports_frame.pack(fill='both', expand=True)
-        
+
         # Left side - report buttons
         buttons_frame = ttk.LabelFrame(reports_frame, text="Available Reports", padding="20")
         buttons_frame.pack(side='left', fill='y', padx=(0, 20))
-        
+
         report_buttons = [
             ("Occupancy Report", lambda: show_occupancy_report(self)),
             ("Financial Summary", lambda: show_financial_summary(self)),
@@ -39,7 +39,7 @@ def show_reports(self):
             ("Schedule Reports", lambda: show_scheduled_reports_manager(self)),
             ("Template Settings", lambda: show_report_template_settings(self))
         ]
-        
+
         for text, command in report_buttons:
             if command is None:
                 # Separator
@@ -47,14 +47,14 @@ def show_reports(self):
             else:
                 ttk.Button(buttons_frame, text=text, width=20,
                           command=command).pack(pady=5)
-        
+
         # Right side - report display area
         self.report_display_frame = ttk.LabelFrame(reports_frame, text="Report Output", padding="20")
         self.report_display_frame.pack(side='right', fill='both', expand=True)
-        
-        ttk.Label(self.report_display_frame, 
+
+        ttk.Label(self.report_display_frame,
                  text="Select a report from the menu to view results here").pack()
-    
+
 def open_report_window(self, title, report_content, report_type='text'):
         """Open a report in a new window with export and send options"""
         # Create new window
@@ -303,7 +303,7 @@ def show_occupancy_report(self):
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Generate report content
             report_content = "HOUSING OCCUPANCY REPORT\n"
             report_content += "=" * 50 + "\n\n"
@@ -379,7 +379,7 @@ def show_occupancy_report(self):
 
         except Exception as e:
             messagebox.showerror("Error", f"Error generating report: {str(e)}")
-    
+
 def show_financial_summary(self):
         """Show financial summary in new window"""
         try:
@@ -448,7 +448,7 @@ def show_financial_summary(self):
 
         except Exception as e:
             messagebox.showerror("Error", f"Error generating report: {str(e)}")
-    
+
 def show_maintenance_summary_gui(self):
         """Show maintenance summary in new window"""
         try:
@@ -544,7 +544,7 @@ def show_maintenance_summary_gui(self):
 
         except Exception as e:
             messagebox.showerror("Error", f"Error generating report: {str(e)}")
-    
+
 def show_room_availability(self):
         """Show room availability report in new window"""
         try:
@@ -598,15 +598,15 @@ def show_room_availability(self):
 
         except Exception as e:
             messagebox.showerror("Error", f"Error generating report: {str(e)}")
-    
+
 def show_export_options(self):
         """Show data export options"""
         for widget in self.report_display_frame.winfo_children():
             widget.destroy()
-        
-        ttk.Label(self.report_display_frame, text="Data Export Options", 
+
+        ttk.Label(self.report_display_frame, text="Data Export Options",
                  font=('Arial', 14, 'bold')).pack(pady=20)
-        
+
         export_buttons = [
             ("Export Building Data", lambda: export_data_gui(self,'buildings')),
             ("Export Room Data", lambda: export_data_gui(self,'rooms')),
@@ -615,7 +615,7 @@ def show_export_options(self):
             ("Export Payment Data", lambda: export_data_gui(self,'payments')),
             ("Export Maintenance Requests", lambda: export_data_gui(self,'maintenance'))
         ]
-        
+
         for text, command in export_buttons:
             ttk.Button(self.report_display_frame, text=text, width=25,
                       command=command).pack(pady=5)

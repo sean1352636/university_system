@@ -74,7 +74,7 @@ def view_customers_gui(self):
         if not conn:
             messagebox.showerror(_t("common.error"), _t("commerce.customers.database_connection_failed"))
             return
-            
+
         cursor = conn.cursor()
         cursor.execute('''
             SELECT customer_id, name, email, phone, loyalty_tier, loyalty_points, total_spent
@@ -82,16 +82,16 @@ def view_customers_gui(self):
             ORDER BY name
         ''')
         customers = cursor.fetchall()
-        
+
         for item in self.customers_tree.get_children():
             self.customers_tree.delete(item)
-            
+
         for customer in customers:
             self.customers_tree.insert('', 'end', values=(
-                customer[0], customer[1], customer[2] or 'N/A', 
+                customer[0], customer[1], customer[2] or 'N/A',
                 customer[3] or 'N/A', customer[4], customer[5], f"£{customer[6]:.2f}"
             ))
-            
+
         conn.close()
         messagebox.showinfo(_t("common.success"), _t("commerce.customers.loaded_customers", count=len(customers)))
 

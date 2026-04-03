@@ -82,25 +82,25 @@ def add_selected_to_cart(self):
     if not selection:
         messagebox.showwarning("Warning", "Please select a product first")
         return
-    
+
     item = self.products_tree.item(selection[0])
     values = item['values']
-    
+
     if not values:
         return
-    
+
     product_id = values[0]
-    
+
     # Ask for quantity
-    quantity = simpledialog.askinteger("Quantity", "Enter quantity to add to cart:", 
+    quantity = simpledialog.askinteger("Quantity", "Enter quantity to add to cart:",
                                      initialvalue=1, minvalue=1, maxvalue=100)
-    
+
     if quantity:
         try:
             self.add_to_cart(product_id, quantity)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to add to cart: {e}")
-            
+
 
 def add_to_cart(self, product_id, quantity):
     """Add product to shopping cart"""
@@ -139,32 +139,32 @@ def add_to_cart(self, product_id, quantity):
     except Exception as e:
         print(f"Error in add_to_cart: {e}")
         raise Exception(f"Failed to add to cart: {e}")
-        
+
 
 def show_shopping_cart(self):
     """Display shopping cart interface"""
     self.clear_content()
     self.update_status("Loading shopping cart...")
-    
+
     # Title
     title_frame = ttk.Frame(self.content_frame)
     title_frame.grid(row=0, column=0, sticky=(tk.W, tk.E), pady=(0, 10))
     title_frame.columnconfigure(1, weight=1)
-    
+
     ttk.Label(title_frame, text="Shopping Cart", style='Title.TLabel').grid(row=0, column=0, sticky=tk.W)
-    
+
     # Cart summary
     summary_label = ttk.Label(title_frame, text=f"Items in cart: {len(self.cart_items)}")
     summary_label.grid(row=0, column=1, sticky=tk.E)
-    
+
     if not self.cart_items:
         # Empty cart message
         empty_frame = ttk.Frame(self.content_frame)
         empty_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
+
         ttk.Label(empty_frame, text="Your cart is empty", style='Heading.TLabel').grid(row=0, column=0, pady=20)
         ttk.Label(empty_frame, text="Browse products to add items to your cart").grid(row=1, column=0, pady=10)
-        ttk.Button(empty_frame, text="Browse Products", command=self.show_browse_products, 
+        ttk.Button(empty_frame, text="Browse Products", command=self.show_browse_products,
                   style='Primary.TButton').grid(row=2, column=0, pady=10)
     else:
         # Cart items
@@ -172,28 +172,28 @@ def show_shopping_cart(self):
         cart_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=(0, 10))
         cart_frame.columnconfigure(0, weight=1)
         cart_frame.rowconfigure(0, weight=1)
-        
+
         # Create treeview for cart items
         cart_columns = ('Product ID', 'Name', 'Price', 'Quantity', 'Subtotal')
         self.cart_tree = ttk.Treeview(cart_frame, columns=cart_columns, show='headings', height=10)
-        
+
         # Configure columns
         for col in cart_columns:
             self.cart_tree.heading(col, text=col)
-        
+
         self.cart_tree.column('Product ID', width=100)
         self.cart_tree.column('Name', width=250)
         self.cart_tree.column('Price', width=80)
         self.cart_tree.column('Quantity', width=80)
         self.cart_tree.column('Subtotal', width=100)
-        
+
         # Scrollbar
         cart_scrollbar = ttk.Scrollbar(cart_frame, orient='vertical', command=self.cart_tree.yview)
         self.cart_tree.configure(yscrollcommand=cart_scrollbar.set)
-        
+
         self.cart_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         cart_scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
-        
+
         # Populate cart
         total = 0
         for item in self.cart_items:
@@ -205,63 +205,63 @@ def show_shopping_cart(self):
                 f"£{item['subtotal']:.2f}"
             ))
             total += item['subtotal']
-        
+
         # Cart actions
         action_frame = ttk.Frame(self.content_frame)
         action_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=10)
-        
+
         ttk.Button(action_frame, text="Update Quantity", command=self.update_cart_quantity).grid(row=0, column=0, padx=5)
-        ttk.Button(action_frame, text="Remove Item", command=self.remove_cart_item, 
+        ttk.Button(action_frame, text="Remove Item", command=self.remove_cart_item,
                   style='Warning.TButton').grid(row=0, column=1, padx=5)
-        ttk.Button(action_frame, text="Clear Cart", command=self.clear_cart, 
+        ttk.Button(action_frame, text="Clear Cart", command=self.clear_cart,
                   style='Danger.TButton').grid(row=0, column=2, padx=5)
-        
+
         # Total and checkout
         total_frame = ttk.LabelFrame(self.content_frame, text="Order Summary", padding="10")
         total_frame.grid(row=3, column=0, sticky=(tk.W, tk.E), pady=10)
-        
+
         ttk.Label(total_frame, text=f"Total: £{total:.2f}", font=('Arial', 14, 'bold')).grid(row=0, column=0, sticky=tk.W)
-        
+
         checkout_frame = ttk.Frame(total_frame)
         checkout_frame.grid(row=0, column=1, sticky=tk.E)
-        
+
         ttk.Button(checkout_frame, text="Continue Shopping", command=self.show_browse_products).grid(row=0, column=0, padx=5)
-        ttk.Button(checkout_frame, text="Checkout", command=self.show_checkout, 
+        ttk.Button(checkout_frame, text="Checkout", command=self.show_checkout,
                   style='Success.TButton').grid(row=0, column=1, padx=5)
-    
+
     self.update_status("Cart loaded")
-    
+
 
 def update_cart_quantity(self):
     """Update quantity of selected cart item"""
     if not hasattr(self, 'cart_tree'):
         return
-        
+
     selection = self.cart_tree.selection()
     if not selection:
         messagebox.showwarning("Warning", "Please select an item to update")
         return
-    
+
     item = self.cart_tree.item(selection[0])
     values = item['values']
     product_id = values[0]
-    
+
     # Find item in cart
     cart_item = None
     for item in self.cart_items:
         if item['product_id'] == product_id:
             cart_item = item
             break
-    
+
     if not cart_item:
         return
-    
+
     # Ask for new quantity
-    new_quantity = simpledialog.askinteger("Update Quantity", 
-                                         f"Enter new quantity for {cart_item['name']}:", 
-                                         initialvalue=cart_item['quantity'], 
+    new_quantity = simpledialog.askinteger("Update Quantity",
+                                         f"Enter new quantity for {cart_item['name']}:",
+                                         initialvalue=cart_item['quantity'],
                                          minvalue=1, maxvalue=100)
-    
+
     if new_quantity:
         try:
             # Check stock
@@ -269,31 +269,31 @@ def update_cart_quantity(self):
             if new_quantity > product_details['quantity']:
                 messagebox.showerror("Error", f"Insufficient stock. Only {product_details['quantity']} available.")
                 return
-            
+
             cart_item['quantity'] = new_quantity
             cart_item['subtotal'] = cart_item['price'] * new_quantity
-            
+
             self.show_shopping_cart()  # Refresh display
             self.update_status(f"Updated quantity for {cart_item['name']}")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update quantity: {e}")
-            
+
 
 def remove_cart_item(self):
     """Remove selected item from cart"""
     if not hasattr(self, 'cart_tree'):
         return
-        
+
     selection = self.cart_tree.selection()
     if not selection:
         messagebox.showwarning("Warning", "Please select an item to remove")
         return
-    
+
     item = self.cart_tree.item(selection[0])
     values = item['values']
     product_id = values[0]
-    
+
     # Find and remove item from cart
     for i, cart_item in enumerate(self.cart_items):
         if cart_item['product_id'] == product_id:
@@ -302,7 +302,7 @@ def remove_cart_item(self):
                 self.show_shopping_cart()  # Refresh display
                 self.update_status(f"Removed {cart_item['name']} from cart")
             break
-            
+
 
 def clear_cart(self):
     """Clear all items from cart"""
@@ -310,5 +310,5 @@ def clear_cart(self):
         self.cart_items.clear()
         self.show_shopping_cart()  # Refresh display
         self.update_status("Cart cleared")
-        
+
 

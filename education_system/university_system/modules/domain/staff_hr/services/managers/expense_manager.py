@@ -265,8 +265,10 @@ class ExpenseManager:
             return True
 
     @staticmethod
-    def reject_claim(claim_id: int, approver_id: str, comments: str) -> bool:
+    def reject_claim(claim_id: int, approver_id: str, comments: str = None, reason: str = None) -> bool:
         """Reject an expense claim."""
+        if comments is None and reason is not None:
+            comments = reason
         with transaction() as conn:
             # Create approval record
             conn.execute('''
@@ -381,9 +383,23 @@ class ExpenseManager:
             return [dict(row) for row in rows]
 
     @staticmethod
-    def process_reimbursement(reimbursement_id: int, processed_by: str,
-                              payment_method: str, reference_number: str) -> bool:
-        """Mark a reimbursement as processed."""
+    def process_reimbursement(reimbursement_id: int, processed_by: str = None,
+                              payment_method: str = None, reference_number: str = None,
+                              amount: float = None, **kwargs):
+        """Mark a reimbursement as processed or create one when needed."""
+        # If amount is provided, treat the first argument as claim_id and create a reimbursement.
+        if amount is not None:
+            return ExpenseManager.create_reimbursement(
+                reimbursement_id,
+                amount=amount,
+                payment_date=datetime.now().isoformat(),
+                payment_method=payment_method,
+                reference_number=reference_number,
+                status='processed',
+                processed_by=processed_by,
+            )
+
+        # Otherwise, update an existing reimbursement record.
         with transaction() as conn:
             conn.execute('''
                 UPDATE reimbursements
@@ -472,6 +488,9 @@ class ExpenseManager:
                 params).fetchone()
             stats['total_claimed'] = row['total'] or 0
             stats['claim_count'] = row['count'] or 0
+            # Backwards-compatible aliases expected by tests
+            stats['total_amount'] = stats['total_claimed']
+            stats['total_claims'] = stats['claim_count']
 
             # By status
             rows = conn.execute(

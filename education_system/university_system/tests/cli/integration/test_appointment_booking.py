@@ -109,7 +109,9 @@ def test_db():
         record_date TEXT,
         description TEXT,
         provider TEXT,
-        created_at TEXT
+        confidential INTEGER DEFAULT 0,
+        created_at TEXT,
+        encrypted_data TEXT
     )
     ''')
 
@@ -164,7 +166,7 @@ def test_db():
         VALUES (102, 'admin1', 'Admin', 'User', 'admin@test.edu', 'admin', datetime('now'))
     """)
 
-    # Insert test students (use column names matching the template schema)
+    # Insert test students (use column names matching the template schema in conftest)
     cursor.execute("""
         INSERT OR IGNORE INTO students (student_id, user_id, first_name, last_name, course, age, status, created_at)
         VALUES ('S001', 100, 'John', 'Doe', 'CS', 20, 'active', datetime('now'))
@@ -176,26 +178,23 @@ def test_db():
 
     # Insert health_records for test students (referenced by joins in report functions)
     cursor.execute("""
-        INSERT OR IGNORE INTO health_records (student_id, email, last_checkup, screening_type, next_screening_due)
-        VALUES ('S001', 'jdoe@test.edu', date('now'), 'Annual Physical', date('now', '+365 days'))
+        INSERT OR IGNORE INTO health_records (student_id, record_type, record_date, description, provider, created_at)
+        VALUES ('S001', 'Annual Physical', date('now'), 'Annual physical exam', 'Dr. Test', datetime('now'))
     """)
     cursor.execute("""
-        INSERT OR IGNORE INTO health_records (student_id, email, last_checkup, screening_type, next_screening_due)
-        VALUES ('S002', 'jsmith@test.edu', date('now'), 'Annual Physical', date('now', '+365 days'))
+        INSERT OR IGNORE INTO health_records (student_id, record_type, record_date, description, provider, created_at)
+        VALUES ('S002', 'Annual Physical', date('now'), 'Annual physical exam', 'Dr. Test', datetime('now'))
     """)
 
     conn.commit()
     yield conn
 
-    # Cleanup
-    cursor.execute("DROP TABLE IF EXISTS students")
-    cursor.execute("DROP TABLE IF EXISTS provider_schedules")
-    cursor.execute("DROP TABLE IF EXISTS health_appointments")
-    cursor.execute("DROP TABLE IF EXISTS screening_schedules")
-    cursor.execute("DROP TABLE IF EXISTS health_records")
-    cursor.execute("DROP TABLE IF EXISTS vaccination_records")
-    cursor.execute("DROP TABLE IF EXISTS referrals")
-    cursor.execute("DROP TABLE IF EXISTS audit_trail")
+    # Cleanup - delete test data (child tables first to avoid FK constraints)
+    cursor.execute("DELETE FROM health_appointments WHERE student_id IN ('S001', 'S002')")
+    cursor.execute("DELETE FROM screening_schedules WHERE student_id IN ('S001', 'S002')")
+    cursor.execute("DELETE FROM health_records WHERE student_id IN ('S001', 'S002')")
+    cursor.execute("DELETE FROM provider_schedules WHERE provider_name LIKE 'Dr.%'")
+    cursor.execute("DELETE FROM students WHERE student_id IN ('S001', 'S002')")
     conn.commit()
     conn.close()
 
@@ -401,7 +400,7 @@ class TestScreeningSchedules:
 
         assert result is not None
         assert result[1] == 'S001'
-        assert result[4] == 'due'  # status
+        assert result[5] == 'due'  # status (index 5: id, student_id, screening_type, due_date, completed_date, status)
 
     def test_schedule_screening_appointment(self, test_db, mock_auth, monkeypatch):
         """Test scheduling a screening appointment"""

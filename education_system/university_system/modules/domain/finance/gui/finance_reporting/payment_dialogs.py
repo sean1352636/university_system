@@ -53,7 +53,7 @@ class PaymentDialog:
         self.payment_id = payment_id
         self.result = False
         self.create_dialog()
-    
+
     def create_dialog(self):
         """Create payment dialog"""
         self.dialog = tk.Toplevel(self.parent)
@@ -71,12 +71,12 @@ class PaymentDialog:
 
         ttk.Button(button_frame, text=_("common.save"), command=self.save_payment).pack(side='left', padx=10)
         ttk.Button(button_frame, text=_("common.cancel"), command=self.cancel).pack(side='left', padx=10)
-    
+
     def save_payment(self):
         """Save payment data"""
         self.result = True
         self.dialog.destroy()
-    
+
     def cancel(self):
         """Cancel dialog"""
         self.result = False
@@ -92,7 +92,7 @@ class RefundDialog:
         self.amount = amount
         self.result = False
         self.create_dialog()
-    
+
     def create_dialog(self):
         """Create refund dialog"""
         self.dialog = tk.Toplevel(self.parent)
@@ -100,7 +100,7 @@ class RefundDialog:
         self.dialog.geometry("500x400")
         self.dialog.transient(self.parent)
         self.dialog.grab_set()
-        
+
         # Add dialog content here
         ttk.Label(self.dialog, text=_("finance_reporting.refund.dialog_pending", payment_id=self.payment_id)).pack(pady=20)
 
@@ -110,12 +110,12 @@ class RefundDialog:
 
         ttk.Button(button_frame, text=_("common.process"), command=self.process_refund).pack(side='left', padx=10)
         ttk.Button(button_frame, text=_("common.cancel"), command=self.cancel).pack(side='left', padx=10)
-    
+
     def process_refund(self):
         """Process refund"""
         self.result = True
         self.dialog.destroy()
-    
+
     def cancel(self):
         """Cancel dialog"""
         self.result = False
@@ -129,7 +129,7 @@ class FeeTypeDialog:
         self.fee_type_id = fee_type_id
         self.result = False
         self.create_dialog()
-    
+
     def create_dialog(self):
         """Create fee type dialog"""
         self.dialog = tk.Toplevel(self.parent)
@@ -147,12 +147,12 @@ class FeeTypeDialog:
 
         ttk.Button(button_frame, text=_("common.save"), command=self.save_fee_type).pack(side='left', padx=10)
         ttk.Button(button_frame, text=_("common.cancel"), command=self.cancel).pack(side='left', padx=10)
-    
+
     def save_fee_type(self):
         """Save fee type"""
         self.result = True
         self.dialog.destroy()
-    
+
     def cancel(self):
         """Cancel dialog"""
         self.result = False
@@ -165,7 +165,7 @@ class AssignFeeDialog:
         self.parent = parent
         self.result = False
         self.create_dialog()
-    
+
     def create_dialog(self):
         """Create assign fee dialog"""
         self.dialog = tk.Toplevel(self.parent)
@@ -173,7 +173,7 @@ class AssignFeeDialog:
         self.dialog.geometry("500x400")
         self.dialog.transient(self.parent)
         self.dialog.grab_set()
-        
+
         # Add dialog content here
         ttk.Label(self.dialog, text=_("finance_reporting.assign_fee.dialog_pending")).pack(pady=20)
 
@@ -183,12 +183,12 @@ class AssignFeeDialog:
 
         ttk.Button(button_frame, text=_("common.assign"), command=self.assign_fee).pack(side='left', padx=10)
         ttk.Button(button_frame, text=_("common.cancel"), command=self.cancel).pack(side='left', padx=10)
-    
+
     def assign_fee(self):
         """Assign fee"""
         self.result = True
         self.dialog.destroy()
-    
+
     def cancel(self):
         """Cancel dialog"""
         self.result = False
@@ -201,7 +201,7 @@ class PaymentDetailsDialog:
         self.parent = parent
         self.payment_id = payment_id
         self.create_dialog()
-    
+
     def create_dialog(self):
         """Create payment details dialog"""
         self.dialog = tk.Toplevel(self.parent)

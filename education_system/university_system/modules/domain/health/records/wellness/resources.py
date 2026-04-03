@@ -4,7 +4,7 @@ from education_system.university_system.modules.domain.health.records.student.we
 
 def wellness_resources(auth):
     print("\n===== Wellness Resources =====")
-    
+
     wellness_categories = {
         "Physical Wellness": [
             "Campus Recreation Center - Free fitness classes",
@@ -71,38 +71,38 @@ def wellness_resources(auth):
             "Wellness Coaching"
         ]
     }
-    
+
     print("Available wellness resources and programs:")
-    
+
     for category, resources in wellness_categories.items():
         print(f"\n🌟 {category}:")
         for resource in resources:
             print(f"   • {resource}")
-    
+
     print(f"\n📞 Important Contacts:")
     print("   • Health Center: (555) 123-4567")
     print("   • Counseling Services: (555) 123-HELP")
     print("   • Crisis Line: 988")
     print("   • Campus Safety: (555) 123-SAFE")
-    
+
     print(f"\n🌐 Online Resources:")
     print("   • Student Health Portal: health.university.edu")
     print("   • Wellness Blog: wellness.university.edu")
     print("   • Mental Health Resources: mentalhealth.university.edu")
     print("   • Fitness Class Schedule: recreation.university.edu")
-    
+
     # Interactive resource finder
     find_resources = input("\nSearch for specific wellness resources? (y/n): ").lower()
-    
+
     if find_resources == 'y':
         search_term = input("Enter wellness topic or keyword: ").lower()
-        
+
         found_resources = []
         for category, resources in wellness_categories.items():
             for resource in resources:
                 if search_term in resource.lower() or search_term in category.lower():
                     found_resources.append((category, resource))
-        
+
         if found_resources:
             print(f"\nResources related to '{search_term}':")
             for category, resource in found_resources:
@@ -110,10 +110,10 @@ def wellness_resources(auth):
         else:
             print(f"No resources found for '{search_term}'.")
             print("Try searching for: fitness, nutrition, mental health, stress, sleep, etc.")
-    
+
     # Wellness assessment offer
     assessment = input("\nWould you like to take a quick wellness assessment? (y/n): ").lower()
-    
+
     if assessment == 'y':
         quick_wellness_assessment(auth)
 

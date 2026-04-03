@@ -185,7 +185,7 @@ class SupportPortalLauncher:
     def launch(self):
         """Launch the GUI interface"""
         return self.launch_gui()
-    
+
     def return_to_main_menu(self):
         """Return to the main menu"""
         try:

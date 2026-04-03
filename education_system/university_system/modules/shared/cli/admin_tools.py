@@ -26,15 +26,15 @@ def get_db_connection():
 def display_admin_tools_menu():
     """Display admin tools menu for database maintenance"""
     global auth
-    
+
     if not auth or not auth.current_user:
         print("You must be logged in to access admin tools.")
         return
-    
+
     if auth.current_user['role'] != 'admin':
         print("Only administrators can access these tools.")
         return
-    
+
     while True:
         print("\nAdmin Tools:")
         print("============")
@@ -44,9 +44,9 @@ def display_admin_tools_menu():
         print("4. Emergency Database Fix")
         print("5. View Database Statistics")
         print("6. Back to Main Menu")
-        
+
         choice = input("Enter your choice (1-6): ")
-        
+
         if choice == '1':
             validate_database_integrity()
         elif choice == '2':
@@ -69,12 +69,12 @@ def display_database_statistics():
         conn = get_db_connection()
         if not conn:
             return
-            
+
         cursor = conn.cursor()
-        
+
         print("\nDatabase Statistics:")
         print("=" * 40)
-        
+
         # Count records in main tables
         tables = ['students', 'users', 'user_accounts', 'student_modules', 'modules']
 
@@ -89,47 +89,47 @@ def display_database_statistics():
                 print(f"{table.capitalize()}: Invalid table name - {e}")
             except sqlite3.Error:
                 print(f"{table.capitalize()}: Table not found")
-        
+
         # Check for duplicates
         print("\nDuplicate Check:")
         cursor.execute('SELECT COUNT(DISTINCT email) as unique_emails, COUNT(*) as total_users FROM users')
         unique_emails, total_users = cursor.fetchone()
-        
+
         if unique_emails != total_users:
             print(f"⚠️  Email duplicates: {total_users - unique_emails} duplicate(s) found")
         else:
             print("✅ No email duplicates found")
-        
+
         cursor.execute('SELECT COUNT(DISTINCT username) as unique_usernames, COUNT(*) as total_users FROM users')
         unique_usernames, total_users = cursor.fetchone()
-        
+
         if unique_usernames != total_users:
             print(f"⚠️  Username duplicates: {total_users - unique_usernames} duplicate(s) found")
         else:
             print("✅ No username duplicates found")
-        
+
         # Check for orphaned records
         cursor.execute('''
-        SELECT COUNT(*) FROM users u 
-        LEFT JOIN user_accounts ua ON u.id = ua.user_id 
+        SELECT COUNT(*) FROM users u
+        LEFT JOIN user_accounts ua ON u.id = ua.user_id
         WHERE ua.user_id IS NULL
         ''')
         orphaned_users = cursor.fetchone()[0]
-        
+
         cursor.execute('''
-        SELECT COUNT(*) FROM user_accounts ua 
-        LEFT JOIN users u ON ua.user_id = u.id 
+        SELECT COUNT(*) FROM user_accounts ua
+        LEFT JOIN users u ON ua.user_id = u.id
         WHERE u.id IS NULL
         ''')
         orphaned_accounts = cursor.fetchone()[0]
-        
+
         print(f"\nOrphaned Records:")
         print(f"Users without accounts: {orphaned_users}")
         print(f"Accounts without users: {orphaned_accounts}")
-        
+
         conn.close()
         print("=" * 40)
-        
+
     except (sqlite3.Error, DatabaseError) as e:
         logging.error(f"Error retrieving database statistics: {e}")
 

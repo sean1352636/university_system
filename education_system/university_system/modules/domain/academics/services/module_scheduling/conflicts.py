@@ -272,8 +272,12 @@ class ConflictsMixin:
         cursor = conn.cursor()
 
         # Get all students and their enrolled modules
-        cursor.execute('SELECT DISTINCT student_id FROM student_modules')
-        students = [row[0] for row in cursor.fetchall()]
+        try:
+            cursor.execute('SELECT DISTINCT student_id FROM student_modules')
+            students = [row[0] for row in cursor.fetchall()]
+        except Exception:
+            conn.close()
+            return []
 
         conflicts = []
         for student_id in students:

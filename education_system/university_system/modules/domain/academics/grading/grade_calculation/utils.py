@@ -74,10 +74,12 @@ def select_assessment(cursor):
 def export_batch_predictions(predictions, filename_prefix):
     """Export batch predictions to CSV"""
     try:
+        # Import here to allow tests to patch grade_calculation.os
+        from education_system.university_system.modules.domain.academics.grading import grade_calculation
         # Create the exports directory if it doesn't exist
         exports_dir = 'grade_exports'
-        if not os.path.exists(exports_dir):
-            os.makedirs(exports_dir)
+        if not grade_calculation.os.path.exists(exports_dir):
+            grade_calculation.os.makedirs(exports_dir)
 
         # Generate a filename based on current timestamp
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

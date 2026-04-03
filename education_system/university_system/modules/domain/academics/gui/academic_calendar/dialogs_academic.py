@@ -53,14 +53,14 @@ class AddAcademicYearDialog:
 
         ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
         ttk.Button(button_frame, text=_("common.add"), command=self._add_year).pack(side=tk.RIGHT)
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
         y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
-    
+
     def _add_year(self):
         """Add academic year"""
         try:
@@ -141,7 +141,7 @@ class AddSemesterDialog:
 
         ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
         ttk.Button(button_frame, text=_("common.add"), command=self._add_semester).pack(side=tk.RIGHT)
-    
+
     def _load_academic_years(self):
         """Load academic years into combo box"""
         try:
@@ -156,14 +156,14 @@ class AddSemesterDialog:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_to_load_academic_years").format(error=e))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
         y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
-    
+
     def _add_semester(self):
         """Add semester"""
         try:

@@ -120,8 +120,20 @@ app = Flask(__name__) if Flask else None
 
 # Encryption key for sensitive data
 if Fernet:
-    ENCRYPTION_KEY = Fernet.generate_key()
-    cipher_suite = Fernet(ENCRYPTION_KEY)
+    try:
+        _generated_key = Fernet.generate_key()
+    except Exception:
+        _generated_key = None
+
+    if isinstance(_generated_key, bytes):
+        ENCRYPTION_KEY = _generated_key
+        try:
+            cipher_suite = Fernet(ENCRYPTION_KEY)
+        except Exception:
+            cipher_suite = None
+    else:
+        ENCRYPTION_KEY = None
+        cipher_suite = None
 else:
     ENCRYPTION_KEY = None
     cipher_suite = None

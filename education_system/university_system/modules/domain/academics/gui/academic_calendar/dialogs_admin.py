@@ -10,26 +10,26 @@ gui_logger = logging.getLogger(__name__)
 
 class SystemMaintenanceDialog:
     """Dialog for system maintenance and backup operations"""
-    
+
     def __init__(self, parent, calendar_manager, auth_manager, callback=None):
         self.calendar_manager = calendar_manager
         self.auth_manager = auth_manager
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.system_maintenance.title"))
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         safe_grab_set(self.dialog, parent)
-        
+
         self._create_widgets()
         self._center_dialog()
-    
+
     def _create_widgets(self):
         """Create dialog widgets"""
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(main_frame, text=_("academic_calendar.dialogs.system_maintenance.title"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
@@ -63,16 +63,16 @@ class SystemMaintenanceDialog:
         # Status area
         status_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.dialogs.system_maintenance.system_status"), padding=10)
         status_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
-        
+
         self.status_text = scrolledtext.ScrolledText(status_frame, height=15, width=70)
         self.status_text.pack(fill=tk.BOTH, expand=True)
-        
+
         # Get system status
         self._update_status()
-        
+
         # Close button
         ttk.Button(main_frame, text=_("common.close"), command=self.dialog.destroy).pack()
-    
+
     def _create_backup(self):
         """Create database backup"""
         try:
@@ -83,7 +83,7 @@ class SystemMaintenanceDialog:
                 self._log_message(f"ERROR: {result['message']}")
         except Exception as e:
             self._log_message(f"ERROR: Backup failed: {e}")
-    
+
     def _restore_backup(self):
         """Restore from backup"""
         backup_file = filedialog.askopenfilename(
@@ -102,7 +102,7 @@ class SystemMaintenanceDialog:
                         self._log_message(f"ERROR: {result['message']}")
                 except Exception as e:
                     self._log_message(f"ERROR: Restore failed: {e}")
-    
+
     def _verify_database(self):
         """Verify database integrity"""
         try:
@@ -113,7 +113,7 @@ class SystemMaintenanceDialog:
                 self._log_message("WARNING: Database integrity issues found (check logs)")
         except Exception as e:
             self._log_message(f"ERROR: Verification failed: {e}")
-    
+
     def _cleanup_data(self):
         """Cleanup old data"""
         if messagebox.askyesno(_("academic_calendar.messages.confirm_dialog.confirm_cleanup_title"),
@@ -128,37 +128,37 @@ class SystemMaintenanceDialog:
                     self._log_message(f"ERROR: {result['error']}")
             except Exception as e:
                 self._log_message(f"ERROR: Cleanup failed: {e}")
-    
+
     def _export_config(self):
         """Export system configuration"""
         try:
             config_data = self.calendar_manager.export_system_configuration()
-            
+
             filename = filedialog.asksaveasfilename(
                 title=_("academic_calendar.messages.file_dialog.save_configuration"),
                 defaultextension=".json",
                 filetypes=[(_("academic_calendar.messages.file_dialog.json_files"), "*.json"), (_("academic_calendar.messages.file_dialog.all_files"), "*.*")]
             )
-            
+
             if filename:
                 with open(filename, 'w') as f:
                     json.dump(config_data, f, indent=2)
                 self._log_message(f"SUCCESS: Configuration exported to {filename}")
         except Exception as e:
             self._log_message(f"ERROR: Export failed: {e}")
-    
+
     def _import_config(self):
         """Import system configuration"""
         config_file = filedialog.askopenfilename(
             title=_("academic_calendar.messages.file_dialog.select_configuration_file"),
             filetypes=[(_("academic_calendar.messages.file_dialog.json_files"), "*.json"), (_("academic_calendar.messages.file_dialog.all_files"), "*.*")]
         )
-        
+
         if config_file:
             try:
                 with open(config_file, 'r') as f:
                     config_data = json.load(f)
-                
+
                 result = self.calendar_manager.import_system_configuration(config_data)
                 if result['success']:
                     imported = result['imported']
@@ -169,44 +169,44 @@ class SystemMaintenanceDialog:
                     self._log_message(f"ERROR: {result['error']}")
             except Exception as e:
                 self._log_message(f"ERROR: Import failed: {e}")
-    
+
     def _update_status(self):
         """Update system status display"""
         try:
             stats = self.calendar_manager.get_system_stats()
-            
+
             status = "SYSTEM STATUS\n" + "="*50 + "\n\n"
             status += f"Current Academic Year: {stats.get('current_academic_year', 'None')}\n"
             status += f"Current Semester: {stats.get('current_semester', 'None')}\n"
             status += f"Total Academic Years: {stats.get('total_academic_years', 0)}\n"
             status += f"Total Semesters: {stats.get('total_semesters', 0)}\n"
             status += f"Upcoming Events: {stats.get('upcoming_events', 0)}\n\n"
-            
+
             status += "Events by Type:\n"
             for event_type, count in stats.get('events_by_type', {}).items():
                 status += f"  {event_type}: {count}\n"
-            
+
             status += f"\nDatabase File: {self.calendar_manager.config.db_file}\n"
-            
+
             # Check database file size
             try:
                 db_size = os.path.getsize(self.calendar_manager.config.db_file)
                 status += f"Database Size: {db_size:,} bytes\n"
             except (OSError, IOError):
                 status += "Database Size: Unknown\n"
-            
+
             self.status_text.delete(1.0, tk.END)
             self.status_text.insert(1.0, status)
-            
+
         except Exception as e:
             self._log_message(f"ERROR: Failed to get system status: {e}")
-    
+
     def _log_message(self, message):
         """Log a message to the status area"""
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.status_text.insert(tk.END, f"\n[{timestamp}] {message}")
         self.status_text.see(tk.END)
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -217,26 +217,26 @@ class SystemMaintenanceDialog:
 
 class AuditLogsDialog:
     """Dialog for viewing audit logs"""
-    
+
     def __init__(self, parent, calendar_manager, callback=None):
         self.calendar_manager = calendar_manager
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.audit_logs.title"))
         self.dialog.geometry("1000x600")
         self.dialog.transient(parent)
         safe_grab_set(self.dialog, parent)
-        
+
         self._create_widgets()
         self._load_audit_logs()
         self._center_dialog()
-    
+
     def _create_widgets(self):
         """Create dialog widgets"""
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(main_frame, text=_("academic_calendar.dialogs.audit_logs.title"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
@@ -262,13 +262,13 @@ class AuditLogsDialog:
                   command=self._load_audit_logs).pack(side=tk.LEFT, padx=5)
         ttk.Button(filter_controls, text=_("academic_calendar.buttons.clear"),
                   command=self._clear_filters).pack(side=tk.LEFT, padx=5)
-        
+
         # Audit logs tree
-        self.audit_tree = ttk.Treeview(main_frame, 
+        self.audit_tree = ttk.Treeview(main_frame,
                                      columns=('Timestamp', 'User', 'Action', 'Table', 'Record'),
                                      show='tree headings')
         self.audit_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
-        
+
         # Configure columns
         self.audit_tree.heading('#0', text='ID')
         self.audit_tree.heading('Timestamp', text='Timestamp')
@@ -276,45 +276,45 @@ class AuditLogsDialog:
         self.audit_tree.heading('Action', text='Action')
         self.audit_tree.heading('Table', text='Table')
         self.audit_tree.heading('Record', text='Record ID')
-        
+
         self.audit_tree.column('#0', width=50)
         self.audit_tree.column('Timestamp', width=150)
         self.audit_tree.column('User', width=100)
         self.audit_tree.column('Action', width=80)
         self.audit_tree.column('Table', width=120)
         self.audit_tree.column('Record', width=200)
-        
+
         # Scrollbars
         v_scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=self.audit_tree.yview)
         h_scrollbar = ttk.Scrollbar(main_frame, orient=tk.HORIZONTAL, command=self.audit_tree.xview)
-        
+
         self.audit_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-        
+
         v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
-        
+
         # Double-click to view details
         self.audit_tree.bind('<Double-1>', self._view_audit_details)
-        
+
         # Close button
         ttk.Button(main_frame, text=_("common.close"), command=self.dialog.destroy).pack(pady=(15, 0))
-    
+
     def _load_audit_logs(self):
         """Load audit logs"""
         try:
             # Clear existing items
             for item in self.audit_tree.get_children():
                 self.audit_tree.delete(item)
-            
+
             # Get filters
             table_filter = self.table_var.get().strip() or None
             user_filter = self.user_var.get().strip() or None
-            
+
             # Get audit logs
             success, logs = self.calendar_manager.audit_manager.get_audit_trail(
                 table_name=table_filter, user_id=user_filter, limit=200
             )
-            
+
             if success:
                 # Filter logs to show only current session if login_time is available
                 filtered_logs = logs
@@ -337,40 +337,40 @@ class AuditLogsDialog:
                                          text=log_id,
                                          values=(timestamp, user_id, action, table_name, record_id),
                                          tags=(log.get('action', '').lower(),))
-                
+
                 # Configure action colors
                 self.audit_tree.tag_configure('create', foreground='green')
                 self.audit_tree.tag_configure('update', foreground='blue')
                 self.audit_tree.tag_configure('delete', foreground='red')
-            
+
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_load_audit_logs", error=str(e)))
-    
+
     def _clear_filters(self):
         """Clear all filters"""
         self.table_var.set("")
         self.user_var.set("")
         self._load_audit_logs()
-    
+
     def _view_audit_details(self, event):
         """View detailed audit information"""
         selection = self.audit_tree.selection()
         if selection:
             item = selection[0]
             log_id = self.audit_tree.item(item, 'text')
-            
+
             # Get full log details
             try:
                 logs = self.calendar_manager.db_manager.execute_query(
                     "SELECT * FROM audit_log WHERE id = ?", (log_id,)
                 )
-                
+
                 if logs:
                     log_data = dict(logs[0])
                     AuditDetailsDialog(self.dialog, log_data)
             except Exception as e:
                 messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_get_audit_details", error=str(e)))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -381,10 +381,10 @@ class AuditLogsDialog:
 
 class AuditDetailsDialog:
     """Dialog for viewing detailed audit information"""
-    
+
     def __init__(self, parent, log_data):
         self.log_data = log_data
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.audit_logs.details_title"))
         self.dialog.geometry("600x500")
@@ -405,7 +405,7 @@ class AuditDetailsDialog:
         # Basic info
         info_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.dialogs.audit_logs.basic_info"), padding=10)
         info_frame.pack(fill=tk.X, pady=(0, 15))
-        
+
         basic_info = [
             ("ID:", self.log_data.get('id', 'N/A')),
             ("Timestamp:", self.log_data.get('timestamp', 'N/A')),
@@ -415,49 +415,49 @@ class AuditDetailsDialog:
             ("Record ID:", self.log_data.get('record_id', 'N/A')),
             ("IP Address:", self.log_data.get('ip_address', 'N/A'))
         ]
-        
+
         for i, (label, value) in enumerate(basic_info):
             row_frame = ttk.Frame(info_frame)
             row_frame.pack(fill=tk.X, pady=2)
-            
+
             ttk.Label(row_frame, text=label, font=('Arial', 9, 'bold')).pack(side=tk.LEFT)
             ttk.Label(row_frame, text=str(value)).pack(side=tk.LEFT, padx=(10, 0))
-        
+
         # Old values
         if self.log_data.get('old_values'):
             old_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.dialogs.audit_logs.old_values"), padding=10)
             old_frame.pack(fill=tk.X, pady=(0, 15))
-            
+
             old_text = scrolledtext.ScrolledText(old_frame, height=6, wrap=tk.WORD)
             old_text.pack(fill=tk.X)
-            
+
             try:
                 old_values = json.loads(self.log_data['old_values'])
                 old_text.insert(1.0, json.dumps(old_values, indent=2))
             except (ValueError, TypeError, KeyError):
                 old_text.insert(1.0, self.log_data['old_values'])
-            
+
             old_text.config(state=tk.DISABLED)
-        
+
         # New values
         if self.log_data.get('new_values'):
             new_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.dialogs.audit_logs.new_values"), padding=10)
             new_frame.pack(fill=tk.X, pady=(0, 15))
-            
+
             new_text = scrolledtext.ScrolledText(new_frame, height=6, wrap=tk.WORD)
             new_text.pack(fill=tk.X)
-            
+
             try:
                 new_values = json.loads(self.log_data['new_values'])
                 new_text.insert(1.0, json.dumps(new_values, indent=2))
             except (ValueError, TypeError, KeyError):
                 new_text.insert(1.0, self.log_data['new_values'])
-            
+
             new_text.config(state=tk.DISABLED)
-        
+
         # Close button
         ttk.Button(main_frame, text=_("common.close"), command=self.dialog.destroy).pack(pady=(15, 0))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -468,25 +468,25 @@ class AuditDetailsDialog:
 
 class SettingsDialog:
     """Dialog for application settings"""
-    
+
     def __init__(self, parent, calendar_manager, auth_manager):
         self.calendar_manager = calendar_manager
         self.auth_manager = auth_manager
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.settings.title"))
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         safe_grab_set(self.dialog, parent)
-        
+
         self._create_widgets()
         self._center_dialog()
-    
+
     def _create_widgets(self):
         """Create dialog widgets"""
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(main_frame, text=_("academic_calendar.dialogs.settings.title"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 20))
 
@@ -520,27 +520,27 @@ class SettingsDialog:
         # User info
         user_frame = ttk.Frame(notebook, padding=10)
         notebook.add(user_frame, text=_("academic_calendar.dialogs.settings.user_info"))
-        
+
         if self.auth_manager and self.auth_manager.current_user:
             user_info = [
                 ("Username:", self.auth_manager.current_user.get('username', 'N/A')),
                 ("Role:", self.auth_manager.current_user.get('role', 'N/A')),
                 ("User ID:", self.auth_manager.current_user.get('id', 'N/A'))
             ]
-            
+
             for label, value in user_info:
                 info_frame = ttk.Frame(user_frame)
                 info_frame.pack(fill=tk.X, pady=5)
                 ttk.Label(info_frame, text=label, font=('Arial', 9, 'bold')).pack(side=tk.LEFT)
                 ttk.Label(info_frame, text=str(value)).pack(side=tk.LEFT, padx=(10, 0))
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X)
-        
+
         ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
         ttk.Button(button_frame, text=_("common.apply"), command=self._apply_settings).pack(side=tk.RIGHT)
-    
+
     def _create_backup(self):
         """Create database backup"""
         try:
@@ -567,7 +567,7 @@ class SettingsDialog:
         """Apply settings"""
         messagebox.showinfo(_("academic_calendar.dialogs.settings.title"), _("academic_calendar.messages.settings_applied"))
         self.dialog.destroy()
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -578,12 +578,12 @@ class SettingsDialog:
 
 class TimezoneSettingsDialog:
     """Dialog for timezone settings"""
-    
+
     def __init__(self, parent, calendar_manager, auth_manager, callback=None):
         self.calendar_manager = calendar_manager
         self.auth_manager = auth_manager
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.timezone.title"))
         self.dialog.geometry("500x400")
@@ -615,12 +615,12 @@ class TimezoneSettingsDialog:
 
         ttk.Label(selection_frame, text=_("academic_calendar.labels.select_timezone")).pack(anchor=tk.W)
         self.timezone_var = tk.StringVar()
-        
+
         # Common timezones
         common_timezones = [
             "UTC",
             "US/Eastern",
-            "US/Central", 
+            "US/Central",
             "US/Mountain",
             "US/Pacific",
             "Europe/London",
@@ -630,40 +630,40 @@ class TimezoneSettingsDialog:
             "Asia/Shanghai",
             "Australia/Sydney"
         ]
-        
-        timezone_combo = ttk.Combobox(selection_frame, textvariable=self.timezone_var, 
+
+        timezone_combo = ttk.Combobox(selection_frame, textvariable=self.timezone_var,
                                     width=40, values=common_timezones)
         timezone_combo.pack(fill=tk.X, pady=(5, 15))
-        
+
         # Auto DST
         self.auto_dst_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(selection_frame, text=_("academic_calendar.labels.dst_auto_adjust"),
                        variable=self.auto_dst_var).pack(anchor=tk.W, pady=(0, 15))
-        
+
         # Timezone info
         info_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.dialogs.timezone.information"), padding=10)
         info_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
 
         ttk.Label(info_frame, text=_("academic_calendar.dialogs.timezone.info_text"), wraplength=450).pack(anchor=tk.W)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=(15, 0))
-        
+
         ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
         ttk.Button(button_frame, text=_("academic_calendar.buttons.apply"), command=self._apply_timezone).pack(side=tk.RIGHT)
-    
+
     def _load_current_settings(self):
         """Load current timezone settings"""
         try:
             if self.auth_manager.current_user:
                 user_id = self.auth_manager.current_user['id']
-                
+
                 # Get current timezone preference
                 prefs = self.calendar_manager.db_manager.execute_query(
                     "SELECT * FROM user_timezone_preferences WHERE user_id = ?", (user_id,)
                 )
-                
+
                 if prefs:
                     pref = prefs[0]
                     current_tz = pref['timezone_name']
@@ -675,7 +675,7 @@ class TimezoneSettingsDialog:
                     self.timezone_var.set("UTC")
         except Exception as e:
             self.current_tz_label.config(text=_("academic_calendar.messages.error_loading_settings", error=str(e)))
-    
+
     def _apply_timezone(self):
         """Apply timezone settings"""
         try:
@@ -705,7 +705,7 @@ class TimezoneSettingsDialog:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_apply_timezone", error=str(e)))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -716,12 +716,12 @@ class TimezoneSettingsDialog:
 
 class NotificationSettingsDialog:
     """Dialog for managing notification settings"""
-    
+
     def __init__(self, parent, calendar_manager, auth_manager, callback=None):
         self.calendar_manager = calendar_manager
         self.auth_manager = auth_manager
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.notifications.title"))
         self.dialog.geometry("600x500")
@@ -743,7 +743,7 @@ class NotificationSettingsDialog:
         # Notification types
         types_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.labels.notification_types"), padding=10)
         types_frame.pack(fill=tk.X, pady=(0, 15))
-        
+
         self.notification_vars = {}
         notification_types = [
             ("event_reminder", _("academic_calendar.labels.event_reminders")),
@@ -766,7 +766,7 @@ class NotificationSettingsDialog:
             advance_var = tk.StringVar(value="60")
             self.notification_vars[f"{type_key}_advance"] = advance_var
             ttk.Entry(frame, textvariable=advance_var, width=8).pack(side=tk.RIGHT)
-        
+
         # Delivery methods
         method_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.labels.delivery_methods"), padding=10)
         method_frame.pack(fill=tk.X, pady=(0, 15))
@@ -794,31 +794,31 @@ class NotificationSettingsDialog:
 
         ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
         ttk.Button(button_frame, text=_("academic_calendar.buttons.save_settings"), command=self._save_preferences).pack(side=tk.RIGHT)
-    
+
     def _load_preferences(self):
         """Load current notification preferences"""
         try:
             if self.auth_manager.current_user:
                 user_id = self.auth_manager.current_user['id']
-                
+
                 # Load notification preferences
                 prefs = self.calendar_manager.db_manager.execute_query(
                     "SELECT * FROM notification_preferences WHERE user_id = ?", (user_id,)
                 )
-                
+
                 for pref in prefs:
                     type_key = pref['notification_type']
                     if type_key in self.notification_vars:
                         self.notification_vars[type_key].set(pref['enabled'])
                         self.notification_vars[f"{type_key}_advance"].set(str(pref['advance_time']))
-                
+
                 # Load contact info from user data
                 self.email_var.set(self.auth_manager.current_user.get('email', ''))
                 self.phone_var.set(self.auth_manager.current_user.get('phone', ''))
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_load_preferences", error=str(e)))
-    
+
     def _save_preferences(self):
         """Save notification preferences"""
         try:
@@ -851,7 +851,7 @@ class NotificationSettingsDialog:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.invalid_advance_time"))
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.failed_save_preferences", error=str(e)))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()

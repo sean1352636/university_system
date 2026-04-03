@@ -53,7 +53,7 @@ class TestTwilioSMSProvider:
         with pytest.raises(ValueError, match="Twilio credentials not configured"):
             TwilioSMSProvider(account_sid=None, auth_token=None, from_number=None)
 
-    @patch('education_system.university_system.infrastructure.auth.sms_provider.Client')
+    @patch('twilio.rest.Client')
     def test_send_otp_success(self, mock_client_class):
         """Test successful OTP sending"""
         # Setup mock Twilio client
@@ -86,18 +86,17 @@ class TestTwilioSMSProvider:
 
     def test_send_otp_twilio_not_installed(self):
         """Test OTP sending when Twilio library is not installed"""
-        with patch('education_system.university_system.infrastructure.auth.sms_provider.Client', side_effect=ImportError):
-            provider = TwilioSMSProvider(
-                account_sid='AC1234567890',
-                auth_token='test_token',
-                from_number='+15551234567'
-            )
+        provider = TwilioSMSProvider(
+            account_sid='AC1234567890',
+            auth_token='test_token',
+            from_number='+15551234567'
+        )
 
-            # The import happens in send_otp, need to test differently
-            # This test verifies the provider can be created
-            assert provider.account_sid == 'AC1234567890'
+        # The import happens inside send_otp; if twilio isn't installed,
+        # it returns an error dict. Just verify provider was created.
+        assert provider.account_sid == 'AC1234567890'
 
-    @patch('education_system.university_system.infrastructure.auth.sms_provider.Client')
+    @patch('twilio.rest.Client')
     def test_send_otp_twilio_error(self, mock_client_class):
         """Test OTP sending with Twilio API error"""
         mock_client = MagicMock()
@@ -115,7 +114,7 @@ class TestTwilioSMSProvider:
         assert result['success'] is False
         assert 'Twilio error' in result['error']
 
-    @patch('education_system.university_system.infrastructure.auth.sms_provider.Client')
+    @patch('twilio.rest.Client')
     def test_send_otp_message_content(self, mock_client_class):
         """Test that OTP message contains required information"""
         mock_client = MagicMock()
@@ -158,11 +157,11 @@ class TestAWS_SNS_Provider:
 
         assert provider.region_name == 'us-west-2'
 
-    @patch('education_system.university_system.infrastructure.auth.sms_provider.boto3')
-    def test_send_otp_success(self, mock_boto3):
+    @patch('boto3.client')
+    def test_send_otp_success(self, mock_boto3_client):
         """Test successful OTP sending via AWS SNS"""
         mock_sns = MagicMock()
-        mock_boto3.client.return_value = mock_sns
+        mock_boto3_client.return_value = mock_sns
         mock_sns.publish.return_value = {'MessageId': 'test-message-id-123'}
 
         provider = AWS_SNS_Provider()
@@ -185,11 +184,11 @@ class TestAWS_SNS_Provider:
         # Verify provider was created successfully
         assert provider.region_name == 'us-east-1'
 
-    @patch('education_system.university_system.infrastructure.auth.sms_provider.boto3')
-    def test_send_otp_sns_error(self, mock_boto3):
+    @patch('boto3.client')
+    def test_send_otp_sns_error(self, mock_boto3_client):
         """Test OTP sending with AWS SNS error"""
         mock_sns = MagicMock()
-        mock_boto3.client.return_value = mock_sns
+        mock_boto3_client.return_value = mock_sns
         mock_sns.publish.side_effect = Exception("SNS error")
 
         provider = AWS_SNS_Provider()
@@ -198,11 +197,11 @@ class TestAWS_SNS_Provider:
         assert result['success'] is False
         assert 'AWS SNS error' in result['error']
 
-    @patch('education_system.university_system.infrastructure.auth.sms_provider.boto3')
-    def test_send_otp_message_content(self, mock_boto3):
+    @patch('boto3.client')
+    def test_send_otp_message_content(self, mock_boto3_client):
         """Test that OTP message contains required information"""
         mock_sns = MagicMock()
-        mock_boto3.client.return_value = mock_sns
+        mock_boto3_client.return_value = mock_sns
         mock_sns.publish.return_value = {'MessageId': 'test-id'}
 
         provider = AWS_SNS_Provider()
@@ -244,11 +243,14 @@ class TestMockSMSProvider:
         assert result['code'] == '123456'
         assert 'development mode' in result['message']
 
-        # Verify log file was created and contains the code
+        # Verify log file was created and contains redacted data
         assert log_file.exists()
         content = log_file.read_text()
-        assert '123456' in content
-        assert '+15559998888' in content
+        # Code is redacted in log (only last 2 digits visible)
+        assert '****56' in content
+        # Phone is redacted in log (only first 4 and last 2 visible)
+        assert '+155' in content
+        assert '****' in content
 
     def test_send_otp_multiple_calls(self, tmp_path):
         """Test multiple OTP logging calls"""
@@ -260,12 +262,12 @@ class TestMockSMSProvider:
         provider.send_otp('+15553333333', '333333')
 
         content = log_file.read_text()
-        assert '111111' in content
-        assert '222222' in content
-        assert '333333' in content
-        assert '+15551111111' in content
-        assert '+15552222222' in content
-        assert '+15553333333' in content
+        # Codes are redacted — only last 2 digits visible
+        assert '****11' in content
+        assert '****22' in content
+        assert '****33' in content
+        # Three log entries should exist
+        assert content.count('verification code sent') == 3
 
     def test_send_otp_timestamp(self, tmp_path):
         """Test that timestamps are included in logs"""
@@ -510,9 +512,20 @@ class TestSMSConfiguration:
         assert config['primary_provider'] == 'twilio'
         assert config['fallback_provider'] == 'aws_sns'
 
-    def test_load_sms_config_file_not_found(self):
+    def test_load_sms_config_file_not_found(self, monkeypatch):
         """Test loading configuration when file doesn't exist"""
-        with patch('education_system.university_system.infrastructure.auth.sms_provider.paths') as mock_paths:
+        # Clear env vars that affect smart defaults
+        monkeypatch.delenv('TWILIO_ACCOUNT_SID', raising=False)
+        monkeypatch.delenv('TWILIO_AUTH_TOKEN', raising=False)
+        monkeypatch.delenv('TWILIO_PHONE_NUMBER', raising=False)
+        monkeypatch.delenv('SMTP_USERNAME', raising=False)
+        monkeypatch.delenv('SMTP_USER', raising=False)
+        monkeypatch.delenv('SMTP_PASSWORD', raising=False)
+        monkeypatch.delenv('SMS_PRIMARY_PROVIDER', raising=False)
+        monkeypatch.delenv('SMS_FALLBACK_PROVIDER', raising=False)
+
+        with patch('education_system.university_system.infrastructure.auth.sms_provider.paths') as mock_paths, \
+             patch.dict('sys.modules', {'education_system.shared.email.config': None}):
             mock_paths.CONFIG_DIR = Path('/nonexistent')
             config = load_sms_config()
 
@@ -521,27 +534,46 @@ class TestSMSConfiguration:
 
     def test_load_sms_config_from_env(self, monkeypatch):
         """Test loading configuration from environment variables"""
+        # Clear Twilio/SMTP env vars so smart detection doesn't override
+        monkeypatch.delenv('TWILIO_ACCOUNT_SID', raising=False)
+        monkeypatch.delenv('TWILIO_AUTH_TOKEN', raising=False)
+        monkeypatch.delenv('TWILIO_PHONE_NUMBER', raising=False)
+        monkeypatch.delenv('SMTP_USERNAME', raising=False)
+        monkeypatch.delenv('SMTP_USER', raising=False)
+        monkeypatch.delenv('SMTP_PASSWORD', raising=False)
         monkeypatch.setenv('SMS_PRIMARY_PROVIDER', 'twilio')
         monkeypatch.setenv('SMS_FALLBACK_PROVIDER', 'aws_sns')
 
-        with patch('education_system.university_system.infrastructure.auth.sms_provider.paths') as mock_paths:
+        with patch('education_system.university_system.infrastructure.auth.sms_provider.paths') as mock_paths, \
+             patch.dict('sys.modules', {'education_system.shared.email.config': None}):
             mock_paths.CONFIG_DIR = Path('/nonexistent')
             config = load_sms_config()
 
         assert config['primary_provider'] == 'twilio'
         assert config['fallback_provider'] == 'aws_sns'
 
-    def test_load_sms_config_invalid_json(self, tmp_path):
+    def test_load_sms_config_invalid_json(self, tmp_path, monkeypatch):
         """Test loading configuration with invalid JSON"""
         config_dir = tmp_path / "config"
         config_dir.mkdir()
         config_file = config_dir / "sms_config.json"
 
+        # Clear env vars that affect smart defaults
+        monkeypatch.delenv('TWILIO_ACCOUNT_SID', raising=False)
+        monkeypatch.delenv('TWILIO_AUTH_TOKEN', raising=False)
+        monkeypatch.delenv('TWILIO_PHONE_NUMBER', raising=False)
+        monkeypatch.delenv('SMTP_USERNAME', raising=False)
+        monkeypatch.delenv('SMTP_USER', raising=False)
+        monkeypatch.delenv('SMTP_PASSWORD', raising=False)
+        monkeypatch.delenv('SMS_PRIMARY_PROVIDER', raising=False)
+        monkeypatch.delenv('SMS_FALLBACK_PROVIDER', raising=False)
+
         # Write invalid JSON
         with open(config_file, 'w') as f:
             f.write("{ invalid json }")
 
-        with patch('education_system.university_system.infrastructure.auth.sms_provider.paths') as mock_paths:
+        with patch('education_system.university_system.infrastructure.auth.sms_provider.paths') as mock_paths, \
+             patch.dict('sys.modules', {'education_system.shared.email.config': None}):
             mock_paths.CONFIG_DIR = config_dir
             config = load_sms_config()
 

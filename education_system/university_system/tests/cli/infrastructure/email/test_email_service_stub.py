@@ -178,12 +178,14 @@ class TestCoreEmailFunctions:
         assert callable(send_email)
 
     def test_send_email_adds_to_queue(self):
-        """Test that send_email adds to email queue"""
+        """Test that send_email adds to email queue when in stub mode"""
         from education_system.university_system.modules.shared.utils import email_service
 
         email_service.email_queue.clear()
 
-        email_service.send_email('test@example.com', 'Subject', 'Body')
+        # Disable real service delegation so stub behavior is exercised
+        with patch.object(email_service, '_REAL_EMAIL_SERVICE_AVAILABLE', False):
+            email_service.send_email('test@example.com', 'Subject', 'Body')
 
         assert len(email_service.email_queue) == 1
         assert email_service.email_queue[0]['type'] == 'immediate'
@@ -390,12 +392,13 @@ class TestQueueFunctions:
         assert callable(queue_email)
 
     def test_queue_email_adds_to_queue(self):
-        """Test that queue_email adds to queue with queued type"""
+        """Test that queue_email adds to queue with queued type when in stub mode"""
         from education_system.university_system.modules.shared.utils import email_service
 
         email_service.email_queue.clear()
 
-        email_service.queue_email('test@example.com', 'Subject')
+        with patch.object(email_service, '_REAL_EMAIL_SERVICE_AVAILABLE', False):
+            email_service.queue_email('test@example.com', 'Subject')
 
         assert len(email_service.email_queue) == 1
         assert email_service.email_queue[0]['type'] == 'queued'
@@ -613,25 +616,27 @@ class TestIntegration:
         email_service.scheduled_jobs.clear()
         email_service.worker_threads.clear()
 
-        # Send immediate email
-        email_service.send_email('user@example.com', 'Test Subject', 'Test Body')
-        assert len(email_service.email_queue) == 1
+        # Disable real service delegation so stub behavior is exercised
+        with patch.object(email_service, '_REAL_EMAIL_SERVICE_AVAILABLE', False):
+            # Send immediate email
+            email_service.send_email('user@example.com', 'Test Subject', 'Test Body')
+            assert len(email_service.email_queue) == 1
 
-        # Queue email
-        email_service.queue_email('user2@example.com', 'Queued Subject')
-        assert len(email_service.email_queue) == 2
+            # Queue email
+            email_service.queue_email('user2@example.com', 'Queued Subject')
+            assert len(email_service.email_queue) == 2
 
-        # Schedule email
-        email_service.schedule_send('user3@example.com', 'Scheduled Subject')
-        assert len(email_service.scheduled_jobs) == 1
+            # Schedule email
+            email_service.schedule_send('user3@example.com', 'Scheduled Subject')
+            assert len(email_service.scheduled_jobs) == 1
 
-        # Get stored emails
-        stored = email_service.get_stored_emails()
-        assert len(stored) == 2
+            # Get stored emails
+            stored = email_service.get_stored_emails()
+            assert len(stored) == 2
 
-        # Clear all
-        email_service.clear_stored_emails()
-        assert len(email_service.email_queue) == 0
+            # Clear all
+            email_service.clear_stored_emails()
+            assert len(email_service.email_queue) == 0
 
     def test_worker_lifecycle_stub(self):
         """Test worker lifecycle using stubs"""

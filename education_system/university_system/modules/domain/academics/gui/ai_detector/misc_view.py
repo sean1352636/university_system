@@ -609,11 +609,11 @@ def create_system_monitoring_view(self, parent):
     health_buttons = ttk.Frame(health_frame)
     health_buttons.pack(fill='x')
 
-    ttk.Button(health_buttons, text="🔄 Refresh Metrics", 
+    ttk.Button(health_buttons, text="🔄 Refresh Metrics",
               command=self.refresh_system_metrics).pack(side='left', padx=(0, 10))
-    ttk.Button(health_buttons, text="🏥 Health Check", 
+    ttk.Button(health_buttons, text="🏥 Health Check",
               command=self.run_system_health_check).pack(side='left', padx=(0, 10))
-    ttk.Button(health_buttons, text="📊 Performance Report", 
+    ttk.Button(health_buttons, text="📊 Performance Report",
               command=self.generate_performance_report).pack(side='left')
 
     # Error logs
@@ -844,11 +844,11 @@ def patch_gui_with_missing_functions():
     control_frame = ttk.Frame(monitoring_card)
     control_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    self.start_monitoring_btn = ttk.Button(control_frame, text="▶️ Start Monitoring", 
+    self.start_monitoring_btn = ttk.Button(control_frame, text="▶️ Start Monitoring",
                                          command=self.start_real_time_monitoring)
     self.start_monitoring_btn.pack(side='left', padx=(0, 10))
 
-    self.stop_monitoring_btn = ttk.Button(control_frame, text="⏹️ Stop Monitoring", 
+    self.stop_monitoring_btn = ttk.Button(control_frame, text="⏹️ Stop Monitoring",
                                         command=self.stop_real_time_monitoring, state='disabled')
     self.stop_monitoring_btn.pack(side='left')
 
@@ -1018,7 +1018,7 @@ def show_db_status(self):
             ttk.Label(status_frame, text=info, style='Subtitle.TLabel').pack(anchor='w', padx=20, pady=5)
 
     except Exception as e:
-        ttk.Label(status_frame, text=f"Error getting database status: {str(e)}", 
+        ttk.Label(status_frame, text=f"Error getting database status: {str(e)}",
                  style='Subtitle.TLabel').pack(anchor='w', padx=20, pady=5)
 
 
@@ -1050,7 +1050,7 @@ def update_error_log(self):
 
 def add_gui_support():
     """Add GUI support to existing AIDetector class"""
-    
+
     def return_to_main_menu(self):
         """Return to the main menu"""
         try:
@@ -1074,7 +1074,7 @@ def add_gui_support():
         """Launch GUI for this detector instance"""
         app = AIDetectorGUI(self)
         app.run()
-    
+
     # Add method to AIDetector class
     AIDetector.launch_gui = launch_gui
 
@@ -1083,25 +1083,25 @@ def main():
     """Main function for testing the ultimate detector"""
     print("Ultimate AI Detector - Advanced Testing Mode")
     print("=" * 50)
-    
+
     import sys
     if len(sys.argv) > 1 and sys.argv[1] == 'ultimate_demo':
         ultimate_demo()
         return
-    
+
     try:
         # Initialize ultimate detector
         detector = AIDetector()
         print("✓ Ultimate AI Detector initialized successfully!")
-        
+
         # Get statistics
         stats = detector.get_ultimate_statistics()
         print(f"✓ System ready with {len(stats['features_active'])} advanced features")
-        
+
         # List active features
         active_features = [name for name, active in stats['features_active'].items() if active]
         print(f"✓ Active features: {', '.join(active_features)}")
-        
+
     except Exception as e:
         print(f"❌ Error: {e}")
         print("This is expected if running standalone without proper database setup.")

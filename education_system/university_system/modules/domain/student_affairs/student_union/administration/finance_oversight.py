@@ -39,19 +39,19 @@ def set_auth(auth_obj: UserAuth) -> None:
 def submit_expense_request():
     """Submit an expense request for a club"""
     global auth
-    
+
     if not auth or not auth.current_user:
         print(get_text("student_union.finance_oversight.login_required_submit"))
         return
-    
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Get student ID
         cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
         result = cursor.fetchone()
-        
+
         if not result:
             print(get_text("student_union.finance_oversight.no_student_record"))
             conn.close()
@@ -78,7 +78,7 @@ def submit_expense_request():
         print("\n" + get_text("student_union.finance_oversight.your_clubs"))
         for i, club in enumerate(clubs):
             print(f"{i+1}. {club[1]}")
-        
+
         choice = input(get_text("student_union.finance_oversight.select_club_prompt")).strip()
         if not choice.isdigit() or int(choice) < 1 or int(choice) > len(clubs):
             print(get_text("student_union.finance_oversight.invalid_selection"))
@@ -95,7 +95,7 @@ def submit_expense_request():
             print(get_text("student_union.finance_oversight.expense_type_empty"))
             conn.close()
             return
-        
+
         try:
             amount = float(input(get_text("student_union.finance_oversight.amount_prompt")).strip())
             if amount <= 0:
@@ -115,14 +115,14 @@ def submit_expense_request():
 
         budget_category = input(get_text("student_union.finance_oversight.budget_category_prompt")).strip()
         receipt_path = input(get_text("student_union.finance_oversight.receipt_path_prompt")).strip()
-        
+
         # Check club budget
         cursor.execute('''
         SELECT SUM(allocated_budget - spent_amount) as available_budget
         FROM club_budgets
         WHERE club_id = ? AND fiscal_year = ?
         ''', (club_id, datetime.now().strftime('%Y')))
-        
+
         budget_result = cursor.fetchone()
         available_budget = budget_result[0] if budget_result[0] else 0
 
@@ -132,10 +132,10 @@ def submit_expense_request():
             if confirm != 'y':
                 conn.close()
                 return
-        
+
         # Submit expense request
         request_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+
         cursor.execute('''
         INSERT INTO club_expenses (
             club_id, requester_id, expense_type, amount, description,
@@ -145,7 +145,7 @@ def submit_expense_request():
             club_id, student_id, expense_type, amount, description,
             receipt_path, request_date, 'pending', budget_category
         ))
-        
+
         conn.commit()
         expense_id = cursor.lastrowid
 
@@ -170,15 +170,15 @@ def approve_expense_requests():
     if not (auth.check_permission('manage_all_clubs') or auth.check_permission('manage_own_club')):
         print(get_text("student_union.finance_oversight.no_permission_approve"))
         return
-    
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Get student ID
         cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
         result = cursor.fetchone()
-        
+
         if not result:
             print(get_text("student_union.finance_oversight.no_student_record"))
             conn.close()
@@ -210,7 +210,7 @@ def approve_expense_requests():
             AND (c.president_id = ? OR c.treasurer_id = ? OR c.secretary_id = ?)
             ORDER BY e.request_date
             ''', (student_id, student_id, student_id))
-        
+
         requests = cursor.fetchall()
 
         if not requests:
@@ -230,7 +230,7 @@ def approve_expense_requests():
             print("   " + get_text("student_union.finance_oversight.description_label", description=request[7]))
             print("   " + get_text("student_union.finance_oversight.date_label", date=request[8]))
             print("-" * 40)
-        
+
         choice = input("\n" + get_text("student_union.finance_oversight.enter_request_number")).strip()
 
         if choice == '0':
@@ -253,59 +253,59 @@ def approve_expense_requests():
         print("3. " + get_text("student_union.finance_oversight.request_info_option"))
 
         action = input(get_text("student_union.finance_oversight.choose_action")).strip()
-        
+
         if action == '1':
             # Approve request
             approval_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
+
             cursor.execute('''
-            UPDATE club_expenses 
+            UPDATE club_expenses
             SET status = 'approved', approval_date = ?, approver_id = ?
             WHERE expense_id = ?
             ''', ('approved', approval_date, student_id, expense_id))
-            
+
             # Update club budget if exists
             cursor.execute('''
-            UPDATE club_budgets 
+            UPDATE club_budgets
             SET spent_amount = spent_amount + ?
             WHERE club_id = ? AND fiscal_year = ?
             ''', (amount, club_id, datetime.now().strftime('%Y')))
-            
+
             print("Expense request approved successfully!")
-            
+
         elif action == '2':
             # Reject request
             reason = input("Reason for rejection: ").strip()
             approval_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
+
             cursor.execute('''
-            UPDATE club_expenses 
+            UPDATE club_expenses
             SET status = 'rejected', approval_date = ?, approver_id = ?, description = ?
             WHERE expense_id = ?
             ''', ('rejected', approval_date, student_id, f"{selected[7]} | REJECTED: {reason}", expense_id))
-            
+
             print("Expense request rejected.")
-            
+
         elif action == '3':
             # Request more info
             info_needed = input("What additional information is needed? ").strip()
-            
+
             cursor.execute('''
-            UPDATE club_expenses 
+            UPDATE club_expenses
             SET description = ?
             WHERE expense_id = ?
             ''', (f"{selected[7]} | INFO NEEDED: {info_needed}", expense_id))
-            
+
             print("Request updated with information needed.")
-            
+
         else:
             print("Invalid choice.")
             conn.close()
             return
-        
+
         conn.commit()
         conn.close()
-        
+
     except sqlite3.Error as e:
         print(f"Database error: {e}")
     except Exception as e:

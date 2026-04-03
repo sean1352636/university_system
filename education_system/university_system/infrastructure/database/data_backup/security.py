@@ -4,7 +4,7 @@ import base64
 import hashlib
 import os
 
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
@@ -61,7 +61,6 @@ def encrypt_file(file_path: str, password: str) -> str:
 
 def decrypt_file(encrypted_path: str, password: str, output_path: str = None) -> str:
     """Decrypt a file and return the decrypted file path"""
-    from cryptography.fernet import InvalidToken
     try:
         key = generate_encryption_key(password)
         fernet = Fernet(key)
@@ -81,7 +80,7 @@ def decrypt_file(encrypted_path: str, password: str, output_path: str = None) ->
     except (OSError, IOError) as e:
         logger.error(f"File I/O error during decryption: {e}")
         return None
-    except InvalidToken as e:
+    except InvalidToken:
         logger.error("Decryption failed - invalid password or corrupted data")
         return None
     except (ValueError, TypeError) as e:

@@ -18,6 +18,7 @@ class DatabaseMixin:
                 user_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE,
                 password_hash TEXT,
+                password_salt TEXT,
                 role TEXT,
                 email TEXT,
                 first_name TEXT,
@@ -92,6 +93,32 @@ class DatabaseMixin:
                 FOREIGN KEY (type_id) REFERENCES document_types (type_id),
                 FOREIGN KEY (parent_document_id) REFERENCES documents (document_id),
                 FOREIGN KEY (uploaded_by) REFERENCES users (username)
+            )
+            ''')
+
+            # Legacy-compatible alias table used by older tests/callers.
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS student_documents (
+                document_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT,
+                type_id INTEGER,
+                file_path TEXT,
+                original_filename TEXT,
+                upload_date TEXT,
+                expiry_date TEXT,
+                verification_status TEXT,
+                verification_date TEXT,
+                verification_notes TEXT,
+                version_number INTEGER DEFAULT 1,
+                parent_document_id INTEGER,
+                is_current_version BOOLEAN DEFAULT 1,
+                uploaded_by TEXT,
+                file_size INTEGER,
+                file_hash TEXT,
+                tags TEXT,
+                workflow_status TEXT DEFAULT 'pending',
+                FOREIGN KEY (student_id) REFERENCES students (student_id),
+                FOREIGN KEY (type_id) REFERENCES document_types (type_id)
             )
             ''')
 
@@ -219,6 +246,12 @@ class DatabaseMixin:
                 print("Migrating document_types table: adding is_active column")
                 cursor.execute("ALTER TABLE document_types ADD COLUMN is_active BOOLEAN DEFAULT 1")
 
+            cursor.execute("PRAGMA table_info(users)")
+            user_columns = [column[1] for column in cursor.fetchall()]
+            if user_columns and 'password_salt' not in user_columns:
+                print("Migrating users table: adding password_salt column")
+                cursor.execute("ALTER TABLE users ADD COLUMN password_salt TEXT")
+
             # Check if students table exists
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='students'")
             if not cursor.fetchone():
@@ -242,6 +275,44 @@ class DatabaseMixin:
                     grade_level TEXT
                 )
                 ''')
+
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='student_documents'")
+            if not cursor.fetchone():
+                print("Creating missing student_documents table")
+                cursor.execute('''
+                CREATE TABLE IF NOT EXISTS student_documents (
+                    document_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    student_id TEXT,
+                    type_id INTEGER,
+                    file_path TEXT,
+                    original_filename TEXT,
+                    upload_date TEXT,
+                    expiry_date TEXT,
+                    verification_status TEXT,
+                verification_date TEXT,
+                verification_notes TEXT,
+                version_number INTEGER DEFAULT 1,
+                parent_document_id INTEGER,
+                is_current_version BOOLEAN DEFAULT 1,
+                uploaded_by TEXT,
+                    file_size INTEGER,
+                    file_hash TEXT,
+                    tags TEXT,
+                    workflow_status TEXT DEFAULT 'pending',
+                    FOREIGN KEY (student_id) REFERENCES students (student_id),
+                    FOREIGN KEY (type_id) REFERENCES document_types (type_id)
+                )
+                ''')
+
+            else:
+                cursor.execute("PRAGMA table_info(student_documents)")
+                student_doc_columns = [column[1] for column in cursor.fetchall()]
+                if 'is_current_version' not in student_doc_columns:
+                    print("Migrating student_documents table: adding is_current_version column")
+                    cursor.execute("ALTER TABLE student_documents ADD COLUMN is_current_version BOOLEAN DEFAULT 1")
+                if 'parent_document_id' not in student_doc_columns:
+                    print("Migrating student_documents table: adding parent_document_id column")
+                    cursor.execute("ALTER TABLE student_documents ADD COLUMN parent_document_id INTEGER")
 
         except sqlite3.Error as e:
             print(f"Migration warning: {e}")
@@ -319,7 +390,7 @@ class DatabaseMixin:
                 ('ID Photo', 'Student identification photograph', True, False, 0, 5, 'jpg,jpeg,png', True, 'Identity', 1),
                 ('Birth Certificate', 'Official birth certificate', True, False, 0, 10, 'pdf,jpg,jpeg,png', True, 'Identity', 2),
                 ('National ID Card', 'Government issued identification card', True, True, 30, 10, 'pdf,jpg,jpeg,png', True, 'Identity', 3),
-                ('Passport', 'International passport', False, True, 60, 10, 'pdf,jpg,jpeg,png', True, 'Identity', 4),
+                ('International Passport', 'International passport', False, True, 60, 10, 'pdf,jpg,jpeg,png', True, 'Identity', 4),
                 ('Prior Qualification', 'Previous educational qualification certificate', True, False, 0, 15, 'pdf,jpg,jpeg,png', True, 'Academic', 5),
                 ('Visa Document', 'Student visa documentation', False, True, 30, 10, 'pdf,jpg,jpeg,png', True, 'Immigration', 6),
                 ('Health Insurance', 'Student health insurance documentation', False, True, 30, 10, 'pdf,jpg,jpeg,png', True, 'Health', 7),

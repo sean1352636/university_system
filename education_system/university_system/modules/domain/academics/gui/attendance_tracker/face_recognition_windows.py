@@ -547,75 +547,75 @@ class FaceRecognitionWindow:
     def __init__(self, parent, face_system):
         self.parent = parent
         self.face_system = face_system
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.face_recognition_setup"))
         self.window.geometry("800x600")
         self.window.transient(parent)
-        
+
         self.create_widgets()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="👤 Face Recognition Setup", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Enrollment section
         enroll_frame = ttk.LabelFrame(self.window, text="Enroll Student Face", padding=10)
         enroll_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         ttk.Label(enroll_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.student_id_var = tk.StringVar()
         ttk.Entry(enroll_frame, textvariable=self.student_id_var, width=20).grid(row=0, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Label(enroll_frame, text="Photo Path:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.photo_path_var = tk.StringVar()
         photo_frame = ttk.Frame(enroll_frame)
         photo_frame.grid(row=1, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         ttk.Entry(photo_frame, textvariable=self.photo_path_var, width=25).pack(side=tk.LEFT)
         ttk.Button(photo_frame, text=_("common.browse"), command=self.browse_photo).pack(side=tk.LEFT, padx=(5, 0))
-        
+
         ttk.Button(enroll_frame, text="Enroll Face", command=self.enroll_face, style='Success.TButton').grid(row=2, column=0, columnspan=2, pady=10)
-        
+
         # Recognition section
         recognize_frame = ttk.LabelFrame(self.window, text="Recognize Face", padding=10)
         recognize_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         ttk.Label(recognize_frame, text="Image Path:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.recognize_path_var = tk.StringVar()
         recognize_photo_frame = ttk.Frame(recognize_frame)
         recognize_photo_frame.grid(row=0, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         ttk.Entry(recognize_photo_frame, textvariable=self.recognize_path_var, width=25).pack(side=tk.LEFT)
         ttk.Button(recognize_photo_frame, text=_("common.browse"), command=self.browse_recognize_photo).pack(side=tk.LEFT, padx=(5, 0))
-        
+
         ttk.Button(recognize_frame, text="Recognize Face", command=self.recognize_face, style='Primary.TButton').grid(row=1, column=0, columnspan=2, pady=10)
-        
+
         # Enrolled students
         enrolled_frame = ttk.LabelFrame(self.window, text="Enrolled Students", padding=10)
         enrolled_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
+
         # Enrolled students list
         enrolled_columns = ("Student ID", "Name", "Enrollment Date")
         self.enrolled_tree = ttk.Treeview(enrolled_frame, columns=enrolled_columns, show="headings", height=6)
-        
+
         for col in enrolled_columns:
             self.enrolled_tree.heading(col, text=col)
             self.enrolled_tree.column(col, width=150)
-        
+
         enrolled_scrollbar = ttk.Scrollbar(enrolled_frame, orient=tk.VERTICAL, command=self.enrolled_tree.yview)
         self.enrolled_tree.configure(yscrollcommand=enrolled_scrollbar.set)
-        
+
         self.enrolled_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         enrolled_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Load enrolled students
         self.load_enrolled_students()
-        
+
         # Close button
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy, style='Danger.TButton').pack(pady=10)
-    
+
     def browse_photo(self):
         """Browse for photo file"""
         filename = filedialog.askopenfilename(
@@ -624,7 +624,7 @@ class FaceRecognitionWindow:
         )
         if filename:
             self.photo_path_var.set(filename)
-    
+
     def browse_recognize_photo(self):
         """Browse for recognition photo"""
         filename = filedialog.askopenfilename(
@@ -633,19 +633,19 @@ class FaceRecognitionWindow:
         )
         if filename:
             self.recognize_path_var.set(filename)
-    
+
     def enroll_face(self):
         """Enroll student face"""
         student_id = self.student_id_var.get()
         photo_path = self.photo_path_var.get()
-        
+
         if not student_id or not photo_path:
             messagebox.showwarning(_("common.warning"), "Please enter student ID and select a photo")
             return
-        
+
         try:
             success, message = self.face_system.enroll_student_face(student_id, photo_path)
-            
+
             if success:
                 messagebox.showinfo(_("common.success"), message)
                 self.load_enrolled_students()
@@ -653,31 +653,31 @@ class FaceRecognitionWindow:
                 self.photo_path_var.set("")
             else:
                 messagebox.showerror(_("common.error"), message)
-                
+
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Enrollment failed: {e}")
-    
+
     def recognize_face(self):
         """Recognize face in photo"""
         image_path = self.recognize_path_var.get()
-        
+
         if not image_path:
             messagebox.showwarning(_("common.warning"), "Please select an image for recognition")
             return
-        
+
         try:
             success, message, student_id = self.face_system.recognize_face_attendance(
                 image_path, "CS101", datetime.date.today().isoformat()
             )
-            
+
             if success:
                 messagebox.showinfo("Recognition Success", f"{message}\nStudent ID: {student_id}")
             else:
                 messagebox.showwarning("Recognition Failed", message)
-                
+
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Recognition failed: {e}")
-    
+
     def load_enrolled_students(self):
         """Load enrolled students list"""
         # Clear existing items
@@ -711,69 +711,69 @@ class FaceRecognitionWindow:
 class BiometricsManagementWindow:
     def __init__(self, parent):
         self.parent = parent
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.biometrics_management"))
         self.window.geometry("600x500")
         self.window.transient(parent)
-        
+
         self.create_widgets()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="👤 Biometrics Management", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Notebook for different biometric types
         notebook = ttk.Notebook(self.window)
         notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
+
         # Face enrollment tab
         face_frame = ttk.Frame(notebook)
         notebook.add(face_frame, text="Face Enrollment")
-        
+
         # Student ID
         ttk.Label(face_frame, text="Student ID:").pack(anchor=tk.W, padx=10, pady=(10, 0))
         self.student_id_var = tk.StringVar()
         ttk.Entry(face_frame, textvariable=self.student_id_var, width=30).pack(padx=10, pady=5)
-        
+
         # Photo selection
         ttk.Label(face_frame, text="Student Photo:").pack(anchor=tk.W, padx=10, pady=(10, 0))
         photo_frame = ttk.Frame(face_frame)
         photo_frame.pack(fill=tk.X, padx=10, pady=5)
-        
+
         self.photo_path_var = tk.StringVar()
         ttk.Entry(photo_frame, textvariable=self.photo_path_var, width=40).pack(side=tk.LEFT, fill=tk.X, expand=True)
         ttk.Button(photo_frame, text=_("common.browse"), command=self.browse_photo).pack(side=tk.RIGHT, padx=(5, 0))
-        
+
         # Enroll button
         ttk.Button(face_frame, text="Enroll Face", command=self.enroll_face, style='Success.TButton').pack(pady=20)
-        
+
         # Enrolled students list
         ttk.Label(face_frame, text="Enrolled Students:").pack(anchor=tk.W, padx=10)
-        
+
         list_frame = ttk.Frame(face_frame)
         list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-        
+
         columns = ("Student ID", "Name", "Enrollment Date", "Status")
         self.enrolled_tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=8)
-        
+
         for col in columns:
             self.enrolled_tree.heading(col, text=col)
             self.enrolled_tree.column(col, width=120)
-        
+
         scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.enrolled_tree.yview)
         self.enrolled_tree.configure(yscrollcommand=scrollbar.set)
-        
+
         self.enrolled_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Load enrolled students
         self.load_enrolled_students()
-        
+
         # Close button
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy, style='Danger.TButton').pack(pady=10)
-    
+
     def browse_photo(self):
         filename = filedialog.askopenfilename(
             title="Select Student Photo",
@@ -781,20 +781,20 @@ class BiometricsManagementWindow:
         )
         if filename:
             self.photo_path_var.set(filename)
-    
+
     def enroll_face(self):
         student_id = self.student_id_var.get()
         photo_path = self.photo_path_var.get()
-        
+
         if not student_id or not photo_path:
             messagebox.showwarning(_("common.warning"), "Please enter student ID and select a photo")
             return
-        
+
         try:
             if FACE_RECOGNITION_SUPPORT:
                 face_system = FaceRecognitionSystem()
                 success, message = face_system.enroll_student_face(student_id, photo_path)
-                
+
                 if success:
                     messagebox.showinfo(_("common.success"), message)
                     self.load_enrolled_students()
@@ -804,15 +804,15 @@ class BiometricsManagementWindow:
                     messagebox.showerror(_("common.error"), message)
             else:
                 messagebox.showinfo("Demo", "Face would be enrolled here (face recognition not available)")
-                
+
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Enrollment failed: {e}")
-    
+
     def load_enrolled_students(self):
         # Clear existing items
         for item in self.enrolled_tree.get_children():
             self.enrolled_tree.delete(item)
-        
+
         # Sample data or real data from database
         # Load real enrollment data from database
         try:

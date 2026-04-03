@@ -125,11 +125,11 @@ class TestIncrementLoginAttempts:
         assert second_time >= first_time
 
     @patch(
-        "university_system.infrastructure.auth.managers.account_security.SECURITY_ALERTS_AVAILABLE",
+        "education_system.university_system.infrastructure.auth.managers.account_security.SECURITY_ALERTS_AVAILABLE",
         True,
     )
     @patch(
-        "university_system.infrastructure.auth.managers.account_security.alert_account_lockout",
+        "education_system.university_system.infrastructure.auth.managers.account_security.alert_account_lockout",
     )
     def test_security_alert_on_lockout(self, mock_alert):
         """Security alert is triggered when attempts reach max_attempts."""
@@ -148,7 +148,7 @@ class TestIncrementLoginAttempts:
         )
 
     @patch(
-        "university_system.infrastructure.auth.managers.account_security.SECURITY_ALERTS_AVAILABLE",
+        "education_system.university_system.infrastructure.auth.managers.account_security.SECURITY_ALERTS_AVAILABLE",
         False,
     )
     def test_no_alert_when_alerts_unavailable(self):

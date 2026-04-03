@@ -212,14 +212,14 @@ class TestInvoiceSaving:
 class TestInvoiceEmailing:
     """Test invoice email functionality"""
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.render_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.render_template')
     @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.messagebox')
     def test_send_invoice_with_template(self, mock_msgbox, mock_render, invoice_manager):
         """Test sending invoice with email template"""
         # The send_invoice function is nested
         pass
 
-    @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.render_template')
+    @patch('education_system.university_system.infrastructure.email.template_utils.render_template')
     @patch('education_system.university_system.modules.domain.finance.gui.finance.invoice_manager.messagebox')
     def test_send_invoice_template_fallback(self, mock_msgbox, mock_render, invoice_manager):
         """Test sending invoice with fallback when template fails"""

@@ -203,8 +203,8 @@ class TestPrintGeneratedPasswords:
         defaults_mod.print_generated_passwords()
 
         captured = capsys.readouterr()
-        assert "DEFAULT_ADMIN_PASSWORD=gen_pwd_123" in captured.out
-        assert "DEFAULT_STAFF_PASSWORD=gen_pwd_456" in captured.out
+        assert "DEFAULT_ADMIN_PASSWORD=ge*********" in captured.out
+        assert "DEFAULT_STAFF_PASSWORD=ge*********" in captured.out
         assert "WARNING" in captured.out
 
         # Passwords should be cleared after printing

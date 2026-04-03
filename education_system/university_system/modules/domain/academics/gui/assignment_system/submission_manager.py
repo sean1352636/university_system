@@ -173,7 +173,7 @@ class SubmissionManager:
                 combo.current(0)
         except Exception as e:
             logger.error(f"Failed to load students for admin: {e}")
-    
+
 
     def load_available_assignments(self, combo):
         """Load available assignments for submission"""
@@ -243,7 +243,7 @@ class SubmissionManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load assignments: {e}")
-    
+
 
     def browse_file(self):
         """Open file browser for assignment submission"""
@@ -260,7 +260,7 @@ class SubmissionManager:
         )
         if filename:
             self.file_var.set(filename)
-    
+
 
     def submit_assignment_gui(self):
         """Submit assignment through GUI"""
@@ -302,7 +302,7 @@ class SubmissionManager:
         threading.Thread(target=self.perform_submission,
                         args=(assignment_id, self.file_var.get(), self.comments_text.get(1.0, tk.END).strip()),
                         daemon=True).start()
-    
+
 
     def _validate_file_submission(self, file_path, allowed_types, max_size_mb):
         """Validate file for assignment submission with comprehensive error handling"""
@@ -310,15 +310,15 @@ class SubmissionManager:
             # Check if file path is provided
             if not file_path:
                 return False, "No file path provided"
-    
+
             # Check if file exists
             if not os.path.exists(file_path):
                 return False, f"File does not exist: {file_path}"
-    
+
             # Check if it's a file (not a directory)
             if not os.path.isfile(file_path):
                 return False, f"Path is not a file: {file_path}"
-    
+
             # Check if file is readable
             try:
                 with open(file_path, 'rb') as f:
@@ -327,13 +327,13 @@ class SubmissionManager:
                 return False, f"File is not readable (permission denied): {file_path}"
             except Exception as e:
                 return False, f"Cannot read file: {str(e)}"
-    
+
             # Get file size in MB
             try:
                 file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
             except OSError as e:
                 return False, f"Cannot determine file size: {str(e)}"
-    
+
             # Check file size
             if max_size_mb:
                 try:
@@ -343,11 +343,11 @@ class SubmissionManager:
                 except (ValueError, TypeError):
                     # Log warning but don't fail validation
                     print(f"Warning: Invalid maximum file size value: {max_size_mb}")
-    
+
             # Check file extension
             if allowed_types:
                 file_ext = os.path.splitext(file_path)[1].lower()
-    
+
                 # Handle both comma-separated and space-separated formats
                 if isinstance(allowed_types, str):
                     allowed_exts = [ext.strip().lower() for ext in allowed_types.replace(',', ' ').split() if ext.strip()]
@@ -355,15 +355,15 @@ class SubmissionManager:
                     allowed_exts = [ext if ext.startswith('.') else f'.{ext}' for ext in allowed_exts]
                 else:
                     allowed_exts = []
-    
+
                 if allowed_exts and file_ext not in allowed_exts:
                     return False, f"File type '{file_ext}' not allowed. Allowed types: {', '.join(allowed_exts)}"
-    
+
             return True, "File validation successful"
-    
+
         except Exception as e:
             return False, f"Validation error: {str(e)}"
-    
+
 
     def _get_student_id_safe(self):
         """Safely get student ID with fallback"""
@@ -398,7 +398,7 @@ class SubmissionManager:
         except Exception as e:
             print(f"Error getting student ID: {e}")
             return None
-    
+
 
     def perform_submission(self, assignment_id, file_path, comments):
         """Perform the actual submission (runs in background thread)"""
@@ -594,96 +594,96 @@ class SubmissionManager:
 
             self.root.after(0, lambda: self.show_status_message(success_msg, "success"))
             self.root.after(0, self.clear_submission_form)
-            
+
         except Exception as e:
             error_msg = f"Submission failed: {str(e)}"
             self.root.after(0, lambda: self.show_status_message(error_msg, "error"))
-    
+
 
     def show_status_message(self, message, msg_type):
         """Show status message in the status frame"""
         for widget in self.status_frame.winfo_children():
             widget.destroy()
-        
+
         if msg_type == "success":
             style = 'Success.TLabel'
         elif msg_type == "error":
             style = 'Error.TLabel'
         else:
             style = 'Warning.TLabel'
-        
+
         status_label = ttk.Label(self.status_frame, text=message, style=style)
         status_label.pack(anchor='w')
-    
+
 
     def clear_submission_form(self):
         """Clear the submission form after successful submission"""
         self.assignment_var.set('')
         self.file_var.set('')
         self.comments_text.delete(1.0, tk.END)
-    
+
 
     def show_my_submissions(self):
         """Show student's submissions"""
         self.gui.layout.clear_content_area()
-        
+
         title = ttk.Label(self.gui.layout.content_area, text="My Submissions", style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
-        
+
         # Create submissions table
         submissions_frame = ttk.Frame(self.gui.layout.content_area)
         submissions_frame.pack(fill='both', expand=True)
-        
+
         # Treeview for submissions
         columns = ('ID', 'Assignment', 'File', 'Submitted', 'Status', 'Grade', 'Feedback')
         tree = ttk.Treeview(submissions_frame, columns=columns, show='headings')
-        
+
         for col in columns:
             tree.heading(col, text=col)
             if col == 'Feedback':
                 tree.column(col, width=200)
             else:
                 tree.column(col, width=120)
-        
+
         # Scrollbars
         v_scrollbar = ttk.Scrollbar(submissions_frame, orient='vertical', command=tree.yview)
         h_scrollbar = ttk.Scrollbar(submissions_frame, orient='horizontal', command=tree.xview)
         tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-        
+
         # Grid layout
         tree.grid(row=0, column=0, sticky='nsew')
         v_scrollbar.grid(row=0, column=1, sticky='ns')
         h_scrollbar.grid(row=1, column=0, sticky='ew')
-        
+
         submissions_frame.grid_rowconfigure(0, weight=1)
         submissions_frame.grid_columnconfigure(0, weight=1)
-        
+
         # Load submissions data
         self.load_submissions_data(tree)
-        
+
         # Buttons frame
         buttons_frame = ttk.Frame(self.gui.layout.content_area)
         buttons_frame.pack(fill='x', pady=(10, 0))
-        
-        ttk.Button(buttons_frame, text="View File", 
+
+        ttk.Button(buttons_frame, text="View File",
                   command=lambda: self.view_submission_file(tree)).pack(side='left', padx=(0, 10))
-        ttk.Button(buttons_frame, text="Download File", 
+        ttk.Button(buttons_frame, text="Download File",
                   command=lambda: self.download_submission_file(tree)).pack(side='left', padx=(0, 10))
-        ttk.Button(buttons_frame, text="Refresh", 
+        ttk.Button(buttons_frame, text="Refresh",
                   command=lambda: self.load_submissions_data(tree)).pack(side='left')
-    
+
 
     def load_submissions_data(self, tree):
         """Load submissions data into the treeview"""
         # Clear existing data
         for item in tree.get_children():
             tree.delete(item)
-        
+
         try:
             student_id = self.assignment_system._get_student_id()
             if not student_id:
                 return
-            
+
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
                 cursor = conn.cursor()
@@ -707,101 +707,101 @@ class SubmissionManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load submissions: {e}")
-    
+
 
     def view_submissions(self):
         """Enhanced view submissions with better filtering and actions"""
         if not self._check_permission('view_own_submissions'):
             return
-        
+
         self.gui.layout.clear_content_area()
-        
+
         title = ttk.Label(self.gui.layout.content_area, text="My Submissions", style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
-        
+
         # Enhanced filter frame
         filter_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Filters & Search", padding=10)
         filter_frame.pack(fill='x', pady=(0, 10))
-        
+
         # Assignment filter
         ttk.Label(filter_frame, text="Assignment:").grid(row=0, column=0, sticky='w', padx=5)
         self.submission_assignment_filter = tk.StringVar()
         assignment_combo = ttk.Combobox(filter_frame, textvariable=self.submission_assignment_filter, width=25)
         assignment_combo.grid(row=0, column=1, padx=5)
-        
+
         # Grade status filter
         ttk.Label(filter_frame, text="Status:").grid(row=0, column=2, sticky='w', padx=5)
         self.submission_status_filter = tk.StringVar(value="All")
         status_combo = ttk.Combobox(filter_frame, textvariable=self.submission_status_filter,
                                    values=["All", "Graded", "Ungraded", "Late"], width=12)
         status_combo.grid(row=0, column=3, padx=5)
-        
+
         # Date range filter
         ttk.Label(filter_frame, text="From:").grid(row=1, column=0, sticky='w', padx=5, pady=5)
         self.submission_date_from = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=self.submission_date_from, width=12).grid(row=1, column=1, padx=5, pady=5)
-        
+
         ttk.Label(filter_frame, text="To:").grid(row=1, column=2, sticky='w', padx=5, pady=5)
         self.submission_date_to = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=self.submission_date_to, width=12).grid(row=1, column=3, padx=5, pady=5)
-        
-        ttk.Button(filter_frame, text="Apply Filters", 
+
+        ttk.Button(filter_frame, text="Apply Filters",
                   command=self.apply_my_submission_filters).grid(row=1, column=4, padx=10, pady=5)
-        ttk.Button(filter_frame, text="Clear Filters", 
+        ttk.Button(filter_frame, text="Clear Filters",
                   command=self.clear_submission_filters).grid(row=1, column=5, padx=5, pady=5)
-        
+
         # Enhanced submissions table
         submissions_frame = ttk.Frame(self.gui.layout.content_area)
         submissions_frame.pack(fill='both', expand=True)
-        
+
         columns = ('ID', 'Assignment', 'Module', 'File', 'Submitted', 'Status', 'Grade', 'Feedback Available')
         self.enhanced_submissions_tree = ttk.Treeview(submissions_frame, columns=columns, show='headings')
-        
+
         for col in columns:
             self.enhanced_submissions_tree.heading(col, text=col)
             if col == 'Feedback Available':
                 self.enhanced_submissions_tree.column(col, width=120)
             else:
                 self.enhanced_submissions_tree.column(col, width=100)
-        
+
         # Scrollbars
         v_scroll = ttk.Scrollbar(submissions_frame, orient='vertical', command=self.enhanced_submissions_tree.yview)
         h_scroll = ttk.Scrollbar(submissions_frame, orient='horizontal', command=self.enhanced_submissions_tree.xview)
         self.enhanced_submissions_tree.configure(yscrollcommand=v_scroll.set, xscrollcommand=h_scroll.set)
-        
+
         self.enhanced_submissions_tree.grid(row=0, column=0, sticky='nsew')
         v_scroll.grid(row=0, column=1, sticky='ns')
         h_scroll.grid(row=1, column=0, sticky='ew')
-        
+
         submissions_frame.grid_rowconfigure(0, weight=1)
         submissions_frame.grid_columnconfigure(0, weight=1)
-        
+
         # Load assignments for filter
         self.load_my_assignments_filter(assignment_combo)
-        
+
         # Enhanced action buttons
         actions_frame = ttk.Frame(self.gui.layout.content_area)
         actions_frame.pack(fill='x', pady=(10, 0))
-        
-        ttk.Button(actions_frame, text="View Feedback", 
+
+        ttk.Button(actions_frame, text="View Feedback",
                   command=self.view_detailed_feedback).pack(side='left', padx=(0, 10))
-        ttk.Button(actions_frame, text="Download File", 
+        ttk.Button(actions_frame, text="Download File",
                   command=self.download_my_submission).pack(side='left', padx=(0, 10))
-        ttk.Button(actions_frame, text="Resubmit (if allowed)", 
+        ttk.Button(actions_frame, text="Resubmit (if allowed)",
                   command=self.resubmit_assignment).pack(side='left', padx=(0, 10))
-        ttk.Button(actions_frame, text="Export My Grades", 
+        ttk.Button(actions_frame, text="Export My Grades",
                   command=self.export_my_grades).pack(side='left', padx=(0, 10))
-        ttk.Button(actions_frame, text="Grade Statistics", 
+        ttk.Button(actions_frame, text="Grade Statistics",
                   command=self.show_my_grade_stats).pack(side='left')
-        
+
         # Load submissions
         self.load_enhanced_submissions()
-    
+
 
     def apply_my_submission_filters(self):
         """Apply filters for the student's submissions view."""
         self.load_enhanced_submissions()
-    
+
 
     def clear_submission_filters(self):
         """Clear all submission filters"""
@@ -810,19 +810,19 @@ class SubmissionManager:
         self.submission_date_from.set("")
         self.submission_date_to.set("")
         self.load_enhanced_submissions()
-    
+
 
     def load_enhanced_submissions(self):
         """Load submissions with enhanced filtering"""
         # Clear existing data
         for item in self.enhanced_submissions_tree.get_children():
             self.enhanced_submissions_tree.delete(item)
-        
+
         try:
             student_id = self.assignment_system._get_student_id()
             if not student_id:
                 return
-            
+
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
                 cursor = conn.cursor()
@@ -901,7 +901,7 @@ class SubmissionManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load submissions: {e}")
-    
+
 
     def view_detailed_feedback(self):
         """View detailed feedback for selected submission"""
@@ -909,16 +909,16 @@ class SubmissionManager:
         if not selection:
             messagebox.showwarning("Warning", "Please select a submission")
             return
-        
+
         item = self.enhanced_submissions_tree.item(selection[0])
         submission_id = item['values'][0]
-        
+
         # Create feedback window
         feedback_window = tk.Toplevel(self.root)
         feedback_window.title("Detailed Feedback")
         feedback_window.geometry("600x500")
         feedback_window.transient(self.root)
-        
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -959,10 +959,10 @@ class SubmissionManager:
         if not selection:
             messagebox.showwarning("Warning", "Please select a submission")
             return
-        
+
         item = self.enhanced_submissions_tree.item(selection[0])
         submission_id = item['values'][0]
-        
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -988,7 +988,7 @@ class SubmissionManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to download file: {e}")
-    
+
 
     def resubmit_assignment(self):
         """Allow resubmission if permitted"""
@@ -996,11 +996,11 @@ class SubmissionManager:
         if not selection:
             messagebox.showwarning("Warning", "Please select a submission")
             return
-        
+
         item = self.enhanced_submissions_tree.item(selection[0])
         submission_id = item['values'][0]
         assignment_title = item['values'][1]
-        
+
         # Check if resubmission is allowed
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
@@ -1027,18 +1027,18 @@ class SubmissionManager:
                     return
             finally:
                 conn.close()
-            
+
             # Confirm resubmission
-            if messagebox.askyesno("Confirm Resubmission", 
+            if messagebox.askyesno("Confirm Resubmission",
                                   f"Are you sure you want to resubmit '{assignment_title}'?\n"
                                   f"This will create a new version."):
                 # Switch to submission interface for this assignment
                 self.show_submit_assignment()
                 # Pre-select the assignment (if possible with current interface)
-                
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to check resubmission: {e}")
-    
+
 
     def export_my_grades(self):
         """Export student's grades to file"""
@@ -1048,15 +1048,15 @@ class SubmissionManager:
                 initialfile="my_grades.csv",
                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
             )
-            
+
             if not save_path:
                 return
-            
+
             student_id = self.assignment_system._get_student_id()
             if not student_id:
                 messagebox.showerror("Error", "Student ID not found")
                 return
-            
+
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
                 cursor = conn.cursor()
@@ -1091,7 +1091,7 @@ class SubmissionManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to export grades: {e}")
-    
+
 
     def show_my_grade_stats(self):
         """Show grade statistics for student"""
@@ -1099,13 +1099,13 @@ class SubmissionManager:
         if not student_id:
             messagebox.showerror("Error", "Student ID not found")
             return
-        
+
         # Create statistics window
         stats_window = tk.Toplevel(self.root)
         stats_window.title("My Grade Statistics")
         stats_window.geometry("500x400")
         stats_window.transient(self.root)
-        
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -1146,16 +1146,16 @@ class SubmissionManager:
         """View all submissions (instructor/admin)"""
         if not self._check_permission('view_all_submissions'):
             return
-        
+
         self.gui.layout.clear_content_area()
-        
+
         title = ttk.Label(self.gui.layout.content_area, text="All Submissions", style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
-        
+
         # Filter frame
         filter_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Filters", padding=10)
         filter_frame.pack(fill='x', pady=(0, 10))
-        
+
         # Module filter
         ttk.Label(filter_frame, text="Module:").grid(row=0, column=0, sticky='w', padx=5)
         self.module_filter_var = tk.StringVar()
@@ -1167,62 +1167,62 @@ class SubmissionManager:
         module_combo.set("All Modules")
         if hasattr(self, 'module_map'):
             self.module_map["All Modules"] = None
-    
+
         # Status filter
         ttk.Label(filter_frame, text="Status:").grid(row=0, column=2, sticky='w', padx=5)
         self.status_filter_var = tk.StringVar(value="All")
-        status_combo = ttk.Combobox(filter_frame, textvariable=self.status_filter_var, 
+        status_combo = ttk.Combobox(filter_frame, textvariable=self.status_filter_var,
                                    values=["All", "Submitted", "Graded", "Late"], width=15)
         status_combo.grid(row=0, column=3, padx=5)
-        
+
         # Apply filter button
-        ttk.Button(filter_frame, text="Apply Filters", 
+        ttk.Button(filter_frame, text="Apply Filters",
                   command=self.apply_admin_submission_filters).grid(row=0, column=4, padx=10)
-        
+
         # Submissions table
         submissions_frame = ttk.Frame(self.gui.layout.content_area)
         submissions_frame.pack(fill='both', expand=True)
-        
+
         columns = ('ID', 'Student', 'Assignment', 'Module', 'Submitted', 'Status', 'Grade')
         self.all_submissions_tree = ttk.Treeview(submissions_frame, columns=columns, show='headings')
-        
+
         for col in columns:
             self.all_submissions_tree.heading(col, text=col)
             self.all_submissions_tree.column(col, width=100)
-        
+
         # Scrollbars
         v_scroll = ttk.Scrollbar(submissions_frame, orient='vertical', command=self.all_submissions_tree.yview)
         h_scroll = ttk.Scrollbar(submissions_frame, orient='horizontal', command=self.all_submissions_tree.xview)
         self.all_submissions_tree.configure(yscrollcommand=v_scroll.set, xscrollcommand=h_scroll.set)
-        
+
         self.all_submissions_tree.grid(row=0, column=0, sticky='nsew')
         v_scroll.grid(row=0, column=1, sticky='ns')
         h_scroll.grid(row=1, column=0, sticky='ew')
-        
+
         submissions_frame.grid_rowconfigure(0, weight=1)
         submissions_frame.grid_columnconfigure(0, weight=1)
-        
+
         # Load all submissions
         self.load_all_submissions()
-        
+
         # Action buttons
         action_frame = ttk.Frame(self.gui.layout.content_area)
         action_frame.pack(fill='x', pady=(10, 0))
-        
-        ttk.Button(action_frame, text="Grade Selected", 
+
+        ttk.Button(action_frame, text="Grade Selected",
                   command=self.grade_selected_submission).pack(side='left', padx=(0, 10))
-        ttk.Button(action_frame, text="Download File", 
+        ttk.Button(action_frame, text="Download File",
                   command=self.download_selected_file).pack(side='left', padx=(0, 10))
-        ttk.Button(action_frame, text="Export List", 
+        ttk.Button(action_frame, text="Export List",
                   command=self.export_submissions_list).pack(side='left')
-    
+
 
     def load_all_submissions(self):
         """Load all submissions into treeview"""
         # Clear existing data
         for item in self.all_submissions_tree.get_children():
             self.all_submissions_tree.delete(item)
-        
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -1288,12 +1288,12 @@ class SubmissionManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load submissions: {e}")
-    
+
 
     def apply_admin_submission_filters(self):
         """Apply filters for the instructor/admin submissions view."""
         self.load_all_submissions()
-    
+
 
     def grade_selected_submission(self):
         """Grade the selected submission"""
@@ -1301,13 +1301,13 @@ class SubmissionManager:
         if not selection:
             messagebox.showwarning("Warning", "Please select a submission to grade")
             return
-        
+
         item = self.all_submissions_tree.item(selection[0])
         submission_id = item['values'][0]
 
         # Switch to grading interface
         self.gui.grading.show_grading_interface(submission_id)
-    
+
 
     def download_selected_file(self):
         """Download the selected submission file"""
@@ -1315,10 +1315,10 @@ class SubmissionManager:
         if not selection:
             messagebox.showwarning("Warning", "Please select a submission")
             return
-        
+
         item = self.all_submissions_tree.item(selection[0])
         submission_id = item['values'][0]
-        
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -1345,7 +1345,7 @@ class SubmissionManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to download file: {e}")
-    
+
 
     def export_submissions_list(self):
         """Export submissions list to CSV"""
@@ -1354,10 +1354,10 @@ class SubmissionManager:
                 defaultextension=".csv",
                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
             )
-            
+
             if not save_path:
                 return
-            
+
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
                 cursor = conn.cursor()
@@ -1385,7 +1385,7 @@ class SubmissionManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to export submissions: {e}")
-    
+
     # Additional helper method for permission checking in GUI
 
     def view_submission_file(self, tree):
@@ -1394,9 +1394,9 @@ class SubmissionManager:
         if not selection:
             messagebox.showwarning("Warning", "Please select a submission")
             return
-        
+
         submission_id = tree.item(selection[0])['values'][0]
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -1411,18 +1411,18 @@ class SubmissionManager:
         except Exception as exc:
             messagebox.showerror("Error", f"Unable to load submission: {exc}")
             return
-    
+
         if not row or not row[0]:
             messagebox.showwarning("Missing File", "No file is associated with this submission.")
             return
-    
+
         file_path = row[0]
         if not os.path.exists(file_path):
             messagebox.showerror("File Not Found", f"The file could not be located:\n{file_path}")
             return
-    
+
         self.open_submission_file(file_path)
-    
+
 
     def download_submission_file(self, tree):
         """Download selected submission file"""
@@ -1430,9 +1430,9 @@ class SubmissionManager:
         if not selection:
             messagebox.showwarning("Warning", "Please select a submission")
             return
-        
+
         submission_id = tree.item(selection[0])['values'][0]
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -1447,18 +1447,18 @@ class SubmissionManager:
         except Exception as exc:
             messagebox.showerror("Error", f"Unable to load submission: {exc}")
             return
-    
+
         if not row or not row[0]:
             messagebox.showwarning("Missing File", "No file is associated with this submission.")
             return
-    
+
         file_path = row[0]
         if not os.path.exists(file_path):
             messagebox.showerror("File Not Found", f"The file could not be located:\n{file_path}")
             return
-    
+
         self.download_file(file_path)
-    
+
 
     def open_submission_file(self, file_path):
         """Open submission file with default application"""
@@ -1476,7 +1476,7 @@ class SubmissionManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open file: {e}")
-    
+
 
     def download_file(self, file_path):
         """Download file to user's chosen location"""
@@ -1485,7 +1485,7 @@ class SubmissionManager:
                 defaultextension=os.path.splitext(file_path)[1],
                 filetypes=[("All Files", "*.*")]
             )
-            
+
             if save_path:
                 import shutil
                 shutil.copy2(file_path, save_path)

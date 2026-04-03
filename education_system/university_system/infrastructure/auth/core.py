@@ -2078,7 +2078,7 @@ class UserAuth:
     def setup_chatbot_permissions(self):
         """
         Setup chatbot-specific permissions in the database.
-        
+
         Delegates to the chatbot_integration module's setup_chatbot_permissions function.
         """
         from education_system.university_system.infrastructure.auth.integrations.chatbot_integration import (

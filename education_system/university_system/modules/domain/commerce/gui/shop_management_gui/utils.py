@@ -79,7 +79,7 @@ logger = logging.getLogger(__name__)
 def setup_styles(self):
     """Configure GUI styles and themes"""
     style = ttk.Style()
-    
+
     # Configure colors and fonts
     self.colors = {
         'primary': '#2E3440',
@@ -91,20 +91,20 @@ def setup_styles(self):
         'background': '#ECEFF4',
         'text': '#2E3440'
     }
-    
+
     # Configure styles
     style.configure('Title.TLabel', font=('Arial', 16, 'bold'), foreground=self.colors['primary'])
     style.configure('Heading.TLabel', font=('Arial', 12, 'bold'), foreground=self.colors['primary'])
     style.configure('Success.TLabel', foreground=self.colors['success'])
     style.configure('Warning.TLabel', foreground=self.colors['warning'])
     style.configure('Error.TLabel', foreground=self.colors['error'])
-    
+
     # Configure button styles
     style.configure('Primary.TButton', background=self.colors['accent'])
     style.configure('Success.TButton', background=self.colors['success'])
     style.configure('Warning.TButton', background=self.colors['warning'])
     style.configure('Danger.TButton', background=self.colors['error'])
-    
+
 
 def _bind_sidebar_scroll_events(self):
     """Bind mouse wheel and keys to sidebar scrolling"""
@@ -162,20 +162,20 @@ def _bind_sidebar_scroll_events(self):
     content_container.rowconfigure(0, weight=1)
     self.content_frame.columnconfigure(0, weight=1)
     self.content_frame.rowconfigure(0, weight=1)
-    
+
     # Status bar
     self.status_frame = ttk.Frame(self.main_frame)
     self.status_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 0))
-    
+
     self.status_label = ttk.Label(self.status_frame, text=_t("common.ready"))
     self.status_label.grid(row=0, column=0, sticky=tk.W)
-    
+
     # Progress bar (hidden by default)
     self.progress_var = tk.DoubleVar()
     self.progress_bar = ttk.Progressbar(self.status_frame, variable=self.progress_var)
     self.progress_bar.grid(row=0, column=1, sticky=tk.E, padx=(10, 0))
     self.progress_bar.grid_remove()
-    
+
 
 def show_print_labels_dialog(self):
     """Show dialog for printing product labels"""
@@ -211,10 +211,10 @@ def show_print_labels_dialog(self):
 
     ttk.Label(category_frame, text=_t("shop_management.labels.category") + ":").grid(row=0, column=0, sticky=tk.W)
     category_var = tk.StringVar()
-    category_combo = ttk.Combobox(category_frame, textvariable=category_var, 
+    category_combo = ttk.Combobox(category_frame, textvariable=category_var,
                                  values=[], state="disabled", width=25)
     category_combo.grid(row=0, column=1, padx=(10, 0))
-    
+
     # Load categories
     try:
         if 'get_connection' in globals():
@@ -228,18 +228,18 @@ def show_print_labels_dialog(self):
         logger.error(f"Failed to load categories for label printing: {e}")
         # Set empty list as fallback
         category_combo.configure(values=[])
-    
+
     def on_option_change():
         if print_option.get() == "category":
             category_combo.configure(state="readonly")
         else:
             category_combo.configure(state="disabled")
-    
+
     # Bind option change
     for widget in main_frame.winfo_children():
         if isinstance(widget, ttk.Radiobutton):
             widget.configure(command=on_option_change)
-    
+
     def print_labels():
         try:
             option = print_option.get()
@@ -548,7 +548,7 @@ def clear_content(self):
         return
     for widget in self.content_frame.winfo_children():
         widget.destroy()
-        
+
 
 def show_product_context_menu(self, event):
     """Show context menu for products"""
@@ -556,7 +556,7 @@ def show_product_context_menu(self, event):
     if item:
         self.products_tree.selection_set(item)
         self.product_context_menu.post(event.x_root, event.y_root)
-        
+
 
 def load_products(self):
     """Load products into the treeview"""
@@ -564,12 +564,12 @@ def load_products(self):
         # Clear existing items
         for item in self.products_tree.get_children():
             self.products_tree.delete(item)
-        
+
         if 'get_connection' in globals():
             conn = get_connection()
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            
+
             cursor.execute("""
                 SELECT p.source_product_id as product_id, p.name, p.category, p.price, p.description, i.quantity
                 FROM products p
@@ -577,14 +577,14 @@ def load_products(self):
                 WHERE p.source_type = 'shop' AND p.is_active = 1
                 ORDER BY p.category, p.name
             """)
-            
+
             products = cursor.fetchall()
             categories = set()
-            
+
             for product in products:
                 # Format price
                 price_str = f"£{product['price']:.2f}"
-                
+
                 # Insert into tree
                 self.products_tree.insert('', 'end', values=(
                     product['product_id'],
@@ -594,15 +594,15 @@ def load_products(self):
                     product['quantity'],
                     product['description'][:50] + "..." if len(product['description']) > 50 else product['description']
                 ))
-                
+
                 categories.add(product['category'])
-            
+
             # Update category filter
             category_list = ["All"] + sorted(list(categories))
             self.category_combo.configure(values=category_list)
-            
+
             conn.close()
-            
+
         else:
             # Fallback sample data
             sample_products = [
@@ -610,52 +610,52 @@ def load_products(self):
                 ("P002", "University T-Shirt", "Clothing", "£19.99", "75", "Cotton t-shirt with logo"),
                 ("P003", "Notebook Pack", "Stationery", "£12.99", "30", "Set of 3 branded notebooks"),
             ]
-            
+
             for product in sample_products:
                 self.products_tree.insert('', 'end', values=product)
-                
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load products: {e}")
-        
+
 
 def view_product_sales(self):
     """View sales data for selected product"""
     if not hasattr(self, 'mgmt_products_tree'):
         return
-        
+
     selection = self.mgmt_products_tree.selection()
     if not selection:
         messagebox.showwarning("Warning", "Please select a product")
         return
-    
+
     item = self.mgmt_products_tree.item(selection[0])
     values = item['values']
     product_id = values[0]
     product_name = values[1]
-    
+
     # Create sales window
     sales_window = tk.Toplevel(self.root)
     sales_window.title(f"Sales Data - {product_name}")
     sales_window.geometry("700x500")
     sales_window.resizable(True, True)
-    
+
     # Make it modal
     sales_window.transient(self.root)
     sales_window.grab_set()
-    
+
     main_frame = ttk.Frame(sales_window, padding="20")
     main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
     main_frame.columnconfigure(0, weight=1)
     main_frame.rowconfigure(1, weight=1)
-    
+
     # Title
-    ttk.Label(main_frame, text=f"Sales Data: {product_name} ({product_id})", 
+    ttk.Label(main_frame, text=f"Sales Data: {product_name} ({product_id})",
              style='Title.TLabel').grid(row=0, column=0, pady=(0, 10))
-    
+
     try:
         # Get sales data
         sales_data = self.get_product_sales_data(product_id)
-        
+
         if not sales_data:
             ttk.Label(main_frame, text="No sales data found for this product").grid(row=1, column=0)
         else:
@@ -664,23 +664,23 @@ def view_product_sales(self):
             sales_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
             sales_frame.columnconfigure(0, weight=1)
             sales_frame.rowconfigure(0, weight=1)
-            
+
             columns = ('Date', 'Transaction ID', 'Quantity', 'Price', 'Subtotal')
             sales_tree = ttk.Treeview(sales_frame, columns=columns, show='headings')
-            
+
             for col in columns:
                 sales_tree.heading(col, text=col)
-            
+
             sales_scrollbar = ttk.Scrollbar(sales_frame, orient='vertical', command=sales_tree.yview)
             sales_tree.configure(yscrollcommand=sales_scrollbar.set)
-            
+
             sales_tree.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
             sales_scrollbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
-            
+
             # Populate sales data
             total_quantity = 0
             total_revenue = 0
-            
+
             for sale in sales_data:
                 sales_tree.insert('', 'end', values=(
                     sale['transaction_date'],
@@ -691,18 +691,18 @@ def view_product_sales(self):
                 ))
                 total_quantity += sale['quantity']
                 total_revenue += sale['subtotal']
-            
+
             # Summary
             summary_frame = ttk.Frame(main_frame)
             summary_frame.grid(row=2, column=0, sticky=(tk.W, tk.E), pady=10)
-            
+
             ttk.Label(summary_frame, text=f"Total Sales: {len(sales_data)} transactions, "
                                          f"{total_quantity} units, £{total_revenue:.2f} revenue",
                      font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky=tk.W)
-    
+
     except Exception as e:
         ttk.Label(main_frame, text=f"Error loading sales data: {e}").grid(row=1, column=0)
-    
+
     # Close button
     ttk.Button(main_frame, text="Close", command=sales_window.destroy).grid(row=3, column=0, pady=10)
 
@@ -712,11 +712,11 @@ def get_product_sales_data(self, product_id):
     try:
         if 'get_connection' not in globals():
             return []
-        
+
         conn = get_connection()
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
+
         cursor.execute("""
             SELECT t.created_at as transaction_date, t.source_transaction_id as transaction_id,
                    ti.quantity, ti.price_per_item, ti.subtotal
@@ -725,12 +725,12 @@ def get_product_sales_data(self, product_id):
             WHERE ti.product_id = ?
             ORDER BY t.created_at DESC
         """, [product_id])
-        
+
         sales = cursor.fetchall()
         conn.close()
-        
+
         return [dict(sale) for sale in sales]
-        
+
     except Exception as e:
         return []
 
@@ -739,78 +739,78 @@ def edit_selected_product(self):
     """Edit the selected product"""
     if not hasattr(self, 'mgmt_products_tree'):
         return
-        
+
     selection = self.mgmt_products_tree.selection()
     if not selection:
         messagebox.showwarning("Warning", "Please select a product to edit")
         return
-    
+
     item = self.mgmt_products_tree.item(selection[0])
     values = item['values']
     product_id = values[0]
-    
+
     # Get current product data
     try:
         product_data = self.get_product_details(product_id)
         if not product_data:
             messagebox.showerror("Error", "Product not found")
             return
-        
+
         # Create edit window
         edit_window = tk.Toplevel(self.root)
         edit_window.title(f"Edit Product - {product_id}")
         edit_window.geometry("500x600")
         edit_window.resizable(False, False)
-        
+
         # Make it modal
         edit_window.transient(self.root)
         edit_window.grab_set()
-        
+
         main_frame = ttk.Frame(edit_window, padding="20")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
+
         # Form fields with current values
         ttk.Label(main_frame, text="Product ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
         ttk.Label(main_frame, text=product_id, font=('Arial', 10, 'bold')).grid(row=0, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         ttk.Label(main_frame, text="Product Name*:").grid(row=1, column=0, sticky=tk.W, pady=5)
         name_var = tk.StringVar(value=product_data.get('name', ''))
         ttk.Entry(main_frame, textvariable=name_var, width=40).grid(row=1, column=1, pady=5, padx=(10, 0))
-        
+
         ttk.Label(main_frame, text="Description:").grid(row=2, column=0, sticky=(tk.W, tk.N), pady=5)
         desc_text = tk.Text(main_frame, height=4, width=40)
         desc_text.grid(row=2, column=1, pady=5, padx=(10, 0))
         desc_text.insert('1.0', product_data.get('description', ''))
-        
+
         ttk.Label(main_frame, text="Price (£)*:").grid(row=3, column=0, sticky=tk.W, pady=5)
         price_var = tk.StringVar(value=str(product_data.get('price', '')))
         ttk.Entry(main_frame, textvariable=price_var, width=40).grid(row=3, column=1, pady=5, padx=(10, 0))
-        
+
         ttk.Label(main_frame, text="Category*:").grid(row=4, column=0, sticky=tk.W, pady=5)
         category_var = tk.StringVar(value=product_data.get('category', ''))
         ttk.Entry(main_frame, textvariable=category_var, width=40).grid(row=4, column=1, pady=5, padx=(10, 0))
-        
+
         ttk.Label(main_frame, text="Tax Rate (%):").grid(row=5, column=0, sticky=tk.W, pady=5)
         tax_rate = product_data.get('tax_rate', 0.2) * 100
         tax_var = tk.StringVar(value=str(tax_rate))
         ttk.Entry(main_frame, textvariable=tax_var, width=40).grid(row=5, column=1, pady=5, padx=(10, 0))
-        
+
         # Status
         ttk.Label(main_frame, text="Status:").grid(row=6, column=0, sticky=tk.W, pady=5)
         status_var = tk.BooleanVar(value=product_data.get('is_active', True))
         ttk.Checkbutton(main_frame, text="Active", variable=status_var).grid(row=6, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.grid(row=7, column=0, columnspan=2, pady=20)
-        
+
         def save_changes():
             try:
                 # Validate inputs
                 if not all([name_var.get().strip(), price_var.get().strip(), category_var.get().strip()]):
                     messagebox.showerror("Error", "Please fill in all required fields (*)")
                     return
-                
+
                 # Update product
                 updated_data = {
                     'name': name_var.get().strip(),
@@ -820,41 +820,41 @@ def edit_selected_product(self):
                     'tax_rate': float(tax_var.get()) / 100,
                     'is_active': status_var.get()
                 }
-                
+
                 self.update_product(product_id, updated_data)
                 edit_window.destroy()
                 self.load_products_for_management()
                 messagebox.showinfo("Success", "Product updated successfully!")
-                
+
             except ValueError:
                 messagebox.showerror("Error", "Please enter valid numeric values")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to update product: {e}")
-        
-        ttk.Button(button_frame, text="Save Changes", command=save_changes, 
+
+        ttk.Button(button_frame, text="Save Changes", command=save_changes,
                   style='Success.TButton').grid(row=0, column=0, padx=5)
         ttk.Button(button_frame, text="Cancel", command=edit_window.destroy).grid(row=0, column=1, padx=5)
-        
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load product for editing: {e}")
-        
+
 
 def delete_selected_product(self):
     """Delete selected product (with confirmation)"""
     if not hasattr(self, 'mgmt_products_tree'):
         return
-        
+
     selection = self.mgmt_products_tree.selection()
     if not selection:
         messagebox.showwarning("Warning", "Please select a product to delete")
         return
-    
+
     item = self.mgmt_products_tree.item(selection[0])
     values = item['values']
     product_id = values[0]
     product_name = values[1]
-    
-    if messagebox.askyesno("Confirm Delete", 
+
+    if messagebox.askyesno("Confirm Delete",
                           f"Are you sure you want to delete product '{product_name}' ({product_id})?\n\n"
                           "This action cannot be undone!"):
         try:
@@ -863,5 +863,5 @@ def delete_selected_product(self):
             messagebox.showinfo("Success", f"Product {product_id} deleted successfully")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to delete product: {e}")
-            
+
 

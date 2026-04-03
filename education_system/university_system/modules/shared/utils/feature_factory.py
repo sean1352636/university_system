@@ -11,12 +11,12 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 def create_cli_menu(title, features, cli_instruction=""):
     """
     Factory function to create a standardized CLI menu.
-    
+
     Args:
         title: Menu title (e.g., "LMS (Learning Management System)")
         features: Dict of menu options and their descriptions
         cli_instruction: Additional CLI instruction text
-    
+
     Returns:
         A menu function that can be called with auth parameter
     """
@@ -55,19 +55,19 @@ def create_cli_menu(title, features, cli_instruction=""):
                 break
             except Exception as e:
                 print(_t("shared.utils.feature_factory.error", error=str(e)))
-    
+
     return menu_function
 
 
 def create_gui_launcher(title, description, cli_instruction=""):
     """
     Factory function to create a standardized GUI launcher.
-    
+
     Args:
         title: Window title (e.g., "LMS (Learning Management System)")
         description: Multi-line feature description
         cli_instruction: CLI access instruction
-    
+
     Returns:
         A GUI launcher function that can be called with root and auth parameters
     """
@@ -109,7 +109,7 @@ def create_gui_launcher(title, description, cli_instruction=""):
                 _t("shared.utils.feature_factory.failed_to_open", title=title, error=str(e))
             )
             print(f"{title} error: {e}")
-    
+
     return launcher_function
 
 

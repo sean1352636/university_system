@@ -42,9 +42,9 @@ class PeerReviewManager:
         """Student interface to complete assigned peer reviews"""
         if not self._check_permission('view_assignments'):
             return
-        
+
         self.gui.layout.clear_content_area()
-        
+
         title = ttk.Label(self.gui.layout.content_area, text=_("peer_review.title"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
@@ -56,7 +56,7 @@ class PeerReviewManager:
             if not student_id:
                 ttk.Label(self.gui.layout.content_area, text=_("peer_review.no_student_id")).pack()
                 return
-            
+
             # Get pending peer reviews
             cursor.execute('''
             SELECT pra.id, a.title, s.first_name, s.last_name, pra.status
@@ -66,9 +66,9 @@ class PeerReviewManager:
             JOIN students s ON pra.reviewee_id = s.student_id
             WHERE pra.reviewer_id = ? AND pra.status = 'pending'
             ''', (student_id,))
-            
+
             reviews = cursor.fetchall()
-            
+
             if not reviews:
                 ttk.Label(self.gui.layout.content_area, text=_("peer_review.no_pending_reviews")).pack(pady=20)
                 conn.close()
@@ -77,21 +77,21 @@ class PeerReviewManager:
             # Create reviews interface
             reviews_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_("peer_review.pending_reviews"), padding=10)
             reviews_frame.pack(fill='both', expand=True)
-            
+
             for review in reviews:
                 review_frame = ttk.Frame(reviews_frame)
                 review_frame.pack(fill='x', pady=5, padx=5)
-                
+
                 ttk.Label(review_frame, text=f"Assignment: {review[1]}").pack(anchor='w')
                 ttk.Label(review_frame, text=f"Student: {review[2]} {review[3]}").pack(anchor='w')
-                ttk.Button(review_frame, text="Complete Review", 
+                ttk.Button(review_frame, text="Complete Review",
                           command=lambda r=review[0]: self.start_peer_review(r)).pack(anchor='e')
-            
+
             conn.close()
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("peer_review.failed_load_reviews", error=str(e)))
-    
+
 
     def start_peer_review(self, review_id):
         """Start a specific peer review"""
@@ -99,30 +99,30 @@ class PeerReviewManager:
         review_window = tk.Toplevel(self.root)
         review_window.title("Peer Review")
         review_window.geometry("600x500")
-        
+
         # Add peer review form components
         ttk.Label(review_window, text=_("peer_review.peer_review_form"), font=('Arial', 16, 'bold')).pack(pady=10)
 
         # Review criteria
         criteria_frame = ttk.LabelFrame(review_window, text=_("peer_review.review_criteria"), padding=10)
         criteria_frame.pack(fill='both', expand=True, padx=10, pady=10)
-        
+
         # Sample criteria (would be loaded from database)
         criteria = ["Content Quality", "Organization", "Clarity", "Creativity"]
         self.review_scores = {}
-        
+
         for criterion in criteria:
             crit_frame = ttk.Frame(criteria_frame)
             crit_frame.pack(fill='x', pady=5)
-            
+
             ttk.Label(crit_frame, text=f"{criterion}:").pack(side='left')
             score_var = tk.StringVar()
             self.review_scores[criterion] = score_var
-            
+
             # Score scale 1-5
             for score in range(1, 6):
                 ttk.Radiobutton(crit_frame, text=str(score), variable=score_var, value=str(score)).pack(side='left', padx=5)
-        
+
         # Comments section
         comments_frame = ttk.LabelFrame(review_window, text=_("peer_review.comments"), padding=10)
         comments_frame.pack(fill='x', padx=10, pady=10)
@@ -133,7 +133,7 @@ class PeerReviewManager:
         # Submit button
         ttk.Button(review_window, text=_("peer_review.submit_review"),
                   command=lambda: self.submit_peer_review(review_id, review_window)).pack(pady=10)
-    
+
 
     def submit_peer_review(self, review_id, window):
         """Submit a completed peer review"""
@@ -143,21 +143,21 @@ class PeerReviewManager:
                 if not score_var.get():
                     messagebox.showerror(_("common.error"), _("assignment_gui.messages.please_rate", criterion=criterion))
                     return
-            
+
             # Calculate overall score
             scores = [int(var.get()) for var in self.review_scores.values()]
             overall_score = sum(scores) / len(scores)
-            
+
             # Get comments
             comments = self.review_comments.get(1.0, tk.END).strip()
-            
+
             # Save review to database
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
                 cursor = conn.cursor()
 
                 cursor.execute('''
-                UPDATE peer_reviews 
+                UPDATE peer_reviews
                 SET overall_score = ?, review_text = ?, status = 'completed', review_date = ?
                 WHERE id = ?
                 ''', (overall_score, comments, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), review_id))
@@ -179,42 +179,42 @@ class PeerReviewManager:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("peer_review.failed_submit_review", error=str(e)))
-    
+
 
     def manage_peer_reviews(self):
         """Instructor interface to manage peer reviews"""
         if not self._check_permission('manage_assignments'):
             return
-        
+
         self.gui.layout.clear_content_area()
-        
+
         title = ttk.Label(self.gui.layout.content_area, text="Manage Peer Reviews", style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
-        
+
         # Create notebook for different views
         notebook = ttk.Notebook(self.gui.layout.content_area)
         notebook.pack(fill='both', expand=True)
-        
+
         # Setup tab
         setup_frame = ttk.Frame(notebook)
         notebook.add(setup_frame, text="Setup Reviews")
-        
+
         # Monitor tab
         monitor_frame = ttk.Frame(notebook)
         notebook.add(monitor_frame, text="Monitor Progress")
-        
+
         # Results tab
         results_frame = ttk.Frame(notebook)
         notebook.add(results_frame, text="View Results")
-        
+
         # Add content to tabs
         ttk.Label(setup_frame, text="Setup peer review assignments").pack(pady=20)
-        ttk.Button(setup_frame, text="Configure Peer Review", 
+        ttk.Button(setup_frame, text="Configure Peer Review",
                   command=self.configure_peer_review).pack(pady=10)
-        
+
         ttk.Label(monitor_frame, text="Monitor review progress").pack(pady=20)
         ttk.Label(results_frame, text="View completed reviews and results").pack(pady=20)
-    
+
 
     def configure_peer_review(self):
         """Configure peer review settings"""
@@ -222,14 +222,14 @@ class PeerReviewManager:
         config_window = tk.Toplevel(self.root)
         config_window.title("Configure Peer Review")
         config_window.geometry("500x400")
-        
-        ttk.Label(config_window, text="Peer Review Configuration", 
+
+        ttk.Label(config_window, text="Peer Review Configuration",
                  font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         # Assignment selection
         assignment_frame = ttk.LabelFrame(config_window, text="Select Assignment", padding=10)
         assignment_frame.pack(fill='x', padx=10, pady=10)
-        
+
         self.peer_assignment_var = tk.StringVar()
         assignment_combo = ttk.Combobox(assignment_frame, textvariable=self.peer_assignment_var,
                                         width=50, state='readonly')
@@ -252,31 +252,31 @@ class PeerReviewManager:
                 assignment_combo.current(0)
         except Exception as e:
             print(f"Failed to load assignments for peer review: {e}")
-        
+
         # Review criteria
         criteria_frame = ttk.LabelFrame(config_window, text="Review Criteria", padding=10)
         criteria_frame.pack(fill='x', padx=10, pady=10)
-        
+
         ttk.Label(criteria_frame, text="Add criteria (one per line):").pack(anchor='w')
         self.criteria_text = scrolledtext.ScrolledText(criteria_frame, height=6)
         self.criteria_text.pack(fill='both', expand=True)
-        
+
         # Default criteria
         default_criteria = "Content Quality\nOrganization\nClarity\nCreativity"
         self.criteria_text.insert(tk.END, default_criteria)
-        
+
         # Configuration options
         options_frame = ttk.LabelFrame(config_window, text="Options", padding=10)
         options_frame.pack(fill='x', padx=10, pady=10)
-        
+
         self.anonymous_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Anonymous reviews", 
+        ttk.Checkbutton(options_frame, text="Anonymous reviews",
                        variable=self.anonymous_var).pack(anchor='w')
-        
+
         # Submit button
-        ttk.Button(config_window, text="Setup Peer Reviews", 
+        ttk.Button(config_window, text="Setup Peer Reviews",
                   command=lambda: self.setup_peer_review_assignments(config_window)).pack(pady=10)
-    
+
 
     def setup_peer_review_assignments(self, window):
         """Setup peer review assignments using real database data"""
@@ -532,37 +532,37 @@ class PeerReviewManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to setup peer reviews: {e}")
-    
+
     # RUBRIC MANAGEMENT METHODS
 
     def show_peer_review_dashboard(self):
         """Show peer review dashboard"""
         self.gui.layout.clear_content_area()
-        
+
         title = ttk.Label(self.gui.layout.content_area, text="Peer Review Dashboard", style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
-        
+
         # Create notebook for different peer review views
         notebook = ttk.Notebook(self.gui.layout.content_area)
         notebook.pack(fill='both', expand=True)
-        
+
         # My Reviews tab
         my_reviews_frame = ttk.Frame(notebook)
         notebook.add(my_reviews_frame, text="My Reviews")
-        
+
         # Reviews to Complete tab
         pending_reviews_frame = ttk.Frame(notebook)
         notebook.add(pending_reviews_frame, text="Pending Reviews")
-        
+
         # Review Results tab
         results_frame = ttk.Frame(notebook)
         notebook.add(results_frame, text="Review Results")
-        
+
         # Placeholder content
         ttk.Label(my_reviews_frame, text="Peer reviews you have completed will appear here").pack(pady=20)
         ttk.Label(pending_reviews_frame, text="Reviews waiting for your input will appear here").pack(pady=20)
         ttk.Label(results_frame, text="Results from peer reviews of your work will appear here").pack(pady=20)
-    
+
 
     def setup_peer_review(self, *args, **kwargs):
         """Open peer review management tools."""

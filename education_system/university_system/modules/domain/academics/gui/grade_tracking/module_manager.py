@@ -69,10 +69,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -123,7 +123,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -139,7 +139,7 @@ def init_basic_database():
         status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -153,7 +153,7 @@ def init_basic_database():
         year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -167,7 +167,7 @@ def init_basic_database():
         UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -187,11 +187,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -201,7 +201,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -216,7 +216,7 @@ def init_enhanced_grades_db():
         FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -229,7 +229,7 @@ def init_enhanced_grades_db():
         FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -248,7 +248,7 @@ def init_enhanced_grades_db():
         FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -359,44 +359,44 @@ class ModuleManager:
         # Module management controls
         control_frame = ttk.Frame(self.content_frame)
         control_frame.pack(fill='x', padx=10, pady=5)
-            
-        ttk.Button(control_frame, text="Add Module", 
+
+        ttk.Button(control_frame, text="Add Module",
                   command=self.add_module_dialog).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Edit Module", 
+        ttk.Button(control_frame, text="Edit Module",
                   command=self.edit_module_dialog).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Delete Module", 
+        ttk.Button(control_frame, text="Delete Module",
                   command=self.delete_module).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Module Enrollments", 
+        ttk.Button(control_frame, text="Module Enrollments",
                   command=self.manage_module_enrollments).pack(side='left', padx=5)
-        ttk.Button(control_frame, text="Refresh", 
+        ttk.Button(control_frame, text="Refresh",
                   command=self.refresh_modules).pack(side='left', padx=5)
-            
+
         # Module list
         list_frame = ttk.Frame(self.content_frame)
         list_frame.pack(fill='both', expand=True, padx=10, pady=5)
-            
+
         columns = ('Code', 'Name', 'Type', 'Credits', 'Description')
         self.module_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=25)
-            
+
         for col in columns:
             self.module_tree.heading(col, text=col)
             if col == 'Description':
                 self.module_tree.column(col, width=300)
             else:
                 self.module_tree.column(col, width=120, anchor='center')
-            
+
         # Scrollbars
         v_scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.module_tree.yview)
         h_scrollbar = ttk.Scrollbar(list_frame, orient='horizontal', command=self.module_tree.xview)
         self.module_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-            
+
         self.module_tree.pack(side='left', fill='both', expand=True)
         v_scrollbar.pack(side='right', fill='y')
         h_scrollbar.pack(side='bottom', fill='x')
-    
+
         # Load modules data
         self.refresh_modules()
-    
+
 
     def load_courses_for_filter(self, combo):
         """Load courses for filtering"""
@@ -404,25 +404,25 @@ class ModuleManager:
         try:
             conn = get_connection()
             cursor = conn.cursor()
-    
+
             cursor.execute('SELECT DISTINCT course FROM students ORDER BY course')
             courses = ['All Courses'] + [row[0] for row in cursor.fetchall()]
             combo['values'] = courses
-    
+
         except sqlite3.Error as e:
             if conn:
                 conn.rollback()
             print(f"Database error loading courses: {e}")
-    
+
         except Exception as e:
             if conn:
                 conn.rollback()
             print(f"Error loading courses: {e}")
-    
+
         finally:
             if conn:
                 conn.close()
-        
+
 
     def generate_module_grade_report(self):
         """Generate module grade report"""
@@ -430,7 +430,7 @@ class ModuleManager:
         try:
             conn = get_connection()
             cursor = conn.cursor()
-    
+
             cursor.execute('''
             SELECT
                 m.module_code,
@@ -454,14 +454,14 @@ class ModuleManager:
             GROUP BY m.module_code, m.module_name
             ''')
             module_rows = cursor.fetchall()
-    
+
             cursor.execute('''
-            SELECT 
+            SELECT
                 m.module_code,
                 AVG(
-                    CASE 
-                        WHEN a.max_points IS NOT NULL AND a.max_points > 0 
-                        THEN (g.score / a.max_points) * 100 
+                    CASE
+                        WHEN a.max_points IS NOT NULL AND a.max_points > 0
+                        THEN (g.score / a.max_points) * 100
                     END
                 ) AS avg_assessment_percentage
             FROM modules m
@@ -470,7 +470,7 @@ class ModuleManager:
             GROUP BY m.module_code
             ''')
             assessment_map = {row[0]: row[1] for row in cursor.fetchall()}
-    
+
             summary_lines = [
                 f"Modules With Recorded Assessments: {sum(1 for r in module_rows if assessment_map.get(r[0]) is not None)}",
                 f"Modules With Final Grades: {sum(1 for r in module_rows if r[3])}",
@@ -478,20 +478,20 @@ class ModuleManager:
                 f"{(sum(r[4] for r in module_rows if r[4] is not None) / max(1, sum(1 for r in module_rows if r[4] is not None))):.1f}%"
                 if any(r[4] is not None for r in module_rows) else "Average Module Final Score: N/A"
             ]
-    
+
             top_modules = sorted(
                 [row for row in module_rows if row[4] is not None],
                 key=lambda r: r[4],
                 reverse=True
             )[:5]
-    
+
             top_lines = [
                 f"{idx + 1}. {row[0]} - {row[1]}: Avg Final Score {row[4]:.1f}%, "
                 f"GPA {row[5]:.2f}" if row[5] is not None else
                 f"{idx + 1}. {row[0]} - {row[1]}: Avg Final Score {row[4]:.1f}%, GPA N/A"
                 for idx, row in enumerate(top_modules)
             ]
-    
+
             risk_modules = []
             for row in module_rows:
                 module_code, module_name, enrolled, graded, avg_score, avg_gpa, fail_count = row
@@ -499,7 +499,7 @@ class ModuleManager:
                     fail_rate = fail_count / graded
                     if fail_rate >= 0.25 or (avg_score is not None and avg_score < 60):
                         risk_modules.append((module_code, module_name, fail_rate, avg_score))
-    
+
             risk_lines = [
                 f"{module_code} - {module_name}: Fail Rate {fail_rate:.0%}, Avg Final Score "
                 f"{avg_score:.1f}%" if avg_score is not None else
@@ -509,7 +509,7 @@ class ModuleManager:
                     key=lambda item: (-item[2], item[3] if item[3] is not None else 101)
                 )[:5]
             ]
-    
+
             assessment_data = [
                 (row[0], row[1], assessment_map[row[0]])
                 for row in module_rows
@@ -520,21 +520,21 @@ class ModuleManager:
                 f"{code} - {name}: Assessment Avg {avg:.1f}%"
                 for code, name, avg in assessment_data[:5]
             ]
-    
+
             sections = [
                 ("Module Overview", summary_lines),
                 ("Top Performing Modules", top_lines),
                 ("Modules Requiring Attention", risk_lines),
                 ("Assessment Averages Snapshot", assessment_lines)
             ]
-    
+
             footer = (
                 "Investigate modules with elevated fail rates or low average scores and collaborate with "
                 "module leaders to review assessment alignment."
             )
-    
+
             self._display_report("Module Grade Report", sections, footer)
-    
+
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to generate module grade report: {e}")
         except Exception as e:
@@ -542,7 +542,7 @@ class ModuleManager:
         finally:
             if conn:
                 conn.close()
-    
+
 
     def generate_module_outcome_report(self):
         """Generate module outcome report"""
@@ -550,12 +550,12 @@ class ModuleManager:
         try:
             conn = get_connection()
             cursor = conn.cursor()
-    
+
             cursor.execute('SELECT COUNT(*) FROM learning_outcomes')
             total_outcomes = cursor.fetchone()[0]
-    
+
             cursor.execute('''
-            SELECT 
+            SELECT
                 m.module_code,
                 m.module_name,
                 COUNT(DISTINCT ao.outcome_id) AS mapped_outcomes
@@ -565,9 +565,9 @@ class ModuleManager:
             GROUP BY m.module_code, m.module_name
             ''')
             module_outcome_rows = cursor.fetchall()
-    
+
             cursor.execute('''
-            SELECT 
+            SELECT
                 lo.outcome_code,
                 lo.description,
                 AVG(or.achievement_level) AS avg_level,
@@ -577,9 +577,9 @@ class ModuleManager:
             GROUP BY lo.outcome_id, lo.outcome_code, lo.description
             ''')
             outcome_results_rows = cursor.fetchall()
-    
+
             cursor.execute('''
-            SELECT 
+            SELECT
                 m.module_code,
                 lo.outcome_code,
                 AVG(or.achievement_level) AS avg_level
@@ -591,13 +591,13 @@ class ModuleManager:
             GROUP BY m.module_code, lo.outcome_code
             ''')
             module_attainment_rows = cursor.fetchall()
-    
+
             summary_lines = [
                 f"Total Defined Outcomes: {total_outcomes}",
                 f"Modules With Outcome Mapping: {sum(1 for row in module_outcome_rows if row[2] > 0)}",
                 f"Modules Without Outcome Mapping: {sum(1 for row in module_outcome_rows if row[2] == 0)}"
             ]
-    
+
             outcome_attainment_lines = [
                 f"{row[0]} - {row[1][:45]}...: Avg Level {row[2]:.2f} ({row[3]} students)"
                 if len(row[1]) > 50 else
@@ -606,7 +606,7 @@ class ModuleManager:
                 f"{row[0]} - {row[1]}: No achievement evidence"
                 for row in outcome_results_rows
             ]
-    
+
             underrepresented_outcomes = [
                 row for row in outcome_results_rows
                 if row[3] == 0 or row[2] is None
@@ -617,12 +617,12 @@ class ModuleManager:
                 f"{row[0]} - {row[1]}: No evidence"
                 for row in underrepresented_outcomes
             ]
-    
+
             module_attainment_map = {}
             for module_code, outcome_code, avg_level in module_attainment_rows:
                 if avg_level is not None:
                     module_attainment_map.setdefault(module_code, []).append(avg_level)
-    
+
             high_alignment_lines = []
             for module_code, module_name, mapped in module_outcome_rows:
                 levels = module_attainment_map.get(module_code, [])
@@ -632,7 +632,7 @@ class ModuleManager:
                         high_alignment_lines.append(
                             f"{module_code} - {module_name}: Avg Outcome Level {avg_level:.2f} across {mapped} outcomes"
                         )
-    
+
             at_risk_lines = []
             for module_code, module_name, mapped in module_outcome_rows:
                 levels = module_attainment_map.get(module_code, [])
@@ -644,21 +644,21 @@ class ModuleManager:
                         at_risk_lines.append(
                             f"{module_code} - {module_name}: Avg Outcome Level {avg_level:.2f} ({mapped} outcomes)"
                         )
-    
+
             sections = [
                 ("Outcome Coverage Overview", summary_lines),
                 ("Outcome Achievement Highlights", outcome_attainment_lines[:10]),
                 ("High Outcome Alignment Modules", high_alignment_lines[:5]),
                 ("Outcome Coverage Gaps", at_risk_lines[:5] if at_risk_lines else underrepresented_lines)
             ]
-    
+
             footer = (
                 "Review modules without outcome evidence to ensure assessments align with intended learning goals "
                 "and capture achievement data consistently."
             )
-    
+
             self._display_report("Module Outcome Report", sections, footer)
-    
+
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to generate module outcome report: {e}")
         except Exception as e:

@@ -32,6 +32,11 @@ class TripManagementGUI:
         # Initialize i18n for language support
         init_i18n()
 
+        # Support both (root, auth) and (auth, root) calling conventions.
+        # Detect by checking if the first argument is a tkinter widget.
+        if auth_instance is not None and isinstance(auth_instance, (tk.Tk, tk.Toplevel, tk.Frame)):
+            auth_instance, root = root, auth_instance
+
         self.auth = auth_instance
         self.root = root          # may be provided by caller
         self._owns_root = self.root is None  # track if we created the root

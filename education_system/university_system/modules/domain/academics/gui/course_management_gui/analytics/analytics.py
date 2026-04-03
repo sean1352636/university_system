@@ -255,7 +255,7 @@ def generate_analytics(self):
         self.analytics_text.insert(1.0, analytics_text)
 
         self.update_status("Analytics generated successfully")
-        
+
     except sqlite3.Error as e:
         messagebox.showerror(_("common.database_error"), f"Failed to generate analytics: {e}")
 
@@ -1040,7 +1040,7 @@ def show_department_stats(self):
 
         # Initial load
         update_stats()
-        
+
     except sqlite3.Error as e:
         messagebox.showerror(_("common.database_error"), f"Failed to load department statistics: {e}")
 
@@ -1050,74 +1050,74 @@ class CourseAnalyticsDialog:
     def __init__(self, parent, auth):
         self.parent = parent
         self.auth = auth
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Course Analytics Dashboard")
         self.dialog.geometry("1000x700")
         self.dialog.transient(parent)
-        
+
         self.create_widgets()
         self.dialog.focus_set()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         # Create notebook for different analytics views
         notebook = ttk.Notebook(main_frame)
         notebook.pack(fill=tk.BOTH, expand=True)
-        
+
         # Overview Tab
         overview_frame = ttk.Frame(notebook)
         notebook.add(overview_frame, text="Overview")
         self.create_overview_tab(overview_frame)
-        
+
         # Department Analysis Tab
         dept_frame = ttk.Frame(notebook)
         notebook.add(dept_frame, text="Department Analysis")
         self.create_department_tab(dept_frame)
-        
+
         # Trends Tab
         trends_frame = ttk.Frame(notebook)
         notebook.add(trends_frame, text="Trends")
         self.create_trends_tab(trends_frame)
-        
+
         # Controls
         controls_frame = ttk.Frame(main_frame)
         controls_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(controls_frame, text="Refresh Data", command=self.refresh_all_data).pack(side=tk.LEFT, padx=5)
         ttk.Button(controls_frame, text="Export Report", command=self.export_report).pack(side=tk.LEFT, padx=5)
         ttk.Button(controls_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-        
+
         # Load initial data
         self.refresh_all_data()
-    
+
     def create_overview_tab(self, parent):
         # Key metrics frame
         metrics_frame = ttk.LabelFrame(parent, text="Key Metrics", padding=10)
         metrics_frame.pack(fill=tk.X, pady=5)
-        
+
         # Create metric labels
         self.total_courses_label = ttk.Label(metrics_frame, text="Total Courses: -", font=("Arial", 12, "bold"))
         self.total_courses_label.grid(row=0, column=0, padx=20, pady=5)
-        
+
         self.total_students_label = ttk.Label(metrics_frame, text="Total Students: -", font=("Arial", 12, "bold"))
         self.total_students_label.grid(row=0, column=1, padx=20, pady=5)
-        
+
         self.avg_fill_rate_label = ttk.Label(metrics_frame, text="Avg Fill Rate: -", font=("Arial", 12, "bold"))
         self.avg_fill_rate_label.grid(row=0, column=2, padx=20, pady=5)
-        
+
         self.available_spots_label = ttk.Label(metrics_frame, text="Available Spots: -", font=("Arial", 12, "bold"))
         self.available_spots_label.grid(row=1, column=0, padx=20, pady=5)
-        
+
         self.active_courses_label = ttk.Label(metrics_frame, text="Active Courses: -", font=("Arial", 12, "bold"))
         self.active_courses_label.grid(row=1, column=1, padx=20, pady=5)
-        
+
         # Charts frame (simplified text-based charts since GUI doesn't have matplotlib)
         charts_frame = ttk.LabelFrame(parent, text="Status Distribution", padding=10)
         charts_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-        
+
         self.status_text = ScrolledText(charts_frame, height=15)
         self.status_text.pack(fill=tk.BOTH, expand=True)
 
@@ -1128,17 +1128,17 @@ class CourseAnalyticsDialog:
             text="Email Overview to Admin",
             command=self.email_overview_report,
         ).pack(side=tk.RIGHT, padx=5)
-    
+
     def create_department_tab(self, parent):
         # Department selector
         selector_frame = ttk.Frame(parent)
         selector_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(selector_frame, text="Department:").pack(side=tk.LEFT)
         self.dept_selector = ttk.Combobox(selector_frame, width=30)
         self.dept_selector.pack(side=tk.LEFT, padx=5)
         self.dept_selector.bind('<<ComboboxSelected>>', self.update_department_data)
-        
+
         # Department details
         self.dept_details = ScrolledText(parent, height=25)
         self.dept_details.pack(fill=tk.BOTH, expand=True, pady=5)
@@ -1150,12 +1150,12 @@ class CourseAnalyticsDialog:
             text="Email Department Report to Admin",
             command=self.email_department_report,
         ).pack(side=tk.RIGHT, padx=5)
-    
+
     def create_trends_tab(self, parent):
         # Trends analysis
         trends_label = ttk.Label(parent, text="Course Trends Analysis", font=("Arial", 14, "bold"))
         trends_label.pack(pady=10)
-        
+
         self.trends_text = ScrolledText(parent, height=25)
         self.trends_text.pack(fill=tk.BOTH, expand=True, pady=5)
 
@@ -1236,12 +1236,12 @@ class CourseAnalyticsDialog:
             messagebox.showwarning("No Report", "Trends report is empty.")
             return
         self._send_report_to_admin("Trends Analysis", report_body)
-    
+
     def refresh_all_data(self):
         self.load_overview_data()
         self.load_department_selector()
         self.load_trends_data()
-    
+
     def load_overview_data(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
@@ -1269,13 +1269,13 @@ class CourseAnalyticsDialog:
                 avg_enrollment = total_students / max(total_courses, 1)
                 available_spots = total_capacity - total_students if total_capacity else 0
                 avg_fill_rate = (total_students / total_capacity * 100) if total_capacity > 0 else 0
-                
+
                 self.total_courses_label.config(text=f"Total Courses: {total_courses}")
                 self.total_students_label.config(text=f"Total Students: {total_students or 0}")
                 self.avg_fill_rate_label.config(text=f"Avg Fill Rate: {avg_fill_rate:.1f}%")
                 self.available_spots_label.config(text=f"Available Spots: {available_spots}")
                 self.active_courses_label.config(text=f"Active Courses: {active_courses}")
-            
+
             # Status distribution
             cursor.execute(
                 "SELECT status, COUNT(*) FROM courses "
@@ -1284,26 +1284,26 @@ class CourseAnalyticsDialog:
                 "GROUP BY status ORDER BY COUNT(*) DESC"
             )
             status_data = cursor.fetchall()
-            
+
             self.status_text.delete(1.0, tk.END)
             self.status_text.insert(tk.END, "COURSE STATUS DISTRIBUTION\n")
             self.status_text.insert(tk.END, "=" * 40 + "\n\n")
-            
+
             for status, count in status_data:
                 percentage = (count / total_courses * 100) if total_courses > 0 else 0
                 bar = "█" * int(percentage / 5)  # Simple text bar chart
                 self.status_text.insert(tk.END, f"{status:<12} {count:<6} {percentage:>6.1f}% {bar}\n")
-            
+
             conn.close()
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load overview data: {e}")
-    
+
     def load_department_selector(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             cursor.execute(
                 "SELECT DISTINCT COALESCE(department, 'Unknown') as dept FROM courses "
                 "WHERE course_code IS NOT NULL "
@@ -1311,29 +1311,29 @@ class CourseAnalyticsDialog:
                 "ORDER BY dept"
             )
             departments = [row[0] for row in cursor.fetchall()]
-            
+
             self.dept_selector['values'] = departments
             if departments:
                 self.dept_selector.set(departments[0])
                 self.update_department_data()
-            
+
             conn.close()
         except sqlite3.Error:
             pass
-    
+
     def update_department_data(self, event=None):
         selected_dept = self.dept_selector.get()
         if not selected_dept:
             return
-        
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             self.dept_details.delete(1.0, tk.END)
             self.dept_details.insert(tk.END, f"DEPARTMENT ANALYSIS: {selected_dept.upper()}\n")
             self.dept_details.insert(tk.END, "=" * 50 + "\n\n")
-            
+
             # Department statistics
             cursor.execute("""
             SELECT
@@ -1349,12 +1349,12 @@ class CourseAnalyticsDialog:
               AND COALESCE(c.course_name, c.name) IS NOT NULL
               AND COALESCE(c.department, 'Unknown') = ?
             """, (selected_dept,))
-            
+
             stats = cursor.fetchone()
             if stats:
                 total, students, capacity, avg_enroll, avg_credits, active = stats
                 fill_rate = (students / capacity * 100) if capacity > 0 else 0
-                
+
                 self.dept_details.insert(tk.END, f"Total Courses: {total}\n")
                 self.dept_details.insert(tk.END, f"Active Courses: {active}\n")
                 self.dept_details.insert(tk.END, f"Total Students: {students or 0}\n")
@@ -1362,7 +1362,7 @@ class CourseAnalyticsDialog:
                 self.dept_details.insert(tk.END, f"Fill Rate: {fill_rate:.1f}%\n")
                 self.dept_details.insert(tk.END, f"Average Enrollment: {avg_enroll:.1f}\n")
                 self.dept_details.insert(tk.END, f"Average Credits: {avg_credits:.1f}\n\n")
-            
+
             # Top courses in department
             cursor.execute("""
             SELECT COALESCE(c.course_code, c.code), COALESCE(c.course_name, c.name),
@@ -1481,14 +1481,14 @@ class CourseAnalyticsDialog:
             defaultextension=".txt",
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")]
         )
-        
+
         if filename:
             try:
                 with open(filename, 'w', encoding='utf-8') as f:
                     f.write("COURSE ANALYTICS REPORT\n")
                     f.write("=" * 50 + "\n")
                     f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-                    
+
                     # Export overview data
                     f.write("OVERVIEW METRICS:\n")
                     f.write(f"{self.total_courses_label.cget('text')}\n")
@@ -1496,16 +1496,16 @@ class CourseAnalyticsDialog:
                     f.write(f"{self.avg_fill_rate_label.cget('text')}\n")
                     f.write(f"{self.available_spots_label.cget('text')}\n")
                     f.write(f"{self.active_courses_label.cget('text')}\n\n")
-                    
+
                     # Export status distribution
                     f.write(self.status_text.get(1.0, tk.END))
                     f.write("\n")
-                    
+
                     # Export trends
                     f.write(self.trends_text.get(1.0, tk.END))
-                
+
                 messagebox.showinfo(_("common.export_complete"), f"Report exported to {filename}")
-                
+
             except Exception as e:
                 messagebox.showerror(_("common.export_error"), f"Failed to export report: {e}")
 
@@ -1528,30 +1528,30 @@ class EnrollmentReportDialog:
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         ttk.Label(main_frame, text="Select Report Type", font=("Arial", 12, "bold")).pack(pady=10)
-        
+
         self.report_type = tk.StringVar(value="Summary")
-        
+
         report_frame = ttk.LabelFrame(main_frame, text="Report Options", padding=10)
         report_frame.pack(fill=tk.X, pady=10)
-        
-        ttk.Radiobutton(report_frame, text="Summary Report", variable=self.report_type, 
+
+        ttk.Radiobutton(report_frame, text="Summary Report", variable=self.report_type,
                        value="Summary").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(report_frame, text="Department Report", variable=self.report_type, 
+        ttk.Radiobutton(report_frame, text="Department Report", variable=self.report_type,
                        value="Department").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(report_frame, text="Detailed Course Report", variable=self.report_type, 
+        ttk.Radiobutton(report_frame, text="Detailed Course Report", variable=self.report_type,
                        value="Detailed").pack(anchor=tk.W, pady=2)
-        ttk.Radiobutton(report_frame, text="Capacity Analysis", variable=self.report_type, 
+        ttk.Radiobutton(report_frame, text="Capacity Analysis", variable=self.report_type,
                        value="Capacity").pack(anchor=tk.W, pady=2)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Generate", command=self.generate_report).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def generate_report(self):
         self.result = self.report_type.get()
         self.dialog.destroy()

@@ -25,13 +25,13 @@ def search_student_by_first_name():
     if not auth.check_permission('view_any_student'):
         print("You don't have permission to search student records.")
         return
-    
+
     conn = get_db_connection()
     if not conn:
         return
-        
+
     cursor = conn.cursor()
-    
+
     # Get search term from user
     search_term = input("Enter student's first name: ")
 
@@ -49,7 +49,7 @@ def search_student_by_first_name():
     cursor.execute('''
     SELECT * FROM students WHERE LOWER(first_name) = LOWER(?)
     ''', (search_term,))
-    
+
     matches = cursor.fetchall()
 
     # Display search results
@@ -62,7 +62,7 @@ def search_student_by_first_name():
         for i, match in enumerate(matches):
             print(f"{i+1}.")
             display_student_record(match)
-        
+
         choice = input("Enter the number of the record you want to display: ")
         try:
             index = int(choice) - 1
@@ -71,7 +71,7 @@ def search_student_by_first_name():
             display_student_record(matches[index])
         except (ValueError, IndexError):
             print("Error: Invalid choice.")
-    
+
     conn.close()
 
 
@@ -82,13 +82,13 @@ def search_student_by_last_name():
     if not auth.check_permission('view_any_student'):
         print("You don't have permission to search student records.")
         return
-    
+
     conn = get_db_connection()
     if not conn:
         return
-        
+
     cursor = conn.cursor()
-    
+
     # Get search term from user
     search_term = input("Enter student's last name: ")
 
@@ -106,7 +106,7 @@ def search_student_by_last_name():
     cursor.execute('''
     SELECT * FROM students WHERE LOWER(last_name) = LOWER(?)
     ''', (search_term,))
-    
+
     matches = cursor.fetchall()
 
     # Display search results
@@ -119,7 +119,7 @@ def search_student_by_last_name():
         for i, match in enumerate(matches):
             print(f"{i+1}.")
             display_student_record(match)
-        
+
         choice = input("Enter the number of the record you want to display: ")
         try:
             index = int(choice) - 1
@@ -128,7 +128,7 @@ def search_student_by_last_name():
             display_student_record(matches[index])
         except (ValueError, IndexError):
             print("Error: Invalid choice.")
-    
+
     conn.close()
 
 
@@ -140,29 +140,29 @@ def search_student_by_student_id():
     if not (auth.check_permission('view_any_student') or auth.check_permission('view_own_record')):
         print("You don't have permission to search student records.")
         return
-    
+
     conn = get_db_connection()
     if not conn:
         return
-        
+
     cursor = conn.cursor()
-    
+
     # For students with view_own_record permission only
     if not auth.check_permission('view_any_student') and auth.check_permission('view_own_record'):
         # Get the student ID associated with this user - updated for new database structure
         cursor.execute('''
         SELECT student_id FROM users WHERE id = ?
         ''', (auth.current_user['id'],))
-        
+
         result = cursor.fetchone()
         if result and result[0]:
             student_id = result[0]
-            
+
             # Fetch and display just this student's record
             cursor.execute('''
             SELECT * FROM students WHERE student_id = ?
             ''', (student_id,))
-            
+
             student = cursor.fetchone()
             if student:
                 display_student_record(student)
@@ -170,10 +170,10 @@ def search_student_by_student_id():
                 print("Your student record was not found.")
         else:
             print("No student ID associated with your account.")
-        
+
         conn.close()
         return
-    
+
     # For staff/admin with view_any_student permission
     # Get search term from user
     search_term = input("Enter student's ID: ")
@@ -192,7 +192,7 @@ def search_student_by_student_id():
     cursor.execute('''
     SELECT * FROM students WHERE student_id = ?
     ''', (search_term,))
-    
+
     match = cursor.fetchone()
 
     # Display search results
@@ -200,7 +200,7 @@ def search_student_by_student_id():
         print(f"No records found for search term '{search_term}'.")
     else:
         display_student_record(match)
-    
+
     conn.close()
 
 
@@ -211,13 +211,13 @@ def search_student_by_registration_date():
     if not auth.check_permission('view_any_student'):
         print("You don't have permission to search student records.")
         return
-    
+
     conn = get_db_connection()
     if not conn:
         return
-        
+
     cursor = conn.cursor()
-    
+
     # Get search term from user
     search_date = input("Enter date (YYYY-MM-DD): ")
 
@@ -231,7 +231,7 @@ def search_student_by_registration_date():
     cursor.execute('''
     SELECT * FROM students WHERE registration_datetime LIKE ?
     ''', (f"{search_date}%",))
-    
+
     matches = cursor.fetchall()
 
     # Display search results
@@ -244,7 +244,7 @@ def search_student_by_registration_date():
         for i, match in enumerate(matches):
             print(f"{i+1}.")
             display_student_record(match)
-        
+
         choice = input("Enter the number of the record you want to display: ")
         try:
             index = int(choice) - 1

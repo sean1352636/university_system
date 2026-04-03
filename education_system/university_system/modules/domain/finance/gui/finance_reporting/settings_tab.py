@@ -69,7 +69,7 @@ def create_settings_tab(self):
     for i, (label, var_name, default_value) in enumerate(alert_settings):
         ttk.Label(alert_frame, text=label).grid(row=i, column=0, sticky=tk.W, pady=2)
         self.alert_vars[var_name] = tk.DoubleVar(value=default_value)
-        ttk.Entry(alert_frame, textvariable=self.alert_vars[var_name], 
+        ttk.Entry(alert_frame, textvariable=self.alert_vars[var_name],
                  width=15).grid(row=i, column=1, sticky=tk.W, padx=(10, 0), pady=2)
 
     # System settings

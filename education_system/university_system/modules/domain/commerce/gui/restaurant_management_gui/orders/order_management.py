@@ -74,10 +74,10 @@ def view_orders_gui(self):
         if not conn:
             messagebox.showerror(_t("common.error"), _t("common.database_error", error="Connection failed"))
             return
-            
+
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT o.order_id, COALESCE(c.name, 'Walk-in'), o.order_date, 
+            SELECT o.order_id, COALESCE(c.name, 'Walk-in'), o.order_date,
                    o.total_amount, o.order_status, o.payment_method
             FROM orders o
             LEFT JOIN restaurant_customers c ON o.customer_id = c.customer_id
@@ -85,18 +85,18 @@ def view_orders_gui(self):
             LIMIT 50
         ''')
         orders = cursor.fetchall()
-        
+
         for item in self.orders_tree.get_children():
             self.orders_tree.delete(item)
-            
+
         for order in orders:
             order_time = order[2][:16] if order[2] else 'N/A'
-            
+
             self.orders_tree.insert('', 'end', values=(
-                order[0], order[1], order_time, f"£{order[3]:.2f}", 
+                order[0], order[1], order_time, f"£{order[3]:.2f}",
                 order[4], order[5] or 'N/A'
             ))
-            
+
         conn.close()
         messagebox.showinfo(_t("common.success"), _t("restaurant.orders.loaded_count", count=len(orders)))
 
@@ -109,10 +109,10 @@ def update_order_status_dialog(self):
     if not selection:
         messagebox.showwarning(_t("common.warning"), _t("restaurant.orders.select_to_update"))
         return
-        
+
     item_values = self.orders_tree.item(selection[0])['values']
     order_id = item_values[0]
-    
+
     dialog = OrderStatusDialog(self.root, order_id)
     if dialog.result:
         self.view_orders_gui()
@@ -123,10 +123,10 @@ def process_payment_dialog(self):
     if not selection:
         messagebox.showwarning(_t("common.warning"), _t("restaurant.orders.select_for_payment"))
         return
-        
+
     item_values = self.orders_tree.item(selection[0])['values']
     order_id = item_values[0]
-    
+
     dialog = PaymentDialog(self.root, order_id)
     if dialog.result:
         self.view_orders_gui()
@@ -137,14 +137,14 @@ def show_order_analytics(self):
         analytics_window = tk.Toplevel(self.root)
         analytics_window.title(_t("restaurant.orders.analytics_title"))
         analytics_window.geometry("800x600")
-        
+
         text_area = ScrolledText(analytics_window, height=30, width=80)
         text_area.pack(fill='both', expand=True, padx=10, pady=10)
-        
+
         analytics_text = self.generate_order_analytics()
         text_area.insert('1.0', analytics_text)
         text_area.config(state='disabled')
-        
+
     except (sqlite3.Error, tk.TclError) as e:
         messagebox.showerror(_t("common.error"), _t("restaurant.orders.analytics_failed", error=str(e)))
 
@@ -159,22 +159,22 @@ def generate_order_analytics(self):
 
         text = _t("restaurant.orders.analytics_header") + "\n"
         text += "=" * 50 + "\n\n"
-        
+
         cursor.execute('''
             SELECT COUNT(*) as total_orders, AVG(total_amount) as avg_value
             FROM orders
             WHERE status = 'Completed'
         ''')
-        
+
         stats = cursor.fetchone()
-        
+
         if stats:
             text += _t("restaurant.orders.total_orders", count=stats[0]) + "\n"
             text += _t("restaurant.orders.avg_order_value", value=f"£{stats[1]:.2f}") + "\n" if stats[1] else _t("common.na") + "\n"
-        
+
         conn.close()
         return text
-        
+
     except sqlite3.Error as e:
         return _t("restaurant.orders.analytics_error", error=str(e))
 
@@ -182,40 +182,40 @@ class OrderStatusDialog:
     def __init__(self, parent, order_id):
         self.result = False
         self.order_id = order_id
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_t("restaurant.orders.update_status_title"))
         self.dialog.geometry("300x200")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
-        
+
     def create_widgets(self):
         """Create dialog widgets"""
         main_frame = ttk.Frame(self.dialog, padding="20")
         main_frame.pack(fill='both', expand=True)
-        
+
         ttk.Label(main_frame, text=_t("restaurant.orders.order_id_label", id=self.order_id)).pack(pady=10)
         ttk.Label(main_frame, text=_t("restaurant.orders.new_status")).pack(pady=5)
-        
+
         self.status_var = tk.StringVar()
         status_combo = ttk.Combobox(main_frame, textvariable=self.status_var,
                                    values=['Pending', 'Preparing', 'Ready', 'Completed', 'Cancelled'])
         status_combo.pack(pady=10)
-        
+
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(pady=20)
-        
+
         ttk.Button(button_frame, text=_t("common.update"), command=self.update_status).pack(side='left', padx=10)
         ttk.Button(button_frame, text=_t("common.cancel"), command=self.cancel).pack(side='left', padx=10)
-        
+
     def update_status(self):
         """Update the order status"""
         if not self.status_var.get():
             messagebox.showerror(_t("common.error"), _t("restaurant.orders.select_status"))
             return
-            
+
         try:
             conn = get_db_connection()
             if conn:
@@ -224,14 +224,14 @@ class OrderStatusDialog:
                               (self.status_var.get(), self.order_id))
                 conn.commit()
                 conn.close()
-            
+
             self.result = True
             self.dialog.destroy()
             messagebox.showinfo(_t("common.success"), _t("restaurant.orders.status_updated"))
 
         except sqlite3.Error as e:
             messagebox.showerror(_t("common.error"), _t("restaurant.orders.update_failed", error=str(e)))
-            
+
     def cancel(self):
         """Cancel the dialog"""
         self.dialog.destroy()

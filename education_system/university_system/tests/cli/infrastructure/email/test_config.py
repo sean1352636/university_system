@@ -221,8 +221,9 @@ class TestSaveConfig:
     def test_save_config_error_handling(self):
         """Test error handling during save"""
         with patch('builtins.open', side_effect=PermissionError("Access denied")):
-            # Should not raise exception
-            config.save_config('/invalid/path/config.json')
+            # save_config delegates to shared save_email_config which raises on error
+            with pytest.raises(PermissionError):
+                config.save_config('/invalid/path/config.json')
 
 
 class TestConfigureEmailSettings:
@@ -380,8 +381,7 @@ class TestConfigurationIntegrity:
             'smtp_port',
             'use_tls',
             'use_authentication',
-            'smtp_username',
-            'smtp_password',
+            'username',
             'email_signature',
             'send_delay',
             'max_threads',

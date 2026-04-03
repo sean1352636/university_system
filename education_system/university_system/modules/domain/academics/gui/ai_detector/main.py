@@ -3,6 +3,7 @@ import os
 import threading
 import time
 import random
+import sys
 from datetime import datetime
 
 import tkinter as tk
@@ -56,11 +57,29 @@ from education_system.university_system.modules.domain.academics.gui.ai_detector
 from education_system.university_system.modules.domain.academics.gui.ai_detector import statistics_view
 from education_system.university_system.modules.domain.academics.gui.ai_detector import student_analytics_view
 
+sys.modules.setdefault(
+    "education_system.university_system.modules.domain.academics.gui.ai_detector_gui",
+    sys.modules[__name__],
+)
+
 class AIDetectorGUI:
     """Modern GUI interface for the AI Detector system"""
 
     def __init__(self, root=None, auth=None, detector_instance=None):
         self.root = root if root else tk.Tk()
+        self.colors = {
+            'bg_primary': '#f0f0f0',
+            'bg_secondary': '#e0e0e0',
+            'bg_tertiary': '#ffffff',
+            'accent': '#0078d4',
+            'accent_hover': '#106ebe',
+            'success': '#107c10',
+            'warning': '#ff8c00',
+            'danger': '#d13438',
+            'text_primary': '#000000',
+            'text_secondary': '#5a5a5a',
+            'border': '#d0d0d0'
+        }
 
         if detector_instance:
             self.detector = detector_instance
@@ -142,14 +161,14 @@ class AIDetectorGUI:
         self.root.title("Ultimate AI Detector - Academic Integrity Suite")
         self.root.geometry("1400x900")
         self.root.minsize(1200, 700)
-        
+
         # Center window on screen
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         x = (screen_width - 1400) // 2
         y = (screen_height - 900) // 2
         self.root.geometry(f"1400x900+{x}+{y}")
-        
+
         # Configure window icon (if available)
         try:
             self.root.iconbitmap('ai_detector_icon.ico')
@@ -161,21 +180,6 @@ class AIDetectorGUI:
         """Setup basic theme to match main GUI"""
         self.style = ttk.Style()
         self.style.theme_use('clam')
-
-        # Basic color scheme (simplified to match main GUI)
-        self.colors = {
-            'bg_primary': '#f0f0f0',
-            'bg_secondary': '#e0e0e0',
-            'bg_tertiary': '#ffffff',
-            'accent': '#0078d4',
-            'accent_hover': '#106ebe',
-            'success': '#107c10',
-            'warning': '#ff8c00',
-            'danger': '#d13438',
-            'text_primary': '#000000',
-            'text_secondary': '#5a5a5a',
-            'border': '#d0d0d0'
-        }
 
 
     def create_main_interface(self):
@@ -282,17 +286,17 @@ class AIDetectorGUI:
         """Create application title bar"""
         title_frame = ttk.Frame(parent, style='Card.TFrame')
         title_frame.pack(fill='x', pady=(0, 10))
-        
+
         # Title and subtitle
         title_label = ttk.Label(title_frame, text="Ultimate AI Detector", style='Title.TLabel')
         title_label.pack(side='left', padx=15, pady=10)
-        
-        subtitle_label = ttk.Label(title_frame, text="Advanced Academic Integrity Detection Suite", 
+
+        subtitle_label = ttk.Label(title_frame, text="Advanced Academic Integrity Detection Suite",
                                  style='Subtitle.TLabel')
         subtitle_label.pack(side='left', padx=(10, 0), pady=10)
-        
+
         # Status indicator
-        self.status_indicator = ttk.Label(title_frame, text="● Ready", 
+        self.status_indicator = ttk.Label(title_frame, text="● Ready",
                                         foreground=self.colors['success'])
         self.status_indicator.pack(side='right', padx=15, pady=10)
 
@@ -301,16 +305,16 @@ class AIDetectorGUI:
         """Create status bar"""
         self.status_frame = ttk.Frame(parent)
         self.status_frame.pack(fill='x', pady=(10, 0))
-        
+
         # Status text
         self.status_text = ttk.Label(self.status_frame, text="Ready", style='Subtitle.TLabel')
         self.status_text.pack(side='left')
-        
+
         # Progress bar (initially hidden)
         self.progress_var = tk.DoubleVar()
-        self.progress_bar = ttk.Progressbar(self.status_frame, variable=self.progress_var, 
+        self.progress_bar = ttk.Progressbar(self.status_frame, variable=self.progress_var,
                                           mode='determinate', length=200)
-        
+
         # Right side info
         self.info_label = ttk.Label(self.status_frame, text="", style='Subtitle.TLabel')
         self.info_label.pack(side='right')
@@ -447,10 +451,10 @@ class AIDetectorGUI:
             # Initialize detector if not provided
             if not hasattr(self.detector, 'get_enhanced_statistics'):
                 print("Warning: Detector instance may not be fully initialized")
-            
+
             # Center and show window
             self.root.deiconify()
-            
+
             # Start the main loop
             self.root.mainloop()
 
@@ -789,7 +793,7 @@ class GUILauncher:
 
             traceback.print_exc()
 
-    
+
 
     @staticmethod
 
@@ -803,7 +807,7 @@ class GUILauncher:
 
             detector = AIDetector()
 
-            
+
 
             # Add some sample data
 
@@ -825,7 +829,7 @@ class GUILauncher:
 
                     'text': "I think AI is really cool and can help us do lots of things. My friend told me about ChatGPT and how it can write essays, which is pretty neat but also kind of scary.",
 
-                    'student_id': 'DEMO_002', 
+                    'student_id': 'DEMO_002',
 
                     'title': 'My thoughts on AI',
 
@@ -835,7 +839,7 @@ class GUILauncher:
 
             ]
 
-            
+
 
             print("Adding sample data...")
 
@@ -861,7 +865,7 @@ class GUILauncher:
 
                     print(f"Warning: Could not add sample data: {e}")
 
-            
+
 
             # Launch GUI
 
@@ -869,7 +873,7 @@ class GUILauncher:
 
             app.run()
 
-            
+
 
         except Exception as e:
 
@@ -878,4 +882,3 @@ class GUILauncher:
             import traceback
 
             traceback.print_exc()
-

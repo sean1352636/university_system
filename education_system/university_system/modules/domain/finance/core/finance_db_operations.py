@@ -658,9 +658,9 @@ def init_default_enhanced_data(cursor):
         ]
 
         cursor.executemany('''
-            INSERT INTO payment_plan_templates 
-            (template_name, description, number_of_installments, installment_frequency, 
-             setup_fee, interest_rate, early_payment_discount, late_payment_penalty, 
+            INSERT INTO payment_plan_templates
+            (template_name, description, number_of_installments, installment_frequency,
+             setup_fee, interest_rate, early_payment_discount, late_payment_penalty,
              is_active, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', payment_plan_templates)
@@ -698,7 +698,7 @@ def init_default_enhanced_data(cursor):
         ]
 
         cursor.executemany('''
-            INSERT INTO notification_templates 
+            INSERT INTO notification_templates
             (template_name, template_type, subject_template, body_template, send_method, is_active, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', notification_templates)
@@ -714,9 +714,9 @@ def init_default_enhanced_data(cursor):
         ]
 
         cursor.executemany('''
-            INSERT INTO financial_aid_types 
-            (aid_name, aid_category, description, max_amount, eligibility_criteria, 
-             application_deadline, is_renewable, requires_repayment, interest_rate, 
+            INSERT INTO financial_aid_types
+            (aid_name, aid_category, description, max_amount, eligibility_criteria,
+             application_deadline, is_renewable, requires_repayment, interest_rate,
              grace_period_months, is_active, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', financial_aid_types)
@@ -737,7 +737,7 @@ def init_default_enhanced_data(cursor):
         ]
 
         cursor.executemany('''
-            INSERT INTO budget_categories 
+            INSERT INTO budget_categories
             (category_name, category_type, parent_category_id, is_active, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', budget_categories)
@@ -753,7 +753,7 @@ def init_default_enhanced_data(cursor):
         ]
 
         cursor.executemany('''
-            INSERT INTO exchange_rates 
+            INSERT INTO exchange_rates
             (from_currency, to_currency, exchange_rate, rate_date, source, created_at)
             VALUES (?, ?, ?, ?, ?, ?)
         ''', exchange_rates)
@@ -762,7 +762,7 @@ def init_default_enhanced_data(cursor):
     cursor.execute('SELECT COUNT(*) FROM currency_settings')
     if cursor.fetchone()[0] == 0:
         cursor.execute('''
-            INSERT INTO currency_settings 
+            INSERT INTO currency_settings
             (base_currency, auto_update_rates, rate_update_frequency, last_rate_update, created_at, updated_at)
             VALUES ('GBP', 1, 24, ?, ?, ?)
         ''', (now, now, now))
@@ -778,8 +778,8 @@ def init_default_enhanced_data(cursor):
         ]
 
         cursor.executemany('''
-            INSERT INTO fee_types 
-            (fee_name, description, is_recurring, academic_year, is_late_fee, 
+            INSERT INTO fee_types
+            (fee_name, description, is_recurring, academic_year, is_late_fee,
              late_fee_calculation, late_fee_amount, grace_period_days, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', fee_types)
@@ -794,7 +794,7 @@ def init_default_enhanced_data(cursor):
         ]
 
         cursor.executemany('''
-            INSERT INTO scholarships 
+            INSERT INTO scholarships
             (scholarship_name, description, amount, academic_year, criteria, deadline, is_active, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', scholarships)
@@ -1379,8 +1379,8 @@ def complete_database_fix():
     ]
 
     cursor.executemany('''
-    INSERT INTO students 
-    (student_id, first_name, last_name, email_address, phone_number, course, 
+    INSERT INTO students
+    (student_id, first_name, last_name, email_address, phone_number, course,
      enrollment_date, status, date_of_birth, address, emergency_contact, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', sample_students)
@@ -1398,8 +1398,8 @@ def complete_database_fix():
     ]
 
     cursor.executemany('''
-    INSERT INTO fee_types 
-    (fee_name, description, is_recurring, academic_year, is_late_fee, 
+    INSERT INTO fee_types
+    (fee_name, description, is_recurring, academic_year, is_late_fee,
      late_fee_calculation, late_fee_amount, grace_period_days, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', fee_types)
@@ -1419,8 +1419,8 @@ def complete_database_fix():
     ]
 
     cursor.executemany('''
-    INSERT INTO program_fees 
-    (fee_type_id, course, amount, currency, academic_year, due_date, 
+    INSERT INTO program_fees
+    (fee_type_id, course, amount, currency, academic_year, due_date,
      early_payment_discount, early_payment_days, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', program_fees)
@@ -1438,8 +1438,8 @@ def complete_database_fix():
     ]
 
     cursor.executemany('''
-    INSERT INTO student_fees 
-    (student_id, fee_type_id, amount, currency, status, due_date, 
+    INSERT INTO student_fees
+    (student_id, fee_type_id, amount, currency, status, due_date,
      last_reminder_sent, reminder_count, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', student_fees)
@@ -1454,8 +1454,8 @@ def complete_database_fix():
     ]
 
     cursor.executemany('''
-    INSERT INTO payments 
-    (student_id, amount, currency, payment_method, gateway_transaction_id, gateway_name, 
+    INSERT INTO payments
+    (student_id, amount, currency, payment_method, gateway_transaction_id, gateway_name,
      transaction_id, payment_date, status, notes, created_by, created_at, fraud_score, is_suspicious)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', sample_payments)
@@ -1470,9 +1470,9 @@ def complete_database_fix():
     ]
 
     cursor.executemany('''
-    INSERT INTO payment_plan_templates 
-    (template_name, description, number_of_installments, installment_frequency, 
-     setup_fee, interest_rate, early_payment_discount, late_payment_penalty, 
+    INSERT INTO payment_plan_templates
+    (template_name, description, number_of_installments, installment_frequency,
+     setup_fee, interest_rate, early_payment_discount, late_payment_penalty,
      is_active, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', payment_plan_templates)
@@ -1487,7 +1487,7 @@ def complete_database_fix():
     ]
 
     cursor.executemany('''
-    INSERT INTO scholarships 
+    INSERT INTO scholarships
     (scholarship_name, description, amount, academic_year, criteria, deadline, is_active, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', scholarships)
@@ -1502,9 +1502,9 @@ def complete_database_fix():
     ]
 
     cursor.executemany('''
-    INSERT INTO financial_aid_types 
-    (aid_name, aid_category, description, max_amount, eligibility_criteria, 
-     application_deadline, is_renewable, requires_repayment, interest_rate, 
+    INSERT INTO financial_aid_types
+    (aid_name, aid_category, description, max_amount, eligibility_criteria,
+     application_deadline, is_renewable, requires_repayment, interest_rate,
      grace_period_months, is_active, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', financial_aid_types)
@@ -1526,14 +1526,14 @@ def complete_database_fix():
     ]
 
     cursor.executemany('''
-    INSERT INTO budget_categories 
+    INSERT INTO budget_categories
     (category_name, category_type, parent_category_id, is_active, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?)
     ''', budget_categories)
 
     # Add currency settings
     cursor.execute('''
-    INSERT INTO currency_settings 
+    INSERT INTO currency_settings
     (base_currency, auto_update_rates, rate_update_frequency, last_rate_update, created_at, updated_at)
     VALUES ('GBP', 1, 24, ?, ?, ?)
     ''', (now, now, now))
@@ -1549,7 +1549,7 @@ def complete_database_fix():
     ]
 
     cursor.executemany('''
-    INSERT INTO exchange_rates 
+    INSERT INTO exchange_rates
     (from_currency, to_currency, exchange_rate, rate_date, source, created_at)
     VALUES (?, ?, ?, ?, ?, ?)
     ''', exchange_rates)
@@ -1564,7 +1564,7 @@ def complete_database_fix():
     ]
 
     cursor.executemany('''
-    INSERT INTO notification_templates 
+    INSERT INTO notification_templates
     (template_name, template_type, subject_template, body_template, send_method, is_active, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ''', notification_templates)

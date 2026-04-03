@@ -54,7 +54,7 @@ except ImportError:
     TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
     SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
     ROOM_TYPES = ['Lecture Hall', 'Lab', 'Tutorial Room', 'Seminar Room', 'Workshop Room', 'Computer Lab', 'Other']
-    
+
     # Import the ModuleScheduler class from the document
     try:
         from education_system.university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
@@ -68,7 +68,7 @@ def create_timetables_tab(self):
     """Create the timetables generation tab"""
     timetables_frame = ttk.Frame(self.notebook)
     self.notebook.add(timetables_frame, text=_t("scheduling.tabs.timetables"))
-    
+
     # Left panel for controls with scrollbar
     left_outer = ttk.Frame(timetables_frame, width=250)
     left_outer.pack(side=tk.LEFT, fill=tk.Y, padx=10, pady=10)
@@ -782,11 +782,11 @@ def view_calendar(self):
             calendar_window = tk.Toplevel(self.root)
             calendar_window.title("Academic Calendar - Basic View")
             calendar_window.geometry("600x400")
-        
+
         # Calendar display
         calendar_text = scrolledtext.ScrolledText(calendar_window, font=('Courier', 10))
         calendar_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         # Get current month's holidays
         from education_system.university_system.infrastructure.database.db import sqlite3
         with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
@@ -801,10 +801,10 @@ def view_calendar(self):
             ''', (f"{current_month}%",))
 
             holidays = cursor.fetchall()
-        
+
         calendar_text.insert(tk.END, f"Academic Calendar - {datetime.now().strftime('%B %Y')}\n")
         calendar_text.insert(tk.END, "=" * 60 + "\n")
-        
+
         if holidays:
             for holiday in holidays:
                 name, start, end, desc = holiday
@@ -817,10 +817,10 @@ def view_calendar(self):
                 calendar_text.insert(tk.END, "\n")
         else:
             calendar_text.insert(tk.END, "No holidays scheduled for this month.\n")
-        
+
         calendar_text.insert(tk.END, "=" * 60 + "\n")
         calendar_text.config(state=tk.DISABLED)
-        
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to view calendar: {str(e)}", parent=self.root)
 

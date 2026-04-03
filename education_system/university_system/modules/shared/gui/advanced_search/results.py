@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -121,7 +121,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -132,7 +132,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -260,7 +260,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -928,16 +928,16 @@ def update_results_display(self):
     # Clear treeview
     for item in self.results_tree.get_children():
         self.results_tree.delete(item)
-    
+
     if not self.search_results:
         return
-    
+
     # Calculate pagination
     self.results_per_page = int(self.per_page_var.get())
     total_pages = (len(self.search_results) - 1) // self.results_per_page + 1 if self.search_results else 1
     start_idx = self.current_page * self.results_per_page
     end_idx = min(start_idx + self.results_per_page, len(self.search_results))
-    
+
     # Display current page results
     for i in range(start_idx, end_idx):
         student = self.search_results[i]
@@ -952,7 +952,7 @@ def update_results_display(self):
             student[10][:10] if student[10] else ""  # Registration date
         )
         self.results_tree.insert('', 'end', values=display_data)
-    
+
     # Update pagination controls
     self.page_label.config(text=f"Page {self.current_page + 1} of {total_pages}")
     self.prev_btn.config(state='normal' if self.current_page > 0 else 'disabled')
@@ -985,17 +985,17 @@ def show_student_details(self, event):
     selection = self.results_tree.selection()
     if not selection:
         return
-    
+
     item = self.results_tree.item(selection[0])
     student_id = item['values'][0]
-    
+
     # Find the full student record
     student_record = None
     for student in self.search_results:
         if student[0] == student_id:
             student_record = student
             break
-    
+
     if student_record:
         self.show_student_detail_window(student_record)
 AdvancedSearchGUI.show_student_details = show_student_details
@@ -1006,18 +1006,18 @@ def show_student_detail_window(self, student):
     detail_window.title(f"📋 Student Details - {student[0]}")
     detail_window.geometry("900x650")
     detail_window.transient(self.master)
-    
+
     main_frame = ttk.Frame(detail_window, padding="20")
     main_frame.pack(fill=tk.BOTH, expand=True)
-    
+
     # Title
     title_label = ttk.Label(main_frame, text=f"Student Information - {student[0]}", style='Title.TLabel')
     title_label.pack(pady=(0, 20))
-    
+
     # Information frame
     info_frame = ttk.LabelFrame(main_frame, text="Basic Information", padding="10")
     info_frame.pack(fill=tk.X, pady=(0, 10))
-    
+
     # Display student information
     info_text = f"""
 📧 Email: {student[1]}
@@ -1029,29 +1029,29 @@ def show_student_detail_window(self, student):
 🎓 Course: {student[9]}
 📝 Registration: {student[10]}
     """
-    
+
     info_label = tk.Label(info_frame, text=info_text, justify=tk.LEFT, font=('Arial', 10))
     info_label.pack(anchor='w')
-    
+
     # Modules frame (placeholder for module information)
     modules_frame = ttk.LabelFrame(main_frame, text="Module Information", padding="10")
     modules_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
-    
+
     modules_text = tk.Text(modules_frame, height=8, wrap=tk.WORD)
     modules_text.pack(fill=tk.BOTH, expand=True)
-    
+
     # Load module information
     self.load_student_modules(student[0], modules_text)
-    
+
     # Buttons frame
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X)
-    
-    ttk.Button(button_frame, text="📧 Send Email", 
+
+    ttk.Button(button_frame, text="📧 Send Email",
               command=lambda: self.simulate_send_email(student)).pack(side=tk.LEFT, padx=(0, 10))
-    ttk.Button(button_frame, text="💾 Export", 
+    ttk.Button(button_frame, text="💾 Export",
               command=lambda: self.export_single_student(student)).pack(side=tk.LEFT, padx=(0, 10))
-    ttk.Button(button_frame, text=f"❌ {_t('advanced_search.close_button')}", 
+    ttk.Button(button_frame, text=f"❌ {_t('advanced_search.close_button')}",
               command=detail_window.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.show_student_detail_window = show_student_detail_window
 
@@ -1075,13 +1075,13 @@ def load_student_modules(self, student_id, text_widget):
 
         modules = cursor.fetchall()
         conn.close()
-        
+
         if modules:
             text_widget.insert(tk.END, f"📚 ENROLLED MODULES ({len(modules)} total):\n")
             text_widget.insert(tk.END, "-" * 60 + "\n")
             text_widget.insert(tk.END, f"{'Type':<15} {'Code':<10} {'Name':<25} {'Grade':<8}\n")
             text_widget.insert(tk.END, "-" * 60 + "\n")
-            
+
             for module in modules:
                 module_type, code, name, grade, enrolled_date = module
                 module_type = module_type or "N/A"
@@ -1091,7 +1091,7 @@ def load_student_modules(self, student_id, text_widget):
                 text_widget.insert(tk.END, f"{module_type:<15} {code:<10} {name:<25} {grade_display:<8}\n")
         else:
             text_widget.insert(tk.END, "No modules enrolled.")
-            
+
     except Exception as e:
         text_widget.insert(tk.END, f"Error loading modules: {str(e)}")
 AdvancedSearchGUI.load_student_modules = load_student_modules

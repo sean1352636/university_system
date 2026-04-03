@@ -71,7 +71,7 @@ class Database:
 
     def get_connection(self):
         return get_db_connection()
-    
+
     def init_database(self):
         """Initialize database tables"""
         conn = self.get_connection()
@@ -130,7 +130,7 @@ class Database:
 
         conn.commit()
         conn.close()
-    
+
     def get_all_services(self):
         """Get all available taxi services"""
         conn = self.get_connection()
@@ -198,7 +198,7 @@ class Database:
         ticket = cursor.fetchone()
         conn.close()
         return ticket
-    
+
     @staticmethod
     def generate_ticket_number():
         """Generate a unique ticket number"""
@@ -209,7 +209,7 @@ class Database:
 
 class ModernStyle:
     """Modern styling configuration"""
-    
+
     # Color palette - Warm amber and slate theme
     BG_PRIMARY = "#1a1a2e"
     BG_SECONDARY = "#16213e"
@@ -221,7 +221,7 @@ class ModernStyle:
     SUCCESS = "#48bb78"
     WARNING = "#f6ad55"
     BORDER = "#2d3748"
-    
+
     # Fonts
     FONT_FAMILY = "Segoe UI"
     FONT_TITLE = (FONT_FAMILY, 24, "bold")
@@ -387,12 +387,12 @@ TaxiGo - {_t("taxi.subtitle")}
         except Exception as e:
             logger.error(f"Error sending booking confirmation email: {e}")
             return False
-    
+
     def configure_styles(self):
         """Configure ttk styles"""
         style = ttk.Style()
         style.theme_use('clam')
-        
+
         # Configure Treeview
         style.configure("Custom.Treeview",
                         background=ModernStyle.BG_CARD,
@@ -408,20 +408,20 @@ TaxiGo - {_t("taxi.subtitle")}
         style.map("Custom.Treeview",
                   background=[('selected', ModernStyle.ACCENT)],
                   foreground=[('selected', ModernStyle.TEXT_PRIMARY)])
-    
+
     def build_ui(self):
         """Build the main user interface"""
         # Main container
         self.main_container = tk.Frame(self.root, bg=ModernStyle.BG_PRIMARY)
         self.main_container.pack(fill=tk.BOTH, expand=True)
-        
+
         # Sidebar
         self.build_sidebar()
-        
+
         # Content area
         self.content_frame = tk.Frame(self.main_container, bg=ModernStyle.BG_PRIMARY)
         self.content_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20, pady=20)
-    
+
     def build_sidebar(self):
         """Build the navigation sidebar"""
         sidebar = tk.Frame(self.main_container, bg=ModernStyle.BG_SECONDARY, width=250)
@@ -503,28 +503,28 @@ TaxiGo - {_t("taxi.subtitle")}
                                font=ModernStyle.FONT_SMALL, bg=ModernStyle.BG_SECONDARY,
                                fg=ModernStyle.TEXT_SECONDARY, justify=tk.CENTER)
         footer_text.pack()
-    
+
     def clear_content(self):
         """Clear the content frame"""
         for widget in self.content_frame.winfo_children():
             widget.destroy()
-    
+
     def create_header(self, title, subtitle=""):
         """Create a header section"""
         header_frame = tk.Frame(self.content_frame, bg=ModernStyle.BG_PRIMARY)
         header_frame.pack(fill=tk.X, pady=(0, 20))
-        
+
         title_label = tk.Label(header_frame, text=title, font=ModernStyle.FONT_TITLE,
                                bg=ModernStyle.BG_PRIMARY, fg=ModernStyle.TEXT_PRIMARY)
         title_label.pack(anchor="w")
-        
+
         if subtitle:
             subtitle_label = tk.Label(header_frame, text=subtitle, font=ModernStyle.FONT_BODY,
                                       bg=ModernStyle.BG_PRIMARY, fg=ModernStyle.TEXT_SECONDARY)
             subtitle_label.pack(anchor="w")
-        
+
         return header_frame
-    
+
     def create_button(self, parent, text, command, style="primary"):
         """Create a styled button"""
         if style == "primary":
@@ -539,94 +539,94 @@ TaxiGo - {_t("taxi.subtitle")}
             bg = ModernStyle.BG_CARD
             fg = ModernStyle.TEXT_PRIMARY
             hover_bg = ModernStyle.BG_SECONDARY
-        
+
         btn = tk.Label(parent, text=text, font=ModernStyle.FONT_BUTTON,
                       bg=bg, fg=fg, cursor="hand2", pady=10, padx=20)
         btn.bind("<Enter>", lambda e: btn.configure(bg=hover_bg))
         btn.bind("<Leave>", lambda e: btn.configure(bg=bg))
         btn.bind("<Button-1>", lambda e: command())
-        
+
         return btn
-    
+
     def show_services_view(self):
         """Display all available taxi services"""
         self.clear_content()
 
         self.create_header(_t("taxi.services.title"), _t("taxi.services.subtitle"))
-        
+
         # Services container with scrollable frame
-        canvas = tk.Canvas(self.content_frame, bg=ModernStyle.BG_PRIMARY, 
+        canvas = tk.Canvas(self.content_frame, bg=ModernStyle.BG_PRIMARY,
                           highlightthickness=0)
         scrollbar = tk.Scrollbar(self.content_frame, orient="vertical", command=canvas.yview)
         scrollable_frame = tk.Frame(canvas, bg=ModernStyle.BG_PRIMARY)
-        
+
         scrollable_frame.bind(
             "<Configure>",
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
-        
+
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
-        
+
         # Grid of service cards
         services = self.db.get_all_services()
-        
+
         for i, service in enumerate(services):
             row = i // 2
             col = i % 2
-            
+
             self.create_service_card(scrollable_frame, service, row, col)
-        
+
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Bind mousewheel
         canvas.bind_all("<MouseWheel>", lambda e: canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
-    
+
     def create_service_card(self, parent, service, row, col):
         """Create a service card widget"""
         service_id, name, vehicle, capacity, price_km, base_fare, desc, available = service
-        
+
         card = tk.Frame(parent, bg=ModernStyle.BG_CARD, padx=20, pady=20)
         card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
-        
+
         # Configure grid weights
         parent.grid_columnconfigure(col, weight=1, minsize=350)
-        
+
         # Service icon based on vehicle type
         icons = {
             "Sedan": "🚗", "SUV": "🚙", "Hatchback": "🚕", "Minivan": "🚐",
             "Electric": "⚡", "Luxury Sedan": "🏎️", "Van": "🚌"
         }
         icon = icons.get(vehicle, "🚗")
-        
+
         # Header row
         header_frame = tk.Frame(card, bg=ModernStyle.BG_CARD)
         header_frame.pack(fill=tk.X)
-        
+
         icon_label = tk.Label(header_frame, text=icon, font=("Segoe UI", 32),
                               bg=ModernStyle.BG_CARD, fg=ModernStyle.ACCENT)
         icon_label.pack(side=tk.LEFT)
-        
+
         name_label = tk.Label(header_frame, text=name, font=ModernStyle.FONT_SUBTITLE,
                               bg=ModernStyle.BG_CARD, fg=ModernStyle.TEXT_PRIMARY)
         name_label.pack(side=tk.LEFT, padx=10)
-        
+
         # Vehicle type badge
         badge = tk.Label(header_frame, text=vehicle, font=ModernStyle.FONT_SMALL,
                         bg=ModernStyle.ACCENT, fg=ModernStyle.TEXT_PRIMARY, padx=8, pady=2)
         badge.pack(side=tk.RIGHT)
-        
+
         # Description
         desc_label = tk.Label(card, text=desc, font=ModernStyle.FONT_BODY,
                               bg=ModernStyle.BG_CARD, fg=ModernStyle.TEXT_SECONDARY,
                               wraplength=300, justify=tk.LEFT)
         desc_label.pack(fill=tk.X, pady=10)
-        
+
         # Details frame
         details_frame = tk.Frame(card, bg=ModernStyle.BG_CARD)
         details_frame.pack(fill=tk.X)
-        
+
         # Capacity
         cap_frame = tk.Frame(details_frame, bg=ModernStyle.BG_CARD)
         cap_frame.pack(side=tk.LEFT, padx=(0, 20))
@@ -648,12 +648,12 @@ TaxiGo - {_t("taxi.subtitle")}
         book_btn = self.create_button(card, _t("taxi.services.book_now"),
                                       lambda s=service: self.select_service_and_book(s))
         book_btn.pack(fill=tk.X, pady=(15, 0))
-    
+
     def select_service_and_book(self, service):
         """Select a service and show booking view"""
         self.selected_service = service
         self.show_booking_view()
-    
+
     def show_booking_view(self):
         """Display the booking form"""
         self.clear_content()
@@ -703,24 +703,24 @@ TaxiGo - {_t("taxi.subtitle")}
         # Service Selection
         tk.Label(form_frame, text=_t("taxi.booking.select_service"), font=ModernStyle.FONT_SUBTITLE,
                 bg=ModernStyle.BG_CARD, fg=ModernStyle.TEXT_PRIMARY).pack(anchor="w", pady=(15, 5))
-        
+
         services = self.db.get_all_services()
         service_names = [f"{s[1]} ({s[2]}) - £{s[4]:.2f}/km" for s in services]
-        
+
         self.service_var = tk.StringVar()
-        self.service_combo = ttk.Combobox(form_frame, values=service_names, 
+        self.service_combo = ttk.Combobox(form_frame, values=service_names,
                                           font=ModernStyle.FONT_BODY, state="readonly")
         self.service_combo.pack(fill=tk.X, pady=(0, 10), ipady=8)
-        
+
         # Pre-select if coming from service card
         if self.selected_service:
             idx = next((i for i, s in enumerate(services) if s[0] == self.selected_service[0]), 0)
             self.service_combo.current(idx)
         else:
             self.service_combo.current(0)
-        
+
         self.services_list = services
-        
+
         # Pickup Location
         self.create_form_field(form_frame, _t("taxi.booking.pickup_location"), "pickup_entry")
 
@@ -730,7 +730,7 @@ TaxiGo - {_t("taxi.subtitle")}
         # Distance
         tk.Label(form_frame, text=_t("taxi.booking.distance_km"), font=ModernStyle.FONT_SUBTITLE,
                 bg=ModernStyle.BG_CARD, fg=ModernStyle.TEXT_PRIMARY).pack(anchor="w", pady=(15, 5))
-        
+
         self.distance_var = tk.StringVar()
         self.distance_var.trace('w', self.update_fare_estimate)
         self.distance_entry = tk.Entry(form_frame, font=ModernStyle.FONT_BODY,
@@ -738,7 +738,7 @@ TaxiGo - {_t("taxi.subtitle")}
                                        insertbackground=ModernStyle.TEXT_PRIMARY,
                                        textvariable=self.distance_var)
         self.distance_entry.pack(fill=tk.X, ipady=10)
-        
+
         # Payment Method
         tk.Label(form_frame, text=_t("taxi.booking.payment_method"), font=ModernStyle.FONT_SUBTITLE,
                 bg=ModernStyle.BG_CARD, fg=ModernStyle.TEXT_PRIMARY).pack(anchor="w", pady=(15, 5))
@@ -837,18 +837,18 @@ TaxiGo - {_t("taxi.subtitle")}
 
         # Initial fare calculation
         self.update_fare_estimate()
-    
+
     def create_form_field(self, parent, label, attr_name):
         """Create a form field with label and entry"""
         tk.Label(parent, text=label, font=ModernStyle.FONT_SUBTITLE,
                 bg=ModernStyle.BG_CARD, fg=ModernStyle.TEXT_PRIMARY).pack(anchor="w", pady=(15, 5))
-        
+
         entry = tk.Entry(parent, font=ModernStyle.FONT_BODY,
                         bg=ModernStyle.BG_SECONDARY, fg=ModernStyle.TEXT_PRIMARY,
                         insertbackground=ModernStyle.TEXT_PRIMARY)
         entry.pack(fill=tk.X, ipady=10)
         setattr(self, attr_name, entry)
-    
+
     def update_fare_estimate(self, *args):
         """Update the fare estimate in the summary"""
         try:
@@ -876,7 +876,7 @@ TaxiGo - {_t("taxi.subtitle")}
                 self.total_label.config(text=f"{_t('taxi.booking.total')}: £{total:.2f}")
         except ValueError:
             pass
-    
+
     def process_booking(self):
         """Process the booking and create a ticket"""
         # Validate inputs
@@ -975,7 +975,7 @@ TaxiGo - {_t("taxi.subtitle")}
 
         # Show receipt
         self.show_receipt(ticket_id, email_sent=email_sent)
-    
+
     def show_receipt(self, ticket_id, email_sent=False):
         """Show the payment receipt"""
         ticket = self.db.get_ticket_by_id(ticket_id)
@@ -1074,7 +1074,7 @@ TaxiGo - {_t("taxi.subtitle")}
                              bg=ModernStyle.BG_CARD, fg="white", bd=0, padx=20, pady=10,
                              cursor="hand2", command=receipt_window.destroy)
         close_btn.pack(side=tk.RIGHT, expand=True, padx=5)
-    
+
     def save_receipt(self, ticket):
         """Save receipt to a text file"""
         (t_id, ticket_num, service_id, customer, pickup, dropoff, distance,
@@ -1117,7 +1117,7 @@ TaxiGo - {_t("taxi.subtitle")}
                 f.write(receipt_text)
 
             messagebox.showinfo(_t("common.success"), _t("taxi.receipt.saved_to", filename=filename))
-    
+
     def show_tickets_view(self):
         """Display all purchased tickets"""
         self.clear_content()
@@ -1144,11 +1144,11 @@ TaxiGo - {_t("taxi.subtitle")}
             "payment": (_t("taxi.tickets.payment"), 120),
             "date": (_t("taxi.tickets.date"), 100)
         }
-        
+
         for col, (heading, width) in headings.items():
             tree.heading(col, text=heading)
             tree.column(col, width=width, anchor="center")
-        
+
         # Add scrollbars
         v_scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
         h_scrollbar = ttk.Scrollbar(table_frame, orient="horizontal", command=tree.xview)
@@ -1184,7 +1184,7 @@ TaxiGo - {_t("taxi.subtitle")}
         # Configure grid weights
         table_frame.grid_rowconfigure(0, weight=1)
         table_frame.grid_columnconfigure(0, weight=1)
-        
+
         # Info label
         info_frame = tk.Frame(self.content_frame, bg=ModernStyle.BG_PRIMARY)
         info_frame.pack(fill=tk.X, pady=10)
@@ -1203,14 +1203,14 @@ TaxiGo - {_t("taxi.subtitle")}
             stats_label.pack(pady=5)
 
         self.tickets_tree = tree
-    
+
     def view_ticket_receipt(self, tree):
         """View receipt for selected ticket"""
         selection = tree.selection()
         if selection:
             item = tree.item(selection[0])
             ticket_num = item['values'][0]
-            
+
             # Find ticket by number
             tickets = self.db.get_all_tickets()
             for ticket in tickets:
@@ -1957,14 +1957,14 @@ TaxiGo - {_t("taxi.subtitle", default="Your Campus Ride")}
 def main():
     """Main entry point"""
     root = tk.Tk()
-    
+
     # Center window on screen
     screen_width = root.winfo_screenwidth()
     screen_height = root.winfo_screenheight()
     x = (screen_width - 1200) // 2
     y = (screen_height - 800) // 2
     root.geometry(f"1200x800+{x}+{y}")
-    
+
     app = TaxiBookingApp(root)
     root.mainloop()
 

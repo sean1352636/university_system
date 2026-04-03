@@ -6,7 +6,7 @@ def init_enhanced_health_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Original tables (keeping existing structure)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS health_records (
@@ -22,9 +22,9 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Enhanced tables for new features
-        
+
         # Audit trail table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS audit_trail (
@@ -41,19 +41,19 @@ def init_enhanced_health_db():
             session_id TEXT
         )
         ''')
-        
+
         # Data retention policies - FIXED COLUMN NAME
         # First check if table exists and has wrong column name
         cursor.execute("PRAGMA table_info(data_retention_policies)")
         existing_columns = cursor.fetchall()
-        
+
         if existing_columns:
             # Check if table has wrong column name
             column_names = [col[1] for col in existing_columns]
             if 'retention_period_days' not in column_names:
                 # Drop and recreate table with correct schema
                 cursor.execute('DROP TABLE IF EXISTS data_retention_policies')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS data_retention_policies (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -64,7 +64,7 @@ def init_enhanced_health_db():
             created_at TEXT
         )
         ''')
-        
+
         # Security settings
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS security_settings (
@@ -75,7 +75,7 @@ def init_enhanced_health_db():
             updated_by TEXT
         )
         ''')
-        
+
         # Allergies and medical conditions
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS allergies (
@@ -91,7 +91,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS medical_conditions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -107,7 +107,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Prescriptions
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS prescriptions (
@@ -127,7 +127,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Vital signs
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS vital_signs (
@@ -147,7 +147,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Care plans
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS care_plans (
@@ -167,7 +167,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (condition_id) REFERENCES medical_conditions (id)
         )
         ''')
-        
+
         # Referrals
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS referrals (
@@ -186,7 +186,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Health metrics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS health_metrics (
@@ -200,7 +200,7 @@ def init_enhanced_health_db():
             calculated_at TEXT
         )
         ''')
-        
+
         # Health screening schedules
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS screening_schedules (
@@ -217,7 +217,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Risk assessments
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS risk_assessments (
@@ -234,7 +234,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Emergency contacts (enhanced)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS emergency_contacts (
@@ -252,7 +252,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Provider schedules and availability
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS provider_schedules (
@@ -268,7 +268,7 @@ def init_enhanced_health_db():
             created_at TEXT
         )
         ''')
-        
+
         # Health campaigns and programs
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS health_campaigns (
@@ -286,7 +286,7 @@ def init_enhanced_health_db():
             created_at TEXT
         )
         ''')
-        
+
         # Wellness program participation
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS wellness_participation (
@@ -302,7 +302,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Disease surveillance
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS disease_surveillance (
@@ -322,7 +322,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Lab results
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS lab_results (
@@ -344,7 +344,7 @@ def init_enhanced_health_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Quality metrics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS quality_metrics (
@@ -360,7 +360,7 @@ def init_enhanced_health_db():
             created_at TEXT
         )
         ''')
-        
+
         # Check if data retention policies need to be populated
         cursor.execute("SELECT COUNT(*) FROM data_retention_policies")
         if cursor.fetchone()[0] == 0:
@@ -373,14 +373,14 @@ def init_enhanced_health_db():
                 ('lab_results', 2555, 1, 0),  # 7 years
                 ('vital_signs', 1095, 1, 0),  # 3 years
             ]
-            
+
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             for policy in policies:
                 cursor.execute(
                     'INSERT INTO data_retention_policies (data_type, retention_period_days, auto_archive, auto_delete, created_at) VALUES (?, ?, ?, ?, ?)',
                     (*policy, timestamp)
                 )
-        
+
         # Check if security settings need to be populated
         cursor.execute("SELECT COUNT(*) FROM security_settings")
         if cursor.fetchone()[0] == 0:
@@ -394,18 +394,18 @@ def init_enhanced_health_db():
                 ('ip_restriction_enabled', '0'),
                 ('allowed_ip_ranges', ''),
             ]
-            
+
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             for setting in settings:
                 cursor.execute(
                     'INSERT INTO security_settings (setting_name, setting_value, updated_at) VALUES (?, ?, ?)',
                     (*setting, timestamp)
                 )
-        
+
         conn.commit()
         conn.close()
         print("Enhanced health portal database initialized successfully!")
-        
+
     except sqlite3.Error as e:
         print(f"An error occurred while initializing the enhanced health database: {e}")
         if conn:

@@ -35,7 +35,7 @@ class GovernanceFrame(tk.Frame):
         self._build_meetings_tab()
         self._build_actions_tab()
         self._build_strategic_plan_tab()
-        
+
 
     def _build_governors_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)

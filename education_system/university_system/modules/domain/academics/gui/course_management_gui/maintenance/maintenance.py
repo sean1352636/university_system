@@ -136,169 +136,169 @@ class MaintenanceDialog:
         self.parent = parent
         self.auth = auth
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("System Maintenance")
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.dialog.focus_set()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         ttk.Label(main_frame, text="System Maintenance", font=("Arial", 12, "bold")).pack(pady=10)
-        
+
         # Maintenance options
         options_frame = ttk.LabelFrame(main_frame, text="Maintenance Tasks", padding=10)
         options_frame.pack(fill=tk.X, pady=5)
-        
-        ttk.Button(options_frame, text="Database Integrity Check", 
+
+        ttk.Button(options_frame, text="Database Integrity Check",
                   command=self.integrity_check).pack(fill=tk.X, pady=2)
-        ttk.Button(options_frame, text="Clean Orphaned Records", 
+        ttk.Button(options_frame, text="Clean Orphaned Records",
                   command=self.clean_orphaned).pack(fill=tk.X, pady=2)
-        ttk.Button(options_frame, text="Recalculate Enrollment Numbers", 
+        ttk.Button(options_frame, text="Recalculate Enrollment Numbers",
                   command=self.recalculate_enrollment).pack(fill=tk.X, pady=2)
-        ttk.Button(options_frame, text="Database Statistics", 
+        ttk.Button(options_frame, text="Database Statistics",
                   command=self.show_db_stats).pack(fill=tk.X, pady=2)
-        ttk.Button(options_frame, text="Optimize Database", 
+        ttk.Button(options_frame, text="Optimize Database",
                   command=self.optimize_db).pack(fill=tk.X, pady=2)
-        
+
         # Results display
         results_frame = ttk.LabelFrame(main_frame, text="Results", padding=10)
         results_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-        
+
         self.results_text = ScrolledText(results_frame, wrap=tk.WORD, height=15)
         self.results_text.pack(fill=tk.BOTH, expand=True)
-        
+
         # Close button
         ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
-    
+
     def integrity_check(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             results = "DATABASE INTEGRITY CHECK\n"
             results += "=" * 40 + "\n\n"
-            
+
             issues = []
-            
+
             # Check for courses with invalid enrollment
             cursor.execute("""
             SELECT course_code, current_enrollment, max_enrollment
-            FROM courses 
+            FROM courses
             WHERE COALESCE(current_enrollment, 0) > COALESCE(max_enrollment, 0)
             """)
             over_enrolled = cursor.fetchall()
-            
+
             if over_enrolled:
                 issues.append(f"Found {len(over_enrolled)} courses with enrollment over capacity")
                 results += "Courses over capacity:\n"
                 for code, current, max_val in over_enrolled:
                     results += f"  - {code}: {current}/{max_val}\n"
                 results += "\n"
-            
+
             # Check for negative enrollments
             cursor.execute("SELECT course_code FROM courses WHERE COALESCE(current_enrollment, 0) < 0")
             negative_enrollments = cursor.fetchall()
-            
+
             if negative_enrollments:
                 issues.append(f"Found {len(negative_enrollments)} courses with negative enrollment")
                 results += "Courses with negative enrollment:\n"
                 for (code,) in negative_enrollments:
                     results += f"  - {code}\n"
                 results += "\n"
-            
+
             if not issues:
                 results += "✓ No integrity issues found.\n"
             else:
                 results += f"⚠ Found {len(issues)} types of issues:\n"
                 for issue in issues:
                     results += f"  - {issue}\n"
-            
+
             conn.close()
-            
+
             self.results_text.delete(1.0, tk.END)
             self.results_text.insert(1.0, results)
             self.result = True
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Integrity check failed: {e}")
-    
+
     def clean_orphaned(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             results = "CLEANING ORPHANED RECORDS\n"
             results += "=" * 40 + "\n\n"
-            
+
             total_deleted = 0
-            
+
             # Clean orphaned prerequisites
             if self.table_exists(cursor, 'course_prerequisites'):
                 cursor.execute("""
-                DELETE FROM course_prerequisites 
+                DELETE FROM course_prerequisites
                 WHERE course_id NOT IN (SELECT id FROM courses)
                    OR prerequisite_course_id NOT IN (SELECT id FROM courses)
                 """)
                 deleted_prereqs = cursor.rowcount
                 total_deleted += deleted_prereqs
                 results += f"Removed {deleted_prereqs} orphaned prerequisites\n"
-            
+
             # Clean orphaned schedules
             if self.table_exists(cursor, 'course_schedule'):
                 cursor.execute("DELETE FROM course_schedule WHERE course_id NOT IN (SELECT id FROM courses)")
                 deleted_schedules = cursor.rowcount
                 total_deleted += deleted_schedules
                 results += f"Removed {deleted_schedules} orphaned schedules\n"
-            
+
             # Clean orphaned waitlists
             if self.table_exists(cursor, 'course_waitlist'):
                 cursor.execute("DELETE FROM course_waitlist WHERE course_id NOT IN (SELECT id FROM courses)")
                 deleted_waitlists = cursor.rowcount
                 total_deleted += deleted_waitlists
                 results += f"Removed {deleted_waitlists} orphaned waitlist entries\n"
-            
+
             conn.commit()
             conn.close()
-            
+
             results += f"\n✓ Cleanup completed. Total records removed: {total_deleted}\n"
-            
+
             self.results_text.delete(1.0, tk.END)
             self.results_text.insert(1.0, results)
             self.result = True
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Cleanup failed: {e}")
-    
+
     def recalculate_enrollment(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             results = "RECALCULATING ENROLLMENT NUMBERS\n"
             results += "=" * 40 + "\n\n"
-            
+
             # Find courses with invalid enrollment
             cursor.execute("""
             SELECT id, course_code, current_enrollment, max_enrollment
             FROM courses
-            WHERE COALESCE(current_enrollment, 0) < 0 
+            WHERE COALESCE(current_enrollment, 0) < 0
                OR COALESCE(current_enrollment, 0) > COALESCE(max_enrollment, 0)
             """)
-            
+
             invalid_enrollments = cursor.fetchall()
-            
+
             if invalid_enrollments:
                 results += f"Found {len(invalid_enrollments)} courses with invalid enrollment:\n"
                 for course_id, code, current, max_val in invalid_enrollments:
                     results += f"  - {code}: {current}/{max_val}\n"
-                
+
                 if messagebox.askyesno("Reset Enrollments", "Reset invalid enrollments to 0?"):
                     cursor.execute("""
                     UPDATE courses
@@ -306,7 +306,7 @@ class MaintenanceDialog:
                     WHERE COALESCE(current_enrollment, 0) < 0
                        OR COALESCE(current_enrollment, 0) > COALESCE(max_enrollment, 0)
                     """)
-                    
+
                     updated = cursor.rowcount
                     conn.commit()
                     results += f"\n✓ Reset {updated} invalid enrollments to 0\n"
@@ -314,24 +314,24 @@ class MaintenanceDialog:
                     results += "\nNo changes made.\n"
             else:
                 results += "✓ All enrollment numbers are valid.\n"
-            
+
             conn.close()
-            
+
             self.results_text.delete(1.0, tk.END)
             self.results_text.insert(1.0, results)
             self.result = True
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Recalculation failed: {e}")
-    
+
     def show_db_stats(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             results = "DATABASE STATISTICS\n"
             results += "=" * 40 + "\n\n"
-            
+
             # Table counts
             tables = ['courses', 'course_prerequisites', 'course_schedule', 'instructors']
             for table in tables:
@@ -342,16 +342,16 @@ class MaintenanceDialog:
                     results += f"{table}: {count} records\n"
                 else:
                     results += f"{table}: Table not found\n"
-            
+
             # Database size
             cursor.execute("PRAGMA page_count")
             page_count = cursor.fetchone()[0]
             cursor.execute("PRAGMA page_size")
             page_size = cursor.fetchone()[0]
-            
+
             db_size_mb = (page_count * page_size) / (1024 * 1024)
             results += f"\nDatabase size: {db_size_mb:.2f} MB\n"
-            
+
             # Additional stats
             cursor.execute(
                 "SELECT COUNT(*) FROM courses "
@@ -361,7 +361,7 @@ class MaintenanceDialog:
             )
             active_courses = cursor.fetchone()[0]
             results += f"Active courses: {active_courses}\n"
-            
+
             cursor.execute(
                 "SELECT SUM(COALESCE(current_enrollment, 0)) FROM courses "
                 "WHERE course_code IS NOT NULL "
@@ -370,44 +370,44 @@ class MaintenanceDialog:
             )
             total_enrollment = cursor.fetchone()[0] or 0
             results += f"Total enrollment: {total_enrollment}\n"
-            
+
             conn.close()
-            
+
             self.results_text.delete(1.0, tk.END)
             self.results_text.insert(1.0, results)
             self.result = True
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Statistics failed: {e}")
-    
+
     def optimize_db(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             results = "DATABASE OPTIMIZATION\n"
             results += "=" * 40 + "\n\n"
-            
+
             # Vacuum database
             results += "Running VACUUM...\n"
             cursor.execute("VACUUM")
-            
+
             # Analyze database
             results += "Running ANALYZE...\n"
             cursor.execute("ANALYZE")
-            
+
             conn.commit()
             conn.close()
-            
+
             results += "\n✓ Database optimization completed.\n"
-            
+
             self.results_text.delete(1.0, tk.END)
             self.results_text.insert(1.0, results)
             self.result = True
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Optimization failed: {e}")
-    
+
     def table_exists(self, cursor, table_name):
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
         return cursor.fetchone() is not None

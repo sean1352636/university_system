@@ -212,7 +212,7 @@ def generate_module_stats_report(cursor, module_code, reports_dir, timestamp):
                 grade_counts[letter] = 1
 
         # Sort the letter grades in descending order (A+, A, A-, B+, etc.)
-        sorted_letters = sorted(grade_counts.keys(), 
+        sorted_letters = sorted(grade_counts.keys(),
                                key=lambda x: float('inf') if x not in GRADE_SYSTEMS["letter"] else -GRADE_SYSTEMS["letter"][x])
 
         # Calculate passing rate
@@ -379,7 +379,7 @@ def generate_module_stats_report(cursor, module_code, reports_dir, timestamp):
 
         # 3. Box plot
         plt.subplot(2, 2, 3)
-        plt.boxplot(scores, vert=False, patch_artist=True, 
+        plt.boxplot(scores, vert=False, patch_artist=True,
                    boxprops=dict(facecolor='lightblue'))
         plt.title('Box Plot of Scores')
         plt.xlabel('Percentage Score')
@@ -401,12 +401,12 @@ def generate_module_stats_report(cursor, module_code, reports_dir, timestamp):
                 plt.xlabel('Average Score (%)')
                 plt.title('Assessment Performance Comparison')
             else:
-                plt.text(0.5, 0.5, 'No assessment data available', 
+                plt.text(0.5, 0.5, 'No assessment data available',
                         horizontalalignment='center', verticalalignment='center')
                 plt.title('Assessment Performance Comparison')
                 plt.axis('off')
         else:
-            plt.text(0.5, 0.5, 'No assessment data available', 
+            plt.text(0.5, 0.5, 'No assessment data available',
                     horizontalalignment='center', verticalalignment='center')
             plt.title('Assessment Performance Comparison')
             plt.axis('off')
@@ -481,18 +481,18 @@ def generate_all_modules_stats_report(cursor, modules, reports_dir, timestamp):
         # ... [previous code]
 
         elements.append(Paragraph(
-            f"- Lowest passing rate: <b>{lowest_passing['code']} - {lowest_passing['name']}</b> " + 
-            f"with {lowest_passing['passing_rate']:.1f}%", 
+            f"- Lowest passing rate: <b>{lowest_passing['code']} - {lowest_passing['name']}</b> " +
+            f"with {lowest_passing['passing_rate']:.1f}%",
             styles['Normal']))
 
         elements.append(Paragraph(
-            f"- Most consistent student performance (lowest variability): <b>{lowest_variability['code']} - " + 
-            f"{lowest_variability['name']}</b> with a standard deviation of {lowest_variability['std_dev']:.1f}%", 
+            f"- Most consistent student performance (lowest variability): <b>{lowest_variability['code']} - " +
+            f"{lowest_variability['name']}</b> with a standard deviation of {lowest_variability['std_dev']:.1f}%",
             styles['Normal']))
 
         elements.append(Paragraph(
-            f"- Most variable student performance (highest variability): <b>{highest_variability['code']} - " + 
-            f"{highest_variability['name']}</b> with a standard deviation of {highest_variability['std_dev']:.1f}%", 
+            f"- Most variable student performance (highest variability): <b>{highest_variability['code']} - " +
+            f"{highest_variability['name']}</b> with a standard deviation of {highest_variability['std_dev']:.1f}%",
             styles['Normal']))
 
         # Calculate average statistics across all modules
@@ -505,15 +505,15 @@ def generate_all_modules_stats_report(cursor, modules, reports_dir, timestamp):
         elements.append(Spacer(1, 6))
 
         elements.append(Paragraph(
-            f"- Average mean score across all modules: {avg_mean:.1f}%", 
+            f"- Average mean score across all modules: {avg_mean:.1f}%",
             styles['Normal']))
 
         elements.append(Paragraph(
-            f"- Average passing rate across all modules: {avg_passing:.1f}%", 
+            f"- Average passing rate across all modules: {avg_passing:.1f}%",
             styles['Normal']))
 
         elements.append(Paragraph(
-            f"- Average standard deviation across all modules: {avg_std_dev:.1f}%", 
+            f"- Average standard deviation across all modules: {avg_std_dev:.1f}%",
             styles['Normal']))
 
         # Add recommendations
@@ -527,19 +527,19 @@ def generate_all_modules_stats_report(cursor, modules, reports_dir, timestamp):
 
         if low_performance_modules:
             elements.append(Paragraph(
-                "- Review teaching methods and materials for modules with low average scores: " + 
+                "- Review teaching methods and materials for modules with low average scores: " +
                 ", ".join([f"<b>{m['code']}</b>" for m in low_performance_modules]),
                 styles['Normal']))
 
         if high_failure_modules:
             elements.append(Paragraph(
-                "- Investigate reasons for high failure rates in: " + 
+                "- Investigate reasons for high failure rates in: " +
                 ", ".join([f"<b>{m['code']}</b>" for m in high_failure_modules]),
                 styles['Normal']))
 
         if high_variability_modules:
             elements.append(Paragraph(
-                "- Address inconsistent student performance in: " + 
+                "- Address inconsistent student performance in: " +
                 ", ".join([f"<b>{m['code']}</b>" for m in high_variability_modules]),
                 styles['Normal']))
 
@@ -651,7 +651,7 @@ def generate_course_stats_report(cursor, course, reports_dir, timestamp):
             min_gpa = 0
             max_gpa = 0
             std_dev_gpa = 0
-            gpa_ranges = {k: 0 for k in ["4.0-4.3", "3.7-3.9", "3.3-3.6", "3.0-3.2", "2.7-2.9", 
+            gpa_ranges = {k: 0 for k in ["4.0-4.3", "3.7-3.9", "3.3-3.6", "3.0-3.2", "2.7-2.9",
                                          "2.3-2.6", "2.0-2.2", "1.7-1.9", "1.0-1.6", "0.0-0.9"]}
 
         # Get student genders for demographic analysis
@@ -749,8 +749,8 @@ def generate_course_stats_report(cursor, course, reports_dir, timestamp):
         for gpa_range, count in gpa_ranges.items():
             percentage = (count / len(student_gpas)) * 100 if student_gpas else 0
             gpa_data.append([
-                gpa_range, 
-                str(count), 
+                gpa_range,
+                str(count),
                 f"{percentage:.1f}%",
                 performance_levels[gpa_range]
             ])
@@ -811,7 +811,7 @@ def generate_course_stats_report(cursor, course, reports_dir, timestamp):
         counts = [gpa_ranges[r] for r in ranges]
 
         # Shorten the range labels for better display
-        short_ranges = ["4.0+", "3.7-3.9", "3.3-3.6", "3.0-3.2", "2.7-2.9", 
+        short_ranges = ["4.0+", "3.7-3.9", "3.3-3.6", "3.0-3.2", "2.7-2.9",
                        "2.3-2.6", "2.0-2.2", "1.7-1.9", "1.0-1.6", "<1.0"]
 
         bars = plt.bar(short_ranges, counts, color='skyblue')
@@ -838,7 +838,7 @@ def generate_course_stats_report(cursor, course, reports_dir, timestamp):
             plt.axis('equal')
             plt.title('Gender Distribution')
         else:
-            plt.text(0.5, 0.5, 'No gender data available', 
+            plt.text(0.5, 0.5, 'No gender data available',
                     horizontalalignment='center', verticalalignment='center')
             plt.title('Gender Distribution')
             plt.axis('off')
@@ -861,10 +861,10 @@ def generate_course_stats_report(cursor, course, reports_dir, timestamp):
             # Add value labels
             for i, bar in enumerate(bars):
                 width = bar.get_width()
-                plt.text(width + 1, bar.get_y() + bar.get_height()/2, 
+                plt.text(width + 1, bar.get_y() + bar.get_height()/2,
                         f'{width:.1f}%', ha='left', va='center')
         else:
-            plt.text(0.5, 0.5, 'No module data available', 
+            plt.text(0.5, 0.5, 'No module data available',
                     horizontalalignment='center', verticalalignment='center')
             plt.title('Module Performance Comparison')
             plt.axis('off')
@@ -907,10 +907,10 @@ def generate_course_stats_report(cursor, course, reports_dir, timestamp):
             # Add value labels
             for i, bar in enumerate(bars):
                 width = bar.get_width()
-                plt.text(width + 0.05, bar.get_y() + bar.get_height()/2, 
+                plt.text(width + 0.05, bar.get_y() + bar.get_height()/2,
                         f'{width:.2f}', ha='left', va='center')
         else:
-            plt.text(0.5, 0.5, 'No GPA data available', 
+            plt.text(0.5, 0.5, 'No GPA data available',
                     horizontalalignment='center', verticalalignment='center')
             plt.title('Top and Bottom Students by GPA')
             plt.axis('off')
@@ -993,21 +993,21 @@ def generate_course_stats_report(cursor, course, reports_dir, timestamp):
             bottom_module = sorted_modules[-1]
 
             elements.append(Paragraph(
-                f"- Highest performing module: <b>{top_module[0]} - {top_module[1]}</b> with an average of {top_module[4]:.1f}%", 
+                f"- Highest performing module: <b>{top_module[0]} - {top_module[1]}</b> with an average of {top_module[4]:.1f}%",
                 styles['Normal']))
 
             elements.append(Paragraph(
-                f"- Lowest performing module: <b>{bottom_module[0]} - {bottom_module[1]}</b> with an average of {bottom_module[4]:.1f}%", 
+                f"- Lowest performing module: <b>{bottom_module[0]} - {bottom_module[1]}</b> with an average of {bottom_module[4]:.1f}%",
                 styles['Normal']))
 
             # If there's a significant gap, note it
             if top_module[4] - bottom_module[4] > 20:
                 elements.append(Paragraph(
-                    f"- There is a significant performance gap of {top_module[4] - bottom_module[4]:.1f}% between the highest and lowest modules.", 
+                    f"- There is a significant performance gap of {top_module[4] - bottom_module[4]:.1f}% between the highest and lowest modules.",
                     styles['Normal']))
 
                 elements.append(Paragraph(
-                    "- Consider reviewing the content, teaching methods, and assessment strategies for the lower-performing modules.", 
+                    "- Consider reviewing the content, teaching methods, and assessment strategies for the lower-performing modules.",
                     styles['Normal']))
 
         # Build the PDF
@@ -1300,27 +1300,27 @@ def generate_all_courses_stats_report(cursor, courses, reports_dir, timestamp):
         elements.append(Spacer(1, 6))
 
         elements.append(Paragraph(
-            f"- Highest average GPA: <b>{best_gpa['course']}</b> with {best_gpa['avg_gpa']:.2f}", 
+            f"- Highest average GPA: <b>{best_gpa['course']}</b> with {best_gpa['avg_gpa']:.2f}",
             styles['Normal']))
 
         elements.append(Paragraph(
-            f"- Lowest average GPA: <b>{worst_gpa['course']}</b> with {worst_gpa['avg_gpa']:.2f}", 
+            f"- Lowest average GPA: <b>{worst_gpa['course']}</b> with {worst_gpa['avg_gpa']:.2f}",
             styles['Normal']))
 
         elements.append(Paragraph(
-            f"- Highest passing rate: <b>{best_passing['course']}</b> with {best_passing['passing_rate']:.1f}%", 
+            f"- Highest passing rate: <b>{best_passing['course']}</b> with {best_passing['passing_rate']:.1f}%",
             styles['Normal']))
 
         elements.append(Paragraph(
-            f"- Lowest passing rate: <b>{worst_passing['course']}</b> with {worst_passing['passing_rate']:.1f}%", 
+            f"- Lowest passing rate: <b>{worst_passing['course']}</b> with {worst_passing['passing_rate']:.1f}%",
             styles['Normal']))
 
         elements.append(Paragraph(
-            f"- Highest retention rate: <b>{best_retention['course']}</b> with {best_retention['retention_rate']:.1f}%", 
+            f"- Highest retention rate: <b>{best_retention['course']}</b> with {best_retention['retention_rate']:.1f}%",
             styles['Normal']))
 
         elements.append(Paragraph(
-            f"- Lowest retention rate: <b>{worst_retention['course']}</b> with {worst_retention['retention_rate']:.1f}%", 
+            f"- Lowest retention rate: <b>{worst_retention['course']}</b> with {worst_retention['retention_rate']:.1f}%",
             styles['Normal']))
 
         # Calculate average statistics across all courses
@@ -1333,15 +1333,15 @@ def generate_all_courses_stats_report(cursor, courses, reports_dir, timestamp):
         elements.append(Spacer(1, 6))
 
         elements.append(Paragraph(
-            f"- Average GPA across all courses: {avg_all_gpa:.2f}", 
+            f"- Average GPA across all courses: {avg_all_gpa:.2f}",
             styles['Normal']))
 
         elements.append(Paragraph(
-            f"- Average passing rate across all courses: {avg_all_passing:.1f}%", 
+            f"- Average passing rate across all courses: {avg_all_passing:.1f}%",
             styles['Normal']))
 
         elements.append(Paragraph(
-            f"- Average retention rate across all courses: {avg_all_retention:.1f}%", 
+            f"- Average retention rate across all courses: {avg_all_retention:.1f}%",
             styles['Normal']))
 
         # Add recommendations
@@ -1355,19 +1355,19 @@ def generate_all_courses_stats_report(cursor, courses, reports_dir, timestamp):
 
         if low_gpa_courses:
             elements.append(Paragraph(
-                "- Review academic support and teaching methods for courses with low average GPAs: " + 
+                "- Review academic support and teaching methods for courses with low average GPAs: " +
                 ", ".join([f"<b>{c['course']}</b>" for c in low_gpa_courses]),
                 styles['Normal']))
 
         if low_passing_courses:
             elements.append(Paragraph(
-                "- Investigate reasons for low passing rates in: " + 
+                "- Investigate reasons for low passing rates in: " +
                 ", ".join([f"<b>{c['course']}</b>" for c in low_passing_courses]),
                 styles['Normal']))
 
         if low_retention_courses:
             elements.append(Paragraph(
-                "- Address retention issues in: " + 
+                "- Address retention issues in: " +
                 ", ".join([f"<b>{c['course']}</b>" for c in low_retention_courses]),
                 styles['Normal']))
 
@@ -1469,7 +1469,7 @@ def generate_comprehensive_stats_report(cursor, reports_dir, timestamp):
 
         # Get top performing modules
         cursor.execute('''
-        SELECT mg.module_code, m.module_name, 
+        SELECT mg.module_code, m.module_name,
                AVG(mg.final_score) as avg_score,
                COUNT(mg.student_id) as student_count
         FROM module_grades mg
@@ -1483,7 +1483,7 @@ def generate_comprehensive_stats_report(cursor, reports_dir, timestamp):
 
         # Get lowest performing modules
         cursor.execute('''
-        SELECT mg.module_code, m.module_name, 
+        SELECT mg.module_code, m.module_name,
                AVG(mg.final_score) as avg_score,
                COUNT(mg.student_id) as student_count
         FROM module_grades mg
@@ -1614,7 +1614,7 @@ def generate_comprehensive_stats_report(cursor, reports_dir, timestamp):
             elements.append(Paragraph("Overall Grade Distribution", styles['Heading2']))
 
             # Sort the grade keys
-            sorted_grades = sorted(grade_counts.keys(), 
+            sorted_grades = sorted(grade_counts.keys(),
                                   key=lambda x: float('inf') if x not in GRADE_SYSTEMS["letter"] else -GRADE_SYSTEMS["letter"][x])
 
             grade_data = [['Grade', 'Count', 'Percentage']]
@@ -1707,7 +1707,7 @@ def generate_comprehensive_stats_report(cursor, reports_dir, timestamp):
         plt.subplot(2, 2, 2)
 
         if grade_counts:
-            sorted_grades = sorted(grade_counts.keys(), 
+            sorted_grades = sorted(grade_counts.keys(),
                                   key=lambda x: float('inf') if x not in GRADE_SYSTEMS["letter"] else -GRADE_SYSTEMS["letter"][x])
 
             grade_values = [grade_counts[grade] for grade in sorted_grades]
@@ -1723,7 +1723,7 @@ def generate_comprehensive_stats_report(cursor, reports_dir, timestamp):
                 plt.text(bar.get_x() + bar.get_width()/2., height + 0.1,
                         f'{height:.0f}', ha='center', va='bottom')
         else:
-            plt.text(0.5, 0.5, 'No grade data available', 
+            plt.text(0.5, 0.5, 'No grade data available',
                     horizontalalignment='center', verticalalignment='center')
             plt.title('Grade Distribution')
             plt.axis('off')
@@ -1740,7 +1740,7 @@ def generate_comprehensive_stats_report(cursor, reports_dir, timestamp):
             plt.ylabel('Number of Students')
             plt.xlim(0, 4.5)  # GPA typically ranges from 0 to 4.3
         else:
-            plt.text(0.5, 0.5, 'No GPA data available', 
+            plt.text(0.5, 0.5, 'No GPA data available',
                     horizontalalignment='center', verticalalignment='center')
             plt.title('GPA Distribution')
             plt.axis('off')
@@ -1764,10 +1764,10 @@ def generate_comprehensive_stats_report(cursor, reports_dir, timestamp):
             # Add value labels
             for i, bar in enumerate(bars):
                 width = bar.get_width()
-                plt.text(width + 1, bar.get_y() + bar.get_height()/2, 
+                plt.text(width + 1, bar.get_y() + bar.get_height()/2,
                         f'{width:.1f}%', ha='left', va='center')
         else:
-            plt.text(0.5, 0.5, 'No module performance data available', 
+            plt.text(0.5, 0.5, 'No module performance data available',
                     horizontalalignment='center', verticalalignment='center')
             plt.title('Module Performance Comparison')
             plt.axis('off')

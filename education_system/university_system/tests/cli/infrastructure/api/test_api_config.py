@@ -258,7 +258,7 @@ class TestLoadConfigValidation:
     """Tests for the validation step inside load_config."""
 
     @patch(
-        "university_system.infrastructure.validation.config_validators.validate_api_config"
+        "education_system.university_system.infrastructure.validation.config_validators.validate_api_config"
     )
     @patch("os.path.exists", return_value=False)
     def test_calls_validate_api_config(self, mock_exists, mock_validate):

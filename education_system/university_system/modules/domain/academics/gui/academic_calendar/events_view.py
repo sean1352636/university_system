@@ -22,39 +22,39 @@ class EventsViewMixin:
         """Show event management view"""
         self._clear_content_area()
         self.current_view = "manage_events"
-    
+
         # Header
         header_frame = ttk.Frame(self.content_area)
         header_frame.pack(fill=tk.X, padx=20, pady=10)
-    
+
         ttk.Label(header_frame, text=_("academic_calendar.manage_events.title"), style='Header.TLabel').pack(side=tk.LEFT)
-    
+
         # Action buttons
         action_frame = ttk.Frame(header_frame)
         action_frame.pack(side=tk.RIGHT)
-    
+
         ttk.Button(action_frame, text=_("academic_calendar.buttons.add_event"),
                   command=self._show_add_event).pack(side=tk.LEFT, padx=5)
         ttk.Button(action_frame, text=_("academic_calendar.buttons.refresh"),
                   command=self._refresh_manage_events).pack(side=tk.LEFT, padx=5)
-    
+
         # Search frame
         search_frame = ttk.Frame(self.content_area)
         search_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
-    
+
         ttk.Label(search_frame, text=_("academic_calendar.labels.search")).pack(side=tk.LEFT, padx=(0, 5))
         self.search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=30)
         search_entry.pack(side=tk.LEFT, padx=(0, 10))
         search_entry.bind('<KeyRelease>', lambda e: self._search_events())
-    
+
         ttk.Button(search_frame, text=_("academic_calendar.buttons.search"),
                   command=self._search_events).pack(side=tk.LEFT, padx=5)
-        
+
         # Events list
         events_frame = ttk.Frame(self.content_area)
         events_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
+
         self._create_events_treeview(events_frame)
         self._load_events_data()
 
@@ -63,13 +63,13 @@ class EventsViewMixin:
         # Create container frame for proper scrollbar positioning
         tree_container = ttk.Frame(parent)
         tree_container.pack(fill=tk.BOTH, expand=True)
-    
+
         # Treeview with more height for better visibility
         self.events_tree = ttk.Treeview(tree_container,
                                       columns=('ID', 'Date', 'End Date', 'Type', 'Description', 'full_data'),
                                       show='tree headings',
                                       height=20)
-    
+
         # Configure columns with better widths
         self.events_tree.heading('#0', text=_("academic_calendar.columns.event_name"))
         self.events_tree.heading('ID', text=_("academic_calendar.columns.id"))
@@ -78,7 +78,7 @@ class EventsViewMixin:
         self.events_tree.heading('Type', text=_("academic_calendar.columns.type"))
         self.events_tree.heading('Description', text=_("academic_calendar.columns.description"))
         self.events_tree.heading('full_data', text='')  # Hidden column
-    
+
         self.events_tree.column('#0', width=220, minwidth=150)
         self.events_tree.column('ID', width=90, minwidth=70)
         self.events_tree.column('Date', width=110, minwidth=90)
@@ -86,27 +86,27 @@ class EventsViewMixin:
         self.events_tree.column('Type', width=130, minwidth=100)
         self.events_tree.column('Description', width=350, minwidth=200)
         self.events_tree.column('full_data', width=0, minwidth=0, stretch=False)  # Hide this column
-    
+
         # Vertical scrollbar
         v_scrollbar = ttk.Scrollbar(tree_container, orient=tk.VERTICAL, command=self.events_tree.yview)
         # Horizontal scrollbar
         h_scrollbar = ttk.Scrollbar(tree_container, orient=tk.HORIZONTAL, command=self.events_tree.xview)
-    
+
         self.events_tree.configure(yscrollcommand=v_scrollbar.set,
                                  xscrollcommand=h_scrollbar.set)
-    
+
         # Use grid layout for proper scrollbar positioning
         self.events_tree.grid(row=0, column=0, sticky='nsew')
         v_scrollbar.grid(row=0, column=1, sticky='ns')
         h_scrollbar.grid(row=1, column=0, sticky='ew')
-    
+
         # Configure grid weights
         tree_container.grid_rowconfigure(0, weight=1)
         tree_container.grid_columnconfigure(0, weight=1)
-    
+
         # Context menu
         self._create_events_context_menu()
-    
+
         # Double-click to edit
         self.events_tree.bind('<Double-1>', lambda e: self._edit_selected_event())
 
@@ -120,13 +120,13 @@ class EventsViewMixin:
         self.events_context_menu.add_command(label=_("academic_calendar.context_menu.view_details"), command=self._view_event_details)
         self.events_context_menu.add_separator()
         self.events_context_menu.add_command(label=_("academic_calendar.context_menu.send_email_reminder"), command=self._send_email_reminder)
-        
+
         def show_context_menu(event):
             try:
                 self.events_context_menu.tk_popup(event.x_root, event.y_root)
             finally:
                 self.events_context_menu.grab_release()
-        
+
         self.events_tree.bind("<Button-3>", show_context_menu)
 
     def _load_events_data(self):
@@ -134,37 +134,37 @@ class EventsViewMixin:
         try:
             if not self.calendar_manager:
                 return
-    
+
             # Clear existing data
             for item in self.events_tree.get_children():
                 self.events_tree.delete(item)
-    
+
             # Get all events (recent first)
             current_date = datetime.now().strftime("%Y-%m-%d")
             past_date = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
             future_date = (datetime.now() + timedelta(days=365)).strftime("%Y-%m-%d")
-    
+
             events = self.calendar_manager.get_events_by_date_range(past_date, future_date)
-    
+
             # Load and integrate trip data
             trip_events = self._get_trip_events(past_date, future_date)
             events.extend(trip_events)
-    
+
             # Load and integrate assignment due dates
             assignment_events = self._get_assignment_events(past_date, future_date)
             events.extend(assignment_events)
-    
+
             # Load and integrate finance payment due dates
             finance_events = self._get_finance_events(past_date, future_date)
             events.extend(finance_events)
-    
+
             # Load and integrate library return due dates
             library_events = self._get_library_events(past_date, future_date)
             events.extend(library_events)
-            
+
             # Sort by date (most recent first)
             events.sort(key=lambda x: x.get('date') or x.get('date_start') or '', reverse=True)
-            
+
             # Add to treeview
             for event in events:
                 event_date = event.get('date') or event.get('date_start', '')
@@ -172,7 +172,7 @@ class EventsViewMixin:
                 event_type = event.get('event_type', '')
                 description = (event.get('description', '') or '')[:100]
                 event_id = event['id'][:8] + "..." if len(event['id']) > 8 else event['id']
-                
+
                 # Add event type icon
                 type_icons = {
                     'Academic': '📚',
@@ -187,18 +187,18 @@ class EventsViewMixin:
                     'Library': '📖'
                 }
                 icon = type_icons.get(event_type, '📅')
-                
+
                 item_id = self.events_tree.insert('', 'end',
                                                  text=f"{icon} {event['name']}",
-                                                 values=(event_id, event_date, end_date, 
+                                                 values=(event_id, event_date, end_date,
                                                         event_type, description))
-                
+
                 # Store full event data as JSON
                 import json
                 self.events_tree.set(item_id, 'full_data', json.dumps(dict(event) if hasattr(event, 'keys') else event))
-            
+
             self._update_status(_("academic_calendar.messages.loaded_events").format(count=len(events)), "success")
-    
+
         except Exception as e:
             gui_logger.error(f"Failed to load events: {e}")
             self._show_error(_("academic_calendar.messages.failed_to_load_events").format(error=e))
@@ -217,7 +217,7 @@ class EventsViewMixin:
                     OR (start_date <= ? AND end_date >= ?)
                     ORDER BY start_date
                 ''', (start_date, end_date, start_date, end_date, start_date, end_date))
-    
+
                 for trip in cursor.fetchall():
                     trip_events.append({
                         'id': f'trip_{trip[4]}',
@@ -231,7 +231,7 @@ class EventsViewMixin:
                     })
         except Exception as e:
             gui_logger.warning(f"Failed to load trip events: {e}")
-    
+
         return trip_events
 
     def _get_assignment_events(self, start_date, end_date):
@@ -247,7 +247,7 @@ class EventsViewMixin:
                     WHERE due_date BETWEEN ? AND ? AND is_active = 1
                     ORDER BY due_date
                 ''', (start_date, end_date))
-    
+
                 for assignment in cursor.fetchall():
                     assignment_events.append({
                         'id': f'assignment_{assignment[4]}',
@@ -261,7 +261,7 @@ class EventsViewMixin:
                     })
         except Exception as e:
             gui_logger.warning(f"Failed to load assignment events: {e}")
-    
+
         return assignment_events
 
     def _get_finance_events(self, start_date, end_date):
@@ -271,7 +271,7 @@ class EventsViewMixin:
             from education_system.university_system.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
-    
+
                 # Get payment due dates for student fees
                 cursor.execute('''
                     SELECT ft.fee_name, f.due_date, f.amount, s.first_name, s.last_name, f.student_fee_id
@@ -281,7 +281,7 @@ class EventsViewMixin:
                     WHERE f.due_date BETWEEN ? AND ? AND f.status != 'paid'
                     ORDER BY f.due_date
                 ''', (start_date, end_date))
-    
+
                 for fee in cursor.fetchall():
                     fee_name = fee[0] if fee[0] else 'Fee'
                     finance_events.append({
@@ -294,7 +294,7 @@ class EventsViewMixin:
                         'description': f"Payment due: {fee_name} - ${fee[2]:.2f} ({fee[3]} {fee[4]})",
                         'source': 'finance'
                     })
-    
+
                 # Get scholarship deadlines (using correct schema)
                 try:
                     cursor.execute('''
@@ -303,7 +303,7 @@ class EventsViewMixin:
                         WHERE sch.deadline BETWEEN ? AND ? AND sch.is_active = 1
                         ORDER BY sch.deadline
                     ''', (start_date, end_date))
-    
+
                     for scholarship in cursor.fetchall():
                         finance_events.append({
                             'id': f'scholarship_{scholarship[3]}',
@@ -317,7 +317,7 @@ class EventsViewMixin:
                         })
                 except Exception as e:
                     gui_logger.debug(f"Could not load scholarship events: {e}")
-    
+
                 # Get financial aid application deadlines
                 try:
                     cursor.execute('''
@@ -327,7 +327,7 @@ class EventsViewMixin:
                           AND fat.is_active = 1
                         ORDER BY fat.application_deadline
                     ''', (start_date, end_date))
-    
+
                     for aid_type in cursor.fetchall():
                         finance_events.append({
                             'id': f'aid_deadline_{aid_type[3]}',
@@ -341,7 +341,7 @@ class EventsViewMixin:
                         })
                 except Exception as e:
                     gui_logger.debug(f"Could not load financial aid deadlines: {e}")
-    
+
                 # Get student financial aid approval/disbursement dates
                 try:
                     cursor.execute('''
@@ -354,7 +354,7 @@ class EventsViewMixin:
                           AND sfa.status IN ('approved', 'disbursed', 'completed')
                         ORDER BY sfa.approval_date
                     ''', (start_date, end_date))
-    
+
                     for aid in cursor.fetchall():
                         finance_events.append({
                             'id': f'aid_approval_{aid[0]}',
@@ -368,10 +368,10 @@ class EventsViewMixin:
                         })
                 except Exception as e:
                     gui_logger.debug(f"Could not load student financial aid: {e}")
-    
+
         except Exception as e:
             gui_logger.warning(f"Failed to load finance events: {e}")
-    
+
         return finance_events
 
     def _get_library_events(self, start_date, end_date):
@@ -381,7 +381,7 @@ class EventsViewMixin:
             from education_system.university_system.infrastructure.database.db import sqlite3, DEFAULT_DB_PATH
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
-    
+
                 # Get book return due dates
                 cursor.execute('''
                     SELECT bl.book_id, bl.user_id, bl.due_date,
@@ -393,7 +393,7 @@ class EventsViewMixin:
                     WHERE bl.due_date BETWEEN ? AND ? AND bl.status = 'active'
                     ORDER BY bl.due_date
                 ''', (start_date, end_date))
-    
+
                 for loan in cursor.fetchall():
                     book_id, user_id, due_date, title, author, first_name, last_name, loan_id = loan
                     library_events.append({
@@ -406,10 +406,10 @@ class EventsViewMixin:
                         'description': f"Book return due: {title} by {author} (borrowed by {first_name} {last_name})",
                         'source': 'library'
                     })
-    
+
         except Exception as e:
             gui_logger.warning(f"Failed to load library events: {e}")
-    
+
         return library_events
 
     def _edit_selected_event(self):
@@ -417,7 +417,7 @@ class EventsViewMixin:
         selection = self.events_tree.selection() if hasattr(self, 'events_tree') else []
         if not selection:
             selection = self.calendar_tree.selection() if hasattr(self, 'calendar_tree') else []
-        
+
         if selection:
             item = selection[0]
             # Get event data from the item
@@ -433,14 +433,14 @@ class EventsViewMixin:
                     except (json.JSONDecodeError, TypeError) as e:
                         # If parsing fails, treat as string (fallback)
                         gui_logger.debug(f"Event data not in expected JSON format, using fallback: {e}")
-            
+
             # Fallback: get event by name
             event_name = self.events_tree.item(item, 'text') if hasattr(self, 'events_tree') else \
                         self.calendar_tree.item(item, 'text')
             # Remove icon from name
             if ' ' in event_name:
                 event_name = ' '.join(event_name.split(' ')[1:])
-            
+
             try:
                 events = self.calendar_manager.db_manager.execute_query(
                     "SELECT * FROM academic_calendar_events WHERE name = ? LIMIT 1", (event_name,)
@@ -460,16 +460,16 @@ class EventsViewMixin:
         selection = self.events_tree.selection() if hasattr(self, 'events_tree') else []
         if not selection:
             selection = self.calendar_tree.selection() if hasattr(self, 'calendar_tree') else []
-        
+
         if selection:
             item = selection[0]
             event_name = self.events_tree.item(item, 'text') if hasattr(self, 'events_tree') else \
                         self.calendar_tree.item(item, 'text')
-            
+
             # Remove icon from name
             if ' ' in event_name:
                 event_name = ' '.join(event_name.split(' ')[1:])
-            
+
             if messagebox.askyesno(_("academic_calendar.messages.confirm_delete"),
                                  _("academic_calendar.messages.confirm_delete_event").format(name=event_name)):
                 try:
@@ -496,16 +496,16 @@ class EventsViewMixin:
         selection = self.events_tree.selection() if hasattr(self, 'events_tree') else []
         if not selection:
             selection = self.calendar_tree.selection() if hasattr(self, 'calendar_tree') else []
-        
+
         if selection:
             item = selection[0]
             event_name = self.events_tree.item(item, 'text') if hasattr(self, 'events_tree') else \
                         self.calendar_tree.item(item, 'text')
-            
+
             # Remove icon from name
             if ' ' in event_name:
                 event_name = ' '.join(event_name.split(' ')[1:])
-            
+
             try:
                 events = self.calendar_manager.db_manager.execute_query(
                     "SELECT * FROM academic_calendar_events WHERE name = ? LIMIT 1", (event_name,)
@@ -522,15 +522,15 @@ class EventsViewMixin:
     def _copy_event_id(self):
         """Copy event ID to clipboard"""
         selection = self.events_tree.selection() if hasattr(self, 'events_tree') else []
-        
+
         if selection:
             item = selection[0]
             event_name = self.events_tree.item(item, 'text')
-            
+
             # Remove icon from name
             if ' ' in event_name:
                 event_name = ' '.join(event_name.split(' ')[1:])
-            
+
             try:
                 events = self.calendar_manager.db_manager.execute_query(
                     "SELECT id FROM academic_calendar_events WHERE name = ? LIMIT 1", (event_name,)
@@ -549,11 +549,11 @@ class EventsViewMixin:
         selection = self.events_tree.selection() if hasattr(self, 'events_tree') else []
         if not selection:
             selection = self.calendar_tree.selection() if hasattr(self, 'calendar_tree') else []
-    
+
         if not selection:
             safe_show_warning(_("academic_calendar.messages.no_selection"), _("academic_calendar.messages.select_event_for_reminder"), self.root)
             return
-    
+
         try:
             item = selection[0]
             # Get event details
@@ -569,14 +569,14 @@ class EventsViewMixin:
                 event_date = values[0] if len(values) > 0 else 'Unknown'
                 event_type = values[2] if len(values) > 2 else 'Event'
                 description = values[3] if len(values) > 3 else ''
-    
+
             # Remove icon from name
             if ' ' in event_name:
                 event_name = ' '.join(event_name.split(' ')[1:])
-    
+
             # Launch email GUI with pre-filled reminder
             self._launch_email_reminder_dialog(event_name, event_date, event_type, description)
-    
+
         except Exception as e:
             self._show_error(_("academic_calendar.messages.failed_to_prepare_reminder").format(error=e))
 
@@ -585,16 +585,16 @@ class EventsViewMixin:
         try:
             # Try to import and use the email manager GUI
             from education_system.university_system.modules.shared.gui.email.email_manager_gui import EmailManagerGUI
-    
+
             # Create email dialog
             email_dialog = tk.Toplevel(self.root)
             email_dialog.title(_("academic_calendar.dialogs.send_reminder.title"))
             email_dialog.geometry("600x500")
             email_dialog.transient(self.root)
-    
+
             # Create email manager instance
             email_manager = EmailManagerGUI(parent=email_dialog)
-    
+
             # Pre-fill email with calendar event details using template system
             from education_system.university_system.infrastructure.email.template_utils import render_template
 
@@ -612,11 +612,11 @@ class EventsViewMixin:
                 gui_logger.warning(f"Failed to render email template: {e}")
                 subject = None
                 message = None
-    
+
             # Set the email content if the email manager supports it
             if subject and message and hasattr(email_manager, 'set_email_content'):
                 email_manager.set_email_content(subject, message)
-    
+
         except ImportError:
             # Fallback to simple dialog if email GUI not available
             self._show_simple_email_dialog(event_name, event_date, event_type, description)

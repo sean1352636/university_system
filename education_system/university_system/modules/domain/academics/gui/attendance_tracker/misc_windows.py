@@ -68,68 +68,68 @@ class GeofencingWindow:
     def __init__(self, parent, geo_system):
         self.parent = parent
         self.geo_system = geo_system
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.geofencing_setup"))
         self.window.geometry("500x400")
         self.window.transient(parent)
-        
+
         self.create_widgets()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="📍 Geofencing Setup", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Create geofenced session
         session_frame = ttk.LabelFrame(self.window, text="Create Geofenced Session", padding=10)
         session_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         ttk.Label(session_frame, text="Module Code:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.module_var = tk.StringVar()
         self.module_var.trace('w', lambda *args: self.on_module_change())
         ttk.Entry(session_frame, textvariable=self.module_var, width=30).grid(row=0, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Label(session_frame, text="Date:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.date_var = tk.StringVar(value=datetime.date.today().isoformat())
         ttk.Entry(session_frame, textvariable=self.date_var, width=30).grid(row=1, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Label(session_frame, text="Location Name:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.location_var = tk.StringVar()
         ttk.Entry(session_frame, textvariable=self.location_var, width=30).grid(row=2, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Label(session_frame, text="Latitude:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.latitude_var = tk.StringVar()
         ttk.Entry(session_frame, textvariable=self.latitude_var, width=30).grid(row=3, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Label(session_frame, text="Longitude:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.longitude_var = tk.StringVar()
         ttk.Entry(session_frame, textvariable=self.longitude_var, width=30).grid(row=4, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Label(session_frame, text="Radius (meters):").grid(row=5, column=0, sticky=tk.W, pady=5)
         self.radius_var = tk.StringVar(value="50")
         ttk.Entry(session_frame, textvariable=self.radius_var, width=30).grid(row=5, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Button(session_frame, text="Create Geofenced Session", command=self.create_session, style='Success.TButton').grid(row=6, column=0, columnspan=2, pady=10)
-        
+
         # Test location
         test_frame = ttk.LabelFrame(self.window, text="Test Location Check", padding=10)
         test_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         ttk.Label(test_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.test_student_var = tk.StringVar()
         ttk.Entry(test_frame, textvariable=self.test_student_var, width=30).grid(row=0, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Label(test_frame, text="Test Latitude:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.test_lat_var = tk.StringVar()
         ttk.Entry(test_frame, textvariable=self.test_lat_var, width=30).grid(row=1, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Label(test_frame, text="Test Longitude:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.test_lon_var = tk.StringVar()
         ttk.Entry(test_frame, textvariable=self.test_lon_var, width=30).grid(row=2, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Button(test_frame, text="Test Location", command=self.test_location, style='Primary.TButton').grid(row=3, column=0, columnspan=2, pady=10)
-        
+
         # Close button
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy, style='Danger.TButton').pack(pady=10)
 
@@ -190,35 +190,35 @@ class GeofencingWindow:
             latitude = float(self.latitude_var.get())
             longitude = float(self.longitude_var.get())
             radius = int(self.radius_var.get())
-            
+
             session_id = self.geo_system.create_geofenced_session(
                 module_code, date, location_name, latitude, longitude, radius
             )
-            
+
             if session_id:
                 messagebox.showinfo(_("common.success"), f"Geofenced session created!\nSession ID: {session_id}")
             else:
                 messagebox.showerror(_("common.error"), "Failed to create geofenced session")
-                
+
         except ValueError:
             messagebox.showerror(_("common.error"), "Please enter valid latitude, longitude, and radius values")
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Session creation failed: {e}")
-    
+
     def test_location(self):
         """Test location check"""
         try:
             student_id = self.test_student_var.get()
             latitude = float(self.test_lat_var.get())
             longitude = float(self.test_lon_var.get())
-            
+
             success, message = self.geo_system.check_location_attendance(student_id, latitude, longitude)
-            
+
             if success:
                 messagebox.showinfo("Location Test", f"✅ {message}")
             else:
                 messagebox.showwarning("Location Test", f"❌ {message}")
-                
+
         except ValueError:
             messagebox.showerror(_("common.error"), "Please enter valid student ID, latitude, and longitude")
         except Exception as e:
@@ -808,94 +808,94 @@ class CalendarSyncWindow:
 class GamificationWindow:
     def __init__(self, parent):
         self.parent = parent
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.gamification_portal"))
         self.window.geometry("800x600")
         self.window.transient(parent)
-        
+
         self.create_widgets()
         self.load_leaderboard()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="🎮 Gamification Portal", font=('Arial', 16, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Notebook for different views
         notebook = ttk.Notebook(self.window)
         notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
+
         # Leaderboard tab
         leaderboard_frame = ttk.Frame(notebook)
         notebook.add(leaderboard_frame, text="🏆 Leaderboard")
-        
+
         # Leaderboard treeview
         lb_columns = ("Rank", "Student ID", "Name", "Points", "Level", "Streak", "Badges")
         self.leaderboard_tree = ttk.Treeview(leaderboard_frame, columns=lb_columns, show="headings")
-        
+
         for col in lb_columns:
             self.leaderboard_tree.heading(col, text=col)
             self.leaderboard_tree.column(col, width=100)
-        
+
         lb_scrollbar = ttk.Scrollbar(leaderboard_frame, orient=tk.VERTICAL, command=self.leaderboard_tree.yview)
         self.leaderboard_tree.configure(yscrollcommand=lb_scrollbar.set)
-        
+
         self.leaderboard_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         lb_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Student details tab
         details_frame = ttk.Frame(notebook)
         notebook.add(details_frame, text="👤 Student Details")
-        
+
         # Student lookup
         lookup_frame = ttk.Frame(details_frame)
         lookup_frame.pack(fill=tk.X, padx=10, pady=10)
-        
+
         ttk.Label(lookup_frame, text="Student ID:").pack(side=tk.LEFT)
         self.lookup_var = tk.StringVar()
         ttk.Entry(lookup_frame, textvariable=self.lookup_var, width=15).pack(side=tk.LEFT, padx=(5, 10))
         ttk.Button(lookup_frame, text="Lookup", command=self.lookup_student, style='Primary.TButton').pack(side=tk.LEFT)
-        
+
         # Student details display
         self.details_text = tk.Text(details_frame, wrap=tk.WORD, height=20)
         details_scrollbar = ttk.Scrollbar(details_frame, orient=tk.VERTICAL, command=self.details_text.yview)
         self.details_text.configure(yscrollcommand=details_scrollbar.set)
-        
+
         self.details_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 0), pady=(0, 10))
         details_scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=(0, 10))
-        
+
         # Awards tab
         awards_frame = ttk.Frame(notebook)
         notebook.add(awards_frame, text="🎯 Award Points")
-        
+
         # Award form
         award_form = ttk.LabelFrame(awards_frame, text="Award Points to Student", padding=20)
         award_form.pack(fill=tk.X, padx=10, pady=10)
-        
+
         ttk.Label(award_form, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.award_student_var = tk.StringVar()
         ttk.Entry(award_form, textvariable=self.award_student_var, width=20).grid(row=0, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Label(award_form, text="Points:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.award_points_var = tk.StringVar()
         ttk.Entry(award_form, textvariable=self.award_points_var, width=20).grid(row=1, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Label(award_form, text="Reason:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.award_reason_var = tk.StringVar()
         ttk.Entry(award_form, textvariable=self.award_reason_var, width=40).grid(row=2, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Button(award_form, text="Award Points", command=self.award_points, style='Success.TButton').grid(row=3, column=0, columnspan=2, pady=10)
-        
+
         # Close button
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy, style='Danger.TButton').pack(pady=10)
-    
+
     def load_leaderboard(self):
         """Load leaderboard data"""
         # Clear existing items
         for item in self.leaderboard_tree.get_children():
             self.leaderboard_tree.delete(item)
-        
+
         # Load real leaderboard data from database
         try:
 
@@ -955,14 +955,14 @@ class GamificationWindow:
 
         except Exception as e:
             self.leaderboard_tree.insert('', 'end', values=('ERROR', '', f'Database error: {str(e)}', '0', '0', '0', 'Unable to load leaderboard'))
-    
+
     def lookup_student(self):
         """Lookup student gamification details"""
         student_id = self.lookup_var.get()
         if not student_id:
             messagebox.showwarning(_("common.warning"), "Please enter a student ID")
             return
-        
+
         # Sample student details
         details = f"""🎮 GAMIFICATION PROFILE: {student_id}
 {'='*50}
@@ -983,28 +983,28 @@ Total Rewards: 1,500
 📈 Points to next level: 750
 
 Last Attendance: 2024-12-20"""
-        
+
         self.details_text.delete(1.0, tk.END)
         self.details_text.insert(tk.END, details)
-    
+
     def award_points(self):
         """Award points to student"""
         try:
             student_id = self.award_student_var.get()
             points = int(self.award_points_var.get())
             reason = self.award_reason_var.get()
-            
+
             if not all([student_id, points, reason]):
                 messagebox.showwarning(_("common.warning"), "Please fill in all fields")
                 return
-            
+
             messagebox.showinfo(_("common.success"), f"Awarded {points} points to {student_id} for: {reason}")
-            
+
             # Clear form
             self.award_student_var.set("")
             self.award_points_var.set("")
             self.award_reason_var.set("")
-            
+
         except ValueError:
             messagebox.showerror(_("common.error"), "Please enter a valid number of points")
 
@@ -1021,16 +1021,16 @@ class CustomReportWindow:
         self.modules = self._load_modules()
 
         self.create_widgets()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="📊 Custom Report Builder", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Report configuration
         config_frame = ttk.LabelFrame(self.window, text="Report Configuration", padding=10)
         config_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         # Report type
         ttk.Label(config_frame, text="Report Type:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.report_type_var = tk.StringVar(value="Attendance Summary")
@@ -1038,22 +1038,22 @@ class CustomReportWindow:
                                  values=["Attendance Summary", "Detailed Records", "Statistical Analysis"],
                                  state="readonly", width=30)
         type_combo.grid(row=0, column=1, padx=(10, 0), pady=5)
-        
+
         # Date range
         ttk.Label(config_frame, text="Date Range:").grid(row=1, column=0, sticky=tk.W, pady=5)
         date_frame = ttk.Frame(config_frame)
         date_frame.grid(row=1, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         self.start_date_var = tk.StringVar(value=(datetime.date.today() - datetime.timedelta(days=30)).isoformat())
         ttk.Entry(date_frame, textvariable=self.start_date_var, width=12).pack(side=tk.LEFT)
         ttk.Label(date_frame, text=" to ").pack(side=tk.LEFT)
         self.end_date_var = tk.StringVar(value=datetime.date.today().isoformat())
         ttk.Entry(date_frame, textvariable=self.end_date_var, width=12).pack(side=tk.LEFT)
-        
+
         # Filters
         filters_frame = ttk.LabelFrame(self.window, text="Filters", padding=10)
         filters_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         # Module filter
         self.module_filter_var = tk.BooleanVar()
         ttk.Checkbutton(filters_frame, text="Filter by Module:", variable=self.module_filter_var).grid(row=0, column=0, sticky=tk.W)
@@ -1061,34 +1061,34 @@ class CustomReportWindow:
         module_combo = ttk.Combobox(filters_frame, textvariable=self.selected_module_var,
                                    values=self.modules, state="readonly", width=20)
         module_combo.grid(row=0, column=1, padx=(10, 0))
-        
+
         # Student filter
         self.student_filter_var = tk.BooleanVar()
         ttk.Checkbutton(filters_frame, text="Filter by Student:", variable=self.student_filter_var).grid(row=1, column=0, sticky=tk.W)
         self.selected_student_var = tk.StringVar()
         ttk.Entry(filters_frame, textvariable=self.selected_student_var, width=20).grid(row=1, column=1, padx=(10, 0))
-        
+
         # Output options
         output_frame = ttk.LabelFrame(self.window, text="Output Options", padding=10)
         output_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         ttk.Label(output_frame, text="Output Format:").grid(row=0, column=0, sticky=tk.W)
         self.output_format_var = tk.StringVar(value="Excel")
         format_combo = ttk.Combobox(output_frame, textvariable=self.output_format_var,
                                    values=["Excel", "PDF", "CSV", "HTML"], state="readonly")
         format_combo.grid(row=0, column=1, padx=(10, 0))
-        
+
         self.include_charts_var = tk.BooleanVar(value=True)
         ttk.Checkbutton(output_frame, text="Include Charts", variable=self.include_charts_var).grid(row=1, column=0, columnspan=2, sticky=tk.W)
-        
+
         # Buttons
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
-        
+
         ttk.Button(buttons_frame, text="Generate Report", command=self.generate_report, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.preview"), command=self.preview_report, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.cancel"), command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
-    
+
     def generate_report(self):
         """Generate the custom report and export to selected format"""
         report_content = self._build_report()
@@ -1392,61 +1392,61 @@ class ImportDataWindow:
         self.parent = parent
         self.filename = filename
         self.callback = callback
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.import_data"))
         self.window.geometry("500x400")
         self.window.transient(parent)
         self.window.grab_set()
-        
+
         self.create_widgets()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="📥 Import Data", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # File info
         info_frame = ttk.LabelFrame(self.window, text="File Information", padding=10)
         info_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         ttk.Label(info_frame, text=f"File: {os.path.basename(self.filename)}").pack(anchor=tk.W)
         ttk.Label(info_frame, text=f"Path: {self.filename}").pack(anchor=tk.W)
-        
+
         # Import options
         options_frame = ttk.LabelFrame(self.window, text="Import Options", padding=10)
         options_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         ttk.Label(options_frame, text="Data Type:").grid(row=0, column=0, sticky=tk.W)
         self.data_type_var = tk.StringVar(value="Students")
         type_combo = ttk.Combobox(options_frame, textvariable=self.data_type_var,
                                  values=["Students", "Attendance Records", "Modules"], state="readonly")
         type_combo.grid(row=0, column=1, padx=(10, 0))
-        
+
         self.overwrite_var = tk.BooleanVar()
         ttk.Checkbutton(options_frame, text="Overwrite existing data", variable=self.overwrite_var).grid(row=1, column=0, columnspan=2, sticky=tk.W, pady=(10, 0))
-        
+
         # Preview
         preview_frame = ttk.LabelFrame(self.window, text="Data Preview", padding=10)
         preview_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
+
         self.preview_text = tk.Text(preview_frame, wrap=tk.WORD)
         preview_scrollbar = ttk.Scrollbar(preview_frame, orient=tk.VERTICAL, command=self.preview_text.yview)
         self.preview_text.configure(yscrollcommand=preview_scrollbar.set)
-        
+
         self.preview_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         preview_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Load preview
         self.load_preview()
-        
+
         # Buttons
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
-        
+
         ttk.Button(buttons_frame, text=_("common.import"), command=self.import_data, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.cancel"), command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
-    
+
     def load_preview(self):
         """Load and display file preview"""
         try:
@@ -1457,85 +1457,85 @@ class ImportDataWindow:
             else:
                 self.preview_text.insert(tk.END, "File format not supported for preview")
                 return
-            
+
             preview_text = f"Columns: {', '.join(df.columns)}\n\n"
             preview_text += f"First 10 rows:\n{df.to_string(index=False)}"
-            
+
             self.preview_text.insert(tk.END, preview_text)
-            
+
         except Exception as e:
             self.preview_text.insert(tk.END, f"Error loading preview: {e}")
-    
+
     def import_data(self):
         """Import the data"""
         try:
             data_type = self.data_type_var.get()
             overwrite = self.overwrite_var.get()
-            
+
             messagebox.showinfo("Import", f"Would import {data_type} data from {self.filename}\nOverwrite: {overwrite}")
-            
+
             self.callback()  # Refresh parent data
             self.window.destroy()
-            
+
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Import failed: {e}")
 
 class ExportDataWindow:
     def __init__(self, parent):
         self.parent = parent
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.export_data"))
         self.window.geometry("400x300")
         self.window.transient(parent)
         self.window.grab_set()
-        
+
         self.create_widgets()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="📤 Export Data", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Export options
         options_frame = ttk.LabelFrame(self.window, text="Export Options", padding=20)
         options_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
+
         ttk.Label(options_frame, text="Data Type:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.data_type_var = tk.StringVar(value="All Data")
         type_combo = ttk.Combobox(options_frame, textvariable=self.data_type_var,
                                  values=["All Data", "Students", "Attendance Records", "Modules", "Settings"],
                                  state="readonly", width=25)
         type_combo.grid(row=0, column=1, padx=(10, 0), pady=5)
-        
+
         ttk.Label(options_frame, text="Format:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.format_var = tk.StringVar(value="Excel")
         format_combo = ttk.Combobox(options_frame, textvariable=self.format_var,
                                    values=["Excel", "CSV", "JSON"], state="readonly", width=25)
         format_combo.grid(row=1, column=1, padx=(10, 0), pady=5)
-        
+
         # Date range for attendance data
         ttk.Label(options_frame, text="Date Range:").grid(row=2, column=0, sticky=tk.W, pady=5)
         date_frame = ttk.Frame(options_frame)
         date_frame.grid(row=2, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         self.start_date_var = tk.StringVar(value=(datetime.date.today() - datetime.timedelta(days=30)).isoformat())
         ttk.Entry(date_frame, textvariable=self.start_date_var, width=10).pack(side=tk.LEFT)
         ttk.Label(date_frame, text=" to ").pack(side=tk.LEFT)
         self.end_date_var = tk.StringVar(value=datetime.date.today().isoformat())
         ttk.Entry(date_frame, textvariable=self.end_date_var, width=10).pack(side=tk.LEFT)
-        
+
         # Include options
         self.include_deleted_var = tk.BooleanVar()
         ttk.Checkbutton(options_frame, text="Include deleted records", variable=self.include_deleted_var).grid(row=3, column=0, columnspan=2, sticky=tk.W, pady=5)
-        
+
         # Buttons
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
-        
+
         ttk.Button(buttons_frame, text=_("common.export"), command=self.export_data, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.cancel"), command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
-    
+
     def export_data(self):
         """Export the selected data"""
         try:
@@ -1543,18 +1543,18 @@ class ExportDataWindow:
             format_type = self.format_var.get()
             start_date = self.start_date_var.get()
             end_date = self.end_date_var.get()
-            
+
             # Choose file location
             file_ext = ".xlsx" if format_type == "Excel" else f".{format_type.lower()}"
             filename = filedialog.asksaveasfilename(
                 defaultextension=file_ext,
                 filetypes=[(f"{format_type} files", f"*{file_ext}"), ("All files", "*.*")]
             )
-            
+
             if filename:
                 messagebox.showinfo("Export", f"Would export {data_type} as {format_type} to {filename}")
                 self.window.destroy()
-                
+
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Export failed: {e}")
 
@@ -2280,15 +2280,15 @@ class HelpWindow:
         # Title
         title_label = ttk.Label(self.window, text="📖 User Manual", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Help content
         help_frame = ttk.Frame(self.window)
         help_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
+
         help_text = tk.Text(help_frame, wrap=tk.WORD)
         help_scrollbar = ttk.Scrollbar(help_frame, orient=tk.VERTICAL, command=help_text.yview)
         help_text.configure(yscrollcommand=help_scrollbar.set)
-        
+
         help_content = """
 ENHANCED ATTENDANCE TRACKING SYSTEM - USER MANUAL
 =================================================
@@ -2430,13 +2430,13 @@ Backwards compatible with CLI version
 
 For more information, visit the system documentation or contact your administrator.
         """
-        
+
         help_text.insert(tk.END, help_content)
         help_text.config(state=tk.DISABLED)
-        
+
         help_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         help_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Close button
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy, style='Primary.TButton').pack(pady=10)
 

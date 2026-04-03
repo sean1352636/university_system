@@ -101,10 +101,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -155,7 +155,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -171,7 +171,7 @@ def init_basic_database():
         status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -185,7 +185,7 @@ def init_basic_database():
         year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -199,7 +199,7 @@ def init_basic_database():
         UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -219,11 +219,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -233,7 +233,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -248,7 +248,7 @@ def init_enhanced_grades_db():
         FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -261,7 +261,7 @@ def init_enhanced_grades_db():
         FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -280,7 +280,7 @@ def init_enhanced_grades_db():
         FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -419,85 +419,85 @@ class GradeManager:
         # Top controls frame
         top_controls = ttk.Frame(self.content_frame)
         top_controls.pack(fill='x', padx=10, pady=5)
-            
+
         # Left side controls
         left_controls = ttk.Frame(top_controls)
         left_controls.pack(side='left', fill='x', expand=True)
-            
-        ttk.Button(left_controls, text="Add Grade", 
+
+        ttk.Button(left_controls, text="Add Grade",
                   command=self.add_grade_dialog).pack(side='left', padx=5)
-        ttk.Button(left_controls, text="Edit Grade", 
+        ttk.Button(left_controls, text="Edit Grade",
                   command=self.edit_grade_dialog).pack(side='left', padx=5)
-        ttk.Button(left_controls, text="Delete Grade", 
+        ttk.Button(left_controls, text="Delete Grade",
                   command=self.delete_grade).pack(side='left', padx=5)
-        ttk.Button(left_controls, text="Import Grades", 
+        ttk.Button(left_controls, text="Import Grades",
                   command=self.import_grades).pack(side='left', padx=5)
-        ttk.Button(left_controls, text="Batch Entry", 
+        ttk.Button(left_controls, text="Batch Entry",
                   command=self.batch_grade_entry).pack(side='left', padx=5)
-            
+
         # Right side controls
         right_controls = ttk.Frame(top_controls)
         right_controls.pack(side='right')
-            
-        ttk.Button(right_controls, text="Calculate GPAs", 
+
+        ttk.Button(right_controls, text="Calculate GPAs",
                   command=self.calculate_all_gpas).pack(side='left', padx=5)
-        ttk.Button(right_controls, text="Grade Statistics", 
+        ttk.Button(right_controls, text="Grade Statistics",
                   command=self.show_grade_statistics).pack(side='left', padx=5)
-        ttk.Button(right_controls, text="Refresh", 
+        ttk.Button(right_controls, text="Refresh",
                   command=self.refresh_grades).pack(side='left', padx=5)
-            
+
         # Filter frame
         filter_frame = ttk.Frame(self.content_frame)
         filter_frame.pack(fill='x', padx=10, pady=5)
-            
+
         ttk.Label(filter_frame, text="Student:").pack(side='left', padx=5)
         self.grade_student_filter_var = tk.StringVar()
-        self.grade_student_combo = ttk.Combobox(filter_frame, 
-                                               textvariable=self.grade_student_filter_var, 
+        self.grade_student_combo = ttk.Combobox(filter_frame,
+                                               textvariable=self.grade_student_filter_var,
                                                width=25, state='readonly')
         self.grade_student_combo.pack(side='left', padx=5)
         self.grade_student_combo.bind('<<ComboboxSelected>>', self.filter_grades)
-            
+
         ttk.Label(filter_frame, text="Assessment:").pack(side='left', padx=5)
         self.grade_assessment_filter_var = tk.StringVar()
-        self.grade_assessment_combo = ttk.Combobox(filter_frame, 
-                                                  textvariable=self.grade_assessment_filter_var, 
+        self.grade_assessment_combo = ttk.Combobox(filter_frame,
+                                                  textvariable=self.grade_assessment_filter_var,
                                                   width=25, state='readonly')
         self.grade_assessment_combo.pack(side='left', padx=5)
         self.grade_assessment_combo.bind('<<ComboboxSelected>>', self.filter_grades)
-            
-        ttk.Button(filter_frame, text="Clear Filters", 
+
+        ttk.Button(filter_frame, text="Clear Filters",
                   command=self.clear_grade_filters).pack(side='left', padx=20)
-            
+
         # Grades list
         list_frame = ttk.Frame(self.content_frame)
         list_frame.pack(fill='both', expand=True, padx=10, pady=5)
-            
+
         columns = ('ID', 'Student', 'Assessment', 'Score', 'Max Points', 'Percentage', 'Letter Grade', 'Date')
         self.grades_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=22)
-            
+
         for col in columns:
             self.grades_tree.heading(col, text=col)
             if col == 'Student' or col == 'Assessment':
                 self.grades_tree.column(col, width=150, anchor='w')
             else:
                 self.grades_tree.column(col, width=100, anchor='center')
-            
+
         # Scrollbars
         v_scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.grades_tree.yview)
         h_scrollbar = ttk.Scrollbar(list_frame, orient='horizontal', command=self.grades_tree.xview)
         self.grades_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-            
+
         self.grades_tree.pack(side='left', fill='both', expand=True)
         v_scrollbar.pack(side='right', fill='y')
         h_scrollbar.pack(side='bottom', fill='x')
-    
+
         # Load grades data
         self.refresh_grades()
-    
+
         # Populate filter combos now that they exist
         self.populate_filter_combos()
-        
+
 
     def percentage_to_letter(self, percentage):
         """Convert percentage to letter grade"""
@@ -527,7 +527,7 @@ class GradeManager:
             return 'D-'
         else:
             return 'F'
-    
+
 
     def letter_to_gpa(self, letter_grade):
         """Convert letter grade to GPA points"""

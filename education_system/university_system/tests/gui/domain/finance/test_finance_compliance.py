@@ -101,13 +101,15 @@ def test_db_with_collection_data():
     conn.commit()
     yield conn
 
-    # Cleanup — avoid blanket DELETE FROM students which would fail
-    # if other tables have FK references to those students
-    cursor.execute('DELETE FROM audit_log')
-    cursor.execute('DELETE FROM collection_cases')
-    cursor.execute('DELETE FROM collection_agencies')
-    conn.commit()
-    conn.close()
+    # Cleanup — the _isolate_db autouse fixture handles DB teardown,
+    # so we only need to clean up if the connection is still open.
+    try:
+        cursor.execute('DELETE FROM audit_log')
+        cursor.execute('DELETE FROM collection_cases')
+        cursor.execute('DELETE FROM collection_agencies')
+        conn.commit()
+    except Exception:
+        pass  # Connection may already be closed by _isolate_db teardown
 
 class TestComplianceManagerInit:
     """Test ComplianceManager initialization"""

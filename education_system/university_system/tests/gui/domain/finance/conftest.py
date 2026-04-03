@@ -9,6 +9,12 @@ from unittest.mock import MagicMock
 
 # Mock GUI-related modules before any finance modules are imported
 # This prevents matplotlib from trying to use TkAgg backend in headless environments
+#
+# NOTE: Do NOT mock PIL (base package), qrcode, or tkinter here — mocking
+# top-level packages via sys.modules poisons them globally for the entire
+# pytest session, breaking later tests that need the real modules.
+# Only mock sub-modules that require a display (e.g. PIL.ImageTk,
+# matplotlib.backends.backend_tkagg).
 
 # Mock matplotlib
 mock_matplotlib = MagicMock()
@@ -23,14 +29,7 @@ sys.modules['matplotlib.backends.backend_agg'] = MagicMock()
 # Mock seaborn
 sys.modules['seaborn'] = MagicMock()
 
-# NOTE: Do NOT mock tkinter here — it poisons sys.modules globally for
-# the entire pytest session, causing InvalidSpecError in any test that
-# later does Mock(spec=tk.Widget).  GitHub Actions runners have tkinter
-# installed, so the mocking is unnecessary.
-
-# Mock PIL/Pillow (used by some finance modules)
-sys.modules['PIL'] = MagicMock()
-sys.modules['PIL.Image'] = MagicMock()
+# Mock only PIL.ImageTk (requires display); leave PIL and PIL.Image real
 sys.modules['PIL.ImageTk'] = MagicMock()
 
 # Mock reportlab (PDF generation) - must be comprehensive
@@ -59,9 +58,6 @@ sys.modules['reportlab.graphics.charts.piecharts'] = MagicMock()
 sys.modules['reportlab.graphics.charts.legends'] = MagicMock()
 sys.modules['reportlab.graphics.widgets'] = MagicMock()
 sys.modules['reportlab.graphics.widgets.markers'] = MagicMock()
-
-# Mock qrcode
-sys.modules['qrcode'] = MagicMock()
 
 # Mock sklearn (used in some finance modules for anomaly detection)
 sys.modules['sklearn'] = MagicMock()

@@ -79,28 +79,28 @@ except ImportError:
     # Stub implementations for missing functions
     def assign_to_collection_agency(*args, **kwargs):
         print("assign_to_collection_agency function not implemented")
-    
+
     def track_collection_progress(*args, **kwargs):
         print("track_collection_progress function not implemented")
-    
+
     def update_collection_case_status(*args, **kwargs):
         print("update_collection_case_status function not implemented")
-    
+
     def create_payment_arrangement(*args, **kwargs):
         print("create_payment_arrangement function not implemented")
-    
+
     def send_arrangement_confirmation(*args, **kwargs):
         print("send_arrangement_confirmation function not implemented")
-    
+
     def setup_collection_workflows(*args, **kwargs):
         print("setup_collection_workflows function not implemented")
-    
+
     def check_required_packages(*args, **kwargs):
         print("check_required_packages function not implemented")
-    
+
     def ensure_database_exists(*args, **kwargs):
         print("ensure_database_exists function not implemented")
-    
+
     def verify_fix(*args, **kwargs):
         print("verify_fix function not implemented")
 
@@ -358,7 +358,7 @@ class FinanceGUI:
                 messagebox.showerror(_("finance.errors.init_error_title"), _("finance.errors.init_failed").format(error=str(e)))
 
         threading.Thread(target=init_thread, daemon=True).start()
-    
+
 
     def run(self):
         """Run the GUI application"""
@@ -369,7 +369,7 @@ class FinanceGUI:
             self.root.quit()
         except Exception as e:
             messagebox.showerror(_("finance.errors.app_error_title"), _("finance.errors.unexpected_error").format(error=e))
-    
+
 
     def return_to_main_menu(self):
         """Return to the main menu"""
@@ -388,7 +388,7 @@ class FinanceGUI:
             print(f"Error returning to main menu: {e}")
             import traceback
             traceback.print_exc()
-    
+
 
     def create_students_tab(self):
         """Create students management tab"""
@@ -403,7 +403,7 @@ class FinanceGUI:
             if not hasattr(self, 'tab_frames'):
                 self.tab_frames = {}
             self.tab_frames['students'] = students_frame
-        
+
         # Students toolbar
         toolbar = tk.Frame(students_frame, bg='white')
         toolbar.pack(fill='x', padx=10, pady=5)
@@ -418,49 +418,49 @@ class FinanceGUI:
                  bg=colors['secondary'], fg='white', font=('Arial', 9, 'bold')).pack(side='left', padx=5)
         tk.Button(toolbar, text=_("finance.buttons.view_finances"), command=self.view_student_finances,
                  bg=colors['dark'], fg='white', font=('Arial', 9, 'bold')).pack(side='left', padx=5)
-        
+
         # Search frame
         search_frame = tk.Frame(students_frame, bg='white')
         search_frame.pack(fill='x', padx=10, pady=5)
-        
+
         tk.Label(search_frame, text=_("finance.labels.search"), bg='white').pack(side='left')
         self.student_search_var = tk.StringVar()
         search_entry = tk.Entry(search_frame, textvariable=self.student_search_var, width=30)
         search_entry.pack(side='left', padx=5)
         search_entry.bind('<KeyRelease>', self.on_student_search)
-        
+
         # Students table
         self.create_students_table(students_frame)
-        
+
         # Load students data
         self.refresh_students()
-    
+
 
     def create_students_table(self, parent):
         """Create students table"""
         table_frame = tk.Frame(parent)
         table_frame.pack(fill='both', expand=True, padx=10, pady=5)
-        
+
         columns = ('student_id', 'name', 'email', 'course', 'status', 'balance')
         self.students_tree = ttk.Treeview(table_frame, columns=columns, show='headings')
-        
+
         self.students_tree.heading('student_id', text=_("finance.columns.student_id"))
         self.students_tree.heading('name', text=_("finance.columns.name"))
         self.students_tree.heading('email', text=_("finance.columns.email"))
         self.students_tree.heading('course', text=_("finance.columns.course"))
         self.students_tree.heading('status', text=_("finance.columns.status"))
         self.students_tree.heading('balance', text=_("finance.columns.balance"))
-        
+
         for col in columns:
             self.students_tree.column(col, width=120)
-        
+
         # Scrollbars
         v_scroll = ttk.Scrollbar(table_frame, orient='vertical', command=self.students_tree.yview)
         self.students_tree.configure(yscrollcommand=v_scroll.set)
-        
+
         self.students_tree.pack(side='left', fill='both', expand=True)
         v_scroll.pack(side='right', fill='y')
-    
+
 
     def refresh_students(self):
         """Refresh students data"""
@@ -468,9 +468,9 @@ class FinanceGUI:
             try:
                 conn = get_connection()
                 cursor = conn.cursor()
-                
+
                 cursor.execute('''
-                SELECT s.student_id, s.first_name || ' ' || s.last_name as name, 
+                SELECT s.student_id, s.first_name || ' ' || s.last_name as name,
                        s.email_address, s.course, s.status,
                        COALESCE(SUM(sf.amount) - SUM(COALESCE(pa.amount, 0)), 0) as balance
                 FROM students s
@@ -479,29 +479,29 @@ class FinanceGUI:
                 GROUP BY s.student_id
                 ORDER BY s.last_name, s.first_name
                 ''')
-                
+
                 students = cursor.fetchall()
                 conn.close()
-                
+
                 self.root.after(0, lambda: self.update_students_table(students))
-                
+
             except Exception as e:
                 print(f"Error refreshing students: {e}")
-        
+
         refresh_thread()
-    
+
 
     def update_students_table(self, students):
         """Update students table"""
         for item in self.students_tree.get_children():
             self.students_tree.delete(item)
-        
+
         for student in students:
             # Format balance
             balance = f"£{student[5]:.2f}" if student[5] else "£0.00"
             display_data = student[:5] + (balance,)
             self.students_tree.insert('', 'end', values=display_data)
-    
+
 
     def on_student_search(self, event):
         """Handle student search"""
@@ -509,36 +509,36 @@ class FinanceGUI:
         if len(search_term) < 2:
             self.refresh_students()
             return
-        
+
         def search_thread():
             try:
                 conn = get_connection()
                 cursor = conn.cursor()
-                
+
                 cursor.execute('''
-                SELECT s.student_id, s.first_name || ' ' || s.last_name as name, 
+                SELECT s.student_id, s.first_name || ' ' || s.last_name as name,
                        s.email_address, s.course, s.status,
                        COALESCE(SUM(sf.amount) - SUM(COALESCE(pa.amount, 0)), 0) as balance
                 FROM students s
                 LEFT JOIN student_fees sf ON s.student_id = sf.student_id
                 LEFT JOIN payment_allocations pa ON sf.student_fee_id = pa.student_fee_id
-                WHERE LOWER(s.first_name || ' ' || s.last_name) LIKE ? 
+                WHERE LOWER(s.first_name || ' ' || s.last_name) LIKE ?
                    OR LOWER(s.student_id) LIKE ?
                    OR LOWER(s.email_address) LIKE ?
                 GROUP BY s.student_id
                 ORDER BY s.last_name, s.first_name
                 ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'))
-                
+
                 students = cursor.fetchall()
                 conn.close()
-                
+
                 self.root.after(0, lambda: self.update_students_table(students))
-                
+
             except Exception as e:
                 print(f"Error searching students: {e}")
-        
+
         threading.Thread(target=search_thread, daemon=True).start()
-    
+
 
     def search_students(self):
         """Search students dialog"""
@@ -546,7 +546,7 @@ class FinanceGUI:
         if search_term:
             self.student_search_var.set(search_term)
             self.on_student_search(None)
-    
+
 
     def view_student_finances(self):
         """View financial details for selected student with access control"""
@@ -1635,9 +1635,9 @@ class FinanceGUI:
             return
 
         self.view_student_finances()
-    
+
     # ==================== REPORT METHODS ====================
-    
+
 
     def log_activity(self, message):
         """Log activity to the activity list"""
@@ -1656,6 +1656,6 @@ class FinanceGUI:
 
         except Exception as e:
             print(f"Error logging activity: {e}")
-    
+
     # Additional helper methods that might be missing
 

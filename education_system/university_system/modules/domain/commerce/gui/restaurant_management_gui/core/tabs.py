@@ -81,7 +81,7 @@ def create_menu_tab(self, parent=None):
               command=self.update_menu_item_dialog).pack(side='left', padx=5)
     ttk.Button(btn_frame, text=_t("restaurant.menu_analytics"),
               command=self.show_menu_analytics).pack(side='left', padx=5)
-    
+
     columns = ('ID', 'Name', 'Category', 'Price', 'Available', 'Vegetarian', 'Vegan')
     column_labels = (
         _t("restaurant.columns.id"),
@@ -97,13 +97,13 @@ def create_menu_tab(self, parent=None):
     for col, label in zip(columns, column_labels):
         self.menu_tree.heading(col, text=label)
         self.menu_tree.column(col, width=100)
-    
+
     tree_frame = ttk.Frame(menu_frame)
     tree_frame.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
     scrollbar_menu = ttk.Scrollbar(tree_frame, orient='vertical', command=self.menu_tree.yview)
     self.menu_tree.configure(yscrollcommand=scrollbar_menu.set)
-    
+
     self.menu_tree.pack(side='left', fill='both', expand=True)
     scrollbar_menu.pack(side='right', fill='y')
 
@@ -194,7 +194,7 @@ def create_customers_tab(self, parent=None):
               command=self.manage_loyalty_dialog).pack(side='left', padx=5)
     ttk.Button(btn_frame, text=_t("restaurant.customer_feedback"),
               command=self.manage_customer_feedback).pack(side='left', padx=5)
-    
+
     columns = ('ID', 'Name', 'Email', 'Phone', 'Loyalty Tier', 'Points', 'Total Spent')
     column_labels = (
         _t("restaurant.columns.id"),
@@ -210,13 +210,13 @@ def create_customers_tab(self, parent=None):
     for col, label in zip(columns, column_labels):
         self.customers_tree.heading(col, text=label)
         self.customers_tree.column(col, width=110)
-    
+
     tree_frame = ttk.Frame(customers_frame)
     tree_frame.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
     scrollbar_customers = ttk.Scrollbar(tree_frame, orient='vertical', command=self.customers_tree.yview)
     self.customers_tree.configure(yscrollcommand=scrollbar_customers.set)
-    
+
     self.customers_tree.pack(side='left', fill='both', expand=True)
     scrollbar_customers.pack(side='right', fill='y')
 
@@ -239,7 +239,7 @@ def create_tables_tab(self, parent=None):
               command=self.generate_qr_dialog).pack(side='left', padx=5)
     ttk.Button(btn_frame, text=_t("restaurant.optimize_layout"),
               command=self.optimize_table_structure).pack(side='left', padx=5)
-    
+
     columns = ('Table ID', 'Capacity', 'Status', 'Location', 'Type')
     column_labels = (
         _t("restaurant.columns.table_id"),
@@ -253,13 +253,13 @@ def create_tables_tab(self, parent=None):
     for col, label in zip(columns, column_labels):
         self.tables_tree.heading(col, text=label)
         self.tables_tree.column(col, width=120)
-    
+
     tree_frame = ttk.Frame(tables_frame)
     tree_frame.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
     scrollbar_tables = ttk.Scrollbar(tree_frame, orient='vertical', command=self.tables_tree.yview)
     self.tables_tree.configure(yscrollcommand=scrollbar_tables.set)
-    
+
     self.tables_tree.pack(side='left', fill='both', expand=True)
     scrollbar_tables.pack(side='right', fill='y')
 
@@ -284,7 +284,7 @@ def create_staff_tab(self, parent=None):
               command=self.staff_performance).pack(side='left', padx=5)
     ttk.Button(btn_frame, text=_t("restaurant.staff_analytics"),
               command=self.show_staff_analytics).pack(side='left', padx=5)
-    
+
     columns = ('Staff ID', 'Name', 'Role', 'Hourly Rate', 'Status', 'Performance')
     column_labels = (
         _t("restaurant.columns.staff_id"),
@@ -299,13 +299,13 @@ def create_staff_tab(self, parent=None):
     for col, label in zip(columns, column_labels):
         self.staff_tree.heading(col, text=label)
         self.staff_tree.column(col, width=120)
-    
+
     tree_frame = ttk.Frame(staff_frame)
     tree_frame.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
     scrollbar_staff = ttk.Scrollbar(tree_frame, orient='vertical', command=self.staff_tree.yview)
     self.staff_tree.configure(yscrollcommand=scrollbar_staff.set)
-    
+
     self.staff_tree.pack(side='left', fill='both', expand=True)
     scrollbar_staff.pack(side='right', fill='y')
 
@@ -330,7 +330,7 @@ def create_inventory_tab(self, parent=None):
               command=self.inventory_reports).pack(side='left', padx=5)
     ttk.Button(btn_frame, text=_t("restaurant.low_stock_alerts"),
               command=self.low_stock_alerts).pack(side='left', padx=5)
-    
+
     columns = ('Item ID', 'Name', 'Quantity', 'Unit', 'Cost/Unit', 'Reorder Level')
     column_labels = (
         _t("restaurant.columns.item_id"),
@@ -345,13 +345,13 @@ def create_inventory_tab(self, parent=None):
     for col, label in zip(columns, column_labels):
         self.inventory_tree.heading(col, text=label)
         self.inventory_tree.column(col, width=120)
-    
+
     tree_frame = ttk.Frame(inventory_frame)
     tree_frame.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
     scrollbar_inventory = ttk.Scrollbar(tree_frame, orient='vertical', command=self.inventory_tree.yview)
     self.inventory_tree.configure(yscrollcommand=scrollbar_inventory.set)
-    
+
     self.inventory_tree.pack(side='left', fill='both', expand=True)
     scrollbar_inventory.pack(side='right', fill='y')
 

@@ -69,111 +69,111 @@ FACE_RECOGNITION_SUPPORT = True
 class AttendanceAlertsWindow:
     def __init__(self, parent):
         self.parent = parent
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.attendance_alerts_manager"))
         self.window.geometry("800x600")
         self.window.transient(parent)
-        
+
         self.create_widgets()
         self.load_alerts()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="🚨 Attendance Alerts Manager", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Controls frame
         controls_frame = ttk.Frame(self.window)
         controls_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
-        ttk.Button(controls_frame, text="Create Alert", 
+
+        ttk.Button(controls_frame, text="Create Alert",
                   command=self.create_alert, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(controls_frame, text="Acknowledge Selected", 
+        ttk.Button(controls_frame, text="Acknowledge Selected",
                   command=self.acknowledge_alert, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(controls_frame, text=_("common.refresh"), 
+        ttk.Button(controls_frame, text=_("common.refresh"),
                   command=self.load_alerts, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
-        
+
         # Filter frame
         filter_frame = ttk.LabelFrame(self.window, text="Filters", padding=10)
         filter_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         filter_controls = ttk.Frame(filter_frame)
         filter_controls.pack(fill=tk.X)
-        
+
         ttk.Label(filter_controls, text="Status:").grid(row=0, column=0, sticky=tk.W)
         self.status_filter_var = tk.StringVar(value="All")
         status_combo = ttk.Combobox(filter_controls, textvariable=self.status_filter_var,
                                    values=["All", "Pending", "Acknowledged", "Resolved"], state="readonly", width=15)
         status_combo.grid(row=0, column=1, padx=(5, 20))
-        
+
         ttk.Label(filter_controls, text="Severity:").grid(row=0, column=2, sticky=tk.W)
         self.severity_filter_var = tk.StringVar(value="All")
         severity_combo = ttk.Combobox(filter_controls, textvariable=self.severity_filter_var,
                                      values=["All", "Low", "Medium", "High", "Critical"], state="readonly", width=15)
         severity_combo.grid(row=0, column=3, padx=(5, 20))
-        
-        ttk.Button(filter_controls, text="Apply Filters", 
+
+        ttk.Button(filter_controls, text="Apply Filters",
                   command=self.apply_filters, style='Primary.TButton').grid(row=0, column=4, padx=(20, 0))
-        
+
         # Alerts treeview
         alerts_frame = ttk.LabelFrame(self.window, text="Active Alerts", padding=10)
         alerts_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
+
         columns = ("Alert ID", "Student ID", "Name", "Module", "Type", "Severity", "Status", "Created")
         self.alerts_tree = ttk.Treeview(alerts_frame, columns=columns, show="headings")
-        
+
         for col in columns:
             self.alerts_tree.heading(col, text=col)
             self.alerts_tree.column(col, width=100)
-        
+
         alerts_scrollbar = ttk.Scrollbar(alerts_frame, orient=tk.VERTICAL, command=self.alerts_tree.yview)
         self.alerts_tree.configure(yscrollcommand=alerts_scrollbar.set)
-        
+
         self.alerts_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         alerts_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Bind double-click to view details
         self.alerts_tree.bind('<Double-1>', self.view_alert_details)
-        
+
         # Close button
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy, style='Danger.TButton').pack(pady=10)
-    
+
     def load_alerts(self):
         # Clear existing items
         for item in self.alerts_tree.get_children():
             self.alerts_tree.delete(item)
-        
+
         # Sample alerts data
         sample_alerts = [
             ("ALT001", "S001", "John Doe", "CS101", "Low Attendance", "High", "Pending", "2024-12-20"),
             ("ALT002", "S003", "Bob Wilson", "CS102", "Consecutive Absences", "Critical", "Pending", "2024-12-19"),
             ("ALT003", "S007", "Alice Brown", "CS101", "Late Pattern", "Medium", "Acknowledged", "2024-12-18"),
         ]
-        
+
         for alert in sample_alerts:
             self.alerts_tree.insert('', 'end', values=alert)
-    
+
     def create_alert(self):
         CreateAlertWindow(self.window, self.load_alerts)
-    
+
     def acknowledge_alert(self):
         selection = self.alerts_tree.selection()
         if not selection:
             messagebox.showwarning(_("common.warning"), "Please select an alert to acknowledge")
             return
-        
+
         item = self.alerts_tree.item(selection[0])
         alert_id = item['values'][0]
-        
+
         # Update alert status
         messagebox.showinfo(_("common.success"), f"Alert {alert_id} acknowledged successfully!")
         self.load_alerts()
-    
+
     def apply_filters(self):
         # Apply filters and refresh view
         self.load_alerts()
-    
+
     def view_alert_details(self, event):
         selection = self.alerts_tree.selection()
         if selection:
@@ -185,35 +185,35 @@ class CreateAlertWindow:
     def __init__(self, parent, callback):
         self.parent = parent
         self.callback = callback
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.create_alert"))
         self.window.geometry("500x400")
         self.window.transient(parent)
         self.window.grab_set()
-        
+
         self.create_widgets()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="Create New Alert", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Form frame
         form_frame = ttk.LabelFrame(self.window, text="Alert Details", padding=20)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
+
         # Student ID
         ttk.Label(form_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.student_id_var = tk.StringVar()
         ttk.Entry(form_frame, textvariable=self.student_id_var, width=30).grid(row=0, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         # Module
         ttk.Label(form_frame, text="Module:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.module_var = tk.StringVar()
         module_combo = ttk.Combobox(form_frame, textvariable=self.module_var, width=27)
         module_combo.grid(row=1, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         # Set module values
         if ORIGINAL_FUNCTIONS_AVAILABLE:
             modules = get_modules()
@@ -221,42 +221,42 @@ class CreateAlertWindow:
         else:
             module_values = ["CS101 - Programming", "CS102 - Data Structures"]
         module_combo['values'] = module_values
-        
+
         # Alert Type
         ttk.Label(form_frame, text="Alert Type:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.alert_type_var = tk.StringVar(value="Custom")
         alert_type_combo = ttk.Combobox(form_frame, textvariable=self.alert_type_var,
-                                       values=["Attendance Warning", "Consecutive Absences", "Late Pattern", "Custom"], 
+                                       values=["Attendance Warning", "Consecutive Absences", "Late Pattern", "Custom"],
                                        state="readonly", width=27)
         alert_type_combo.grid(row=2, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         # Severity
         ttk.Label(form_frame, text="Severity:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.severity_var = tk.StringVar(value="Medium")
         severity_combo = ttk.Combobox(form_frame, textvariable=self.severity_var,
-                                     values=["Low", "Medium", "High", "Critical"], 
+                                     values=["Low", "Medium", "High", "Critical"],
                                      state="readonly", width=27)
         severity_combo.grid(row=3, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         # Message
         ttk.Label(form_frame, text="Message:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.message_text = tk.Text(form_frame, width=35, height=6)
         self.message_text.grid(row=4, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         # Auto-send notifications
         self.auto_send_var = tk.BooleanVar(value=True)
-        ttk.Checkbutton(form_frame, text="Send automatic notifications", 
+        ttk.Checkbutton(form_frame, text="Send automatic notifications",
                        variable=self.auto_send_var).grid(row=5, column=0, columnspan=2, sticky=tk.W, pady=10)
-        
+
         # Buttons
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
-        
+
         ttk.Button(buttons_frame, text="Create Alert",
                   command=self.create_alert, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.cancel"),
                   command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
-    
+
     def create_alert(self):
         try:
             student_id = self.student_id_var.get()
@@ -264,29 +264,29 @@ class CreateAlertWindow:
             alert_type = self.alert_type_var.get()
             severity = self.severity_var.get()
             message = self.message_text.get(1.0, tk.END).strip()
-            
+
             if not all([student_id, module, message]):
                 messagebox.showwarning(_("common.warning"), "Please fill in all required fields")
                 return
-            
+
             module_code = module.split(' - ')[0] if ' - ' in module else module
-            
+
             if ORIGINAL_FUNCTIONS_AVAILABLE:
                 notification_system = EnhancedNotificationSystem()
                 success = notification_system.create_attendance_alert(
                     student_id, module_code, alert_type, severity, message
                 )
-                
+
                 if success:
                     messagebox.showinfo(_("common.success"), "Alert created successfully!")
                 else:
                     messagebox.showerror(_("common.error"), "Failed to create alert")
             else:
                 messagebox.showinfo("Demo", "Alert would be created here")
-            
+
             self.callback()  # Refresh parent data
             self.window.destroy()
-            
+
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to create alert: {e}")
 
@@ -294,27 +294,27 @@ class AlertDetailsWindow:
     def __init__(self, parent, alert_data):
         self.parent = parent
         self.alert_data = alert_data
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.alert_details"))
         self.window.geometry("500x300")
         self.window.transient(parent)
         self.window.grab_set()
-        
+
         self.create_widgets()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="Alert Details", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Details frame
         details_frame = ttk.LabelFrame(self.window, text="Alert Information", padding=20)
         details_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
+
         # Display alert details
         alert_id, student_id, name, module, alert_type, severity, status, created = self.alert_data
-        
+
         details = [
             ("Alert ID:", alert_id),
             ("Student:", f"{name} ({student_id})"),
@@ -324,113 +324,113 @@ class AlertDetailsWindow:
             ("Status:", status),
             ("Created:", created)
         ]
-        
+
         for i, (label, value) in enumerate(details):
             ttk.Label(details_frame, text=label, font=('Arial', 10, 'bold')).grid(row=i, column=0, sticky=tk.W, pady=5)
             ttk.Label(details_frame, text=str(value)).grid(row=i, column=1, sticky=tk.W, padx=(20, 0), pady=5)
-        
+
         # Close button
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy, style='Primary.TButton').pack(pady=10)
 
 class PredictiveAnalyticsWindow:
     def __init__(self, parent):
         self.parent = parent
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.predictive_analytics"))
         self.window.geometry("900x700")
         self.window.transient(parent)
-        
+
         self.create_widgets()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="🔮 Predictive Analytics", font=('Arial', 16, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Controls frame
         controls_frame = ttk.LabelFrame(self.window, text="Model Controls", padding=10)
         controls_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         controls_grid = ttk.Frame(controls_frame)
         controls_grid.pack(fill=tk.X)
-        
-        ttk.Button(controls_grid, text="Train Model", 
+
+        ttk.Button(controls_grid, text="Train Model",
                   command=self.train_model, style='Primary.TButton').grid(row=0, column=0, padx=5)
-        ttk.Button(controls_grid, text="Single Prediction", 
+        ttk.Button(controls_grid, text="Single Prediction",
                   command=self.single_prediction, style='Warning.TButton').grid(row=0, column=1, padx=5)
-        ttk.Button(controls_grid, text="Batch Analysis", 
+        ttk.Button(controls_grid, text="Batch Analysis",
                   command=self.batch_analysis, style='Success.TButton').grid(row=0, column=2, padx=5)
-        ttk.Button(controls_grid, text="Model Info", 
+        ttk.Button(controls_grid, text="Model Info",
                   command=self.show_model_info, style='Primary.TButton').grid(row=0, column=3, padx=5)
-        
+
         # Results notebook
         self.results_notebook = ttk.Notebook(self.window)
         self.results_notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
+
         # Predictions tab
         predictions_frame = ttk.Frame(self.results_notebook)
         self.results_notebook.add(predictions_frame, text="Predictions")
-        
+
         # Predictions treeview
         pred_columns = ("Student ID", "Name", "Module", "Risk Level", "Confidence", "Current Rate", "Factors")
         self.predictions_tree = ttk.Treeview(predictions_frame, columns=pred_columns, show="headings")
-        
+
         for col in pred_columns:
             self.predictions_tree.heading(col, text=col)
             self.predictions_tree.column(col, width=120)
-        
+
         pred_scrollbar = ttk.Scrollbar(predictions_frame, orient=tk.VERTICAL, command=self.predictions_tree.yview)
         self.predictions_tree.configure(yscrollcommand=pred_scrollbar.set)
-        
+
         self.predictions_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         pred_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Model info tab
         model_frame = ttk.Frame(self.results_notebook)
         self.results_notebook.add(model_frame, text="Model Information")
-        
+
         self.model_info_text = tk.Text(model_frame, wrap=tk.WORD)
         model_scrollbar = ttk.Scrollbar(model_frame, orient=tk.VERTICAL, command=self.model_info_text.yview)
         self.model_info_text.configure(yscrollcommand=model_scrollbar.set)
-        
+
         self.model_info_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         model_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Load initial model info
         self.load_model_info()
-        
+
         # Close button
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy, style='Danger.TButton').pack(pady=10)
-    
+
     def train_model(self):
         if not ORIGINAL_FUNCTIONS_AVAILABLE:
             messagebox.showinfo("Demo", "Model training would be performed here")
             return
-        
+
         self.update_status("Training model...")
-        
+
         def train_in_background():
             try:
                 analytics = AttendancePredictiveAnalytics()
                 success = analytics.train_model()
-                
+
                 self.window.after(0, lambda: self.on_training_complete(success))
             except Exception as e:
                 self.window.after(0, lambda _e=e: messagebox.showerror(_("common.error"), f"Training failed: {_e}"))
-        
+
         threading.Thread(target=train_in_background, daemon=True).start()
-    
+
     def on_training_complete(self, success):
         if success:
             messagebox.showinfo(_("common.success"), "Model trained successfully!")
             self.load_model_info()
         else:
             messagebox.showerror(_("common.error"), "Model training failed")
-    
+
     def single_prediction(self):
         SinglePredictionWindow(self.window, self.update_predictions)
-    
+
     def batch_analysis(self):
         messagebox.showinfo("Info", "Performing batch risk analysis...")
         self.load_real_predictions()
@@ -520,7 +520,7 @@ class PredictiveAnalyticsWindow:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load predictions: {e}")
-    
+
     def update_predictions(self, prediction_data):
         # Add new prediction to the tree
         item = self.predictions_tree.insert('', 'end', values=prediction_data)
@@ -531,10 +531,10 @@ class PredictiveAnalyticsWindow:
             self.predictions_tree.set(item, "Risk Level", "🟡 " + risk_level)
         else:
             self.predictions_tree.set(item, "Risk Level", "🟢 " + risk_level)
-    
+
     def show_model_info(self):
         self.results_notebook.select(1)  # Switch to model info tab
-    
+
     def load_model_info(self):
         info_text = """PREDICTIVE ANALYTICS MODEL INFORMATION
 ========================================
@@ -570,10 +570,10 @@ Usage:
 Last Training: Not trained yet
 Model Status: Ready for training
 """
-        
+
         self.model_info_text.delete(1.0, tk.END)
         self.model_info_text.insert(tk.END, info_text)
-    
+
     def update_status(self, message):
         # This would update a status bar if we had one
         print(f"Status: {message}")
@@ -582,35 +582,35 @@ class SinglePredictionWindow:
     def __init__(self, parent, callback):
         self.parent = parent
         self.callback = callback
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.single_prediction"))
         self.window.geometry("400x300")
         self.window.transient(parent)
         self.window.grab_set()
-        
+
         self.create_widgets()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="Single Student Prediction", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Input frame
         input_frame = ttk.LabelFrame(self.window, text="Student Selection", padding=20)
         input_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         # Student ID
         ttk.Label(input_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.student_id_var = tk.StringVar()
         ttk.Entry(input_frame, textvariable=self.student_id_var, width=20).grid(row=0, column=1, padx=(10, 0), pady=5)
-        
+
         # Module
         ttk.Label(input_frame, text="Module:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.module_var = tk.StringVar()
         module_combo = ttk.Combobox(input_frame, textvariable=self.module_var, width=17)
         module_combo.grid(row=1, column=1, padx=(10, 0), pady=5)
-        
+
         # Set module values
         if ORIGINAL_FUNCTIONS_AVAILABLE:
             modules = get_modules()
@@ -618,31 +618,31 @@ class SinglePredictionWindow:
         else:
             module_values = ["CS101 - Programming", "CS102 - Data Structures"]
         module_combo['values'] = module_values
-        
+
         # Buttons
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
-        
+
         ttk.Button(buttons_frame, text="Predict Risk",
                   command=self.predict_risk, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.cancel"),
                   command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
-    
+
     def predict_risk(self):
         try:
             student_id = self.student_id_var.get()
             module = self.module_var.get()
-            
+
             if not student_id or not module:
                 messagebox.showwarning(_("common.warning"), "Please enter student ID and select module")
                 return
-            
+
             module_code = module.split(' - ')[0] if ' - ' in module else module
-            
+
             if ORIGINAL_FUNCTIONS_AVAILABLE:
                 analytics = AttendancePredictiveAnalytics()
                 prediction = analytics.predict_student_risk(student_id, module_code)
-                
+
                 if prediction:
                     # Show prediction results
                     result_text = f"Risk Level: {prediction['risk_level']}\n"
@@ -650,9 +650,9 @@ class SinglePredictionWindow:
                     result_text += f"Current Rate: {prediction['current_attendance_rate']:.1f}%\n"
                     result_text += f"Consecutive Absences: {prediction['factors']['consecutive_absences']}\n"
                     result_text += f"Days Since Last: {prediction['factors']['days_since_last_attendance']}"
-                    
+
                     messagebox.showinfo("Prediction Result", result_text)
-                    
+
                     # Add to parent predictions view
                     prediction_data = (
                         student_id,
@@ -663,7 +663,7 @@ class SinglePredictionWindow:
                         f"{prediction['current_attendance_rate']:.1f}%",
                         f"Consecutive: {prediction['factors']['consecutive_absences']}, Days: {prediction['factors']['days_since_last_attendance']}"
                     )
-                    
+
                     self.callback(prediction_data)
                     self.window.destroy()
                 else:
@@ -682,7 +682,7 @@ class SinglePredictionWindow:
                 self.callback(sample_prediction)
                 messagebox.showinfo("Demo", "Sample prediction generated")
                 self.window.destroy()
-                
+
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Prediction failed: {e}")
 

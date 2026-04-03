@@ -18,11 +18,7 @@ class FAFSAImportMixin:
 
     def show_fafsa_import(self):
         """Show FAFSA import interface"""
-        # Ensure we have a valid parent frame/window
-        parent = self._ensure_valid_parent()
-        self.parent_frame = parent
-
-        clear_frame(self.parent_frame)
+        self._prepare_view_parent()
 
         # Title
         title_frame = ttk.Frame(self.parent_frame)

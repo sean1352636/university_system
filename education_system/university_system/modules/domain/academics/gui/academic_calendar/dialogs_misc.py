@@ -30,9 +30,9 @@ class ExportDialog:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        ttk.Label(main_frame, text=_("academic_calendar.dialogs.export.header"), 
+        ttk.Label(main_frame, text=_("academic_calendar.dialogs.export.header"),
                  font=('Arial', 14, 'bold')).pack(pady=(0, 20))
-        
+
         # Export format
         format_frame = ttk.LabelFrame(main_frame, text=_("academic_calendar.labels.export_format"), padding=10)
         format_frame.pack(fill=tk.X, pady=(0, 15))
@@ -88,7 +88,7 @@ class ExportDialog:
 
         ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
         ttk.Button(button_frame, text=_("academic_calendar.buttons.export_action"), command=self._export_calendar).pack(side=tk.RIGHT)
-    
+
     def _browse_file(self):
         """Browse for output file"""
         format_ext = self.format_var.get()
@@ -100,30 +100,30 @@ class ExportDialog:
             'ics': [("iCal files", "*.ics"), ("All files", "*.*")],
             'txt': [("Text files", "*.txt"), ("All files", "*.*")]
         }
-        
+
         filename = filedialog.asksaveasfilename(
             title=_("academic_calendar.dialogs.import_calendar.save_export_as"),
             defaultextension=f".{format_ext}",
             filetypes=filetypes.get(format_ext, [("All files", "*.*")])
         )
-        
+
         if filename:
             self.file_var.set(filename)
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
         y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
-    
+
     def _export_calendar(self):
         """Export calendar"""
         try:
             format_type = self.format_var.get()
             file_path = self.file_var.get().strip()
             academic_year = self.year_var.get()
-            
+
             if not file_path:
                 messagebox.showerror(_("common.error"), _("academic_calendar.messages.select_output_file"))
                 return
@@ -149,11 +149,11 @@ class ExportDialog:
 
 class ImportCalendarDialog:
     """Dialog for importing calendar data"""
-    
+
     def __init__(self, parent, calendar_manager, callback=None):
         self.calendar_manager = calendar_manager
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.import_calendar.title"))
         self.dialog.geometry("400x300")
@@ -201,7 +201,7 @@ class ImportCalendarDialog:
 
         ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
         ttk.Button(button_frame, text=_("academic_calendar.buttons.import"), command=self._import_calendar).pack(side=tk.RIGHT)
-    
+
     def _browse_file(self):
         """Browse for import file"""
         filename = filedialog.askopenfilename(
@@ -340,7 +340,7 @@ class ImportCalendarDialog:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.import_failed").format(error=e))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -351,11 +351,11 @@ class ImportCalendarDialog:
 
 class CalendarSyncDialog:
     """Dialog for calendar synchronization"""
-    
+
     def __init__(self, parent, calendar_manager, callback=None):
         self.calendar_manager = calendar_manager
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.calendar_sync.title"))
         self.dialog.geometry("450x300")
@@ -397,7 +397,7 @@ class CalendarSyncDialog:
 
         ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
         ttk.Button(button_frame, text=_("academic_calendar.buttons.sync"), command=self._sync_calendar).pack(side=tk.RIGHT)
-    
+
     def _sync_calendar(self):
         """Perform calendar sync"""
         try:
@@ -448,7 +448,7 @@ class CalendarSyncDialog:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.sync_setup_failed").format(error=e))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -459,11 +459,11 @@ class CalendarSyncDialog:
 
 class ImportHolidaysDialog:
     """Dialog for importing holidays"""
-    
+
     def __init__(self, parent, calendar_manager, callback=None):
         self.calendar_manager = calendar_manager
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.import_holidays.title"))
         self.dialog.geometry("400x300")
@@ -510,7 +510,7 @@ class ImportHolidaysDialog:
 
         ttk.Button(button_frame, text=_("common.cancel"), command=self.dialog.destroy).pack(side=tk.RIGHT, padx=(10, 0))
         ttk.Button(button_frame, text=_("academic_calendar.buttons.import"), command=self._import_holidays).pack(side=tk.RIGHT)
-    
+
     def _import_holidays(self):
         """Import holidays"""
         try:
@@ -540,7 +540,7 @@ class ImportHolidaysDialog:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.invalid_year_format"))
         except Exception as e:
             messagebox.showerror(_("common.error"), _("academic_calendar.messages.import_failed").format(error=e))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -551,11 +551,11 @@ class ImportHolidaysDialog:
 
 class BulkOperationsDialog:
     """Dialog for bulk operations"""
-    
+
     def __init__(self, parent, calendar_manager, callback=None):
         self.calendar_manager = calendar_manager
         self.callback = callback
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_("academic_calendar.dialogs.bulk_operations.title"))
         self.dialog.geometry("500x400")
@@ -600,7 +600,7 @@ class BulkOperationsDialog:
 
         # Close button
         ttk.Button(main_frame, text=_("common.close"), command=self.dialog.destroy).pack(pady=(15, 0))
-    
+
     def _perform_operation(self, operation):
         """Perform selected bulk operation"""
         bulk_create_key = _("academic_calendar.dialogs.bulk_operations.bulk_create")
@@ -616,7 +616,7 @@ class BulkOperationsDialog:
             messagebox.showinfo(_("common.info"), _("academic_calendar.messages.template_info"))
         elif operation == cleanup_key:
             self._cleanup_old_data()
-    
+
     def _cleanup_old_data(self):
         """Clean up old data"""
         if messagebox.askyesno(_("academic_calendar.messages.confirm_cleanup"), _("academic_calendar.messages.cleanup_warning")):
@@ -635,7 +635,7 @@ class BulkOperationsDialog:
                     messagebox.showerror(_("common.error"), result['error'])
             except Exception as e:
                 messagebox.showerror(_("common.error"), _("academic_calendar.messages.cleanup_failed").format(error=e))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -676,7 +676,7 @@ class HelpDialog:
 
         # Close button
         ttk.Button(main_frame, text=_("common.close"), command=self.dialog.destroy).pack()
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
@@ -748,7 +748,7 @@ class AboutDialog:
 
         # Close button
         ttk.Button(main_frame, text=_("common.close"), command=self.dialog.destroy).pack(pady=(10, 0))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()

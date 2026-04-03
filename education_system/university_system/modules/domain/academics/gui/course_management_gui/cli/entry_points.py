@@ -115,11 +115,11 @@ def run_gui_application():
     """Main function to run the GUI application"""
     root = tk.Tk()
     app = CourseManagementGUI(root)
-    
+
     # Create backwards compatibility wrapper
     if ORIGINAL_MODULE_AVAILABLE:
         compat_wrapper = BackwardsCompatibilityWrapper(app)
-        
+
         # Override original functions to use GUI (optional)
         # This allows existing code to seamlessly use the GUI
         import sys
@@ -130,7 +130,7 @@ def run_gui_application():
             course_management.view_all_courses = compat_wrapper.view_all_courses
             course_management.search_courses = compat_wrapper.search_courses
             course_management.generate_course_analytics = compat_wrapper.generate_course_analytics
-    
+
     # Run the application
     try:
         root.mainloop()
@@ -144,16 +144,16 @@ def run_gui_application():
 def cli_interface():
     """Command line interface for backwards compatibility"""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description='Enhanced Course Management System')
     parser.add_argument('--gui', action='store_true', help='Launch GUI interface (default)')
     parser.add_argument('--cli', action='store_true', help='Use original CLI interface')
     parser.add_argument('--import-csv', type=str, help='Import courses from CSV file')
     parser.add_argument('--export-csv', type=str, help='Export courses to CSV file')
     parser.add_argument('--backup', type=str, help='Create database backup')
-    
+
     args = parser.parse_args()
-    
+
     if args.cli and ORIGINAL_MODULE_AVAILABLE:
         # Use original CLI interface
         print(_("course_management.cli.launching_cli"))
@@ -168,7 +168,7 @@ def cli_interface():
         except NameError:
             print(_("course_management.cli.cli_not_available"))
             run_gui_application()
-    
+
     elif args.import_csv:
         # Handle CSV import
         print(_("course_management.cli.importing_courses", file=args.import_csv))
@@ -316,7 +316,7 @@ def cli_interface():
         except Exception as e:
             print(_("course_management.errors.backup_failed", error=str(e)))
             return 1
-        
+
     else:
         # Default to GUI
         run_gui_application()
@@ -328,12 +328,12 @@ def init_gui_mode():
     if '_gui_app_instance' not in globals():
         root = tk.Tk()
         _gui_app_instance = CourseManagementGUI(root)
-        
+
         # Start GUI in a separate thread to avoid blocking
         import threading
         gui_thread = threading.Thread(target=root.mainloop, daemon=True)
         gui_thread.start()
-    
+
     return _gui_app_instance
 
 
@@ -399,7 +399,7 @@ BACKWARDS COMPATIBILITY:
 INTEGRATION:
     The GUI can be integrated with existing code by importing this
     module and calling the appropriate functions:
-    
+
     from gui_course_management import show_gui
     show_gui()
 

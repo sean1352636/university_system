@@ -47,12 +47,12 @@ try:
 except ImportError:
     # If helpdesk.py is not available, we'll define minimal stubs
     print("Warning: helpdesk.py not found. Running in standalone mode.")
-    
+
     def init_helpdesk_db():
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Create support_tickets table with enhanced fields
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS support_tickets (
@@ -118,7 +118,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_attachments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_attachments (
@@ -138,7 +138,7 @@ except ImportError:
                 FOREIGN KEY (uploaded_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_assignments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_assignments (
@@ -153,7 +153,7 @@ except ImportError:
                 FOREIGN KEY (assigned_to) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_templates table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_templates (
@@ -174,7 +174,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create sla_policies table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS sla_policies (
@@ -193,7 +193,7 @@ except ImportError:
                 updated_at TEXT
             )
             ''')
-            
+
             # Create ticket_workflows table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_workflows (
@@ -210,7 +210,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_time_tracking table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_time_tracking (
@@ -227,7 +227,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_escalations table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_escalations (
@@ -244,7 +244,7 @@ except ImportError:
                 FOREIGN KEY (escalated_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_links table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_links (
@@ -259,7 +259,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_audit_log table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_audit_log (
@@ -276,7 +276,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create knowledge_base table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS knowledge_base (
@@ -296,7 +296,7 @@ except ImportError:
                 FOREIGN KEY (author_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create departments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS departments (
@@ -313,7 +313,7 @@ except ImportError:
                 FOREIGN KEY (sla_policy_id) REFERENCES sla_policies (sla_id)
             )
             ''')
-            
+
             # Create organizations table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS organizations (
@@ -328,7 +328,7 @@ except ImportError:
                 updated_at TEXT
             )
             ''')
-            
+
             # Create saved_searches table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS saved_searches (
@@ -344,13 +344,13 @@ except ImportError:
             conn.commit()
             conn.close()
             print("Enhanced helpdesk database initialized successfully!")
-            
+
             # Initialize default data
             init_default_data()
-            
+
         except sqlite3.Error as e:
             print(f"An error occurred while initializing the helpdesk database: {e}")
-        
+
     def setup_enhanced_helpdesk_permissions():
         """
         Setup enhanced helpdesk permissions
@@ -905,11 +905,11 @@ def show_export_dialog(self):
     options_frame = ttk.LabelFrame(export_window, text="Export Options")
     options_frame.pack(fill='x', padx=10, pady=10)
 
-    ttk.Button(options_frame, text="Export All Tickets (CSV)", 
+    ttk.Button(options_frame, text="Export All Tickets (CSV)",
           command=self.export_tickets_csv).pack(fill='x', padx=5, pady=5)
-    ttk.Button(options_frame, text="Export Users (CSV)", 
+    ttk.Button(options_frame, text="Export Users (CSV)",
           command=self.export_users_csv).pack(fill='x', padx=5, pady=5)
-    ttk.Button(options_frame, text="Export Analytics (JSON)", 
+    ttk.Button(options_frame, text="Export Analytics (JSON)",
           command=self.export_analytics_json).pack(fill='x', padx=5, pady=5)
 
 # Attach method to HelpdeskGUI class
@@ -929,22 +929,22 @@ def show_about(self):
     about_window.geometry("400x300")
     about_window.transient(self.root)
     about_window.grab_set()
-    
+
     # Center the about dialog
     about_window.update_idletasks()
     x = (about_window.winfo_screenwidth() // 2) - (400 // 2)
     y = (about_window.winfo_screenheight() // 2) - (300 // 2)
     about_window.geometry(f'400x300+{x}+{y}')
-    
+
     # About content
     content_frame = ttk.Frame(about_window)
     content_frame.pack(fill='both', expand=True, padx=20, pady=20)
-    
-    ttk.Label(content_frame, text="Enhanced Helpdesk System", 
+
+    ttk.Label(content_frame, text="Enhanced Helpdesk System",
              style='Title.TLabel').pack(pady=10)
-    
+
     ttk.Label(content_frame, text="Version 2.0 GUI Edition").pack(pady=5)
-    
+
     info_text = """
 A comprehensive helpdesk and ticket management system
 with both GUI and CLI interfaces.
@@ -962,7 +962,7 @@ Backwards compatible with CLI version
 
 © 2024 Enhanced Helpdesk System
     """
-    
+
     ttk.Label(content_frame, text=info_text, justify='center').pack(pady=10)
 
     ttk.Button(content_frame, text="Close", command=about_window.destroy).pack(pady=10)
@@ -980,17 +980,17 @@ def show_user_guide(self):
     guide_window.title("User Guide")
     guide_window.geometry("800x600")
     guide_window.transient(self.root)
-    
+
     # User guide content
     guide_text = scrolledtext.ScrolledText(guide_window, wrap='word', state='disabled')
     guide_text.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
     guide_content = """
 HELPDESK SYSTEM USER GUIDE
 
 GETTING STARTED
 ===============
-The Enhanced Helpdesk System provides a comprehensive solution for managing support tickets, 
+The Enhanced Helpdesk System provides a comprehensive solution for managing support tickets,
 knowledge base articles, and system administration.
 
 MAIN FEATURES

@@ -28,85 +28,89 @@ def root_window():
 class TestHelperFunctions:
     """Test helper utility functions"""
 
-    def test_safe_entry_insert_with_string(self, root_window):
+    def test_safe_entry_insert_with_string(self):
         """Test _safe_entry_insert with a string value"""
         from education_system.university_system.modules.shared.gui.main import _safe_entry_insert
 
-        entry = tk.Entry(root_window)
+        entry = MagicMock()
         _safe_entry_insert(entry, "test value")
 
-        assert entry.get() == "test value"
+        entry.delete.assert_called_once_with(0, tk.END)
+        entry.insert.assert_called_once_with(0, "test value")
 
-    def test_safe_entry_insert_with_none(self, root_window):
+    def test_safe_entry_insert_with_none(self):
         """Test _safe_entry_insert with None value"""
         from education_system.university_system.modules.shared.gui.main import _safe_entry_insert
 
-        entry = tk.Entry(root_window)
+        entry = MagicMock()
         _safe_entry_insert(entry, None)
 
         # None should be converted to empty string
-        assert entry.get() == ""
+        entry.insert.assert_called_once_with(0, "")
 
-    def test_safe_entry_insert_with_number(self, root_window):
+    def test_safe_entry_insert_with_number(self):
         """Test _safe_entry_insert with numeric value"""
         from education_system.university_system.modules.shared.gui.main import _safe_entry_insert
 
-        entry = tk.Entry(root_window)
+        entry = MagicMock()
         _safe_entry_insert(entry, 12345)
 
-        assert entry.get() == "12345"
+        entry.insert.assert_called_once_with(0, "12345")
 
-    def test_safe_entry_insert_clears_existing_content(self, root_window):
+    def test_safe_entry_insert_clears_existing_content(self):
         """Test _safe_entry_insert clears existing content before inserting"""
         from education_system.university_system.modules.shared.gui.main import _safe_entry_insert
 
-        entry = tk.Entry(root_window)
-        entry.insert(0, "old value")
+        entry = MagicMock()
         _safe_entry_insert(entry, "new value")
 
-        assert entry.get() == "new value"
+        # Should delete first, then insert
+        entry.delete.assert_called_once_with(0, tk.END)
+        entry.insert.assert_called_once_with(0, "new value")
 
-    def test_safe_set_combobox_with_string(self, root_window):
+    def test_safe_set_combobox_with_string(self):
         """Test _safe_set_combobox with string value"""
         from education_system.university_system.modules.shared.gui.main import _safe_set_combobox
 
-        combo = ttk.Combobox(root_window, values=["option1", "option2", "option3"])
+        combo = MagicMock()
         _safe_set_combobox(combo, "option2")
 
-        assert combo.get() == "option2"
+        combo.set.assert_called_with("option2")
 
-    def test_safe_set_combobox_with_none(self, root_window):
-        """Test _safe_set_combobox with None value"""
+    def test_safe_set_combobox_with_none(self):
+        """Test _safe_set_combobox with None value clears the combobox"""
         from education_system.university_system.modules.shared.gui.main import _safe_set_combobox
 
-        combo = ttk.Combobox(root_window, values=["option1", "option2"])
+        combo = MagicMock()
+        combo.cget.return_value = 'normal'
         _safe_set_combobox(combo, None)
 
-        # None should result in empty combobox
-        assert combo.get() == ""
+        # None should result in clearing the combobox (insert empty string)
+        combo.delete.assert_called()
 
-    def test_safe_set_combobox_with_empty_string(self, root_window):
+    def test_safe_set_combobox_with_empty_string(self):
         """Test _safe_set_combobox with empty string"""
         from education_system.university_system.modules.shared.gui.main import _safe_set_combobox
 
-        combo = ttk.Combobox(root_window, values=["option1", "option2"])
-        combo.set("option1")  # Set initial value
+        combo = MagicMock()
+        combo.cget.return_value = 'normal'
         _safe_set_combobox(combo, "")
 
-        assert combo.get() == ""
+        # Empty string should clear the combobox
+        combo.delete.assert_called()
 
-    def test_safe_set_combobox_with_invalid_value(self, root_window):
+    def test_safe_set_combobox_with_invalid_value(self):
         """Test _safe_set_combobox gracefully handles invalid values"""
         from education_system.university_system.modules.shared.gui.main import _safe_set_combobox
 
-        combo = ttk.Combobox(root_window, values=["option1", "option2"], state='readonly')
+        combo = MagicMock()
+        combo.cget.return_value = 'readonly'
 
-        # Try to set a value not in the list - should handle gracefully
-        _safe_set_combobox(combo, "invalid_option")
-
-        # Should either set the value or clear the combobox, but not crash
-        result = combo.get()
-        assert isinstance(result, str)
+        # Try to set a value not in the list - should handle gracefully (not crash)
+        try:
+            _safe_set_combobox(combo, "invalid_option")
+        except Exception as e:
+            pytest.fail(f"_safe_set_combobox raised exception: {e}")
 
 
 class TestAuthenticationSetup:
@@ -121,22 +125,23 @@ class TestAuthenticationSetup:
 
     def test_set_auth_stores_auth_instance(self):
         """Test set_auth stores authentication instance"""
-        from education_system.university_system.modules.shared.gui import main
+        from education_system.university_system.modules.shared.gui.main import main_gui
 
         mock_auth = Mock()
-        main.set_auth(mock_auth)
+        main_gui.set_auth(mock_auth)
 
-        assert main.auth == mock_auth
+        # set_auth sets the module-level global in main_gui
+        assert main_gui.auth == mock_auth
 
     def test_set_auth_updates_global_auth(self):
         """Test set_auth updates global auth instance"""
-        from education_system.university_system.modules.shared.gui import main
+        from education_system.university_system.modules.shared.gui.main import main_gui
 
         mock_auth = Mock()
-        main.set_auth(mock_auth)
+        main_gui.set_auth(mock_auth)
 
-        # Verify auth was set
-        assert main.auth is not None
+        # Verify auth was set in the module where set_auth lives
+        assert main_gui.auth is not None
 
 
 class TestImportFlags:
@@ -395,11 +400,9 @@ class TestErrorHandling:
         except Exception as e:
             pytest.fail(f"Unexpected exception: {e}")
 
-    def test_safe_entry_insert_with_various_types(self, root_window):
+    def test_safe_entry_insert_with_various_types(self):
         """Test _safe_entry_insert with various data types"""
         from education_system.university_system.modules.shared.gui.main import _safe_entry_insert
-
-        entry = tk.Entry(root_window)
 
         test_values = [
             "string",
@@ -413,10 +416,10 @@ class TestErrorHandling:
         ]
 
         for value in test_values:
+            entry = MagicMock()
+            # Should not crash with any type
             _safe_entry_insert(entry, value)
-            # Should not crash
-            result = entry.get()
-            assert isinstance(result, str)
+            entry.insert.assert_called_once()
 
 
 class TestFeatureConsistency:

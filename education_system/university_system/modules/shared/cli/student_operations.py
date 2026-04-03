@@ -55,9 +55,9 @@ def create_student_record():
         first_name = input("Enter first name: ").strip()
         if not first_name:
             print("Error. Please enter a name.")
-    
+
     middle_name = input("Enter middle name (optional): ").strip()
-    
+
     last_name = None
     while not last_name:
         last_name = input("Enter last name: ").strip()
@@ -89,7 +89,7 @@ def create_student_record():
                 return datetime.strptime(dob_str, "%Y-%m-%d")
             except ValueError:
                 print("Invalid date. Please enter a valid date in YYYY-MM-DD format.")
-    
+
     dob = get_valid_date()
 
     # Compute age
@@ -147,14 +147,14 @@ def create_student_record():
     # Add retry logic for database operations
     max_retries = 3
     retry_count = 0
-    
+
     while retry_count < max_retries:
         conn = None
         try:
             conn = get_db_connection(timeout=30.0)
             if not conn:
                 raise sqlite3.Error("Could not connect to database")
-                
+
             cursor = conn.cursor()
 
             # Temporarily disable foreign key checks to avoid module_code issues
@@ -205,13 +205,13 @@ def create_student_record():
                 conn.commit()
                 conn.close()
                 conn = None  # Mark as closed to avoid double-close
-                
+
                 # Add a small delay to ensure the database commit is fully processed
                 time.sleep(0.1)
-                
+
                 # Success - break out of retry loop
                 break
-                
+
             except sqlite3.OperationalError as e:
                 if "database is locked" in str(e).lower() and retry_count < max_retries - 1:
                     print(f"Database temporarily locked, retrying... (attempt {retry_count + 1})")
@@ -229,7 +229,7 @@ def create_student_record():
                     continue
                 else:
                     raise e
-                    
+
         except (ValueError, TypeError, ValidationError) as e:
             if conn:
                 try:
@@ -240,7 +240,7 @@ def create_student_record():
                     logging.warning(f"Unexpected error closing connection after exception: {close_error}")
                 finally:
                     conn = None
-                    
+
             if retry_count >= max_retries - 1:
                 logging.error(f"Failed to create student record after {max_retries} attempts: {e}")
                 print(f"Error: Failed to create student record after {max_retries} attempts. Please try again later.")
@@ -265,12 +265,12 @@ def create_student_record():
             student_id=student_id_str,
             password_reset_required=False
         )
-        
+
         if created:
             print("\nUser account created successfully!")
             print(f"  Username: {student_id_str}")
             print(f"  Password: {temp_password}")
-            
+
             # Ensure the user is integrated with the communication system
             ensure_user_in_communication_system(
                 username=student_id_str,
@@ -280,19 +280,19 @@ def create_student_record():
                 role='student',
                 student_id=student_id_str
             )
-            
+
             print(f"Student '{first_name} {last_name}' can now send and receive messages through the communication system.")
-            
+
             # Send registration confirmation email
             try:
                 send_registration_confirmation(student_id_str)
                 print("Registration confirmation email has been sent.")
             except (ValueError, TypeError, ValidationError) as e:
                 logging.warning(f"Registration confirmation email could not be sent: {e}")
-            
+
         else:
             print("Failed to create user account. It may already exist.")
-            
+
     except (ValueError, TypeError, ValidationError) as e:
         logging.error(f"Error creating student user account: {e}")
         print("Warning: Student record created but user account creation failed. Please contact an administrator.")
@@ -306,12 +306,12 @@ def create_student_record():
 
 def view_student_record():
     global auth
-    
+
     # Check for permission
     if not auth or not auth.current_user:
         print("You must be logged in to view student records.")
         return
-    
+
     # Different behavior based on role/permissions
     if not (auth.has_permission('view_any_student') or auth.has_permission('view_own_record')):
         print("You don't have permission to view student records.")
@@ -328,35 +328,35 @@ def view_student_record():
         cursor.execute('''
         SELECT * FROM students
         ''')
-        
+
         students = cursor.fetchall()
-        
+
         if not students:
             print("No student records found.")
             conn.close()
             return
-        
+
         for student in students:
             display_student_record(student)
-            
+
     elif auth.has_permission('view_own_record'):
         # Student - can only view their own record
         student_id = None
-        
+
         # Get the student_id associated with this user - updated query for new database structure
         cursor.execute('''
         SELECT student_id FROM users WHERE id = ?
         ''', (auth.current_user['id'],))
-        
+
         result = cursor.fetchone()
         if result and result[0]:
             student_id = result[0]
-            
+
             # Fetch and display just this student's record
             cursor.execute('''
             SELECT * FROM students WHERE student_id = ?
             ''', (student_id,))
-            
+
             student = cursor.fetchone()
             if student:
                 display_student_record(student)
@@ -364,7 +364,7 @@ def view_student_record():
                 print("Your student record was not found.")
         else:
             print("No student ID associated with your account.")
-    
+
     conn.close()
 
 
@@ -723,7 +723,7 @@ def update_student_record():
         if not result.get('success'):
             print("Failed to update student record. Please try again.")
             return
-        
+
         # Display the updated record
         display_student_record(result['updated_student'])
 
@@ -733,9 +733,9 @@ def update_student_record():
             send_update_confirmation(student_email, result['updated_fields'])
         except (ValueError, TypeError, ValidationError) as e:
             logging.warning(f"Update confirmation email could not be sent ({type(e).__name__})")
-        
+
         print("\nStudent record updated successfully!")
-        
+
         # Display password change summary if first name was updated
         if result['field_num'] == 1:
             print("\n" + "="*50)
@@ -747,74 +747,74 @@ def update_student_record():
                 print(f"New Password: {result['updated_fields']['Password'].replace('Updated to ', '')}")
                 print("\n⚠️  IMPORTANT: Please inform the student of their new password!")
             print("="*50)
-            
+
     except (sqlite3.Error, DatabaseError) as e:
         logging.error(f"Error during student record update: {e}")
         print("An error occurred while updating the student record. Please try again.")
-    
+
 
 def delete_student_record():
     global auth
-    
+
     # Check for permission
     if not auth or not auth.current_user:
         print("You must be logged in to delete student records.")
         return
-    
+
     if not auth.check_permission('delete_any_student'):
         print("You don't have permission to delete student records.")
         return
-    
+
     backup_before_operation('delete')
-    
+
     def perform_delete_operation(conn):
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        
+
         # Ask the user for the student ID to delete
         id_num = input("Enter the ID number of the student to delete: ").strip()
-        
+
         if not id_num:
             print("Error: Student ID cannot be empty.")
             return False
-        
+
         # Check if the student exists
         cursor.execute('SELECT student_id, first_name, last_name FROM students WHERE student_id = ?', (id_num,))
         student = cursor.fetchone()
-        
+
         if not student:
             print("No student records found with that ID.")
             return False
-        
+
         # Display student info and confirm deletion
         print(f"\nStudent to delete:")
         print(f"ID: {student['student_id']}")
         print(f"Name: {student['first_name']} {student['last_name']}")
-        
+
         confirm = input(f"\nAre you sure you want to delete student {id_num}? This will also delete all related records. (y/n): ")
         if confirm.lower() != 'y':
             print("Delete operation cancelled.")
             return False
-        
+
         try:
             # Disable foreign key constraints temporarily for this operation
             cursor.execute("PRAGMA foreign_keys = OFF")
-            
+
             # Delete from all related tables in the correct order
             # Start with tables that reference the student
-            
+
             # Delete student grades
             cursor.execute('DELETE FROM student_grades WHERE student_id = ?', (id_num,))
             print(f"Deleted {cursor.rowcount} grade records.")
-            
+
             # Delete attendance records
             cursor.execute('DELETE FROM attendance WHERE student_id = ?', (id_num,))
             print(f"Deleted {cursor.rowcount} attendance records.")
-            
+
             # Delete student modules
             cursor.execute('DELETE FROM student_modules WHERE student_id = ?', (id_num,))
             print(f"Deleted {cursor.rowcount} module assignments.")
-            
+
             # Delete user account (if exists) - first get the user_id
             cursor.execute('SELECT id, username FROM users WHERE student_id = ?', (id_num,))
             user_record = cursor.fetchone()
@@ -840,7 +840,7 @@ def delete_student_record():
                     print(f"Deleted {cursor.rowcount} user profile records.")
                     # Log activity even in fallback mode
                     log_delete('user', user_id=user_id, details={'username': username, 'student_id': id_num, 'reason': 'Student deletion (fallback)'})
-            
+
             # Delete any parking permits
             try:
                 cursor.execute('DELETE FROM parking_permits WHERE id IN (SELECT id FROM users WHERE student_id = ?)', (id_num,))
@@ -849,7 +849,7 @@ def delete_student_record():
             except sqlite3.OperationalError as e:
                 # Table might not exist
                 logger.debug(f"Parking permits table may not exist: {e}")
-            
+
             # Delete any finance records
             try:
                 cursor.execute('DELETE FROM student_fees WHERE student_id = ?', (id_num,))
@@ -858,7 +858,7 @@ def delete_student_record():
             except sqlite3.OperationalError as e:
                 # Table might not exist
                 logger.debug(f"Student fees table may not exist: {e}")
-            
+
             # Delete any library records
             try:
                 cursor.execute('DELETE FROM loans WHERE borrower_id = ?', (id_num,))
@@ -867,7 +867,7 @@ def delete_student_record():
             except sqlite3.OperationalError as e:
                 # Table might not exist
                 logger.debug(f"Loans table may not exist: {e}")
-            
+
             # Delete any trip participation records
             try:
                 cursor.execute('DELETE FROM trip_participants WHERE student_id = ?', (id_num,))
@@ -876,7 +876,7 @@ def delete_student_record():
             except sqlite3.OperationalError as e:
                 # Table might not exist
                 logger.debug(f"Trip participants table may not exist: {e}")
-            
+
             # Delete any assignment submissions
             try:
                 cursor.execute('DELETE FROM assignment_submissions WHERE student_id = ?', (id_num,))
@@ -885,7 +885,7 @@ def delete_student_record():
             except sqlite3.OperationalError as e:
                 # Table might not exist
                 logger.debug(f"Assignment submissions table may not exist: {e}")
-            
+
             # Delete any accommodation requests
             try:
                 cursor.execute('DELETE FROM accommodation_requests WHERE student_id = ?', (id_num,))
@@ -894,7 +894,7 @@ def delete_student_record():
             except sqlite3.OperationalError as e:
                 # Table might not exist
                 logger.debug(f"Accommodation requests table may not exist: {e}")
-            
+
             # Delete any housing accommodation requests
             try:
                 cursor.execute('DELETE FROM housing_requests WHERE student_id = ?', (id_num,))
@@ -903,7 +903,7 @@ def delete_student_record():
             except sqlite3.OperationalError as e:
                 # Table might not exist
                 logger.debug(f"Housing requests table may not exist: {e}")
-            
+
             # Delete any health records
             try:
                 cursor.execute('DELETE FROM health_records WHERE student_id = ?', (id_num,))
@@ -912,7 +912,7 @@ def delete_student_record():
             except sqlite3.OperationalError as e:
                 # Table might not exist
                 logger.debug(f"Health records table may not exist: {e}")
-            
+
             # Delete any internship applications
             try:
                 cursor.execute('DELETE FROM internship_applications WHERE student_id = ?', (id_num,))
@@ -921,7 +921,7 @@ def delete_student_record():
             except sqlite3.OperationalError as e:
                 # Table might not exist
                 logger.debug(f"Internship applications table may not exist: {e}")
-            
+
             # Finally, delete the main student record
             cursor.execute('DELETE FROM students WHERE student_id = ?', (id_num,))
             if cursor.rowcount > 0:
@@ -929,42 +929,42 @@ def delete_student_record():
             else:
                 print("Warning: Student record was not found during final deletion.")
                 return False
-            
+
             # Re-enable foreign key constraints
             cursor.execute("PRAGMA foreign_keys = ON")
-            
+
             print(f"\nStudent {id_num} and all related records have been successfully deleted.")
             return True
-            
+
         except sqlite3.Error as e:
             # Re-enable foreign keys even if there was an error
             cursor.execute("PRAGMA foreign_keys = ON")
             logging.error(f"Database error during student deletion: {e}")
             print(f"Error during deletion: {e}")
             return False
-    
+
     # Execute the delete operation using safe database handling
     try:
         success = safe_db_operation_with_retry(perform_delete_operation, max_retries=3)
-        
+
         if success:
             print("Student record deletion completed successfully!")
         else:
             print("Failed to delete student record. Please try again.")
-            
+
     except (sqlite3.Error, DatabaseError) as e:
         logging.error(f"Error during student record deletion: {e}")
         print("An error occurred while deleting the student record. Please try again.")
-    
+
     input("\nPress Enter to continue...")
-    
+
 
 def display_student_record(student):
     """Helper function to display a student record"""
     if not student:
         print("Invalid student record.")
         return
-    
+
     print("\n" + "=" * 40)
     print("Student Record:")
     print("=" * 40)
@@ -979,7 +979,7 @@ def display_student_record(student):
     print(f"Age: {student[8]}")
     print(f"Course: {student[9]}")
     print(f"Registration Date/Time: {student[10]}")
-    
+
     # Fetch and display modules
     try:
         conn = get_db_connection()
@@ -993,7 +993,7 @@ def display_student_record(student):
             ORDER BY m.module_type, sm.module_code
             ''', (student[0],))
             modules = cursor.fetchall()
-            
+
             if modules:
                 print("\nModules:")
                 print("-" * 40)
@@ -1002,7 +1002,7 @@ def display_student_record(student):
             conn.close()
     except sqlite3.Error as e:
         logging.error(f"Error fetching modules: {e}")
-    
+
     print("=" * 40 + "\n")
 
 # Add this to your main menu function
@@ -1010,63 +1010,63 @@ def display_student_record(student):
 
 def display_student_records_menu():
     global auth
-    
+
     if not auth or not auth.current_user:
         print("You must be logged in to access student records.")
         return
-    
+
     while True:
         print("\nStudent Records Menu:")
         print("=====================")
-        
+
         # Show options based on permissions
         option_num = 1
         options = {}
-        
+
         if auth.check_permission('create_student'):
             print(f"{option_num}. Create student record")
             options[str(option_num)] = 'create_student'
             option_num += 1
-        
+
         if auth.check_permission('view_any_student') or auth.check_permission('view_own_record'):
             print(f"{option_num}. View student records")
             options[str(option_num)] = 'view_student'
             option_num += 1
-        
+
         if auth.check_permission('update_any_student') or auth.check_permission('update_own_profile'):
             print(f"{option_num}. Update student record")
             options[str(option_num)] = 'update_student'
             option_num += 1
-        
+
         if auth.check_permission('delete_any_student'):
             print(f"{option_num}. Delete student record")
             options[str(option_num)] = 'delete_student'
             option_num += 1
-        
+
         if auth.check_permission('view_any_student'):
             print(f"{option_num}. Search student by first name")
             options[str(option_num)] = 'search_first_name'
             option_num += 1
-            
+
             print(f"{option_num}. Search student by last name")
             options[str(option_num)] = 'search_last_name'
             option_num += 1
-            
+
             print(f"{option_num}. Search student by ID")
             options[str(option_num)] = 'search_id'
             option_num += 1
-            
+
             print(f"{option_num}. Search student by registration date")
             options[str(option_num)] = 'search_date'
             option_num += 1
-        
+
         print(f"{option_num}. Return to Main Menu")
-        
+
         choice = input("Enter your choice: ")
-        
+
         if choice in options:
             action = options[choice]
-            
+
             if action == 'create_student':
                 create_student_record()
             elif action == 'view_student':
@@ -1099,19 +1099,19 @@ def fetch_student_data(include_modules=True):
         conn = get_db_connection()
         if not conn:
             return []
-            
+
         cursor = conn.cursor()
-        
+
         # Fetch all students
         cursor.execute('SELECT * FROM students')
         students = cursor.fetchall()
-        
+
         if include_modules:
             # For each student, fetch their modules
             student_data = []
             for student in students:
                 student_id = student[0]
-                
+
                 # Fetch modules for this student
                 cursor.execute('''
                 SELECT m.module_type, sm.module_code, m.module_name
@@ -1120,22 +1120,22 @@ def fetch_student_data(include_modules=True):
                 WHERE sm.student_id = ?
                 ORDER BY m.module_type, sm.module_code
                 ''', (student_id,))
-                
+
                 modules = cursor.fetchall()
-                
+
                 # Combine student info with modules
                 student_data.append({
                     'student': student,
                     'modules': modules
                 })
-                
+
             conn.close()
             return student_data
         else:
             # Just return the students without modules
             conn.close()
             return students
-            
+
     except sqlite3.Error as e:
         logging.error(f"Database error: {e}")
         return []
@@ -1147,17 +1147,17 @@ def example_create_student_operation(conn, student_data):
     This shows how to structure operations for use with the retry function.
     """
     cursor = conn.cursor()
-    
+
     try:
         # Insert student data
         cursor.execute('''
         INSERT INTO students (student_id, email_address, first_name, last_name, course)
         VALUES (?, ?, ?, ?, ?)
         ''', student_data)
-        
+
         logging.info(f"Successfully created student record for ID: {student_data[0]}")
         return True
-        
+
     except sqlite3.IntegrityError as e:
         if "UNIQUE constraint failed" in str(e):
             logging.warning(f"Student with ID {student_data[0]} already exists")
@@ -1165,7 +1165,7 @@ def example_create_student_operation(conn, student_data):
         else:
             logging.error(f"Data integrity issue when creating student: {e}")
             raise
-            
+
     except (sqlite3.Error, DatabaseError) as e:
         logging.error(f"Error creating student record: {e}")
         raise
@@ -1177,18 +1177,18 @@ def example_create_student_operation(conn, student_data):
 def create_student_with_retry(student_data):
     """
     Create a student record with retry logic and enhanced error handling.
-    
+
     Args:
         student_data: Tuple containing student information
-    
+
     Returns:
         Boolean indicating success or failure
     """
     success, result, error_type = enhanced_db_operation(
-        example_create_student_operation, 
+        example_create_student_operation,
         student_data
     )
-    
+
     if not success:
         if error_type == "integrity_error":
             print(f"Error: Student with ID {student_data[0]} already exists or data conflicts with existing records.")
@@ -1198,7 +1198,7 @@ def create_student_with_retry(student_data):
             print("Error: Database operational issue. Please contact system administrator.")
         else:
             print("Error: An unexpected issue occurred. Please try again or contact support.")
-    
+
     return success
 
 

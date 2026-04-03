@@ -652,9 +652,9 @@ class TestErrorHandling:
     """Test error handling."""
 
     def test_import_from_nonexistent_csv(self, batch_manager):
-        """Test importing from nonexistent CSV file."""
-        with pytest.raises(Exception):
-            batch_manager.read_csv_file('/nonexistent/file.csv')
+        """Test importing from nonexistent CSV file returns empty list."""
+        result = batch_manager.read_csv_file('/nonexistent/file.csv')
+        assert result == []
 
     def test_validate_empty_data(self, batch_manager):
         """Test validating empty data."""

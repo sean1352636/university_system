@@ -292,7 +292,7 @@ def create_reservation_database(self, book_id, user_id):
 
         # Check if user already has reservation
         cursor.execute('''
-        SELECT reservation_id FROM book_reservations 
+        SELECT reservation_id FROM book_reservations
         WHERE book_id = ? AND user_id = ? AND status = 'active'
         ''', (book_id, user_id))
 
@@ -302,8 +302,8 @@ def create_reservation_database(self, book_id, user_id):
 
         # Get next priority order
         cursor.execute('''
-        SELECT COALESCE(MAX(priority_order), 0) + 1 
-        FROM book_reservations 
+        SELECT COALESCE(MAX(priority_order), 0) + 1
+        FROM book_reservations
         WHERE book_id = ? AND status = 'active'
         ''', (book_id,))
 
@@ -324,7 +324,7 @@ def create_reservation_database(self, book_id, user_id):
         expiry_date = reservation_date + timedelta(days=reservation_days)
 
         cursor.execute('''
-        INSERT INTO book_reservations 
+        INSERT INTO book_reservations
         (book_id, user_id, reservation_date, expiry_date, status, priority_order)
         VALUES (?, ?, ?, ?, 'active', ?)
         ''', (
@@ -339,8 +339,8 @@ def create_reservation_database(self, book_id, user_id):
 
         # Log the action
         if ORIGINAL_LIBRARY_AVAILABLE:
-            log_audit_event(get_current_user_id(), 
-                          f"GUI: Created reservation for book {book_id}", 
+            log_audit_event(get_current_user_id(),
+                          f"GUI: Created reservation for book {book_id}",
                           "book_reservations")
 
         return True
@@ -369,7 +369,7 @@ def cancel_reservation(self):
                 conn = get_db_connection()
                 if conn:
                     cursor = conn.cursor()
-                    cursor.execute('UPDATE book_reservations SET status = "cancelled" WHERE reservation_id = ?', 
+                    cursor.execute('UPDATE book_reservations SET status = "cancelled" WHERE reservation_id = ?',
                                  (reservation_id,))
                     conn.commit()
                     conn.close()

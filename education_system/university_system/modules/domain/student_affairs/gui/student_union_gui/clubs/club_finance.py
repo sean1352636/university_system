@@ -54,7 +54,7 @@ except (ImportError, ModuleNotFoundError):
     student_union_cli = None
     init_student_union_db = None
     CLI_AVAILABLE = False
-    
+
 
 class ClubFinancialReportsDialog:
     """Dialog for viewing club financial reports"""

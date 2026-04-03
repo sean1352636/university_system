@@ -199,10 +199,11 @@ class TestInitGUIRouting:
     """Tests for the init_gui function that routes student vs admin."""
 
     @pytest.mark.skipif(not os.environ.get('DISPLAY'), reason='No display')
+    @patch('education_system.university_system.modules.shared.gui.main.main_gui.safe_auth_check')
     @patch('education_system.university_system.modules.shared.gui.main.main_gui.get_auth')
     @patch('education_system.university_system.modules.shared.gui.main.main_gui.UserAuth')
     def test_init_gui_routes_student_to_student_portal(self, mock_user_auth_cls,
-                                                        mock_get_auth, mock_auth):
+                                                        mock_get_auth, mock_safe_auth, mock_auth):
         """init_gui with role='student' should create a StudentPortalGUI."""
         mock_get_auth.return_value = mock_auth
         mock_user_auth_cls.return_value = mock_auth
@@ -215,16 +216,25 @@ class TestInitGUIRouting:
             'display_name': 'Jane Doe',
         }
 
+        import education_system.university_system.modules.shared.gui.main.main_gui as main_gui_mod
+        original_auth = main_gui_mod.auth
+
         with patch(
             'education_system.university_system.modules.shared.gui.main.student_portal.StudentPortalGUI'
         ) as mock_portal_cls:
             mock_portal_cls.return_value = Mock()
 
-            from education_system.university_system.modules.shared.gui.main.main_gui import init_gui
+            try:
+                # Reset module-level auth so init_gui re-initializes it from get_auth()
+                main_gui_mod.auth = None
 
-            app = init_gui(session_user=session_user)
+                from education_system.university_system.modules.shared.gui.main.main_gui import init_gui
 
-            mock_portal_cls.assert_called_once_with(mock_auth)
+                app = init_gui(session_user=session_user)
+
+                mock_portal_cls.assert_called_once_with(mock_auth)
+            finally:
+                main_gui_mod.auth = original_auth
 
     @pytest.mark.skipif(not os.environ.get('DISPLAY'), reason='No display')
     @patch('education_system.university_system.modules.shared.gui.main.main_gui.get_auth')

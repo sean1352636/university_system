@@ -56,17 +56,17 @@ class TestPDFExportGUI:
         """Test showing the export window."""
         from education_system.university_system.modules.shared.gui.pdf_export_gui import PDFExportGUI
 
-        with patch(
-            "university_system.modules.shared.gui.pdf_export_gui.PDFExportGUI._create_widgets"
-        ):
-            with patch(
-                "university_system.modules.shared.gui.pdf_export_gui.PDFExportGUI._load_preview"
-            ):
-                gui = PDFExportGUI(mock_root, mock_auth)
-                gui.show_export_window()
+        gui = PDFExportGUI(mock_root, mock_auth)
 
-                # Should create a Toplevel window
-                mock_root.winfo_screenwidth.assert_called()
+        with patch.object(gui, '_create_widgets'), \
+             patch.object(gui, '_load_preview'), \
+             patch('education_system.university_system.modules.shared.gui.pdf_export_gui.tk.Toplevel') as mock_toplevel:
+            mock_toplevel.return_value = MagicMock()
+            gui.show_export_window()
+
+            # Should create a Toplevel window (export_window is set)
+            assert gui.export_window is not None
+            mock_toplevel.assert_called_once_with(mock_root)
 
     def test_progress_callback(self, mock_tk, mock_root, mock_auth):
         """Test progress callback updates."""
@@ -121,7 +121,7 @@ class TestShowPDFExportGUIFunction:
     def test_show_pdf_export_gui_function(self):
         """Test the show_pdf_export_gui function."""
         with patch(
-            "university_system.modules.shared.gui.pdf_export_gui.PDFExportGUI"
+            "education_system.university_system.modules.shared.gui.pdf_export_gui.PDFExportGUI"
         ) as mock_class:
             from education_system.university_system.modules.shared.gui.pdf_export_gui import (
                 show_pdf_export_gui,
@@ -196,11 +196,12 @@ class TestPDFExportGUIIntegration:
         mock_root = MagicMock()
         gui = PDFExportGUI(mock_root)
         gui.is_exporting = False
-        gui.export_window = MagicMock()
+        mock_window = MagicMock()
+        gui.export_window = mock_window
 
         gui._close_window()
 
-        gui.export_window.destroy.assert_called_once()
+        mock_window.destroy.assert_called_once()
         assert gui.export_window is None
 
     def test_close_window_when_exporting_cancelled(self):
@@ -227,12 +228,13 @@ class TestPDFExportGUIIntegration:
             mock_root = MagicMock()
             gui = PDFExportGUI(mock_root)
             gui.is_exporting = True
-            gui.export_window = MagicMock()
+            mock_window = MagicMock()
+            gui.export_window = mock_window
 
             gui._close_window()
 
             # Should destroy window
-            gui.export_window.destroy.assert_called_once()
+            mock_window.destroy.assert_called_once()
 
 class TestPDFExportGUIValidation:
     """Test input validation in PDF export GUI."""

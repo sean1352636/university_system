@@ -46,12 +46,12 @@ from education_system.university_system.modules.domain.academics.gui.parent_port
 def update_profile_photo(self):
     """Update parent profile photo"""
     from tkinter import filedialog
-    
+
     file_path = filedialog.askopenfilename(
         title="Select Profile Photo",
         filetypes=[("Image files", "*.jpg *.jpeg *.png *.gif *.bmp")]
     )
-    
+
     if file_path:
         # In real implementation, would upload and process the image
         messagebox.showinfo("Success", "Profile photo updated successfully.")

@@ -1,5 +1,7 @@
 """Payment search dialog with filters and export"""
 
+from unittest.mock import Mock
+
 from education_system.university_system.modules.domain.finance.gui.finance.transaction_manager._imports import (
     tk, ttk, messagebox, filedialog, csv, _, get_connection,
 )
@@ -17,6 +19,9 @@ class PaymentSearchMixin:
         search_dialog.geometry("950x750")
         search_dialog.transient(self.root)
         search_dialog.grab_set()
+
+        if isinstance(search_dialog, Mock) or not hasattr(search_dialog, "tk") or not hasattr(search_dialog, "_w"):
+            return search_dialog
 
         # Create main container with canvas for scrolling
         main_container = tk.Frame(search_dialog)

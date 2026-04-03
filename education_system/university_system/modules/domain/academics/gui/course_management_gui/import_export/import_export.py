@@ -132,22 +132,22 @@ def import_csv(self):
         title="Select CSV file to import",
         filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
     )
-    
+
     if not file_path:
         return
-    
+
     try:
         imported_count = 0
         error_count = 0
-        
+
         with open(file_path, 'r', newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
-            
+
             required_fields = ['course_code', 'course_name', 'department']
             if not all(field in reader.fieldnames for field in required_fields):
                 messagebox.showerror(_("common.import_error"), f"CSV must contain these required columns: {', '.join(required_fields)}")
                 return
-            
+
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             try:
                 cursor = conn.cursor()
@@ -199,13 +199,13 @@ def import_csv(self):
                 conn.commit()
             finally:
                 conn.close()
-        
+
         self.refresh_course_list()
-        
+
         message = f"Import completed!\n\nSuccessfully imported: {imported_count} courses\nErrors: {error_count} courses"
         messagebox.showinfo("Import Results", message)
         self.update_status(f"Imported {imported_count} courses from CSV")
-        
+
     except Exception as e:
         messagebox.showerror(_("common.import_error"), f"Failed to import CSV: {e}")
 
@@ -217,31 +217,31 @@ def export_csv(self):
         defaultextension=".csv",
         filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
     )
-    
+
     if not file_path:
         return
-    
+
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
         cursor = conn.cursor()
-        
+
         cursor.execute("SELECT * FROM courses ORDER BY course_code")
         courses = cursor.fetchall()
-        
+
         # Get column names
         cursor.execute("PRAGMA table_info(courses)")
         columns = [col[1] for col in cursor.fetchall()]
-        
+
         with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(columns)
             writer.writerows(courses)
-        
+
         conn.close()
-        
+
         messagebox.showinfo(_("common.export_complete"), f"Exported {len(courses)} courses to {file_path}")
         self.update_status(f"Exported {len(courses)} courses to CSV")
-        
+
     except Exception as e:
         messagebox.showerror(_("common.export_error"), f"Failed to export CSV: {e}")
 
@@ -253,13 +253,13 @@ def backup_database(self):
         defaultextension=".sql",
         filetypes=[("SQL files", "*.sql"), ("SQLite files", "*.db"), ("All files", "*.*")]
     )
-    
+
     if not file_path:
         return
-    
+
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-        
+
         if file_path.endswith('.sql'):
             # SQL dump backup
             with open(file_path, 'w') as f:
@@ -272,12 +272,12 @@ def backup_database(self):
                 conn.backup(backup_conn)
             finally:
                 backup_conn.close()
-        
+
         conn.close()
-        
+
         messagebox.showinfo("Backup Complete", f"Database backup saved to {file_path}")
         self.update_status("Database backup created")
-        
+
     except Exception as e:
         messagebox.showerror("Backup Error", f"Failed to create backup: {e}")
 
@@ -298,112 +298,112 @@ class ImportExportDialog:
         self.auth = auth
         self.operation = operation
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(f"{operation.capitalize()} Courses")
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.dialog.focus_set()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
-        ttk.Label(main_frame, text=f"{self.operation.capitalize()} Courses", 
+
+        ttk.Label(main_frame, text=f"{self.operation.capitalize()} Courses",
                  font=("Arial", 12, "bold")).pack(pady=10)
-        
+
         if self.operation == "import":
             self.create_import_widgets(main_frame)
         else:
             self.create_export_widgets(main_frame)
-    
+
     def create_import_widgets(self, parent):
         # File selection
         file_frame = ttk.LabelFrame(parent, text="Select CSV File", padding=10)
         file_frame.pack(fill=tk.X, pady=5)
-        
+
         self.file_var = tk.StringVar()
         ttk.Entry(file_frame, textvariable=self.file_var, width=50).pack(side=tk.LEFT, fill=tk.X, expand=True)
         ttk.Button(file_frame, text="Browse", command=self.browse_file).pack(side=tk.RIGHT, padx=(5,0))
-        
+
         # Requirements
         req_frame = ttk.LabelFrame(parent, text="CSV Requirements", padding=10)
         req_frame.pack(fill=tk.X, pady=5)
-        
+
         requirements = [
             "• Required columns: course_code, course_name, department",
             "• Optional columns: description, level, credit_hours, max_enrollment, course_type",
             "• Course codes must be unique and follow format (e.g., CS101)",
             "• First row should contain column headers"
         ]
-        
+
         for req in requirements:
             ttk.Label(req_frame, text=req).pack(anchor=tk.W)
-        
+
         # Options
         options_frame = ttk.LabelFrame(parent, text="Import Options", padding=10)
         options_frame.pack(fill=tk.X, pady=5)
-        
+
         self.skip_duplicates = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Skip duplicate course codes", 
+        ttk.Checkbutton(options_frame, text="Skip duplicate course codes",
                        variable=self.skip_duplicates).pack(anchor=tk.W)
-        
+
         self.validate_codes = tk.BooleanVar(value=True)
-        ttk.Checkbutton(options_frame, text="Validate course code format", 
+        ttk.Checkbutton(options_frame, text="Validate course code format",
                        variable=self.validate_codes).pack(anchor=tk.W)
-        
+
         # Progress display
         self.progress_text = ScrolledText(parent, height=8)
         self.progress_text.pack(fill=tk.BOTH, expand=True, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Import", command=self.import_courses).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def create_export_widgets(self, parent):
         # Filter options
         filter_frame = ttk.LabelFrame(parent, text="Export Filters", padding=10)
         filter_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(filter_frame, text="Department:").grid(row=0, column=0, sticky=tk.W)
         self.dept_var = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=self.dept_var, width=20).grid(row=0, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(filter_frame, text="Level:").grid(row=1, column=0, sticky=tk.W)
         self.level_var = tk.StringVar()
         ttk.Entry(filter_frame, textvariable=self.level_var, width=20).grid(row=1, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(filter_frame, text="Status:").grid(row=2, column=0, sticky=tk.W)
         self.status_var = tk.StringVar()
-        status_combo = ttk.Combobox(filter_frame, textvariable=self.status_var, 
+        status_combo = ttk.Combobox(filter_frame, textvariable=self.status_var,
                                    values=["", "Active", "Inactive", "Archived", "Cancelled"])
         status_combo.grid(row=2, column=1, sticky=tk.W, padx=5)
-        
+
         # File location
         file_frame = ttk.LabelFrame(parent, text="Export Location", padding=10)
         file_frame.pack(fill=tk.X, pady=5)
-        
+
         self.export_file_var = tk.StringVar()
         ttk.Entry(file_frame, textvariable=self.export_file_var, width=50).pack(side=tk.LEFT, fill=tk.X, expand=True)
         ttk.Button(file_frame, text="Browse", command=self.browse_export_file).pack(side=tk.RIGHT, padx=(5,0))
-        
+
         # Progress display
         self.progress_text = ScrolledText(parent, height=8)
         self.progress_text.pack(fill=tk.BOTH, expand=True, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Export", command=self.export_courses).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def browse_file(self):
         filename = filedialog.askopenfilename(
             title="Select CSV file to import",
@@ -411,7 +411,7 @@ class ImportExportDialog:
         )
         if filename:
             self.file_var.set(filename)
-    
+
     def browse_export_file(self):
         filename = filedialog.asksaveasfilename(
             title="Save CSV file",
@@ -420,28 +420,28 @@ class ImportExportDialog:
         )
         if filename:
             self.export_file_var.set(filename)
-    
+
     def import_courses(self):
         file_path = self.file_var.get()
         if not file_path:
             messagebox.showwarning("No File", "Please select a CSV file to import.")
             return
-        
+
         try:
             self.progress_text.delete(1.0, tk.END)
             self.progress_text.insert(tk.END, f"Starting import from {file_path}...\n")
-            
+
             imported_count = 0
             error_count = 0
-            
+
             with open(file_path, 'r', newline='', encoding='utf-8') as csvfile:
                 reader = csv.DictReader(csvfile)
-                
+
                 required_fields = ['course_code', 'course_name', 'department']
                 if not all(field in reader.fieldnames for field in required_fields):
                     self.progress_text.insert(tk.END, f"ERROR: CSV must contain these required columns: {', '.join(required_fields)}\n")
                     return
-                
+
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 try:
                     cursor = conn.cursor()
@@ -501,28 +501,28 @@ class ImportExportDialog:
                     conn.commit()
                 finally:
                     conn.close()
-            
+
             self.progress_text.insert(tk.END, f"\nImport completed!\n")
             self.progress_text.insert(tk.END, f"Successfully imported: {imported_count} courses\n")
             self.progress_text.insert(tk.END, f"Errors: {error_count} courses\n")
-            
+
             self.result = imported_count > 0
-            
+
         except FileNotFoundError:
             messagebox.showerror("File Error", "File not found.")
         except Exception as e:
             messagebox.showerror(_("common.import_error"), f"Failed to import CSV: {e}")
-    
+
     def export_courses(self):
         file_path = self.export_file_var.get()
         if not file_path:
             messagebox.showwarning("No File", "Please specify a location to save the CSV file.")
             return
-        
+
         try:
             self.progress_text.delete(1.0, tk.END)
             self.progress_text.insert(tk.END, f"Starting export to {file_path}...\n")
-            
+
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             try:
                 cursor = conn.cursor()
@@ -556,20 +556,20 @@ class ImportExportDialog:
             finally:
                 conn.close()
                 return
-            
+
             # Get column names
             cursor.execute("PRAGMA table_info(courses)")
             columns = [col[1] for col in cursor.fetchall()]
-            
+
             with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(columns)
                 writer.writerows(courses)
-            
+
             conn.close()
-            
+
             self.progress_text.insert(tk.END, f"Exported {len(courses)} courses to {file_path}\n")
             self.result = True
-            
+
         except Exception as e:
             messagebox.showerror(_("common.export_error"), f"Failed to export CSV: {e}")

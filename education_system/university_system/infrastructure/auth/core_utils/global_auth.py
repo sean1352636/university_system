@@ -330,7 +330,7 @@ def get_global_auth():
     instance automatically.
     """
     global _current_auth_instance, _global_auth_instance
-    
+
     with _auth_instance_lock:
         if _current_auth_instance is None:
             # Try to create a new auth instance
@@ -341,7 +341,7 @@ def get_global_auth():
             except ImportError:
                 # Avoid circular import issues
                 pass
-        
+
         _global_auth_instance = _current_auth_instance
         return _current_auth_instance
 

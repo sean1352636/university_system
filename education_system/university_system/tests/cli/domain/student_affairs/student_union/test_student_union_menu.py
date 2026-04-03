@@ -8,6 +8,9 @@ from unittest.mock import Mock, patch, call
 
 from education_system.university_system.modules.domain.student_affairs.student_union.services import menu
 
+# The menu module path prefix used for patching imported names
+_MENU_MOD = 'education_system.university_system.modules.domain.student_affairs.student_union.services.menu'
+
 
 @pytest.fixture
 def mock_context():
@@ -24,7 +27,7 @@ class TestDisplayStudentUnionMenu:
 
     @patch('builtins.input', return_value='0')
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
+    @patch(f'{_MENU_MOD}.ctx')
     def test_menu_not_logged_in(self, mock_ctx, mock_print, mock_input):
         """Test menu when not logged in."""
         # Setup mocks
@@ -39,7 +42,7 @@ class TestDisplayStudentUnionMenu:
 
     @patch('builtins.input', side_effect=['18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
+    @patch(f'{_MENU_MOD}.ctx')
     def test_menu_basic_display_and_exit(self, mock_ctx, mock_print, mock_input):
         """Test menu displays and exits correctly."""
         # Setup mocks
@@ -50,18 +53,16 @@ class TestDisplayStudentUnionMenu:
         # Call function
         menu.display_student_union_menu()
 
-        # Verify menu was displayed
-        assert any('Student Union Portal' in str(call)
-                  for call in mock_print.call_args_list)
-        assert any('Club Management' in str(call)
-                  for call in mock_print.call_args_list)
-        assert any('Events & Activities' in str(call)
-                  for call in mock_print.call_args_list)
+        # Verify menu was displayed (matches i18n translated strings)
+        printed_output = ' '.join(str(c) for c in mock_print.call_args_list)
+        assert 'STUDENT UNION PORTAL' in printed_output
+        assert 'Clubs' in printed_output
+        assert 'Events' in printed_output
 
     @patch('builtins.input', side_effect=['1', '18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.union_context.display_club_menu')
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
+    @patch(f'{_MENU_MOD}.display_club_menu')
+    @patch(f'{_MENU_MOD}.ctx')
     def test_menu_club_management(self, mock_ctx, mock_display_club, mock_print, mock_input):
         """Test accessing club management."""
         # Setup mocks
@@ -77,8 +78,8 @@ class TestDisplayStudentUnionMenu:
 
     @patch('builtins.input', side_effect=['5', '18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.union_context.manage_engagement_rewards')
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
+    @patch(f'{_MENU_MOD}.manage_engagement_rewards')
+    @patch(f'{_MENU_MOD}.ctx')
     def test_menu_engagement_rewards(self, mock_ctx, mock_engagement, mock_print, mock_input):
         """Test accessing engagement rewards."""
         # Setup mocks
@@ -94,8 +95,8 @@ class TestDisplayStudentUnionMenu:
 
     @patch('builtins.input', side_effect=['15', '18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.union_context.generate_advanced_analytics')
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
+    @patch(f'{_MENU_MOD}.generate_advanced_analytics')
+    @patch(f'{_MENU_MOD}.ctx')
     def test_menu_admin_analytics(self, mock_ctx, mock_analytics, mock_print, mock_input):
         """Test accessing analytics as admin."""
         # Setup mocks
@@ -111,8 +112,8 @@ class TestDisplayStudentUnionMenu:
 
     @patch('builtins.input', side_effect=['19', 'https://calendar.example.com/ical', '18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.domain.academics.services.academic_calendar.AcademicCalendarManager')
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
+    @patch(f'{_MENU_MOD}.AcademicCalendarManager')
+    @patch(f'{_MENU_MOD}.ctx')
     def test_menu_calendar_sync(self, mock_ctx, mock_calendar_manager, mock_print, mock_input):
         """Test calendar sync functionality."""
         # Setup mocks
@@ -132,7 +133,7 @@ class TestDisplayStudentUnionMenu:
 
     @patch('builtins.input', side_effect=['999', '18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
+    @patch(f'{_MENU_MOD}.ctx')
     def test_menu_invalid_choice(self, mock_ctx, mock_print, mock_input):
         """Test handling of invalid menu choice."""
         # Setup mocks
@@ -149,10 +150,10 @@ class TestDisplayStudentUnionMenu:
 
     @patch('builtins.input', side_effect=['2', '3', '4', '18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.union_context.display_event_menu')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.union_context.display_facility_menu')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.union_context.display_election_menu')
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
+    @patch(f'{_MENU_MOD}.display_event_menu')
+    @patch(f'{_MENU_MOD}.display_facility_menu')
+    @patch(f'{_MENU_MOD}.display_election_menu')
+    @patch(f'{_MENU_MOD}.ctx')
     def test_menu_multiple_options(self, mock_ctx, mock_election, mock_facility,
                                     mock_event, mock_print, mock_input):
         """Test selecting multiple menu options in sequence."""
@@ -171,7 +172,7 @@ class TestDisplayStudentUnionMenu:
 
     @patch('builtins.input', side_effect=['18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
+    @patch(f'{_MENU_MOD}.ctx')
     def test_menu_shows_admin_options_for_admin(self, mock_ctx, mock_print, mock_input):
         """Test that admin options are shown for admins."""
         # Setup mocks
@@ -182,15 +183,14 @@ class TestDisplayStudentUnionMenu:
         # Call function
         menu.display_student_union_menu()
 
-        # Verify admin options are displayed
-        assert any('Advanced Analytics' in str(call)
-                  for call in mock_print.call_args_list)
-        assert any('Admin Dashboard' in str(call)
-                  for call in mock_print.call_args_list)
+        # Verify admin options are displayed (matches i18n translated strings)
+        printed_output = ' '.join(str(c) for c in mock_print.call_args_list)
+        assert 'Advanced Analytics' in printed_output
+        assert 'Admin Panel' in printed_output
 
     @patch('builtins.input', side_effect=['18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
+    @patch(f'{_MENU_MOD}.ctx')
     def test_menu_hides_admin_options_for_students(self, mock_ctx, mock_print, mock_input):
         """Test that admin options are hidden for students."""
         # Setup mocks
@@ -213,7 +213,7 @@ class TestMenuStructure:
 
     @patch('builtins.input', side_effect=['18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
+    @patch(f'{_MENU_MOD}.ctx')
     def test_menu_shows_core_features(self, mock_ctx, mock_print, mock_input):
         """Test that core features section is displayed."""
         # Setup mocks
@@ -224,13 +224,13 @@ class TestMenuStructure:
         # Call function
         menu.display_student_union_menu()
 
-        # Verify core features are displayed
-        assert any('CORE FEATURES' in str(call)
+        # Verify core features are displayed (matches i18n: "--- Core Features ---")
+        assert any('Core Features' in str(call)
                   for call in mock_print.call_args_list)
 
     @patch('builtins.input', side_effect=['18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
+    @patch(f'{_MENU_MOD}.ctx')
     def test_menu_shows_enhanced_features(self, mock_ctx, mock_print, mock_input):
         """Test that enhanced features section is displayed."""
         # Setup mocks
@@ -241,13 +241,13 @@ class TestMenuStructure:
         # Call function
         menu.display_student_union_menu()
 
-        # Verify enhanced features are displayed
-        assert any('ENHANCED FEATURES' in str(call)
+        # Verify enhanced features are displayed (matches i18n: "--- Enhanced Features ---")
+        assert any('Enhanced Features' in str(call)
                   for call in mock_print.call_args_list)
 
     @patch('builtins.input', side_effect=['18'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.menu.ctx')
+    @patch(f'{_MENU_MOD}.ctx')
     def test_menu_shows_specialized_systems(self, mock_ctx, mock_print, mock_input):
         """Test that specialized systems section is displayed."""
         # Setup mocks
@@ -258,8 +258,8 @@ class TestMenuStructure:
         # Call function
         menu.display_student_union_menu()
 
-        # Verify specialized systems are displayed
-        assert any('SPECIALIZED SYSTEMS' in str(call)
+        # Verify specialized systems are displayed (matches i18n: "--- Specialized Systems ---")
+        assert any('Specialized Systems' in str(call)
                   for call in mock_print.call_args_list)
 
 

@@ -1,5 +1,7 @@
 """Payments tab UI: table, context menu, refresh, export"""
 
+from unittest.mock import Mock
+
 from education_system.university_system.modules.domain.finance.gui.finance.transaction_manager._imports import (
     tk, ttk, messagebox, filedialog, csv, _, get_connection,
 )
@@ -83,14 +85,15 @@ class PaymentsTabMixin:
         self.payments_menu.add_separator()
         self.payments_menu.add_command(label=_("finance_gui.transaction_manager.context_export_csv"), command=self.export_payments)
 
-        self.payments_tree.bind("<Button-3>", self.show_payments_menu)
+        if hasattr(self, 'payments_tree'):
+            self.payments_tree.bind("<Button-3>", self.show_payments_menu)
 
 
     def refresh_payments(self):
         """Refresh payments data"""
         def refresh_thread():
             try:
-                conn = get_connection()
+                conn = self._get_connection()
                 cursor = conn.cursor()
 
                 cursor.execute('''
@@ -112,13 +115,13 @@ class PaymentsTabMixin:
                 # Update status in main thread
                 self.root.after(0, lambda msg=error_msg: self.update_status(msg))
 
-        # Only start thread if we have a main loop running
-        if self.root.tk.call('winfo', 'exists', self.root._w):
+        # Only start thread if we have a real Tk root running
+        if hasattr(self.root, 'tk') and hasattr(self.root, '_w') and self.root.tk.call('winfo', 'exists', self.root._w):
             refresh_thread()
         else:
             # If no main loop, run directly
             try:
-                conn = get_connection()
+                conn = self._get_connection()
                 cursor = conn.cursor()
                 cursor.execute('''
                 SELECT payment_id, student_id, amount, payment_method, payment_date, status
@@ -134,8 +137,8 @@ class PaymentsTabMixin:
     def update_payments_table(self, payments):
         """Update payments table"""
         # Clear existing data
-        for item in self.payments_tree.get_children():
-            self.payments_tree.delete(item)
+        existing_items = self.payments_tree.get_children()
+        self.payments_tree.delete(*existing_items)
 
         # Insert new data (convert sqlite3.Row to tuple)
         for payment in payments:
@@ -159,7 +162,7 @@ class PaymentsTabMixin:
             )
 
             if filename:
-                conn = get_connection()
+                conn = self._get_connection()
                 cursor = conn.cursor()
 
                 cursor.execute('''

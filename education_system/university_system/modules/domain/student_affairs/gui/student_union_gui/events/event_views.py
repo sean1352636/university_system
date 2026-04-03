@@ -54,7 +54,7 @@ except (ImportError, ModuleNotFoundError):
     student_union_cli = None
     init_student_union_db = None
     CLI_AVAILABLE = False
-    
+
 
 def show_events_content(self):
     """Display events in main content area"""
@@ -134,22 +134,22 @@ def refresh_events_list(self):
     # Clear existing items
     for item in self.events_tree.get_children():
         self.events_tree.delete(item)
-    
+
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         cursor.execute('''
-            SELECT e.event_id, e.event_name, e.event_date, e.start_time, 
+            SELECT e.event_id, e.event_name, e.event_date, e.start_time,
                    e.location, c.club_name, e.current_attendees, e.max_attendees, e.status
             FROM union_events e
             LEFT JOIN student_clubs c ON e.organizer_id = c.club_id
             WHERE e.status IN ('upcoming', 'open')
             ORDER BY e.event_date, e.start_time
         ''')
-        
+
         events = cursor.fetchall()
-        
+
         for event in events:
             attendees = f"{event[6]}/{event[7]}" if event[7] else str(event[6])
             self.events_tree.insert('', tk.END, values=(
@@ -170,23 +170,23 @@ def view_event_details(self):
     if not selection:
         messagebox.showwarning(_t("student_union.events.no_selection"), _t("student_union.events.select_event_to_view"))
         return
-    
+
     item = self.events_tree.item(selection[0])
     event_id = item['values'][0]
-    
+
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         cursor.execute('''
             SELECT e.event_name, e.description, e.event_date, e.start_time, e.end_time,
-                   e.location, e.category, e.max_attendees, e.current_attendees, 
+                   e.location, e.category, e.max_attendees, e.current_attendees,
                    c.club_name, e.status
             FROM union_events e
             LEFT JOIN student_clubs c ON e.organizer_id = c.club_id
             WHERE e.event_id = ?
         ''', (event_id,))
-        
+
         event = cursor.fetchone()
 
         if event:
@@ -235,7 +235,7 @@ def show_my_events(self):
     # This would show user's registered events
     ttk.Label(my_events_window, text=_t("student_union.events.my_registered_events"),
              font=('Arial', 14, 'bold')).pack(pady=20)
-    
+
     info_frame = ttk.Frame(my_events_window)
     info_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
     tree_columns = ('name', 'date', 'time', 'location', 'status')

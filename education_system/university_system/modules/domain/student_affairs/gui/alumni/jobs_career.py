@@ -53,7 +53,7 @@ except ImportError as e:
             f"• All database schema requirements\n\n"
             f"Contact your system administrator for assistance."
         )
-    
+
     # Assign placeholder to missing functions
     register_alumni = placeholder_function
     view_alumni = placeholder_function

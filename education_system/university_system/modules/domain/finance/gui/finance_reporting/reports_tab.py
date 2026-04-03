@@ -188,7 +188,7 @@ def generate_quick_report(self):
 
             # Generate quick summary
             cursor.execute('''
-            SELECT 
+            SELECT
                 SUM(sf.amount) as total_expected,
                 SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END) as total_collected,
                 COUNT(DISTINCT sf.student_id) as student_count
@@ -264,7 +264,7 @@ def generate_selected_report(self):
                 cursor = conn.cursor()
 
                 cursor.execute('''
-                SELECT 
+                SELECT
                     SUM(sf.amount) as total_expected,
                     SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END) as total_collected,
                     COUNT(DISTINCT sf.student_id) as student_count
@@ -330,7 +330,7 @@ def show_custom_report_builder(self):
     main_frame = ttk.Frame(builder_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Custom Report Builder", 
+    ttk.Label(main_frame, text="Custom Report Builder",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Report components selection
@@ -354,7 +354,7 @@ def show_custom_report_builder(self):
 
     for i, (comp_id, comp_name) in enumerate(components):
         self.report_components[comp_id] = tk.BooleanVar()
-        ttk.Checkbutton(components_frame, text=comp_name, 
+        ttk.Checkbutton(components_frame, text=comp_name,
                        variable=self.report_components[comp_id]).grid(
                            row=i//2, column=i%2, sticky=tk.W, padx=10, pady=5)
 
@@ -365,7 +365,7 @@ def show_custom_report_builder(self):
     # Report name
     ttk.Label(settings_frame, text="Report Name:").grid(row=0, column=0, sticky=tk.W)
     self.custom_report_name = tk.StringVar(value="Custom Financial Report")
-    ttk.Entry(settings_frame, textvariable=self.custom_report_name, 
+    ttk.Entry(settings_frame, textvariable=self.custom_report_name,
              width=30).grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(10, 0))
 
     # Output format
@@ -401,7 +401,7 @@ def show_custom_report_builder(self):
         messagebox.showinfo("Report Generated", f"Custom report configuration saved as {filename}")
         builder_window.destroy()
 
-    ttk.Button(main_frame, text="Generate Custom Report", 
+    ttk.Button(main_frame, text="Generate Custom Report",
               command=generate_custom_report, style='Accent.TButton').pack(pady=10)
 
 def populate_scheduled_reports(self):
@@ -641,7 +641,7 @@ def export_comprehensive_report(self):
     main_frame = ttk.Frame(export_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Comprehensive Report Export", 
+    ttk.Label(main_frame, text="Comprehensive Report Export",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Export options
@@ -653,13 +653,13 @@ def export_comprehensive_report(self):
     self.export_analytics = tk.BooleanVar(value=True)
     self.export_charts = tk.BooleanVar(value=True)
 
-    ttk.Checkbutton(options_frame, text="Financial Forecasting Reports", 
+    ttk.Checkbutton(options_frame, text="Financial Forecasting Reports",
                    variable=self.export_forecasting).pack(anchor=tk.W)
-    ttk.Checkbutton(options_frame, text="Dashboard Summaries", 
+    ttk.Checkbutton(options_frame, text="Dashboard Summaries",
                    variable=self.export_dashboard).pack(anchor=tk.W)
-    ttk.Checkbutton(options_frame, text="Advanced Analytics", 
+    ttk.Checkbutton(options_frame, text="Advanced Analytics",
                    variable=self.export_analytics).pack(anchor=tk.W)
-    ttk.Checkbutton(options_frame, text="Charts and Visualizations", 
+    ttk.Checkbutton(options_frame, text="Charts and Visualizations",
                    variable=self.export_charts).pack(anchor=tk.W)
 
     # Format selection
@@ -669,7 +669,7 @@ def export_comprehensive_report(self):
     self.export_format = tk.StringVar(value="PDF")
     formats = ["PDF", "Excel", "CSV", "All Formats"]
     for fmt in formats:
-        ttk.Radiobutton(format_frame, text=fmt, variable=self.export_format, 
+        ttk.Radiobutton(format_frame, text=fmt, variable=self.export_format,
                        value=fmt).pack(anchor=tk.W)
 
     # Progress area
@@ -755,7 +755,7 @@ def export_comprehensive_report(self):
     buttons_frame = ttk.Frame(main_frame)
     buttons_frame.pack(fill=tk.X, pady=(10, 0))
 
-    ttk.Button(buttons_frame, text="Start Export", command=run_export, 
+    ttk.Button(buttons_frame, text="Start Export", command=run_export,
               style='Accent.TButton').pack(side=tk.LEFT, padx=(0, 5))
     ttk.Button(buttons_frame, text="Close", command=export_window.destroy).pack(side=tk.RIGHT)
 

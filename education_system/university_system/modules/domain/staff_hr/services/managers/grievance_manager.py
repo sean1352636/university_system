@@ -497,6 +497,11 @@ class GrievanceManager:
             return [dict(row) for row in rows]
 
     @staticmethod
+    def get_user_disciplinary_history(user_id: str) -> List[Dict[str, Any]]:
+        """Backwards-compatible alias for disciplinary history retrieval."""
+        return GrievanceManager.get_user_disciplinary_records(user_id)
+
+    @staticmethod
     def update_disciplinary_record(record_id: int, **data) -> bool:
         """Update a disciplinary record."""
         if not data:
@@ -612,6 +617,14 @@ class GrievanceManager:
                 'appeal_id': appeal_id, 'action_id': action_id
             })
             return appeal_id
+
+    @staticmethod
+    def file_appeal(action_id: int, appellant_id: str, grounds: str,
+                    supporting_documents: str = None) -> int:
+        """Backwards-compatible alias for submitting an appeal."""
+        return GrievanceManager.submit_appeal(
+            action_id, appellant_id, grounds, supporting_documents=supporting_documents
+        )
 
     @staticmethod
     def get_appeal(appeal_id: int) -> Optional[Dict[str, Any]]:

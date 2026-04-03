@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import escape_like, validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import escape_like, validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -121,7 +121,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -132,7 +132,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -260,7 +260,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -882,10 +882,10 @@ def show_condition_builder(self):
     dialog.geometry("1200x850")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.conditional.advanced_condition_builder'), style='Title.TLabel').pack(pady=(0, 20))
 
     # Condition management
@@ -894,7 +894,7 @@ def show_condition_builder(self):
     # Condition display
     conditions_frame = ttk.LabelFrame(frame, text=_t('advanced_search.conditional.current_conditions'), padding="10")
     conditions_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     self.conditions_tree = ttk.Treeview(conditions_frame, columns=('Field', 'Operator', 'Value', 'Logic'),
                                        show='headings', height=10)
 
@@ -907,13 +907,13 @@ def show_condition_builder(self):
     for col in ['Field', 'Operator', 'Value', 'Logic']:
         self.conditions_tree.heading(col, text=columns_i18n[col])
         self.conditions_tree.column(col, width=120)
-    
+
     scrollbar_cond = ttk.Scrollbar(conditions_frame, orient=tk.VERTICAL, command=self.conditions_tree.yview)
     self.conditions_tree.configure(yscrollcommand=scrollbar_cond.set)
-    
+
     self.conditions_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     scrollbar_cond.pack(side=tk.RIGHT, fill=tk.Y)
-    
+
     # Add condition interface
     add_frame = ttk.LabelFrame(frame, text=_t('advanced_search.conditional.add_new_condition'), padding="10")
     add_frame.pack(fill=tk.X, pady=(0, 20))
@@ -946,46 +946,46 @@ def show_condition_builder(self):
     logic_var = tk.StringVar(value="AND")
     ttk.Radiobutton(logic_frame, text="AND", variable=logic_var, value="AND").pack(side=tk.LEFT, padx=(10, 5))
     ttk.Radiobutton(logic_frame, text="OR", variable=logic_var, value="OR").pack(side=tk.LEFT)
-    
+
     def add_condition():
         field = field_var.get()
         operator = operator_var.get()
         value = value_var.get().strip()
         logic = logic_var.get()
-        
+
         if not value:
             messagebox.showwarning(_t('advanced_search.conditional.missing_value'), _t('advanced_search.conditional.missing_value_msg'))
             return
-        
+
         condition = {
             'field': field,
             'operator': operator,
             'value': value,
             'logic': logic if self.conditions_list else None
         }
-        
+
         self.conditions_list.append(condition)
         self.update_conditions_display()
         value_var.set("")
-    
+
     def remove_condition():
         selection = self.conditions_tree.selection()
         if not selection:
             messagebox.showwarning(_t('advanced_search.no_selection'), _t('advanced_search.conditional.select_condition_to_remove'))
             return
-        
+
         item_index = self.conditions_tree.index(selection[0])
         self.conditions_list.pop(item_index)
         self.update_conditions_display()
-    
+
     def execute_conditions():
         if not self.conditions_list:
             messagebox.showwarning(_t('advanced_search.conditional.no_conditions'), _t('advanced_search.conditional.no_conditions_msg'))
             return
-        
+
         dialog.destroy()
         self.execute_conditional_logic_search(self.conditions_list)
-    
+
     button_frame = ttk.Frame(add_frame)
     button_frame.pack(fill=tk.X)
 
@@ -1006,7 +1006,7 @@ def update_conditions_display(self):
     """Update the conditions display tree"""
     for item in self.conditions_tree.get_children():
         self.conditions_tree.delete(item)
-    
+
     for i, condition in enumerate(self.conditions_list):
         logic_display = condition['logic'] if i > 0 else ""
         self.conditions_tree.insert('', 'end', values=(
@@ -1027,7 +1027,7 @@ def execute_conditional_logic_search(self, conditions):
     """Execute search with complex conditions"""
     self.update_status(_t('advanced_search.conditional.executing_search'))
     self.start_progress()
-    
+
     def run_conditional():
         try:
             results = self.perform_conditional_logic_search(conditions)
@@ -1037,7 +1037,7 @@ def execute_conditional_logic_search(self, conditions):
             self.output_queue.put(("error", _t('advanced_search.conditional.search_error', error=str(e))))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_conditional, daemon=True).start()
 AdvancedSearchGUI.execute_conditional_logic_search = execute_conditional_logic_search
 
@@ -1046,17 +1046,17 @@ def perform_conditional_logic_search(self, conditions):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Build complex WHERE clause
         where_parts = []
         params = []
-        
+
         for i, condition in enumerate(conditions):
             field = condition['field']
             operator = condition['operator']
             value = condition['value']
             logic = condition['logic']
-            
+
             # Build condition string
             safe_field = validate_identifier(field, "column")
             if operator in ['LIKE', 'NOT LIKE']:
@@ -1069,23 +1069,23 @@ def perform_conditional_logic_search(self, conditions):
                     params.append(int(value))
                 else:
                     params.append(value)
-            
+
             if i == 0:
                 where_parts.append(condition_str)
             else:
                 # Only allow safe logic operators
                 safe_logic = "AND" if logic != "OR" else "OR"
                 where_parts.append(" " + safe_logic + " " + condition_str)
-        
+
         where_clause = "".join(where_parts)
         query = "SELECT * FROM students WHERE " + where_clause
-        
+
         cursor.execute(query, params)
         results = cursor.fetchall()
         conn.close()
-        
+
         return results
-        
+
     except Exception as e:
         raise Exception(f"Conditional logic search error: {str(e)}")
 AdvancedSearchGUI.perform_conditional_logic_search = perform_conditional_logic_search
@@ -1097,10 +1097,10 @@ def show_conditional_search(self):
     dialog.geometry("1100x800")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.conditional.conditional_logic_search'), style='Title.TLabel').pack(pady=(0, 20))
 
     # Instructions
@@ -1110,14 +1110,14 @@ def show_conditional_search(self):
     # Conditions list
     conditions_frame = ttk.LabelFrame(frame, text=_t('advanced_search.conditional.conditions'), padding="10")
     conditions_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     self.conditions_listbox = tk.Listbox(conditions_frame, height=8)
     self.conditions_listbox.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
-    
+
     # Condition builder
     builder_frame = ttk.Frame(conditions_frame)
     builder_frame.pack(fill=tk.X)
-    
+
     ttk.Label(builder_frame, text=f"{_t('advanced_search.conditional.field')}:").grid(row=0, column=0, sticky='w')
     field_var = tk.StringVar(value="age")
     field_combo = ttk.Combobox(builder_frame, textvariable=field_var,
@@ -1135,16 +1135,16 @@ def show_conditional_search(self):
     ttk.Label(builder_frame, text=f"{_t('advanced_search.conditional.value')}:").grid(row=0, column=4, sticky='w')
     value_var = tk.StringVar()
     ttk.Entry(builder_frame, textvariable=value_var, width=15).grid(row=0, column=5, padx=(5, 10))
-    
+
     def add_condition():
         field = field_var.get()
         operator = op_var.get()
         value = value_var.get().strip()
-        
+
         if not value:
             messagebox.showwarning(_t('advanced_search.conditional.missing_value'), _t('advanced_search.conditional.enter_value_msg'))
             return
-        
+
         # Format the condition
         if field in ['course', 'gender']:
             condition = f"{field} {operator} '{value}'"
@@ -1152,10 +1152,10 @@ def show_conditional_search(self):
             condition = f"DATE({field}) {operator} '{value}'"
         else:
             condition = f"{field} {operator} {value}"
-        
+
         self.conditions_listbox.insert(tk.END, condition)
         value_var.set("")
-    
+
     ttk.Button(builder_frame, text=_t('advanced_search.conditional.add'), command=add_condition).grid(row=0, column=6, padx=(10, 0))
 
     # Logic operations
@@ -1166,15 +1166,15 @@ def show_conditional_search(self):
     logic_var = tk.StringVar(value="AND")
     ttk.Radiobutton(logic_frame, text="AND", variable=logic_var, value="AND").pack(side=tk.LEFT, padx=(10, 5))
     ttk.Radiobutton(logic_frame, text="OR", variable=logic_var, value="OR").pack(side=tk.LEFT, padx=(5, 0))
-    
+
     def execute_conditional_search():
         conditions = [self.conditions_listbox.get(i) for i in range(self.conditions_listbox.size())]
         if not conditions:
             messagebox.showwarning(_t('advanced_search.conditional.no_conditions'), _t('advanced_search.conditional.add_at_least_one'))
             return
-        
+
         logic_operator = logic_var.get()
-        
+
         dialog.destroy()
         self.update_status(_t('advanced_search.conditional.executing_search'))
         self.start_progress()
@@ -1188,12 +1188,12 @@ def show_conditional_search(self):
                 self.output_queue.put(("error", _t('advanced_search.conditional.search_error', error=str(e))))
             finally:
                 self.output_queue.put(("stop_progress", None))
-        
+
         threading.Thread(target=run_conditional_search, daemon=True).start()
-    
+
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
-    
+
     ttk.Button(button_frame, text=f"🔍 {_t('advanced_search.search_button')}", command=execute_conditional_search).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"🗑️ {_t('advanced_search.conditional.clear')}",
               command=lambda: self.conditions_listbox.delete(0, tk.END)).pack(side=tk.LEFT, padx=(10, 0))
@@ -1205,16 +1205,16 @@ def perform_conditional_search(self, conditions, logic_operator):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         where_clause = (" " + logic_operator + " ").join(conditions)
         query = "SELECT * FROM students WHERE " + where_clause
-        
+
         cursor.execute(query)
         results = cursor.fetchall()
         conn.close()
-        
+
         return results
-        
+
     except Exception as e:
         raise Exception(f"Conditional search error: {str(e)}")
 AdvancedSearchGUI.perform_conditional_search = perform_conditional_search

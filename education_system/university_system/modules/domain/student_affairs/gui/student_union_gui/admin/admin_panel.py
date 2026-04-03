@@ -55,7 +55,7 @@ except (ImportError, ModuleNotFoundError):
     student_union_cli = None
     init_student_union_db = None
     CLI_AVAILABLE = False
-    
+
 
 def show_admin_content(self):
     """Display admin panel in main content area"""
@@ -106,11 +106,11 @@ def setup_users_management(self, parent):
     # Users list
     users_list_frame = ttk.LabelFrame(parent, text="Registered Users")
     users_list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-    
+
     # Users treeview
     user_columns = ('ID', 'Username', 'Email', 'Role', 'Created', 'Last Login')
     self.users_tree = ttk.Treeview(users_list_frame, columns=user_columns, show='headings', height=12)
-    
+
     for col in user_columns:
         self.users_tree.heading(col, text=col)
         if col == 'ID':
@@ -119,24 +119,24 @@ def setup_users_management(self, parent):
             self.users_tree.column(col, width=150)
         else:
             self.users_tree.column(col, width=120)
-    
+
     users_scrollbar = ttk.Scrollbar(users_list_frame, orient=tk.VERTICAL, command=self.users_tree.yview)
     self.users_tree.configure(yscrollcommand=users_scrollbar.set)
-    
+
     self.users_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
     users_scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=5)
-    
+
     # User management buttons
     user_buttons_frame = ttk.Frame(parent)
     user_buttons_frame.pack(fill=tk.X, padx=10, pady=5)
-    
-    ttk.Button(user_buttons_frame, text="Refresh Users", 
+
+    ttk.Button(user_buttons_frame, text="Refresh Users",
               command=self.refresh_users_list).pack(side=tk.LEFT, padx=5)
-    ttk.Button(user_buttons_frame, text="Change Role", 
+    ttk.Button(user_buttons_frame, text="Change Role",
               command=self.change_user_role).pack(side=tk.LEFT, padx=5)
-    ttk.Button(user_buttons_frame, text="Delete User", 
+    ttk.Button(user_buttons_frame, text="Delete User",
               command=self.delete_user).pack(side=tk.LEFT, padx=5)
-    
+
     # Load users initially
     self.refresh_users_list()
 
@@ -146,22 +146,22 @@ def setup_club_administration(self, parent):
     # Club approval section
     approval_frame = ttk.LabelFrame(parent, text="Club Management")
     approval_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-    
+
     # Admin club actions
     admin_buttons_frame = ttk.Frame(approval_frame)
     admin_buttons_frame.pack(fill=tk.X, padx=10, pady=10)
-    
-    ttk.Button(admin_buttons_frame, text="View All Clubs", 
+
+    ttk.Button(admin_buttons_frame, text="View All Clubs",
               command=self.view_all_clubs_admin).pack(side=tk.LEFT, padx=5)
-    ttk.Button(admin_buttons_frame, text="Club Statistics", 
+    ttk.Button(admin_buttons_frame, text="Club Statistics",
               command=self.show_club_statistics).pack(side=tk.LEFT, padx=5)
-    ttk.Button(admin_buttons_frame, text="Export Data", 
+    ttk.Button(admin_buttons_frame, text="Export Data",
               command=self.export_club_data).pack(side=tk.LEFT, padx=5)
-    
+
     # Club statistics display
     self.club_stats_text = scrolledtext.ScrolledText(approval_frame, height=15)
     self.club_stats_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-    
+
     # Load initial statistics
     self.show_club_statistics()
 
@@ -170,21 +170,21 @@ def setup_system_info(self, parent):
     """Setup system information interface"""
     info_frame = ttk.LabelFrame(parent, text="System Information")
     info_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-    
+
     self.system_info_text = scrolledtext.ScrolledText(info_frame, height=20)
     self.system_info_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-    
+
     # System action buttons
     system_buttons_frame = ttk.Frame(parent)
     system_buttons_frame.pack(fill=tk.X, padx=10, pady=5)
-    
-    ttk.Button(system_buttons_frame, text="Refresh Info", 
+
+    ttk.Button(system_buttons_frame, text="Refresh Info",
               command=self.refresh_system_info).pack(side=tk.LEFT, padx=5)
-    ttk.Button(system_buttons_frame, text="Backup Database", 
+    ttk.Button(system_buttons_frame, text="Backup Database",
               command=self.backup_database).pack(side=tk.LEFT, padx=5)
-    ttk.Button(system_buttons_frame, text="Check Integrity", 
+    ttk.Button(system_buttons_frame, text="Check Integrity",
               command=self.check_database_integrity).pack(side=tk.LEFT, padx=5)
-    
+
     # Load initial system info
     self.refresh_system_info()
 
@@ -195,25 +195,25 @@ def refresh_users_list(self):
     """Refresh the users list (admin only)"""
     for item in self.users_tree.get_children():
         self.users_tree.delete(item)
-    
+
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         cursor.execute('''
             SELECT id, username, email, role, created_at, last_login
             FROM users
             ORDER BY created_at DESC
         ''')
-        
+
         users = cursor.fetchall()
-        
+
         for user in users:
             self.users_tree.insert('', tk.END, values=user)
-        
+
         conn.close()
         self.update_status(f"Loaded {len(users)} users")
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Failed to load users: {e}")
 
@@ -298,11 +298,11 @@ def view_all_clubs_admin(self):
     clubs_window.title("All Clubs - Admin View")
     clubs_window.geometry("1000x600")
     clubs_window.transient(self.root)
-    
+
     # Clubs treeview
     columns = ('ID', 'Name', 'Category', 'Members', 'President', 'Status', 'Created')
     clubs_tree = ttk.Treeview(clubs_window, columns=columns, show='headings', height=20)
-    
+
     for col in columns:
         clubs_tree.heading(col, text=col)
         if col == 'ID':
@@ -311,34 +311,34 @@ def view_all_clubs_admin(self):
             clubs_tree.column(col, width=200)
         else:
             clubs_tree.column(col, width=120)
-    
+
     clubs_scrollbar = ttk.Scrollbar(clubs_window, orient=tk.VERTICAL, command=clubs_tree.yview)
     clubs_tree.configure(yscrollcommand=clubs_scrollbar.set)
-    
+
     clubs_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
     clubs_scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=10)
-    
+
     # Load all clubs
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         cursor.execute('''
-            SELECT c.club_id, c.club_name, c.category, c.member_count, 
-                   p.first_name || ' ' || p.last_name as president, 
+            SELECT c.club_id, c.club_name, c.category, c.member_count,
+                   p.first_name || ' ' || p.last_name as president,
                    c.status, c.created_date
             FROM student_clubs c
             LEFT JOIN students p ON c.president_id = p.student_id
             ORDER BY c.created_date DESC
         ''')
-        
+
         clubs = cursor.fetchall()
-        
+
         for club in clubs:
             clubs_tree.insert('', tk.END, values=club)
-        
+
         conn.close()
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Failed to load clubs: {e}")
 
@@ -346,47 +346,47 @@ def view_all_clubs_admin(self):
 def show_club_statistics(self):
     """Show club statistics"""
     self.club_stats_text.delete(1.0, tk.END)
-    
+
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         stats = "CLUB STATISTICS\n"
         stats += "=" * 50 + "\n\n"
-        
+
         # Total clubs
         cursor.execute('SELECT COUNT(*) FROM student_clubs')
         total_clubs = cursor.fetchone()[0]
         stats += f"Total Clubs: {total_clubs}\n"
-        
+
         # Active clubs
         cursor.execute('SELECT COUNT(*) FROM student_clubs WHERE status = "active"')
         active_clubs = cursor.fetchone()[0]
         stats += f"Active Clubs: {active_clubs}\n"
-        
+
         # Total members across all clubs
         cursor.execute('SELECT SUM(member_count) FROM student_clubs WHERE status = "active"')
         total_members = cursor.fetchone()[0] or 0
         stats += f"Total Memberships: {total_members}\n\n"
-        
+
         # Clubs by category
         cursor.execute('''
             SELECT category, COUNT(*) as count
-            FROM student_clubs 
+            FROM student_clubs
             WHERE status = "active" AND category IS NOT NULL
             GROUP BY category
             ORDER BY count DESC
         ''')
-        
+
         categories = cursor.fetchall()
-        
+
         if categories:
             stats += "CLUBS BY CATEGORY:\n"
             stats += "-" * 20 + "\n"
             for category, count in categories:
                 stats += f"{category}: {count}\n"
             stats += "\n"
-        
+
         # Most popular clubs
         cursor.execute('''
             SELECT club_name, member_count
@@ -395,18 +395,18 @@ def show_club_statistics(self):
             ORDER BY member_count DESC
             LIMIT 10
         ''')
-        
+
         popular_clubs = cursor.fetchall()
-        
+
         if popular_clubs:
             stats += "MOST POPULAR CLUBS:\n"
             stats += "-" * 20 + "\n"
             for club_name, member_count in popular_clubs:
                 stats += f"{club_name}: {member_count} members\n"
-        
+
         self.club_stats_text.insert(1.0, stats)
         conn.close()
-        
+
     except sqlite3.Error as e:
         self.club_stats_text.insert(1.0, f"Error loading statistics: {e}")
 
@@ -415,16 +415,16 @@ def export_club_data(self):
     """Export club data to a file"""
     try:
         from tkinter import filedialog
-        
+
         filename = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv"), ("Text files", "*.txt")],
             title="Export Club Data"
         )
-        
+
         if not filename:
             return
-        
+
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         try:
             cursor = conn.cursor()
@@ -460,7 +460,7 @@ def export_club_data(self):
         finally:
             conn.close()
         messagebox.showinfo("Success", f"Club data exported to {filename}")
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Export Error", f"Failed to export data: {e}")
 
@@ -468,26 +468,26 @@ def export_club_data(self):
 def refresh_system_info(self):
     """Refresh system information"""
     self.system_info_text.delete(1.0, tk.END)
-    
+
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         info = "SYSTEM INFORMATION\n"
         info += "=" * 50 + "\n\n"
-        
+
         # Database file info
         db_size = os.path.getsize(self.db_path) if os.path.exists(self.db_path) else 0
         info += f"Database File: {self.db_path}\n"
         info += f"Database Size: {db_size:,} bytes\n"
         info += f"Last Modified: {datetime.fromtimestamp(os.path.getmtime(self.db_path)).strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        
+
         # Table statistics
         tables = ['users', 'students', 'student_clubs', 'union_events']
-        
+
         info += "TABLE STATISTICS:\n"
         info += "-" * 20 + "\n"
-        
+
         for table in tables:
             try:
                 safe_table = validate_table_name(table, conn=conn)
@@ -496,13 +496,13 @@ def refresh_system_info(self):
                 info += f"{table}: {count} records\n"
             except Exception:
                 info += f"{table}: Table not found\n"
-        
+
         info += "\n"
-        
+
         # Recent activity
         info += "RECENT ACTIVITY:\n"
         info += "-" * 15 + "\n"
-        
+
         # Recent users
         cursor.execute('''
             SELECT username, created_at
@@ -510,15 +510,15 @@ def refresh_system_info(self):
             ORDER BY created_at DESC
             LIMIT 5
         ''')
-        
+
         recent_users = cursor.fetchall()
-        
+
         if recent_users:
             info += "Recent Users:\n"
             for username, created_at in recent_users:
                 info += f"  {username} - {created_at}\n"
             info += "\n"
-        
+
         # Recent clubs
         cursor.execute('''
             SELECT club_name, created_date
@@ -526,17 +526,17 @@ def refresh_system_info(self):
             ORDER BY created_date DESC
             LIMIT 5
         ''')
-        
+
         recent_clubs = cursor.fetchall()
-        
+
         if recent_clubs:
             info += "Recent Clubs:\n"
             for club_name, created_date in recent_clubs:
                 info += f"  {club_name} - {created_date or 'Unknown'}\n"
-        
+
         self.system_info_text.insert(1.0, info)
         conn.close()
-        
+
     except sqlite3.Error as e:
         self.system_info_text.insert(1.0, f"Error loading system info: {e}")
 
@@ -545,23 +545,23 @@ def backup_database(self):
     """Create a backup of the database"""
     try:
         from tkinter import filedialog
-        
+
         backup_filename = filedialog.asksaveasfilename(
             defaultextension=".db",
             filetypes=[("Database files", "*.db"), ("All files", "*.*")],
             title="Save Database Backup",
             initialfile=f"student_union_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.db"
         )
-        
+
         if not backup_filename:
             return
-        
+
         # Copy database file
         import shutil
         shutil.copy2(self.db_path, backup_filename)
-        
+
         messagebox.showinfo("Success", f"Database backed up to {backup_filename}")
-        
+
     except (tk.TclError, AttributeError) as e:
         messagebox.showerror("Backup Error", f"Failed to backup database: {e}")
 
@@ -571,18 +571,18 @@ def check_database_integrity(self):
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         # Run PRAGMA integrity_check
         cursor.execute('PRAGMA integrity_check')
         result = cursor.fetchone()
-        
+
         if result[0] == 'ok':
             messagebox.showinfo("Integrity Check", "Database integrity check passed - no issues found")
         else:
             messagebox.showwarning("Integrity Check", f"Database issues found: {result[0]}")
-        
+
         conn.close()
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Integrity Check Error", f"Failed to check integrity: {e}")
 

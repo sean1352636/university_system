@@ -275,39 +275,39 @@ class DashboardManager:
         activity_frame = tk.LabelFrame(main_frame, text=_("finance_gui.dashboard.recent_activity_frame"),
                                       font=('Arial', 12, 'bold'), bg='white')
         activity_frame.pack(fill='both', expand=True, pady=10)
-        
+
         # Activity listbox with scrollbar
         activity_container = tk.Frame(activity_frame, bg='white')
         activity_container.pack(fill='both', expand=True, padx=10, pady=10)
-        
+
         self.activity_listbox = tk.Listbox(activity_container, font=('Arial', 9))
         scrollbar = ttk.Scrollbar(activity_container, orient='vertical', command=self.activity_listbox.yview)
         self.activity_listbox.configure(yscrollcommand=scrollbar.set)
-        
+
         self.activity_listbox.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
-        
+
         # Load dashboard data
         self.refresh_dashboard()
-    
+
 
     def create_stat_card(self, parent, title, value, color, row, col):
         """Create a statistics card"""
         card_frame = tk.Frame(parent, bg=color, relief='raised', bd=2)
         card_frame.grid(row=row, column=col, padx=10, pady=5, sticky='ew')
         parent.grid_columnconfigure(col, weight=1)
-        
+
         title_label = tk.Label(card_frame, text=title, font=('Arial', 10, 'bold'),
                               bg=color, fg='white')
         title_label.pack(pady=5)
-        
+
         value_label = tk.Label(card_frame, text=value, font=('Arial', 14, 'bold'),
                               bg=color, fg='white')
         value_label.pack(pady=5)
-        
+
         # Store reference for updating
         setattr(self, f"stat_{col}", value_label)
-    
+
 
     def refresh_dashboard(self):
         """Refresh dashboard data"""
@@ -316,15 +316,15 @@ class DashboardManager:
             try:
                 conn = get_connection()
                 cursor = conn.cursor()
-    
+
                 # Get total revenue
                 cursor.execute("SELECT SUM(amount) FROM payments WHERE status = 'completed'")
                 total_revenue = cursor.fetchone()[0] or 0
-    
+
                 # Get active students
                 cursor.execute("SELECT COUNT(*) FROM students WHERE status = 'active'")
                 active_students = cursor.fetchone()[0] or 0
-    
+
                 # Get overdue amount
                 cursor.execute('''
                 SELECT SUM(sf.amount) - COALESCE(SUM(pa.amount), 0)
@@ -333,39 +333,39 @@ class DashboardManager:
                 WHERE sf.status IN ('unpaid', 'partial') AND date(sf.due_date) < date('now')
                 ''')
                 overdue_amount = cursor.fetchone()[0] or 0
-    
+
                 # Calculate collection rate
                 total_fees = cursor.execute('''
                 SELECT SUM(sf.amount) FROM student_fees sf
                 WHERE sf.status IN ('paid', 'partial', 'unpaid')
                 ''').fetchone()[0] or 1
-    
+
                 paid_amount = total_revenue
                 collection_rate = (paid_amount / total_fees * 100) if total_fees > 0 else 0
-    
+
                 # Update UI in main thread
                 self.root.after(0, lambda: self.update_dashboard_stats(
                     total_revenue, active_students, overdue_amount, collection_rate))
-    
+
                 # Load recent activity
                 self.root.after(100, self.load_recent_activity)
-    
+
             except sqlite3.Error as e:
                 if conn:
                     conn.rollback()
                 print(f"Database error refreshing dashboard: {e}")
-    
+
             except Exception as e:
                 if conn:
                     conn.rollback()
                 print(f"Error refreshing dashboard: {e}")
-    
+
             finally:
                 if conn:
                     conn.close()
-    
+
         refresh_thread()
-    
+
 
     def update_dashboard_stats(self, revenue, students, overdue, collection_rate):
         """Update dashboard statistics"""
@@ -376,7 +376,7 @@ class DashboardManager:
             self.stat_3.config(text=f"{collection_rate:.1f}%")
         except AttributeError:
             pass  # Stats not yet created
-    
+
 
     def load_recent_activity(self):
         """Load recent activity for dashboard"""
@@ -384,7 +384,7 @@ class DashboardManager:
         try:
             conn = get_connection()
             cursor = conn.cursor()
-    
+
             # Get recent payments
             cursor.execute('''
             SELECT p.payment_date, s.first_name, s.last_name, p.amount, p.payment_method
@@ -394,29 +394,29 @@ class DashboardManager:
             ORDER BY p.payment_date DESC
             LIMIT 10
             ''')
-    
+
             recent_payments = cursor.fetchall()
-    
+
             # Clear and populate activity listbox
             self.activity_listbox.delete(0, tk.END)
             for payment_date, first_name, last_name, amount, method in recent_payments:
                 activity_text = f"{payment_date} - {first_name} {last_name} paid £{amount:.2f} via {method}"
                 self.activity_listbox.insert(tk.END, activity_text)
-    
+
         except sqlite3.Error as e:
             if conn:
                 conn.rollback()
             print(f"Database error loading recent activity: {e}")
-    
+
         except Exception as e:
             if conn:
                 conn.rollback()
             print(f"Error loading recent activity: {e}")
-    
+
         finally:
             if conn:
                 conn.close()
-    
+
 
     def load_initial_data(self):
         """Load initial data for all tabs"""
@@ -432,7 +432,7 @@ class DashboardManager:
             self.load_notification_templates()
         except Exception as e:
             print(f"Error loading initial data: {e}")
-    
+
 
     def gui_generate_financial_dashboard(self):
         """Generate and display financial dashboard"""
@@ -468,25 +468,25 @@ class DashboardManager:
 
         except Exception as e:
             messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.dashboard.error_generate_dashboard", error=str(e)))
-    
 
-    
+
+
 
     def update_quick_stats(self, parent_frame):
         """Update quick statistics display"""
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Total revenue this year
             current_year = datetime.now().year
             cursor.execute('''
-            SELECT SUM(amount) FROM payments 
+            SELECT SUM(amount) FROM payments
             WHERE strftime('%Y', payment_date) = ? AND status = 'completed'
             ''', (str(current_year),))
-            
+
             total_revenue = cursor.fetchone()[0] or 0
-            
+
             # Outstanding fees
             cursor.execute('''
             SELECT SUM(sf.amount) - COALESCE(SUM(pa.amount), 0) as outstanding
@@ -494,17 +494,17 @@ class DashboardManager:
             LEFT JOIN payment_allocations pa ON sf.student_fee_id = pa.student_fee_id
             WHERE sf.status IN ('unpaid', 'partial')
             ''')
-            
+
             outstanding_fees = cursor.fetchone()[0] or 0
-            
+
             # Active payment plans
             cursor.execute('''SELECT COUNT(*) FROM student_payment_plans WHERE status = 'active' ''')
             active_plans = cursor.fetchone()[0] or 0
-            
+
             # Total students
             cursor.execute('''SELECT COUNT(*) FROM students WHERE status = 'active' ''')
             total_students = cursor.fetchone()[0] or 0
-            
+
             # Create or update stats labels
             stats_data = [
                 (_("finance_gui.dashboard.stats_total_revenue_ytd"), f"£{total_revenue:,.2f}", "#27ae60"),
@@ -512,26 +512,26 @@ class DashboardManager:
                 (_("finance_gui.dashboard.stats_active_payment_plans"), str(active_plans), "#3498db"),
                 (_("finance_gui.dashboard.stats_total_active_students"), str(total_students), "#9b59b6")
             ]
-            
+
             # Clear existing widgets
             for widget in parent_frame.winfo_children():
                 widget.destroy()
-            
+
             # Create stats display
             for i, (label, value, color) in enumerate(stats_data):
                 stat_frame = tk.Frame(parent_frame, bg=color, relief='raised', bd=2)
                 stat_frame.grid(row=i//2, column=i%2, padx=10, pady=10, sticky='ew')
-                
-                tk.Label(stat_frame, text=label, font=('Arial', 12, 'bold'), 
+
+                tk.Label(stat_frame, text=label, font=('Arial', 12, 'bold'),
                         fg='white', bg=color).pack(pady=5)
-                tk.Label(stat_frame, text=value, font=('Arial', 16, 'bold'), 
+                tk.Label(stat_frame, text=value, font=('Arial', 16, 'bold'),
                         fg='white', bg=color).pack(pady=5)
-            
+
             parent_frame.columnconfigure(0, weight=1)
             parent_frame.columnconfigure(1, weight=1)
-            
+
             conn.close()
-            
+
         except Exception as e:
             # Create error display
             error_label = tk.Label(parent_frame, text=_("finance_gui.dashboard.error_loading_stats", error=str(e)),

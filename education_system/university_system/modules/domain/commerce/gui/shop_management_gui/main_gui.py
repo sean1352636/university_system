@@ -272,17 +272,17 @@ class UniversityShopGUI:
         # Main container
         self.main_frame = ttk.Frame(self.root, padding="10")
         self.main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-    
+
         # Configure grid weights
         self.root.columnconfigure(0, weight=1)
         self.root.rowconfigure(0, weight=1)
         self.main_frame.columnconfigure(1, weight=1)
         self.main_frame.rowconfigure(1, weight=1)
-    
+
         # Header frame
         self.header_frame = ttk.Frame(self.main_frame)
         self.header_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
-    
+
         # Title
         self.title_label = ttk.Label(self.header_frame, text=_t("university_shop.header_title"),
                                style='Title.TLabel')
@@ -298,9 +298,9 @@ class UniversityShopGUI:
         self.logout_btn = ttk.Button(self.user_frame, text=_t("common.return_to_main_menu"), command=self.return_to_main_menu)
         self.logout_btn.grid(row=0, column=1)
         self.logout_btn.configure(state='disabled')
-    
+
         self.header_frame.columnconfigure(1, weight=1)
-    
+
         # Create scrollable sidebar for navigation
         sidebar_container = ttk.LabelFrame(self.main_frame, text=_t("shop_management.navigation"), padding="5")
         sidebar_container.grid(row=1, column=0, sticky=(tk.W, tk.N, tk.S), padx=(0, 10))
@@ -362,16 +362,16 @@ class UniversityShopGUI:
         user_info = f"Logged in as: {self.current_user['username']} ({self.current_user.get('role', 'user')})"
         self.user_label.config(text=user_info)
         self.logout_btn.configure(state='normal')
-    
+
         # Create navigation menu
         self.create_navigation_menu()
-    
+
         # Show dashboard by default
         self.show_dashboard()
-    
+
         # Unbind Enter key
         self.root.unbind('<Return>')
-    
+
 
     def create_navigation_menu(self):
         """Create navigation sidebar with role-based filtering"""

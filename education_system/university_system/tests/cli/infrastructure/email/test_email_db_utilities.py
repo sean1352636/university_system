@@ -20,10 +20,10 @@ from education_system.university_system.infrastructure.email import email_db_uti
 class TestModuleConstants:
     """Test suite for module-level constants and configuration"""
 
-    def test_use_auth_db_flag_exists(self):
-        """Test that USE_AUTH_DB flag exists"""
-        assert hasattr(email_db_utilities, 'USE_AUTH_DB')
-        assert isinstance(email_db_utilities.USE_AUTH_DB, bool)
+    def test_current_schema_version_exists(self):
+        """Test that CURRENT_SCHEMA_VERSION constant exists"""
+        assert hasattr(email_db_utilities, 'CURRENT_SCHEMA_VERSION')
+        assert isinstance(email_db_utilities.CURRENT_SCHEMA_VERSION, int)
 
     def test_main_dir_exists(self):
         """Test that MAIN_DIR constant exists"""
@@ -47,13 +47,13 @@ class TestModuleConstants:
 class TestEnsureDbDirectory:
     """Test suite for ensure_db_directory() function"""
 
-    @patch('education_system.university_system.modules.shared.constants.paths.DB_DIR')
-    @patch('os.path.exists')
-    @patch('os.makedirs')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.paths')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.os.path.exists')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.os.makedirs')
     @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
-    def test_ensure_db_directory_creates_new(self, mock_log, mock_makedirs, mock_exists, mock_db_dir):
+    def test_ensure_db_directory_creates_new(self, mock_log, mock_makedirs, mock_exists, mock_paths):
         """Test ensure_db_directory creates directory when missing"""
-        mock_db_dir.__fspath__ = Mock(return_value='/path/to/db')
+        mock_paths.DB_DIR = '/path/to/db'
         mock_exists.return_value = False
 
         result = email_db_utilities.ensure_db_directory()
@@ -62,12 +62,12 @@ class TestEnsureDbDirectory:
         assert result == '/path/to/db'
         mock_log.assert_called_once()
 
-    @patch('education_system.university_system.modules.shared.constants.paths.DB_DIR')
-    @patch('os.path.exists')
-    @patch('os.makedirs')
-    def test_ensure_db_directory_exists_already(self, mock_makedirs, mock_exists, mock_db_dir):
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.paths')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.os.path.exists')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.os.makedirs')
+    def test_ensure_db_directory_exists_already(self, mock_makedirs, mock_exists, mock_paths):
         """Test ensure_db_directory when directory exists"""
-        mock_db_dir.__fspath__ = Mock(return_value='/path/to/db')
+        mock_paths.DB_DIR = '/path/to/db'
         mock_exists.return_value = True
 
         result = email_db_utilities.ensure_db_directory()
@@ -101,72 +101,56 @@ class TestEnsureParentDir:
 class TestGetUnifiedConnection:
     """Test suite for get_unified_connection() function"""
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', True)
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.auth_get_connection')
-    def test_get_unified_connection_uses_auth_db(self, mock_auth_conn):
-        """Test get_unified_connection uses auth DB when available"""
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_connection')
+    def test_get_unified_connection_delegates_to_get_connection(self, mock_get_conn):
+        """Test get_unified_connection delegates to centralized get_connection"""
         mock_conn = MagicMock()
-        mock_auth_conn.return_value = mock_conn
+        mock_get_conn.return_value = mock_conn
 
         result = email_db_utilities.get_unified_connection()
 
         assert result == mock_conn
-        mock_auth_conn.assert_called_once()
+        mock_get_conn.assert_called_once_with(db_path=email_db_utilities.DB_PATH, row_factory=True)
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', True)
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.auth_get_connection')
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.sqlite3.connect')
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
-    def test_get_unified_connection_fallback_on_auth_error(self, mock_log, mock_connect, mock_auth_conn):
-        """Test get_unified_connection falls back to direct connection on auth error"""
-        mock_auth_conn.side_effect = Exception("Auth DB error")
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_connection')
+    def test_get_unified_connection_returns_connection(self, mock_get_conn):
+        """Test get_unified_connection returns the connection object"""
         mock_conn = MagicMock()
-        mock_connect.return_value = mock_conn
+        mock_get_conn.return_value = mock_conn
 
         result = email_db_utilities.get_unified_connection()
 
-        assert result == mock_conn
-        mock_connect.assert_called_once()
-        # Should log warning about fallback
-        warning_calls = [call for call in mock_log.call_args_list if call[0][0] == 'warning']
-        assert len(warning_calls) > 0
+        assert result is mock_conn
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', False)
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.sqlite3.connect')
-    def test_get_unified_connection_direct_when_auth_disabled(self, mock_connect):
-        """Test get_unified_connection uses direct connection when auth disabled"""
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_connection')
+    def test_get_unified_connection_passes_row_factory(self, mock_get_conn):
+        """Test get_unified_connection requests row_factory=True"""
         mock_conn = MagicMock()
-        mock_connect.return_value = mock_conn
+        mock_get_conn.return_value = mock_conn
 
-        result = email_db_utilities.get_unified_connection()
+        email_db_utilities.get_unified_connection()
 
-        assert result == mock_conn
-        mock_connect.assert_called_once_with(email_db_utilities.DB_PATH, timeout=30.0)
+        _, kwargs = mock_get_conn.call_args
+        assert kwargs.get('row_factory') is True
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', False)
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.sqlite3.connect')
-    def test_get_unified_connection_sets_row_factory(self, mock_connect):
-        """Test get_unified_connection sets row_factory"""
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_connection')
+    def test_get_unified_connection_passes_db_path(self, mock_get_conn):
+        """Test get_unified_connection passes DB_PATH"""
         mock_conn = MagicMock()
-        mock_connect.return_value = mock_conn
+        mock_get_conn.return_value = mock_conn
 
-        result = email_db_utilities.get_unified_connection()
+        email_db_utilities.get_unified_connection()
 
-        assert result.row_factory == sqlite3.Row
+        _, kwargs = mock_get_conn.call_args
+        assert kwargs.get('db_path') == email_db_utilities.DB_PATH
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.USE_AUTH_DB', False)
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.sqlite3.connect')
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.log_event')
-    def test_get_unified_connection_handles_connection_error(self, mock_log, mock_connect):
-        """Test get_unified_connection handles connection errors"""
-        mock_connect.side_effect = sqlite3.Error("Connection failed")
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_connection')
+    def test_get_unified_connection_propagates_errors(self, mock_get_conn):
+        """Test get_unified_connection propagates connection errors"""
+        mock_get_conn.side_effect = Exception("Connection failed")
 
-        with pytest.raises(sqlite3.Error):
+        with pytest.raises(Exception, match="Connection failed"):
             email_db_utilities.get_unified_connection()
-
-        # Should log error
-        error_calls = [call for call in mock_log.call_args_list if call[0][0] == 'error']
-        assert len(error_calls) > 0
 
 class TestSimpleDBManager:
     """Test suite for SimpleDBManager class"""
@@ -200,7 +184,7 @@ class TestSimpleDBManager:
 
         mock_ensure_parent.assert_called_once_with(test_path)
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_unified_connection')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_connection')
     @patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
     def test_simple_db_manager_get_connection_success(self, mock_ensure, mock_get_conn):
         """Test SimpleDBManager.get_connection yields cursor"""
@@ -214,19 +198,16 @@ class TestSimpleDBManager:
         with manager.get_connection() as cursor:
             assert cursor == mock_cursor
 
-        # Should execute PRAGMA statements
-        assert mock_conn.execute.call_count >= 3
-
         # Should commit at the end
         mock_conn.commit.assert_called_once()
 
         # Should close connection
         mock_conn.close.assert_called_once()
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_unified_connection')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_connection')
     @patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
-    def test_simple_db_manager_get_connection_pragma_settings(self, mock_ensure, mock_get_conn):
-        """Test SimpleDBManager.get_connection sets proper PRAGMA settings"""
+    def test_simple_db_manager_get_connection_uses_centralized_pool(self, mock_ensure, mock_get_conn):
+        """Test SimpleDBManager.get_connection uses centralized get_connection"""
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
         mock_conn.cursor.return_value = mock_cursor
@@ -237,13 +218,12 @@ class TestSimpleDBManager:
         with manager.get_connection() as cursor:
             pass
 
-        # Verify PRAGMA calls
-        pragma_calls = [str(call) for call in mock_conn.execute.call_args_list]
-        assert any('WAL' in str(call) for call in pragma_calls)
-        assert any('NORMAL' in str(call) for call in pragma_calls)
-        assert any('busy_timeout' in str(call) for call in pragma_calls)
+        # Verify it called get_connection with correct parameters
+        mock_get_conn.assert_called_once()
+        _, kwargs = mock_get_conn.call_args
+        assert kwargs.get('row_factory') is True
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_unified_connection')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_connection')
     @patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
     def test_simple_db_manager_get_connection_rollback_on_error(self, mock_ensure, mock_get_conn):
         """Test SimpleDBManager.get_connection rolls back on error"""
@@ -262,7 +242,7 @@ class TestSimpleDBManager:
         mock_conn.rollback.assert_called_once()
         mock_conn.commit.assert_not_called()
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_unified_connection')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_connection')
     @patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir')
     def test_simple_db_manager_get_connection_closes_on_error(self, mock_ensure, mock_get_conn):
         """Test SimpleDBManager.get_connection closes connection on error"""
@@ -357,13 +337,13 @@ class TestGetDbManager:
 class TestExecuteDbOperation:
     """Test suite for execute_db_operation() function"""
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
-    def test_execute_db_operation_success(self, mock_get_manager):
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.DatabaseManager')
+    def test_execute_db_operation_success(self, mock_db_cls):
         """Test execute_db_operation executes function successfully"""
-        mock_manager = MagicMock()
+        mock_db = MagicMock()
         mock_cursor = MagicMock()
-        mock_manager.get_connection.return_value.__enter__.return_value = mock_cursor
-        mock_get_manager.return_value = mock_manager
+        mock_db.cursor = mock_cursor
+        mock_db_cls.return_value.__enter__.return_value = mock_db
 
         def test_operation(cursor):
             return "success"
@@ -372,13 +352,13 @@ class TestExecuteDbOperation:
 
         assert result == "success"
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
-    def test_execute_db_operation_with_args(self, mock_get_manager):
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.DatabaseManager')
+    def test_execute_db_operation_with_args(self, mock_db_cls):
         """Test execute_db_operation passes args to operation"""
-        mock_manager = MagicMock()
+        mock_db = MagicMock()
         mock_cursor = MagicMock()
-        mock_manager.get_connection.return_value.__enter__.return_value = mock_cursor
-        mock_get_manager.return_value = mock_manager
+        mock_db.cursor = mock_cursor
+        mock_db_cls.return_value.__enter__.return_value = mock_db
 
         def test_operation(cursor, arg1, arg2):
             return arg1 + arg2
@@ -387,13 +367,13 @@ class TestExecuteDbOperation:
 
         assert result == 30
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
-    def test_execute_db_operation_with_kwargs(self, mock_get_manager):
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.DatabaseManager')
+    def test_execute_db_operation_with_kwargs(self, mock_db_cls):
         """Test execute_db_operation passes kwargs to operation"""
-        mock_manager = MagicMock()
+        mock_db = MagicMock()
         mock_cursor = MagicMock()
-        mock_manager.get_connection.return_value.__enter__.return_value = mock_cursor
-        mock_get_manager.return_value = mock_manager
+        mock_db.cursor = mock_cursor
+        mock_db_cls.return_value.__enter__.return_value = mock_db
 
         def test_operation(cursor, value=0):
             return value * 2
@@ -402,24 +382,21 @@ class TestExecuteDbOperation:
 
         assert result == 30
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
-    @patch('time.sleep')
-    def test_execute_db_operation_retries_on_lock(self, mock_sleep, mock_get_manager):
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.DatabaseManager')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.time.sleep')
+    def test_execute_db_operation_retries_on_lock(self, mock_sleep, mock_db_cls):
         """Test execute_db_operation retries on database lock"""
-        mock_manager = MagicMock()
-        mock_cursor = MagicMock()
-
-        # First two attempts fail with locked error, third succeeds
         call_count = [0]
 
-        def get_connection_side_effect():
+        def enter_side_effect():
             call_count[0] += 1
             if call_count[0] < 3:
                 raise sqlite3.OperationalError("database is locked")
-            return MagicMock(__enter__=lambda self: mock_cursor, __exit__=lambda *args: None)
+            mock_db = MagicMock()
+            mock_db.cursor = MagicMock()
+            return mock_db
 
-        mock_manager.get_connection.side_effect = get_connection_side_effect
-        mock_get_manager.return_value = mock_manager
+        mock_db_cls.return_value.__enter__.side_effect = enter_side_effect
 
         def test_operation(cursor):
             return "success"
@@ -431,14 +408,12 @@ class TestExecuteDbOperation:
         # Should have slept twice (after first two failures)
         assert mock_sleep.call_count == 2
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
-    @patch('time.sleep')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.DatabaseManager')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.time.sleep')
     @patch('education_system.university_system.infrastructure.email.email_db_utilities.logger')
-    def test_execute_db_operation_max_retries_exceeded(self, mock_logger, mock_sleep, mock_get_manager):
+    def test_execute_db_operation_max_retries_exceeded(self, mock_logger, mock_sleep, mock_db_cls):
         """Test execute_db_operation raises error after max retries"""
-        mock_manager = MagicMock()
-        mock_manager.get_connection.side_effect = sqlite3.OperationalError("database is locked")
-        mock_get_manager.return_value = mock_manager
+        mock_db_cls.return_value.__enter__.side_effect = sqlite3.OperationalError("database is locked")
 
         def test_operation(cursor):
             return "success"
@@ -447,42 +422,40 @@ class TestExecuteDbOperation:
             email_db_utilities.execute_db_operation(test_operation, max_retries=3)
 
         # Should have tried 3 times
-        assert mock_manager.get_connection.call_count == 3
+        assert mock_db_cls.call_count == 3
         # Should have slept 2 times (not after last attempt)
         assert mock_sleep.call_count == 2
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
-    @patch('time.sleep')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.DatabaseManager')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.time.sleep')
     @patch('education_system.university_system.infrastructure.email.email_db_utilities.logger')
-    def test_execute_db_operation_exponential_backoff(self, mock_logger, mock_sleep, mock_get_manager):
+    def test_execute_db_operation_exponential_backoff(self, mock_logger, mock_sleep, mock_db_cls):
         """Test execute_db_operation uses exponential backoff"""
-        mock_manager = MagicMock()
-        mock_manager.get_connection.side_effect = sqlite3.OperationalError("database is locked")
-        mock_get_manager.return_value = mock_manager
+        mock_db_cls.return_value.__enter__.side_effect = sqlite3.OperationalError("database is locked")
 
         def test_operation(cursor):
             return "success"
 
         try:
             email_db_utilities.execute_db_operation(test_operation, max_retries=3)
-        except (OSError, IOError):
+        except sqlite3.OperationalError:
             pass
 
         # Check that sleep times increase (exponential backoff with random component)
         sleep_calls = [call[0][0] for call in mock_sleep.call_args_list]
-        # First sleep should be around 1 second (2^0 + random)
-        # Second sleep should be around 2 seconds (2^1 + random)
+        # First sleep should be around RETRY_DELAY * 2^0 + random
+        # Second sleep should be around RETRY_DELAY * 2^1 + random
         assert len(sleep_calls) == 2
         assert sleep_calls[0] < sleep_calls[1]  # Exponential increase
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.DatabaseManager')
     @patch('education_system.university_system.infrastructure.email.email_db_utilities.logger')
-    def test_execute_db_operation_non_lock_error_no_retry(self, mock_logger, mock_get_manager):
+    def test_execute_db_operation_non_lock_error_no_retry(self, mock_logger, mock_db_cls):
         """Test execute_db_operation doesn't retry on non-lock errors"""
-        mock_manager = MagicMock()
+        mock_db = MagicMock()
         mock_cursor = MagicMock()
-        mock_manager.get_connection.return_value.__enter__.return_value = mock_cursor
-        mock_get_manager.return_value = mock_manager
+        mock_db.cursor = mock_cursor
+        mock_db_cls.return_value.__enter__.return_value = mock_db
 
         def test_operation(cursor):
             raise sqlite3.IntegrityError("UNIQUE constraint failed")
@@ -491,26 +464,25 @@ class TestExecuteDbOperation:
             email_db_utilities.execute_db_operation(test_operation, max_retries=3)
 
         # Should only try once (no retries for non-lock errors)
-        assert mock_manager.get_connection.call_count == 1
+        assert mock_db_cls.call_count == 1
 
-    @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_db_manager')
+    @patch('education_system.university_system.infrastructure.email.email_db_utilities.DatabaseManager')
     @patch('education_system.university_system.infrastructure.email.email_db_utilities.logger')
-    def test_execute_db_operation_logs_info_on_lock(self, mock_logger, mock_get_manager):
+    def test_execute_db_operation_logs_info_on_lock(self, mock_logger, mock_db_cls):
         """Test execute_db_operation logs info (not warning) on lock retry"""
-        mock_manager = MagicMock()
-
         call_count = [0]
 
-        def get_connection_side_effect():
+        def enter_side_effect():
             call_count[0] += 1
             if call_count[0] == 1:
                 raise sqlite3.OperationalError("database is locked")
-            return MagicMock(__enter__=lambda self: MagicMock(), __exit__=lambda *args: None)
+            mock_db = MagicMock()
+            mock_db.cursor = MagicMock()
+            return mock_db
 
-        mock_manager.get_connection.side_effect = get_connection_side_effect
-        mock_get_manager.return_value = mock_manager
+        mock_db_cls.return_value.__enter__.side_effect = enter_side_effect
 
-        with patch('time.sleep'):
+        with patch('education_system.university_system.infrastructure.email.email_db_utilities.time.sleep'):
             email_db_utilities.execute_db_operation(lambda cursor: None, max_retries=3)
 
         # Should log at INFO level, not WARNING

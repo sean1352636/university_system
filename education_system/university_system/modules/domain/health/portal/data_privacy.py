@@ -117,7 +117,7 @@ def ensure_integration_schema():
 
         # 2) Add compatibility/alias columns if older schemas exist
         def cols(table):
-            from education_system.university_system.core.sql_safety import validate_identifier
+            from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
             validate_identifier(table, "table")
             c.execute("PRAGMA table_info([" + table + "])")
             return {r[1] for r in c.fetchall()}
@@ -226,7 +226,7 @@ def ensure_security_schema():
 
         # Utility: list columns
         def cols_of(table: str) -> set[str]:
-            from education_system.university_system.core.sql_safety import validate_identifier
+            from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
             validate_identifier(table, "table")
             c.execute("PRAGMA table_info([" + table + "])")
             return {row[1] for row in c.fetchall()}
@@ -363,7 +363,7 @@ def ensure_security_schema():
             pass
 
 def _first_existing_column(conn: sqlite3.Connection, table: str, candidates: list[str]) -> str | None:
-    from education_system.university_system.core.sql_safety import validate_identifier
+    from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
     validate_identifier(table, "table")
     cur = conn.cursor()
     cur.execute("PRAGMA table_info([" + table + "])")
@@ -396,7 +396,7 @@ def advanced_security_menu(auth):
     if auth.current_user['role'] != 'admin':
         print("Only administrators can access advanced security features.")
         return
-    
+
     while True:
         print("\n===== Advanced Security Management =====")
         print("1. User Session Management")
@@ -407,9 +407,9 @@ def advanced_security_menu(auth):
         print("6. Access Control Lists")
         print("7. Security Incident Response")
         print("8. Return to Main Menu")
-        
+
         choice = input("\nEnter your choice (1-8): ")
-        
+
         if choice == '1':
             user_session_management(auth)
         elif choice == '2':
@@ -433,9 +433,9 @@ def user_session_management(auth):
     """Manage active user sessions"""
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     print("\n===== Active User Sessions =====")
-    
+
     # Get recent login activity from audit trail
     cursor.execute('''
     SELECT user_id, ip_address, timestamp
@@ -443,42 +443,42 @@ def user_session_management(auth):
     WHERE action = 'login' AND timestamp >= datetime('now', '-24 hours')
     ORDER BY timestamp DESC
     ''')
-    
+
     sessions = cursor.fetchall()
-    
+
     if not sessions:
         print("No active sessions found in the last 24 hours.")
         conn.close()
         return
-    
+
     print("Recent Login Activity (Last 24 hours):")
     for user_id, ip_address, timestamp in sessions:
         print(f"  {timestamp} - User: {user_id} - IP: {ip_address}")
-    
+
     # Session management options
     print("\nSession Management Options:")
     print("1. Force logout all users")
     print("2. Force logout specific user")
     print("3. View failed login attempts")
     print("4. Return to security menu")
-    
+
     choice = input("\nSelect option (1-4): ")
-    
+
     if choice == '1':
         confirm = input("Force logout ALL users? (yes/no): ")
         if confirm.lower() == 'yes':
             # This would invalidate all sessions in a real system
             log_audit_event(auth.current_user['id'], 'force_logout_all', 'security', 0)
             print("All user sessions terminated.")
-    
+
     elif choice == '2':
         user_to_logout = input("Enter username to force logout: ")
         log_audit_event(auth.current_user['id'], 'force_logout_user', 'security', 0, user_to_logout)
         print(f"User {user_to_logout} session terminated.")
-    
+
     elif choice == '3':
         view_failed_logins(auth)
-    
+
     conn.close()
 
 def access_control_lists(auth):
@@ -709,7 +709,7 @@ def security_incident_response(auth):
         stat  = _first_existing_column(conn, "security_incidents", ["status"])
         when  = _first_existing_column(conn, "security_incidents", ["detected_at", "opened_at", "created_at"])
 
-        from education_system.university_system.core.sql_safety import validate_identifier
+        from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
         for col_name in [kid, title, sev, stat, when]:
             validate_identifier(col_name, "column")
         sel = ", ".join(["[" + x + "]" for x in [kid, title, sev, stat, when]])
@@ -1034,32 +1034,32 @@ def ip_restriction_management(auth):
     """Manage IP address restrictions"""
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     print("\n===== IP Restriction Management =====")
-    
+
     # Check current IP restriction setting
     cursor.execute('''
-    SELECT setting_value FROM security_settings 
+    SELECT setting_value FROM security_settings
     WHERE setting_name = 'ip_restriction_enabled'
     ''')
-    
+
     ip_restriction_enabled = cursor.fetchone()
     enabled = ip_restriction_enabled and ip_restriction_enabled[0] == '1'
-    
+
     print(f"IP Restriction Status: {'Enabled' if enabled else 'Disabled'}")
-    
+
     if enabled:
         cursor.execute('''
-        SELECT setting_value FROM security_settings 
+        SELECT setting_value FROM security_settings
         WHERE setting_name = 'allowed_ip_ranges'
         ''')
-        
+
         allowed_ips = cursor.fetchone()
         if allowed_ips and allowed_ips[0]:
             print(f"Allowed IP Ranges: {allowed_ips[0]}")
         else:
             print("No IP ranges configured")
-    
+
     print("\nOptions:")
     print("1. Enable IP Restrictions")
     print("2. Disable IP Restrictions")
@@ -1067,9 +1067,9 @@ def ip_restriction_management(auth):
     print("4. Remove IP Range")
     print("5. View Login Attempts by IP")
     print("6. Return to security menu")
-    
+
     choice = input("\nSelect option (1-6): ")
-    
+
     if choice == '1':
         cursor.execute('''
         UPDATE security_settings SET setting_value = '1', updated_at = ?
@@ -1077,7 +1077,7 @@ def ip_restriction_management(auth):
         ''', (datetime.now().strftime('%Y-%m-%d %H:%M:%S'),))
         conn.commit()
         print("IP restrictions enabled.")
-    
+
     elif choice == '2':
         cursor.execute('''
         UPDATE security_settings SET setting_value = '0', updated_at = ?
@@ -1085,12 +1085,12 @@ def ip_restriction_management(auth):
         ''', (datetime.now().strftime('%Y-%m-%d %H:%M:%S'),))
         conn.commit()
         print("IP restrictions disabled.")
-    
+
     elif choice == '3':
         ip_range = input("Enter IP range (e.g., 192.168.1.0/24): ")
         # In a real system, this would validate the IP range format
         print(f"IP range {ip_range} added to allowed list.")
-    
+
     elif choice == '5':
         cursor.execute('''
         SELECT ip_address, COUNT(*) as attempt_count
@@ -1099,45 +1099,45 @@ def ip_restriction_management(auth):
         GROUP BY ip_address
         ORDER BY attempt_count DESC
         ''')
-        
+
         ip_attempts = cursor.fetchall()
-        
+
         if ip_attempts:
             print("\nFailed Login Attempts by IP (Last 24 hours):")
             for ip, count in ip_attempts:
                 print(f"  {ip}: {count} attempts")
         else:
             print("No failed login attempts in the last 24 hours.")
-    
+
     conn.close()
 
 def two_factor_authentication_setup(auth):
     """Two-factor authentication management"""
     print("\n===== Two-Factor Authentication Setup =====")
-    
+
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     # Check current 2FA setting
     cursor.execute('''
-    SELECT setting_value FROM security_settings 
+    SELECT setting_value FROM security_settings
     WHERE setting_name = 'require_2fa_for_providers'
     ''')
-    
+
     require_2fa = cursor.fetchone()
     enabled = require_2fa and require_2fa[0] == '1'
-    
+
     print(f"2FA for Providers: {'Required' if enabled else 'Optional'}")
-    
+
     print("\n2FA Management Options:")
     print("1. Require 2FA for All Providers")
     print("2. Make 2FA Optional")
     print("3. Reset User 2FA")
     print("4. View 2FA Statistics")
     print("5. Return to security menu")
-    
+
     choice = input("\nSelect option (1-5): ")
-    
+
     if choice == '1':
         cursor.execute('''
         UPDATE security_settings SET setting_value = '1', updated_at = ?
@@ -1146,7 +1146,7 @@ def two_factor_authentication_setup(auth):
         conn.commit()
         log_audit_event(auth.current_user['id'], 'enable_mandatory_2fa', 'security', 0)
         print("2FA is now required for all healthcare providers.")
-    
+
     elif choice == '2':
         cursor.execute('''
         UPDATE security_settings SET setting_value = '0', updated_at = ?
@@ -1155,18 +1155,18 @@ def two_factor_authentication_setup(auth):
         conn.commit()
         log_audit_event(auth.current_user['id'], 'disable_mandatory_2fa', 'security', 0)
         print("2FA is now optional for healthcare providers.")
-    
+
     elif choice == '3':
         username = input("Enter username to reset 2FA: ")
         log_audit_event(auth.current_user['id'], 'reset_user_2fa', 'security', 0, username)
         print(f"2FA reset for user {username}. They will need to set it up again.")
-    
+
     elif choice == '4':
         print("2FA Statistics:")
         print("• Total users with 2FA enabled: [Would query user database]")
         print("• Providers with 2FA enabled: [Would query user database]")
         print("• Recent 2FA authentication attempts: [Would query audit log]")
-    
+
     conn.close()
 
 def integration_management(auth):
@@ -1174,7 +1174,7 @@ def integration_management(auth):
     if auth.current_user['role'] != 'admin':
         print("Only administrators can manage integrations.")
         return
-    
+
     while True:
         print("\n===== Integration Management =====")
         print("1. External System Connections")
@@ -1185,9 +1185,9 @@ def integration_management(auth):
         print("6. Insurance System Integration")
         print("7. Integration Health Check")
         print("8. Return to Main Menu")
-        
+
         choice = input("\nEnter your choice (1-8): ")
-        
+
         if choice == '1':
             external_system_connections(auth)
         elif choice == '2':
@@ -1210,7 +1210,7 @@ def integration_management(auth):
 def api_key_management(auth):
     """Manage API keys for integrations"""
     print("\n===== API Key Management =====")
-    
+
     # Mock API keys
     api_keys = [
         {"service": "LabCorp API", "key": "lc_***************", "expires": "2024-12-31", "status": "Active"},
@@ -1218,7 +1218,7 @@ def api_key_management(auth):
         {"service": "State Registry", "key": "sr_***************", "expires": "2025-03-15", "status": "Active"},
         {"service": "Hospital API", "key": "hosp_*************", "expires": "2024-02-28", "status": "Expiring Soon"}
     ]
-    
+
     print("API Key Status:")
     for i, key in enumerate(api_keys):
         status_icon = "🟡" if key["status"] == "Expiring Soon" else "✅"
@@ -1226,22 +1226,22 @@ def api_key_management(auth):
         print(f"   Key: {key['key']}")
         print(f"   Expires: {key['expires']}")
         print(f"   Status: {key['status']}")
-    
+
     print("\nActions:")
     print("1. Generate New API Key")
     print("2. Rotate Existing Key")
     print("3. Revoke API Key")
     print("4. View Key Usage Statistics")
     print("5. Return to integration menu")
-    
+
     choice = input("\nSelect action (1-5): ")
-    
+
     if choice == '1':
         service_name = input("Enter service name for new API key: ")
         print(f"New API key generated for {service_name}")
         print("Key: api_key_" + datetime.now().strftime('%Y%m%d%H%M%S'))
         log_audit_event(auth.current_user['id'], 'generate_api_key', 'integration', 0, service_name)
-    
+
     elif choice == '2':
         key_num = input("Enter key number to rotate: ")
         print(f"API key {key_num} rotated successfully.")
@@ -1250,7 +1250,7 @@ def api_key_management(auth):
 def integration_health_check(auth):
     """Check health of all integrations"""
     print("\n===== Integration Health Check =====")
-    
+
     # Mock health check results
     health_checks = [
         {"system": "LabCorp API", "status": "Healthy", "response_time": "245ms", "last_error": None},
@@ -1258,9 +1258,9 @@ def integration_health_check(auth):
         {"system": "State Registry", "status": "Healthy", "response_time": "156ms", "last_error": None},
         {"system": "Hospital EMR", "status": "Down", "response_time": "N/A", "last_error": "Connection refused"}
     ]
-    
+
     print("System Health Status:")
-    
+
     for check in health_checks:
         if check["status"] == "Healthy":
             icon = "✅"
@@ -1268,19 +1268,19 @@ def integration_health_check(auth):
             icon = "🟡"
         else:
             icon = "❌"
-        
+
         print(f"\n{icon} {check['system']}")
         print(f"   Status: {check['status']}")
         print(f"   Response Time: {check['response_time']}")
         if check['last_error']:
             print(f"   Last Error: {check['last_error']}")
-    
+
     # Overall health summary
     healthy_count = sum(1 for c in health_checks if c["status"] == "Healthy")
     total_count = len(health_checks)
-    
+
     print(f"\nOverall Integration Health: {healthy_count}/{total_count} systems healthy")
-    
+
     if healthy_count < total_count:
         print("⚠️ Some integrations require attention.")
     else:
@@ -1291,7 +1291,7 @@ def add_missing_menu_integrations():
     Integration points for adding missing menus to the main health portal.
     Add these to the display_health_portal_menu function:
     """
-    
+
     # Add to Provider/Admin section:
     provider_admin_menus = [
         ("Provider Dashboard", provider_dashboard),
@@ -1302,7 +1302,7 @@ def add_missing_menu_integrations():
         ("Advanced Security Management", advanced_security_menu),
         ("Integration Management", integration_management)
     ]
-    
+
     # Add to Student section:
     student_menus = [
         ("Personal Health Dashboard", student_health_dashboard)
@@ -1311,180 +1311,180 @@ def add_missing_menu_integrations():
 def generate_security_report(auth):
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     print("\n===== Security Report Generation =====")
-    
+
     timestamp = datetime.now()
     report_content = []
-    
+
     # Report header
     report_content.append("HEALTH PORTAL SECURITY REPORT")
     report_content.append("=" * 40)
     report_content.append(f"Generated: {timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
     report_content.append(f"Generated by: {auth.current_user['username']}")
     report_content.append("")
-    
+
     # Security metrics
     seven_days_ago = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
     thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
-    
+
     # Failed login attempts
     cursor.execute('''
     SELECT COUNT(*) FROM audit_trail
     WHERE action = 'failed_login' AND timestamp >= ?
     ''', (seven_days_ago,))
-    
+
     failed_logins_7d = cursor.fetchone()[0]
-    
+
     cursor.execute('''
     SELECT COUNT(*) FROM audit_trail
     WHERE action = 'failed_login' AND timestamp >= ?
     ''', (thirty_days_ago,))
-    
+
     failed_logins_30d = cursor.fetchone()[0]
-    
+
     report_content.append("AUTHENTICATION SECURITY")
     report_content.append("-" * 25)
     report_content.append(f"Failed login attempts (7 days): {failed_logins_7d}")
     report_content.append(f"Failed login attempts (30 days): {failed_logins_30d}")
-    
+
     if failed_logins_7d > 50:
         report_content.append("⚠️  HIGH: Unusual number of failed logins")
     elif failed_logins_7d > 20:
         report_content.append("🟡 MEDIUM: Monitor login security")
     else:
         report_content.append("✅ LOW: Normal login activity")
-    
+
     # Data access patterns
     cursor.execute('''
     SELECT COUNT(*) FROM audit_trail
     WHERE action LIKE '%view%' AND timestamp >= ?
     ''', (seven_days_ago,))
-    
+
     data_access_7d = cursor.fetchone()[0]
-    
+
     report_content.append("")
     report_content.append("DATA ACCESS SECURITY")
     report_content.append("-" * 20)
     report_content.append(f"Health record accesses (7 days): {data_access_7d}")
-    
+
     # After-hours access
     cursor.execute('''
     SELECT COUNT(*) FROM audit_trail
-    WHERE action LIKE '%view%' 
+    WHERE action LIKE '%view%'
     AND (strftime('%H', timestamp) < '07' OR strftime('%H', timestamp) > '19')
     AND timestamp >= ?
     ''', (seven_days_ago,))
-    
+
     after_hours_access = cursor.fetchone()[0]
-    
+
     report_content.append(f"After-hours accesses (7 days): {after_hours_access}")
-    
+
     if after_hours_access > 100:
         report_content.append("⚠️  REVIEW: High after-hours activity")
     elif after_hours_access > 50:
         report_content.append("🟡 MONITOR: Moderate after-hours activity")
     else:
         report_content.append("✅ NORMAL: Low after-hours activity")
-    
+
     # Security settings compliance
     cursor.execute('''
     SELECT setting_name, setting_value FROM security_settings
     ''')
-    
+
     security_settings = dict(cursor.fetchall())
-    
+
     report_content.append("")
     report_content.append("SECURITY CONFIGURATION")
     report_content.append("-" * 22)
-    
+
     config_issues = []
-    
+
     # Check critical settings
     if security_settings.get('encryption_enabled') != '1':
         config_issues.append("Data encryption disabled")
-    
+
     if security_settings.get('audit_logging_enabled') != '1':
         config_issues.append("Audit logging disabled")
-    
+
     session_timeout = int(security_settings.get('session_timeout_minutes', '30'))
     if session_timeout > 60:
         config_issues.append(f"Session timeout too long: {session_timeout} minutes")
-    
+
     max_attempts = int(security_settings.get('max_failed_login_attempts', '3'))
     if max_attempts > 5:
         config_issues.append(f"Too many login attempts allowed: {max_attempts}")
-    
+
     if config_issues:
         report_content.append("Configuration Issues:")
         for issue in config_issues:
             report_content.append(f"  🔴 {issue}")
     else:
         report_content.append("✅ All critical settings properly configured")
-    
+
     # Data retention compliance
     cursor.execute('''
-    SELECT COUNT(*) FROM health_records 
+    SELECT COUNT(*) FROM health_records
     WHERE record_date < date('now', '-2555 days')
     ''')
-    
+
     old_health_records = cursor.fetchone()[0]
-    
+
     report_content.append("")
     report_content.append("DATA RETENTION COMPLIANCE")
     report_content.append("-" * 26)
     report_content.append(f"Health records exceeding retention: {old_health_records}")
-    
+
     if old_health_records > 0:
         report_content.append("⚠️  ACTION NEEDED: Review old records for archival")
     else:
         report_content.append("✅ COMPLIANT: All records within retention periods")
-    
+
     # Recommendations
     report_content.append("")
     report_content.append("SECURITY RECOMMENDATIONS")
     report_content.append("-" * 25)
-    
+
     recommendations = []
-    
+
     if failed_logins_7d > 20:
         recommendations.append("Implement additional login security measures")
-    
+
     if after_hours_access > 50:
         recommendations.append("Review after-hours access policies")
-    
+
     if config_issues:
         recommendations.append("Address security configuration issues")
-    
+
     if old_health_records > 0:
         recommendations.append("Implement automated data retention policies")
-    
+
     if not recommendations:
         recommendations.append("Continue current security practices")
         recommendations.append("Regular security monitoring and audits")
-    
+
     for rec in recommendations:
         report_content.append(f"• {rec}")
-    
+
     # Risk assessment
     risk_score = 0
     if failed_logins_7d > 50:
         risk_score += 3
     elif failed_logins_7d > 20:
         risk_score += 1
-    
+
     if config_issues:
         risk_score += len(config_issues)
-    
+
     if after_hours_access > 100:
         risk_score += 2
     elif after_hours_access > 50:
         risk_score += 1
-    
+
     report_content.append("")
     report_content.append("OVERALL RISK ASSESSMENT")
     report_content.append("-" * 24)
-    
+
     if risk_score >= 5:
         risk_level = "HIGH"
         risk_color = "🔴"
@@ -1494,48 +1494,48 @@ def generate_security_report(auth):
     else:
         risk_level = "LOW"
         risk_color = "✅"
-    
+
     report_content.append(f"Risk Level: {risk_color} {risk_level}")
     report_content.append(f"Risk Score: {risk_score}/10")
-    
+
     # Display report
     print("\n" + "="*60)
     for line in report_content:
         print(line)
     print("="*60)
-    
+
     # Save report option
     save_report = input("\nSave security report to file? (y/n): ").lower()
     if save_report == 'y':
         timestamp_str = timestamp.strftime('%Y%m%d_%H%M%S')
         filename = f"security_report_{timestamp_str}.txt"
-        
+
         try:
             with open(filename, 'w', encoding='utf-8') as f:
                 for line in report_content:
                     f.write(line + '\n')
-            
+
             log_audit_event(auth.current_user['id'], 'generate_security_report', 'security_report', filename)
             print(f"Security report saved to: {filename}")
         except Exception as e:
             print(f"Error saving report: {e}")
-    
+
     conn.close()
 
 def population_risk_analysis(auth):
     if not auth.check_permission('view_any_health_record'):
         print("You don't have permission to perform population risk analysis.")
         return
-    
+
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     print("\n===== Population Risk Analysis =====")
-    
+
     # High-risk student identification
     print("HIGH-RISK STUDENT IDENTIFICATION")
     print("-" * 32)
-    
+
     # Students with multiple chronic conditions
     cursor.execute('''
     SELECT mc.student_id, s.first_name, s.last_name, COUNT(*) as condition_count,
@@ -1547,43 +1547,43 @@ def population_risk_analysis(auth):
     HAVING COUNT(*) >= 2
     ORDER BY condition_count DESC
     ''')
-    
+
     multi_condition_students = cursor.fetchall()
-    
+
     if multi_condition_students:
         print(f"Students with multiple chronic conditions: {len(multi_condition_students)}")
         print("Top cases requiring care coordination:")
         for student_id, first_name, last_name, count, conditions in multi_condition_students[:5]:
             print(f"  {first_name} {last_name} (ID: {student_id}): {count} conditions")
             print(f"    Conditions: {conditions}")
-    
+
     # Students with severe allergies
     cursor.execute('''
-    SELECT a.student_id, s.first_name, s.last_name, 
+    SELECT a.student_id, s.first_name, s.last_name,
            GROUP_CONCAT(a.allergen, ', ') as severe_allergies
     FROM allergies a
     JOIN students s ON a.student_id = s.student_id
     WHERE a.severity IN ('Severe', 'Life-threatening') AND a.verified = 1
     GROUP BY a.student_id, s.first_name, s.last_name
     ''')
-    
+
     severe_allergy_students = cursor.fetchall()
-    
+
     if severe_allergy_students:
         print(f"\nStudents with severe allergies: {len(severe_allergy_students)}")
         print("Requiring emergency action plans:")
         for student_id, first_name, last_name, allergies in severe_allergy_students[:5]:
             print(f"  {first_name} {last_name} (ID: {student_id})")
             print(f"    Severe allergies: {allergies}")
-    
+
     # Risk stratification by demographics
     print(f"\nRISK STRATIFICATION ANALYSIS")
     print("-" * 27)
-    
+
     # Age-based risk analysis
     cursor.execute('''
-    SELECT 
-        CASE 
+    SELECT
+        CASE
             WHEN age < 20 THEN '18-19'
             WHEN age < 25 THEN '20-24'
             WHEN age < 30 THEN '25-29'
@@ -1591,22 +1591,22 @@ def population_risk_analysis(auth):
         END as age_group,
         COUNT(*) as total_students,
         SUM(CASE WHEN EXISTS (
-            SELECT 1 FROM medical_conditions mc 
+            SELECT 1 FROM medical_conditions mc
             WHERE mc.student_id = s.student_id AND mc.status = 'active'
         ) THEN 1 ELSE 0 END) as with_conditions
     FROM students s
     GROUP BY age_group
     ORDER BY age_group
     ''')
-    
+
     age_risk_data = cursor.fetchall()
-    
+
     if age_risk_data:
         print("Chronic condition prevalence by age group:")
         for age_group, total, with_conditions in age_risk_data:
             prevalence = (with_conditions / total * 100) if total > 0 else 0
             print(f"  {age_group}: {with_conditions}/{total} ({prevalence:.1f}%)")
-    
+
     # Mental health risk indicators
     cursor.execute('''
     SELECT COUNT(DISTINCT student_id) as mental_health_cases
@@ -1614,49 +1614,49 @@ def population_risk_analysis(auth):
     WHERE condition_name IN ('Depression', 'Anxiety', 'PTSD', 'Bipolar Disorder')
     AND status = 'active'
     ''')
-    
+
     mental_health_cases = cursor.fetchone()[0]
-    
+
     cursor.execute("SELECT COUNT(*) FROM students")
     total_students = cursor.fetchone()[0]
-    
+
     mental_health_prevalence = (mental_health_cases / total_students * 100) if total_students > 0 else 0
-    
+
     print(f"\nMental health conditions: {mental_health_cases} students ({mental_health_prevalence:.1f}%)")
-    
+
     if mental_health_prevalence > 15:  # Above typical college rates
         print("  ⚠️  High prevalence - Consider expanded mental health services")
     elif mental_health_prevalence > 10:
         print("  🟡 Moderate prevalence - Monitor trends")
     else:
         print("  ✅ Within expected range")
-    
+
     # Preventive care gaps
     print(f"\nPREVENTIVE CARE GAPS")
     print("-" * 19)
-    
+
     # Vaccination gaps
     critical_vaccines = ['COVID-19', 'Influenza (Flu)', 'Hepatitis B', 'MMR']
-    
+
     for vaccine in critical_vaccines:
         cursor.execute('''
-        SELECT COUNT(DISTINCT student_id) 
-        FROM vaccination_records 
+        SELECT COUNT(DISTINCT student_id)
+        FROM vaccination_records
         WHERE vaccine_name = ? AND verified = 1
         ''', (vaccine,))
-        
+
         vaccinated = cursor.fetchone()[0]
         coverage = (vaccinated / total_students * 100) if total_students > 0 else 0
-        
+
         print(f"{vaccine}: {coverage:.1f}% coverage")
-        
+
         if coverage < 70:
             print(f"  🔴 Low coverage - Priority intervention needed")
         elif coverage < 85:
             print(f"  🟡 Suboptimal - Targeted outreach recommended")
         else:
             print(f"  ✅ Good coverage")
-    
+
     # Emergency preparedness gaps
     cursor.execute('''
     SELECT COUNT(DISTINCT s.student_id)
@@ -1664,50 +1664,50 @@ def population_risk_analysis(auth):
     LEFT JOIN emergency_contacts ec ON s.student_id = ec.student_id
     WHERE ec.student_id IS NULL
     ''')
-    
+
     no_emergency_contacts = cursor.fetchone()[0]
     emergency_gap = (no_emergency_contacts / total_students * 100) if total_students > 0 else 0
-    
+
     print(f"\nStudents without emergency contacts: {no_emergency_contacts} ({emergency_gap:.1f}%)")
-    
+
     if emergency_gap > 10:
         print("  🔴 High gap - Emergency preparedness campaign needed")
     elif emergency_gap > 5:
         print("  🟡 Moderate gap - Targeted outreach")
     else:
         print("  ✅ Good emergency preparedness")
-    
+
     # Generate population risk score
     risk_factors = 0
-    
+
     if mental_health_prevalence > 15:
         risk_factors += 2
     elif mental_health_prevalence > 10:
         risk_factors += 1
-    
+
     # Check vaccination coverage
     low_coverage_vaccines = 0
     for vaccine in critical_vaccines:
         cursor.execute('''
-        SELECT COUNT(DISTINCT student_id) 
-        FROM vaccination_records 
+        SELECT COUNT(DISTINCT student_id)
+        FROM vaccination_records
         WHERE vaccine_name = ? AND verified = 1
         ''', (vaccine,))
-        
+
         vaccinated = cursor.fetchone()[0]
         coverage = (vaccinated / total_students * 100) if total_students > 0 else 0
-        
+
         if coverage < 70:
             low_coverage_vaccines += 1
-    
+
     risk_factors += low_coverage_vaccines
-    
+
     if emergency_gap > 10:
         risk_factors += 1
-    
+
     print(f"\n===== POPULATION RISK ASSESSMENT =====")
     print(f"Risk Score: {risk_factors}/7")
-    
+
     if risk_factors >= 5:
         risk_level = "HIGH"
         print("🔴 HIGH RISK - Multiple intervention priorities")
@@ -1717,58 +1717,58 @@ def population_risk_analysis(auth):
     else:
         risk_level = "LOW"
         print("✅ LOW RISK - Maintain current programs")
-    
+
     # Recommendations
     print(f"\nRECOMMENDATIONS:")
-    
+
     if mental_health_prevalence > 15:
         print("• Expand mental health services and counseling staff")
         print("• Implement mental health screening programs")
-    
+
     if low_coverage_vaccines > 2:
         print("• Launch comprehensive vaccination campaign")
         print("• Implement vaccination requirements or incentives")
-    
+
     if emergency_gap > 10:
         print("• Emergency contact collection campaign")
         print("• Integrate into enrollment/registration process")
-    
+
     if len(multi_condition_students) > 10:
         print("• Develop care coordination programs")
         print("• Implement chronic disease management protocols")
-    
+
     if not any([mental_health_prevalence > 10, low_coverage_vaccines > 1, emergency_gap > 5]):
         print("• Continue current preventive health programs")
         print("• Regular monitoring of population health metrics")
-    
+
     conn.close()
 
 def review_security_settings(auth):
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     print("\n===== Security Settings Review =====")
-    
+
     cursor.execute('''
     SELECT setting_name, setting_value, updated_at, updated_by
     FROM security_settings
     ORDER BY setting_name
     ''')
-    
+
     settings = cursor.fetchall()
-    
+
     if not settings:
         print("No security settings found.")
         conn.close()
         return
-    
+
     security_issues = []
-    
+
     for setting_name, setting_value, updated_at, updated_by in settings:
         print(f"\n{setting_name}: {setting_value}")
         if updated_at:
             print(f"  Last updated: {updated_at} by {updated_by}")
-        
+
         # Security assessment
         if setting_name == 'session_timeout_minutes':
             timeout = int(setting_value)
@@ -1779,7 +1779,7 @@ def review_security_settings(auth):
                 print("  ✅ Good: Appropriate session timeout")
             else:
                 print("  🟡 Acceptable: Session timeout within range")
-        
+
         elif setting_name == 'max_failed_login_attempts':
             max_attempts = int(setting_value)
             if max_attempts > 5:
@@ -1787,7 +1787,7 @@ def review_security_settings(auth):
                 print("  🔴 RISK: Max attempts should be ≤5")
             else:
                 print("  ✅ Good: Appropriate login attempt limit")
-        
+
         elif setting_name == 'password_expiry_days':
             expiry_days = int(setting_value)
             if expiry_days > 90:
@@ -1795,93 +1795,93 @@ def review_security_settings(auth):
                 print("  🔴 RISK: Password should expire within 90 days")
             else:
                 print("  ✅ Good: Appropriate password expiry")
-        
+
         elif setting_name == 'encryption_enabled':
             if setting_value != '1':
                 security_issues.append("Data encryption disabled")
                 print("  🔴 CRITICAL: Encryption should be enabled")
             else:
                 print("  ✅ Good: Encryption enabled")
-        
+
         elif setting_name == 'audit_logging_enabled':
             if setting_value != '1':
                 security_issues.append("Audit logging disabled")
                 print("  🔴 CRITICAL: Audit logging should be enabled")
             else:
                 print("  ✅ Good: Audit logging enabled")
-        
+
         elif setting_name == 'require_2fa_for_providers':
             if setting_value != '1':
                 security_issues.append("2FA not required for providers")
                 print("  🟡 WARNING: Consider requiring 2FA for providers")
             else:
                 print("  ✅ Good: 2FA required for providers")
-    
+
     # Security recommendations
     print(f"\n===== Security Assessment =====")
-    
+
     if security_issues:
         print("Security Issues Found:")
         for issue in security_issues:
             print(f"  🔴 {issue}")
-        
+
         print(f"\nRecommendations:")
         print("  • Review and update security settings")
         print("  • Implement stricter policies where needed")
         print("  • Regular security setting audits")
     else:
         print("✅ All security settings appear to be properly configured.")
-    
+
     # Update settings option
     update_settings = input("\nUpdate security settings? (y/n): ").lower()
     if update_settings == 'y':
         update_security_settings(auth)
-    
+
     conn.close()
 
 def update_security_settings(auth):
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     print("\n===== Update Security Settings =====")
-    
+
     # Show current settings
     cursor.execute('''
     SELECT setting_name, setting_value
     FROM security_settings
     ORDER BY setting_name
     ''')
-    
+
     settings = cursor.fetchall()
     setting_names = [setting[0] for setting in settings]
-    
+
     print("Current Settings:")
     for i, (name, value) in enumerate(settings):
         print(f"{i+1}. {name}: {value}")
-    
+
     while True:
         choice = input(f"\nSelect setting to update (1-{len(settings)}) or 'q' to quit: ")
         if choice.lower() == 'q':
             break
-        
+
         try:
             setting_idx = int(choice) - 1
             if 0 <= setting_idx < len(settings):
                 setting_name = setting_names[setting_idx]
                 current_value = settings[setting_idx][1]
-                
+
                 print(f"\nUpdating: {setting_name}")
                 print(f"Current value: {current_value}")
-                
+
                 new_value = input("New value: ").strip()
                 if new_value:
                     cursor.execute('''
-                    UPDATE security_settings 
+                    UPDATE security_settings
                     SET setting_value = ?, updated_at = ?, updated_by = ?
                     WHERE setting_name = ?
                     ''', (new_value, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                           auth.current_user['username'], setting_name))
-                    
+
                     conn.commit()
                     log_audit_event(auth.current_user['id'], 'update_security_setting', 'security_setting', 0,
                                    f"{setting_name}: {current_value} -> {new_value}")
@@ -1892,13 +1892,13 @@ def update_security_settings(auth):
                 print("Invalid choice.")
         except ValueError:
             print("Invalid input.")
-    
+
     conn.close()
 
 def assess_contact_risk(contact, disease, severity):
     """Assess risk level for a contact based on exposure parameters"""
     risk_factors = 0
-    
+
     # Contact type risk
     if contact['type'] == 'household':
         risk_factors += 3
@@ -1906,7 +1906,7 @@ def assess_contact_risk(contact, disease, severity):
         risk_factors += 2
     elif contact['type'] == 'healthcare':
         risk_factors += 1
-    
+
     # Duration risk
     try:
         duration = int(contact['duration'])
@@ -1916,16 +1916,16 @@ def assess_contact_risk(contact, disease, severity):
             risk_factors += 1
     except (ValueError, KeyError, TypeError) as e:
         logging.warning(f"Invalid duration value in contact data: {e}")
-    
+
     # Disease severity
     if severity in ['Severe', 'Critical']:
         risk_factors += 1
-    
+
     # Disease type
     high_transmission_diseases = ['COVID-19', 'Influenza', 'Measles', 'Tuberculosis']
     if disease in high_transmission_diseases:
         risk_factors += 1
-    
+
     # Risk classification
     if risk_factors >= 4:
         return 'High'
@@ -1939,7 +1939,7 @@ def security_audit_menu(auth):
     if auth.current_user['role'] != 'admin':
         print("Only administrators can access security audit features.")
         return
-    
+
     while True:
         print("\n===== Security Audit =====")
         print("1. View Audit Log")
@@ -1948,9 +1948,9 @@ def security_audit_menu(auth):
         print("4. Security Settings Review")
         print("5. Generate Security Report")
         print("6. Return to Main Menu")
-        
+
         choice = input("\nEnter your choice (1-6): ")
-        
+
         if choice == '1':
             view_audit_log(auth)
         elif choice == '2':
@@ -1970,7 +1970,7 @@ def view_audit_log(auth):
     """View system audit log"""
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     # Get recent audit events
     cursor.execute('''
     SELECT user_id, action, resource_type, resource_id, timestamp, ip_address
@@ -1978,31 +1978,31 @@ def view_audit_log(auth):
     ORDER BY timestamp DESC
     LIMIT 50
     ''')
-    
+
     audit_events = cursor.fetchall()
-    
+
     if not audit_events:
         print("No audit events found.")
         conn.close()
         return
-    
+
     print("\n===== System Audit Log (Last 50 Events) =====")
     for event in audit_events:
         user_id, action, resource_type, resource_id, timestamp, ip_address = event
-        
+
         print(f"{timestamp} - User: {user_id} - Action: {action}")
         print(f"  Resource: {resource_type}:{resource_id}")
         if ip_address:
             print(f"  IP: {ip_address}")
         print("-" * 30)
-    
+
     conn.close()
 
 def health_risk_assessment(auth):
     if not auth or not auth.current_user:
         print("You must be logged in to access health risk assessment.")
         return
-    
+
     while True:
         print("\n===== Health Risk Assessment =====")
         print("1. Conduct Risk Assessment")
@@ -2010,9 +2010,9 @@ def health_risk_assessment(auth):
         print("3. Risk-Based Screening Recommendations")
         print("4. Population Risk Analysis")
         print("5. Return to Main Menu")
-        
+
         choice = input("\nEnter your choice (1-5): ")
-        
+
         if choice == '1':
             conduct_risk_assessment(auth)
         elif choice == '2':
@@ -2030,27 +2030,27 @@ def conduct_risk_assessment(auth):
     if not auth.check_permission('manage_health_records'):
         print("You don't have permission to conduct risk assessments.")
         return
-    
+
     backup_before_operation('conduct_risk_assessment')
-    
+
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     student_id = input("Enter student ID: ")
-    
+
     # Verify student exists
     cursor.execute("SELECT first_name, last_name, age FROM students WHERE student_id = ?", (student_id,))
     student = cursor.fetchone()
-    
+
     if not student:
         print("Error: Student ID not found.")
         conn.close()
         return
-    
+
     first_name, last_name, age = student
-    
+
     print(f"\n===== Risk Assessment for {first_name} {last_name} =====")
-    
+
     # Assessment types
     assessment_types = [
         'General Health Risk',
@@ -2060,51 +2060,51 @@ def conduct_risk_assessment(auth):
         'Substance Use Risk',
         'Infectious Disease Risk'
     ]
-    
+
     print("\nAssessment Types:")
     for i, assessment_type in enumerate(assessment_types):
         print(f"{i+1}. {assessment_type}")
-    
+
     while True:
         type_choice = input("\nSelect assessment type (1-6): ")
         if type_choice.isdigit() and 1 <= int(type_choice) <= len(assessment_types):
             assessment_type = assessment_types[int(type_choice) - 1]
             break
         print("Invalid choice. Please try again.")
-    
+
     # Get existing health data for risk calculation
     cursor.execute('''
-    SELECT condition_name, severity FROM medical_conditions 
+    SELECT condition_name, severity FROM medical_conditions
     WHERE student_id = ? AND status = 'active'
     ''', (student_id,))
     conditions = cursor.fetchall()
-    
+
     cursor.execute('''
-    SELECT allergen, severity FROM allergies 
+    SELECT allergen, severity FROM allergies
     WHERE student_id = ? AND verified = 1
     ''', (student_id,))
     allergies = cursor.fetchall()
-    
+
     cursor.execute('''
-    SELECT bmi FROM vital_signs 
+    SELECT bmi FROM vital_signs
     WHERE student_id = ? AND bmi IS NOT NULL
     ORDER BY measurement_date DESC LIMIT 1
     ''', (student_id,))
     latest_bmi = cursor.fetchone()
-    
+
     # Calculate risk score based on assessment type
     risk_score = calculate_risk_score(assessment_type, age, conditions, allergies, latest_bmi)
-    
+
     # Get risk factors
     risk_factors = get_risk_factors(assessment_type, age, conditions, allergies, latest_bmi)
-    
+
     # Generate recommendations
     recommendations = generate_risk_recommendations(assessment_type, risk_score, risk_factors)
-    
+
     print(f"\nRisk Assessment Results:")
     print(f"Assessment Type: {assessment_type}")
     print(f"Risk Score: {risk_score}/100")
-    
+
     if risk_score < 25:
         risk_level = "Low Risk"
     elif risk_score < 50:
@@ -2113,23 +2113,23 @@ def conduct_risk_assessment(auth):
         risk_level = "High Risk"
     else:
         risk_level = "Very High Risk"
-    
+
     print(f"Risk Level: {risk_level}")
-    
+
     if risk_factors:
         print("\nRisk Factors:")
         for factor in risk_factors:
             print(f"- {factor}")
-    
+
     if recommendations:
         print("\nRecommendations:")
         for recommendation in recommendations:
             print(f"- {recommendation}")
-    
+
     # Ask for follow-up date
     follow_up_needed = input("\nSchedule follow-up assessment? (y/n): ").lower() == 'y'
     follow_up_date = None
-    
+
     if follow_up_needed:
         while True:
             follow_up_input = input("Follow-up date (YYYY-MM-DD): ")
@@ -2139,31 +2139,31 @@ def conduct_risk_assessment(auth):
                 break
             except ValueError:
                 print("Invalid date format. Please use YYYY-MM-DD.")
-    
+
     # Save assessment
     assessed_date = datetime.now().strftime('%Y-%m-%d')
     created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    
+
     cursor.execute('''
-    INSERT INTO risk_assessments 
-    (student_id, assessment_type, risk_score, risk_factors, recommendations, 
+    INSERT INTO risk_assessments
+    (student_id, assessment_type, risk_score, risk_factors, recommendations,
      assessed_date, assessed_by, follow_up_date, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (student_id, assessment_type, risk_score, json.dumps(risk_factors), 
-          json.dumps(recommendations), assessed_date, auth.current_user['username'], 
+    ''', (student_id, assessment_type, risk_score, json.dumps(risk_factors),
+          json.dumps(recommendations), assessed_date, auth.current_user['username'],
           follow_up_date, created_at))
-    
+
     conn.commit()
     log_audit_event(auth.current_user['id'], 'conduct_risk_assessment', 'risk_assessment', cursor.lastrowid)
-    
+
     print("\nRisk assessment completed and saved!")
-    
+
     conn.close()
 
 def calculate_risk_score(assessment_type, age, conditions, allergies, latest_bmi):
     """Calculate risk score based on assessment type and health data"""
     base_score = 0
-    
+
     # Age-based risk
     if age >= 65:
         base_score += 20
@@ -2171,7 +2171,7 @@ def calculate_risk_score(assessment_type, age, conditions, allergies, latest_bmi
         base_score += 10
     elif age >= 25:
         base_score += 5
-    
+
     # Condition-based risk
     high_risk_conditions = ['diabetes', 'hypertension', 'heart disease', 'asthma', 'obesity']
     for condition_name, severity in conditions:
@@ -2182,7 +2182,7 @@ def calculate_risk_score(assessment_type, age, conditions, allergies, latest_bmi
                 base_score += 10
             else:
                 base_score += 5
-    
+
     # BMI-based risk
     if latest_bmi:
         bmi = latest_bmi[0]
@@ -2192,14 +2192,14 @@ def calculate_risk_score(assessment_type, age, conditions, allergies, latest_bmi
             base_score += 10
         elif bmi < 18.5:
             base_score += 5
-    
+
     # Allergy-based risk
     for allergen, severity in allergies:
         if severity in ['Severe', 'Life-threatening']:
             base_score += 10
         elif severity == 'Moderate':
             base_score += 5
-    
+
     # Assessment-specific adjustments
     if assessment_type == 'Cardiovascular Risk':
         # Additional cardiovascular risk factors would be assessed here
@@ -2207,25 +2207,25 @@ def calculate_risk_score(assessment_type, age, conditions, allergies, latest_bmi
     elif assessment_type == 'Mental Health Risk':
         # Mental health specific risk factors
         pass
-    
+
     return min(base_score, 100)  # Cap at 100
 
 def get_risk_factors(assessment_type, age, conditions, allergies, latest_bmi):
     """Get list of risk factors based on assessment"""
     risk_factors = []
-    
+
     if age >= 65:
         risk_factors.append("Advanced age (65+)")
     elif age >= 45:
         risk_factors.append("Middle age (45-64)")
-    
+
     for condition_name, severity in conditions:
         risk_factors.append(f"Medical condition: {condition_name} ({severity})")
-    
+
     for allergen, severity in allergies:
         if severity in ['Severe', 'Life-threatening']:
             risk_factors.append(f"Severe allergy: {allergen}")
-    
+
     if latest_bmi:
         bmi = latest_bmi[0]
         if bmi >= 30:
@@ -2234,13 +2234,13 @@ def get_risk_factors(assessment_type, age, conditions, allergies, latest_bmi):
             risk_factors.append(f"Overweight (BMI: {bmi})")
         elif bmi < 18.5:
             risk_factors.append(f"Underweight (BMI: {bmi})")
-    
+
     return risk_factors
 
 def generate_risk_recommendations(assessment_type, risk_score, risk_factors):
     """Generate recommendations based on risk assessment"""
     recommendations = []
-    
+
     if risk_score >= 75:
         recommendations.append("Schedule immediate follow-up with healthcare provider")
         recommendations.append("Consider referral to specialist")
@@ -2253,7 +2253,7 @@ def generate_risk_recommendations(assessment_type, risk_score, risk_factors):
     else:
         recommendations.append("Continue routine preventive care")
         recommendations.append("Annual reassessment recommended")
-    
+
     # Assessment-specific recommendations
     if assessment_type == 'Cardiovascular Risk':
         recommendations.extend([
@@ -2267,5 +2267,5 @@ def generate_risk_recommendations(assessment_type, risk_score, risk_factors):
             "Stress management techniques",
             "Counseling services available"
         ])
-    
+
     return recommendations

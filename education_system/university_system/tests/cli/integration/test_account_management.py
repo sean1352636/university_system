@@ -9,7 +9,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 import tempfile
 import os
 from datetime import datetime
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch, MagicMock, mock_open
 from education_system.university_system.modules.domain.finance.core import account_management
 
 
@@ -134,6 +134,30 @@ def temp_db():
             created_at TEXT,
             FOREIGN KEY (student_id) REFERENCES students (student_id),
             FOREIGN KEY (original_payment_id) REFERENCES payments (payment_id)
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS unified_refunds (
+            refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_type TEXT,
+            reference_type TEXT,
+            reference_id INTEGER,
+            student_id TEXT NOT NULL,
+            amount DECIMAL(10,2) NOT NULL,
+            original_amount DECIMAL(10,2),
+            currency TEXT DEFAULT 'GBP',
+            refund_type TEXT NOT NULL,
+            refund_method TEXT,
+            reason TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            department TEXT,
+            requested_by TEXT,
+            request_date TEXT,
+            approved_by TEXT,
+            approval_date TEXT,
+            created_at TEXT,
+            FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
     """)
 
@@ -283,14 +307,15 @@ class TestInvoiceGeneration:
              patch('education_system.university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
              patch('builtins.input', side_effect=['STU001']), \
              patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
-             patch('education_system.university_system.modules.domain.finance.core.account_management.send_email_notification'):
+             patch('education_system.university_system.modules.domain.finance.core.account_management.send_email_notification', create=True), \
+             patch('builtins.open', mock_open()):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
             account_management.generate_invoice()
 
-            # Verify invoice was generated (file created)
+            # Verify invoice was generated (printed output)
 class TestRefundProcessing:
     """Test refund processing functionality"""
 
@@ -298,10 +323,11 @@ class TestRefundProcessing:
         """Test processing a refund"""
         with patch('education_system.university_system.modules.domain.finance.core.account_management.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.core.account_management.auth', mock_auth), \
-             patch('builtins.input', side_effect=['STU001', '1', '1', '1', '500.00', 'Overpayment', '1', 'y']), \
+             patch('builtins.input', side_effect=['STU001', '1', '1', '500.00', 'Overpayment', '1', 'y']), \
              patch('education_system.university_system.modules.domain.finance.core.account_management.student_exists', return_value=True), \
              patch('education_system.university_system.modules.domain.finance.core.account_management.get_student_name', return_value='John Doe'), \
-             patch('education_system.university_system.modules.domain.finance.core.account_management.log_audit_action'):
+             patch('education_system.university_system.modules.domain.finance.core.account_management.log_audit_action', create=True), \
+             patch('education_system.university_system.modules.domain.finance.core.account_management.IMMUTABLE_AUDIT_AVAILABLE', False):
 
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
@@ -316,7 +342,7 @@ class TestRefundProcessing:
 
             account_management.process_refund()
 
-            cursor.execute("SELECT COUNT(*) FROM refunds WHERE student_id = 'STU001'")
+            cursor.execute("SELECT COUNT(*) FROM unified_refunds WHERE student_id = 'STU001'")
             count = cursor.fetchone()[0]
             assert count == 1, "Refund should be created"
 

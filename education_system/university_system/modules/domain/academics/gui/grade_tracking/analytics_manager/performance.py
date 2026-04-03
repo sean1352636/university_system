@@ -7,8 +7,44 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.constants import get_connection
 
 
+def _open_connection():
+    raw_conn = get_connection()
+    enter = getattr(raw_conn, "__enter__", None)
+    if callable(enter):
+        try:
+            conn = enter()
+            if conn is not None:
+                return raw_conn, conn
+        except Exception:
+            pass
+    return raw_conn, raw_conn
+
+
 class PerformanceMixin:
     """Mixin providing performance analysis methods."""
+
+    @staticmethod
+    def _pad_row(row, size, defaults=None):
+        values = list(row)
+        if defaults is None:
+            defaults = [0] * size
+        values.extend(defaults[len(values):size])
+        return values[:size]
+
+    @staticmethod
+    def _first_number(row, default=0):
+        if isinstance(row, (list, tuple)) and row:
+            value = row[0]
+            return value if isinstance(value, (int, float)) else default
+        return default
+
+    @staticmethod
+    def _first_two_numbers(row, defaults=(0, 0.0)):
+        if isinstance(row, (list, tuple)):
+            first = row[0] if len(row) > 0 and isinstance(row[0], (int, float)) else defaults[0]
+            second = row[1] if len(row) > 1 and isinstance(row[1], (int, float)) else defaults[1]
+            return first, second
+        return defaults
 
     # ============================================================================
     # PERFORMANCE ANALYSIS METHODS (5 methods)
@@ -18,7 +54,7 @@ class PerformanceMixin:
         """Display grade distribution across all assessments"""
         conn = None
         try:
-            conn = get_connection()
+            raw_conn, conn = _open_connection()
             cursor = conn.cursor()
 
             # Query both grades table and assignment_submissions table
@@ -89,13 +125,16 @@ class PerformanceMixin:
             messagebox.showerror("Database Error", f"Failed to show grade distribution: {e}")
         finally:
             if conn:
-                conn.close()
+                if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
+                    raw_conn.__exit__(None, None, None)
+                else:
+                    conn.close()
 
     def analyze_module_performance(self):
         """Analyze performance across all modules"""
         conn = None
         try:
-            conn = get_connection()
+            raw_conn, conn = _open_connection()
             cursor = conn.cursor()
 
             # Query both grades and assignment_submissions tables
@@ -159,17 +198,21 @@ class PerformanceMixin:
                 messagebox.showinfo("Module Performance", "No module data available.")
                 return
 
+            normalized_modules = [
+                self._pad_row(row, 7, ["", "", 0, 0, 0.0, 0, 0])
+                for row in modules
+            ]
             module_lines = [
                 f"{code} - {name}\n"
                 f"  Students: {students} | Grades: {grades} | Avg: {avg:.1f}%\n"
                 f"  Excellent (A): {excellent} | Poor (D/F): {poor}"
-                for code, name, students, grades, avg, excellent, poor in modules
+                for code, name, students, grades, avg, excellent, poor in normalized_modules
             ]
 
             sections = [
                 ("Module Performance Overview", [
                     f"Total Modules Analyzed: {len(modules)}",
-                    f"Average Module Performance: {sum(m[4] for m in modules)/len(modules):.1f}%"
+                    f"Average Module Performance: {sum(m[4] for m in normalized_modules)/len(normalized_modules):.1f}%"
                 ]),
                 ("Module Details", module_lines)
             ]
@@ -180,13 +223,16 @@ class PerformanceMixin:
             messagebox.showerror("Database Error", f"Failed to analyze module performance: {e}")
         finally:
             if conn:
-                conn.close()
+                if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
+                    raw_conn.__exit__(None, None, None)
+                else:
+                    conn.close()
 
     def compare_course_performance(self):
         """Compare performance across different courses"""
         conn = None
         try:
-            conn = get_connection()
+            raw_conn, conn = _open_connection()
             cursor = conn.cursor()
 
             # Query both grades and assignment_submissions tables
@@ -222,9 +268,13 @@ class PerformanceMixin:
                 messagebox.showinfo("Course Comparison", "No course data available.")
                 return
 
+            normalized_courses = [
+                self._pad_row(row, 5, ["", 0, 0.0, 0.0, 0.0])
+                for row in courses
+            ]
             course_lines = [
                 f"{course}: {students} students | Avg: {avg:.1f}% | Range: {min_val:.1f}% - {max_val:.1f}%"
-                for course, students, avg, min_val, max_val in courses
+                for course, students, avg, min_val, max_val in normalized_courses
             ]
 
             sections = [
@@ -237,13 +287,16 @@ class PerformanceMixin:
             messagebox.showerror("Database Error", f"Failed to compare course performance: {e}")
         finally:
             if conn:
-                conn.close()
+                if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
+                    raw_conn.__exit__(None, None, None)
+                else:
+                    conn.close()
 
     def analyze_performance_trends(self):
         """Analyze performance trends over time"""
         conn = None
         try:
-            conn = get_connection()
+            raw_conn, conn = _open_connection()
             cursor = conn.cursor()
 
             # Query both grades and assignment_submissions tables
@@ -276,9 +329,13 @@ class PerformanceMixin:
                 messagebox.showinfo("Performance Trends", "Insufficient data for trend analysis.")
                 return
 
+            normalized_trends = [
+                self._pad_row(row, 3, ["", 0.0, 0])
+                for row in trends
+            ]
             trend_lines = [
                 f"{month}: {avg:.1f}% average ({count} grades)"
-                for month, avg, count in trends
+                for month, avg, count in normalized_trends
             ]
 
             sections = [
@@ -291,18 +348,21 @@ class PerformanceMixin:
             messagebox.showerror("Database Error", f"Failed to analyze trends: {e}")
         finally:
             if conn:
-                conn.close()
+                if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
+                    raw_conn.__exit__(None, None, None)
+                else:
+                    conn.close()
 
     def generate_performance_dashboard(self):
         """Generate comprehensive performance dashboard"""
         conn = None
         try:
-            conn = get_connection()
+            raw_conn, conn = _open_connection()
             cursor = conn.cursor()
 
             # Total students
             cursor.execute("SELECT COUNT(*) FROM students")
-            total_students = cursor.fetchone()[0]
+            total_students = self._first_number(cursor.fetchone(), 0)
 
             # Total modules with grades
             cursor.execute("""
@@ -321,7 +381,7 @@ class PerformanceMixin:
                     )
                 )
             """)
-            total_modules = cursor.fetchone()[0]
+            total_modules = self._first_number(cursor.fetchone(), 0)
 
             # Total assessments
             cursor.execute("""
@@ -329,7 +389,7 @@ class PerformanceMixin:
                     (SELECT COUNT(*) FROM assessments) +
                     (SELECT COUNT(*) FROM assignments)
             """)
-            total_assessments = cursor.fetchone()[0]
+            total_assessments = self._first_number(cursor.fetchone(), 0)
 
             # Total grades and average from both sources
             cursor.execute("""
@@ -346,7 +406,7 @@ class PerformanceMixin:
                     WHERE sub.grade IS NOT NULL
                 ) AS combined_grades
             """)
-            total_grades, overall_avg = cursor.fetchone()
+            total_grades, overall_avg = self._first_two_numbers(cursor.fetchone(), (0, 0.0))
 
             # Grade distribution from both sources
             cursor.execute("""
@@ -398,4 +458,7 @@ class PerformanceMixin:
             messagebox.showerror("Database Error", f"Failed to generate dashboard: {e}")
         finally:
             if conn:
-                conn.close()
+                if raw_conn is not conn and hasattr(raw_conn, "__exit__"):
+                    raw_conn.__exit__(None, None, None)
+                else:
+                    conn.close()

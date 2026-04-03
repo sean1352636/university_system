@@ -60,7 +60,7 @@ def build_insert_clause(fields: dict) -> tuple[str, str, list]:
     Example::
 
         cols, phs, vals = build_insert_clause({"name": "Ada", "age": 30})
-        conn.execute(f"INSERT INTO students ({cols}) VALUES ({phs})", vals)
+        conn.execute(f"INSERT INTO students ({cols}) VALUES ({phs})", vals)  # nosec B608
         # -> INSERT INTO students (name, age) VALUES (?, ?)  with [\"Ada\", 30]
     """
     if not fields:

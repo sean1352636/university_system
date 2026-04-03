@@ -214,6 +214,15 @@ class TestLibraryDatabaseFunctions:
         """Create a temporary database for testing"""
         fd, path = tempfile.mkstemp(suffix='.db')
         os.close(fd)
+        # Create stub payments table needed by init_library_db
+        conn = sqlite3.connect(path)
+        conn.execute('''CREATE TABLE IF NOT EXISTS payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            amount REAL, payment_date TEXT, source_type TEXT,
+            reference_id TEXT, reference_type TEXT, payment_reference TEXT
+        )''')
+        conn.commit()
+        conn.close()
         yield path
         if os.path.exists(path):
             os.remove(path)
@@ -221,8 +230,8 @@ class TestLibraryDatabaseFunctions:
     @pytest.fixture
     def mock_db_path(self, temp_db, monkeypatch):
         """Mock the database path"""
-        from education_system.university_system.modules.domain.academics.services import library
-        monkeypatch.setattr(library, 'DATABASE_FILE', temp_db)
+        from education_system.university_system.modules.domain.academics.services.library import database
+        monkeypatch.setattr(database, 'DATABASE_FILE', temp_db)
         return temp_db
 
     def test_get_db_connection(self, mock_db_path):
@@ -313,9 +322,9 @@ class TestLibraryAuth:
 
         set_auth(mock_auth)
 
-        # Import the module to check the global auth
-        from education_system.university_system.modules.domain.academics.services import library
-        assert library.auth == mock_auth
+        # Import the settings module to check the global auth
+        from education_system.university_system.modules.domain.academics.services.library import settings
+        assert settings.auth == mock_auth
 
 class TestLibraryUtilityFunctions:
     """Test suite for library utility functions"""
@@ -372,6 +381,14 @@ class TestLibraryDatabaseSchema:
         """Create a temporary database for testing"""
         fd, path = tempfile.mkstemp(suffix='.db')
         os.close(fd)
+        conn = sqlite3.connect(path)
+        conn.execute('''CREATE TABLE IF NOT EXISTS payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            amount REAL, payment_date TEXT, source_type TEXT,
+            reference_id TEXT, reference_type TEXT, payment_reference TEXT
+        )''')
+        conn.commit()
+        conn.close()
         yield path
         if os.path.exists(path):
             os.remove(path)
@@ -379,8 +396,8 @@ class TestLibraryDatabaseSchema:
     @pytest.fixture
     def initialized_db(self, temp_db, monkeypatch):
         """Initialize database and return path"""
-        from education_system.university_system.modules.domain.academics.services import library
-        monkeypatch.setattr(library, 'DATABASE_FILE', temp_db)
+        from education_system.university_system.modules.domain.academics.services.library import database
+        monkeypatch.setattr(database, 'DATABASE_FILE', temp_db)
         init_library_db()
         return temp_db
 
@@ -518,6 +535,14 @@ class TestLibraryDataOperations:
         """Create a temporary database for testing"""
         fd, path = tempfile.mkstemp(suffix='.db')
         os.close(fd)
+        conn = sqlite3.connect(path)
+        conn.execute('''CREATE TABLE IF NOT EXISTS payments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            amount REAL, payment_date TEXT, source_type TEXT,
+            reference_id TEXT, reference_type TEXT, payment_reference TEXT
+        )''')
+        conn.commit()
+        conn.close()
         yield path
         if os.path.exists(path):
             os.remove(path)
@@ -525,8 +550,8 @@ class TestLibraryDataOperations:
     @pytest.fixture
     def initialized_db(self, temp_db, monkeypatch):
         """Initialize database and return path"""
-        from education_system.university_system.modules.domain.academics.services import library
-        monkeypatch.setattr(library, 'DATABASE_FILE', temp_db)
+        from education_system.university_system.modules.domain.academics.services.library import database
+        monkeypatch.setattr(database, 'DATABASE_FILE', temp_db)
         init_library_db()
         return temp_db
 

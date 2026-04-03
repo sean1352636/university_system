@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -121,7 +121,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -132,7 +132,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -260,7 +260,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -882,58 +882,58 @@ def show_favorites_manager(self):
     dialog.geometry("1100x800")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text="Favorite Students", style='Title.TLabel').pack(pady=(0, 20))
-    
+
     # Load favorites
     try:
         with open('favorite_students.json', 'r') as f:
             self.favorite_students = json.load(f)
     except FileNotFoundError:
         self.favorite_students = []
-    
+
     if not self.favorite_students:
         ttk.Label(frame, text="No favorite students yet.").pack()
         ttk.Button(frame, text=_t('advanced_search.close_button'), command=dialog.destroy).pack(pady=(20, 0))
         return
-    
+
     # Favorites list
     columns = ('ID', 'Name', 'Email', 'Course', 'Added')
     favorites_tree = ttk.Treeview(frame, columns=columns, show='headings', height=12)
-    
+
     for col in columns:
         favorites_tree.heading(col, text=col)
         favorites_tree.column(col, width=100)
-    
+
     favorites_scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL, command=favorites_tree.yview)
     favorites_tree.configure(yscrollcommand=favorites_scrollbar.set)
-    
+
     favorites_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     favorites_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    
+
     # Populate favorites
     for fav in self.favorite_students:
         added_date = fav['added_date'][:10] if 'added_date' in fav else 'N/A'
         favorites_tree.insert('', 'end', values=(
             fav['id'], fav['name'], fav['email'], fav['course'], added_date
         ))
-    
+
     # Actions
     actions_frame = ttk.Frame(frame)
     actions_frame.pack(fill=tk.X, pady=(10, 0))
-    
+
     def view_favorite():
         selection = favorites_tree.selection()
         if not selection:
             messagebox.showwarning("_t('advanced_search.no_selection')", "_t('advanced_search.select_student')")
             return
-        
+
         item = favorites_tree.item(selection[0])
         student_id = item['values'][0]
-        
+
         # Find full student data
         try:
             conn = get_connection()
@@ -941,34 +941,34 @@ def show_favorites_manager(self):
             cursor.execute("SELECT * FROM students WHERE student_id = ?", (student_id,))
             student_data = cursor.fetchone()
             conn.close()
-            
+
             if student_data:
                 self.show_detailed_student_view(student_data)
             else:
                 messagebox.showerror(_t("advanced_search.error_title"), _t("advanced_search.predictive.student_not_found"))
         except Exception as e:
             messagebox.showerror(_t("advanced_search.error_title"), _t("advanced_search.predictive.could_not_load_student", error=str(e)))
-    
+
     def remove_favorite():
         selection = favorites_tree.selection()
         if not selection:
             messagebox.showwarning("_t('advanced_search.no_selection')", "Please select a student to remove.")
             return
-        
+
         item = favorites_tree.item(selection[0])
         student_name = item['values'][1]
-        
+
         if messagebox.askyesno("Confirm Remove", f"Remove {student_name} from favorites?"):
             student_id = item['values'][0]
             self.favorite_students = [fav for fav in self.favorite_students if fav['id'] != student_id]
-            
+
             # Save updated favorites
             with open('favorite_students.json', 'w') as f:
                 json.dump(self.favorite_students, f, indent=2)
-            
+
             favorites_tree.delete(selection[0])
             messagebox.showinfo(_t("advanced_search.predictive.removed_title"), _t("advanced_search.predictive.removed_from_favorites", name=student_name))
-    
+
     ttk.Button(actions_frame, text=_t('advanced_search.view_details'), command=view_favorite).pack(side=tk.LEFT, padx=(0, 10))
     ttk.Button(actions_frame, text=_t('advanced_search.remove_button'), command=remove_favorite).pack(side=tk.LEFT, padx=(0, 10))
     ttk.Button(actions_frame, text=_t('advanced_search.close_button'), command=dialog.destroy).pack(side=tk.RIGHT)
@@ -981,20 +981,20 @@ def show_smart_suggestions(self):
     dialog.geometry("1100x800")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text="Smart Search Suggestions", style='Title.TLabel').pack(pady=(0, 20))
-    
+
     # Suggestion categories
     notebook = ttk.Notebook(frame)
     notebook.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     # Popular searches tab
     popular_frame = ttk.Frame(notebook, padding="10")
     notebook.add(popular_frame, text="Popular Searches")
-    
+
     popular_suggestions = [
         "Students enrolled in CS courses",
         "Recent registrations (last 30 days)",
@@ -1003,57 +1003,57 @@ def show_smart_suggestions(self):
         "Students without email addresses",
         "Incomplete module enrollments"
     ]
-    
+
     ttk.Label(popular_frame, text="Most popular search patterns:").pack(anchor='w', pady=(0, 10))
-    
+
     for suggestion in popular_suggestions:
         btn = ttk.Button(popular_frame, text=f"🔍 {suggestion}",
                         command=lambda s=suggestion: self.execute_suggestion(s, dialog))
         btn.pack(fill=tk.X, pady=2)
-    
+
     # Recent searches tab
     recent_frame = ttk.Frame(notebook, padding="10")
     notebook.add(recent_frame, text="Recent Searches")
-    
+
     recent_searches = [
         "John Smith",
         "CS101 module",
         "Age between 20-25",
         "Registration after 2024-01-01"
     ]
-    
+
     ttk.Label(recent_frame, text="Your recent searches:").pack(anchor='w', pady=(0, 10))
-    
+
     for search in recent_searches:
         btn = ttk.Button(recent_frame, text=f"🔄 {search}",
                         command=lambda s=search: self.execute_suggestion(s, dialog))
         btn.pack(fill=tk.X, pady=2)
-    
+
     # Recommended tab
     recommended_frame = ttk.Frame(notebook, padding="10")
     notebook.add(recommended_frame, text="Recommended")
-    
+
     recommendations = [
         "Students at risk of dropping out",
         "High-performing students for honors",
         "Students needing academic support",
         "Duplicate student records"
     ]
-    
+
     ttk.Label(recommended_frame, text="Recommended searches based on patterns:").pack(anchor='w', pady=(0, 10))
-    
+
     for recommendation in recommendations:
         btn = ttk.Button(recommended_frame, text=f"💡 {recommendation}",
                         command=lambda r=recommendation: self.execute_suggestion(r, dialog))
         btn.pack(fill=tk.X, pady=2)
-    
+
     ttk.Button(frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack()
 AdvancedSearchGUI.show_smart_suggestions = show_smart_suggestions
 
 def execute_suggestion(self, suggestion, parent_dialog):
     """Execute a suggested search"""
     parent_dialog.destroy()
-    
+
     # Parse suggestion and create appropriate search
     if "CS courses" in suggestion:
         # Execute course search
@@ -1070,10 +1070,10 @@ def execute_suggestion(self, suggestion, parent_dialog):
     else:
         # Default to text search
         criteria = {"search_term": suggestion}
-    
+
     self.update_status(f"Executing suggested search: {suggestion}")
     self.start_progress()
-    
+
     def run_suggestion():
         try:
             results = self.perform_suggested_search(criteria)
@@ -1083,7 +1083,7 @@ def execute_suggestion(self, suggestion, parent_dialog):
             self.output_queue.put(("error", f"Suggested search error: {str(e)}"))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_suggestion, daemon=True).start()
 AdvancedSearchGUI.execute_suggestion = execute_suggestion
 
@@ -1092,10 +1092,10 @@ def perform_suggested_search(self, criteria):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         query = "SELECT * FROM students WHERE 1=1"
         params = []
-        
+
         for key, value in criteria.items():
             if key == "course":
                 query += " AND LOWER(course) = LOWER(?)"
@@ -1112,13 +1112,13 @@ def perform_suggested_search(self, criteria):
             elif key == "search_term":
                 query += " AND (LOWER(first_name || ' ' || last_name) LIKE ? OR LOWER(email_address) LIKE ?)"
                 params.extend([f'%{value.lower()}%', f'%{value.lower()}%'])
-        
+
         cursor.execute(query, params)
         results = cursor.fetchall()
         conn.close()
-        
+
         return results
-        
+
     except Exception as e:
         raise Exception(f"Suggested search error: {str(e)}")
 AdvancedSearchGUI.perform_suggested_search = perform_suggested_search
@@ -1130,25 +1130,25 @@ def show_predictive_analytics(self):
     dialog.geometry("1200x850")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text="Predictive Analytics Dashboard", style='Title.TLabel').pack(pady=(0, 20))
-    
+
     # Analytics options
     analytics_notebook = ttk.Notebook(frame)
     analytics_notebook.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     # At-risk students tab
     risk_frame = ttk.Frame(analytics_notebook, padding="10")
     analytics_notebook.add(risk_frame, text="At-Risk Students")
-    
+
     ttk.Label(risk_frame, text="Identify students at risk of academic failure:").pack(anchor='w', pady=(0, 10))
-    
+
     risk_criteria_frame = ttk.LabelFrame(risk_frame, text="Risk Criteria", padding="10")
     risk_criteria_frame.pack(fill=tk.X, pady=(0, 10))
-    
+
     # Risk factors checkboxes
     risk_vars = {}
     risk_factors = [
@@ -1158,20 +1158,20 @@ def show_predictive_analytics(self):
         ("No recent login activity", "activity"),
         ("Financial aid issues", "financial")
     ]
-    
+
     for text, key in risk_factors:
         risk_vars[key] = tk.BooleanVar(value=True)
         ttk.Checkbutton(risk_criteria_frame, text=text, variable=risk_vars[key]).pack(anchor='w')
-    
+
     def analyze_at_risk():
         selected_criteria = [key for key, var in risk_vars.items() if var.get()]
         if not selected_criteria:
             messagebox.showwarning(_t("advanced_search.predictive.no_criteria_title"), _t("advanced_search.predictive.no_criteria_msg"))
             return
-        
+
         self.update_status("Analyzing at-risk students...")
         self.start_progress()
-        
+
         def run_risk_analysis():
             try:
                 results = self.identify_at_risk_students(selected_criteria)
@@ -1181,38 +1181,38 @@ def show_predictive_analytics(self):
                 self.output_queue.put(("error", f"Risk analysis error: {str(e)}"))
             finally:
                 self.output_queue.put(("stop_progress", None))
-        
+
         threading.Thread(target=run_risk_analysis, daemon=True).start()
-    
+
     ttk.Button(risk_frame, text="🔍 Analyze At-Risk Students", command=analyze_at_risk).pack(pady=10)
-    
+
     # Enrollment prediction tab
     enrollment_frame = ttk.Frame(analytics_notebook, padding="10")
     analytics_notebook.add(enrollment_frame, text="Enrollment Prediction")
-    
+
     ttk.Label(enrollment_frame, text="Predict future enrollment trends:").pack(anchor='w', pady=(0, 10))
-    
+
     prediction_frame = ttk.LabelFrame(enrollment_frame, text="Prediction Parameters", padding="10")
     prediction_frame.pack(fill=tk.X, pady=(0, 10))
-    
+
     ttk.Label(prediction_frame, text="Time Period:").pack(anchor='w')
     period_var = tk.StringVar(value="next_semester")
-    
+
     periods = [
         ("Next Semester", "next_semester"),
         ("Next Academic Year", "next_year"),
         ("Next 5 Years", "5_years")
     ]
-    
+
     for text, value in periods:
         ttk.Radiobutton(prediction_frame, text=text, variable=period_var, value=value).pack(anchor='w')
-    
+
     def predict_enrollment():
         period = period_var.get()
-        
+
         self.update_status("Predicting enrollment trends...")
         self.start_progress()
-        
+
         def run_enrollment_prediction():
             try:
                 results = self.predict_enrollment_trends(period)
@@ -1222,25 +1222,25 @@ def show_predictive_analytics(self):
                 self.output_queue.put(("error", f"Prediction error: {str(e)}"))
             finally:
                 self.output_queue.put(("stop_progress", None))
-        
+
         threading.Thread(target=run_enrollment_prediction, daemon=True).start()
-    
+
     ttk.Button(enrollment_frame, text="📈 Generate Predictions", command=predict_enrollment).pack(pady=10)
-    
+
     # Success probability tab
     success_frame = ttk.Frame(analytics_notebook, padding="10")
     analytics_notebook.add(success_frame, text="Success Probability")
-    
+
     ttk.Label(success_frame, text="Calculate module success probability:").pack(anchor='w', pady=(0, 10))
-    
+
     module_frame = ttk.LabelFrame(success_frame, text="Module Selection", padding="10")
     module_frame.pack(fill=tk.X, pady=(0, 10))
-    
+
     ttk.Label(module_frame, text="Select Module:").pack(anchor='w')
     module_var = tk.StringVar()
     module_combo = ttk.Combobox(module_frame, textvariable=module_var, width=30)
     module_combo.pack(fill=tk.X, pady=(5, 0))
-    
+
     # Load available modules
     try:
         conn = get_connection()
@@ -1251,16 +1251,16 @@ def show_predictive_analytics(self):
         conn.close()
     except Exception:
         module_combo['values'] = ['CS101', 'CS102', 'DS101', 'DS102']
-    
+
     def calculate_success():
         module = module_var.get().strip()
         if not module:
             messagebox.showwarning(_t("advanced_search.predictive.missing_module_title"), _t("advanced_search.predictive.missing_module_msg"))
             return
-        
+
         self.update_status("Calculating success probability...")
         self.start_progress()
-        
+
         def run_success_calculation():
             try:
                 results = self.calculate_module_success_probability(module)
@@ -1270,11 +1270,11 @@ def show_predictive_analytics(self):
                 self.output_queue.put(("error", f"Success calculation error: {str(e)}"))
             finally:
                 self.output_queue.put(("stop_progress", None))
-        
+
         threading.Thread(target=run_success_calculation, daemon=True).start()
-    
+
     ttk.Button(success_frame, text="🎯 Calculate Success Probability", command=calculate_success).pack(pady=10)
-    
+
     ttk.Button(frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack()
 AdvancedSearchGUI.show_predictive_analytics = show_predictive_analytics
 
@@ -1283,35 +1283,35 @@ def identify_at_risk_students(self, criteria):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Simulate risk analysis based on available data
         risk_query = """
         SELECT s.*, COUNT(sm.module_code) as module_count,
-               AVG(CASE WHEN sm.grade IS NOT NULL THEN 
-                   CASE sm.grade 
-                       WHEN 'A' THEN 4.0 
-                       WHEN 'B' THEN 3.0 
-                       WHEN 'C' THEN 2.0 
-                       WHEN 'D' THEN 1.0 
-                       ELSE 0.0 
-                   END 
+               AVG(CASE WHEN sm.grade IS NOT NULL THEN
+                   CASE sm.grade
+                       WHEN 'A' THEN 4.0
+                       WHEN 'B' THEN 3.0
+                       WHEN 'C' THEN 2.0
+                       WHEN 'D' THEN 1.0
+                       ELSE 0.0
+                   END
                END) as avg_grade
         FROM students s
         LEFT JOIN student_modules sm ON s.student_id = sm.student_id
         GROUP BY s.student_id
         HAVING avg_grade < 2.5 OR module_count = 0
         """
-        
+
         cursor.execute(risk_query)
         at_risk_students = cursor.fetchall()
         conn.close()
-        
+
         result = f"🚨 AT-RISK STUDENTS ANALYSIS\n"
         result += f"═" * 50 + "\n"
         result += f"Analysis Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
         result += f"Risk Criteria: {', '.join(criteria)}\n\n"
         result += f"Students Identified as At-Risk: {len(at_risk_students)}\n\n"
-        
+
         if at_risk_students:
             result += "DETAILED BREAKDOWN:\n"
             result += "-" * 30 + "\n"
@@ -1321,18 +1321,18 @@ def identify_at_risk_students(self, criteria):
                 result += f"  Email: {student[1]}\n"
                 result += f"  Course: {student[9]}\n"
                 result += f"  Age: {student[8]}\n\n"
-            
+
             if len(at_risk_students) > 10:
                 result += f"... and {len(at_risk_students) - 10} more students\n"
-        
+
         result += f"\nRECOMMENDATIONS:\n"
         result += "• Schedule academic counseling sessions\n"
         result += "• Provide additional tutoring support\n"
         result += "• Monitor attendance more closely\n"
         result += "• Consider intervention programs\n"
-        
+
         return result
-        
+
     except Exception as e:
         raise Exception(f"Risk analysis error: {str(e)}")
 AdvancedSearchGUI.identify_at_risk_students = identify_at_risk_students
@@ -1342,47 +1342,47 @@ def predict_enrollment_trends(self, period):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Get historical enrollment data
         cursor.execute("""
-        SELECT 
+        SELECT
             strftime('%Y-%m', registration_datetime) as month,
             course,
             COUNT(*) as enrollments
-        FROM students 
+        FROM students
         WHERE registration_datetime IS NOT NULL
         GROUP BY strftime('%Y-%m', registration_datetime), course
         ORDER BY month DESC
         """)
-        
+
         historical_data = cursor.fetchall()
         conn.close()
-        
+
         # Simple trend analysis
         result = f"📈 ENROLLMENT PREDICTION\n"
         result += f"═" * 50 + "\n"
         result += f"Prediction Period: {period.replace('_', ' ').title()}\n"
         result += f"Analysis Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        
+
         if historical_data:
             result += "HISTORICAL TRENDS:\n"
             result += "-" * 20 + "\n"
-            
+
             # Group by course
             course_trends = {}
             for month, course, count in historical_data:
                 if course not in course_trends:
                     course_trends[course] = []
                 course_trends[course].append((month, count))
-            
+
             for course, data in course_trends.items():
                 total_enrollments = sum(count for _, count in data)
                 avg_monthly = total_enrollments / max(len(data), 1)
-                
+
                 result += f"\n{course} Course:\n"
                 result += f"  Total Historical Enrollments: {total_enrollments}\n"
                 result += f"  Average Monthly: {avg_monthly:.1f}\n"
-                
+
                 # Predict based on period
                 if period == "next_semester":
                     predicted = int(avg_monthly * 6)  # 6 months
@@ -1390,22 +1390,22 @@ def predict_enrollment_trends(self, period):
                     predicted = int(avg_monthly * 12)  # 12 months
                 else:  # 5_years
                     predicted = int(avg_monthly * 60)  # 60 months
-                
+
                 result += f"  Predicted Enrollments ({period.replace('_', ' ')}): {predicted}\n"
-        
+
         result += f"\nPREDICTION FACTORS:\n"
         result += "• Historical enrollment patterns\n"
         result += "• Seasonal variations\n"
         result += "• Course popularity trends\n"
         result += "• Market demand indicators\n"
-        
+
         result += f"\nRECOMMENDATIONS:\n"
         result += "• Prepare resources for predicted enrollment levels\n"
         result += "• Adjust marketing strategies accordingly\n"
         result += "• Plan faculty and infrastructure needs\n"
-        
+
         return result
-        
+
     except Exception as e:
         raise Exception(f"Enrollment prediction error: {str(e)}")
 AdvancedSearchGUI.predict_enrollment_trends = predict_enrollment_trends
@@ -1415,66 +1415,66 @@ def calculate_module_success_probability(self, module_code):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Get module statistics
         cursor.execute("""
-        SELECT 
+        SELECT
             grade,
             COUNT(*) as count
-        FROM student_modules 
+        FROM student_modules
         WHERE module_code = ? AND grade IS NOT NULL
         GROUP BY grade
         """, (module_code,))
-        
+
         grade_distribution = cursor.fetchall()
-        
+
         # Get overall module info
         cursor.execute("""
-        SELECT 
+        SELECT
             COUNT(*) as total_enrolled,
             COUNT(grade) as graded,
             module_name
-        FROM student_modules 
+        FROM student_modules
         WHERE module_code = ?
         """, (module_code,))
-        
+
         module_info = cursor.fetchone()
         conn.close()
-        
+
         result = f"🎯 MODULE SUCCESS PROBABILITY\n"
         result += f"═" * 50 + "\n"
         result += f"Module: {module_code}\n"
-        
+
         if module_info and len(module_info) > 2:
             result += f"Module Name: {module_info[2] or 'Unknown'}\n"
         result += f"Analysis Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        
+
         if module_info:
             total_enrolled, graded = module_info[0], module_info[1]
             result += f"ENROLLMENT STATISTICS:\n"
             result += f"Total Enrolled: {total_enrolled}\n"
             result += f"Students Graded: {graded}\n"
             result += f"Completion Rate: {(graded/max(total_enrolled,1)*100):.1f}%\n\n"
-        
+
         if grade_distribution:
             result += "GRADE DISTRIBUTION:\n"
             result += "-" * 20 + "\n"
-            
+
             total_graded = sum(count for _, count in grade_distribution)
             success_count = 0  # Grades A, B, C considered success
-            
+
             for grade, count in grade_distribution:
                 percentage = (count / total_graded) * 100
                 result += f"  {grade}: {count} students ({percentage:.1f}%)\n"
-                
+
                 if grade in ['A', 'B', 'C']:
                     success_count += count
-            
+
             success_rate = (success_count / total_graded) * 100
             result += f"\nSUCCESS ANALYSIS:\n"
             result += f"Success Rate (A, B, C grades): {success_rate:.1f}%\n"
             result += f"Students Likely to Succeed: {success_count}/{total_graded}\n"
-            
+
             # Risk assessment
             if success_rate >= 80:
                 risk_level = "LOW RISK"
@@ -1485,12 +1485,12 @@ def calculate_module_success_probability(self, module_code):
             else:
                 risk_level = "HIGH RISK"
                 recommendation = "Module requires immediate attention"
-            
+
             result += f"Risk Level: {risk_level}\n"
             result += f"Recommendation: {recommendation}\n"
-        
+
         return result
-        
+
     except Exception as e:
         raise Exception(f"Success probability calculation error: {str(e)}")
 AdvancedSearchGUI.calculate_module_success_probability = calculate_module_success_probability
@@ -1502,55 +1502,55 @@ def show_graduation_timeline_forecast(self):
     dialog.geometry("1100x800")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text="Graduation Timeline Forecast", style='Title.TLabel').pack(pady=(0, 20))
-    
+
     # Student selection
     selection_frame = ttk.LabelFrame(frame, text="Student Selection", padding="10")
     selection_frame.pack(fill=tk.X, pady=(0, 20))
-    
+
     selection_var = tk.StringVar(value="all")
     ttk.Radiobutton(selection_frame, text="All students", variable=selection_var, value="all").pack(anchor='w')
     ttk.Radiobutton(selection_frame, text="Specific course", variable=selection_var, value="course").pack(anchor='w')
     ttk.Radiobutton(selection_frame, text="Current search results", variable=selection_var, value="results").pack(anchor='w')
-    
+
     course_frame = ttk.Frame(selection_frame)
     course_frame.pack(fill=tk.X, pady=(10, 0))
-    
+
     ttk.Label(course_frame, text="Course (if selected):").pack(side=tk.LEFT)
     course_var = tk.StringVar()
     course_combo = ttk.Combobox(course_frame, textvariable=course_var, values=["CS", "DS"], width=15)
     course_combo.pack(side=tk.LEFT, padx=(10, 0))
-    
+
     # Forecast parameters
     params_frame = ttk.LabelFrame(frame, text="Forecast Parameters", padding="10")
     params_frame.pack(fill=tk.X, pady=(0, 20))
-    
+
     ttk.Label(params_frame, text="Graduation Requirements:").pack(anchor='w')
     requirements_frame = ttk.Frame(params_frame)
     requirements_frame.pack(fill=tk.X, pady=(5, 0))
-    
+
     ttk.Label(requirements_frame, text="Minimum Modules:").pack(side=tk.LEFT)
     min_modules_var = tk.StringVar(value="8")
     ttk.Entry(requirements_frame, textvariable=min_modules_var, width=10).pack(side=tk.LEFT, padx=(10, 20))
-    
+
     ttk.Label(requirements_frame, text="Minimum GPA:").pack(side=tk.LEFT)
     min_gpa_var = tk.StringVar(value="2.0")
     ttk.Entry(requirements_frame, textvariable=min_gpa_var, width=10).pack(side=tk.LEFT, padx=(10, 0))
-    
+
     def generate_forecast():
         selection = selection_var.get()
         course = course_var.get() if selection == "course" else None
         min_modules = int(min_modules_var.get() or 8)
         min_gpa = float(min_gpa_var.get() or 2.0)
-        
+
         dialog.destroy()
         self.update_status("Generating graduation timeline forecast...")
         self.start_progress()
-        
+
         def run_forecast():
             try:
                 results = self.generate_graduation_forecast(selection, course, min_modules, min_gpa)
@@ -1560,12 +1560,12 @@ def show_graduation_timeline_forecast(self):
                 self.output_queue.put(("error", f"Forecast error: {str(e)}"))
             finally:
                 self.output_queue.put(("stop_progress", None))
-        
+
         threading.Thread(target=run_forecast, daemon=True).start()
-    
+
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
-    
+
     ttk.Button(button_frame, text="📊 Generate Forecast", command=generate_forecast).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.cancel_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.show_graduation_timeline_forecast = show_graduation_timeline_forecast
@@ -1575,7 +1575,7 @@ def generate_graduation_forecast(self, selection, course, min_modules, min_gpa):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Base query
         if selection == "course" and course:
             student_query = "SELECT * FROM students WHERE LOWER(course) = LOWER(?)"
@@ -1588,10 +1588,10 @@ def generate_graduation_forecast(self, selection, course, min_modules, min_gpa):
         else:
             student_query = "SELECT * FROM students"
             params = []
-        
+
         cursor.execute(student_query, params)
         students = cursor.fetchall()
-        
+
         result = f"🎓 GRADUATION TIMELINE FORECAST\n"
         result += f"═" * 50 + "\n"
         result += f"Analysis Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
@@ -1600,7 +1600,7 @@ def generate_graduation_forecast(self, selection, course, min_modules, min_gpa):
             result += f"Course Filter: {course}\n"
         result += f"Requirements: {min_modules} modules, {min_gpa} GPA\n"
         result += f"Students Analyzed: {len(students)}\n\n"
-        
+
         # Analyze each student's progress
         graduation_forecast = {
             "ready_to_graduate": [],
@@ -1609,34 +1609,34 @@ def generate_graduation_forecast(self, selection, course, min_modules, min_gpa):
             "at_risk": [],
             "insufficient_data": []
         }
-        
+
         for student in students:
             student_id = student[0]
-            
+
             # Get student's module progress
             cursor.execute("""
             SELECT COUNT(*) as module_count,
-                   AVG(CASE WHEN grade IS NOT NULL THEN 
-                       CASE grade 
-                           WHEN 'A' THEN 4.0 
-                           WHEN 'B' THEN 3.0 
-                           WHEN 'C' THEN 2.0 
-                           WHEN 'D' THEN 1.0 
-                           ELSE 0.0 
-                       END 
+                   AVG(CASE WHEN grade IS NOT NULL THEN
+                       CASE grade
+                           WHEN 'A' THEN 4.0
+                           WHEN 'B' THEN 3.0
+                           WHEN 'C' THEN 2.0
+                           WHEN 'D' THEN 1.0
+                           ELSE 0.0
+                       END
                    END) as avg_gpa
-            FROM student_modules 
+            FROM student_modules
             WHERE student_id = ?
             """, (student_id,))
-            
+
             progress = cursor.fetchone()
-            
+
             if not progress or progress[0] == 0:
                 graduation_forecast["insufficient_data"].append(student)
             else:
                 module_count, avg_gpa = progress
                 avg_gpa = avg_gpa or 0.0
-                
+
                 if module_count >= min_modules and avg_gpa >= min_gpa:
                     graduation_forecast["ready_to_graduate"].append((student, module_count, avg_gpa))
                 elif module_count >= (min_modules * 0.8) and avg_gpa >= min_gpa:
@@ -1645,20 +1645,20 @@ def generate_graduation_forecast(self, selection, course, min_modules, min_gpa):
                     graduation_forecast["on_track"].append((student, module_count, avg_gpa))
                 else:
                     graduation_forecast["at_risk"].append((student, module_count, avg_gpa))
-        
+
         conn.close()
-        
+
         # Generate detailed results
         result += "GRADUATION STATUS BREAKDOWN:\n"
         result += "-" * 30 + "\n"
-        
+
         for category, students_data in graduation_forecast.items():
             count = len(students_data)
             percentage = (count / len(students)) * 100 if students else 0
-            
+
             category_name = category.replace("_", " ").title()
             result += f"\n{category_name}: {count} students ({percentage:.1f}%)\n"
-            
+
             if category != "insufficient_data":
                 for student_data, modules, gpa in students_data[:5]:  # Show first 5
                     name = f"{student_data[3]} {student_data[5]}"
@@ -1670,15 +1670,15 @@ def generate_graduation_forecast(self, selection, course, min_modules, min_gpa):
                 for student in students_data[:5]:
                     name = f"{student[3]} {student[5]}"
                     result += f"  • {student[0]} - {name}\n"
-        
+
         result += f"\nTIMELINE PROJECTIONS:\n"
         result += "• Ready to Graduate: Can graduate immediately\n"
         result += "• Graduating Soon: 1-2 semesters remaining\n"
         result += "• On Track: 2-4 semesters remaining\n"
         result += "• At Risk: May require academic intervention\n"
-        
+
         return result
-        
+
     except Exception as e:
         raise Exception(f"Graduation forecast error: {str(e)}")
 AdvancedSearchGUI.generate_graduation_forecast = generate_graduation_forecast

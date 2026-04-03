@@ -95,7 +95,7 @@ def show_comprehensive_risk_results(self, risk_students, anomalies):
     main_frame = ttk.Frame(risk_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Comprehensive Risk Analysis Results", 
+    ttk.Label(main_frame, text="Comprehensive Risk Analysis Results",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Create notebook for different risk analyses
@@ -128,7 +128,7 @@ def show_comprehensive_risk_results(self, risk_students, anomalies):
 
     for student in risk_students:
         risk_tree.insert('', 'end', text=student['student_name'],
-                        values=(student['risk_level'], 
+                        values=(student['risk_level'],
                               f"{student['risk_score']:.1%}",
                               f"£{student['total_fees']:,.2f}",
                               student['payments_made']))
@@ -144,10 +144,10 @@ def show_comprehensive_risk_results(self, risk_students, anomalies):
     ttk.Label(anomaly_summary_frame, text=f"Anomalies Detected: {len(anomalies)}").pack(anchor=tk.W)
 
     if len(anomalies) > 0:
-        ttk.Label(anomaly_summary_frame, text="⚠ Unusual payment patterns detected - review recommended", 
+        ttk.Label(anomaly_summary_frame, text="⚠ Unusual payment patterns detected - review recommended",
                  foreground="orange").pack(anchor=tk.W)
     else:
-        ttk.Label(anomaly_summary_frame, text="✓ No unusual payment patterns detected", 
+        ttk.Label(anomaly_summary_frame, text="✓ No unusual payment patterns detected",
                  foreground="green").pack(anchor=tk.W)
 
     # Anomaly details
@@ -242,16 +242,16 @@ def show_ml_training_results(self, success):
     main_frame = ttk.Frame(training_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="ML Model Training Results", 
+    ttk.Label(main_frame, text="ML Model Training Results",
              style='Title.TLabel').pack(pady=(0, 20))
 
     if success:
-        ttk.Label(main_frame, text="✓ Payment prediction model trained successfully", 
+        ttk.Label(main_frame, text="✓ Payment prediction model trained successfully",
                  foreground="green").pack(pady=5)
         ttk.Label(main_frame, text="✓ Model saved to payment_prediction_model.pkl").pack(pady=5)
         ttk.Label(main_frame, text="✓ Risk prediction system is now operational").pack(pady=5)
     else:
-        ttk.Label(main_frame, text="✗ Model training failed", 
+        ttk.Label(main_frame, text="✗ Model training failed",
                  foreground="red").pack(pady=5)
         ttk.Label(main_frame, text="Possible causes:").pack(pady=5)
         ttk.Label(main_frame, text="• Insufficient training data").pack(pady=2)
@@ -295,7 +295,7 @@ def show_anomaly_results(self, anomalies):
     main_frame = ttk.Frame(anomaly_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Payment Anomaly Detection Results", 
+    ttk.Label(main_frame, text="Payment Anomaly Detection Results",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Summary
@@ -305,10 +305,10 @@ def show_anomaly_results(self, anomalies):
     ttk.Label(summary_frame, text=f"Total Anomalies Detected: {len(anomalies)}").pack(anchor=tk.W)
 
     if len(anomalies) == 0:
-        ttk.Label(summary_frame, text="✓ No unusual payment patterns detected", 
+        ttk.Label(summary_frame, text="✓ No unusual payment patterns detected",
                  foreground="green").pack(anchor=tk.W)
     else:
-        ttk.Label(summary_frame, text="⚠ Anomalous payments require review", 
+        ttk.Label(summary_frame, text="⚠ Anomalous payments require review",
                  foreground="orange").pack(anchor=tk.W)
 
     # Results table
@@ -368,7 +368,7 @@ def show_cash_flow_results(self, forecast):
     main_frame = ttk.Frame(forecast_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Cash Flow Forecast Results", 
+    ttk.Label(main_frame, text="Cash Flow Forecast Results",
              style='Title.TLabel').pack(pady=(0, 20))
 
     if forecast:
@@ -398,7 +398,7 @@ def show_cash_flow_results(self, forecast):
                                       f"{item['confidence']:.1%}",
                                       f"£{item['cumulative_cash']:,.2f}"))
     else:
-        ttk.Label(main_frame, text="No forecast data available", 
+        ttk.Label(main_frame, text="No forecast data available",
                  foreground="red").pack(pady=20)
 
     ttk.Button(main_frame, text="Close", command=forecast_window.destroy).pack(pady=10)
@@ -415,7 +415,7 @@ def run_peer_benchmarking(self):
             cursor = conn.cursor()
 
             cursor.execute('''
-            SELECT 
+            SELECT
                 SUM(sf.amount) as total_expected,
                 SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END) as total_collected,
                 COUNT(DISTINCT sf.student_id) as student_count

@@ -1,12 +1,19 @@
 import os
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-import seaborn as sns
+try:
+    import matplotlib
+    import matplotlib.pyplot as plt
+    matplotlib.use('Agg')
+except ImportError:  # Optional dependency
+    matplotlib = None
+    plt = None
+try:
+    import seaborn as sns
+except ImportError:  # Optional dependency
+    sns = None
 from scipy import stats
 from datetime import datetime
 
-matplotlib.use('Agg')
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.domain.academics.grading.grade_calculation.conversions import (
@@ -156,7 +163,8 @@ def calculate_assessment_statistics():
 
         if visualize == 'y':
             # Create a directory for the plots if it doesn't exist
-            plots_dir = 'statistics_plots'
+            plots_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', 'data', 'analytics', 'plots')
+            plots_dir = os.path.normpath(plots_dir)
             if not os.path.exists(plots_dir):
                 os.makedirs(plots_dir)
 

@@ -556,37 +556,37 @@ class PrerequisitesWindow:
     def __init__(self, parent, auth):
         self.parent = parent
         self.auth = auth
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title("Manage Prerequisites")
         self.window.geometry("800x600")
         self.window.transient(parent)
-        
+
         self.create_widgets()
         self.load_data()
-    
+
     def create_widgets(self):
         # Prerequisites management interface
         main_frame = ttk.Frame(self.window)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         # Controls
         controls_frame = ttk.Frame(main_frame)
         controls_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Button(controls_frame, text="Add Prerequisite", command=self.add_prerequisite).pack(side=tk.LEFT, padx=5)
         ttk.Button(controls_frame, text="Remove Prerequisite", command=self.remove_prerequisite).pack(side=tk.LEFT, padx=5)
         ttk.Button(controls_frame, text="Refresh", command=self.load_data).pack(side=tk.LEFT, padx=5)
-        
+
         # Prerequisites display
         self.prereq_text = ScrolledText(main_frame, wrap=tk.WORD, height=30)
         self.prereq_text.pack(fill=tk.BOTH, expand=True, pady=5)
-    
+
     def load_data(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             # Check if prerequisites table exists
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='course_prerequisites'")
             if not cursor.fetchone():
@@ -601,37 +601,37 @@ class PrerequisitesWindow:
                 JOIN courses c2 ON cp.prerequisite_course_id = c2.id
                 ORDER BY c1.course_code, c2.course_code
                 """)
-                
+
                 prereqs = cursor.fetchall()
-                
+
                 prereq_text = "PREREQUISITES MANAGEMENT\n"
                 prereq_text += "=" * 50 + "\n\n"
-                
+
                 if prereqs:
                     current_course = None
                     for prereq in prereqs:
                         if current_course != prereq[0]:
                             current_course = prereq[0]
                             prereq_text += f"\n{prereq[0]} - {prereq[1]}:\n"
-                        
+
                         req_type = "Required" if prereq[4] else "Recommended"
                         prereq_text += f"  → {prereq[2]} - {prereq[3]} ({req_type})\n"
                 else:
                     prereq_text += "No prerequisites found in the system.\n"
-            
+
             conn.close()
-            
+
             self.prereq_text.delete(1.0, tk.END)
             self.prereq_text.insert(1.0, prereq_text)
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load prerequisites: {e}")
-    
+
     def add_prerequisite(self):
         dialog = AddPrerequisiteDialog(self.window, self.auth)
         if dialog.result:
             self.load_data()
-    
+
     def remove_prerequisite(self):
         """Show remove prerequisite dialog"""
         dialog = RemovePrerequisiteDialog(self.window, self.auth)
@@ -644,56 +644,56 @@ class AddPrerequisiteDialog:
         self.parent = parent
         self.auth = auth
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Add Prerequisite")
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.load_courses()
         self.dialog.focus_set()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         ttk.Label(main_frame, text="Add Course Prerequisite", font=("Arial", 12, "bold")).pack(pady=10)
-        
+
         # Course selection
         course_frame = ttk.LabelFrame(main_frame, text="Select Course", padding=10)
         course_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(course_frame, text="Course:").pack(anchor=tk.W)
         self.course_combo = ttk.Combobox(course_frame, width=50)
         self.course_combo.pack(fill=tk.X, pady=2)
-        
+
         # Prerequisite selection
         prereq_frame = ttk.LabelFrame(main_frame, text="Select Prerequisite", padding=10)
         prereq_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(prereq_frame, text="Prerequisite Course:").pack(anchor=tk.W)
         self.prereq_combo = ttk.Combobox(prereq_frame, width=50)
         self.prereq_combo.pack(fill=tk.X, pady=2)
-        
+
         # Requirement type
         self.is_required = tk.BooleanVar(value=True)
-        ttk.Checkbutton(prereq_frame, text="Required (uncheck for recommended)", 
+        ttk.Checkbutton(prereq_frame, text="Required (uncheck for recommended)",
                        variable=self.is_required).pack(anchor=tk.W, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Add Prerequisite", command=self.add_prerequisite).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def load_courses(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             cursor.execute(
                 "SELECT id, course_code, course_name FROM courses "
                 "WHERE course_code IS NOT NULL "
@@ -702,39 +702,39 @@ class AddPrerequisiteDialog:
                 "ORDER BY course_code"
             )
             courses = cursor.fetchall()
-            
+
             course_options = [f"{course[1]} - {course[2]}" for course in courses]
             self.course_combo['values'] = course_options
             self.prereq_combo['values'] = course_options
-            
+
             # Store course IDs for mapping
             self.course_id_map = {f"{course[1]} - {course[2]}": course[0] for course in courses}
-            
+
             conn.close()
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load courses: {e}")
-    
+
     def add_prerequisite(self):
         try:
             course_text = self.course_combo.get()
             prereq_text = self.prereq_combo.get()
-            
+
             if not course_text or not prereq_text:
                 messagebox.showwarning(_("common.selection_required"), "Please select both course and prerequisite.")
                 return
-            
+
             if course_text == prereq_text:
                 messagebox.showerror("Invalid Selection", "A course cannot be a prerequisite for itself.")
                 return
-            
+
             course_id = self.course_id_map.get(course_text)
             prereq_id = self.course_id_map.get(prereq_text)
-            
+
             if not course_id or not prereq_id:
                 messagebox.showerror(_("common.error"), "Invalid course selection.")
                 return
-            
+
             # Create prerequisites table if it doesn't exist
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             try:
@@ -763,10 +763,10 @@ class AddPrerequisiteDialog:
                 conn.commit()
             finally:
                 conn.close()
-            
+
             self.result = True
             self.dialog.destroy()
-            
+
         except sqlite3.IntegrityError:
             messagebox.showerror(_("common.duplicate_error"), "This prerequisite already exists.")
         except sqlite3.Error as e:
@@ -778,59 +778,59 @@ class RemovePrerequisiteDialog:
         self.parent = parent
         self.auth = auth
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Remove Course Prerequisite")
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.dialog.focus_set()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         # Course selection
         course_frame = ttk.LabelFrame(main_frame, text="Select Course", padding=10)
         course_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(course_frame, text="Course:").pack(side=tk.LEFT)
         self.course_combo = ttk.Combobox(course_frame, width=50)
         self.course_combo.pack(side=tk.LEFT, padx=5)
         self.course_combo.bind('<<ComboboxSelected>>', self.load_prerequisites)
-        
+
         # Prerequisites display
         prereq_frame = ttk.LabelFrame(main_frame, text="Current Prerequisites", padding=10)
         prereq_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-        
+
         columns = ("ID", "Code", "Name", "Type")
         self.prereq_tree = ttk.Treeview(prereq_frame, columns=columns, show="headings")
-        
+
         for col in columns:
             self.prereq_tree.heading(col, text=col)
-        
+
         scrollbar = ttk.Scrollbar(prereq_frame, orient=tk.VERTICAL, command=self.prereq_tree.yview)
         self.prereq_tree.configure(yscrollcommand=scrollbar.set)
-        
+
         self.prereq_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Remove Selected", command=self.remove_prerequisite).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-        
+
         self.load_courses()
-    
+
     def load_courses(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             # Get courses that have prerequisites
             cursor.execute("""
             SELECT DISTINCT c.id, c.course_code, c.course_name
@@ -839,73 +839,73 @@ class RemovePrerequisiteDialog:
             ORDER BY c.course_code
             """)
             courses = cursor.fetchall()
-            
+
             course_options = [f"{course[1]} - {course[2]}" for course in courses]
             self.course_combo['values'] = course_options
-            
+
             self.course_id_map = {f"{course[1]} - {course[2]}": course[0] for course in courses}
-            
+
             conn.close()
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load courses: {e}")
-    
+
     def load_prerequisites(self, event=None):
         selected_text = self.course_combo.get()
         if selected_text not in self.course_id_map:
             return
-        
+
         course_id = self.course_id_map[selected_text]
-        
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             cursor.execute("""
-            SELECT cp.id, c.course_code, c.course_name, 
+            SELECT cp.id, c.course_code, c.course_name,
                    CASE WHEN cp.is_required = 1 THEN 'Required' ELSE 'Recommended' END as type
             FROM course_prerequisites cp
             JOIN courses c ON cp.prerequisite_course_id = c.id
             WHERE cp.course_id = ?
             ORDER BY c.course_code
             """, (course_id,))
-            
+
             prerequisites = cursor.fetchall()
-            
+
             for item in self.prereq_tree.get_children():
                 self.prereq_tree.delete(item)
-            
+
             for prereq in prerequisites:
                 self.prereq_tree.insert("", tk.END, values=prereq)
-            
+
             conn.close()
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load prerequisites: {e}")
-    
+
     def remove_prerequisite(self):
         selection = self.prereq_tree.selection()
         if not selection:
             messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a prerequisite to remove.")
             return
-        
+
         prereq_data = self.prereq_tree.item(selection[0])['values']
         prereq_id = prereq_data[0]
         prereq_code = prereq_data[1]
         prereq_name = prereq_data[2]
-        
+
         if messagebox.askyesno("Confirm Removal", f"Remove prerequisite '{prereq_code} - {prereq_name}'?"):
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
-                
+
                 cursor.execute("DELETE FROM course_prerequisites WHERE id = ?", (prereq_id,))
-                
+
                 conn.commit()
                 conn.close()
-                
+
                 messagebox.showinfo(_("common.success"), "Prerequisite removed successfully!")
                 self.load_prerequisites()
                 self.result = True
-                
+
             except sqlite3.Error as e:
                 messagebox.showerror(_("common.database_error"), f"Failed to remove prerequisite: {e}")
 

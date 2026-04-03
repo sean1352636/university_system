@@ -68,3 +68,15 @@ def accessibility_service(db_path):
 @pytest.fixture
 def attachments_service(db_path):
     return AttachmentService(db_path)
+
+
+@pytest.fixture
+def census_ilr_service(db_path):
+    from education_system.college_system.modules.domain.census_ilr.services.census_ilr_service import CensusILRService
+    return CensusILRService(db_path)
+
+
+@pytest.fixture
+def complaints_service(db_path):
+    from education_system.college_system.modules.domain.complaints.services.complaints_service import ComplaintService
+    return ComplaintService(db_path)

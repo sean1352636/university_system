@@ -74,18 +74,18 @@ def create_api_integration_view(self, parent):
     test_frame = ttk.LabelFrame(api_card, text="API Testing", padding=15)
     test_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(test_frame, text="🧪 Test API Connection", 
+    ttk.Button(test_frame, text="🧪 Test API Connection",
               command=self.test_api_connection).pack(side='left', padx=(0, 10))
-    ttk.Button(test_frame, text="📊 API Performance", 
+    ttk.Button(test_frame, text="📊 API Performance",
               command=self.show_api_performance).pack(side='left')
 
     # API results comparison
     comparison_frame = ttk.LabelFrame(api_card, text="Multi-API Analysis", padding=15)
     comparison_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(comparison_frame, text="🔍 Compare API Results", 
+    ttk.Button(comparison_frame, text="🔍 Compare API Results",
               command=self.compare_api_results).pack(side='left', padx=(0, 10))
-    ttk.Button(comparison_frame, text="⚡ Ensemble Prediction", 
+    ttk.Button(comparison_frame, text="⚡ Ensemble Prediction",
               command=self.run_ensemble_prediction).pack(side='left')
 
 
@@ -169,7 +169,7 @@ def show_api_performance(self):
     perf_frame = ttk.Frame(performance_window, style='Card.TFrame')
     perf_frame.pack(fill='both', expand=True, padx=20, pady=20)
 
-    ttk.Label(perf_frame, text="API performance monitoring feature", 
+    ttk.Label(perf_frame, text="API performance monitoring feature",
              style='Subtitle.TLabel').pack(expand=True)
 
 
@@ -228,14 +228,14 @@ def show_ensemble_results(self, result):
     individual_predictions = result.get('individual_predictions', {})
 
     # Main score
-    ttk.Label(results_frame, text=f"Ensemble Score: {ensemble_score:.1%}", 
+    ttk.Label(results_frame, text=f"Ensemble Score: {ensemble_score:.1%}",
              font=('Segoe UI', 14, 'bold')).pack(anchor='w', padx=15, pady=15)
-    ttk.Label(results_frame, text=f"Confidence: {confidence:.1%}", 
+    ttk.Label(results_frame, text=f"Confidence: {confidence:.1%}",
              font=('Segoe UI', 12)).pack(anchor='w', padx=15, pady=5)
 
     # Individual model predictions
     if individual_predictions:
-        ttk.Label(results_frame, text="Individual Model Predictions:", 
+        ttk.Label(results_frame, text="Individual Model Predictions:",
                  font=('Segoe UI', 10, 'bold')).pack(anchor='w', padx=15, pady=(15, 5))
 
         for model_name, prediction in individual_predictions.items():
@@ -258,11 +258,11 @@ def create_visual_analysis_view(self, parent):
     options_frame = ttk.Frame(visual_card)
     options_frame.pack(fill='x', padx=15, pady=(0, 15))
 
-    ttk.Button(options_frame, text="🔥 Generate Text Heatmap", 
+    ttk.Button(options_frame, text="🔥 Generate Text Heatmap",
               command=self.generate_text_heatmap).pack(side='left', padx=(0, 10))
-    ttk.Button(options_frame, text="📈 Writing Flow Analysis", 
+    ttk.Button(options_frame, text="📈 Writing Flow Analysis",
               command=self.generate_writing_flow).pack(side='left', padx=(0, 10))
-    ttk.Button(options_frame, text="📊 Complexity Visualization", 
+    ttk.Button(options_frame, text="📊 Complexity Visualization",
               command=self.generate_complexity_viz).pack(side='left')
 
     # Visualization display area
@@ -270,7 +270,7 @@ def create_visual_analysis_view(self, parent):
     self.visual_display_frame.pack(fill='both', expand=True, padx=15, pady=(0, 15))
 
     # Initial message
-    ttk.Label(self.visual_display_frame, text="Select an analysis option above to generate visualizations", 
+    ttk.Label(self.visual_display_frame, text="Select an analysis option above to generate visualizations",
              style='Subtitle.TLabel').pack(expand=True)
 
 

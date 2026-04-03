@@ -94,75 +94,75 @@ class MessagingManager:
         """Show message sending interface"""
         if not self._check_permission('manage_assignments'):
             return
-        
+
         self.gui.layout.clear_content_area()
-        
+
         title = ttk.Label(self.gui.layout.content_area, text="Send Messages", style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
-        
+
         # Message composition frame
         compose_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Compose Message", padding=20)
         compose_frame.pack(fill='both', expand=True)
-        
+
         # Recipient type
         ttk.Label(compose_frame, text="Send To:", font=('Arial', 12, 'bold')).grid(row=0, column=0, sticky='w', pady=(0, 10))
-        
+
         self.recipient_type_var = tk.StringVar(value="module")
         recipient_frame = ttk.Frame(compose_frame)
         recipient_frame.grid(row=1, column=0, columnspan=2, sticky='w', pady=(0, 20))
-        
-        ttk.Radiobutton(recipient_frame, text="All students in module", 
+
+        ttk.Radiobutton(recipient_frame, text="All students in module",
                        variable=self.recipient_type_var, value="module").pack(anchor='w')
-        ttk.Radiobutton(recipient_frame, text="Specific student", 
+        ttk.Radiobutton(recipient_frame, text="Specific student",
                        variable=self.recipient_type_var, value="student").pack(anchor='w')
-        ttk.Radiobutton(recipient_frame, text="All instructors", 
+        ttk.Radiobutton(recipient_frame, text="All instructors",
                        variable=self.recipient_type_var, value="instructors").pack(anchor='w')
-        
+
         # Module/Student selection
         selection_frame = ttk.Frame(compose_frame)
         selection_frame.grid(row=2, column=0, columnspan=2, sticky='ew', pady=(0, 20))
-        
+
         ttk.Label(selection_frame, text="Module/Student:").pack(side='left')
         self.recipient_selection_var = tk.StringVar()
         self.recipient_combo = ttk.Combobox(selection_frame, textvariable=self.recipient_selection_var, width=40)
         self.recipient_combo.pack(side='left', padx=(10, 0))
-        
+
         # Bind recipient type change to update combo options
         for widget in recipient_frame.winfo_children():
             if isinstance(widget, ttk.Radiobutton):
                 widget.configure(command=self.update_recipient_options)
-        
+
         # Subject
         ttk.Label(compose_frame, text="Subject:").grid(row=3, column=0, sticky='w', pady=5)
         self.message_subject_var = tk.StringVar()
         ttk.Entry(compose_frame, textvariable=self.message_subject_var, width=60).grid(row=3, column=1, sticky='ew', pady=5, padx=(10, 0))
-        
+
         # Message body
         ttk.Label(compose_frame, text="Message:").grid(row=4, column=0, sticky='nw', pady=5)
         self.message_body_text = scrolledtext.ScrolledText(compose_frame, height=10, width=60)
         self.message_body_text.grid(row=4, column=1, sticky='ew', pady=5, padx=(10, 0))
-        
+
         # Assignment reference (optional)
         ttk.Label(compose_frame, text="Related Assignment (optional):").grid(row=5, column=0, sticky='w', pady=5)
         self.message_assignment_var = tk.StringVar()
         assignment_combo = ttk.Combobox(compose_frame, textvariable=self.message_assignment_var, width=40)
         assignment_combo.grid(row=5, column=1, sticky='w', pady=5, padx=(10, 0))
         self.load_assignments_for_message(assignment_combo)
-        
+
         # Send button
-        ttk.Button(compose_frame, text="Send Message", 
+        ttk.Button(compose_frame, text="Send Message",
                   command=self.send_message_gui).grid(row=6, column=1, sticky='e', pady=(20, 0))
-        
+
         compose_frame.grid_columnconfigure(1, weight=1)
-        
+
         # Initialize recipient options
         self.update_recipient_options()
-    
+
 
     def update_recipient_options(self):
         """Update recipient options based on selection type"""
         recipient_type = self.recipient_type_var.get()
-        
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -185,28 +185,28 @@ class MessagingManager:
 
         except Exception as e:
             print(f"Error updating recipient options: {e}")
-    
+
 
     def send_message_gui(self):
         """Send message through GUI"""
         try:
             subject = self.message_subject_var.get().strip()
             message = self.message_body_text.get(1.0, tk.END).strip()
-            
+
             if not subject or not message:
                 messagebox.showerror("Error", "Subject and message are required")
                 return
-            
+
             recipient_type = self.recipient_type_var.get()
             selection = self.recipient_selection_var.get()
-            
+
             if not selection:
                 messagebox.showerror("Error", "Please select a recipient")
                 return
-            
+
             # Get assignment ID if selected
             assignment_id = self.message_assignment_map.get(self.message_assignment_var.get())
-            
+
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
                 cursor = conn.cursor()
@@ -307,12 +307,12 @@ class MessagingManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send message: {e}")
-    
+
     # GROUP ASSIGNMENT CREATION (enhanced GUI)
 
     def view_messages(self, *args, **kwargs):
         """View and manage all messages for the current user.
-    
+
         Features:
         - Display inbox with all received messages
         - View sent messages
@@ -328,99 +328,99 @@ class MessagingManager:
             messages_window.title("Messages")
             messages_window.geometry("1000x700")
             messages_window.configure(bg='#f0f0f0')
-    
+
             # Get current user ID
             user_id = self.auth.current_user.get('id')
             if not user_id:
                 messagebox.showerror("Error", "User not authenticated")
                 messages_window.destroy()
                 return
-    
+
             # Ensure messages table exists
             self.gui.db._ensure_messages_table()
-    
+
             # Create notebook for tabs
             notebook = ttk.Notebook(messages_window)
             notebook.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
             # Inbox tab
             inbox_frame = ttk.Frame(notebook)
             notebook.add(inbox_frame, text="Inbox")
             self._create_inbox_view(inbox_frame, user_id)
-    
+
             # Sent messages tab
             sent_frame = ttk.Frame(notebook)
             notebook.add(sent_frame, text="Sent")
             self._create_sent_view(sent_frame, user_id)
-    
+
             # Compose message tab
             compose_frame = ttk.Frame(notebook)
             notebook.add(compose_frame, text="Compose")
             self._create_compose_view(compose_frame, user_id)
-    
+
             # Archive tab
             archive_frame = ttk.Frame(notebook)
             notebook.add(archive_frame, text="Archive")
             self._create_archive_view(archive_frame, user_id)
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load messages: {str(e)}")
             print(f"Error in view_messages: {e}")
-    
+
 
     def _create_inbox_view(self, parent, user_id):
         """Create inbox view with message list"""
         # Search frame
         search_frame = ttk.Frame(parent)
         search_frame.pack(fill='x', padx=10, pady=10)
-    
+
         ttk.Label(search_frame, text="Search:").pack(side='left', padx=5)
         search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
         search_entry.pack(side='left', padx=5)
-    
+
         # Filter options
         filter_var = tk.StringVar(value="all")
         ttk.Radiobutton(search_frame, text="All", variable=filter_var, value="all").pack(side='left', padx=5)
         ttk.Radiobutton(search_frame, text="Unread", variable=filter_var, value="unread").pack(side='left', padx=5)
         ttk.Radiobutton(search_frame, text="Read", variable=filter_var, value="read").pack(side='left', padx=5)
-    
+
         # Refresh button
         refresh_btn = ttk.Button(search_frame, text="Refresh",
                                 command=lambda: self._refresh_inbox(tree, user_id, search_var.get(), filter_var.get()))
         refresh_btn.pack(side='right', padx=5)
-    
+
         # Messages list
         list_frame = ttk.Frame(parent)
         list_frame.pack(fill='both', expand=True, padx=10, pady=5)
-    
+
         # Treeview for messages
         columns = ('Status', 'From', 'Subject', 'Date')
         tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
-    
+
         tree.heading('#0', text='ID')
         tree.heading('Status', text='Status')
         tree.heading('From', text='From')
         tree.heading('Subject', text='Subject')
         tree.heading('Date', text='Date')
-    
+
         tree.column('#0', width=50)
         tree.column('Status', width=80)
         tree.column('From', width=150)
         tree.column('Subject', width=400)
         tree.column('Date', width=150)
-    
+
         # Scrollbar
         scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
-    
+
         tree.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
-    
+
         # Action buttons
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill='x', padx=10, pady=10)
-    
+
         ttk.Button(button_frame, text="View Message",
                   command=lambda: self._view_message_details(tree, user_id)).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Mark as Read",
@@ -431,20 +431,20 @@ class MessagingManager:
                   command=lambda: self._archive_message(tree, user_id)).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Delete",
                   command=lambda: self._delete_message(tree, user_id, 'recipient')).pack(side='left', padx=5)
-    
+
         # Load messages
         self._refresh_inbox(tree, user_id, search_var.get(), filter_var.get())
-    
+
         # Bind double-click to view message
         tree.bind('<Double-1>', lambda e: self._view_message_details(tree, user_id))
-    
+
 
     def _refresh_inbox(self, tree, user_id, search_text="", filter_type="all"):
         """Refresh inbox with messages"""
         # Clear existing items
         for item in tree.get_children():
             tree.delete(item)
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -497,70 +497,70 @@ class MessagingManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load messages: {str(e)}")
             print(f"Error refreshing inbox: {e}")
-    
+
 
     def _create_sent_view(self, parent, user_id):
         """Create sent messages view"""
         # Search frame
         search_frame = ttk.Frame(parent)
         search_frame.pack(fill='x', padx=10, pady=10)
-    
+
         ttk.Label(search_frame, text="Search:").pack(side='left', padx=5)
         search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
         search_entry.pack(side='left', padx=5)
-    
+
         # Refresh button
         refresh_btn = ttk.Button(search_frame, text="Refresh",
                                 command=lambda: self._refresh_sent(tree, user_id, search_var.get()))
         refresh_btn.pack(side='right', padx=5)
-    
+
         # Messages list
         list_frame = ttk.Frame(parent)
         list_frame.pack(fill='both', expand=True, padx=10, pady=5)
-    
+
         columns = ('To', 'Subject', 'Date', 'Read')
         tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
-    
+
         tree.heading('#0', text='ID')
         tree.heading('To', text='To')
         tree.heading('Subject', text='Subject')
         tree.heading('Date', text='Date')
         tree.heading('Read', text='Status')
-    
+
         tree.column('#0', width=50)
         tree.column('To', width=150)
         tree.column('Subject', width=400)
         tree.column('Date', width=150)
         tree.column('Read', width=100)
-    
+
         scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
-    
+
         tree.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
-    
+
         # Action buttons
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill='x', padx=10, pady=10)
-    
+
         ttk.Button(button_frame, text="View Message",
                   command=lambda: self._view_sent_message_details(tree, user_id)).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Delete",
                   command=lambda: self._delete_message(tree, user_id, 'sender')).pack(side='left', padx=5)
-    
+
         # Load messages
         self._refresh_sent(tree, user_id, search_var.get())
-    
+
         # Bind double-click
         tree.bind('<Double-1>', lambda e: self._view_sent_message_details(tree, user_id))
-    
+
 
     def _refresh_sent(self, tree, user_id, search_text=""):
         """Refresh sent messages"""
         for item in tree.get_children():
             tree.delete(item)
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -601,7 +601,7 @@ class MessagingManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load sent messages: {str(e)}")
             print(f"Error refreshing sent messages: {e}")
-    
+
 
     def _create_compose_view(self, parent, user_id):
         """Create compose message view"""
@@ -609,43 +609,43 @@ class MessagingManager:
         canvas = tk.Canvas(parent, bg='#f0f0f0')
         scrollbar = ttk.Scrollbar(parent, orient='vertical', command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
-    
+
         scrollable_frame.bind(
             "<Configure>",
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
-    
+
         canvas.create_window((0, 0), window=scrollable_frame, anchor='nw')
         canvas.configure(yscrollcommand=scrollbar.set)
-    
+
         canvas.pack(side='left', fill='both', expand=True, padx=10, pady=10)
         scrollbar.pack(side='right', fill='y')
-    
+
         # Compose form
         form_frame = ttk.LabelFrame(scrollable_frame, text="New Message", padding=20)
         form_frame.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
         # Recipient
         ttk.Label(form_frame, text="To (Username):").grid(row=0, column=0, sticky='w', pady=5)
         recipient_var = tk.StringVar()
         recipient_entry = ttk.Entry(form_frame, textvariable=recipient_var, width=50)
         recipient_entry.grid(row=0, column=1, sticky='ew', pady=5, padx=5)
-    
+
         # Browse recipients button
         ttk.Button(form_frame, text="Browse Users",
                   command=lambda: self._browse_users(recipient_var)).grid(row=0, column=2, padx=5)
-    
+
         # Subject
         ttk.Label(form_frame, text="Subject:").grid(row=1, column=0, sticky='w', pady=5)
         subject_var = tk.StringVar()
         subject_entry = ttk.Entry(form_frame, textvariable=subject_var, width=50)
         subject_entry.grid(row=1, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
-    
+
         # Message body
         ttk.Label(form_frame, text="Message:").grid(row=2, column=0, sticky='nw', pady=5)
         message_text = scrolledtext.ScrolledText(form_frame, width=50, height=15, wrap=tk.WORD)
         message_text.grid(row=2, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
-    
+
         # Attachment (optional)
         ttk.Label(form_frame, text="Attachment:").grid(row=3, column=0, sticky='w', pady=5)
         attachment_var = tk.StringVar()
@@ -653,64 +653,64 @@ class MessagingManager:
         attachment_entry.grid(row=3, column=1, sticky='ew', pady=5, padx=5)
         ttk.Button(form_frame, text="Browse",
                   command=lambda: self._browse_attachment(attachment_var)).grid(row=3, column=2, padx=5)
-    
+
         # Assignment reference (optional)
         ttk.Label(form_frame, text="Assignment:").grid(row=4, column=0, sticky='w', pady=5)
         assignment_var = tk.StringVar()
         assignment_combo = ttk.Combobox(form_frame, textvariable=assignment_var, width=48, state='readonly')
         assignment_combo.grid(row=4, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
-    
+
         # Load assignments
         self._load_assignments_for_compose(assignment_combo)
-    
+
         form_frame.columnconfigure(1, weight=1)
-    
+
         # Buttons
         button_frame = ttk.Frame(scrollable_frame)
         button_frame.pack(fill='x', padx=10, pady=10)
-    
+
         ttk.Button(button_frame, text="Send Message",
                   command=lambda: self._send_composed_message(
                       user_id, recipient_var.get(), subject_var.get(),
                       message_text.get('1.0', 'end-1c'), attachment_var.get(),
                       assignment_var.get(), recipient_entry, subject_entry, message_text
                   )).pack(side='left', padx=5)
-    
+
         ttk.Button(button_frame, text="Clear Form",
                   command=lambda: self._clear_compose_form(
                       recipient_entry, subject_entry, message_text, attachment_var, assignment_combo
                   )).pack(side='left', padx=5)
-    
+
 
     def _create_archive_view(self, parent, user_id):
         """Create archive view"""
         # Messages list
         list_frame = ttk.Frame(parent)
         list_frame.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
         columns = ('From', 'Subject', 'Date')
         tree = ttk.Treeview(list_frame, columns=columns, show='tree headings', height=15)
-    
+
         tree.heading('#0', text='ID')
         tree.heading('From', text='From')
         tree.heading('Subject', text='Subject')
         tree.heading('Date', text='Date')
-    
+
         tree.column('#0', width=50)
         tree.column('From', width=200)
         tree.column('Subject', width=450)
         tree.column('Date', width=150)
-    
+
         scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
-    
+
         tree.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
-    
+
         # Action buttons
         button_frame = ttk.Frame(parent)
         button_frame.pack(fill='x', padx=10, pady=10)
-    
+
         ttk.Button(button_frame, text="View Message",
                   command=lambda: self._view_message_details(tree, user_id)).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Unarchive",
@@ -719,18 +719,18 @@ class MessagingManager:
                   command=lambda: self._delete_message(tree, user_id, 'recipient')).pack(side='left', padx=5)
         ttk.Button(button_frame, text="Refresh",
                   command=lambda: self._refresh_archive(tree, user_id)).pack(side='right', padx=5)
-    
+
         # Load archived messages
         self._refresh_archive(tree, user_id)
-    
+
         tree.bind('<Double-1>', lambda e: self._view_message_details(tree, user_id))
-    
+
 
     def _refresh_archive(self, tree, user_id):
         """Refresh archived messages"""
         for item in tree.get_children():
             tree.delete(item)
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -763,7 +763,7 @@ class MessagingManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load archived messages: {str(e)}")
             print(f"Error refreshing archive: {e}")
-    
+
 
     def _view_message_details(self, tree, user_id):
         """View full message details"""
@@ -771,9 +771,9 @@ class MessagingManager:
         if not selection:
             messagebox.showwarning("No Selection", "Please select a message to view")
             return
-    
+
         msg_id = tree.item(selection[0])['text']
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -801,26 +801,26 @@ class MessagingManager:
                     conn.commit()
             finally:
                 conn.close()
-    
+
             # Create detail window
             detail_window = tk.Toplevel(self.root)
             detail_window.title("Message Details")
             detail_window.geometry("800x600")
             detail_window.configure(bg='#f0f0f0')
-    
+
             # Message info frame
             info_frame = ttk.LabelFrame(detail_window, text="Message Information", padding=10)
             info_frame.pack(fill='x', padx=10, pady=10)
-    
+
             ttk.Label(info_frame, text="From:").grid(row=0, column=0, sticky='w', padx=5, pady=2)
             ttk.Label(info_frame, text=message[15], font=('TkDefaultFont', 10, 'bold')).grid(row=0, column=1, sticky='w', padx=5, pady=2)
-    
+
             ttk.Label(info_frame, text="To:").grid(row=1, column=0, sticky='w', padx=5, pady=2)
             ttk.Label(info_frame, text=message[16], font=('TkDefaultFont', 10, 'bold')).grid(row=1, column=1, sticky='w', padx=5, pady=2)
-    
+
             ttk.Label(info_frame, text="Subject:").grid(row=2, column=0, sticky='w', padx=5, pady=2)
             ttk.Label(info_frame, text=message[3], font=('TkDefaultFont', 10, 'bold')).grid(row=2, column=1, sticky='w', padx=5, pady=2)
-    
+
             ttk.Label(info_frame, text="Date:").grid(row=3, column=0, sticky='w', padx=5, pady=2)
             try:
                 date_obj = datetime.fromisoformat(message[12])
@@ -828,42 +828,42 @@ class MessagingManager:
             except (ValueError, TypeError):
                 formatted_date = message[12]
             ttk.Label(info_frame, text=formatted_date).grid(row=3, column=1, sticky='w', padx=5, pady=2)
-    
+
             # Message content frame
             content_frame = ttk.LabelFrame(detail_window, text="Message Content", padding=10)
             content_frame.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
             message_content = message[4] or message[5] or "No content"
             content_text = scrolledtext.ScrolledText(content_frame, width=70, height=15, wrap=tk.WORD)
             content_text.pack(fill='both', expand=True)
             content_text.insert('1.0', message_content)
             content_text.config(state='disabled')
-    
+
             # Attachment info
             if message[6]:  # attachment_path
                 ttk.Label(content_frame, text=f"Attachment: {message[6]}",
                          font=('TkDefaultFont', 9, 'italic')).pack(pady=5)
-    
+
             # Action buttons
             button_frame = ttk.Frame(detail_window)
             button_frame.pack(fill='x', padx=10, pady=10)
-    
+
             if message[2] == user_id:  # If current user is recipient
                 ttk.Button(button_frame, text="Reply",
                           command=lambda: self._reply_to_message(msg_id, message[1], message[3])).pack(side='left', padx=5)
-    
+
             ttk.Button(button_frame, text="Close",
                       command=detail_window.destroy).pack(side='right', padx=5)
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to view message: {str(e)}")
             print(f"Error viewing message: {e}")
-    
+
 
     def _view_sent_message_details(self, tree, user_id):
         """View sent message details"""
         self._view_message_details(tree, user_id)
-    
+
 
     def _mark_message_read(self, tree, user_id, is_read):
         """Mark message as read or unread"""
@@ -871,9 +871,9 @@ class MessagingManager:
         if not selection:
             messagebox.showwarning("No Selection", "Please select a message")
             return
-    
+
         msg_id = tree.item(selection[0])['text']
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -897,7 +897,7 @@ class MessagingManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to update message: {str(e)}")
             print(f"Error marking message: {e}")
-    
+
 
     def _archive_message(self, tree, user_id):
         """Archive a message"""
@@ -905,9 +905,9 @@ class MessagingManager:
         if not selection:
             messagebox.showwarning("No Selection", "Please select a message to archive")
             return
-    
+
         msg_id = tree.item(selection[0])['text']
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -927,7 +927,7 @@ class MessagingManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to archive message: {str(e)}")
             print(f"Error archiving message: {e}")
-    
+
 
     def _unarchive_message(self, tree, user_id):
         """Unarchive a message"""
@@ -935,9 +935,9 @@ class MessagingManager:
         if not selection:
             messagebox.showwarning("No Selection", "Please select a message to unarchive")
             return
-    
+
         msg_id = tree.item(selection[0])['text']
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -957,7 +957,7 @@ class MessagingManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to unarchive message: {str(e)}")
             print(f"Error unarchiving message: {e}")
-    
+
 
     def _delete_message(self, tree, user_id, user_type):
         """Delete a message"""
@@ -965,12 +965,12 @@ class MessagingManager:
         if not selection:
             messagebox.showwarning("No Selection", "Please select a message to delete")
             return
-    
+
         if not messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this message?"):
             return
-    
+
         msg_id = tree.item(selection[0])['text']
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -1000,7 +1000,7 @@ class MessagingManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to delete message: {str(e)}")
             print(f"Error deleting message: {e}")
-    
+
 
     def _browse_users(self, recipient_var):
         """Browse and select users"""
@@ -1019,62 +1019,62 @@ class MessagingManager:
                 users = cursor.fetchall()
             finally:
                 conn.close()
-    
+
             # Create selection window
             select_window = tk.Toplevel(self.root)
             select_window.title("Select Recipient")
             select_window.geometry("600x400")
-    
+
             # Search frame
             search_frame = ttk.Frame(select_window)
             search_frame.pack(fill='x', padx=10, pady=10)
-    
+
             ttk.Label(search_frame, text="Search:").pack(side='left', padx=5)
             search_var = tk.StringVar()
             search_entry = ttk.Entry(search_frame, textvariable=search_var, width=30)
             search_entry.pack(side='left', padx=5)
-    
+
             # Users list
             list_frame = ttk.Frame(select_window)
             list_frame.pack(fill='both', expand=True, padx=10, pady=5)
-    
+
             columns = ('Username', 'Name', 'Role')
             tree = ttk.Treeview(list_frame, columns=columns, show='tree headings')
-    
+
             tree.heading('#0', text='ID')
             tree.heading('Username', text='Username')
             tree.heading('Name', text='Name')
             tree.heading('Role', text='Role')
-    
+
             tree.column('#0', width=50)
             tree.column('Username', width=150)
             tree.column('Name', width=200)
             tree.column('Role', width=100)
-    
+
             scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=tree.yview)
             tree.configure(yscrollcommand=scrollbar.set)
-    
+
             tree.pack(side='left', fill='both', expand=True)
             scrollbar.pack(side='right', fill='y')
-    
+
             # Populate users
             def populate_users(search_text=""):
                 for item in tree.get_children():
                     tree.delete(item)
-    
+
                 for user in users:
                     user_id, username, first_name, last_name, role = user
                     full_name = f"{first_name} {last_name}"
-    
+
                     if search_text.lower() in username.lower() or search_text.lower() in full_name.lower():
                         tree.insert('', 'end', text=user_id,
                                    values=(username, full_name, role))
-    
+
             populate_users()
-    
+
             # Search functionality
             search_var.trace('w', lambda *args: populate_users(search_var.get()))
-    
+
             # Select button
             def select_user():
                 selection = tree.selection()
@@ -1084,19 +1084,19 @@ class MessagingManager:
                     select_window.destroy()
                 else:
                     messagebox.showwarning("No Selection", "Please select a user")
-    
+
             button_frame = ttk.Frame(select_window)
             button_frame.pack(fill='x', padx=10, pady=10)
-    
+
             ttk.Button(button_frame, text="Select", command=select_user).pack(side='left', padx=5)
             ttk.Button(button_frame, text="Cancel", command=select_window.destroy).pack(side='left', padx=5)
-    
+
             tree.bind('<Double-1>', lambda e: select_user())
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load users: {str(e)}")
             print(f"Error browsing users: {e}")
-    
+
 
     def _browse_attachment(self, attachment_var):
         """Browse for file attachment"""
@@ -1104,10 +1104,10 @@ class MessagingManager:
             title="Select Attachment",
             filetypes=[("All Files", "*.*")]
         )
-    
+
         if file_path:
             attachment_var.set(file_path)
-    
+
 
     def _send_composed_message(self, sender_id, recipient_username, subject, message_body,
                                attachment_path, assignment_ref, recipient_entry, subject_entry, message_text):
@@ -1116,15 +1116,15 @@ class MessagingManager:
         if not recipient_username:
             messagebox.showerror("Error", "Please specify a recipient")
             return
-    
+
         if not subject:
             messagebox.showerror("Error", "Please enter a subject")
             return
-    
+
         if not message_body.strip():
             messagebox.showerror("Error", "Please enter a message")
             return
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -1169,7 +1169,7 @@ class MessagingManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send message: {str(e)}")
             print(f"Error sending message: {e}")
-    
+
 
     def _send_message_and_close(self, window, sender_id, recipient_username, subject,
                                 message_body, attachment_path, assignment_ref):
@@ -1178,15 +1178,15 @@ class MessagingManager:
         if not recipient_username:
             messagebox.showerror("Error", "Please specify a recipient")
             return
-    
+
         if not subject:
             messagebox.showerror("Error", "Please enter a subject")
             return
-    
+
         if not message_body.strip():
             messagebox.showerror("Error", "Please enter a message")
             return
-    
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -1229,7 +1229,7 @@ class MessagingManager:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to send message: {str(e)}")
             print(f"Error sending message: {e}")
-    
+
 
     def _load_recent_contacts(self, parent, recipient_var, user_id):
         """Load recent message contacts for quick selection"""
@@ -1255,10 +1255,10 @@ class MessagingManager:
                 contacts = cursor.fetchall()
             finally:
                 conn.close()
-    
+
             if contacts:
                 ttk.Label(parent, text="Click to select:").pack(side='left', padx=5)
-    
+
                 for username, first_name, last_name in contacts:
                     btn = ttk.Button(parent, text=username,
                                     command=lambda u=username: recipient_var.set(u))
@@ -1266,24 +1266,24 @@ class MessagingManager:
             else:
                 ttk.Label(parent, text="No recent contacts",
                          foreground='#666666').pack(side='left', padx=5)
-    
+
         except Exception as e:
             print(f"Error loading recent contacts: {e}")
-    
-    
+
+
 
     def _clear_compose_form(self, recipient_entry, subject_entry, message_text, attachment_var, assignment_combo):
         """Clear the compose form"""
         recipient_entry.delete(0, tk.END)
         subject_entry.delete(0, tk.END)
         message_text.delete('1.0', tk.END)
-    
+
         if attachment_var:
             attachment_var.set("")
-    
+
         if assignment_combo:
             assignment_combo.current(0)
-    
+
 
     def _reply_to_message(self, original_msg_id, original_sender_id, original_subject):
         """Reply to a message"""
@@ -1301,48 +1301,48 @@ class MessagingManager:
             if not sender:
                 messagebox.showerror("Error", "Original sender not found")
                 return
-    
+
             sender_username = sender[0]
-    
+
             # Create reply window
             reply_window = tk.Toplevel(self.root)
             reply_window.title("Reply to Message")
             reply_window.geometry("700x500")
             reply_window.configure(bg='#f0f0f0')
-    
+
             form_frame = ttk.LabelFrame(reply_window, text="Reply", padding=20)
             form_frame.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
             # Recipient (read-only)
             ttk.Label(form_frame, text="To:").grid(row=0, column=0, sticky='w', pady=5)
             recipient_label = ttk.Label(form_frame, text=sender_username, font=('TkDefaultFont', 10, 'bold'))
             recipient_label.grid(row=0, column=1, sticky='w', pady=5)
-    
+
             # Subject
             ttk.Label(form_frame, text="Subject:").grid(row=1, column=0, sticky='w', pady=5)
             reply_subject = f"Re: {original_subject}" if not original_subject.startswith("Re:") else original_subject
             subject_label = ttk.Label(form_frame, text=reply_subject, font=('TkDefaultFont', 10, 'bold'))
             subject_label.grid(row=1, column=1, sticky='w', pady=5)
-    
+
             # Message
             ttk.Label(form_frame, text="Message:").grid(row=2, column=0, sticky='nw', pady=5)
             message_text = scrolledtext.ScrolledText(form_frame, width=60, height=15, wrap=tk.WORD)
             message_text.grid(row=2, column=1, sticky='ew', pady=5, padx=5)
-    
+
             form_frame.columnconfigure(1, weight=1)
-    
+
             # Buttons
             button_frame = ttk.Frame(reply_window)
             button_frame.pack(fill='x', padx=10, pady=10)
-    
+
             def send_reply():
                 user_id = self.auth.current_user.get('id')
                 message_body = message_text.get('1.0', 'end-1c')
-    
+
                 if not message_body.strip():
                     messagebox.showerror("Error", "Please enter a message")
                     return
-    
+
                 try:
                     conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                     try:
@@ -1365,18 +1365,18 @@ class MessagingManager:
                 except Exception as e:
                     messagebox.showerror("Error", f"Failed to send reply: {str(e)}")
                     print(f"Error sending reply: {e}")
-    
+
             ttk.Button(button_frame, text="Send Reply", command=send_reply).pack(side='left', padx=5)
             ttk.Button(button_frame, text="Cancel", command=reply_window.destroy).pack(side='left', padx=5)
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to create reply: {str(e)}")
             print(f"Error creating reply: {e}")
-    
+
 
     def send_message(self, *args, **kwargs):
         """Open a dialog to compose and send a message.
-    
+
         Features:
         - Quick compose message dialog
         - Recipient selection with user browser
@@ -1391,55 +1391,55 @@ class MessagingManager:
             if not user_id:
                 messagebox.showerror("Error", "User not authenticated")
                 return
-    
+
             # Ensure messages table exists
             self.gui.db._ensure_messages_table()
-    
+
             # Create compose message window
             compose_window = tk.Toplevel(self.root)
             compose_window.title("Send Message")
             compose_window.geometry("800x600")
             compose_window.configure(bg='#f0f0f0')
-    
+
             # Header
             header_frame = ttk.Frame(compose_window)
             header_frame.pack(fill='x', padx=10, pady=10)
-    
+
             ttk.Label(header_frame, text="Compose New Message",
                      font=('TkDefaultFont', 16, 'bold')).pack(side='left')
-    
+
             # Form frame
             form_frame = ttk.LabelFrame(compose_window, text="Message Details", padding=20)
             form_frame.pack(fill='both', expand=True, padx=10, pady=10)
-    
+
             # Recipient
             ttk.Label(form_frame, text="To (Username):").grid(row=0, column=0, sticky='w', pady=5)
             recipient_var = tk.StringVar()
             recipient_entry = ttk.Entry(form_frame, textvariable=recipient_var, width=50)
             recipient_entry.grid(row=0, column=1, sticky='ew', pady=5, padx=5)
-    
+
             # Browse recipients button
             ttk.Button(form_frame, text="Browse Users",
                       command=lambda: self._browse_users(recipient_var)).grid(row=0, column=2, padx=5)
-    
+
             # Subject
             ttk.Label(form_frame, text="Subject:").grid(row=1, column=0, sticky='w', pady=5)
             subject_var = tk.StringVar()
             subject_entry = ttk.Entry(form_frame, textvariable=subject_var, width=50)
             subject_entry.grid(row=1, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
-    
+
             # Priority (optional)
             ttk.Label(form_frame, text="Priority:").grid(row=2, column=0, sticky='w', pady=5)
             priority_var = tk.StringVar(value="normal")
             priority_combo = ttk.Combobox(form_frame, textvariable=priority_var, width=48,
                                          values=["low", "normal", "high", "urgent"], state='readonly')
             priority_combo.grid(row=2, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
-    
+
             # Message body
             ttk.Label(form_frame, text="Message:").grid(row=3, column=0, sticky='nw', pady=5)
             message_text = scrolledtext.ScrolledText(form_frame, width=50, height=12, wrap=tk.WORD)
             message_text.grid(row=3, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
-    
+
             # Attachment (optional)
             ttk.Label(form_frame, text="Attachment:").grid(row=4, column=0, sticky='w', pady=5)
             attachment_var = tk.StringVar()
@@ -1447,38 +1447,38 @@ class MessagingManager:
             attachment_entry.grid(row=4, column=1, sticky='ew', pady=5, padx=5)
             ttk.Button(form_frame, text="Browse",
                       command=lambda: self._browse_attachment(attachment_var)).grid(row=4, column=2, padx=5)
-    
+
             # Assignment reference (optional)
             ttk.Label(form_frame, text="Assignment:").grid(row=5, column=0, sticky='w', pady=5)
             assignment_var = tk.StringVar()
             assignment_combo = ttk.Combobox(form_frame, textvariable=assignment_var, width=48, state='readonly')
             assignment_combo.grid(row=5, column=1, columnspan=2, sticky='ew', pady=5, padx=5)
-    
+
             # Load assignments
             self._load_assignments_for_compose(assignment_combo)
-    
+
             form_frame.columnconfigure(1, weight=1)
-    
+
             # Buttons
             button_frame = ttk.Frame(compose_window)
             button_frame.pack(fill='x', padx=10, pady=10)
-    
+
             ttk.Button(button_frame, text="Send Message",
                       command=lambda: self._send_message_and_close(
                           compose_window, user_id, recipient_var.get(), subject_var.get(),
                           message_text.get('1.0', 'end-1c'), attachment_var.get(),
                           assignment_var.get()
                       ), style='Accent.TButton').pack(side='left', padx=5)
-    
+
             ttk.Button(button_frame, text="Cancel",
                       command=compose_window.destroy).pack(side='left', padx=5)
-    
+
             # Quick recipients frame (recent contacts)
             quick_frame = ttk.LabelFrame(compose_window, text="Recent Contacts", padding=10)
             quick_frame.pack(fill='x', padx=10, pady=5)
-    
+
             self._load_recent_contacts(quick_frame, recipient_var, user_id)
-    
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open compose dialog: {str(e)}")
             print(f"Error in send_message: {e}")

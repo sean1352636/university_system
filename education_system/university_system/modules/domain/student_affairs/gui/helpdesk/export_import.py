@@ -9,7 +9,7 @@ import threading
 from functools import partial
 import webbrowser
 from education_system.university_system.infrastructure.email.template_utils import render_template
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 # Import authentication - REQUIRED (no fallback for security)
 from education_system.university_system.infrastructure.auth import UserAuth, get_global_auth
@@ -61,12 +61,12 @@ try:
 except ImportError:
     # If helpdesk.py is not available, we'll define minimal stubs
     print("Warning: helpdesk.py not found. Running in standalone mode.")
-    
+
     def init_helpdesk_db():
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Create support_tickets table with enhanced fields
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS support_tickets (
@@ -132,7 +132,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_attachments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_attachments (
@@ -152,7 +152,7 @@ except ImportError:
                 FOREIGN KEY (uploaded_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_assignments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_assignments (
@@ -167,7 +167,7 @@ except ImportError:
                 FOREIGN KEY (assigned_to) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_templates table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_templates (
@@ -188,7 +188,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create sla_policies table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS sla_policies (
@@ -207,7 +207,7 @@ except ImportError:
                 updated_at TEXT
             )
             ''')
-            
+
             # Create ticket_workflows table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_workflows (
@@ -224,7 +224,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_time_tracking table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_time_tracking (
@@ -241,7 +241,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_escalations table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_escalations (
@@ -258,7 +258,7 @@ except ImportError:
                 FOREIGN KEY (escalated_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_links table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_links (
@@ -273,7 +273,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_audit_log table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_audit_log (
@@ -290,7 +290,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create knowledge_base table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS knowledge_base (
@@ -310,7 +310,7 @@ except ImportError:
                 FOREIGN KEY (author_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create departments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS departments (
@@ -327,7 +327,7 @@ except ImportError:
                 FOREIGN KEY (sla_policy_id) REFERENCES sla_policies (sla_id)
             )
             ''')
-            
+
             # Create organizations table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS organizations (
@@ -342,7 +342,7 @@ except ImportError:
                 updated_at TEXT
             )
             ''')
-            
+
             # Create saved_searches table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS saved_searches (
@@ -358,13 +358,13 @@ except ImportError:
             conn.commit()
             conn.close()
             print("Enhanced helpdesk database initialized successfully!")
-            
+
             # Initialize default data
             init_default_data()
-            
+
         except sqlite3.Error as e:
             print(f"An error occurred while initializing the helpdesk database: {e}")
-        
+
     def setup_enhanced_helpdesk_permissions():
         """
         Setup enhanced helpdesk permissions
@@ -1432,14 +1432,14 @@ def run_gui_helpdesk(auth_system=None):
     """Run the GUI helpdesk system"""
     root = tk.Tk()
     app = HelpdeskGUI(root, auth=auth_system)
-    
+
     # Handle window closing
     def on_closing():
         if messagebox.askokcancel("Quit", "Do you want to quit the helpdesk system?"):
             root.destroy()
-    
+
     root.protocol("WM_DELETE_WINDOW", on_closing)
-    
+
     # Start the GUI
     root.mainloop()
 

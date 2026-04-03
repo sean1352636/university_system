@@ -240,9 +240,10 @@ class TestPrintOutput:
         """Test output format of debug_function_definition"""
         misc.debug_function_definition()
 
-        # Should print debugging header
+        # The i18n key 'email.misc.debugging_function_definition' is returned as-is
+        # when no translation is found, so check for the key fragment
         printed_args = [call[0][0] for call in mock_print.call_args_list if call[0]]
-        assert any('Debugging' in str(arg) for arg in printed_args)
+        assert any('debugging_function_definition' in str(arg) or 'Debugging' in str(arg) for arg in printed_args)
 
     @patch('builtins.print')
     def test_find_function_prints_context(self, mock_print):

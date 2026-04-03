@@ -62,7 +62,7 @@ except (ImportError, ModuleNotFoundError):
     student_union_cli = None
     init_student_union_db = None
     CLI_AVAILABLE = False
-    
+
 
 def register_for_selected_event(self):
     """Register for the selected event"""
@@ -74,15 +74,15 @@ def register_for_selected_event(self):
     if not selection:
         messagebox.showwarning(_t("common.no_selection"), _t("student_union.events.select_event_to_register"))
         return
-    
+
     item = self.events_tree.item(selection[0])
     event_id = item['values'][0]
     event_name = item['values'][1]
-    
+
     values = item['values']
     max_capacity = values[7] if len(values) > 7 else None
     current_attendees = values[6] if len(values) > 6 else None
-    
+
     # Check existing registration
     def has_existing_registration(conn):
         cursor = conn.cursor()
@@ -94,11 +94,11 @@ def register_for_selected_event(self):
             (event_id, self.current_user['id'])
         )
         return cursor.fetchone() is not None
-    
+
     if self._safe_db_call(has_existing_registration):
         messagebox.showinfo(_t("student_union.events.already_registered"), _t("student_union.events.already_registered_msg"))
         return
-    
+
     # Capacity check
     if isinstance(max_capacity, int) and isinstance(current_attendees, str):
         try:
@@ -107,7 +107,7 @@ def register_for_selected_event(self):
             current_count = None
     else:
         current_count = None
-    
+
     if isinstance(max_capacity, int) and current_count is not None and current_count >= max_capacity:
         messagebox.showwarning(_t("student_union.events.event_full"), _t("student_union.events.event_full_msg"))
         return
@@ -236,14 +236,14 @@ def create_event_dialog(self):
     ttk.Label(form_frame, text=_t("common.description")).pack(anchor=tk.W)
     fields['description'] = scrolledtext.ScrolledText(form_frame, height=10, width=60)
     fields['description'].pack(fill=tk.BOTH, expand=True, pady=(0,10))
-    
+
     # Set default values
     fields['date'].insert(0, datetime.now().strftime('%Y-%m-%d'))
-    
+
     # Buttons
     button_frame = ttk.Frame(form_frame)
     button_frame.pack(pady=20)
-    
+
     def create_event():
         name = fields['name'].get().strip()
         date = fields['date'].get().strip()
@@ -301,7 +301,7 @@ def create_event_dialog(self):
 
     ttk.Button(button_frame, text=_t("student_union.events.create_event"), command=create_event).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("common.cancel"), command=create_window.destroy).pack(side=tk.LEFT, padx=5)
-    
+
     fields['name'].focus()
 
 

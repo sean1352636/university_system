@@ -63,7 +63,7 @@ class BackupMixin:
 
         if not backups:
             print("No backups found.")
-            return
+            return []
 
         print("\nAvailable Backups:")
         print("=" * 80)
@@ -77,6 +77,7 @@ class BackupMixin:
             print(f"{name:<25} {backup_date:<20} {size_kb:<12} {desc:<20}")
 
         print("=" * 80)
+        return backups
 
     def restore_backup(self, backup_name):
         """Restore from a backup"""

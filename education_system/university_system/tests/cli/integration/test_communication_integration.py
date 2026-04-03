@@ -366,10 +366,12 @@ class TestLibraryNotifications:
         assert '5 days overdue' in call_args[0][2]
 
     @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
-    def test_library_notification_reservation_ready(self, mock_email):
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.render_template')
+    def test_library_notification_reservation_ready(self, mock_render, mock_email):
         """Test library reservation ready notification"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_library_notification
 
+        mock_render.return_value = ('Reservation Ready', 'Your book "Python Programming" is ready for pickup.')
         mock_email.return_value = True
 
         result = send_library_notification(
@@ -433,10 +435,12 @@ class TestCalendarReminder:
     """Test calendar reminder helper"""
 
     @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
-    def test_calendar_reminder_email(self, mock_email):
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.render_template')
+    def test_calendar_reminder_email(self, mock_render, mock_email):
         """Test calendar reminder via email"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_calendar_reminder
 
+        mock_render.return_value = ('Calendar Reminder', 'Reminder: Final Exam on 2025-01-20 at 09:00\nLocation: Room 101')
         mock_email.return_value = True
 
         result = send_calendar_reminder(
@@ -515,10 +519,12 @@ class TestRestaurantNotifications:
     """Test restaurant notification helper"""
 
     @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_unified')
-    def test_restaurant_order_confirmation(self, mock_email):
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.render_template')
+    def test_restaurant_order_confirmation(self, mock_render, mock_email):
         """Test restaurant order confirmation"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_restaurant_notification
 
+        mock_render.return_value = ('Order Confirmation - ORD123', 'Thank you for your order!\nTotal: £25.50\nItems: 2 x Pizza')
         mock_email.return_value = True
 
         result = send_restaurant_notification(
@@ -706,12 +712,12 @@ class TestEdgeCases:
 
         assert result is True
 
-    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_template_email')
-    def test_send_email_with_template_no_vars(self, mock_template):
-        """Test template email with no variables"""
+    @patch('education_system.university_system.modules.shared.utils.communication_integration.send_email_as_system')
+    def test_send_email_with_template_no_vars(self, mock_send):
+        """Test template email with empty vars dict falls back to regular send (empty dict is falsy)"""
         from education_system.university_system.modules.shared.utils.communication_integration import send_email_unified
 
-        mock_template.return_value = True
+        mock_send.return_value = True
 
         result = send_email_unified(
             'test@example.com',
@@ -722,6 +728,7 @@ class TestEdgeCases:
         )
 
         assert result is True
+        mock_send.assert_called_once()
 
 
 if __name__ == '__main__':

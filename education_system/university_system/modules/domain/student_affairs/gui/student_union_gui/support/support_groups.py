@@ -54,7 +54,7 @@ except (ImportError, ModuleNotFoundError):
     student_union_cli = None
     init_student_union_db = None
     CLI_AVAILABLE = False
-    
+
 
 class SupportGroupsDialog:
     """Dialog for browsing support groups"""
@@ -959,27 +959,27 @@ def create_support_tab(self):
     """Create peer support tab"""
     support_frame = ttk.Frame(self.notebook)
     self.notebook.add(support_frame, text="Peer Support")
-    
+
     # Left panel
     left_panel = ttk.LabelFrame(support_frame, text="Support Actions")
     left_panel.pack(side='left', fill='y', padx=5, pady=5, ipadx=5, ipady=5)
-    
-    ttk.Button(left_panel, text="Browse Support Groups", 
+
+    ttk.Button(left_panel, text="Browse Support Groups",
               command=self.browse_support_groups).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Join Support Group", 
+    ttk.Button(left_panel, text="Join Support Group",
               command=self.join_support_group_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="My Support Groups", 
+    ttk.Button(left_panel, text="My Support Groups",
               command=self.view_my_support_groups).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Create Support Group", 
+    ttk.Button(left_panel, text="Create Support Group",
               command=self.create_support_group_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Wellness Resources", 
+    ttk.Button(left_panel, text="Wellness Resources",
               command=self.view_wellness_resources).pack(fill='x', pady=2)
-    
+
     # Right panel
     right_panel = ttk.LabelFrame(support_frame, text="Support Information")
     right_panel.pack(side='right', fill='both', expand=True, padx=5, pady=5)
-    
-    self.support_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD, 
+
+    self.support_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD,
                                                  height=30, width=80)
     self.support_text.pack(fill='both', expand=True, padx=5, pady=5)
 

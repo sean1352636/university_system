@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -122,7 +122,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -133,7 +133,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -261,7 +261,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -1163,9 +1163,9 @@ def generate_specific_report(self, report_type):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+
         if report_type == "student_summary":
             return self.generate_student_summary_report(cursor, timestamp)
         elif report_type == "module_enrollment":
@@ -1178,7 +1178,7 @@ def generate_specific_report(self, report_type):
             return self.generate_custom_sql_report(cursor, timestamp)
         else:
             return f"Unknown report type: {report_type}"
-        
+
     except Exception as e:
         raise Exception(f"Specific report generation error: {str(e)}")
     finally:
@@ -1191,55 +1191,55 @@ def generate_student_summary_report(self, cursor, timestamp):
     result = f"STUDENT SUMMARY REPORT\n"
     result += f"=" * 50 + "\n"
     result += f"Generated: {timestamp}\n\n"
-    
+
     # Total students
     cursor.execute("SELECT COUNT(*) FROM students")
     total_students = cursor.fetchone()[0]
-    
+
     # Students by course
     cursor.execute("SELECT course, COUNT(*) FROM students GROUP BY course ORDER BY COUNT(*) DESC")
     course_breakdown = cursor.fetchall()
-    
+
     # Gender distribution
     cursor.execute("SELECT gender, COUNT(*) FROM students GROUP BY gender")
     gender_breakdown = cursor.fetchall()
-    
+
     # Age statistics
     cursor.execute("SELECT MIN(age), MAX(age), AVG(age) FROM students WHERE age IS NOT NULL")
     age_stats = cursor.fetchone()
-    
+
     result += f"OVERVIEW:\n"
     result += f"Total Students: {total_students}\n\n"
-    
+
     result += f"COURSE BREAKDOWN:\n"
     for course, count in course_breakdown:
         percentage = (count / total_students) * 100
         course_display = course if course else "Not Specified"
         result += f"  {course_display}: {count} students ({percentage:.1f}%)\n"
-    
+
     result += f"\nGENDER DISTRIBUTION:\n"
     for gender, count in gender_breakdown:
         percentage = (count / total_students) * 100
         gender_display = gender.title() if gender else "Not Specified"
         result += f"  {gender_display}: {count} students ({percentage:.1f}%)\n"
-    
+
     if age_stats and age_stats[0]:
         result += f"\nAGE STATISTICS:\n"
         result += f"  Youngest: {age_stats[0]} years\n"
         result += f"  Oldest: {age_stats[1]} years\n"
         avg_age = age_stats[2] if age_stats[2] is not None else 0.0
         result += f"  Average: {avg_age:.1f} years\n"
-    
+
     # Recent registrations
     cursor.execute("""
-    SELECT COUNT(*) FROM students 
+    SELECT COUNT(*) FROM students
     WHERE registration_datetime >= datetime('now', '-30 days')
     """)
     recent_count = cursor.fetchone()[0]
-    
+
     result += f"\nRECENT ACTIVITY:\n"
     result += f"  New registrations (last 30 days): {recent_count}\n"
-    
+
     return result
 AdvancedSearchGUI.generate_student_summary_report = generate_student_summary_report
 
@@ -1248,57 +1248,57 @@ def generate_module_enrollment_report(self, cursor, timestamp):
     result = f"MODULE ENROLLMENT REPORT\n"
     result += f"=" * 50 + "\n"
     result += f"Generated: {timestamp}\n\n"
-    
+
     # Total enrollments
     cursor.execute("SELECT COUNT(*) FROM student_modules")
     total_enrollments = cursor.fetchone()[0]
-    
+
     # Enrollments by module
     cursor.execute("""
     SELECT module_code, module_name, COUNT(*) as enrollment_count
-    FROM student_modules 
+    FROM student_modules
     GROUP BY module_code, module_name
     ORDER BY enrollment_count DESC
     """)
     module_enrollments = cursor.fetchall()
-    
+
     # Enrollments by type
     cursor.execute("""
-    SELECT module_type, COUNT(*) 
-    FROM student_modules 
+    SELECT module_type, COUNT(*)
+    FROM student_modules
     GROUP BY module_type
     """)
     type_enrollments = cursor.fetchall()
-    
+
     result += f"ENROLLMENT OVERVIEW:\n"
     result += f"Total Module Enrollments: {total_enrollments}\n\n"
-    
+
     result += f"TOP MODULES BY ENROLLMENT:\n"
     for code, name, count in module_enrollments[:10]:  # Top 10
         result += f"  {code} - {name}: {count} students\n"
-    
+
     result += f"\nENROLLMENT BY MODULE TYPE:\n"
     for module_type, count in type_enrollments:
         percentage = (count / total_enrollments) * 100 if total_enrollments > 0 else 0
         result += f"  {module_type}: {count} enrollments ({percentage:.1f}%)\n"
-    
+
     # Grade distribution across all modules
     cursor.execute("""
-    SELECT grade, COUNT(*) 
-    FROM student_modules 
-    WHERE grade IS NOT NULL 
+    SELECT grade, COUNT(*)
+    FROM student_modules
+    WHERE grade IS NOT NULL
     GROUP BY grade
     ORDER BY grade
     """)
     grade_distribution = cursor.fetchall()
-    
+
     if grade_distribution:
         total_graded = sum(count for _, count in grade_distribution)
         result += f"\nOVERALL GRADE DISTRIBUTION:\n"
         for grade, count in grade_distribution:
             percentage = (count / total_graded) * 100
             result += f"  Grade {grade}: {count} ({percentage:.1f}%)\n"
-    
+
     return result
 AdvancedSearchGUI.generate_module_enrollment_report = generate_module_enrollment_report
 
@@ -1307,45 +1307,45 @@ def generate_demographics_analysis_report(self, cursor, timestamp):
     result = f"DEMOGRAPHICS ANALYSIS REPORT\n"
     result += f"=" * 50 + "\n"
     result += f"Generated: {timestamp}\n\n"
-    
+
     # Gender distribution by course
     cursor.execute("""
-    SELECT course, gender, COUNT(*) 
-    FROM students 
+    SELECT course, gender, COUNT(*)
+    FROM students
     GROUP BY course, gender
     ORDER BY course, gender
     """)
     gender_course_data = cursor.fetchall()
-    
+
     # Age distribution by course
     cursor.execute("""
-    SELECT course, 
-           CASE 
+    SELECT course,
+           CASE
                WHEN age < 20 THEN 'Under 20'
                WHEN age BETWEEN 20 AND 25 THEN '20-25'
                WHEN age BETWEEN 26 AND 30 THEN '26-30'
                ELSE 'Over 30'
            END as age_group,
            COUNT(*)
-    FROM students 
+    FROM students
     WHERE age IS NOT NULL
     GROUP BY course, age_group
     ORDER BY course, age_group
     """)
     age_course_data = cursor.fetchall()
-    
+
     # Registration trends
     cursor.execute("""
-    SELECT strftime('%Y-%m', registration_datetime) as month, 
+    SELECT strftime('%Y-%m', registration_datetime) as month,
            course, COUNT(*)
-    FROM students 
+    FROM students
     WHERE registration_datetime IS NOT NULL
     GROUP BY month, course
     ORDER BY month DESC, course
     LIMIT 20
     """)
     registration_trends = cursor.fetchall()
-    
+
     result += f"GENDER DISTRIBUTION BY COURSE:\n"
     current_course = None
     for course, gender, count in gender_course_data:
@@ -1355,7 +1355,7 @@ def generate_demographics_analysis_report(self, cursor, timestamp):
             current_course = course
         gender_display = gender.title() if gender else "Not Specified"
         result += f"  {gender_display}: {count} students\n"
-    
+
     result += f"\nAGE DISTRIBUTION BY COURSE:\n"
     current_course = None
     for course, age_group, count in age_course_data:
@@ -1364,11 +1364,11 @@ def generate_demographics_analysis_report(self, cursor, timestamp):
             result += f"\n{course_display} Course:\n"
             current_course = course
         result += f"  {age_group}: {count} students\n"
-    
+
     result += f"\nREGISTRATION TRENDS (Recent months):\n"
     for month, course, count in registration_trends:
         result += f"  {month} - {course}: {count} new students\n"
-    
+
     return result
 AdvancedSearchGUI.generate_demographics_analysis_report = generate_demographics_analysis_report
 
@@ -1377,33 +1377,33 @@ def generate_performance_analysis_report(self, cursor, timestamp):
     result = f"PERFORMANCE ANALYSIS REPORT\n"
     result += f"=" * 50 + "\n"
     result += f"Generated: {timestamp}\n\n"
-    
+
     # Overall performance metrics
     cursor.execute("""
-    SELECT 
+    SELECT
         COUNT(DISTINCT student_id) as total_students_with_grades,
         COUNT(*) as total_graded_modules,
-        AVG(CASE grade 
-            WHEN 'A' THEN 4.0 
-            WHEN 'B' THEN 3.0 
-            WHEN 'C' THEN 2.0 
-            WHEN 'D' THEN 1.0 
-            ELSE 0.0 
+        AVG(CASE grade
+            WHEN 'A' THEN 4.0
+            WHEN 'B' THEN 3.0
+            WHEN 'C' THEN 2.0
+            WHEN 'D' THEN 1.0
+            ELSE 0.0
         END) as average_gpa
-    FROM student_modules 
+    FROM student_modules
     WHERE grade IS NOT NULL
     """)
     performance_stats = cursor.fetchone()
-    
+
     # Performance by course
     cursor.execute("""
-    SELECT s.course, 
-           AVG(CASE sm.grade 
-               WHEN 'A' THEN 4.0 
-               WHEN 'B' THEN 3.0 
-               WHEN 'C' THEN 2.0 
-               WHEN 'D' THEN 1.0 
-               ELSE 0.0 
+    SELECT s.course,
+           AVG(CASE sm.grade
+               WHEN 'A' THEN 4.0
+               WHEN 'B' THEN 3.0
+               WHEN 'C' THEN 2.0
+               WHEN 'D' THEN 1.0
+               ELSE 0.0
            END) as avg_gpa,
            COUNT(sm.grade) as graded_modules
     FROM students s
@@ -1412,16 +1412,16 @@ def generate_performance_analysis_report(self, cursor, timestamp):
     GROUP BY s.course
     """)
     course_performance = cursor.fetchall()
-    
+
     # Top and bottom performing students
     cursor.execute("""
     SELECT s.student_id, s.first_name, s.last_name, s.course,
-           AVG(CASE sm.grade 
-               WHEN 'A' THEN 4.0 
-               WHEN 'B' THEN 3.0 
-               WHEN 'C' THEN 2.0 
-               WHEN 'D' THEN 1.0 
-               ELSE 0.0 
+           AVG(CASE sm.grade
+               WHEN 'A' THEN 4.0
+               WHEN 'B' THEN 3.0
+               WHEN 'C' THEN 2.0
+               WHEN 'D' THEN 1.0
+               ELSE 0.0
            END) as avg_gpa,
            COUNT(sm.grade) as modules_completed
     FROM students s
@@ -1432,7 +1432,7 @@ def generate_performance_analysis_report(self, cursor, timestamp):
     ORDER BY avg_gpa DESC
     """)
     student_performance = cursor.fetchall()
-    
+
     if performance_stats:
         total_students, total_modules, avg_gpa = performance_stats
         result += f"OVERALL PERFORMANCE METRICS:\n"
@@ -1456,7 +1456,7 @@ def generate_performance_analysis_report(self, cursor, timestamp):
         for i, (student_id, first_name, last_name, course, gpa, modules) in enumerate(student_performance[-5:]):
             gpa_display = gpa if gpa is not None else 0.0
             result += f"  {first_name} {last_name} ({course}): {gpa_display:.2f} GPA ({modules} modules)\n"
-    
+
     return result
 AdvancedSearchGUI.generate_performance_analysis_report = generate_performance_analysis_report
 
@@ -1465,26 +1465,26 @@ def generate_custom_sql_report(self, cursor, timestamp):
     result = f"CUSTOM SQL REPORT\n"
     result += f"=" * 50 + "\n"
     result += f"Generated: {timestamp}\n\n"
-    
+
     # In a real implementation, this would allow users to input custom SQL
     # For now, provide some example queries
-    
+
     sample_queries = [
         ("Students without module enrollments", "SELECT * FROM students WHERE student_id NOT IN (SELECT DISTINCT student_id FROM student_modules)"),
         ("Module completion rates", "SELECT module_code, COUNT(*) as enrolled, COUNT(grade) as completed FROM student_modules GROUP BY module_code"),
         ("Recent activity summary", "SELECT DATE(registration_datetime) as date, COUNT(*) FROM students WHERE registration_datetime >= datetime('now', '-7 days') GROUP BY DATE(registration_datetime)")
     ]
-    
+
     result += f"SAMPLE CUSTOM QUERIES:\n\n"
-    
+
     for query_name, sql in sample_queries:
         result += f"{query_name}:\n"
         result += f"SQL: {sql}\n"
-        
+
         try:
             cursor.execute(sql)
             query_results = cursor.fetchall()
-            
+
             result += f"Results ({len(query_results)} rows):\n"
             for row in query_results[:5]:  # Show first 5 rows
                 result += f"  {row}\n"
@@ -1492,11 +1492,11 @@ def generate_custom_sql_report(self, cursor, timestamp):
                 result += f"  ... and {len(query_results) - 5} more rows\n"
         except Exception as e:
             result += f"Error executing query: {str(e)}\n"
-        
+
         result += f"\n"
-    
+
     result += f"Note: In full implementation, users can input custom SQL queries here.\n"
-    
+
     return result
 AdvancedSearchGUI.generate_custom_sql_report = generate_custom_sql_report
 

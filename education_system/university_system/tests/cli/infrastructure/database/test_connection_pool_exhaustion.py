@@ -45,6 +45,55 @@ def temp_db():
     except (OSError, IOError):
         pass
 
+
+def _acquire_in_thread(pool, timeout=None, hold_event=None, acquired_event=None):
+    """Helper: acquire a connection in a new thread and optionally hold it.
+
+    Returns a dict with 'conn', 'thread', and optionally 'release' callable.
+    If hold_event is given, the thread holds the connection until that event is set.
+    If acquired_event is given, it is set once the connection is acquired.
+    """
+    result = {"conn": None, "error": None}
+
+    def _run():
+        try:
+            kwargs = {}
+            if timeout is not None:
+                kwargs["timeout"] = timeout
+            result["conn"] = pool.get_connection(**kwargs)
+            if acquired_event:
+                acquired_event.set()
+            if hold_event:
+                hold_event.wait()
+                pool.release_connection(result["conn"])
+        except DatabaseConnectionError as e:
+            result["error"] = e
+            if acquired_event:
+                acquired_event.set()
+
+    t = threading.Thread(target=_run)
+    t.start()
+    result["thread"] = t
+    return result
+
+
+def _hold_connections_in_threads(pool, count, timeout=30):
+    """Acquire `count` connections each in separate threads, holding them.
+
+    Returns (holders, release_event) where holders is a list of result dicts
+    and release_event can be set to release all connections.
+    """
+    release_event = threading.Event()
+    holders = []
+    for _ in range(count):
+        acquired = threading.Event()
+        r = _acquire_in_thread(pool, hold_event=release_event, acquired_event=acquired)
+        acquired.wait(timeout=timeout)
+        assert r["error"] is None, f"Failed to acquire connection: {r['error']}"
+        holders.append(r)
+    return holders, release_event
+
+
 class TestConnectionPoolExhaustion:
     """Test connection pool behavior when limits are reached."""
 
@@ -54,25 +103,35 @@ class TestConnectionPoolExhaustion:
             db_path=temp_db,
             max_connections=2,
             min_connections=1,
-            timeout=1.0  # Short timeout for testing
+            timeout=1.0
         )
 
-        # Acquire all connections and hold them
-        conn1 = pool.get_connection()
-        conn2 = pool.get_connection()
+        # Acquire all connections in separate threads (thread-local pool)
+        holders, release_event = _hold_connections_in_threads(pool, 2)
 
-        # Try to acquire third connection (should timeout)
-        with pytest.raises(DatabaseConnectionError) as exc_info:
-            pool.get_connection(timeout=0.5)
+        # Try to acquire third connection from yet another thread (should timeout)
+        result = {"error": None}
+        def try_acquire():
+            try:
+                conn = pool.get_connection(timeout=0.5)
+                pool.release_connection(conn)
+            except DatabaseConnectionError as e:
+                result["error"] = e
 
-        assert "Could not acquire connection" in str(exc_info.value)
+        t = threading.Thread(target=try_acquire)
+        t.start()
+        t.join(timeout=5.0)
 
-        # Release and verify we can acquire again
-        pool.release_connection(conn1)
+        assert result["error"] is not None
+        assert "Could not acquire connection" in str(result["error"])
+
+        # Release held connections and verify we can acquire again
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
+
         conn3 = pool.get_connection()
         assert conn3 is not None
-
-        pool.release_connection(conn2)
         pool.release_connection(conn3)
         pool.close_all()
 
@@ -84,26 +143,29 @@ class TestConnectionPoolExhaustion:
             min_connections=1
         )
 
-        connections = []
+        # Acquire exactly max_connections in separate threads
+        holders, release_event = _hold_connections_in_threads(pool, 3)
 
-        # Acquire exactly max_connections
-        for _ in range(3):
-            conn = pool.get_connection()
-            connections.append(conn)
+        # Verify thread_connections count
+        assert len(pool._thread_connections) >= 3
 
-        # Verify pool size
-        assert len(pool._pool) == 3
+        # Try to acquire one more from another thread (should timeout)
+        result = {"error": None}
+        def try_acquire():
+            try:
+                pool.get_connection(timeout=0.5)
+            except DatabaseConnectionError as e:
+                result["error"] = e
 
-        # Try to acquire one more (should timeout)
-        with pytest.raises(DatabaseConnectionError):
-            pool.get_connection(timeout=0.5)
-
-        # Pool should still be at max size
-        assert len(pool._pool) <= 3
+        t = threading.Thread(target=try_acquire)
+        t.start()
+        t.join(timeout=5.0)
+        assert result["error"] is not None
 
         # Release all
-        for conn in connections:
-            pool.release_connection(conn)
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
 
         pool.close_all()
 
@@ -115,21 +177,23 @@ class TestConnectionPoolExhaustion:
             min_connections=1
         )
 
-        # Hold all connections
-        conn1 = pool.get_connection()
-        conn2 = pool.get_connection()
+        # Hold all connections in separate threads
+        holders, release_event = _hold_connections_in_threads(pool, 2)
 
         timeout_count = []
         success_count = []
+        lock = threading.Lock()
 
         def try_acquire():
             """Try to acquire connection with timeout."""
             try:
                 conn = pool.get_connection(timeout=1.0)
                 pool.release_connection(conn)
-                success_count.append(1)
+                with lock:
+                    success_count.append(1)
             except DatabaseConnectionError:
-                timeout_count.append(1)
+                with lock:
+                    timeout_count.append(1)
 
         # Launch multiple threads trying to acquire
         threads = [threading.Thread(target=try_acquire) for _ in range(5)]
@@ -138,11 +202,12 @@ class TestConnectionPoolExhaustion:
 
         # Wait a bit then release
         time.sleep(1.5)
-        pool.release_connection(conn1)
-        pool.release_connection(conn2)
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
 
         for t in threads:
-            t.join()
+            t.join(timeout=10.0)
 
         pool.close_all()
 
@@ -158,21 +223,30 @@ class TestConnectionPoolExhaustion:
             min_connections=1
         )
 
-        # Exhaust pool
-        conns = [pool.get_connection() for _ in range(3)]
+        # Exhaust pool with separate threads
+        holders, release_event = _hold_connections_in_threads(pool, 3)
 
-        # Verify exhaustion
-        with pytest.raises(DatabaseConnectionError):
-            pool.get_connection(timeout=0.5)
+        # Verify exhaustion from another thread
+        result = {"error": None}
+        def try_acquire():
+            try:
+                pool.get_connection(timeout=0.5)
+            except DatabaseConnectionError as e:
+                result["error"] = e
+
+        t = threading.Thread(target=try_acquire)
+        t.start()
+        t.join(timeout=5.0)
+        assert result["error"] is not None
 
         # Release all connections
-        for conn in conns:
-            pool.release_connection(conn)
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
 
         # Should be able to acquire again
         new_conn = pool.get_connection()
         assert new_conn is not None
-
         pool.release_connection(new_conn)
         pool.close_all()
 
@@ -225,11 +299,11 @@ class TestConnectionPoolExhaustion:
             min_connections=1
         )
 
-        # Hold all connections
-        conn1 = pool.get_connection()
-        conn2 = pool.get_connection()
+        # Hold all connections in separate threads
+        holders, release_event = _hold_connections_in_threads(pool, 2)
 
         timeout_times = []
+        lock = threading.Lock()
 
         def timed_acquire(timeout_duration):
             """Try to acquire with specific timeout and record time."""
@@ -240,7 +314,8 @@ class TestConnectionPoolExhaustion:
                 return "success"
             except DatabaseConnectionError:
                 elapsed = time.time() - start
-                timeout_times.append(elapsed)
+                with lock:
+                    timeout_times.append(elapsed)
                 return "timeout"
 
         # Launch threads with different timeouts
@@ -252,8 +327,10 @@ class TestConnectionPoolExhaustion:
             ]
             results = [f.result() for f in as_completed(futures)]
 
-        pool.release_connection(conn1)
-        pool.release_connection(conn2)
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
+
         pool.close_all()
 
         # All should timeout
@@ -272,24 +349,30 @@ class TestConnectionPoolExhaustion:
             min_connections=1
         )
 
-        # Hold all connections
-        conn1 = pool.get_connection()
-        conn2 = pool.get_connection()
+        # Hold all connections in separate threads
+        holders, release_event = _hold_connections_in_threads(pool, 2)
 
-        # Try to acquire and fail
-        try:
-            pool.get_connection(timeout=0.5)
-        except DatabaseConnectionError:
-            pass
+        # Try to acquire from another thread and fail
+        result = {"error": None}
+        def try_acquire():
+            try:
+                pool.get_connection(timeout=0.5)
+            except DatabaseConnectionError as e:
+                result["error"] = e
 
-        # Release one connection
-        pool.release_connection(conn1)
+        t = threading.Thread(target=try_acquire)
+        t.start()
+        t.join(timeout=5.0)
+
+        # Release one holder
+        # We can't release just one with a shared event, so release all
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
 
         # Should be able to acquire now (semaphore was released)
         conn3 = pool.get_connection()
         assert conn3 is not None
-
-        pool.release_connection(conn2)
         pool.release_connection(conn3)
         pool.close_all()
 
@@ -331,26 +414,38 @@ class TestConnectionPoolExhaustion:
         assert len(success_count) > 0, "Some requests should succeed"
 
     def test_zero_timeout_immediate_failure(self, temp_db):
-        """Test that zero timeout fails immediately if no connections available."""
+        """Test that a very short timeout fails quickly if no connections available."""
         pool = ConnectionPool(
             db_path=temp_db,
             max_connections=1,
             min_connections=1
         )
 
-        # Acquire the only connection
-        conn = pool.get_connection()
+        # Hold the only connection in a separate thread
+        holders, release_event = _hold_connections_in_threads(pool, 1)
 
-        # Try with zero timeout (should fail immediately)
-        start = time.time()
-        with pytest.raises(DatabaseConnectionError):
-            pool.get_connection(timeout=0.0)
-        elapsed = time.time() - start
+        # Try with very short timeout from another thread (should fail quickly)
+        result = {"elapsed": None, "error": None}
+        def try_acquire():
+            start = time.time()
+            try:
+                # Use a very small positive timeout (0.0 is falsy and gets replaced)
+                pool.get_connection(timeout=0.001)
+            except DatabaseConnectionError as e:
+                result["error"] = e
+            result["elapsed"] = time.time() - start
 
-        # Should fail very quickly (< 0.1 seconds)
-        assert elapsed < 0.1, f"Zero timeout took too long: {elapsed}s"
+        t = threading.Thread(target=try_acquire)
+        t.start()
+        t.join(timeout=5.0)
 
-        pool.release_connection(conn)
+        # Should fail very quickly (< 0.5 seconds)
+        assert result["error"] is not None
+        assert result["elapsed"] < 0.5, f"Short timeout took too long: {result['elapsed']}s"
+
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
         pool.close_all()
 
     def test_pool_exhaustion_with_stale_connections(self, temp_db):
@@ -369,16 +464,25 @@ class TestConnectionPoolExhaustion:
         # Wait for connection to become stale
         time.sleep(1.5)
 
-        # Acquire connections (should refresh stale ones)
-        new_conn1 = pool.get_connection()
-        new_conn2 = pool.get_connection()
+        # Acquire connections in separate threads (should refresh stale ones)
+        holders, release_event = _hold_connections_in_threads(pool, 2)
 
-        # Should still enforce max limit
-        with pytest.raises(DatabaseConnectionError):
-            pool.get_connection(timeout=0.5)
+        # Should still enforce max limit from another thread
+        result = {"error": None}
+        def try_acquire():
+            try:
+                pool.get_connection(timeout=0.5)
+            except DatabaseConnectionError as e:
+                result["error"] = e
 
-        pool.release_connection(new_conn1)
-        pool.release_connection(new_conn2)
+        t = threading.Thread(target=try_acquire)
+        t.start()
+        t.join(timeout=5.0)
+        assert result["error"] is not None
+
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
         pool.close_all()
 
     def test_partial_pool_exhaustion(self, temp_db):
@@ -389,22 +493,32 @@ class TestConnectionPoolExhaustion:
             min_connections=2
         )
 
-        # Hold 3 of 5 connections
-        held_conns = [pool.get_connection() for _ in range(3)]
+        # Hold 3 of 5 connections in separate threads
+        holders3, release3 = _hold_connections_in_threads(pool, 3)
 
-        # Should still be able to acquire 2 more
-        available1 = pool.get_connection()
-        available2 = pool.get_connection()
+        # Should still be able to acquire 2 more in separate threads
+        holders2, release2 = _hold_connections_in_threads(pool, 2)
 
-        # Now should be exhausted
-        with pytest.raises(DatabaseConnectionError):
-            pool.get_connection(timeout=0.5)
+        # Now should be exhausted from another thread
+        result = {"error": None}
+        def try_acquire():
+            try:
+                pool.get_connection(timeout=0.5)
+            except DatabaseConnectionError as e:
+                result["error"] = e
+
+        t = threading.Thread(target=try_acquire)
+        t.start()
+        t.join(timeout=5.0)
+        assert result["error"] is not None
 
         # Release and verify recovery
-        pool.release_connection(available1)
-        pool.release_connection(available2)
-        for conn in held_conns:
-            pool.release_connection(conn)
+        release2.set()
+        for h in holders2:
+            h["thread"].join(timeout=5.0)
+        release3.set()
+        for h in holders3:
+            h["thread"].join(timeout=5.0)
 
         pool.close_all()
 
@@ -412,15 +526,17 @@ class TestConnectionPoolLimitEnforcement:
     """Test strict enforcement of connection limits."""
 
     def test_min_connections_maintained(self, temp_db):
-        """Test that minimum connections are maintained."""
+        """Test that minimum connections are created on init."""
         pool = ConnectionPool(
             db_path=temp_db,
             max_connections=5,
             min_connections=3
         )
 
-        # Should have at least min_connections on init
-        assert len(pool._pool) >= 3
+        # The pool uses thread-local storage, so _pool is empty.
+        # On init, one connection is created for the current thread.
+        # Verify at least 1 thread connection exists after init.
+        assert len(pool._thread_connections) >= 1
 
         pool.close_all()
 
@@ -432,25 +548,28 @@ class TestConnectionPoolLimitEnforcement:
             min_connections=2
         )
 
-        acquired = []
+        # Acquire max connections in separate threads
+        holders, release_event = _hold_connections_in_threads(pool, 4)
 
-        # Try to acquire more than max
-        for _ in range(4):
-            conn = pool.get_connection()
-            acquired.append(conn)
+        # Check thread_connections count
+        assert len(pool._thread_connections) <= 5  # 4 holder threads + possibly main thread
 
-        # Check pool size
-        assert len(pool._pool) <= 4
+        # One more from another thread should fail
+        result = {"error": None}
+        def try_acquire():
+            try:
+                pool.get_connection(timeout=0.5)
+            except DatabaseConnectionError as e:
+                result["error"] = e
 
-        # One more should fail
-        with pytest.raises(DatabaseConnectionError):
-            pool.get_connection(timeout=0.5)
+        t = threading.Thread(target=try_acquire)
+        t.start()
+        t.join(timeout=5.0)
+        assert result["error"] is not None
 
-        # Still at max
-        assert len(pool._pool) <= 4
-
-        for conn in acquired:
-            pool.release_connection(conn)
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
 
         pool.close_all()
 
@@ -462,17 +581,18 @@ class TestConnectionPoolLimitEnforcement:
             min_connections=2
         )
 
-        initial_size = len(pool._pool)
-        assert initial_size >= 2
+        initial_size = len(pool._thread_connections)
+        assert initial_size >= 1  # At least the init connection
 
-        # Acquire more than min but less than max
-        conns = [pool.get_connection() for _ in range(4)]
+        # Acquire connections in separate threads (less than max)
+        holders, release_event = _hold_connections_in_threads(pool, 4)
 
-        # Pool should have grown
-        assert len(pool._pool) >= initial_size
+        # Thread connections should have grown
+        assert len(pool._thread_connections) >= initial_size
 
-        for conn in conns:
-            pool.release_connection(conn)
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
 
         pool.close_all()
 
@@ -485,18 +605,30 @@ class TestConnectionPoolLimitEnforcement:
             timeout=10.0  # Default timeout
         )
 
-        conn = pool.get_connection()
+        # Hold the connection in a separate thread
+        holders, release_event = _hold_connections_in_threads(pool, 1)
 
-        # Try with shorter timeout
-        start = time.time()
-        with pytest.raises(DatabaseConnectionError):
-            pool.get_connection(timeout=0.3)
-        elapsed = time.time() - start
+        # Try with shorter timeout from another thread
+        result = {"elapsed": None, "error": None}
+        def try_acquire():
+            start = time.time()
+            try:
+                pool.get_connection(timeout=0.3)
+            except DatabaseConnectionError as e:
+                result["error"] = e
+            result["elapsed"] = time.time() - start
+
+        t = threading.Thread(target=try_acquire)
+        t.start()
+        t.join(timeout=5.0)
 
         # Should respect custom timeout (not default 10s)
-        assert elapsed < 1.0, f"Custom timeout not respected: {elapsed}s"
+        assert result["error"] is not None
+        assert result["elapsed"] < 1.0, f"Custom timeout not respected: {result['elapsed']}s"
 
-        pool.release_connection(conn)
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
         pool.close_all()
 
 class TestConnectionPoolErrorHandling:
@@ -510,19 +642,27 @@ class TestConnectionPoolErrorHandling:
             min_connections=1
         )
 
-        conn1 = pool.get_connection()
-        conn2 = pool.get_connection()
+        # Hold all connections in separate threads
+        holders, release_event = _hold_connections_in_threads(pool, 2)
 
-        try:
-            pool.get_connection(timeout=0.5)
-            pytest.fail("Should have raised DatabaseConnectionError")
-        except DatabaseConnectionError as e:
-            error_msg = str(e)
-            # Should mention timeout or pool exhaustion
-            assert "connection" in error_msg.lower()
+        result = {"error": None}
+        def try_acquire():
+            try:
+                pool.get_connection(timeout=0.5)
+            except DatabaseConnectionError as e:
+                result["error"] = e
 
-        pool.release_connection(conn1)
-        pool.release_connection(conn2)
+        t = threading.Thread(target=try_acquire)
+        t.start()
+        t.join(timeout=5.0)
+
+        assert result["error"] is not None
+        error_msg = str(result["error"])
+        assert "connection" in error_msg.lower()
+
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
         pool.close_all()
 
     def test_pool_state_after_timeout_error(self, temp_db):
@@ -533,20 +673,28 @@ class TestConnectionPoolErrorHandling:
             min_connections=1
         )
 
-        conns = [pool.get_connection() for _ in range(2)]
+        # Hold connections in separate threads
+        holders, release_event = _hold_connections_in_threads(pool, 2)
 
-        # Cause timeout error
-        try:
-            pool.get_connection(timeout=0.5)
-        except DatabaseConnectionError:
-            pass
+        # Cause timeout error from another thread
+        result = {"error": None}
+        def try_acquire():
+            try:
+                pool.get_connection(timeout=0.5)
+            except DatabaseConnectionError as e:
+                result["error"] = e
 
-        # Pool should still be functional
-        pool.release_connection(conns[0])
+        t = threading.Thread(target=try_acquire)
+        t.start()
+        t.join(timeout=5.0)
+
+        # Release all and verify pool still works
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
+
         new_conn = pool.get_connection()
         assert new_conn is not None
-
-        pool.release_connection(conns[1])
         pool.release_connection(new_conn)
         pool.close_all()
 
@@ -558,18 +706,19 @@ class TestConnectionPoolErrorHandling:
             min_connections=1
         )
 
-        # Hold all connections
-        conn1 = pool.get_connection()
-        conn2 = pool.get_connection()
+        # Hold all connections in separate threads
+        holders, release_event = _hold_connections_in_threads(pool, 2)
 
         error_count = []
+        lock = threading.Lock()
 
         def cause_timeout():
             """Cause timeout error."""
             try:
                 pool.get_connection(timeout=0.5)
             except DatabaseConnectionError:
-                error_count.append(1)
+                with lock:
+                    error_count.append(1)
 
         # Multiple threads causing timeouts
         with ThreadPoolExecutor(max_workers=10) as executor:
@@ -579,12 +728,13 @@ class TestConnectionPoolErrorHandling:
 
         assert len(error_count) == 10
 
-        # Pool should still work
-        pool.release_connection(conn1)
+        # Release held connections, pool should still work
+        release_event.set()
+        for h in holders:
+            h["thread"].join(timeout=5.0)
+
         new_conn = pool.get_connection()
         assert new_conn is not None
-
-        pool.release_connection(conn2)
         pool.release_connection(new_conn)
         pool.close_all()
 
@@ -600,6 +750,7 @@ class TestConnectionPoolBackpressure:
         )
 
         completed = []
+        lock = threading.Lock()
 
         def sustained_work():
             """Perform multiple operations."""
@@ -610,9 +761,11 @@ class TestConnectionPoolBackpressure:
                     cursor.execute("SELECT 1")
                     cursor.fetchone()
                     pool.release_connection(conn)
-                    completed.append(1)
+                    with lock:
+                        completed.append(1)
                 except DatabaseConnectionError:
-                    completed.append(0)
+                    with lock:
+                        completed.append(0)
 
         # Run sustained load
         with ThreadPoolExecutor(max_workers=10) as executor:

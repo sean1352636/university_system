@@ -121,10 +121,19 @@ class TestAlumniGUIApp:
         with patch.object(AlumniGUIApp, 'create_widgets'), \
              patch.object(AlumniGUIApp, 'show_dashboard', lambda self: None):
             gui = AlumniGUIApp(mock_root, mock_auth)
+            gui.content_frame = Mock()
 
-        # Manually call show_dashboard
+        # Manually call show_dashboard with tkinter widgets patched
         with patch.object(gui, 'clear_content'), \
-             patch.object(gui, 'update_status'):
+             patch.object(gui, 'update_status'), \
+             patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.dashboard.ttk'), \
+             patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.dashboard.tk'), \
+             patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.dashboard.db_get_connection') as mock_db_conn:
+            mock_db = Mock()
+            mock_cursor = Mock()
+            mock_db_conn.return_value = mock_db
+            mock_db.cursor.return_value = mock_cursor
+            mock_cursor.fetchone.return_value = [100]
             gui.show_dashboard()
 
             # Should clear content and update status
@@ -138,9 +147,14 @@ class TestAlumniGUIApp:
         with patch.object(AlumniGUIApp, 'create_widgets'), \
              patch.object(AlumniGUIApp, 'show_dashboard'):
             gui = AlumniGUIApp(mock_root, mock_auth)
+            gui.content_frame = Mock()
 
         with patch.object(gui, 'clear_content'), \
-             patch.object(gui, 'update_status'):
+             patch.object(gui, 'update_status'), \
+             patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.alumni_crud.ttk'), \
+             patch('education_system.university_system.modules.domain.student_affairs.gui.alumni.alumni_crud.tk') as mock_tk:
+            mock_tk.StringVar.return_value = Mock()
+            mock_tk.BooleanVar.return_value = Mock()
             gui.show_register_alumni()
 
             # Should create form variables
@@ -362,7 +376,8 @@ class TestAlumniGUIApp:
     def test_database_error_handling(self, mock_messagebox, mock_permissions, mock_init_db,
                                      mock_root, mock_auth):
         """Test database error handling"""
-        mock_init_db.side_effect = Exception("Database error")
+        import sqlite3 as _sqlite3
+        mock_init_db.side_effect = _sqlite3.Error("Database error")
 
         with patch.object(AlumniGUIApp, 'create_widgets'), \
              patch.object(AlumniGUIApp, 'show_dashboard'):

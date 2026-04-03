@@ -134,7 +134,7 @@ def load_loan_history(self):
 
             if history_type == "all":
                 cursor.execute('''
-                SELECT bl.loan_id, bl.user_id, bl.book_id, b.title, 
+                SELECT bl.loan_id, bl.user_id, bl.book_id, b.title,
                        bl.checkout_date, bl.due_date, bl.return_date, bl.status
                 FROM book_loans bl
                 JOIN books b ON bl.book_id = b.book_id
@@ -143,7 +143,7 @@ def load_loan_history(self):
                 ''')
             elif history_type == "user" and search_term:
                 cursor.execute('''
-                SELECT bl.loan_id, bl.user_id, bl.book_id, b.title, 
+                SELECT bl.loan_id, bl.user_id, bl.book_id, b.title,
                        bl.checkout_date, bl.due_date, bl.return_date, bl.status
                 FROM book_loans bl
                 JOIN books b ON bl.book_id = b.book_id
@@ -152,7 +152,7 @@ def load_loan_history(self):
                 ''', (search_term,))
             elif history_type == "book" and search_term:
                 cursor.execute('''
-                SELECT bl.loan_id, bl.user_id, bl.book_id, b.title, 
+                SELECT bl.loan_id, bl.user_id, bl.book_id, b.title,
                        bl.checkout_date, bl.due_date, bl.return_date, bl.status
                 FROM book_loans bl
                 JOIN books b ON bl.book_id = b.book_id

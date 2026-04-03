@@ -190,7 +190,7 @@ def refresh_instructor_list(self):
         # Update instructor tab
         self.instructor_text.delete(1.0, tk.END)
         self.instructor_text.insert(1.0, instructor_text)
-        
+
     except sqlite3.Error as e:
         messagebox.showerror(_("common.database_error"), f"Failed to load instructors: {e}")
 
@@ -237,48 +237,48 @@ class InstructorCreateDialog:
         self.parent = parent
         self.auth = auth
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Add New Instructor")
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.dialog.focus_set()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         # Personal Information
         personal_frame = ttk.LabelFrame(main_frame, text="Personal Information", padding=10)
         personal_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(personal_frame, text="First Name:").grid(row=0, column=0, sticky=tk.W)
         self.first_name_var = tk.StringVar()
         ttk.Entry(personal_frame, textvariable=self.first_name_var, width=25).grid(row=0, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(personal_frame, text="Last Name:").grid(row=1, column=0, sticky=tk.W)
         self.last_name_var = tk.StringVar()
         ttk.Entry(personal_frame, textvariable=self.last_name_var, width=25).grid(row=1, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(personal_frame, text="Email:").grid(row=2, column=0, sticky=tk.W)
         self.email_var = tk.StringVar()
         ttk.Entry(personal_frame, textvariable=self.email_var, width=35).grid(row=2, column=1, sticky=tk.W, padx=5)
-        
+
         # Professional Information
         prof_frame = ttk.LabelFrame(main_frame, text="Professional Information", padding=10)
         prof_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(prof_frame, text="Department:").grid(row=0, column=0, sticky=tk.W)
         self.department_var = tk.StringVar()
         ttk.Entry(prof_frame, textvariable=self.department_var, width=25).grid(row=0, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(prof_frame, text="Specialization:").grid(row=1, column=0, sticky=tk.W)
         self.specialization_var = tk.StringVar()
         ttk.Entry(prof_frame, textvariable=self.specialization_var, width=35).grid(row=1, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(prof_frame, text="Max Courses/Semester:").grid(row=2, column=0, sticky=tk.W)
         self.max_courses_var = tk.StringVar(value="4")
         ttk.Entry(prof_frame, textvariable=self.max_courses_var, width=10).grid(row=2, column=1, sticky=tk.W, padx=5)
@@ -304,30 +304,30 @@ class InstructorCreateDialog:
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Add Instructor", command=self.add_instructor).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def add_instructor(self):
         try:
             # Validate inputs
             first_name = self.first_name_var.get().strip()
             last_name = self.last_name_var.get().strip()
             email = self.email_var.get().strip()
-            
+
             if not first_name or not last_name or not email:
                 messagebox.showerror(_("common.validation_error"), "First name, last name, and email are required.")
                 return
-            
+
             # Validate email format
             email_pattern = r'^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}$'
             if not re.match(email_pattern, email):
                 messagebox.showerror(_("common.validation_error"), "Please enter a valid email address.")
                 return
-            
+
             department = self.department_var.get().strip()
             specialization = self.specialization_var.get().strip()
-            
+
             try:
                 max_courses = int(self.max_courses_var.get())
             except ValueError:
@@ -342,7 +342,7 @@ class InstructorCreateDialog:
 
             preferred_days = self.preferred_days_var.get().strip()
             preferred_times = self.preferred_times_var.get().strip()
-            
+
             # Create instructors table if it doesn't exist
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
@@ -387,7 +387,7 @@ class InstructorCreateDialog:
             messagebox.showinfo(_("common.success"), f"Instructor {first_name} {last_name} added successfully.")
             self.result = f"{first_name} {last_name}"
             self.dialog.destroy()
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to add instructor: {e}")
 
@@ -397,60 +397,60 @@ class AssignInstructorDialog:
         self.parent = parent
         self.auth = auth
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Assign Instructor to Course")
         self.dialog.geometry("600x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.load_data()
         self.dialog.focus_set()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         ttk.Label(main_frame, text="Assign Instructor to Course", font=("Arial", 12, "bold")).pack(pady=10)
-        
+
         # Course selection
         course_frame = ttk.LabelFrame(main_frame, text="Select Course", padding=10)
         course_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(course_frame, text="Course:").pack(anchor=tk.W)
         self.course_combo = ttk.Combobox(course_frame, width=50)
         self.course_combo.pack(fill=tk.X, pady=2)
-        
+
         # Instructor selection
         instructor_frame = ttk.LabelFrame(main_frame, text="Select Instructor", padding=10)
         instructor_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(instructor_frame, text="Instructor:").pack(anchor=tk.W)
         self.instructor_combo = ttk.Combobox(instructor_frame, width=50)
         self.instructor_combo.pack(fill=tk.X, pady=2)
-        
+
         # Schedule information
         schedule_frame = ttk.LabelFrame(main_frame, text="Schedule Information", padding=10)
         schedule_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(schedule_frame, text="Semester:").grid(row=0, column=0, sticky=tk.W)
         self.semester_var = tk.StringVar(value="Fall")
         semester_combo = ttk.Combobox(schedule_frame, textvariable=self.semester_var,
                                      values=["Fall", "Spring", "Summer", "Winter"])
         semester_combo.grid(row=0, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(schedule_frame, text="Year:").grid(row=1, column=0, sticky=tk.W)
         self.year_var = tk.StringVar(value=str(datetime.now().year))
         ttk.Entry(schedule_frame, textvariable=self.year_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Assign", command=self.assign_instructor).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def load_data(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
@@ -485,31 +485,31 @@ class AssignInstructorDialog:
 
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load data: {e}")
-    
+
     def assign_instructor(self):
         try:
             course_text = self.course_combo.get()
             instructor_text = self.instructor_combo.get()
             semester = self.semester_var.get()
             year = self.year_var.get()
-            
+
             if not course_text or not instructor_text:
                 messagebox.showwarning(_("common.selection_required"), "Please select both course and instructor.")
                 return
-            
+
             course_id = self.course_id_map.get(course_text)
             instructor_id = self.instructor_id_map.get(instructor_text)
-            
+
             if not course_id or not instructor_id:
                 messagebox.showerror(_("common.error"), "Invalid selection.")
                 return
-            
+
             try:
                 year_int = int(year)
             except ValueError:
                 messagebox.showerror(_("common.error"), "Please enter a valid year.")
                 return
-            
+
             # Create schedule table if it doesn't exist and assign instructor
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             try:
@@ -553,10 +553,10 @@ class AssignInstructorDialog:
                 conn.commit()
             finally:
                 conn.close()
-            
+
             messagebox.showinfo(_("common.success"), f"Instructor assigned to {course_text} for {semester} {year}")
             self.result = True
             self.dialog.destroy()
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to assign instructor: {e}")

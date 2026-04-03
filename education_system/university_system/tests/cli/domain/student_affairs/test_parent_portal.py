@@ -12,6 +12,11 @@ from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 from education_system.university_system.modules.domain.academics.services.parent_portal import ParentPortal
 
+# Patch DEFAULT_DB_PATH in the database module where initialize_parent_portal actually reads it
+DB_PATH_TARGET = 'education_system.university_system.modules.domain.academics.services.parent_portal.database.DEFAULT_DB_PATH'
+ACCOUNTS_DB_PATH_TARGET = 'education_system.university_system.modules.domain.academics.services.parent_portal.accounts.DEFAULT_DB_PATH'
+
+
 class TestParentPortalInitialization:
     """Test suite for ParentPortal initialization"""
 
@@ -32,36 +37,30 @@ class TestParentPortalInitialization:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_initialize_parent_portal(self, mock_db_path, temp_db):
+    def test_initialize_parent_portal(self, temp_db):
         """Test initializing parent portal database"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
-
-        # Mock sqlite3.connect to use our temp db
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
-
+        with patch(DB_PATH_TARGET, temp_db):
             ParentPortal.initialize_parent_portal()
 
-            # Verify tables were created
-            cursor = conn.cursor()
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            tables = [row[0] for row in cursor.fetchall()]
+        # Verify tables were created
+        conn = sqlite3.connect(temp_db)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = [row[0] for row in cursor.fetchall()]
 
-            expected_tables = [
-                'parent_accounts',
-                'parent_student_relationships',
-                'parent_user_mapping',
-                'parent_notifications',
-                'parent_preferences',
-                'parent_messages'
-            ]
+        expected_tables = [
+            'parent_accounts',
+            'parent_student_relationships',
+            'parent_user_mapping',
+            'parent_notifications',
+            'parent_preferences',
+            'parent_messages'
+        ]
 
-            for table in expected_tables:
-                assert table in tables, f"Table {table} not found"
+        for table in expected_tables:
+            assert table in tables, f"Table {table} not found"
 
-            conn.close()
+        conn.close()
 
 class TestParentPortalDatabaseSchema:
     """Test suite for parent portal database schema"""
@@ -75,98 +74,73 @@ class TestParentPortalDatabaseSchema:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_parent_accounts_table_structure(self, mock_db_path, temp_db):
+    @pytest.fixture
+    def initialized_db(self, temp_db):
+        """Initialize parent portal tables in temp db and return path"""
+        with patch(DB_PATH_TARGET, temp_db):
+            ParentPortal.initialize_parent_portal()
+        return temp_db
+
+    def test_parent_accounts_table_structure(self, initialized_db):
         """Test parent_accounts table has correct structure"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
+        conn = sqlite3.connect(initialized_db)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(parent_accounts)")
+        columns = {row[1] for row in cursor.fetchall()}
+        conn.close()
 
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
+        expected_columns = {
+            'id', 'parent_id', 'first_name', 'last_name', 'email',
+            'phone', 'address', 'emergency_contact', 'registration_date',
+            'two_factor_enabled', 'two_factor_secret', 'profile_photo'
+        }
 
-            ParentPortal.initialize_parent_portal()
+        assert expected_columns.issubset(columns)
 
-            cursor = conn.cursor()
-            cursor.execute("PRAGMA table_info(parent_accounts)")
-            columns = {row[1] for row in cursor.fetchall()}
-
-            expected_columns = {
-                'id', 'parent_id', 'first_name', 'last_name', 'email',
-                'phone', 'address', 'emergency_contact', 'registration_date',
-                'two_factor_enabled', 'two_factor_secret', 'profile_photo'
-            }
-
-            assert expected_columns.issubset(columns)
-            conn.close()
-
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_parent_student_relationships_table_structure(self, mock_db_path, temp_db):
+    def test_parent_student_relationships_table_structure(self, initialized_db):
         """Test parent_student_relationships table structure"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
+        conn = sqlite3.connect(initialized_db)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(parent_student_relationships)")
+        columns = {row[1] for row in cursor.fetchall()}
+        conn.close()
 
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
+        expected_columns = {
+            'id', 'parent_id', 'student_id', 'relationship_type',
+            'access_level', 'date_added'
+        }
 
-            ParentPortal.initialize_parent_portal()
+        assert expected_columns.issubset(columns)
 
-            cursor = conn.cursor()
-            cursor.execute("PRAGMA table_info(parent_student_relationships)")
-            columns = {row[1] for row in cursor.fetchall()}
-
-            expected_columns = {
-                'id', 'parent_id', 'student_id', 'relationship_type',
-                'access_level', 'date_added'
-            }
-
-            assert expected_columns.issubset(columns)
-            conn.close()
-
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_parent_preferences_table_structure(self, mock_db_path, temp_db):
+    def test_parent_preferences_table_structure(self, initialized_db):
         """Test parent_preferences table structure"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
+        conn = sqlite3.connect(initialized_db)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(parent_preferences)")
+        columns = {row[1] for row in cursor.fetchall()}
+        conn.close()
 
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
+        expected_columns = {
+            'parent_id', 'email_notifications', 'sms_notifications',
+            'grade_alerts', 'attendance_alerts', 'behavior_alerts'
+        }
 
-            ParentPortal.initialize_parent_portal()
+        assert expected_columns.issubset(columns)
 
-            cursor = conn.cursor()
-            cursor.execute("PRAGMA table_info(parent_preferences)")
-            columns = {row[1] for row in cursor.fetchall()}
-
-            expected_columns = {
-                'parent_id', 'email_notifications', 'sms_notifications',
-                'grade_alerts', 'attendance_alerts', 'behavior_alerts'
-            }
-
-            assert expected_columns.issubset(columns)
-            conn.close()
-
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_student_fees_table_structure(self, mock_db_path, temp_db):
+    def test_student_fees_table_structure(self, initialized_db):
         """Test student_fees table structure"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
+        conn = sqlite3.connect(initialized_db)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(student_fees)")
+        columns = {row[1] for row in cursor.fetchall()}
+        conn.close()
 
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
+        expected_columns = {
+            'student_id', 'fee_type', 'description', 'amount',
+            'due_date', 'payment_status'
+        }
 
-            ParentPortal.initialize_parent_portal()
-
-            cursor = conn.cursor()
-            cursor.execute("PRAGMA table_info(student_fees)")
-            columns = {row[1] for row in cursor.fetchall()}
-
-            expected_columns = {
-                'student_id', 'fee_type', 'description', 'amount',
-                'due_date', 'payment_status'
-            }
-
-            assert expected_columns.issubset(columns)
-            conn.close()
+        assert expected_columns.issubset(columns)
 
 class TestParentPortalAccountManagement:
     """Test suite for parent account management"""
@@ -240,15 +214,9 @@ class TestParentPortalAccountManagement:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_create_parent_user(self, mock_db_path, temp_db, mock_auth):
+    def test_create_parent_user(self, temp_db, mock_auth):
         """Test creating a parent user"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
-
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
-
+        with patch(ACCOUNTS_DB_PATH_TARGET, temp_db):
             result = ParentPortal.create_parent_user(
                 mock_auth,
                 first_name='John',
@@ -258,26 +226,22 @@ class TestParentPortalAccountManagement:
                 address='123 Main St'
             )
 
-            # Should return parent_id or success indicator
-            assert result is not None
-
-            conn.close()
+        # Should return parent_id or success indicator
+        assert result is not None
 
     def test_get_parent_id_from_user(self, temp_db, mock_auth):
         """Test getting parent ID from user ID"""
         portal = ParentPortal(mock_auth)
 
-        # Insert test data
+        # Insert test data - use the temp_db that already has parent_user_mapping with FKs
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
 
+        # Insert a parent account first (required by FK on parent_user_mapping)
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS parent_user_mapping (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                parent_id TEXT UNIQUE
-            )
-        ''')
+            INSERT INTO parent_accounts (parent_id, first_name, last_name, email, registration_date)
+            VALUES (?, ?, ?, ?, ?)
+        ''', ('P001', 'Test', 'Parent', 'test@example.com', '2026-01-01'))
 
         cursor.execute('''
             INSERT INTO parent_user_mapping (user_id, parent_id)
@@ -287,16 +251,10 @@ class TestParentPortalAccountManagement:
         conn.commit()
         conn.close()
 
-        with patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH', temp_db):
-            with patch('sqlite3.connect') as mock_connect:
-                conn = sqlite3.connect(temp_db)
-                mock_connect.return_value = conn
+        with patch(ACCOUNTS_DB_PATH_TARGET, temp_db):
+            parent_id = portal.get_parent_id_from_user(1)
 
-                parent_id = portal.get_parent_id_from_user(1)
-
-                assert parent_id == 'P001'
-
-                conn.close()
+        assert parent_id == 'P001'
 
 class TestParentPortalStudentLinking:
     """Test suite for student-parent linking"""
@@ -352,10 +310,8 @@ class TestParentPortalStudentLinking:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_link_student_to_parent_database_structure(self, mock_db_path, temp_db, mock_auth):
+    def test_link_student_to_parent_database_structure(self, temp_db, mock_auth):
         """Test linking student to parent creates proper database record"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
 
         portal = ParentPortal(mock_auth)
 
@@ -383,28 +339,23 @@ class TestParentPortalNotifications:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_parent_notifications_table(self, mock_db_path, temp_db):
+    def test_parent_notifications_table(self, temp_db):
         """Test parent_notifications table structure"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
-
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
-
+        with patch(DB_PATH_TARGET, temp_db):
             ParentPortal.initialize_parent_portal()
 
-            cursor = conn.cursor()
-            cursor.execute("PRAGMA table_info(parent_notifications)")
-            columns = {row[1] for row in cursor.fetchall()}
+        conn = sqlite3.connect(temp_db)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(parent_notifications)")
+        columns = {row[1] for row in cursor.fetchall()}
+        conn.close()
 
-            expected_columns = {
-                'parent_id', 'student_id', 'notification_type',
-                'notification_content', 'created_date', 'read_status'
-            }
+        expected_columns = {
+            'parent_id', 'student_id', 'notification_type',
+            'notification_content', 'created_date', 'read_status'
+        }
 
-            assert expected_columns.issubset(columns)
-            conn.close()
+        assert expected_columns.issubset(columns)
 
 class TestParentPortalMessages:
     """Test suite for parent-teacher messaging"""
@@ -418,28 +369,23 @@ class TestParentPortalMessages:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_parent_messages_table(self, mock_db_path, temp_db):
+    def test_parent_messages_table(self, temp_db):
         """Test parent_messages table structure"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
-
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
-
+        with patch(DB_PATH_TARGET, temp_db):
             ParentPortal.initialize_parent_portal()
 
-            cursor = conn.cursor()
-            cursor.execute("PRAGMA table_info(parent_messages)")
-            columns = {row[1] for row in cursor.fetchall()}
+        conn = sqlite3.connect(temp_db)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(parent_messages)")
+        columns = {row[1] for row in cursor.fetchall()}
+        conn.close()
 
-            expected_columns = {
-                'parent_id', 'teacher_id', 'student_id',
-                'message_content', 'created_date', 'is_read', 'is_from_parent'
-            }
+        expected_columns = {
+            'parent_id', 'teacher_id', 'student_id',
+            'message_content', 'created_date', 'is_read', 'is_from_parent'
+        }
 
-            assert expected_columns.issubset(columns)
-            conn.close()
+        assert expected_columns.issubset(columns)
 
 class TestParentPortalFinancial:
     """Test suite for financial features"""
@@ -453,51 +399,42 @@ class TestParentPortalFinancial:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_meal_accounts_table(self, mock_db_path, temp_db):
+    @pytest.fixture
+    def initialized_db(self, temp_db):
+        """Initialize parent portal tables in temp db and return path"""
+        with patch(DB_PATH_TARGET, temp_db):
+            ParentPortal.initialize_parent_portal()
+        return temp_db
+
+    def test_meal_accounts_table(self, initialized_db):
         """Test meal_accounts table structure"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
+        conn = sqlite3.connect(initialized_db)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(meal_accounts)")
+        columns = {row[1] for row in cursor.fetchall()}
+        conn.close()
 
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
+        expected_columns = {
+            'student_id', 'balance', 'low_balance_threshold',
+            'auto_topup_enabled', 'auto_topup_amount'
+        }
 
-            ParentPortal.initialize_parent_portal()
+        assert expected_columns.issubset(columns)
 
-            cursor = conn.cursor()
-            cursor.execute("PRAGMA table_info(meal_accounts)")
-            columns = {row[1] for row in cursor.fetchall()}
-
-            expected_columns = {
-                'student_id', 'balance', 'low_balance_threshold',
-                'auto_topup_enabled', 'auto_topup_amount'
-            }
-
-            assert expected_columns.issubset(columns)
-            conn.close()
-
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_fundraising_campaigns_table(self, mock_db_path, temp_db):
+    def test_fundraising_campaigns_table(self, initialized_db):
         """Test fundraising_campaigns table structure"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
+        conn = sqlite3.connect(initialized_db)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(fundraising_campaigns)")
+        columns = {row[1] for row in cursor.fetchall()}
+        conn.close()
 
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
+        expected_columns = {
+            'campaign_name', 'description', 'target_amount',
+            'current_amount', 'start_date', 'end_date', 'status'
+        }
 
-            ParentPortal.initialize_parent_portal()
-
-            cursor = conn.cursor()
-            cursor.execute("PRAGMA table_info(fundraising_campaigns)")
-            columns = {row[1] for row in cursor.fetchall()}
-
-            expected_columns = {
-                'campaign_name', 'description', 'target_amount',
-                'current_amount', 'start_date', 'end_date', 'status'
-            }
-
-            assert expected_columns.issubset(columns)
-            conn.close()
+        assert expected_columns.issubset(columns)
 
 class TestParentPortalAcademicFeatures:
     """Test suite for academic features"""
@@ -511,51 +448,42 @@ class TestParentPortalAcademicFeatures:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_homework_assignments_table(self, mock_db_path, temp_db):
+    @pytest.fixture
+    def initialized_db(self, temp_db):
+        """Initialize parent portal tables in temp db and return path"""
+        with patch(DB_PATH_TARGET, temp_db):
+            ParentPortal.initialize_parent_portal()
+        return temp_db
+
+    def test_homework_assignments_table(self, initialized_db):
         """Test homework_assignments table structure"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
+        conn = sqlite3.connect(initialized_db)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(homework_assignments)")
+        columns = {row[1] for row in cursor.fetchall()}
+        conn.close()
 
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
+        expected_columns = {
+            'student_id', 'module_code', 'assignment_title',
+            'description', 'due_date', 'completion_status'
+        }
 
-            ParentPortal.initialize_parent_portal()
+        assert expected_columns.issubset(columns)
 
-            cursor = conn.cursor()
-            cursor.execute("PRAGMA table_info(homework_assignments)")
-            columns = {row[1] for row in cursor.fetchall()}
-
-            expected_columns = {
-                'student_id', 'module_code', 'assignment_title',
-                'description', 'due_date', 'completion_status'
-            }
-
-            assert expected_columns.issubset(columns)
-            conn.close()
-
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_academic_goals_table(self, mock_db_path, temp_db):
+    def test_academic_goals_table(self, initialized_db):
         """Test academic_goals table structure"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
+        conn = sqlite3.connect(initialized_db)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(academic_goals)")
+        columns = {row[1] for row in cursor.fetchall()}
+        conn.close()
 
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
+        expected_columns = {
+            'student_id', 'parent_id', 'goal_title',
+            'description', 'target_grade', 'target_date', 'status'
+        }
 
-            ParentPortal.initialize_parent_portal()
-
-            cursor = conn.cursor()
-            cursor.execute("PRAGMA table_info(academic_goals)")
-            columns = {row[1] for row in cursor.fetchall()}
-
-            expected_columns = {
-                'student_id', 'parent_id', 'goal_title',
-                'description', 'target_grade', 'target_date', 'status'
-            }
-
-            assert expected_columns.issubset(columns)
-            conn.close()
+        assert expected_columns.issubset(columns)
 
 class TestParentPortalCommunication:
     """Test suite for communication features"""
@@ -569,51 +497,42 @@ class TestParentPortalCommunication:
         if os.path.exists(path):
             os.remove(path)
 
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_school_announcements_table(self, mock_db_path, temp_db):
+    @pytest.fixture
+    def initialized_db(self, temp_db):
+        """Initialize parent portal tables in temp db and return path"""
+        with patch(DB_PATH_TARGET, temp_db):
+            ParentPortal.initialize_parent_portal()
+        return temp_db
+
+    def test_school_announcements_table(self, initialized_db):
         """Test school_announcements table structure"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
+        conn = sqlite3.connect(initialized_db)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(school_announcements)")
+        columns = {row[1] for row in cursor.fetchall()}
+        conn.close()
 
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
+        expected_columns = {
+            'title', 'content', 'priority', 'category',
+            'audience', 'created_date', 'requires_acknowledgment'
+        }
 
-            ParentPortal.initialize_parent_portal()
+        assert expected_columns.issubset(columns)
 
-            cursor = conn.cursor()
-            cursor.execute("PRAGMA table_info(school_announcements)")
-            columns = {row[1] for row in cursor.fetchall()}
-
-            expected_columns = {
-                'title', 'content', 'priority', 'category',
-                'audience', 'created_date', 'requires_acknowledgment'
-            }
-
-            assert expected_columns.issubset(columns)
-            conn.close()
-
-    @patch('education_system.university_system.modules.domain.academics.services.parent_portal.DEFAULT_DB_PATH')
-    def test_emergency_alerts_table(self, mock_db_path, temp_db):
+    def test_emergency_alerts_table(self, initialized_db):
         """Test emergency_alerts table structure"""
-        mock_db_path.__str__ = Mock(return_value=temp_db)
+        conn = sqlite3.connect(initialized_db)
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(emergency_alerts)")
+        columns = {row[1] for row in cursor.fetchall()}
+        conn.close()
 
-        with patch('sqlite3.connect') as mock_connect:
-            conn = sqlite3.connect(temp_db)
-            mock_connect.return_value = conn
+        expected_columns = {
+            'alert_title', 'alert_message', 'alert_type',
+            'created_date', 'active'
+        }
 
-            ParentPortal.initialize_parent_portal()
-
-            cursor = conn.cursor()
-            cursor.execute("PRAGMA table_info(emergency_alerts)")
-            columns = {row[1] for row in cursor.fetchall()}
-
-            expected_columns = {
-                'alert_title', 'alert_message', 'alert_type',
-                'created_date', 'active'
-            }
-
-            assert expected_columns.issubset(columns)
-            conn.close()
+        assert expected_columns.issubset(columns)
 
 class TestParentPortalIntegration:
     """Integration tests for parent portal"""

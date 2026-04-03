@@ -131,7 +131,7 @@ def init_student_union_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create clubs/societies table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_clubs (
@@ -151,7 +151,7 @@ def init_student_union_db():
             FOREIGN KEY (secretary_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Create club membership table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS club_members (
@@ -164,7 +164,7 @@ def init_student_union_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Create unified events table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS unified_events (
@@ -204,7 +204,7 @@ def init_student_union_db():
             notes TEXT
         )
         ''')
-        
+
         # Create unified event registrations table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS unified_event_registrations (
@@ -228,7 +228,7 @@ def init_student_union_db():
             FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
         )
         ''')
-        
+
         # Create facility bookings table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS facility_bookings (
@@ -246,7 +246,7 @@ def init_student_union_db():
             FOREIGN KEY (club_id) REFERENCES student_clubs (club_id)
         )
         ''')
-        
+
         # Create student union representatives table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS union_representatives (
@@ -260,7 +260,7 @@ def init_student_union_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Create elections table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS union_elections (
@@ -274,7 +274,7 @@ def init_student_union_db():
             status TEXT DEFAULT 'upcoming'
         )
         ''')
-        
+
         # Create election candidates table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS election_candidates (
@@ -287,7 +287,7 @@ def init_student_union_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Create votes table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS election_votes (
@@ -301,7 +301,7 @@ def init_student_union_db():
             FOREIGN KEY (candidate_id) REFERENCES election_candidates (id)
         )
         ''')
-        
+
         # Create facilities inventory table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS union_facilities (
@@ -336,7 +336,7 @@ def init_student_union_db():
             FOREIGN KEY (approver_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS club_budgets (
             budget_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -351,7 +351,7 @@ def init_student_union_db():
             FOREIGN KEY (club_id) REFERENCES student_clubs (club_id)
         )
         ''')
-        
+
         # Event Financial Tracking
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS event_finances (
@@ -366,7 +366,7 @@ def init_student_union_db():
             FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS event_tickets (
             ticket_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -382,7 +382,7 @@ def init_student_union_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Event Attendance System (now uses unified_event_registrations)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS unified_event_registrations (
@@ -406,7 +406,7 @@ def init_student_union_db():
             FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
         )
         ''')
-        
+
         # Recurring Events
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS recurring_events (
@@ -422,7 +422,7 @@ def init_student_union_db():
             FOREIGN KEY (parent_event_id) REFERENCES unified_events (event_id)
         )
         ''')
-        
+
         # Club Social Platform
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS club_discussions (
@@ -439,7 +439,7 @@ def init_student_union_db():
             FOREIGN KEY (author_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS club_media (
             media_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -455,7 +455,7 @@ def init_student_union_db():
             FOREIGN KEY (event_id) REFERENCES unified_events (event_id)
         )
         ''')
-        
+
         # Mentorship System
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS mentorship_relationships (
@@ -473,7 +473,7 @@ def init_student_union_db():
             FOREIGN KEY (mentee_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS mentorship_sessions (
             session_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -487,7 +487,7 @@ def init_student_union_db():
             FOREIGN KEY (relationship_id) REFERENCES mentorship_relationships (relationship_id)
         )
         ''')
-        
+
         # Equipment Management
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS union_equipment (
@@ -504,7 +504,7 @@ def init_student_union_db():
             replacement_cost REAL
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS equipment_checkouts (
             checkout_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -523,7 +523,7 @@ def init_student_union_db():
             FOREIGN KEY (club_id) REFERENCES student_clubs (club_id)
         )
         ''')
-        
+
         # Engagement Rewards System
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_points (
@@ -538,7 +538,7 @@ def init_student_union_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS achievement_badges (
             badge_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -549,7 +549,7 @@ def init_student_union_db():
             category TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_badges (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -560,7 +560,7 @@ def init_student_union_db():
             FOREIGN KEY (badge_id) REFERENCES achievement_badges (badge_id)
         )
         ''')
-        
+
         # Inter-club Competitions
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS club_competitions (
@@ -578,7 +578,7 @@ def init_student_union_db():
             FOREIGN KEY (organizer_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS competition_participants (
             participant_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -593,7 +593,7 @@ def init_student_union_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Peer Support System
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS peer_support_groups (
@@ -610,7 +610,7 @@ def init_student_union_db():
             FOREIGN KEY (facilitator_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS support_group_members (
             membership_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -623,7 +623,7 @@ def init_student_union_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Academic Support
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS study_groups (
@@ -641,7 +641,7 @@ def init_student_union_db():
             FOREIGN KEY (organizer_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS tutoring_offers (
             offer_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -658,7 +658,7 @@ def init_student_union_db():
             FOREIGN KEY (tutor_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Green Initiatives
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS sustainability_tracking (
@@ -676,7 +676,7 @@ def init_student_union_db():
             FOREIGN KEY (club_id) REFERENCES student_clubs (club_id)
         )
         ''')
-        
+
         # Community Engagement
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS volunteer_opportunities (
@@ -695,7 +695,7 @@ def init_student_union_db():
             status TEXT DEFAULT 'open'
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS volunteer_signups (
             signup_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -710,7 +710,7 @@ def init_student_union_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Enhanced Voting System
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS campaign_materials (
@@ -724,7 +724,7 @@ def init_student_union_db():
             FOREIGN KEY (candidate_id) REFERENCES election_candidates (id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS campaign_expenses (
             expense_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -737,7 +737,7 @@ def init_student_union_db():
             FOREIGN KEY (candidate_id) REFERENCES election_candidates (id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS ranked_votes (
             vote_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -749,7 +749,7 @@ def init_student_union_db():
             FOREIGN KEY (voter_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Learning Integration
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS book_clubs (
@@ -766,7 +766,7 @@ def init_student_union_db():
             FOREIGN KEY (discussion_leader_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS shared_resources (
             resource_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -782,7 +782,7 @@ def init_student_union_db():
             FOREIGN KEY (uploader_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Create some sample data for testing
         # Add sample facilities
         facilities = [
@@ -791,7 +791,7 @@ def init_student_union_db():
             ('Meeting Room 2', 'Student Union Building', 15, 'Small meeting room', 'available', 'Whiteboard, Conference Table, Chairs x15', 10.0),
             ('Activity Space', 'Student Union Building', 100, 'Open space for activities', 'available', 'Mats, Basic Sound System', 25.0)
         ]
-        
+
         # Check if facilities already exist
         cursor.execute('SELECT COUNT(*) FROM union_facilities')
         if cursor.fetchone()[0] == 0:
@@ -800,7 +800,7 @@ def init_student_union_db():
                 facilities
             )
             print("Sample union facilities added!")
-            
+
         conn.commit()
         conn.close()
         print("Student Union database initialized successfully!")
@@ -897,7 +897,7 @@ def display_student_union_menu():
         print(f"20. {get_text('union.menu.sync_calendar', default='Sync Academic Calendar')}")
 
         choice = input(f"\n{get_text('union.prompt.choice', default='Choose an option (1-20)')}: ").strip()
-        
+
         # Core features
         if choice == '1':
             display_club_menu()
@@ -907,7 +907,7 @@ def display_student_union_menu():
             display_facility_menu()
         elif choice == '4':
             display_election_menu()
-        
+
         # Enhanced features
         elif choice == '5':
             manage_engagement_rewards()
@@ -919,7 +919,7 @@ def display_student_union_menu():
             manage_academic_support()
         elif choice == '9':
             manage_mentorship_system()
-        
+
         # Specialized systems
         elif choice == '10':
             manage_equipment_system()
@@ -931,7 +931,7 @@ def display_student_union_menu():
             manage_virtual_events()
         elif choice == '14':
             manage_learning_integration()
-        
+
         # Analytics and admin
         elif choice == '15' and (auth.check_permission('manage_all_clubs') or auth.check_permission('view_election_results')):
             generate_advanced_analytics()
@@ -939,7 +939,7 @@ def display_student_union_menu():
             manage_enhanced_voting()
         elif choice == '17' and (auth.check_permission('manage_all_clubs') or auth.check_permission('view_election_results')):
             display_admin_menu()
-        
+
         # Navigation and calendar sync
         elif choice == '18':
             display_language_menu_option()
@@ -958,58 +958,58 @@ def display_student_union_menu():
 def display_club_menu():
     """Display the club management menu"""
     global auth
-    
+
     while True:
         print("\nClub Management")
         print("===============")
-        
+
         # Options based on permissions
         options = []
         option_num = 1
-        
+
         # View Clubs
         print(f"{option_num}. View Available Clubs")
         options.append("view_clubs")
         option_num += 1
-        
+
         # View My Clubs
         print(f"{option_num}. View My Club Memberships")
         options.append("view_my_clubs")
         option_num += 1
-        
+
         # Join a Club
         if auth.check_permission('join_clubs'):
             print(f"{option_num}. Join a Club")
             options.append("join_club")
             option_num += 1
-        
+
         # Manage Club
         if auth.check_permission('manage_own_club') or auth.check_permission('manage_all_clubs'):
             print(f"{option_num}. Manage Club")
             options.append("manage_club")
             option_num += 1
-        
+
         # Create Club
         if auth.check_permission('create_club') or auth.check_permission('manage_all_clubs'):
             print(f"{option_num}. Create New Club")
             options.append("create_club")
             option_num += 1
-        
+
         # Return to Student Union Menu
         print(f"{option_num}. Return to Student Union Menu")
-        
+
         choice = input("\nEnter your choice: ")
-        
+
         # First check if user wants to return to main menu
         if choice == str(option_num):
             return
-        
+
         # Then map the numeric choice to the actual option based on available permissions
         try:
             choice_index = int(choice) - 1  # Convert to 0-based index
             if 0 <= choice_index < len(options):
                 selected_option = options[choice_index]
-                
+
                 if selected_option == "view_clubs":
                     view_clubs()
                 elif selected_option == "view_my_clubs":
@@ -1028,15 +1028,15 @@ def display_club_menu():
 def display_event_menu():
     """Display the event management menu"""
     global auth
-    
+
     while True:
         print("\nEvents")
         print("======")
-        
+
         # Options
         print("1. View Upcoming Events")
         print("2. View My Registered Events")
-        
+
         if auth.check_permission('register_for_events'):
             print("3. Register for an Event")
             print("4. Return to Student Union Menu")
@@ -1044,9 +1044,9 @@ def display_event_menu():
         else:
             print("3. Return to Student Union Menu")
             max_option = 3
-        
+
         choice = input("\nEnter your choice: ")
-        
+
         if choice == '1':
             # View Events
             view_events()
@@ -1065,29 +1065,29 @@ def display_event_menu():
 def display_facility_menu():
     """Display the facility management menu"""
     global auth
-    
+
     while True:
         print("\nFacilities")
         print("==========")
-        
+
         # Options
         print("1. View Available Facilities")
-        
+
         if auth.check_permission('request_facility_booking'):
             print("2. Request Facility Booking")
             print("3. View My Bookings")
             max_option = 4
         else:
             max_option = 2
-        
+
         if auth.check_permission('approve_facility_bookings') or auth.check_permission('manage_facilities'):
             print(f"{max_option}. Approve Facility Bookings")
             max_option += 1
-        
+
         print(f"{max_option}. Return to Student Union Menu")
-        
+
         choice = input("\nEnter your choice: ")
-        
+
         if choice == '1':
             # View Facilities
             view_facilities()
@@ -1098,7 +1098,7 @@ def display_facility_menu():
             # View My Bookings
             view_my_bookings()
         elif (choice == '4' and auth.check_permission('approve_facility_bookings')) or \
-             (choice == '2' and not auth.check_permission('request_facility_booking') and 
+             (choice == '2' and not auth.check_permission('request_facility_booking') and
               auth.check_permission('approve_facility_bookings')):
             # Approve Bookings
             approve_facility_bookings()
@@ -1111,44 +1111,44 @@ def display_facility_menu():
 def display_election_menu():
     """Display the election menu"""
     global auth
-    
+
     while True:
         print("\nElections")
         print("=========")
-        
+
         # Options
         print("1. View Current & Upcoming Elections")
         print("2. View Election Results")
-        
+
         max_option = 3
         if auth.check_permission('vote_in_elections'):
             print("3. Vote in Active Election")
             max_option = 4
-            
+
             # Check if any elections are in nomination phase
             try:
                 conn = get_connection()
                 cursor = conn.cursor()
-                
+
                 current_date = datetime.now().strftime('%Y-%m-%d')
                 cursor.execute('''
                 SELECT COUNT(*) FROM union_elections
                 WHERE status = 'nomination'
                 AND nomination_start <= ? AND nomination_end >= ?
                 ''', (current_date, current_date))
-                
+
                 if cursor.fetchone()[0] > 0:
                     print("4. Submit Nomination for Election")
                     max_option = 5
-                
+
                 conn.close()
             except sqlite3.Error:
                 pass
-        
+
         print(f"{max_option}. Return to Student Union Menu")
-        
+
         choice = input("\nEnter your choice: ")
-        
+
         if choice == '1':
             # View Elections
             view_elections()
@@ -1170,52 +1170,52 @@ def display_election_menu():
 def display_admin_menu():
     """Display the admin menu for student union"""
     global auth
-    
+
     if not auth.check_permission('manage_all_clubs') and not auth.check_permission('approve_facility_bookings') and \
        not auth.check_permission('set_up_elections') and not auth.check_permission('manage_union_reps'):
         print("You don't have permission to access the admin menu.")
         return
-    
+
     while True:
         print("\nStudent Union Administration")
         print("===========================")
-        
+
         option_num = 1
         options = []
-        
+
         if auth.check_permission('set_up_elections'):
             print(f"{option_num}. Set Up New Election")
             options.append("setup_election")
             option_num += 1
-        
+
         if auth.check_permission('manage_union_reps'):
             print(f"{option_num}. Manage Union Representatives")
             options.append("manage_reps")
             option_num += 1
-        
+
         if auth.check_permission('approve_facility_bookings'):
             print(f"{option_num}. Manage Facility Bookings")
             options.append("manage_bookings")
             option_num += 1
-        
+
         if auth.check_permission('manage_all_clubs'):
             print(f"{option_num}. Manage All Clubs")
             options.append("manage_all_clubs")
             option_num += 1
-        
+
         print(f"{option_num}. Return to Student Union Menu")
-        
+
         choice = input("\nEnter your choice: ")
-        
+
         try:
             choice_index = int(choice) - 1
-            
+
             if choice == str(option_num):
                 # Return to Student Union Menu
                 return
             elif 0 <= choice_index < len(options):
                 selected_option = options[choice_index]
-                
+
                 if selected_option == "setup_election":
                     # Call the imported function without cursor/conn arguments
                     conn = get_connection()

@@ -17,6 +17,7 @@ or modules, preventing circular imports.
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 
 def _ensure(dir_path: Path) -> Path:
@@ -65,20 +66,20 @@ BACKUP_CALENDAR_DIR: Path = BACKUP_DIR / "calendar"
 # Backward-compatible aliases
 DB_BACKUPS_DIR: Path = BACKUP_DATABASE_DIR
 
-# Export paths - organised by type under a single top-level directory
-EXPORTS_DIR: Path = PROJECT_ROOT / "exports"
+# Export paths - organised under data for consistent hierarchy
+EXPORTS_DIR: Path = DATA_DIR / "exports"
 EXPORTS_DATABASE_DIR: Path = EXPORTS_DIR / "database"
 EXPORTS_PDF_DIR: Path = EXPORTS_DIR / "pdf"
 EXPORTS_TICKETS_DIR: Path = EXPORTS_DIR / "tickets"
 EXPORTS_SUBMISSIONS_DIR: Path = EXPORTS_DIR / "submissions"
 EXPORTS_REPORTS_DIR: Path = EXPORTS_DIR / "reports"
 # Backward-compatible alias
-DB_EXPORTS_DIR: Path = EXPORTS_DATABASE_DIR
+DB_EXPORTS_DIR: Path = DB_DIR / "exports"
 
-# Reports paths - centralized in templates directory
-REPORTS_DIR: Path = PROJECT_ROOT / "data" / "reports"
+# Reports paths under data
+REPORTS_DIR: Path = DATA_DIR / "reports"
 REPORT_TEMPLATES_DIR: Path = PROJECT_ROOT / "templates" / "reports_templates"
-REPORT_CACHE_DIR: Path = PROJECT_ROOT / "data" / "report_cache"
+REPORT_CACHE_DIR: Path = DATA_DIR / "report_cache"
 
 # Email subsystem paths - consolidated to templates/email
 EMAIL_DATA_DIR: Path = DATA_DIR / "email"
@@ -87,19 +88,11 @@ EMAIL_TEMPLATES_DIR: Path = PROJECT_ROOT / "templates" / "email"
 # Configuration directory
 CONFIG_DIR: Path = DATA_DIR / "config"
 
-# Email config now lives in the shared data directory so all subsystems
-# (university, college, school, primary) use a single SMTP configuration.
-_SHARED_EMAIL_CONFIG: Path = (
-    Path(__file__).resolve().parent.parent.parent / "shared" / "data" / "config" / "email_config.json"
-)
-_LEGACY_EMAIL_CONFIG: Path = CONFIG_DIR / "email_config.json"
-# Resolve to shared path if it exists, else fall back to the legacy location
-EMAIL_CONFIG_FILE: Path = _SHARED_EMAIL_CONFIG if _SHARED_EMAIL_CONFIG.exists() else _LEGACY_EMAIL_CONFIG
-EMAIL_CONFIG_PATH: Path = EMAIL_CONFIG_FILE  # Alias for backward compat
+EMAIL_CONFIG_FILE: Path = EMAIL_DATA_DIR / "email_config.json"
+EMAIL_CONFIG_PATH: Path = EMAIL_CONFIG_FILE
 
-# Activity logger configuration lives alongside other shared config files.
-# Consolidated to modules/shared/config
-LOGGER_CONFIG_DIR: Path = PROJECT_ROOT / "modules" / "shared" / "config"
+# Activity logger configuration lives in config data.
+LOGGER_CONFIG_DIR: Path = CONFIG_DIR
 
 # Chatbot assets (uploads/models) live under a dedicated namespace.
 CHATBOT_DATA_DIR: Path = DATA_DIR / "chatbot"
@@ -168,52 +161,55 @@ def ensure_directories() -> None:
     This function should be called during application bootstrap/initialization,
     not at import time. This keeps imports side-effect free.
     """
-    _ensure(DATA_DIR)
-    _ensure(DB_DIR)
-    _ensure(LOG_DIR)
+    shim = sys.modules.get("education_system.university_system.modules.shared.constants.paths")
+    ensure_fn = getattr(shim, "_ensure", _ensure)
+
+    ensure_fn(DATA_DIR)
+    ensure_fn(DB_DIR)
+    ensure_fn(LOG_DIR)
     # Backup subdirectories
-    _ensure(BACKUP_DATABASE_DIR)
-    _ensure(BACKUP_FILES_DIR)
-    _ensure(BACKUP_ATTENDANCE_DIR)
-    _ensure(BACKUP_FINANCE_DIR)
-    _ensure(BACKUP_LIBRARY_DIR)
-    _ensure(BACKUP_HEALTH_DIR)
-    _ensure(BACKUP_SETTINGS_DIR)
-    _ensure(BACKUP_CALENDAR_DIR)
+    ensure_fn(BACKUP_DATABASE_DIR)
+    ensure_fn(BACKUP_FILES_DIR)
+    ensure_fn(BACKUP_ATTENDANCE_DIR)
+    ensure_fn(BACKUP_FINANCE_DIR)
+    ensure_fn(BACKUP_LIBRARY_DIR)
+    ensure_fn(BACKUP_HEALTH_DIR)
+    ensure_fn(BACKUP_SETTINGS_DIR)
+    ensure_fn(BACKUP_CALENDAR_DIR)
     # Export subdirectories
-    _ensure(EXPORTS_DATABASE_DIR)
-    _ensure(EXPORTS_PDF_DIR)
-    _ensure(EXPORTS_TICKETS_DIR)
-    _ensure(EXPORTS_SUBMISSIONS_DIR)
-    _ensure(EXPORTS_REPORTS_DIR)
-    _ensure(REPORTS_DIR)
-    _ensure(REPORT_TEMPLATES_DIR)
-    _ensure(REPORT_CACHE_DIR)
-    _ensure(EMAIL_DATA_DIR)
-    _ensure(EMAIL_TEMPLATES_DIR)
-    _ensure(LOGGER_CONFIG_DIR)
-    _ensure(CHATBOT_DATA_DIR)
-    _ensure(CHATBOT_UPLOAD_DIR)
-    _ensure(CHATBOT_MODELS_DIR)
-    _ensure(QR_CODES_DIR)
-    _ensure(ANALYTICS_DIR)
-    _ensure(ANALYTICS_PLOTS_DIR)
-    _ensure(ANALYTICS_REPORTS_DIR)
-    _ensure(SUBMISSIONS_DIR)
-    _ensure(UPLOAD_DIR)
-    _ensure(TEMPLATES_DIR)
-    _ensure(ASSIGNMENT_TEMPLATES_DIR)
-    _ensure(BACKUP_TEMPLATES_DIR)
-    _ensure(MEDICAL_TEMPLATES_DIR)
-    _ensure(TICKET_TEMPLATES_DIR)
-    _ensure(EMAIL_REMINDER_TEMPLATES_DIR)
-    _ensure(FINANCE_TEMPLATES_DIR)
-    _ensure(NLTK_DATA_DIR)
-    _ensure(STUDENT_DOCUMENTS_DIR)
-    _ensure(TEMP_DIR)
-    _ensure(CONFIG_DIR)
-    _ensure(CHARTS_DIR)
-    _ensure(LOCALES_DIR)
+    ensure_fn(EXPORTS_DATABASE_DIR)
+    ensure_fn(EXPORTS_PDF_DIR)
+    ensure_fn(EXPORTS_TICKETS_DIR)
+    ensure_fn(EXPORTS_SUBMISSIONS_DIR)
+    ensure_fn(EXPORTS_REPORTS_DIR)
+    ensure_fn(REPORTS_DIR)
+    ensure_fn(REPORT_TEMPLATES_DIR)
+    ensure_fn(REPORT_CACHE_DIR)
+    ensure_fn(EMAIL_DATA_DIR)
+    ensure_fn(EMAIL_TEMPLATES_DIR)
+    ensure_fn(LOGGER_CONFIG_DIR)
+    ensure_fn(CHATBOT_DATA_DIR)
+    ensure_fn(CHATBOT_UPLOAD_DIR)
+    ensure_fn(CHATBOT_MODELS_DIR)
+    ensure_fn(QR_CODES_DIR)
+    ensure_fn(ANALYTICS_DIR)
+    ensure_fn(ANALYTICS_PLOTS_DIR)
+    ensure_fn(ANALYTICS_REPORTS_DIR)
+    ensure_fn(SUBMISSIONS_DIR)
+    ensure_fn(UPLOAD_DIR)
+    ensure_fn(TEMPLATES_DIR)
+    ensure_fn(ASSIGNMENT_TEMPLATES_DIR)
+    ensure_fn(BACKUP_TEMPLATES_DIR)
+    ensure_fn(MEDICAL_TEMPLATES_DIR)
+    ensure_fn(TICKET_TEMPLATES_DIR)
+    ensure_fn(EMAIL_REMINDER_TEMPLATES_DIR)
+    ensure_fn(FINANCE_TEMPLATES_DIR)
+    ensure_fn(NLTK_DATA_DIR)
+    ensure_fn(STUDENT_DOCUMENTS_DIR)
+    ensure_fn(TEMP_DIR)
+    ensure_fn(CONFIG_DIR)
+    ensure_fn(CHARTS_DIR)
+    ensure_fn(LOCALES_DIR)
 
 
 

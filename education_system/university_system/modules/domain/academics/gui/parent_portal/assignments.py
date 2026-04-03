@@ -147,17 +147,17 @@ def create_assignments_tree(self, parent):
     """Create a tree widget for assignments"""
     columns = ('Module', 'Assignment', 'Due Date', 'Status', 'Grade/Priority')
     tree = ttk.Treeview(parent, columns=columns, show='headings', height=10)
-    
+
     for col in columns:
         tree.heading(col, text=col)
         tree.column(col, width=150)
-    
+
     scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=tree.yview)
     tree.configure(yscrollcommand=scrollbar.set)
-    
+
     tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    
+
     return tree
 ParentPortalGUI.create_assignments_tree = create_assignments_tree
 

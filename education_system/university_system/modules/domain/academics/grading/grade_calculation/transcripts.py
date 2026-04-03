@@ -1,10 +1,23 @@
 import os
 from datetime import datetime
 
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+try:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    _REPORTLAB_AVAILABLE = True
+except ImportError:  # Optional dependency
+    letter = None
+    SimpleDocTemplate = None
+    Table = None
+    TableStyle = None
+    Paragraph = None
+    Spacer = None
+    colors = None
+    getSampleStyleSheet = None
+    ParagraphStyle = None
+    _REPORTLAB_AVAILABLE = False
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.domain.academics.grading.grade_calculation.utils import select_student
@@ -16,6 +29,9 @@ def generate_transcript():
     print("\nGenerate Transcript")
 
     try:
+        if not _REPORTLAB_AVAILABLE:
+            print("ReportLab is not installed; cannot generate transcript PDFs.")
+            return
         conn = get_connection()
         cursor = conn.cursor()
 
@@ -109,6 +125,9 @@ def generate_transcript():
 def create_transcript_pdf(filename, student_id, first_name, middle_name, last_name, course, email, gender, dob, gpa, credits, module_grades, assessment_grades=None):
     """Create a PDF transcript for a student"""
     try:
+        if not _REPORTLAB_AVAILABLE:
+            print("ReportLab is not installed; cannot generate transcript PDFs.")
+            return
         # Create a PDF document
         doc = SimpleDocTemplate(filename, pagesize=letter)
         styles = getSampleStyleSheet()

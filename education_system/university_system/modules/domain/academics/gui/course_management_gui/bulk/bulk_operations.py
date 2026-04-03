@@ -129,61 +129,61 @@ class BulkUpdateDialog:
         self.parent = parent
         self.auth = auth
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Bulk Update Courses")
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.dialog.focus_set()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         ttk.Label(main_frame, text="Bulk Update Courses", font=("Arial", 12, "bold")).pack(pady=10)
-        
+
         # Selection criteria
         criteria_frame = ttk.LabelFrame(main_frame, text="Select Courses to Update", padding=10)
         criteria_frame.pack(fill=tk.X, pady=5)
-        
+
         self.selection_method = tk.StringVar(value="department")
-        
-        ttk.Radiobutton(criteria_frame, text="By Department", variable=self.selection_method, 
+
+        ttk.Radiobutton(criteria_frame, text="By Department", variable=self.selection_method,
                        value="department").pack(anchor=tk.W)
-        ttk.Radiobutton(criteria_frame, text="By Level", variable=self.selection_method, 
+        ttk.Radiobutton(criteria_frame, text="By Level", variable=self.selection_method,
                        value="level").pack(anchor=tk.W)
-        ttk.Radiobutton(criteria_frame, text="By Status", variable=self.selection_method, 
+        ttk.Radiobutton(criteria_frame, text="By Status", variable=self.selection_method,
                        value="status").pack(anchor=tk.W)
-        
+
         ttk.Label(criteria_frame, text="Value:").pack(anchor=tk.W, pady=(10,0))
         self.criteria_value_var = tk.StringVar()
         ttk.Entry(criteria_frame, textvariable=self.criteria_value_var, width=30).pack(anchor=tk.W)
-        
+
         # Update field
         update_frame = ttk.LabelFrame(main_frame, text="Field to Update", padding=10)
         update_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(update_frame, text="Field:").pack(anchor=tk.W)
         self.update_field = tk.StringVar(value="status")
         field_combo = ttk.Combobox(update_frame, textvariable=self.update_field,
                                   values=["status", "max_enrollment", "course_fee", "course_type"])
         field_combo.pack(anchor=tk.W, pady=2)
-        
+
         ttk.Label(update_frame, text="New Value:").pack(anchor=tk.W, pady=(10,0))
         self.new_value_var = tk.StringVar()
         ttk.Entry(update_frame, textvariable=self.new_value_var, width=30).pack(anchor=tk.W)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Preview", command=self.preview_update).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Update", command=self.perform_update).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     _ALLOWED_SELECTION_COLUMNS = frozenset({'department', 'level', 'status'})
     _ALLOWED_UPDATE_COLUMNS = frozenset({'status', 'max_enrollment', 'course_fee', 'course_type'})
 
@@ -259,7 +259,7 @@ class BulkUpdateDialog:
             messagebox.showinfo("Update Complete", f"Successfully updated {updated_count} courses.")
             self.result = True
             self.dialog.destroy()
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Update failed: {e}")
 
@@ -269,61 +269,61 @@ class BulkUpdateDialog:
         self.parent = parent
         self.auth = auth
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Bulk Update Courses")
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.dialog.focus_set()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         ttk.Label(main_frame, text="Bulk Update Courses", font=("Arial", 12, "bold")).pack(pady=10)
-        
+
         # Selection criteria
         criteria_frame = ttk.LabelFrame(main_frame, text="Select Courses to Update", padding=10)
         criteria_frame.pack(fill=tk.X, pady=5)
-        
+
         self.selection_method = tk.StringVar(value="department")
-        
-        ttk.Radiobutton(criteria_frame, text="By Department", variable=self.selection_method, 
+
+        ttk.Radiobutton(criteria_frame, text="By Department", variable=self.selection_method,
                        value="department").pack(anchor=tk.W)
-        ttk.Radiobutton(criteria_frame, text="By Level", variable=self.selection_method, 
+        ttk.Radiobutton(criteria_frame, text="By Level", variable=self.selection_method,
                        value="level").pack(anchor=tk.W)
-        ttk.Radiobutton(criteria_frame, text="By Status", variable=self.selection_method, 
+        ttk.Radiobutton(criteria_frame, text="By Status", variable=self.selection_method,
                        value="status").pack(anchor=tk.W)
-        
+
         ttk.Label(criteria_frame, text="Value:").pack(anchor=tk.W, pady=(10,0))
         self.criteria_value_var = tk.StringVar()
         ttk.Entry(criteria_frame, textvariable=self.criteria_value_var, width=30).pack(anchor=tk.W)
-        
+
         # Update field
         update_frame = ttk.LabelFrame(main_frame, text="Field to Update", padding=10)
         update_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(update_frame, text="Field:").pack(anchor=tk.W)
         self.update_field = tk.StringVar(value="status")
         field_combo = ttk.Combobox(update_frame, textvariable=self.update_field,
                                   values=["status", "max_enrollment", "course_fee", "course_type"])
         field_combo.pack(anchor=tk.W, pady=2)
-        
+
         ttk.Label(update_frame, text="New Value:").pack(anchor=tk.W, pady=(10,0))
         self.new_value_var = tk.StringVar()
         ttk.Entry(update_frame, textvariable=self.new_value_var, width=30).pack(anchor=tk.W)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Preview", command=self.preview_update).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Update", command=self.perform_update).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     _ALLOWED_SELECTION_COLUMNS = frozenset({'department', 'level', 'status'})
     _ALLOWED_UPDATE_COLUMNS = frozenset({'status', 'max_enrollment', 'course_fee', 'course_type'})
 
@@ -411,10 +411,10 @@ class BulkUpdateDialog:
                 conn.commit()
             finally:
                 conn.close()
-            
+
             messagebox.showinfo("Update Complete", f"Successfully updated {updated_count} courses.")
             self.result = True
             self.dialog.destroy()
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Update failed: {e}")

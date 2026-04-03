@@ -75,6 +75,7 @@ from education_system.university_system.core.paths import (
     UNIVERSITY_SYSTEM_DIR,
     UPLOAD_DIR,
     UPLOADS_DIR,
+    _ensure,
     ensure_directories,
 )
 
@@ -121,6 +122,7 @@ __all__ = [
     "SUBMISSIONS_DIR",
     "UPLOAD_DIR",
     "UPLOADS_DIR",
+    "_ensure",
     "TEMP_DIR",
     "TEMPLATES_DIR",
     "ASSIGNMENT_TEMPLATES_DIR",

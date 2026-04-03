@@ -132,11 +132,11 @@ except (ImportError, ModuleNotFoundError):
     student_union_cli = None
     init_student_union_db = None
     CLI_AVAILABLE = False
-    
+
 
 class DatabaseQueryDialog:
     """Generic dialog for database queries with results display"""
-    
+
     def __init__(self, parent, title, query, columns):
         self.parent = parent
         self.dialog = tk.Toplevel(parent)
@@ -144,49 +144,49 @@ class DatabaseQueryDialog:
         self.dialog.geometry("800x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.query = query
         self.columns = columns
-        
+
         self.create_widgets()
         self.execute_query()
-    
+
     def create_widgets(self):
         """Create dialog widgets"""
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
-        
+
         # Results tree
         self.tree = ttk.Treeview(main_frame, columns=self.columns, show='tree headings')
-        
+
         for col in self.columns:
             self.tree.heading(col, text=col)
             self.tree.column(col, width=100)
-        
+
         scrollbar_y = ttk.Scrollbar(main_frame, orient='vertical', command=self.tree.yview)
         scrollbar_x = ttk.Scrollbar(main_frame, orient='horizontal', command=self.tree.xview)
-        
+
         self.tree.configure(yscrollcommand=scrollbar_y.set, xscrollcommand=scrollbar_x.set)
-        
+
         self.tree.pack(side='left', fill='both', expand=True)
         scrollbar_y.pack(side='right', fill='y')
         scrollbar_x.pack(side='bottom', fill='x')
-        
+
         # Close button
         ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
-    
+
     def execute_query(self):
         """Execute the database query and display results"""
         try:
             conn = student_union_cli.get_connection()
             cursor = conn.cursor()
-            
+
             cursor.execute(self.query)
             results = cursor.fetchall()
-            
+
             for result in results:
                 self.tree.insert('', 'end', values=result)
-            
+
             conn.close()
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to execute query: {str(e)}")
@@ -1300,16 +1300,16 @@ def launch_cli():
 
 class CLIGUIBridge:
     """Bridge between CLI and GUI systems for seamless integration"""
-    
+
     def __init__(self):
         self.gui_app = None
         self.cli_available = CLI_AVAILABLE
-    
+
     def start_gui(self):
         """Start GUI mode"""
         self.gui_app = StudentUnionGUI()
         self.gui_app.run()
-    
+
     def start_cli(self):
         """Start CLI mode"""
         if not self.cli_available:
@@ -1346,10 +1346,10 @@ def run_gui_with_cli_fallback(function_name, *args, **kwargs):
         # Try to run GUI version first
         root = tk.Tk()
         root.withdraw()  # Hide root window
-        
+
         # Create a temporary GUI instance for function calls
         app = StudentUnionGUI()
-        
+
         if hasattr(app, f"{function_name}_gui"):
             gui_method = getattr(app, f"{function_name}_gui")
             result = gui_method(*args, **kwargs)
@@ -1364,7 +1364,7 @@ def run_gui_with_cli_fallback(function_name, *args, **kwargs):
                     cli_method = getattr(student_union_cli, function_name)
                     return cli_method(*args, **kwargs)
             raise AttributeError(f"Function {function_name} not found")
-                
+
     except ImportError:
         # If GUI libraries not available, use CLI
         if CLI_AVAILABLE and 'student_union_cli' in globals():

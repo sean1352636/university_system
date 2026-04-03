@@ -90,7 +90,9 @@ def temp_db():
             days_before_due INTEGER,
             max_reminders INTEGER DEFAULT 3,
             reminder_interval_days INTEGER DEFAULT 7,
-            is_active BOOLEAN DEFAULT 1
+            is_active BOOLEAN DEFAULT 1,
+            created_at TEXT,
+            updated_at TEXT
         )
     """)
 

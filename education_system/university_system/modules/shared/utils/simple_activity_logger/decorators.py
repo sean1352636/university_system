@@ -3,7 +3,10 @@ import functools
 import traceback
 import logging
 
-import psutil
+try:
+    import psutil
+except ImportError:  # pragma: no cover - optional dependency
+    psutil = None
 
 from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogLevel, SecurityLevel
 
@@ -67,7 +70,8 @@ def enhanced_log_activity(action=None, module=None, description=None,
                 if measure_performance:
                     func_metadata['execution_time'] = processing_time
                     try:
-                        func_metadata['memory_usage'] = psutil.Process().memory_info().rss
+                        if psutil is not None:
+                            func_metadata['memory_usage'] = psutil.Process().memory_info().rss
                     except (ImportError, OSError, AttributeError) as e:
                         _logger.debug(f"Failed to get memory usage: {e}")
 

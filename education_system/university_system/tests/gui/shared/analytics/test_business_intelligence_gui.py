@@ -65,10 +65,11 @@ class TestBusinessIntelligenceGUI:
 
     def test_init_database(self, root_window, mock_auth):
         """Test database initialization"""
-        with patch(f'{_BI_MOD}.init_business_intelligence_system_db') as mock_init:
+        with patch('education_system.university_system.infrastructure.database.schemas.analytics_bi_schemas.init_business_intelligence_system_db') as mock_init:
             with patch.object(BusinessIntelligenceGUI, '_create_widgets'):
                 with patch(f'{_BI_MOD}.log_activity'):
                     gui = BusinessIntelligenceGUI(root_window, mock_auth)
+                    mock_init.assert_called_once()
 
     def test_create_widgets(self, root_window, mock_auth):
         """Test widget creation"""
@@ -397,6 +398,8 @@ class TestExportReportDialog:
 
                     dialog.report_combo = Mock()
                     dialog.report_combo.get.return_value = ''
+                    dialog.format_combo = Mock()
+                    dialog.format_combo.get.return_value = 'CSV'
 
                     with patch('tkinter.messagebox.showerror') as mock_error:
                         dialog._export()

@@ -62,30 +62,30 @@ except (ImportError, ModuleNotFoundError):
     student_union_cli = None
     init_student_union_db = None
     CLI_AVAILABLE = False
-    
+
 
 class FacilityBookingDialog:
     """Dialog for facility booking"""
-    
+
     def __init__(self, parent, auth_manager):
         self.parent = parent
         self.auth = auth_manager
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(_t("facility.dialog.book_title"))
         self.dialog.geometry("600x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.load_facilities()
-    
+
     def create_widgets(self):
         """Create dialog widgets"""
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill='both', expand=True, padx=10, pady=10)
-        
+
         # Title
         title_label = ttk.Label(main_frame, text=_t("facility.dialog.book_title"), font=('Arial', 14, 'bold'))
         title_label.pack(pady=(0, 10))
@@ -93,16 +93,16 @@ class FacilityBookingDialog:
         # Facility selection
         facility_frame = ttk.LabelFrame(main_frame, text=_t("facility.select_facility"))
         facility_frame.pack(fill='x', pady=(0, 10))
-        
+
         self.facility_var = tk.StringVar()
         self.facility_combo = ttk.Combobox(facility_frame, textvariable=self.facility_var, width=50)
         self.facility_combo.pack(side='left', padx=5, pady=5)
         self.facility_combo.bind('<<ComboboxSelected>>', self.on_facility_selected)
-        
+
         # Facility details
         self.facility_details = tk.Text(facility_frame, height=4, width=60)
         self.facility_details.pack(fill='x', padx=5, pady=5)
-        
+
         # Booking details
         booking_frame = ttk.LabelFrame(main_frame, text=_t("facility.booking_details"))
         booking_frame.pack(fill='x', pady=(0, 10))
@@ -141,11 +141,11 @@ class FacilityBookingDialog:
         club_check = ttk.Checkbutton(club_frame, text=_t("facility.book_for_club"), variable=self.club_booking_var,
                                    command=self.toggle_club_selection)
         club_check.pack(anchor='w', padx=5, pady=5)
-        
+
         self.club_var = tk.StringVar()
         self.club_combo = ttk.Combobox(club_frame, textvariable=self.club_var, width=40, state='disabled')
         self.club_combo.pack(fill='x', padx=5, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill='x', pady=(10, 0))
@@ -154,38 +154,38 @@ class FacilityBookingDialog:
                   command=self.submit_booking).pack(side='left', padx=(0, 10))
         ttk.Button(button_frame, text=_t("common.cancel"),
                   command=self.cancel).pack(side='left')
-    
+
     def load_facilities(self):
         """Load available facilities"""
         try:
             conn = student_union_cli.get_connection()
             cursor = conn.cursor()
-            
+
             cursor.execute('''
-            SELECT facility_id, facility_name, location, capacity, description, 
+            SELECT facility_id, facility_name, location, capacity, description,
                    equipment, booking_fee
             FROM union_facilities
             WHERE status = 'available'
             ORDER BY facility_name
             ''')
-            
+
             facilities = cursor.fetchall()
-            
+
             facility_options = []
             self.facility_data = {}
-            
+
             for facility in facilities:
                 option = f"{facility[1]} - {facility[2]}"
                 facility_options.append(option)
                 self.facility_data[option] = facility
-            
+
             self.facility_combo['values'] = facility_options
-            
+
             # Load user's clubs for club booking option
             if self.auth and self.auth.current_user:
                 cursor.execute('SELECT student_id FROM users WHERE id = ?', (self.auth.current_user['id'],))
                 result = cursor.fetchone()
-                
+
                 if result:
                     student_id = result[0]
                     cursor.execute('''
@@ -195,34 +195,34 @@ class FacilityBookingDialog:
                     AND c.status = 'active'
                     ORDER BY c.club_name
                     ''', (student_id, student_id, student_id))
-                    
+
                     clubs = cursor.fetchall()
-                    
+
                     club_options = [f"{club[1]} (ID: {club[0]})" for club in clubs]
                     self.club_combo['values'] = club_options
-            
+
             conn.close()
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to load facilities: {str(e)}")
-    
+
     def on_facility_selected(self, event=None):
         """Handle facility selection"""
         selection = self.facility_var.get()
         if not selection or selection not in self.facility_data:
             return
-        
+
         facility = self.facility_data[selection]
-        
+
         details = f"Facility: {facility[1]}\n"
         details += f"Location: {facility[2]}\n"
         details += f"Capacity: {facility[3]} people\n"
         details += f"Description: {facility[4]}\n"
         details += f"Equipment: {facility[5]}\n"
         details += f"Booking Fee: £{facility[6]:.2f}"
-        
+
         self.facility_details.delete(1.0, tk.END)
         self.facility_details.insert(1.0, details)
-    
+
     def toggle_club_selection(self):
         """Toggle club selection based on checkbox"""
         if self.club_booking_var.get():
@@ -230,7 +230,7 @@ class FacilityBookingDialog:
         else:
             self.club_combo.config(state='disabled')
             self.club_var.set('')
-    
+
     def submit_booking(self):
         """Submit the booking request"""
         # Validate inputs
@@ -256,7 +256,7 @@ class FacilityBookingDialog:
         except ValueError:
             messagebox.showwarning(_t("common.warning"), _t("facility.error.invalid_date_format"))
             return
-        
+
         booking_data = {
             'facility': self.facility_var.get(),
             'date': self.date_var.get(),
@@ -266,12 +266,12 @@ class FacilityBookingDialog:
             'notes': self.notes_text.get(1.0, tk.END).strip(),
             'club': self.club_var.get() if self.club_booking_var.get() else None
         }
-        
+
         if messagebox.askyesno(_t("common.confirm"), _t("facility.confirm_submit")):
             self.result = booking_data
             messagebox.showinfo(_t("common.success"), _t("facility.booking_submitted"))
             self.dialog.destroy()
-    
+
     def cancel(self):
         """Cancel the dialog"""
         self.dialog.destroy()
@@ -791,28 +791,28 @@ def submit_booking_request(self):
     start_time = self.start_time_entry.get().strip()
     end_time = self.end_time_entry.get().strip()
     purpose = self.purpose_entry.get().strip()
-    
+
     if not all([facility, date, start_time, end_time, purpose]):
         messagebox.showerror("Error", "Please fill in all fields")
         return
-    
+
     # Validate date format
     try:
         datetime.strptime(date, '%Y-%m-%d')
     except ValueError:
         messagebox.showerror("Error", "Date must be in YYYY-MM-DD format")
         return
-    
+
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         cursor.execute('''
             INSERT INTO facility_bookings (facility_name, user_id, booking_date, start_time, end_time, purpose, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        ''', (facility, self.current_user['id'], date, start_time, end_time, purpose, 
+        ''', (facility, self.current_user['id'], date, start_time, end_time, purpose,
               datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-        
+
         conn.commit()
         messagebox.showinfo("Success", f"Booking request for {facility} submitted successfully!")
 
@@ -840,13 +840,13 @@ def submit_booking_request(self):
     finally:
         if conn:
             conn.close()
-    
+
     # Clear form
     self.booking_date_entry.delete(0, tk.END)
     self.start_time_entry.delete(0, tk.END)
     self.end_time_entry.delete(0, tk.END)
     self.purpose_entry.delete(0, tk.END)
-    
+
     self.refresh_my_bookings()
 
 
@@ -855,28 +855,28 @@ def refresh_my_bookings(self):
     # Clear existing items
     for item in self.bookings_tree.get_children():
         self.bookings_tree.delete(item)
-    
+
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         cursor.execute('''
-            SELECT booking_id, facility_name, booking_date, 
+            SELECT booking_id, facility_name, booking_date,
                    start_time || '-' || end_time as time_slot, status, purpose
             FROM facility_bookings
             WHERE user_id = ?
             ORDER BY booking_date DESC
         ''', (self.current_user['id'],))
-        
+
         bookings = cursor.fetchall()
-        
+
         for booking in bookings:
             self.bookings_tree.insert('', tk.END, values=booking)
-        
+
         conn.close()
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Failed to load bookings: {e}")
-    
+
 
 def open_approve_facility_bookings_dialog(self):
     """Open facility bookings approval (admin)"""
@@ -888,25 +888,25 @@ def create_facilities_tab(self):
     """Create facilities booking tab"""
     facilities_frame = ttk.Frame(self.notebook)
     self.notebook.add(facilities_frame, text="Facilities")
-    
+
     # Left panel
     left_panel = ttk.LabelFrame(facilities_frame, text="Facility Actions")
     left_panel.pack(side='left', fill='y', padx=5, pady=5, ipadx=5, ipady=5)
-    
-    ttk.Button(left_panel, text="View Facilities", 
+
+    ttk.Button(left_panel, text="View Facilities",
               command=self.view_facilities).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Book Facility", 
+    ttk.Button(left_panel, text="Book Facility",
               command=self.request_facility_booking_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="My Bookings", 
+    ttk.Button(left_panel, text="My Bookings",
               command=self.view_my_bookings).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Approve Bookings", 
+    ttk.Button(left_panel, text="Approve Bookings",
               command=self.approve_facility_bookings_gui).pack(fill='x', pady=2)
-    
+
     # Right panel
     right_panel = ttk.LabelFrame(facilities_frame, text="Facility Information")
     right_panel.pack(side='right', fill='both', expand=True, padx=5, pady=5)
-    
-    self.facilities_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD, 
+
+    self.facilities_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD,
                                                     height=30, width=80)
     self.facilities_text.pack(fill='both', expand=True, padx=5, pady=5)
 
@@ -914,11 +914,11 @@ def create_facilities_tab(self):
 def view_facilities(self):
     """GUI wrapper for viewing facilities"""
     self.update_status("Loading facilities...")
-    
+
     def callback(output, result):
         self.display_result(self.facilities_text, output)
         self.update_status("Facilities loaded")
-    
+
     self.run_in_thread(student_union_cli.view_facilities, callback)
 
 
@@ -926,7 +926,7 @@ def request_facility_booking_gui(self):
     """GUI for facility booking"""
     dialog = FacilityBookingDialog(self.master, self.auth)
     self.master.wait_window(dialog.dialog)
-    
+
     if dialog.result:
         self.update_status("Facility booking requested")
         self.view_my_bookings()
@@ -935,11 +935,11 @@ def request_facility_booking_gui(self):
 def view_my_bookings(self):
     """GUI wrapper for viewing my bookings"""
     self.update_status("Loading your bookings...")
-    
+
     def callback(output, result):
         self.display_result(self.facilities_text, output)
         self.update_status("Your bookings loaded")
-    
+
     self.run_in_thread(student_union_cli.view_my_bookings, callback)
 
 # Add more GUI wrapper methods for other functions...

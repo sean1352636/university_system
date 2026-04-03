@@ -217,9 +217,11 @@ def format_date(date_obj: Any) -> str:
 def validate_decimal(value: str) -> bool:
     """Validate decimal input"""
     try:
+        if not value:
+            return False
         Decimal(value)
         return True
-    except (ValueError, TypeError):
+    except Exception:
         return False
 
 

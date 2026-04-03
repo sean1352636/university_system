@@ -144,7 +144,7 @@ class RecordingManager:
                 cursor.execute("""
                     SELECT * FROM virtual_recordings
                     WHERE session_id = ?
-                    ORDER BY created_at DESC
+                    ORDER BY created_at DESC, recording_id DESC
                 """, (session_id,))
 
                 columns = [d[0] for d in cursor.description]

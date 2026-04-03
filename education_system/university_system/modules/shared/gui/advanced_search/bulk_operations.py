@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -121,7 +121,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -132,7 +132,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -260,7 +260,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -932,15 +932,15 @@ def bulk_export(self):
         (_t("advanced_search.bulk_operations.excel_format"), "xlsx"),
         (_t("advanced_search.bulk_operations.text_format"), "txt"),
     ]
-    
+
     for text, value in formats:
         ttk.Radiobutton(frame, text=text, variable=format_var, value=value).pack(anchor='w', pady=2)
-    
+
     def do_export():
         format_type = format_var.get()
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"bulk_export_{timestamp}.{format_type}"
-        
+
         try:
             if format_type == "csv":
                 self.export_to_csv(filename)
@@ -1006,10 +1006,10 @@ def bulk_export(self):
 
         except Exception as e:
             messagebox.showerror(_t("advanced_search.bulk_operations.export_error_title"), _t("advanced_search.bulk_operations.could_not_export", error=str(e)))
-    
+
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X, pady=(20, 0))
-    
+
     ttk.Button(button_frame, text=f"💾 {_t('advanced_search.bulk_operations.export_btn')}", command=do_export).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.cancel_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.bulk_export = bulk_export
@@ -1050,31 +1050,31 @@ def generate_email_list(self):
     ttk.Radiobutton(format_frame, text=_t("advanced_search.bulk_operations.one_per_line"), variable=format_var, value="list").pack(anchor='w')
     ttk.Radiobutton(format_frame, text=_t("advanced_search.bulk_operations.comma_separated"), variable=format_var, value="comma").pack(anchor='w')
     ttk.Radiobutton(format_frame, text=_t("advanced_search.bulk_operations.semicolon_separated"), variable=format_var, value="semicolon").pack(anchor='w')
-    
+
     def update_format():
         email_text.delete(1.0, tk.END)
         format_type = format_var.get()
-        
+
         if format_type == "list":
             email_text.insert(tk.END, "\n".join(emails))
         elif format_type == "comma":
             email_text.insert(tk.END, ", ".join(emails))
         elif format_type == "semicolon":
             email_text.insert(tk.END, "; ".join(emails))
-    
+
     for widget in format_frame.winfo_children():
         if isinstance(widget, ttk.Radiobutton):
             widget.configure(command=update_format)
-    
+
     update_format()  # Initial format
-    
+
     def save_email_list():
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"email_list_{timestamp}.txt"
-        
+
         with open(filename, 'w', encoding='utf-8') as f:
             f.write(email_text.get(1.0, tk.END))
-        
+
         messagebox.showinfo(_t("advanced_search.bulk_operations.email_list_saved_title"), _t("advanced_search.bulk_operations.email_list_saved_msg", filename=filename))
         dialog.destroy()
 
@@ -1116,10 +1116,10 @@ def create_student_groups(self):
         (_t("advanced_search.bulk_operations.random_assignment"), "random"),
         (_t("advanced_search.bulk_operations.alphabetical_order"), "alpha"),
     ]
-    
+
     for text, value in methods:
         ttk.Radiobutton(frame, text=text, variable=method_var, value=value).pack(anchor='w', pady=2)
-    
+
     # Additional options
     options_frame = ttk.LabelFrame(frame, text=_t("advanced_search.bulk_operations.options_label"), padding="10")
     options_frame.pack(fill=tk.X, pady=(20, 0))
@@ -1127,18 +1127,18 @@ def create_student_groups(self):
     ttk.Label(options_frame, text=_t("advanced_search.bulk_operations.group_size_label")).pack(anchor='w')
     size_var = tk.StringVar(value="5")
     ttk.Entry(options_frame, textvariable=size_var, width=10).pack(anchor='w')
-    
+
     def create_groups():
         method = method_var.get()
         groups = {}
-        
+
         if method == "course":
             for student in self.search_results:
                 course = student[9]  # course field
                 if course not in groups:
                     groups[course] = []
                 groups[course].append(student)
-        
+
         elif method == "age":
             for student in self.search_results:
                 age = student[8]  # age field
@@ -1150,18 +1150,18 @@ def create_student_groups(self):
                     age_group = "26-30"
                 else:
                     age_group = "Over 30"
-                
+
                 if age_group not in groups:
                     groups[age_group] = []
                 groups[age_group].append(student)
-        
+
         elif method == "random":
             import random
             try:
                 group_size = int(size_var.get())
                 students_copy = self.search_results.copy()
                 random.shuffle(students_copy)
-                
+
                 for i, student in enumerate(students_copy):
                     group_name = f"Group {(i // group_size) + 1}"
                     if group_name not in groups:
@@ -1182,14 +1182,14 @@ def create_student_groups(self):
             except ValueError:
                 messagebox.showerror(_t("advanced_search.bulk_operations.invalid_size_title"), _t("advanced_search.bulk_operations.invalid_size_msg"))
                 return
-        
+
         # Show groups result
         self.show_groups_result(groups)
         dialog.destroy()
-    
+
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X, pady=(20, 0))
-    
+
     ttk.Button(button_frame, text=f"👥 {_t('advanced_search.bulk_operations.create_groups_btn')}", command=create_groups).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.cancel_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.create_student_groups = create_student_groups
@@ -1200,17 +1200,17 @@ def show_groups_result(self, groups):
     dialog.title(f"👥 {_t('advanced_search.created_groups_dialog_title')}")
     dialog.geometry("1100x800")
     dialog.transient(self.master)
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t("advanced_search.bulk_operations.created_groups_title", count=len(groups)),
              style='Title.TLabel').pack(pady=(0, 20))
-    
+
     # Groups display
     groups_text = scrolledtext.ScrolledText(frame, height=20, wrap=tk.WORD)
     groups_text.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     for group_name, students in groups.items():
         groups_text.insert(tk.END, f"\n{group_name} ({len(students)} students):\n")
         groups_text.insert(tk.END, "-" * 50 + "\n")
@@ -1218,14 +1218,14 @@ def show_groups_result(self, groups):
             name = f"{student[3]} {student[5]}"
             groups_text.insert(tk.END, f"  • {student[0]} - {name} ({student[1]})\n")
         groups_text.insert(tk.END, "\n")
-    
+
     def export_groups():
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"student_groups_{timestamp}.txt"
-        
+
         with open(filename, 'w', encoding='utf-8') as f:
             f.write(groups_text.get(1.0, tk.END))
-        
+
         messagebox.showinfo(_t("advanced_search.bulk_operations.groups_exported_title"), _t("advanced_search.bulk_operations.groups_exported_msg", filename=filename))
 
     button_frame = ttk.Frame(frame)
@@ -1263,16 +1263,16 @@ def mark_for_followup(self):
     priorities = [(_t("advanced_search.bulk_operations.priority_high"), "high"), (_t("advanced_search.bulk_operations.priority_medium"), "medium"), (_t("advanced_search.bulk_operations.priority_low"), "low")]
     for text, value in priorities:
         ttk.Radiobutton(frame, text=text, variable=priority_var, value=value).pack(anchor='w')
-    
+
     def mark_students():
         reason = reason_var.get().strip()
         if not reason:
             messagebox.showwarning(_t("advanced_search.bulk_operations.missing_reason_title"), _t("advanced_search.bulk_operations.missing_reason_msg"))
             return
-        
+
         priority = priority_var.get()
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+
         # Create follow-up data
         followup_data = {
             'reason': reason,
@@ -1287,20 +1287,20 @@ def mark_for_followup(self):
                 } for s in self.search_results
             ]
         }
-        
+
         # Save to file
         filename = f"followup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(followup_data, f, indent=2)
-        
+
         messagebox.showinfo(_t("advanced_search.bulk_operations.followup_marked_title"),
                           _t("advanced_search.bulk_operations.followup_marked_msg",
                              count=len(self.search_results), reason=reason, priority=priority, filename=filename))
         dialog.destroy()
-    
+
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X, pady=(20, 0))
-    
+
     ttk.Button(button_frame, text=f"📌 {_t('advanced_search.bulk_operations.mark_btn')}", command=mark_students).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.cancel_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.mark_for_followup = mark_for_followup
@@ -1333,10 +1333,10 @@ def bulk_enrollment_management(self):
         (_t("advanced_search.bulk_operations.transfer_between_modules"), "transfer"),
         (_t("advanced_search.bulk_operations.update_enrollment_status"), "status"),
     ]
-    
+
     for text, value in operations:
         ttk.Radiobutton(frame, text=text, variable=operation_var, value=value).pack(anchor='w')
-    
+
     # Module inputs
     module_frame = ttk.LabelFrame(frame, text=_t("advanced_search.bulk_operations.module_information"), padding="10")
     module_frame.pack(fill=tk.X, pady=(20, 0))
@@ -1348,11 +1348,11 @@ def bulk_enrollment_management(self):
     ttk.Label(module_frame, text=_t("advanced_search.bulk_operations.to_module_label")).pack(anchor='w')
     to_module_var = tk.StringVar()
     ttk.Entry(module_frame, textvariable=to_module_var, width=20).pack(anchor='w')
-    
+
     def execute_bulk_operation():
         operation = operation_var.get()
         module_code = module_var.get().strip()
-        
+
         if not module_code and operation != "status":
             messagebox.showwarning(_t("advanced_search.bulk_operations.missing_module_title"), _t("advanced_search.bulk_operations.missing_module_msg"))
             return
@@ -1373,10 +1373,10 @@ def bulk_enrollment_management(self):
 
         messagebox.showinfo(_t("advanced_search.bulk_operations.operation_complete_title"), message)
         dialog.destroy()
-    
+
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X, pady=(20, 0))
-    
+
     ttk.Button(button_frame, text=f"🎓 {_t('advanced_search.bulk_operations.execute_btn')}", command=execute_bulk_operation).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.cancel_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.bulk_enrollment_management = bulk_enrollment_management
@@ -1662,11 +1662,11 @@ def show_mass_email(self):
     ttk.Label(frame, text=_t("advanced_search.bulk_operations.message_label")).pack(anchor='w')
     message_text = scrolledtext.ScrolledText(frame, height=15, wrap=tk.WORD)
     message_text.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     # Email template buttons
     template_frame = ttk.Frame(frame)
     template_frame.pack(fill=tk.X, pady=(0, 20))
-    
+
     def load_template(template_type):
         template_map = {
             "welcome": "welcome_message",
@@ -1684,7 +1684,7 @@ def show_mass_email(self):
             except Exception:
 
                 pass
-    
+
     ttk.Label(template_frame, text=_t("advanced_search.bulk_operations.quick_templates")).pack(side=tk.LEFT)
     ttk.Button(template_frame, text=_t("advanced_search.bulk_operations.template_welcome"),
               command=lambda: load_template("welcome")).pack(side=tk.LEFT, padx=(10, 5))
@@ -1753,10 +1753,10 @@ def show_mass_email(self):
                 messagebox.showerror(_t("advanced_search.bulk_operations.email_error_title"),
                                    _t("advanced_search.bulk_operations.email_error_msg", error=str(e)))
                 print(f"Mass email error: {str(e)}")
-    
+
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
-    
+
     ttk.Button(button_frame, text=f"📧 {_t('advanced_search.bulk_operations.send_email_btn')}", command=send_mass_email).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"💾 {_t('advanced_search.bulk_operations.save_draft_btn')}",
               command=lambda: messagebox.showinfo(_t("advanced_search.bulk_operations.draft_title"), _t("advanced_search.bulk_operations.draft_saved_msg"))).pack(side=tk.LEFT, padx=(10, 0))
@@ -1788,12 +1788,12 @@ def show_batch_updates(self):
         (_t("advanced_search.bulk_operations.add_note_flag"), "note"),
         (_t("advanced_search.bulk_operations.update_contact_information"), "contact"),
     ]
-    
+
     operation_var = tk.StringVar(value="course")
-    
+
     for text, value in operations:
         ttk.Radiobutton(frame, text=text, variable=operation_var, value=value).pack(anchor='w', pady=2)
-    
+
     # Update values frame
     values_frame = ttk.LabelFrame(frame, text=_t("advanced_search.bulk_operations.update_values"), padding="10")
     values_frame.pack(fill=tk.X, pady=(20, 0))
@@ -1805,7 +1805,7 @@ def show_batch_updates(self):
     ttk.Label(values_frame, text=_t("advanced_search.bulk_operations.reason_for_change")).pack(anchor='w')
     reason_text = tk.Text(values_frame, height=4, wrap=tk.WORD)
     reason_text.pack(fill=tk.X)
-    
+
     def execute_batch_update():
         operation = operation_var.get()
         new_value = new_value_var.get().strip()
@@ -1828,10 +1828,10 @@ def show_batch_updates(self):
             messagebox.showinfo(_t("advanced_search.bulk_operations.update_complete_title"),
                               _t("advanced_search.bulk_operations.batch_update_complete_msg", count=len(self.search_results)))
             dialog.destroy()
-    
+
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X, pady=(20, 0))
-    
+
     ttk.Button(button_frame, text=f"📝 {_t('advanced_search.bulk_operations.update_btn')}", command=execute_batch_update).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.cancel_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.show_batch_updates = show_batch_updates
@@ -1843,16 +1843,16 @@ def simulate_send_email(self, student):
     dialog.geometry("1000x750")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t("advanced_search.bulk_operations.send_email_title"), style='Title.TLabel').pack(pady=(0, 20))
 
     # Email details
     info_frame = ttk.LabelFrame(frame, text=_t("advanced_search.bulk_operations.email_details_label"), padding="10")
     info_frame.pack(fill=tk.X, pady=(0, 20))
-    
+
     ttk.Label(info_frame, text=_t("advanced_search.bulk_operations.to_recipient", email=student[1], name=f"{student[3]} {student[5]}")).pack(anchor='w')
 
     ttk.Label(frame, text=_t("advanced_search.bulk_operations.subject_label")).pack(anchor='w')
@@ -1862,7 +1862,7 @@ def simulate_send_email(self, student):
     ttk.Label(frame, text=_t("advanced_search.bulk_operations.message_label")).pack(anchor='w')
     message_text = scrolledtext.ScrolledText(frame, height=10, wrap=tk.WORD)
     message_text.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     def send_email():
         subject = subject_var.get().strip()
         message = message_text.get(1.0, tk.END).strip()

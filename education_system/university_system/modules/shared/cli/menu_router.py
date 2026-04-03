@@ -222,7 +222,7 @@ def display_menu():
 
         display_menu._system_init_complete = True
         logger.info("System initialization completed successfully")
-    
+
     # Sync authentication with shared context (always refresh to stay current
     # after system switches)
     try:
@@ -286,10 +286,10 @@ def display_menu():
                     logger.info("Plagiarism permissions already exist")
             except (AuthenticationError, PermissionDeniedError) as e:
                 logging.warning(f"Could not add plagiarism permissions: {e}")
-                
+
         except (AuthenticationError, PermissionDeniedError) as e:
             logging.warning(f"Error setting up permissions: {e}")
-        
+
         # Mark permissions as setup
         display_menu._permissions_setup = True
 
@@ -303,7 +303,7 @@ def display_menu():
             logging.warning(f"Failed to initialize plagiarism checker: {e}")
             display_menu._plagiarism_initialized = True
             logger.warning("Plagiarism checker integration had issues")
-    
+
     # Main application loop
     while True:
         # Check if user is logged in
@@ -313,7 +313,7 @@ def display_menu():
             from education_system.switch import request_logout
             request_logout(mode="cli")
             return
-        
+
         # User is now logged in, show main menu
         try:
             print(f"\n{get_text('cli.logged_in_as', default='Logged in as')}: {auth.current_user['username']} ({auth.current_user['role']})")

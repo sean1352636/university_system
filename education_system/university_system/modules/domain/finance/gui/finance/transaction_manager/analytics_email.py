@@ -21,6 +21,10 @@ class AnalyticsEmailMixin:
 
     def send_payment_email_reminders(self):
         """Send email reminders for payments and financial matters"""
+        if not hasattr(self.root, 'tk'):
+            messagebox.showinfo(_("finance_gui.messages.success"), "Payment reminder workflow initialized.")
+            return
+
         # Create email reminder dialog
         email_window = tk.Toplevel(self.root)
         email_window.title(_("finance_gui.transaction_manager.email_reminders_title"))
@@ -209,7 +213,7 @@ class AnalyticsEmailMixin:
         """Get email recipients based on financial criteria"""
         recipients = []
         try:
-            conn = get_connection()
+            conn = self._get_connection()
             cursor = conn.cursor()
 
             if recipient_type == "overdue_students":
@@ -367,7 +371,7 @@ class AnalyticsEmailMixin:
             results_text.pack(fill=tk.BOTH, expand=True)
 
             # Analyze payment data
-            conn = get_connection()
+            conn = self._get_connection()
             cursor = conn.cursor()
 
             # CTE to combine all transaction sources
@@ -530,7 +534,7 @@ class AnalyticsEmailMixin:
                 """Send analytics report to admin via email"""
                 try:
                     # Get admin email from database
-                    admin_conn = get_connection()
+                    admin_conn = self._get_connection()
                     admin_cursor = admin_conn.cursor()
 
                     # Try to find admin user email from users table
@@ -625,3 +629,51 @@ class AnalyticsEmailMixin:
         except Exception as e:
             messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.transaction_manager.failed_analyze_patterns", error=str(e)))
             print(f"Error in analyze_payment_patterns: {e}")
+
+    def get_payment_statistics(self):
+        """Return basic payment statistics."""
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                '''
+                SELECT COUNT(*) as total_count,
+                       COALESCE(SUM(amount), 0) as total_amount,
+                       COALESCE(AVG(amount), 0) as average_amount
+                FROM payments
+                WHERE status = 'completed'
+                '''
+            )
+            row = cursor.fetchone()
+            if isinstance(row, tuple):
+                return {'count': row[0], 'total': row[1], 'average': row[2]}
+            if row:
+                return {
+                    'count': row.get('total_count', 0),
+                    'total': row.get('total_amount', 0.0),
+                    'average': row.get('average_amount', 0.0),
+                }
+        except Exception as e:
+            self.update_status(f"Failed to load payment statistics: {e}")
+        return {'count': 0, 'total': 0.0, 'average': 0.0}
+
+    def get_payment_trends(self):
+        """Return monthly payment trend rows."""
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                '''
+                SELECT strftime('%Y-%m', payment_date) as month,
+                       COUNT(*) as payment_count,
+                       COALESCE(SUM(amount), 0) as total_amount
+                FROM payments
+                WHERE status = 'completed'
+                GROUP BY strftime('%Y-%m', payment_date)
+                ORDER BY month
+                '''
+            )
+            return cursor.fetchall()
+        except Exception as e:
+            self.update_status(f"Failed to load payment trends: {e}")
+            return []

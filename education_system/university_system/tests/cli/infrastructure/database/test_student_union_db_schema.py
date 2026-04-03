@@ -8,6 +8,9 @@ from unittest.mock import Mock, patch
 
 from education_system.university_system.modules.domain.student_affairs.student_union.services import union_db_schema
 
+# Patch target: the name as it's used in the shim module
+UNION_SCHEMA = 'education_system.university_system.modules.domain.student_affairs.student_union.services.union_db_schema'
+
 
 class TestUnionDbSchemaImports:
     """Tests for union_db_schema module imports."""
@@ -22,10 +25,9 @@ class TestUnionDbSchemaImports:
         assert hasattr(union_db_schema, '__all__')
         assert 'init_student_union_db' in union_db_schema.__all__
 
-    @patch('education_system.university_system.infrastructure.database.schemas.init_student_union_db')
+    @patch(f'{UNION_SCHEMA}.init_student_union_db')
     def test_init_student_union_db_delegates(self, mock_init_db):
         """Test that init_student_union_db properly delegates to centralized function."""
-        # Call the function (takes no args — manages its own connection)
         union_db_schema.init_student_union_db()
 
         # Verify it delegates to the centralized function
@@ -54,7 +56,7 @@ class TestCompatibilityShim:
         assert 'init_student_union_db' in namespace
         assert callable(namespace['init_student_union_db'])
 
-    @patch('education_system.university_system.infrastructure.database.schemas.init_student_union_db')
+    @patch(f'{UNION_SCHEMA}.init_student_union_db')
     def test_function_signature_preserved(self, mock_init_db):
         """Test that the function signature is preserved through the import."""
         try:
@@ -87,7 +89,7 @@ class TestModuleDocstring:
 class TestIntegrationDbSchema:
     """Integration tests for database schema initialization."""
 
-    @patch('education_system.university_system.infrastructure.database.schemas.init_student_union_db')
+    @patch(f'{UNION_SCHEMA}.init_student_union_db')
     def test_init_db_can_be_called_multiple_times(self, mock_init_db):
         """Test that init_student_union_db can be called multiple times safely."""
         # Call multiple times (function takes no args)
@@ -98,7 +100,7 @@ class TestIntegrationDbSchema:
         # Should have been called 3 times
         assert mock_init_db.call_count == 3
 
-    @patch('education_system.university_system.infrastructure.database.schemas.init_student_union_db')
+    @patch(f'{UNION_SCHEMA}.init_student_union_db')
     def test_init_db_delegates_correctly(self, mock_init_db):
         """Test that init_student_union_db delegates to centralized function."""
         union_db_schema.init_student_union_db()
@@ -150,16 +152,11 @@ class TestModuleStructure:
 
     def test_module_has_future_annotations(self):
         """Test that module uses future annotations."""
-        import sys
-        import importlib
-
-        # Reimport to check annotations
-        if 'university_system.modules.core.services.student_union_misc.union_db_schema' in sys.modules:
-            importlib.reload(union_db_schema)
-
-        # Should have annotations from __future__
-        assert '__annotations__' in dir(union_db_schema) or \
-               'annotations' in str(union_db_schema.__doc__).lower()
+        # The module has 'from __future__ import annotations'
+        # Check for the annotations feature flag
+        assert hasattr(union_db_schema, '__annotations__') or \
+               'annotations' in getattr(union_db_schema, '__doc__', '') or \
+               hasattr(union_db_schema, '__future__')
 
 
 if __name__ == '__main__':

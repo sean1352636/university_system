@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -121,7 +121,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -132,7 +132,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -260,7 +260,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -991,7 +991,7 @@ def import_data(self, file_type, data_type, filename_override: Optional[str] = N
         "json": [("JSON files", "*.json")],
         "xlsx": [("Excel files", "*.xlsx")]
     }
-    
+
     if filename_override:
         filename = filename_override
     else:
@@ -999,7 +999,7 @@ def import_data(self, file_type, data_type, filename_override: Optional[str] = N
             title=_t('advanced_search.export_import.select_file_to_import', file_type=file_type.upper()),
             filetypes=filetypes.get(file_type, [(_t('common.all_files'), "*.*")])
         )
-    
+
     if not filename:
         return 0
 
@@ -1029,7 +1029,7 @@ def bulk_import_with_validation(self):
         title=_t('advanced_search.export_import.select_file_bulk_import'),
         filetypes=[(_t('common.csv_files'), "*.csv"), (_t('common.json_files'), "*.json"), (_t('common.all_files'), "*.*")]
     )
-    
+
     if filename:
         # Validation dialog
         validation_dialog = tk.Toplevel(self.master)
@@ -1037,10 +1037,10 @@ def bulk_import_with_validation(self):
         validation_dialog.geometry("900x700")
         validation_dialog.transient(self.master)
         validation_dialog.grab_set()
-        
+
         val_frame = ttk.Frame(validation_dialog, padding="20")
         val_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(val_frame, text=_t('advanced_search.export_import.validation_settings'), style='Title.TLabel').pack(pady=(0, 20))
 
         # Validation options
@@ -1053,7 +1053,7 @@ def bulk_import_with_validation(self):
         ttk.Checkbutton(val_frame, text=_t('advanced_search.export_import.validate_ages'), variable=validate_ages).pack(anchor='w')
         ttk.Checkbutton(val_frame, text=_t('advanced_search.export_import.validate_courses'), variable=validate_courses).pack(anchor='w')
         ttk.Checkbutton(val_frame, text=_t('advanced_search.export_import.skip_duplicates'), variable=skip_duplicates).pack(anchor='w')
-        
+
         def start_validated_import():
             validation_dialog.destroy()
 
@@ -1082,9 +1082,9 @@ def bulk_import_with_validation(self):
                     self.output_queue.put(("error", _t('advanced_search.export_import.validated_import_error', error=str(e))))
                 finally:
                     self.output_queue.put(("stop_progress", None))
-            
+
             threading.Thread(target=run_validated_import, daemon=True).start()
-        
+
         button_frame = ttk.Frame(val_frame)
         button_frame.pack(fill=tk.X, pady=(20, 0))
 
@@ -1111,10 +1111,10 @@ def custom_format_export(self):
     dialog.geometry("1000x750")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.export_import.custom_format_export'), style='Title.TLabel').pack(pady=(0, 20))
 
     # Format options
@@ -1128,10 +1128,10 @@ def custom_format_export(self):
         (_t('advanced_search.export_import.xml_format'), "xml"),
         (_t('advanced_search.export_import.sql_statements'), "sql")
     ]
-    
+
     for text, value in formats:
         ttk.Radiobutton(format_frame, text=text, variable=format_var, value=value).pack(anchor='w')
-    
+
     # Custom options
     options_frame = ttk.LabelFrame(frame, text=_t('advanced_search.export_import.options'), padding="10")
     options_frame.pack(fill=tk.X, pady=(0, 20))
@@ -1142,18 +1142,18 @@ def custom_format_export(self):
 
     include_header_var = tk.BooleanVar(value=True)
     ttk.Checkbutton(options_frame, text=_t('advanced_search.export_import.include_header'), variable=include_header_var).pack(anchor='w')
-    
+
     def export_custom():
         if not self.search_results:
             messagebox.showwarning(_t('advanced_search.export_import.no_data'), _t('advanced_search.export_import.no_results_to_export'))
             return
-        
+
         format_type = format_var.get()
         delimiter = delimiter_var.get()
         include_header = include_header_var.get()
-        
+
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        
+
         try:
             if format_type == "custom":
                 filename = f"custom_export_{timestamp}.txt"
@@ -1167,7 +1167,7 @@ def custom_format_export(self):
             elif format_type == "sql":
                 filename = f"export_{timestamp}.sql"
                 self.export_to_sql(filename)
-            
+
             dialog.destroy()
             messagebox.showinfo(_t('advanced_search.export_complete'), _t('advanced_search.export_import.custom_export_completed', filename=filename))
 
@@ -1191,7 +1191,7 @@ def export_custom_delimiter(self, filename, delimiter, include_header):
                 'Registration Datetime'
             ]
             f.write(delimiter.join(headers) + '\n')
-        
+
         for student in self.search_results:
             row = [str(field) if field is not None else '' for field in student]
             f.write(delimiter.join(row) + '\n')
@@ -1202,19 +1202,19 @@ def export_to_xml(self, filename):
     with open(filename, 'w', encoding='utf-8') as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
         f.write('<students>\n')
-        
+
         for student in self.search_results:
             f.write('  <student>\n')
             fields = ['student_id', 'email', 'title', 'first_name', 'middle_name',
                      'last_name', 'gender', 'date_of_birth', 'age', 'course',
                      'registration_datetime']
-            
+
             for i, field_name in enumerate(fields):
                 value = student[i] if i < len(student) else ''
                 if value is not None:
                     f.write(f'    <{field_name}>{str(value)}</{field_name}>\n')
             f.write('  </student>\n')
-        
+
         f.write('</students>\n')
 AdvancedSearchGUI.export_to_xml = export_to_xml
 
@@ -1223,7 +1223,7 @@ def export_to_sql(self, filename):
     with open(filename, 'w', encoding='utf-8') as f:
         f.write('-- Student data export\n')
         f.write('-- Generated on ' + datetime.now().strftime('%Y-%m-%d %H:%M:%S') + '\n\n')
-        
+
         for student in self.search_results:
             values = []
             for field in student:
@@ -1235,24 +1235,24 @@ def export_to_sql(self, filename):
                     values.append(f"'{safe_string}'")
                 else:
                     values.append(str(field))
-            
+
             f.write(f"INSERT INTO students VALUES ({', '.join(values)});\n")
 AdvancedSearchGUI.export_to_sql = export_to_sql
 
 def export_to_csv(self, filename):
     """Export results to CSV"""
     import csv
-    
+
     with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
         writer = csv.writer(csvfile)
-        
+
         # Header
         writer.writerow([
             'Student ID', 'Email', 'Title', 'First Name', 'Middle Name',
             'Last Name', 'Gender', 'Date of Birth', 'Age', 'Course',
             'Registration Datetime'
         ])
-        
+
         # Data
         for student in self.search_results:
             writer.writerow(student)
@@ -1306,7 +1306,7 @@ def show_duplicate_detection(self):
     """Show duplicate detection interface"""
     self.update_status(_t("advanced_search.export_import.running_duplicate_detection"))
     self.start_progress()
-    
+
     def run_duplicate_detection():
         try:
             result = self.capture_function_output(duplicate_detection)
@@ -1315,7 +1315,7 @@ def show_duplicate_detection(self):
             self.output_queue.put(("error", f"Error in duplicate detection: {str(e)}"))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_duplicate_detection, daemon=True).start()
 AdvancedSearchGUI.show_duplicate_detection = show_duplicate_detection
 
@@ -1339,10 +1339,10 @@ def show_import_export(self):
     dialog.geometry("1000x750")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.export_import.import_export_data'), style='Title.TLabel').pack(pady=(0, 20))
 
     # Import section
@@ -1359,7 +1359,7 @@ def show_import_export(self):
                 (_t('common.all_files'), "*.*")
             ]
         )
-        
+
         if filename:
             extension = Path(filename).suffix.lower().lstrip('.')
             data_type = simpledialog.askstring(
@@ -1389,10 +1389,10 @@ def show_import_export(self):
         (_t('advanced_search.export_import.export_search_analytics'), lambda: self.export_all_data("analytics")),
         (_t('advanced_search.export_import.export_system_stats'), lambda: self.export_all_data("stats")),
     ]
-    
+
     for text, command in export_options:
         ttk.Button(export_frame, text=text, command=command, width=25).pack(pady=2)
-    
+
     ttk.Button(frame, text=f"❌ {_t('advanced_search.close_button')}", command=dialog.destroy).pack(pady=(20, 0))
 AdvancedSearchGUI.show_import_export = show_import_export
 
@@ -1598,7 +1598,7 @@ def export_single_student(self, student):
     """Export single student data"""
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     filename = f"student_{student[0]}_{timestamp}.json"
-    
+
     student_data = {
         'student_info': {
             'student_id': student[0],
@@ -1615,7 +1615,7 @@ def export_single_student(self, student):
         },
         'export_date': datetime.now().isoformat()
     }
-    
+
     try:
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(student_data, f, indent=2, default=str)

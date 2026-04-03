@@ -54,7 +54,7 @@ except (ImportError, ModuleNotFoundError):
     student_union_cli = None
     init_student_union_db = None
     CLI_AVAILABLE = False
-    
+
 
 class EquipmentBrowseDialog:
     """Dialog for browsing available equipment"""
@@ -517,27 +517,27 @@ def create_equipment_tab(self):
     """Create equipment management tab"""
     equipment_frame = ttk.Frame(self.notebook)
     self.notebook.add(equipment_frame, text="Equipment")
-    
+
     # Left panel
     left_panel = ttk.LabelFrame(equipment_frame, text="Equipment Actions")
     left_panel.pack(side='left', fill='y', padx=5, pady=5, ipadx=5, ipady=5)
-    
-    ttk.Button(left_panel, text="Browse Equipment", 
+
+    ttk.Button(left_panel, text="Browse Equipment",
               command=self.browse_available_equipment).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Check Out Equipment", 
+    ttk.Button(left_panel, text="Check Out Equipment",
               command=self.check_out_equipment_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Return Equipment", 
+    ttk.Button(left_panel, text="Return Equipment",
               command=self.return_equipment_gui).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="My Checkouts", 
+    ttk.Button(left_panel, text="My Checkouts",
               command=self.view_my_equipment_checkouts).pack(fill='x', pady=2)
-    ttk.Button(left_panel, text="Search Equipment", 
+    ttk.Button(left_panel, text="Search Equipment",
               command=self.search_equipment_gui).pack(fill='x', pady=2)
-    
+
     # Right panel
     right_panel = ttk.LabelFrame(equipment_frame, text="Equipment Information")
     right_panel.pack(side='right', fill='both', expand=True, padx=5, pady=5)
-    
-    self.equipment_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD, 
+
+    self.equipment_text = scrolledtext.ScrolledText(right_panel, wrap=tk.WORD,
                                                    height=30, width=80)
     self.equipment_text.pack(fill='both', expand=True, padx=5, pady=5)
 

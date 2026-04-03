@@ -177,36 +177,36 @@ class TicketDetailMixin:
         detail_window.title(f"🎫 Ticket #{ticket_id} - {ticket_title}")
         detail_window.geometry("1600x950")
         detail_window.transient(self.root)
-        
+
         # Create notebook for different sections
         detail_notebook = ttk.Notebook(detail_window, padding="10")
         detail_notebook.pack(fill="both", expand=True)
-        
+
         # Overview tab
         overview_frame = ttk.Frame(detail_notebook, padding="10")
         detail_notebook.add(overview_frame, text="📋 Overview")
-        
+
         self.create_ticket_overview(overview_frame, ticket)
-        
+
         # Responses tab
         responses_frame = ttk.Frame(detail_notebook, padding="10")
         detail_notebook.add(responses_frame, text=f"💬 Responses ({len(ticket.get('responses', []))})")
-        
+
         self.create_ticket_responses(responses_frame, ticket)
-        
+
         # Attachments tab
         attachments = ticket.get('attachments', [])
         if attachments:
             attachments_frame = ttk.Frame(detail_notebook, padding="10")
             detail_notebook.add(attachments_frame, text=f"📎 Attachments ({len(attachments)})")
-            
+
             self.create_ticket_attachments(attachments_frame, attachments)
-        
+
         # Actions tab (for staff)
         if self.auth.current_user['role'] in ('staff', 'admin'):
             actions_frame = ttk.Frame(detail_notebook, padding="10")
             detail_notebook.add(actions_frame, text="🔧 Actions")
-            
+
             self.create_ticket_actions(actions_frame, ticket, detail_window)
 
     def create_ticket_overview(self, parent, ticket):
@@ -246,17 +246,17 @@ class TicketDetailMixin:
             ("📂 Category:", ticket_category),
             ("📅 Created:", ticket_created),
         ]
-        
+
         for i, (label, value) in enumerate(details):
             ttk.Label(left_frame, text=label, font=('Segoe UI', 9, 'bold')).grid(
                 row=i, column=0, sticky="w", pady=2, padx=(0, 10))
             ttk.Label(left_frame, text=str(value)).grid(
                 row=i, column=1, sticky="w", pady=2)
-        
+
         # Right column
         right_frame = ttk.Frame(details_grid)
         right_frame.pack(side="right", fill="both", expand=True)
-        
+
         right_details = [
             ("👨‍💼 Assigned to:", ticket.get('assigned_to', 'Unassigned')),
             ("⏰ Last Updated:", ticket.get('last_updated_datetime', 'N/A')),
@@ -264,13 +264,13 @@ class TicketDetailMixin:
             ("😊 Sentiment:", ticket.get('sentiment', 'neutral').title()),
             ("⭐ Satisfaction:", f"{ticket.get('satisfaction_rating', 'N/A')}/5" if ticket.get('satisfaction_rating') else 'N/A'),
         ]
-        
+
         for i, (label, value) in enumerate(right_details):
             ttk.Label(right_frame, text=label, font=('Segoe UI', 9, 'bold')).grid(
                 row=i, column=0, sticky="w", pady=2, padx=(0, 10))
             ttk.Label(right_frame, text=str(value)).grid(
                 row=i, column=1, sticky="w", pady=2)
-        
+
         # Tags
         if ticket.get('tags'):
             ticket_tags = ticket.get('tags', [])
@@ -278,20 +278,20 @@ class TicketDetailMixin:
             if tags:
                 tags_frame = ttk.Frame(details_frame)
                 tags_frame.pack(fill="x", pady=(10, 0))
-                
+
                 ttk.Label(tags_frame, text="🏷️ Tags:", font=('Segoe UI', 9, 'bold')).pack(side="left")
                 for tag in tags:
-                    tag_label = tk.Label(tags_frame, text=tag, bg="#e5e7eb", fg="#374151", 
+                    tag_label = tk.Label(tags_frame, text=tag, bg="#e5e7eb", fg="#374151",
                                        padx=8, pady=2, relief="solid", borderwidth=1)
                     tag_label.pack(side="left", padx=(5, 0))
-        
+
         # Description
         desc_frame = ttk.LabelFrame(parent, text="📄 Description", padding="15")
         desc_frame.pack(fill="both", expand=True)
-        
+
         desc_text = scrolledtext.ScrolledText(desc_frame, height=10, wrap=tk.WORD, state='disabled')
         desc_text.pack(fill="both", expand=True)
-        
+
         desc_text.config(state='normal')
         desc_text.insert(1.0, ticket.get('description', 'No description available') if ticket else 'No description available')
         desc_text.config(state='disabled')
@@ -299,24 +299,24 @@ class TicketDetailMixin:
     def create_ticket_responses(self, parent, ticket):
         """Create ticket responses section"""
         responses = ticket.get('responses', [])
-        
+
         if not responses:
             ttk.Label(parent, text="💬 No responses yet", style='Heading.TLabel').pack(pady=20)
             return
-        
+
         # Create scrollable responses
         canvas = tk.Canvas(parent)
         scrollbar = ttk.Scrollbar(parent, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
-        
+
         scrollable_frame.bind(
             "<Configure>",
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
-        
+
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
-        
+
         # Add responses
         for i, response in enumerate(responses):
             # Skip None or invalid response entries
@@ -365,7 +365,7 @@ class TicketDetailMixin:
             response_text_widget.config(state='normal')
             response_text_widget.insert(1.0, response_content)
             response_text_widget.config(state='disabled')
-        
+
         # Configure grid weights for proper resizing
         parent.grid_rowconfigure(0, weight=1)
         parent.grid_columnconfigure(0, weight=1)
@@ -442,25 +442,25 @@ class TicketDetailMixin:
 
         ttk.Button(status_grid, text="Update Status",
                   command=lambda: self.update_ticket_status_action(ticket_id, window)).grid(row=0, column=2)
-        
+
         status_grid.columnconfigure(1, weight=1)
-        
+
         # Assignment
         assign_frame = ttk.LabelFrame(parent, text="👨‍💼 Assignment", padding="10")
         assign_frame.pack(fill="x", pady=(0, 10))
-        
+
         assign_grid = ttk.Frame(assign_frame)
         assign_grid.pack(fill="x")
-        
+
         ttk.Label(assign_grid, text="Assign to:").grid(row=0, column=0, sticky="w", padx=(0, 10))
-        
+
         self.assign_to_var = tk.StringVar(value=ticket.get('assigned_to', ''))
         assign_entry = ttk.Entry(assign_grid, textvariable=self.assign_to_var)
         assign_entry.grid(row=0, column=1, sticky="ew", padx=(0, 10))
-        
-        ttk.Button(assign_grid, text="Assign to Me", 
+
+        ttk.Button(assign_grid, text="Assign to Me",
                   command=lambda: self.assign_to_var.set(self.auth.current_user['username'])).grid(row=0, column=2, padx=(0, 10))
-        
+
         ttk.Button(assign_grid, text="Update Assignment",
                   command=lambda: self.update_ticket_assignment(ticket_id, window)).grid(row=0, column=3)
 
@@ -1004,33 +1004,33 @@ University Student Support Team
         status_dialog.geometry("900x550")
         status_dialog.transient(self.root)
         status_dialog.grab_set()
-        
+
         form_frame = ttk.Frame(status_dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
-        
-        ttk.Label(form_frame, text="Update Ticket Status", 
+
+        ttk.Label(form_frame, text="Update Ticket Status",
                  style='Heading.TLabel').pack(pady=(0, 15))
-        
+
         # Status selection
         ttk.Label(form_frame, text="New Status:").pack(anchor="w")
         status_var = tk.StringVar()
-        status_combo = ttk.Combobox(form_frame, textvariable=status_var, 
+        status_combo = ttk.Combobox(form_frame, textvariable=status_var,
                                    values=TICKET_STATUSES, state="readonly")
         status_combo.pack(fill="x", pady=(5, 10))
-        
+
         # Resolution notes
         ttk.Label(form_frame, text="Resolution Notes (optional):").pack(anchor="w")
         notes_text = scrolledtext.ScrolledText(form_frame, height=4, wrap=tk.WORD)
         notes_text.pack(fill="both", expand=True, pady=(5, 15))
-        
+
         def update_status():
             new_status = status_var.get()
             if not new_status:
                 messagebox.showerror("Error", "Please select a status")
                 return
-            
+
             notes = notes_text.get(1.0, tk.END).strip() or None
-            
+
             try:
                 self.support.update_ticket_status(ticket_id, new_status, notes)
                 messagebox.showinfo("Success", f"Status updated to {new_status}")
@@ -1038,10 +1038,10 @@ University Student Support Team
                 self.refresh_data()
             except Exception as e:
                 messagebox.showerror("Error", f"Could not update status: {e}")
-        
+
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x")
-        
+
         ttk.Button(btn_frame, text="Update Status", command=update_status).pack(side="left", padx=(0, 10))
         ttk.Button(btn_frame, text="Cancel", command=status_dialog.destroy).pack(side="left")
 

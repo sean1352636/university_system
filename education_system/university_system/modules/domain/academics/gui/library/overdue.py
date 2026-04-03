@@ -221,7 +221,7 @@ def load_overdue_books(self):
                 contact = email if email else "No email"
 
                 self.overdue_tree.insert('', 'end', values=(
-                    user_id, book_id, title[:30], due_date[:10], 
+                    user_id, book_id, title[:30], due_date[:10],
                     int(days_overdue), f"${fine_amount:.2f}", contact
                 ))
 
@@ -382,7 +382,7 @@ def calculate_overdue_fines(self):
 
         # Update fines for overdue books
         cursor.execute('''
-        UPDATE book_loans 
+        UPDATE book_loans
         SET fine_amount = (julianday('now') - julianday(due_date)) * ?
         WHERE status = 'overdue' AND due_date < datetime('now')
         ''', (fine_per_day,))
@@ -447,7 +447,7 @@ def create_overdue_export(self, file_path):
         if not data:
             return False
 
-        columns = ['User ID', 'Book ID', 'Title', 'Author', 'Checkout Date', 'Due Date', 
+        columns = ['User ID', 'Book ID', 'Title', 'Author', 'Checkout Date', 'Due Date',
                   'Days Overdue', 'Fine Amount', 'First Name', 'Last Name', 'Email']
         if 'grade_level' in student_columns:
             columns.append('Grade')

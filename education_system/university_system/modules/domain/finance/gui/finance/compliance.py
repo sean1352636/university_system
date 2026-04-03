@@ -138,10 +138,14 @@ class ComplianceManager:
         self.gui = gui
         self.root = gui.root
         self.conn = gui.conn
-        try:
-            self.finance_system = gui.finance_system
-        except Exception:
-            self.finance_system = None
+        self.finance_system = vars(gui).get('finance_system')
+
+    def update_status(self, message):
+        """Forward status updates to the owning GUI when available."""
+        if hasattr(self.gui, 'layout') and hasattr(self.gui.layout, 'update_status'):
+            self.gui.layout.update_status(message)
+        elif hasattr(self.gui, 'update_status'):
+            self.gui.update_status(message)
 
     def create_collections_tab(self):
         """Create collections management tab"""

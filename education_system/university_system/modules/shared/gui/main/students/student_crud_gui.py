@@ -1360,8 +1360,8 @@ def select_student_for_deletion(self):
             if filter_text:
                 cursor.execute('''
                     SELECT student_id, first_name, last_name, email_address, course
-                    FROM students 
-                    WHERE LOWER(first_name) LIKE LOWER(?) 
+                    FROM students
+                    WHERE LOWER(first_name) LIKE LOWER(?)
                        OR LOWER(last_name) LIKE LOWER(?)
                        OR LOWER(student_id) LIKE LOWER(?)
                     ORDER BY last_name, first_name
@@ -1369,7 +1369,7 @@ def select_student_for_deletion(self):
             else:
                 cursor.execute('''
                     SELECT student_id, first_name, last_name, email_address, course
-                    FROM students 
+                    FROM students
                     ORDER BY last_name, first_name
                 ''')
 

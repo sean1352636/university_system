@@ -16,6 +16,60 @@ HEADER_BG = "#2c3e50"
 CARD_BG = "white"
 BG = "#ecf0f1"
 
+QUICK_ACTION_COLORS = [
+    "#2980b9", "#27ae60", "#8e44ad", "#e67e22", "#16a085", "#c0392b",
+    "#2c3e50", "#f39c12", "#1abc9c", "#e74c3c", "#3498db", "#9b59b6",
+]
+
+ROLE_QUICK_ACTIONS: dict[str, list[tuple[str, str]]] = {
+    "admin": [
+        ("Students", "student_gui"), ("Courses", "course_gui"),
+        ("Grades", "grade_gui"), ("Attendance", "attendance_gui"),
+        ("Timetable", "timetable_gui"), ("Reports", "reports_gui"),
+        ("Finance", "finance_gui"), ("Staff HR", "staff_hr_gui"),
+        ("User Management", "user_management_gui"), ("Admissions", "admissions_gui"),
+        ("KPI Dashboard", "kpi_dashboard_gui"), ("Quality Assurance", "quality_assurance_gui"),
+        ("Safeguarding", "safeguarding_gui"), ("SEND", "send_gui"),
+        ("Settings", "settings_gui"),
+    ],
+    "staff": [
+        ("Students", "student_gui"), ("Courses", "course_gui"),
+        ("Grades", "grade_gui"), ("Attendance", "attendance_gui"),
+        ("Timetable", "timetable_gui"), ("Reports", "reports_gui"),
+        ("Pastoral", "pastoral_gui"), ("Safeguarding", "safeguarding_gui"),
+        ("SEND", "send_gui"), ("Admissions", "admissions_gui"),
+        ("Cover", "cover_gui"), ("Exams", "exams_gui"),
+    ],
+    "instructor": [
+        ("Courses", "course_gui"), ("Grades", "grade_gui"),
+        ("Attendance", "attendance_gui"), ("Timetable", "timetable_gui"),
+        ("Markbook", "markbook_gui"), ("Lesson Plans", "lesson_plan_gui"),
+        ("Assignments", "assignment_gui"), ("Reports", "reports_gui"),
+        ("CPD", "cpd_gui"), ("Observations", "observation_gui"),
+        ("ILP", "ilp_gui"), ("Data Dashboard", "data_dashboard_gui"),
+    ],
+    "student": [
+        ("Assignments", "assignment_gui"), ("Timetable", "timetable_gui"),
+        ("Grades", "grade_gui"), ("Messages", "message_gui"),
+        ("Notifications", "notification_gui"), ("Portfolio", "portfolio_gui"),
+        ("Study Planner", "study_planner_gui"), ("Careers", "careers_gui"),
+        ("Progress Dashboard", "progress_dashboard_gui"), ("Helpdesk", "helpdesk_gui"),
+        ("Library", "library_gui"), ("Enrichment", "enrichment_gui"),
+    ],
+    "parent": [
+        ("Parent Portal", "parent_gui"), ("Parents Evening", "parents_evening_gui"),
+        ("Messages", "message_gui"), ("Announcements", "announcement_gui"),
+        ("Calendar", "calendar_gui"), ("Feedback", "feedback_gui"),
+    ],
+}
+
+# Default actions used before role is known
+_DEFAULT_QUICK_ACTIONS = [
+    ("Students", "student_gui"), ("Courses", "course_gui"),
+    ("Attendance", "attendance_gui"), ("Timetable", "timetable_gui"),
+    ("Messages", "message_gui"), ("Reports", "reports_gui"),
+]
+
 
 class DashboardFrame(tk.Frame):
     """Main dashboard displayed after a successful login.
@@ -96,27 +150,10 @@ class DashboardFrame(tk.Frame):
             font=("Helvetica", 13, "bold"), bg=BG, fg="#2c3e50",
         ).pack(anchor="w", pady=(0, 10))
 
-        btn_row = tk.Frame(actions_frame, bg=BG)
-        btn_row.pack(fill="x")
+        self._quick_actions_container = tk.Frame(actions_frame, bg=BG)
+        self._quick_actions_container.pack(fill="x")
 
-        quick_actions = [
-            ("Students",     "student_gui",    "#2980b9"),
-            ("Courses",      "course_gui",     "#27ae60"),
-            ("Attendance",   "attendance_gui",  "#e67e22"),
-            ("Timetable",    "timetable_gui",  "#8e44ad"),
-            ("Messages",     "message_gui",    "#16a085"),
-            ("Reports",      "reports_gui",    "#c0392b"),
-        ]
-
-        for label, target, colour in quick_actions:
-            btn = tk.Button(
-                btn_row, text=label, font=("Helvetica", 10, "bold"),
-                bg=colour, fg="white", activebackground=colour,
-                activeforeground="white", relief="flat", cursor="hand2",
-                padx=16, pady=8,
-                command=lambda t=target: self._navigate(t),
-            )
-            btn.pack(side="left", padx=(0, 8), pady=4)
+        self._rebuild_quick_actions()
 
         # --- Info / tips area ---
         info_frame = tk.Frame(self, bg=BG)
@@ -166,6 +203,7 @@ class DashboardFrame(tk.Frame):
         self._user_info = user_info
         self._welcome_var.set(t("dashboard.welcome", username=user_info.get('username', 'User')))
         self._role_var.set(t("dashboard.role_display", role=user_info.get('role', 'N/A').capitalize()))
+        self._rebuild_quick_actions()
         self._refresh_stats()
 
     def refresh(self):
@@ -175,6 +213,28 @@ class DashboardFrame(tk.Frame):
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
+
+    def _rebuild_quick_actions(self):
+        """Clear and repopulate quick action buttons based on the current role."""
+        for child in self._quick_actions_container.winfo_children():
+            child.destroy()
+
+        role = (self._user_info or {}).get("role", "").lower()
+        actions = ROLE_QUICK_ACTIONS.get(role, _DEFAULT_QUICK_ACTIONS)
+
+        cols = 6
+        for idx, (label, target) in enumerate(actions):
+            row, col = divmod(idx, cols)
+            colour = QUICK_ACTION_COLORS[idx % len(QUICK_ACTION_COLORS)]
+            btn = tk.Button(
+                self._quick_actions_container, text=label,
+                font=("Helvetica", 10, "bold"),
+                bg=colour, fg="white", activebackground=colour,
+                activeforeground="white", relief="flat", cursor="hand2",
+                padx=16, pady=8,
+                command=lambda t=target: self._navigate(t),
+            )
+            btn.grid(row=row, column=col, padx=(0, 8), pady=4, sticky="w")
 
     def _refresh_stats(self):
         """Fetch live counts from the services and update the stat cards."""

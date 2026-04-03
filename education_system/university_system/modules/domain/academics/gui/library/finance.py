@@ -1863,12 +1863,12 @@ def get_library_settings(setting_name):
         conn = get_db_connection()
         if not conn:
             return None
-            
+
         cursor = conn.cursor()
         cursor.execute('SELECT setting_value FROM library_settings WHERE setting_name = ?', (setting_name,))
         result = cursor.fetchone()
         conn.close()
-        
+
         return result[0] if result else None
     except (sqlite3.Error, DatabaseError) as e:
         print(f"Error getting setting {setting_name}: {e}")
@@ -1880,13 +1880,13 @@ def update_library_setting(setting_name, setting_value):
         conn = get_db_connection()
         if not conn:
             return False
-            
+
         cursor = conn.cursor()
         cursor.execute('''
         INSERT OR REPLACE INTO library_settings (setting_name, setting_value)
         VALUES (?, ?)
         ''', (setting_name, setting_value))
-        
+
         conn.commit()
         conn.close()
         return True
@@ -1913,11 +1913,11 @@ def log_audit_event(user_id, action, table_name=None, record_id=None, success=Tr
     try:
         if not ORIGINAL_LIBRARY_AVAILABLE:
             return
-            
+
         conn = get_db_connection()
         if not conn:
             return
-            
+
         cursor = conn.cursor()
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         user_value = user_id if user_id not in (None, "") else 'system'
@@ -1968,16 +1968,16 @@ def process_scanned_barcode(barcode):
         conn = get_db_connection()
         if not conn:
             return None
-            
+
         cursor = conn.cursor()
-        
+
         # Try to find book by barcode
         cursor.execute('''
         SELECT book_id, title, author, status, barcode
-        FROM books 
+        FROM books
         WHERE barcode = ?
         ''', (barcode,))
-        
+
         result = cursor.fetchone()
         if result:
             book_id, title, author, status, barcode_val = result
@@ -1990,17 +1990,17 @@ def process_scanned_barcode(barcode):
                 'status': status,
                 'barcode': barcode_val
             }
-        
+
         # Try to find user by barcode (if user barcode system exists)
         cursor.execute('''
         SELECT student_id, first_name, last_name
-        FROM students 
+        FROM students
         WHERE student_id = ?
         ''', (barcode,))
-        
+
         result = cursor.fetchone()
         conn.close()
-        
+
         if result:
             student_id, first_name, last_name = result
             return {
@@ -2009,9 +2009,9 @@ def process_scanned_barcode(barcode):
                 'name': f"{first_name} {last_name}",
                 'barcode': barcode
             }
-        
+
         return None
-        
+
     except (sqlite3.Error, DatabaseError) as e:
         print(f"Error processing barcode: {e}")
         return None
@@ -2025,7 +2025,7 @@ def get_db_connection():
             return original_get_db_connection()
         except ImportError:
             pass
-    
+
     # Fallback implementation
     try:
         from education_system.university_system.infrastructure.database.db import sqlite3
@@ -2038,10 +2038,10 @@ def start_gui_library_system():
     """Start the GUI library system"""
     root = tk.Tk()
     app = LibraryGUI(root)
-    
+
     # Setup keyboard shortcuts
     setup_keyboard_shortcuts(root, app)
-    
+
     root.mainloop()
 
 def setup_keyboard_shortcuts(root, app):
@@ -2052,7 +2052,7 @@ def setup_keyboard_shortcuts(root, app):
     root.bind('<F5>', lambda e: app.refresh_books_table() if hasattr(app, 'books_tree') else None)
     root.bind('<Control-s>', lambda e: None)  # Save shortcut (context dependent)
     root.bind('<Escape>', lambda e: None)  # Cancel shortcut (context dependent)
-    
+
     # Navigation shortcuts
     root.bind('<Control-Key-1>', lambda e: app.show_dashboard())
     root.bind('<Control-Key-2>', lambda e: app.show_all_books())
@@ -2075,7 +2075,7 @@ def run_library_gui():
 def run_library_system_with_gui_option():
     """Run library system with option to choose CLI or GUI"""
     import sys
-    
+
     if len(sys.argv) > 1 and sys.argv[1] in ['--gui', '-g']:
         # GUI mode
         print("Starting Library Management System - GUI Mode")
@@ -2094,9 +2094,9 @@ def run_library_system_with_gui_option():
         print("1. GUI Mode (Recommended)")
         print("2. CLI Mode (Traditional)")
         print("3. Exit")
-        
+
         choice = input("Choose interface (1-3): ").strip()
-        
+
         if choice == '1':
             start_gui_library_system()
         elif choice == '2':

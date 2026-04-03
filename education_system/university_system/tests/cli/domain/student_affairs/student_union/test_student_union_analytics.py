@@ -35,11 +35,11 @@ class TestActivityCorrelationAnalysis:
         # Sample data: clubs_joined, events_attended, student_id
         activity_data = [(i % 5 + 1, i % 3 + 1, f'S{i}') for i in range(20)]
         leadership_data = [(f'S{i}', i % 2, i % 3, i % 5) for i in range(20)]
-        
+
         mock_cursor.fetchall.side_effect = [activity_data, leadership_data, []]
-        
+
         analytics.activity_correlation_analysis(mock_cursor)
-        
+
         # Verify correlation output
         assert any('Correlation' in str(call) for call in mock_print.call_args_list)
 
@@ -51,9 +51,9 @@ class TestActivityCorrelationAnalysis:
             [],
             []
         ]
-        
+
         analytics.activity_correlation_analysis(mock_cursor)
-        
+
         # Should handle gracefully
         mock_cursor.execute.assert_called()
 
@@ -62,45 +62,45 @@ class TestGenerateAdvancedAnalytics:
 
     @patch('builtins.input', side_effect=['7'])
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.analytics.get_connection')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.analytics.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.analytics.ctx')
     def test_analytics_menu_exit(self, mock_ctx, mock_get_conn, mock_print, mock_input):
         """Test analytics menu displays and exits."""
         mock_ctx.auth = Mock()
         mock_ctx.auth.current_user = {'id': 1}
         mock_ctx.auth.check_permission = Mock(return_value=True)
-        
+
         mock_conn = Mock()
         mock_conn.cursor.return_value = Mock()
         mock_get_conn.return_value = mock_conn
-        
+
         analytics.generate_advanced_analytics()
-        
+
         # Verify menu was displayed
         assert any('Advanced Analytics' in str(call) for call in mock_print.call_args_list)
         mock_conn.close.assert_called_once()
 
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.analytics.ctx')
     def test_analytics_no_auth(self, mock_ctx, mock_print):
         """Test analytics without authentication."""
         mock_ctx.auth = None
-        
+
         analytics.generate_advanced_analytics()
-        
+
         # Verify access denied
         assert any('must be logged in' in str(call).lower() for call in mock_print.call_args_list)
 
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.analytics.ctx')
     def test_analytics_no_permission(self, mock_ctx, mock_print):
         """Test analytics without permission."""
         mock_ctx.auth = Mock()
         mock_ctx.auth.current_user = {'id': 1}
         mock_ctx.auth.check_permission = Mock(return_value=False)
-        
+
         analytics.generate_advanced_analytics()
-        
+
         # Verify permission denied
         assert any("don't have permission" in str(call).lower() for call in mock_print.call_args_list)
 

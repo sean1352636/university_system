@@ -70,6 +70,7 @@ def temp_db():
             poll_id INTEGER PRIMARY KEY AUTOINCREMENT,
             session_id INTEGER NOT NULL,
             question TEXT NOT NULL,
+            created_by INTEGER,
             FOREIGN KEY (session_id) REFERENCES virtual_sessions(session_id) ON DELETE CASCADE
         );
 
@@ -77,6 +78,8 @@ def temp_db():
             room_id INTEGER PRIMARY KEY AUTOINCREMENT,
             session_id INTEGER NOT NULL,
             room_name TEXT NOT NULL,
+            room_number INTEGER,
+            participants TEXT,
             FOREIGN KEY (session_id) REFERENCES virtual_sessions(session_id) ON DELETE CASCADE
         );
     """)

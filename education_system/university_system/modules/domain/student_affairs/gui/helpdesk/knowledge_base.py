@@ -48,12 +48,12 @@ try:
 except ImportError:
     # If helpdesk.py is not available, we'll define minimal stubs
     print("Warning: helpdesk.py not found. Running in standalone mode.")
-    
+
     def init_helpdesk_db():
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Create support_tickets table with enhanced fields
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS support_tickets (
@@ -119,7 +119,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_attachments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_attachments (
@@ -139,7 +139,7 @@ except ImportError:
                 FOREIGN KEY (uploaded_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_assignments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_assignments (
@@ -154,7 +154,7 @@ except ImportError:
                 FOREIGN KEY (assigned_to) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_templates table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_templates (
@@ -175,7 +175,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create sla_policies table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS sla_policies (
@@ -194,7 +194,7 @@ except ImportError:
                 updated_at TEXT
             )
             ''')
-            
+
             # Create ticket_workflows table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_workflows (
@@ -211,7 +211,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_time_tracking table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_time_tracking (
@@ -228,7 +228,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_escalations table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_escalations (
@@ -245,7 +245,7 @@ except ImportError:
                 FOREIGN KEY (escalated_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_links table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_links (
@@ -260,7 +260,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_audit_log table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_audit_log (
@@ -277,7 +277,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create knowledge_base table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS knowledge_base (
@@ -297,7 +297,7 @@ except ImportError:
                 FOREIGN KEY (author_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create departments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS departments (
@@ -314,7 +314,7 @@ except ImportError:
                 FOREIGN KEY (sla_policy_id) REFERENCES sla_policies (sla_id)
             )
             ''')
-            
+
             # Create organizations table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS organizations (
@@ -329,7 +329,7 @@ except ImportError:
                 updated_at TEXT
             )
             ''')
-            
+
             # Create saved_searches table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS saved_searches (
@@ -345,13 +345,13 @@ except ImportError:
             conn.commit()
             conn.close()
             print("Enhanced helpdesk database initialized successfully!")
-            
+
             # Initialize default data
             init_default_data()
-            
+
         except sqlite3.Error as e:
             print(f"An error occurred while initializing the helpdesk database: {e}")
-        
+
     def setup_enhanced_helpdesk_permissions():
         """
         Setup enhanced helpdesk permissions
@@ -475,7 +475,7 @@ def create_knowledge_base_list(self):
     self.kb_tree = ttk.Treeview(self.kb_list_frame, columns=columns, show='headings')
 
     # Configure columns
-    column_widths = {'ID': 50, 'Title': 300, 'Category': 120, 'Views': 80, 
+    column_widths = {'ID': 50, 'Title': 300, 'Category': 120, 'Views': 80,
                     'Rating': 100, 'Updated': 120}
 
     for col in columns:
@@ -632,7 +632,7 @@ def search_kb_articles(self, search_term):
         cursor.execute('''
         SELECT article_id, title, category, views, helpful_votes, unhelpful_votes, updated_at
         FROM knowledge_base
-        WHERE status = 'published' 
+        WHERE status = 'published'
         AND (title LIKE ? OR content LIKE ? OR search_keywords LIKE ?)
         ORDER BY helpful_votes DESC, views DESC
         ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'))
@@ -693,7 +693,7 @@ def show_kb_article_details(self, article_id):
     header_frame = ttk.Frame(scrollable_frame)
     header_frame.pack(fill='x', padx=10, pady=10)
 
-    ttk.Label(header_frame, text=article_data.get('title', ''), 
+    ttk.Label(header_frame, text=article_data.get('title', ''),
              style='Title.TLabel').pack(anchor='w')
 
     # Article info
@@ -733,9 +733,9 @@ def show_kb_article_details(self, article_id):
     button_frame = ttk.Frame(rating_frame)
     button_frame.pack(pady=5)
 
-    ttk.Button(button_frame, text="👍 Helpful", 
+    ttk.Button(button_frame, text="👍 Helpful",
               command=lambda: self.rate_article(article_id, True, details_window)).pack(side='left', padx=5)
-    ttk.Button(button_frame, text="👎 Not Helpful", 
+    ttk.Button(button_frame, text="👎 Not Helpful",
               command=lambda: self.rate_article(article_id, False, details_window)).pack(side='left', padx=5)
 
     canvas.pack(side="left", fill="both", expand=True)
@@ -845,7 +845,7 @@ def show_create_article(self):
     canvas.configure(yscrollcommand=scrollbar.set)
 
     # Title
-    ttk.Label(scrollable_frame, text="Create Knowledge Base Article", 
+    ttk.Label(scrollable_frame, text="Create Knowledge Base Article",
              style='Title.TLabel').pack(pady=10)
 
     # Form
@@ -882,9 +882,9 @@ def show_create_article(self):
     status_frame.pack(fill='x', padx=10, pady=10)
 
     status_var = tk.StringVar(value="draft")
-    ttk.Radiobutton(status_frame, text="Save as Draft", variable=status_var, 
+    ttk.Radiobutton(status_frame, text="Save as Draft", variable=status_var,
                    value="draft").pack(anchor='w', padx=5, pady=2)
-    ttk.Radiobutton(status_frame, text="Publish Immediately", variable=status_var, 
+    ttk.Radiobutton(status_frame, text="Publish Immediately", variable=status_var,
                    value="published").pack(anchor='w', padx=5, pady=2)
 
     # Buttons
@@ -917,7 +917,7 @@ def show_create_article(self):
         else:
             messagebox.showerror("Error", "Failed to create article")
 
-    ttk.Button(button_frame, text="Create Article", command=create_article, 
+    ttk.Button(button_frame, text="Create Article", command=create_article,
               style='Primary.TButton').pack(side='right', padx=5)
     ttk.Button(button_frame, text="Cancel", command=create_window.destroy).pack(side='right')
 

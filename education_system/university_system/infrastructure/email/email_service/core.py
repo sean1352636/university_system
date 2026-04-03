@@ -220,13 +220,36 @@ def send_email_db_only(recipient_email, subject, body, cc, bcc, attachments, cur
             sender_name  = config.get('sender_name',  "University System")
 
         # 1) Store in stored_emails (admin/storage view)
-        cursor.execute('''
-            INSERT INTO stored_emails
-                (recipient_email, subject, body, sender_email, sender_name,
-                 cc_recipients, bcc_recipients, attachment_paths, created_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (recipient_email, subject, body, sender_email, sender_name,
-              cc, bcc, attachments, current_time))
+        cursor.execute("PRAGMA table_info(stored_emails)")
+        stored_email_columns = {row[1] for row in cursor.fetchall()}
+        stored_email_values = {
+            'recipient_email': recipient_email,
+            'subject': subject,
+            'body': body,
+            'sender_email': sender_email,
+            'sender_name': sender_name,
+            'cc_recipients': cc,
+            'bcc_recipients': bcc,
+            'attachment_paths': attachments,
+            'created_date': current_time,
+            'sent_date': current_time,
+            'status': 'sent',
+            'cc': cc,
+            'bcc': bcc,
+        }
+        insertable_columns = [name for name in stored_email_values if name in stored_email_columns]
+        if insertable_columns:
+            placeholders = ", ".join("?" for _ in insertable_columns)
+            column_list = ", ".join(insertable_columns)
+            cursor.execute(
+                f"INSERT INTO stored_emails ({column_list}) VALUES ({placeholders})",
+                tuple(stored_email_values[name] for name in insertable_columns),
+            )
+        else:
+            cursor.execute(
+                "INSERT INTO stored_emails (recipient_email, subject, body) VALUES (?, ?, ?)",
+                (recipient_email, subject, body),
+            )
 
         # 2) If recipient is a real user, create an inbox message
         cursor.execute("SELECT id FROM users WHERE email = ?", (recipient_email,))
@@ -246,7 +269,10 @@ def send_email_db_only(recipient_email, subject, body, cc, bcc, attachments, cur
                 # Fallback: create/find a system user explicitly
                 try:
                     system_username = generate_system_username(sender_name, sender_email)
-                    cursor.execute("SELECT id FROM users WHERE username = ? AND role = 'admin'", (system_username,))
+                    try:
+                        cursor.execute("SELECT id FROM users WHERE username = ? AND role = 'admin'", (system_username,))
+                    except sqlite3.OperationalError:
+                        cursor.execute("SELECT id FROM users WHERE username = ?", (system_username,))
                     su = cursor.fetchone()
                     if su:
                         sender_id = su[0]
@@ -254,10 +280,16 @@ def send_email_db_only(recipient_email, subject, body, cc, bcc, attachments, cur
                         parts = sender_name.split(' ', 1)
                         first = parts[0] if parts else sender_name
                         last  = parts[1] if len(parts) > 1 else ''
-                        cursor.execute('''
-                            INSERT INTO users (username, first_name, last_name, email, role, created_at, updated_at)
-                            VALUES (?, ?, ?, ?, ?, ?, ?)
-                        ''', (system_username, first, last, sender_email, 'admin', current_time, current_time))
+                        try:
+                            cursor.execute('''
+                                INSERT INTO users (username, first_name, last_name, email, role, created_at, updated_at)
+                                VALUES (?, ?, ?, ?, ?, ?, ?)
+                            ''', (system_username, first, last, sender_email, 'admin', current_time, current_time))
+                        except sqlite3.OperationalError:
+                            cursor.execute('''
+                                INSERT INTO users (username, password_hash, email, first_name, last_name)
+                                VALUES (?, ?, ?, ?, ?)
+                            ''', (system_username, '', sender_email, first, last))
                         sender_id = cursor.lastrowid
                 except sqlite3.Error as e:
                     log_event('warning', f"System sender fallback failed (database error): {e}")
@@ -267,11 +299,31 @@ def send_email_db_only(recipient_email, subject, body, cc, bcc, attachments, cur
                 sender_id = recipient_id
 
             # Create the inbox message (what the UI reads)
-            cursor.execute('''
-                INSERT INTO messages
-                    (sender_id, recipient_id, subject, message, content, attachment_path, is_read, sent_at)
-                VALUES (?, ?, ?, ?, ?, ?, 0, ?)
-            ''', (sender_id, recipient_id, subject, body, body, attachments, current_time))
+            try:
+                cursor.execute("PRAGMA table_info(messages)")
+                message_columns = {row[1] for row in cursor.fetchall()}
+                message_values = {
+                    'sender_id': sender_id,
+                    'recipient_id': recipient_id,
+                    'subject': subject,
+                    'message': body,
+                    'content': body,
+                    'attachment_path': attachments,
+                    'body': body,
+                    'sent_at': current_time,
+                    'sent_date': current_time,
+                    'is_read': 0,
+                }
+                insertable_columns = [name for name in message_values if name in message_columns]
+                if insertable_columns:
+                    placeholders = ", ".join("?" for _ in insertable_columns)
+                    column_list = ", ".join(insertable_columns)
+                    cursor.execute(
+                        f"INSERT INTO messages ({column_list}) VALUES ({placeholders})",
+                        tuple(message_values[name] for name in insertable_columns),
+                    )
+            except sqlite3.Error:
+                pass
         else:
             log_event('info', f"Email stored for {recipient_email}, but no matching user account found.")
 
@@ -287,10 +339,13 @@ def send_email_db_only(recipient_email, subject, body, cc, bcc, attachments, cur
         except sqlite3.OperationalError as e:
             # Fallback to minimal log if extended columns aren't available (schema mismatch)
             log_event('warning', f"Extended email_log insert failed (schema mismatch), falling back: {e}")
-            cursor.execute('''
-                INSERT INTO email_log (recipient, subject, sent_date, status, sender_email)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (recipient_email, subject, current_time, 'stored', sender_email))
+            try:
+                cursor.execute('''
+                    INSERT INTO email_log (recipient, subject, sent_date, status, sender_email)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (recipient_email, subject, current_time, 'stored', sender_email))
+            except sqlite3.OperationalError:
+                pass
 
         # Make sure everything is persisted
         try:

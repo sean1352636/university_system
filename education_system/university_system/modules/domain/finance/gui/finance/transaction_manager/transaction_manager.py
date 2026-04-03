@@ -1,5 +1,7 @@
 """Payment and transaction processing - main facade class"""
 
+import sys
+
 from education_system.university_system.modules.domain.finance.gui.finance.transaction_manager._imports import (
     tk, ttk, _, get_connection, get_global_auth,
 )
@@ -32,10 +34,7 @@ class TransactionManager(
         self.gui = gui
         self.root = gui.root
         self.conn = gui.conn
-        try:
-            self.finance_system = gui.finance_system
-        except Exception:
-            self.finance_system = None
+        self.finance_system = vars(gui).get('finance_system')
 
     def create_core_finance_tab(self):
         """Create core finance operations tab"""
@@ -88,6 +87,18 @@ class TransactionManager(
         scrollbar.pack(side="right", fill="y")
 
     # Helper methods
+    @staticmethod
+    def _transaction_manager_package():
+        return sys.modules.get(
+            'education_system.university_system.modules.domain.finance.gui.finance.transaction_manager'
+        )
+
+    @classmethod
+    def _get_connection(cls):
+        package = cls._transaction_manager_package()
+        factory = getattr(package, 'get_connection', get_connection) if package else get_connection
+        return factory()
+
     def update_status(self, message):
         """Update status bar message"""
         try:

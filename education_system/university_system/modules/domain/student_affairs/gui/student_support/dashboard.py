@@ -269,10 +269,10 @@ class DashboardMixin:
             return
         if not isinstance(self.auth.current_user, dict) or not self.auth.current_user.get('username'):
             return
-        
+
         # Load fresh data
         self.load_dashboard()
-        
+
         # Title
         title_frame = ttk.Frame(scrollable_frame, padding="10")
         title_frame.pack(fill="x")
@@ -284,13 +284,13 @@ class DashboardMixin:
         welcome_text = _t("student_support.dashboard.welcome", username=self.auth.current_user['username'])
         ttk.Label(title_frame, text=welcome_text,
                  font=('Segoe UI', 12)).pack(side="right")
-        
+
         # Create dashboard widgets based on role
         if self.auth.current_user['role'] == 'student':
             self.create_student_dashboard(scrollable_frame)
         else:
             self.create_staff_dashboard(scrollable_frame)
-        
+
         # Common widgets
         self.create_notifications_widget(scrollable_frame)
         self.create_quick_actions_widget(scrollable_frame)
@@ -300,19 +300,19 @@ class DashboardMixin:
         # Ticket statistics
         stats_frame = ttk.LabelFrame(parent, text="📊 Your Tickets", padding="10")
         stats_frame.pack(fill="x", padx=10, pady=5)
-        
+
         stats = self.dashboard_data.get('ticket_stats', {})
-        
+
         stats_text = f"Open: {stats.get('Open', 0)} | "
         stats_text += f"In Progress: {stats.get('In Progress', 0)} | "
         stats_text += f"Resolved: {stats.get('Resolved', 0)}"
-        
+
         ttk.Label(stats_frame, text=stats_text, font=('Segoe UI', 11)).pack()
-        
+
         # Recent tickets
         recent_frame = ttk.LabelFrame(parent, text="📋 Recent Tickets", padding="10")
         recent_frame.pack(fill="x", padx=10, pady=5)
-        
+
         recent_tickets = self.dashboard_data.get('recent_tickets', []) or []
         if recent_tickets:
             for ticket in recent_tickets[:3]:
@@ -333,11 +333,11 @@ class DashboardMixin:
                           command=lambda t=ticket_id: self.view_ticket_details(t)).pack(side="right")
         else:
             ttk.Label(recent_frame, text="No recent tickets").pack()
-        
+
         # Featured resources
         resources_frame = ttk.LabelFrame(parent, text="⭐ Featured Resources", padding="10")
         resources_frame.pack(fill="x", padx=10, pady=5)
-        
+
         featured_resources = self.dashboard_data.get('featured_resources', []) or []
         if featured_resources:
             for resource in featured_resources[:3]:
@@ -358,25 +358,25 @@ class DashboardMixin:
         # Performance metrics
         metrics_frame = ttk.LabelFrame(parent, text="📈 Performance Metrics", padding="10")
         metrics_frame.pack(fill="x", padx=10, pady=5)
-        
+
         metrics = self.dashboard_data.get('performance_metrics', {})
-        
+
         metrics_text = f"Monthly Tickets: {metrics.get('total_tickets_month', 0)} | "
         metrics_text += f"Avg Resolution: {metrics.get('avg_resolution_time', 0)} days | "
         metrics_text += f"Resolution Rate: {metrics.get('resolution_rate', 0)}%"
-        
+
         ttk.Label(metrics_frame, text=metrics_text, font=('Segoe UI', 11)).pack()
-        
+
         # Assigned tickets
         assigned_frame = ttk.LabelFrame(parent, text="👨‍💼 Assigned Tickets", padding="10")
         assigned_frame.pack(fill="x", padx=10, pady=5)
-        
+
         assigned_stats = self.dashboard_data.get('assigned_stats', {})
         assigned_text = f"Open: {assigned_stats.get('Open', 0)} | "
         assigned_text += f"In Progress: {assigned_stats.get('In Progress', 0)}"
-        
+
         ttk.Label(assigned_frame, text=assigned_text, font=('Segoe UI', 11)).pack()
-        
+
         # High priority tickets
         priority_frame = ttk.LabelFrame(parent, text="🚨 Priority Tickets", padding="10")
         priority_frame.pack(fill="x", padx=10, pady=5)
@@ -436,11 +436,11 @@ class DashboardMixin:
         """Create quick actions widget"""
         actions_frame = ttk.LabelFrame(parent, text="⚡ Quick Actions", padding="10")
         actions_frame.pack(fill="x", padx=10, pady=5)
-        
+
         # Create grid of action buttons
         actions_grid = ttk.Frame(actions_frame)
         actions_grid.pack(fill="x")
-        
+
         if self.auth.current_user['role'] == 'student':
             actions = [
                 ("🎫 Create Ticket", self.show_create_ticket),
@@ -455,53 +455,53 @@ class DashboardMixin:
                 ("🔧 Manage Templates", self.show_manage_templates),
                 ("📦 Bulk Operations", self.show_bulk_operations)
             ]
-        
+
         for i, (text, command) in enumerate(actions):
             row, col = i // 2, i % 2
             ttk.Button(actions_grid, text=text, command=command).grid(
                 row=row, column=col, padx=5, pady=5, sticky="ew")
-        
+
         actions_grid.columnconfigure(0, weight=1)
         actions_grid.columnconfigure(1, weight=1)
 
     def show_notifications(self):
         """Show notifications interface"""
         self.clear_content()
-        
+
         notifications_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(notifications_frame, text="🔔 Notifications")
 
         # Configure frame to expand
         notifications_frame.rowconfigure(0, weight=1)
         notifications_frame.columnconfigure(0, weight=1)
-        
+
         # Header
         header_frame = ttk.Frame(notifications_frame)
         header_frame.pack(fill="x", pady=(0, 15))
-        
-        ttk.Label(header_frame, text="🔔 Notifications", 
+
+        ttk.Label(header_frame, text="🔔 Notifications",
                  style='Title.TLabel').pack(side="left")
-        
+
         # Mark all as read button
-        ttk.Button(header_frame, text="📫 Mark All Read", 
+        ttk.Button(header_frame, text="📫 Mark All Read",
                   command=self.mark_all_notifications_read).pack(side="right")
-        
+
         # Filter options
         filter_frame = ttk.Frame(notifications_frame)
         filter_frame.pack(fill="x", pady=(0, 10))
-        
+
         ttk.Label(filter_frame, text="Filter:").pack(side="left")
-        
+
         self.notification_filter_var = tk.StringVar(value="All")
         filter_combo = ttk.Combobox(filter_frame, textvariable=self.notification_filter_var,
                                    values=["All", "Unread", "Read"], state="readonly")
         filter_combo.pack(side="left", padx=(10, 0))
         filter_combo.bind('<<ComboboxSelected>>', lambda e: self.load_notifications())
-        
+
         # Notifications display
         self.notifications_display_frame = ttk.Frame(notifications_frame)
         self.notifications_display_frame.pack(fill="both", expand=True)
-        
+
         # Load notifications
         self.load_notifications()
 
@@ -510,32 +510,32 @@ class DashboardMixin:
         # Clear display
         for widget in self.notifications_display_frame.winfo_children():
             widget.destroy()
-        
+
         try:
             # Get notifications (using dashboard data for now)
             notifications = self.dashboard_data.get('notifications', [])
-            
+
             # Apply filter
             filter_value = self.notification_filter_var.get()
             if filter_value == "Unread":
                 notifications = [n for n in notifications if not n.get('is_read', False)]
             elif filter_value == "Read":
                 notifications = [n for n in notifications if n.get('is_read', False)]
-            
+
             if not notifications:
                 ttk.Label(self.notifications_display_frame, text="📭 No notifications").pack(pady=20)
                 return
-            
+
             # Create scrollable notifications list
             canvas, scrollbar, scrollable_frame = self._create_scrollable_frame(self.notifications_display_frame)
-            
+
             # Add notifications
             for notification in notifications:
                 self.create_notification_item(scrollable_frame, notification)
-            
+
             canvas.pack(side="left", fill="both", expand=True)
             scrollbar.pack(side="right", fill="y")
-            
+
         except Exception as e:
             ttk.Label(self.notifications_display_frame, text=f"❌ Error loading notifications: {e}").pack(pady=20)
 
@@ -543,30 +543,30 @@ class DashboardMixin:
         """Create a notification item"""
         # Frame with background color based on read status
         bg_color = "#f8fafc" if notification.get('is_read') else "#dbeafe"
-        
+
         notif_frame = tk.Frame(parent, bg=bg_color, relief="solid", bd=1)
         notif_frame.pack(fill="x", padx=5, pady=2)
-        
+
         content_frame = ttk.Frame(notif_frame)
         content_frame.pack(fill="x", padx=10, pady=8)
-        
+
         # Status icon and title
         header_frame = ttk.Frame(content_frame)
         header_frame.pack(fill="x")
-        
+
         status_icon = "📫" if notification.get('is_read') else "📬"
         title_text = f"{status_icon} {notification['title']}"
-        
+
         ttk.Label(header_frame, text=title_text, font=('Segoe UI', 10, 'bold')).pack(side="left")
-        
+
         # Timestamp
         ttk.Label(header_frame, text=notification['created'], font=('Segoe UI', 9),
                  foreground=self.colors['text_secondary']).pack(side="right")
-        
+
         # Message
         if notification.get('message'):
             ttk.Label(content_frame, text=notification['message'], wraplength=700).pack(anchor="w", pady=(5, 0))
-        
+
         # Actions
         action_frame = ttk.Frame(content_frame)
         action_frame.pack(anchor="w", pady=(5, 0))
@@ -807,17 +807,17 @@ class DashboardMixin:
     def show_preferences(self):
         """Show user preferences interface"""
         self.clear_content()
-        
+
         prefs_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(prefs_frame, text="⚙️ Preferences")
 
         # Configure frame to expand
         prefs_frame.rowconfigure(0, weight=1)
         prefs_frame.columnconfigure(0, weight=1)
-        
-        ttk.Label(prefs_frame, text="⚙️ User Preferences", 
+
+        ttk.Label(prefs_frame, text="⚙️ User Preferences",
                  style='Title.TLabel').pack(pady=(0, 20))
-        
+
         # Get current preferences
         try:
             if self.support:
@@ -826,69 +826,69 @@ class DashboardMixin:
                 current_prefs = {}
         except Exception:
             current_prefs = {}
-        
+
         # Preferences form
         form_frame = ttk.LabelFrame(prefs_frame, text="Notification Settings", padding="15")
         form_frame.pack(fill="x", pady=(0, 10))
-        
+
         # Notification preferences
         self.email_notifications_var = tk.BooleanVar(value=current_prefs.get('email_notifications', True))
-        ttk.Checkbutton(form_frame, text="📧 Email Notifications", 
+        ttk.Checkbutton(form_frame, text="📧 Email Notifications",
                        variable=self.email_notifications_var).pack(anchor="w", pady=2)
-        
+
         self.in_app_notifications_var = tk.BooleanVar(value=current_prefs.get('in_app_notifications', True))
-        ttk.Checkbutton(form_frame, text="🔔 In-App Notifications", 
+        ttk.Checkbutton(form_frame, text="🔔 In-App Notifications",
                        variable=self.in_app_notifications_var).pack(anchor="w", pady=2)
-        
+
         self.push_notifications_var = tk.BooleanVar(value=current_prefs.get('push_notifications', True))
-        ttk.Checkbutton(form_frame, text="📱 Push Notifications", 
+        ttk.Checkbutton(form_frame, text="📱 Push Notifications",
                        variable=self.push_notifications_var).pack(anchor="w", pady=2)
-        
+
         # Digest frequency
         digest_frame = ttk.Frame(form_frame)
         digest_frame.pack(fill="x", pady=(10, 0))
-        
+
         ttk.Label(digest_frame, text="📅 Digest Frequency:").pack(side="left")
         self.digest_frequency_var = tk.StringVar(value=current_prefs.get('digest_frequency', 'daily'))
         digest_combo = ttk.Combobox(digest_frame, textvariable=self.digest_frequency_var,
                                    values=['immediate', 'daily', 'weekly'], state="readonly")
         digest_combo.pack(side="left", padx=(10, 0))
-        
+
         # Display preferences
         display_frame = ttk.LabelFrame(prefs_frame, text="Display Settings", padding="15")
         display_frame.pack(fill="x", pady=(0, 10))
-        
+
         # Theme
         theme_frame = ttk.Frame(display_frame)
         theme_frame.pack(fill="x", pady=2)
-        
+
         ttk.Label(theme_frame, text="🎨 Theme:").pack(side="left")
         self.theme_var = tk.StringVar(value=current_prefs.get('theme', 'light'))
         theme_combo = ttk.Combobox(theme_frame, textvariable=self.theme_var,
                                   values=['light', 'dark'], state="readonly")
         theme_combo.pack(side="left", padx=(10, 0))
-        
+
         # Language
         language_frame = ttk.Frame(display_frame)
         language_frame.pack(fill="x", pady=2)
-        
+
         ttk.Label(language_frame, text="🌐 Language:").pack(side="left")
         self.language_var = tk.StringVar(value=current_prefs.get('language', 'en'))
         language_combo = ttk.Combobox(language_frame, textvariable=self.language_var,
                                      values=['en', 'es', 'fr', 'de'], state="readonly")
         language_combo.pack(side="left", padx=(10, 0))
-        
+
         # Timezone
         timezone_frame = ttk.Frame(display_frame)
         timezone_frame.pack(fill="x", pady=2)
-        
+
         ttk.Label(timezone_frame, text="🕐 Timezone:").pack(side="left")
         self.timezone_var = tk.StringVar(value=current_prefs.get('timezone', 'UTC'))
         timezone_entry = ttk.Entry(timezone_frame, textvariable=self.timezone_var, width=20)
         timezone_entry.pack(side="left", padx=(10, 0))
-        
+
         # Save button
-        ttk.Button(prefs_frame, text="💾 Save Preferences", 
+        ttk.Button(prefs_frame, text="💾 Save Preferences",
                   command=self.save_preferences, style='Primary.TButton').pack(pady=20)
 
     def save_preferences(self):
@@ -903,14 +903,14 @@ class DashboardMixin:
                 'language': self.language_var.get(),
                 'timezone': self.timezone_var.get()
             }
-            
+
             if self.support:
                 self.support.update_user_preferences(preferences)
                 messagebox.showinfo("Success", "Preferences saved successfully!")
                 self.update_status("Preferences saved")
             else:
                 messagebox.showerror("Error", "Support system not available")
-                
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save preferences: {e}")
 

@@ -55,7 +55,7 @@ except (ImportError, ModuleNotFoundError):
     student_union_cli = None
     init_student_union_db = None
     CLI_AVAILABLE = False
-    
+
 
 def show_profile(self):
     """Show user profile"""
@@ -121,12 +121,12 @@ def change_password(self):
     ttk.Label(form_frame, text=_t("auth.confirm_password")).pack(anchor=tk.W)
     confirm_pw_entry = ttk.Entry(form_frame, show="*", width=30)
     confirm_pw_entry.pack(fill=tk.X, pady=(0,20))
-    
+
     def update_password():
         current_pw = current_pw_entry.get()
         new_pw = new_pw_entry.get()
         confirm_pw = confirm_pw_entry.get()
-        
+
         if not all([current_pw, new_pw, confirm_pw]):
             messagebox.showerror(_t("common.error"), _t("auth.all_fields_required"))
             return
@@ -138,25 +138,25 @@ def change_password(self):
         if len(new_pw) < 6:
             messagebox.showerror(_t("common.error"), _t("student_union.profile.password_min_length"))
             return
-        
+
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             # Verify current password
             current_hash = hashlib.sha256(current_pw.encode()).hexdigest()
-            cursor.execute('SELECT id FROM users WHERE id = ? AND password_hash = ?', 
+            cursor.execute('SELECT id FROM users WHERE id = ? AND password_hash = ?',
                          (self.current_user['id'], current_hash))
-            
+
             if not cursor.fetchone():
                 messagebox.showerror(_t("common.error"), _t("auth.current_password_incorrect"))
                 return
-            
+
             # Update password
             new_hash = hashlib.sha256(new_pw.encode()).hexdigest()
-            cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?', 
+            cursor.execute('UPDATE users SET password_hash = ? WHERE id = ?',
                          (new_hash, self.current_user['id']))
-            
+
             conn.commit()
             conn.close()
 
@@ -165,14 +165,14 @@ def change_password(self):
 
         except sqlite3.Error as e:
             messagebox.showerror(_t("common.error"), _t("student_union.profile.password_change_failed", error=str(e)))
-    
+
     # Buttons
     button_frame = ttk.Frame(form_frame)
     button_frame.pack()
-    
+
     ttk.Button(button_frame, text=_t("student_union.profile.update_password"), command=update_password).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("common.cancel"), command=password_window.destroy).pack(side=tk.LEFT, padx=5)
-    
+
     current_pw_entry.focus()
 
 
@@ -182,14 +182,14 @@ def show_database_info(self):
     info_window.title(_t("student_union.profile.db_info_title"))
     info_window.geometry("500x400")
     info_window.transient(self.root)
-    
+
     info_text = scrolledtext.ScrolledText(info_window, height=20, width=60)
     info_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-    
+
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
-        
+
         info = _t("student_union.profile.db_info_header") + "\n"
         info += "=" * 30 + "\n\n"
 
@@ -211,10 +211,10 @@ def show_database_info(self):
             info += "    Columns: "
             info += ", ".join([col[1] for col in columns])
             info += "\n\n"
-        
+
         info_text.insert(1.0, info)
         conn.close()
-        
+
     except sqlite3.Error as e:
         info_text.insert(1.0, _t("student_union.profile.db_info_error", error=str(e)))
 

@@ -114,7 +114,7 @@ def edit_attendance_record(self, event):
         student_id, name, current_status, notes, _ = item['values']
 
         # Create edit dialog
-        EditAttendanceWindow(self.root, student_id, name, current_status, notes, 
+        EditAttendanceWindow(self.root, student_id, name, current_status, notes,
                            self.module_var.get().split(' - ')[0], self.date_var.get(),
                            self.refresh_attendance_data)
 

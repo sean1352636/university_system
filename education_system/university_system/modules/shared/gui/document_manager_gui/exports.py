@@ -15,7 +15,7 @@ except ImportError:
     def get_connection():
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 try:
     from education_system.university_system.modules.shared.utils.i18n import get_text as _t

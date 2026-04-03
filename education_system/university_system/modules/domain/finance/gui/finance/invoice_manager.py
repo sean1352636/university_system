@@ -77,28 +77,28 @@ except ImportError:
     # Stub implementations for missing functions
     def assign_to_collection_agency(*args, **kwargs):
         print("assign_to_collection_agency function not implemented")
-    
+
     def track_collection_progress(*args, **kwargs):
         print("track_collection_progress function not implemented")
-    
+
     def update_collection_case_status(*args, **kwargs):
         print("update_collection_case_status function not implemented")
-    
+
     def create_payment_arrangement(*args, **kwargs):
         print("create_payment_arrangement function not implemented")
-    
+
     def send_arrangement_confirmation(*args, **kwargs):
         print("send_arrangement_confirmation function not implemented")
-    
+
     def setup_collection_workflows(*args, **kwargs):
         print("setup_collection_workflows function not implemented")
-    
+
     def check_required_packages(*args, **kwargs):
         print("check_required_packages function not implemented")
-    
+
     def ensure_database_exists(*args, **kwargs):
         print("ensure_database_exists function not implemented")
-    
+
     def verify_fix(*args, **kwargs):
         print("verify_fix function not implemented")
 
@@ -201,6 +201,24 @@ SUPPORTED_CURRENCIES = ['GBP', 'USD', 'EUR', 'CAD', 'AUD']
 # Load exchange API key from environment variable
 EXCHANGE_API_KEY = os.getenv('EXCHANGE_API_KEY', '')
 
+# Backward-compatible re-exports for transaction manager dialog imports.
+try:
+    from education_system.university_system.modules.domain.finance.gui.finance_reporting.payment_dialogs import (
+        PaymentDetailsDialog,
+        RefundDialog,
+    )
+except Exception:
+    class PaymentDetailsDialog:
+        def __init__(self, parent, payment_id):
+            self.dialog = tk.Toplevel(parent)
+            self.dialog.title(f"Payment Details - {payment_id}")
+
+    class RefundDialog:
+        def __init__(self, parent, payment_id, student_id, amount):
+            self.dialog = tk.Toplevel(parent)
+            self.dialog.title(f"Refund - {payment_id}")
+            self.result = False
+
 
 
 
@@ -290,9 +308,9 @@ class InvoiceManager:
                     messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.invoice_manager.error_student_not_found"))
                     conn.close()
                     return
-                    
+
                 first_name, last_name, email, course = student
-                
+
                 # Get outstanding fees
                 cursor.execute('''
                 SELECT ft.fee_name, sf.amount, sf.due_date, sf.status
@@ -301,18 +319,18 @@ class InvoiceManager:
                 WHERE sf.student_id = ? AND sf.status != 'paid'
                 ORDER BY sf.due_date
                 ''', (student_id,))
-                
+
                 fees = cursor.fetchall()
-                
+
                 # Update fees display
                 for item in fees_tree.get_children():
                     fees_tree.delete(item)
-                
+
                 total_amount = 0
                 for fee_name, amount, due_date, status in fees:
                     fees_tree.insert('', 'end', values=(fee_name, f"£{amount:.2f}", due_date, status))
                     total_amount += amount
-                
+
                 if not fees:
                     messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.invoice_manager.info_no_outstanding_fees"))
                     conn.close()
@@ -354,24 +372,24 @@ class InvoiceManager:
 
         {_("finance_gui.invoice_manager.thank_you_message")}
                 """
-                
+
                 # Display in preview
                 invoice_text.delete('1.0', tk.END)
                 invoice_text.insert('1.0', invoice_content)
-                
+
                 conn.close()
-                
+
                 # Enable save/send buttons
                 save_btn.config(state='normal')
                 send_btn.config(state='normal')
-                
+
                 self.current_invoice = {
                     'number': invoice_number,
                     'content': invoice_content,
                     'student_email': email,
                     'student_name': f"{first_name} {last_name}"
                 }
-                
+
             except Exception as e:
                 messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.invoice_manager.error_generate_invoice", error=str(e)))
 
@@ -394,7 +412,7 @@ class InvoiceManager:
                     messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.invoice_manager.success_invoice_saved", filename=filename))
                 except Exception as e:
                     messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.invoice_manager.error_save_invoice", error=str(e)))
-    
+
 
         def send_invoice():
             if not hasattr(self, 'current_invoice'):
@@ -503,4 +521,3 @@ class InvoiceManager:
             text_widget.delete('1.0', tk.END)
             text_widget.insert('1.0', _("finance_gui.invoice_manager.error_loading_student", error=str(e)))
             text_widget.config(state='disabled')
-    

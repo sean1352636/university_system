@@ -249,26 +249,26 @@ class TicketActionsMixin:
 
         ttk.Label(form_frame, text=f"Adding response to: {ticket_title}",
                  style='Heading.TLabel').pack(anchor="w", pady=(0, 15))
-        
+
         # Response text
         ttk.Label(form_frame, text="Response:").pack(anchor="w")
         response_text = scrolledtext.ScrolledText(form_frame, height=12, wrap=tk.WORD)
         response_text.pack(fill="both", expand=True, pady=(5, 15))
-        
+
         # Options
         options_frame = ttk.Frame(form_frame)
         options_frame.pack(fill="x", pady=(0, 15))
-        
+
         # Internal note checkbox (for staff)
         if self.auth.current_user['role'] in ('staff', 'admin'):
             self.is_internal_var = tk.BooleanVar()
-            ttk.Checkbutton(options_frame, text="🔒 Internal note (staff only)", 
+            ttk.Checkbutton(options_frame, text="🔒 Internal note (staff only)",
                            variable=self.is_internal_var).pack(side="left")
-        
+
         # Buttons
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x")
-        
+
         def submit_response():
             text = response_text.get(1.0, tk.END).strip()
             if not text:
@@ -283,8 +283,8 @@ class TicketActionsMixin:
                 self.refresh_data()
             except Exception as e:
                 messagebox.showerror("Error", f"Could not add response: {e}")
-        
-        ttk.Button(btn_frame, text="💬 Add Response", command=submit_response, 
+
+        ttk.Button(btn_frame, text="💬 Add Response", command=submit_response,
                   style='Primary.TButton').pack(side="left", padx=(0, 10))
         ttk.Button(btn_frame, text="❌ Cancel", command=response_dialog.destroy).pack(side="left")
 
@@ -338,15 +338,15 @@ class TicketActionsMixin:
             # Update ticket status to escalated
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             escalation_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            
+
             cursor.execute('''
-            UPDATE support_tickets 
+            UPDATE support_tickets
             SET status = 'Escalated', escalated_at = ?, last_updated_datetime = ?
             WHERE ticket_id = ?
             ''', (escalation_time, escalation_time, ticket_id))
-            
+
             # Add escalation response
             cursor.execute('''
             INSERT INTO ticket_responses (
@@ -358,13 +358,13 @@ class TicketActionsMixin:
                 f'Ticket escalated to supervisor by {auth.current_user["username"]}',
                 escalation_time, 1
             ))
-            
+
             conn.commit()
             conn.close()
-            
+
             messagebox.showinfo("Success", f"Ticket #{ticket_id} escalated successfully!")
             self.refresh_data()
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Could not escalate ticket: {e}")
 
@@ -388,15 +388,15 @@ class TicketActionsMixin:
 
         ttk.Label(form_frame, text=f"Merge into Ticket #{ticket_id}",
                  style='Heading.TLabel').pack(pady=(0, 15))
-        
+
         ttk.Label(form_frame, text="Secondary ticket IDs (comma-separated):").pack(anchor="w")
         secondary_ids_entry = ttk.Entry(form_frame, width=40)
         secondary_ids_entry.pack(fill="x", pady=(5, 10))
-        
+
         ttk.Label(form_frame, text="Merge reason:").pack(anchor="w")
         reason_text = scrolledtext.ScrolledText(form_frame, height=4, wrap=tk.WORD)
         reason_text.pack(fill="both", expand=True, pady=(5, 15))
-        
+
         def perform_merge():
             secondary_ids = secondary_ids_entry.get().strip()
             reason = reason_text.get(1.0, tk.END).strip()
@@ -413,10 +413,10 @@ class TicketActionsMixin:
                 self.refresh_data()
             except Exception as e:
                 messagebox.showerror("Error", f"Could not merge tickets: {e}")
-        
+
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x")
-        
+
         ttk.Button(btn_frame, text="Merge Tickets", command=perform_merge).pack(side="left", padx=(0, 10))
         ttk.Button(btn_frame, text="Cancel", command=merge_dialog.destroy).pack(side="left")
 
@@ -444,7 +444,7 @@ class TicketActionsMixin:
 
             # Get full ticket details
             ticket_details = self.support.get_ticket_details(ticket_id)
-            
+
             if filename.endswith('.json'):
                 with open(filename, 'w') as f:
                     json.dump(ticket_details, f, indent=2, default=str)
@@ -472,9 +472,9 @@ class TicketActionsMixin:
                             if response and isinstance(response, dict):
                                 f.write(f"\n[{response.get('response_datetime', 'N/A')}] {response.get('responder_role', 'N/A')}:\n")
                                 f.write(f"{response.get('response_text', '')}\n")
-            
+
             messagebox.showinfo("Success", f"Ticket exported to {filename}")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Could not export ticket: {e}")
 
@@ -482,73 +482,73 @@ class TicketActionsMixin:
         """Show complete ticket history in a new window"""
         try:
             history = self.support.get_ticket_history(ticket_id)
-            
+
             history_window = tk.Toplevel(self.root)
             history_window.title(f"Ticket #{ticket_id} History")
             history_window.geometry("1500x900")
             history_window.transient(self.root)
-            
+
             # Create scrollable timeline
             canvas = tk.Canvas(history_window)
             scrollbar = ttk.Scrollbar(history_window, orient="vertical", command=canvas.yview)
             timeline_frame = ttk.Frame(canvas)
-            
+
             timeline_frame.bind(
                 "<Configure>",
                 lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
             )
-            
+
             canvas.create_window((0, 0), window=timeline_frame, anchor="nw")
             canvas.configure(yscrollcommand=scrollbar.set)
-            
+
             # Title
             title_frame = ttk.Frame(timeline_frame, padding="10")
             title_frame.pack(fill="x")
-            
-            ttk.Label(title_frame, text=f"Complete History for Ticket #{ticket_id}", 
+
+            ttk.Label(title_frame, text=f"Complete History for Ticket #{ticket_id}",
                      style='Title.TLabel').pack()
-            
+
             # Timeline events
             timeline = history['timeline']
             for event in timeline:
                 event_frame = ttk.LabelFrame(timeline_frame, padding="10")
                 event_frame.pack(fill="x", padx=10, pady=5)
-                
+
                 event_type = event['type']
                 data = event['data']
-                
+
                 if event_type == 'creation':
                     event_frame.config(text=f"Created - {event['datetime']}")
                     ttk.Label(event_frame, text=f"Title: {data['title']}").pack(anchor="w")
                     ttk.Label(event_frame, text=f"Description: {data['description'][:100]}...").pack(anchor="w")
-                    
+
                 elif event_type == 'response':
                     responder = data['responder_role']
                     is_internal = data.get('is_internal', False)
                     is_auto = data.get('is_auto_generated', False)
-                    
+
                     tags = []
                     if is_internal:
                         tags.append("INTERNAL")
                     if is_auto:
                         tags.append("AUTO")
-                    
+
                     tag_text = f" [{', '.join(tags)}]" if tags else ""
                     event_frame.config(text=f"Response by {responder}{tag_text} - {event['datetime']}")
-                    
+
                     ttk.Label(event_frame, text=data['response_text'][:150] + "...").pack(anchor="w")
-                    
+
                 elif event_type == 'attachment':
                     event_frame.config(text=f"Attachment Added - {event['datetime']}")
                     ttk.Label(event_frame, text=f"File: {data['original_filename']}").pack(anchor="w")
-                    
+
                 elif event_type == 'audit':
                     event_frame.config(text=f"System Event - {event['datetime']}")
                     ttk.Label(event_frame, text=f"Action: {data['action']}").pack(anchor="w")
-            
+
             canvas.pack(side="left", fill="both", expand=True)
             scrollbar.pack(side="right", fill="y")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Could not load ticket history: {e}")
 
@@ -589,10 +589,10 @@ class TicketActionsMixin:
                 self.refresh_data()
             except Exception as e:
                 messagebox.showerror("Error", f"Could not add note: {e}")
-        
+
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x")
-        
+
         ttk.Button(btn_frame, text="Add Note", command=add_note).pack(side="left", padx=(0, 10))
         ttk.Button(btn_frame, text="Cancel", command=note_dialog.destroy).pack(side="left")
 
@@ -603,37 +603,37 @@ class TicketActionsMixin:
         template_dialog.geometry("1400x800")
         template_dialog.transient(self.root)
         template_dialog.grab_set()
-        
+
         form_frame = ttk.Frame(template_dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
-        
-        ttk.Label(form_frame, text="Select Response Template", 
+
+        ttk.Label(form_frame, text="Select Response Template",
                  style='Heading.TLabel').pack(pady=(0, 15))
-        
+
         # Get templates
         templates = self.support.get_response_templates()
-        
+
         if not templates:
             ttk.Label(form_frame, text="No response templates available").pack()
             ttk.Button(form_frame, text="Close", command=template_dialog.destroy).pack(pady=10)
             return
-        
+
         # Template selection
         template_frame = ttk.LabelFrame(form_frame, text="Templates", padding="10")
         template_frame.pack(fill="x", pady=(0, 10))
-        
+
         template_var = tk.StringVar()
         template_combo = ttk.Combobox(template_frame, textvariable=template_var, state="readonly")
         template_combo['values'] = [f"{t['name']} - {t.get('category', 'General')}" for t in templates]
         template_combo.pack(fill="x")
-        
+
         # Preview area
         preview_frame = ttk.LabelFrame(form_frame, text="Preview", padding="10")
         preview_frame.pack(fill="both", expand=True, pady=(0, 10))
-        
+
         preview_text = scrolledtext.ScrolledText(preview_frame, height=8, wrap=tk.WORD, state='disabled')
         preview_text.pack(fill="both", expand=True)
-        
+
         def update_preview(event=None):
             selection = template_combo.current()
             if selection >= 0:
@@ -642,24 +642,24 @@ class TicketActionsMixin:
                 preview_text.delete(1.0, tk.END)
                 preview_text.insert(1.0, template['content'])
                 preview_text.config(state='disabled')
-        
+
         template_combo.bind('<<ComboboxSelected>>', update_preview)
-        
+
         def use_template():
             selection = template_combo.current()
             if selection < 0:
                 messagebox.showerror("Error", "Please select a template")
                 return
-            
+
             template = templates[selection]
             template_dialog.destroy()
-            
+
             # Show add response dialog with template pre-filled
             self.show_add_response_dialog_with_template(ticket, template)
-        
+
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x")
-        
+
         ttk.Button(btn_frame, text="Use Template", command=use_template).pack(side="left", padx=(0, 10))
         ttk.Button(btn_frame, text="Cancel", command=template_dialog.destroy).pack(side="left")
 
@@ -723,10 +723,10 @@ class TicketActionsMixin:
                 self.refresh_data()
             except Exception as e:
                 messagebox.showerror("Error", f"Could not add response: {e}")
-        
+
         btn_frame = ttk.Frame(form_frame)
         btn_frame.pack(fill="x")
-        
+
         ttk.Button(btn_frame, text="Add Response", command=submit_response).pack(side="left", padx=(0, 10))
         ttk.Button(btn_frame, text="Cancel", command=response_dialog.destroy).pack(side="left")
 
@@ -735,19 +735,19 @@ class TicketActionsMixin:
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'student':
             messagebox.showerror("Error", "Only students can submit satisfaction ratings")
             return
-        
+
         rating_dialog = tk.Toplevel(self.root)
         rating_dialog.title("Submit Satisfaction Rating")
         rating_dialog.geometry("1300x800")
         rating_dialog.transient(self.root)
         rating_dialog.grab_set()
-        
+
         form_frame = ttk.Frame(rating_dialog, padding="20")
         form_frame.pack(fill="both", expand=True)
-        
-        ttk.Label(form_frame, text="Rate Your Support Experience", 
+
+        ttk.Label(form_frame, text="Rate Your Support Experience",
                  style='Title.TLabel').pack(pady=(0, 20))
-        
+
         # Get resolved tickets for this student
         try:
             from education_system.university_system.infrastructure.database.db import get_connection
@@ -756,12 +756,12 @@ class TicketActionsMixin:
             cursor.execute('SELECT student_id FROM users WHERE id = ?', (auth.current_user['id'],))
             result = cursor.fetchone()
             conn.close()
-            
+
             if not result:
                 messagebox.showerror("Error", "No student ID found")
                 rating_dialog.destroy()
                 return
-            
+
             student_id = result[0]
             filters = {'status': 'Resolved'}
             result = self.support.get_student_tickets(student_id, filters, page=1, per_page=50)
@@ -778,29 +778,29 @@ class TicketActionsMixin:
                 ttk.Label(form_frame, text="No resolved tickets to rate").pack()
                 ttk.Button(form_frame, text="Close", command=rating_dialog.destroy).pack(pady=10)
                 return
-            
+
             # Ticket selection
             ttk.Label(form_frame, text="Select Ticket:").pack(anchor="w")
             ticket_var = tk.StringVar()
             ticket_combo = ttk.Combobox(form_frame, textvariable=ticket_var, state="readonly")
             ticket_combo['values'] = [f"#{t['ticket_id']} - {t['title']}" for t in resolved_tickets]
             ticket_combo.pack(fill="x", pady=(5, 10))
-            
+
             # Rating
             ttk.Label(form_frame, text="Rating (1-5 stars):").pack(anchor="w")
             rating_var = tk.IntVar(value=5)
             rating_frame = ttk.Frame(form_frame)
             rating_frame.pack(anchor="w", pady=(5, 10))
-            
+
             for i in range(1, 6):
-                ttk.Radiobutton(rating_frame, text=f"{i} star{'s' if i > 1 else ''}", 
+                ttk.Radiobutton(rating_frame, text=f"{i} star{'s' if i > 1 else ''}",
                                variable=rating_var, value=i).pack(side="left", padx=(0, 10))
-            
+
             # Feedback
             ttk.Label(form_frame, text="Additional Feedback (optional):").pack(anchor="w")
             feedback_text = scrolledtext.ScrolledText(form_frame, height=6, wrap=tk.WORD)
             feedback_text.pack(fill="both", expand=True, pady=(5, 15))
-            
+
             def submit_rating():
                 selection = ticket_combo.current()
                 if selection < 0:
@@ -827,13 +827,13 @@ class TicketActionsMixin:
                     rating_dialog.destroy()
                 except Exception as e:
                     messagebox.showerror("Error", f"Could not submit rating: {e}")
-            
+
             btn_frame = ttk.Frame(form_frame)
             btn_frame.pack(fill="x")
-            
+
             ttk.Button(btn_frame, text="Submit Rating", command=submit_rating).pack(side="left", padx=(0, 10))
             ttk.Button(btn_frame, text="Cancel", command=rating_dialog.destroy).pack(side="left")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Could not load tickets: {e}")
             rating_dialog.destroy()
@@ -842,7 +842,7 @@ class TicketActionsMixin:
         """Update ticket assignment"""
         try:
             assigned_to = self.assign_to_var.get().strip()
-            
+
             # Update in database
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
@@ -850,7 +850,7 @@ class TicketActionsMixin:
 
                 update_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 cursor.execute('''
-                UPDATE support_tickets 
+                UPDATE support_tickets
                 SET assigned_to = ?, last_updated_datetime = ?
                 WHERE ticket_id = ?
                 ''', (assigned_to, update_time, ticket_id))

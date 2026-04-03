@@ -102,7 +102,7 @@ def create_dashboard_tab(self):
     for i, (text, command) in enumerate(action_buttons):
         row = i // 3
         col = i % 3
-        ttk.Button(actions_frame, text=text, command=command, 
+        ttk.Button(actions_frame, text=text, command=command,
                   style='Accent.TButton').grid(row=row, column=col, padx=5, pady=5, sticky=(tk.W, tk.E))
 
     # Configure column weights
@@ -380,7 +380,7 @@ def show_realtime_dashboard(self):
     main_frame.pack(fill=tk.BOTH, expand=True)
 
     # Title
-    ttk.Label(main_frame, text="Real-Time Financial Dashboard", 
+    ttk.Label(main_frame, text="Real-Time Financial Dashboard",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Metrics frame
@@ -396,7 +396,7 @@ def show_realtime_dashboard(self):
     hour_frame.pack(side=tk.LEFT, padx=10)
     ttk.Label(hour_frame, text="Current Hour", font=('Arial', 10, 'bold')).pack()
     hour_value = tk.StringVar(value="Loading...")
-    ttk.Label(hour_frame, textvariable=hour_value, font=('Arial', 12), 
+    ttk.Label(hour_frame, textvariable=hour_value, font=('Arial', 12),
              foreground='#27ae60').pack()
 
     # Payment velocity
@@ -404,7 +404,7 @@ def show_realtime_dashboard(self):
     velocity_frame.pack(side=tk.LEFT, padx=10)
     ttk.Label(velocity_frame, text="Payment Velocity", font=('Arial', 10, 'bold')).pack()
     velocity_value = tk.StringVar(value="Loading...")
-    ttk.Label(velocity_frame, textvariable=velocity_value, font=('Arial', 12), 
+    ttk.Label(velocity_frame, textvariable=velocity_value, font=('Arial', 12),
              foreground='#3498db').pack()
 
     # System status
@@ -412,7 +412,7 @@ def show_realtime_dashboard(self):
     status_frame.pack(side=tk.LEFT, padx=10)
     ttk.Label(status_frame, text="System Status", font=('Arial', 10, 'bold')).pack()
     system_status = tk.StringVar(value="Online")
-    ttk.Label(status_frame, textvariable=system_status, font=('Arial', 12), 
+    ttk.Label(status_frame, textvariable=system_status, font=('Arial', 12),
              foreground='#27ae60').pack()
 
     # Activity log

@@ -342,6 +342,10 @@ class TestSecurityConfiguration:
 
     def test_encryption_key_is_bytes_or_none(self):
         """Test encryption key is bytes or None"""
+        # Reload to restore clean state (earlier test_warnings_filtered may have
+        # corrupted module-level variables via importlib.reload under patches)
+        import importlib
+        importlib.reload(finance_context)
         assert finance_context.ENCRYPTION_KEY is None or isinstance(
             finance_context.ENCRYPTION_KEY, bytes
         )
@@ -353,7 +357,8 @@ class TestSecurityConfiguration:
         stripe_config = finance_context.PAYMENT_GATEWAYS['stripe']
 
         # These should be placeholder values, not real keys
-        assert 'test' in stripe_config['secret_key'] or stripe_config['secret_key'] == 'sk_test_...'
+        # Empty string (from env default) or test-prefixed keys are both safe
+        assert stripe_config['secret_key'] == '' or 'test' in stripe_config['secret_key'] or stripe_config['secret_key'] == 'sk_test_...'
 
 
 class TestImportResilience:

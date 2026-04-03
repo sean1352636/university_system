@@ -483,8 +483,6 @@ def budget_vs_actual_analysis(*args, **kwargs):
 
 def budget_approval_workflow(*args, **kwargs):
     """Budget approval workflow with database integration"""
-    from education_system.university_system.infrastructure.database.db import get_connection
-
     print("\n" + "=" * 80)
     print("BUDGET APPROVAL WORKFLOW".center(80))
     print("=" * 80)
@@ -494,13 +492,13 @@ def budget_approval_workflow(*args, **kwargs):
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Get pending/draft budget plans
+        # Only budgets explicitly marked as pending require approval.
         cursor.execute('''
             SELECT budget_id, plan_name, academic_year, status,
                    total_revenue_budget, total_expense_budget,
-                   created_by, created_at
+                   created_at
             FROM budget_plans
-            WHERE status IN ('draft', 'pending')
+            WHERE status = 'pending'
             ORDER BY created_at DESC
         ''')
         pending_plans = cursor.fetchall()
@@ -518,7 +516,7 @@ def budget_approval_workflow(*args, **kwargs):
             print("-" * 90)
 
             for plan in pending_plans:
-                budget_id, name, year, status, revenue, expense, created_by, created_at = plan
+                budget_id, name, year, status, revenue, expense, created_at = plan
                 print(f"{budget_id:<6} {name:<30} {year:<12} £{revenue:>13,.2f} £{expense:>13,.2f} {status:<10}")
 
             print("\n" + "=" * 80)
@@ -531,7 +529,6 @@ def budget_approval_workflow(*args, **kwargs):
             print("5. View approval history")
             print("\nNote: Use the 'Approve Budget' button in the main interface to approve plans.\n")
 
-        conn.close()
         print("=" * 80 + "\n")
 
     except Exception as e:

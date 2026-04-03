@@ -55,10 +55,5 @@
         "json",
         "xml"
     ],
-    "backup_templates": {
-        "test_template": {
-            "compression_enabled": true,
-            "compression_format": "zip"
-        }
-    }
+    "backup_templates": {}
 }

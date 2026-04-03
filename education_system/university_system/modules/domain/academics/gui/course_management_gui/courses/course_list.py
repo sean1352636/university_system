@@ -138,11 +138,11 @@ def create_course_list_tab(self):
     self.status_filter.set(_("common.all"))
     self.status_filter.grid(row=0, column=5, padx=5)
     self.status_filter.bind('<<ComboboxSelected>>', self.on_filter_change)
-    
+
     # Course list with treeview
     list_frame = ttk.Frame(course_frame)
     list_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-    
+
     # Create treeview with scrollbar
     columns = ("ID", "Code", "Name", "Department", "Level", "Credits", "Enrollment", "Status")
     column_labels = {
@@ -174,18 +174,18 @@ def create_course_list_tab(self):
             self.course_tree.column(col, width=100)
         elif col == "Status":
             self.course_tree.column(col, width=80)
-    
+
     # Scrollbar for treeview
     scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.course_tree.yview)
     self.course_tree.configure(yscrollcommand=scrollbar.set)
-    
+
     # Pack treeview and scrollbar
     self.course_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    
+
     # Bind double-click event
     self.course_tree.bind("<Double-1>", self.on_course_double_click)
-    
+
     # Buttons frame - Role-based access
     buttons_frame = ttk.Frame(course_frame)
     buttons_frame.pack(fill=tk.X, padx=5, pady=5)
@@ -207,7 +207,7 @@ def create_course_list_tab(self):
 
     # Everyone can refresh
     ttk.Button(buttons_frame, text=_("common.refresh"), command=self.refresh_course_list).pack(side=tk.LEFT, padx=5)
-    
+
     # Load initial data
     self.refresh_course_list()
     self.load_filter_options()
@@ -219,7 +219,7 @@ def refresh_course_list(self):
         # Clear existing items
         for item in self.course_tree.get_children():
             self.course_tree.delete(item)
-        
+
         # Get courses from database
         with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
             cursor = conn.cursor()
@@ -273,7 +273,7 @@ def refresh_course_list(self):
                 self.course_tree.insert("", tk.END, values=course)
 
             self.update_status(f"Loaded {len(courses)} courses")
-        
+
     except sqlite3.Error as e:
         self.update_status(f"Database error: {e}", error=True)
         print(_("course_management.errors.db_refresh", error=str(e)))
@@ -298,7 +298,7 @@ def filter_courses(self):
         # Clear existing items
         for item in self.course_tree.get_children():
             self.course_tree.delete(item)
-        
+
         # Build query
         search_text = self.search_var.get().strip()
         dept_filter = self.dept_filter.get()
@@ -314,20 +314,20 @@ def filter_courses(self):
         FROM courses WHERE course_code IS NOT NULL
         """
         params = []
-        
+
         if search_text:
             query += " AND (course_code LIKE ? OR course_name LIKE ? OR description LIKE ?)"
             search_param = f"%{escape_like(search_text)}%"
             params.extend([search_param, search_param, search_param])
-        
+
         if dept_filter and dept_filter != "All":
             query += " AND department = ?"
             params.append(dept_filter)
-        
+
         if status_filter and status_filter != "All":
             query += " AND status = ?"
             params.append(status_filter)
-        
+
         query += " ORDER BY course_code"
 
         with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
@@ -338,9 +338,9 @@ def filter_courses(self):
         # Populate filtered results
         for course in courses:
             self.course_tree.insert("", tk.END, values=course)
-        
+
         self.update_status(f"Found {len(courses)} courses")
-        
+
     except sqlite3.Error as e:
         messagebox.showerror(_("common.database_error"), _("course_management.messages.search_failed").format(error=e))
 
@@ -356,7 +356,7 @@ def load_filter_options(self):
             departments = ["All"] + [row[0] for row in cursor.fetchall()]
             self.dept_filter['values'] = departments
             self.dept_filter.set("All")
-        
+
     except sqlite3.Error:
         pass
 
@@ -373,7 +373,7 @@ def on_course_double_click(self, event):
 def sort_treeview(self, col):
     """Sort treeview by column"""
     data = [(self.course_tree.set(child, col), child) for child in self.course_tree.get_children('')]
-    
+
     # Determine if we're sorting numbers or text
     try:
         # Try to convert to float for numeric sorting
@@ -381,7 +381,7 @@ def sort_treeview(self, col):
     except Exception:
         # Fall back to string sorting
         data.sort(key=lambda x: x[0].lower())
-    
+
     # Rearrange items in sorted positions
     for ix, item in enumerate(data):
         self.course_tree.move(item[1], '', ix)

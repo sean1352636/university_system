@@ -54,7 +54,7 @@ except ImportError:
     TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
     SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
     ROOM_TYPES = ['Lecture Hall', 'Lab', 'Tutorial Room', 'Seminar Room', 'Workshop Room', 'Computer Lab', 'Other']
-    
+
     # Import the ModuleScheduler class from the document
     try:
         from education_system.university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
@@ -68,7 +68,7 @@ def create_settings_tab(self):
     """Create the settings tab"""
     settings_frame = ttk.Frame(self.notebook)
     self.notebook.add(settings_frame, text=_t("scheduling.tabs.settings"))
-    
+
     # System settings
     system_frame = ttk.LabelFrame(settings_frame, text=_t("scheduling.system_settings"), padding=15)
     system_frame.pack(fill=tk.X, padx=20, pady=10)
@@ -118,25 +118,25 @@ def create_settings_tab(self):
               command=self.add_holiday).pack(side=tk.LEFT, padx=5)
     ttk.Button(holiday_controls, text=_t("scheduling.view_calendar"),
               command=self.view_calendar).pack(side=tk.LEFT, padx=5)
-    
+
     # Holidays list
     holidays_tree_frame = ttk.Frame(holidays_frame)
     holidays_tree_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-    
+
     columns = ("Name", "Start Date", "End Date", "Recurring", "Description")
     self.holidays_tree = ttk.Treeview(holidays_tree_frame, columns=columns, show="headings", height=8)
-    
+
     for col in columns:
         self.holidays_tree.heading(col, text=col)
         if col == "Description":
             self.holidays_tree.column(col, width=200)
         else:
             self.holidays_tree.column(col, width=120)
-    
+
     # Scrollbar for holidays
     holidays_scrollbar = ttk.Scrollbar(holidays_tree_frame, orient=tk.VERTICAL, command=self.holidays_tree.yview)
     self.holidays_tree.configure(yscrollcommand=holidays_scrollbar.set)
-    
+
     self.holidays_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     holidays_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -150,13 +150,13 @@ def load_settings(self):
         self.semester_start_var.set(self.scheduler.get_system_setting('semester_start', ''))
         self.semester_end_var.set(self.scheduler.get_system_setting('semester_end', ''))
         self.session_duration_var.set(self.scheduler.get_system_setting('default_session_duration', '60'))
-        
+
         email_notifications = self.scheduler.get_system_setting('email_notifications', 'False') == 'True'
         self.email_notifications_var.set(email_notifications)
-        
+
         auto_backup = self.scheduler.get_system_setting('auto_backup', 'True') == 'True'
         self.auto_backup_var.set(auto_backup)
-        
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load settings: {str(e)}", parent=self.root)
 
@@ -172,10 +172,10 @@ def save_settings(self):
         self.scheduler.update_system_setting('default_session_duration', self.session_duration_var.get())
         self.scheduler.update_system_setting('email_notifications', str(self.email_notifications_var.get()))
         self.scheduler.update_system_setting('auto_backup', str(self.auto_backup_var.get()))
-        
+
         messagebox.showinfo("Success", "Settings saved successfully!", parent=self.root)
         self.update_activity_log("System settings updated")
-        
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to save settings: {str(e)}", parent=self.root)
 
@@ -245,7 +245,7 @@ def refresh_holidays(self):
         # Clear existing items
         for item in self.holidays_tree.get_children():
             self.holidays_tree.delete(item)
-        
+
         from education_system.university_system.infrastructure.database.db import sqlite3
         with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
             cursor = conn.cursor()
@@ -257,16 +257,16 @@ def refresh_holidays(self):
             ''')
 
             holidays = cursor.fetchall()
-        
+
         for holiday in holidays:
             name, start_date, end_date, recurring, description = holiday
             recurring_str = "Yes" if recurring else "No"
             description = description or ""
-            
+
             self.holidays_tree.insert("", tk.END, values=(
                 name, start_date, end_date, recurring_str, description
             ))
-            
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to refresh holidays: {str(e)}", parent=self.root)
 
@@ -398,24 +398,24 @@ def load_template(self):
     try:
         # First list templates
         self.list_templates()
-        
-        template_name = tk.simpledialog.askstring("Load Template", 
-                                                 "Enter template name to load:", 
+
+        template_name = tk.simpledialog.askstring("Load Template",
+                                                 "Enter template name to load:",
                                                  parent=self.root)
-        
+
         if template_name:
-            clear_existing = messagebox.askyesno("Load Template", 
+            clear_existing = messagebox.askyesno("Load Template",
                                                "Clear existing schedules before loading template?", parent=self.root)
-            
+
             success = self.scheduler.load_schedule_template(template_name, clear_existing)
-            
+
             if success:
                 messagebox.showinfo("Success", f"Template '{template_name}' loaded successfully!", parent=self.root)
                 self.refresh_all_data()
                 self.update_activity_log(f"Loaded template: {template_name}")
             else:
                 messagebox.showerror("Error", "Failed to load template.", parent=self.root)
-        
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load template: {str(e)}", parent=self.root)
 
@@ -426,7 +426,7 @@ def list_templates(self):
     try:
         self.log_text.config(state=tk.NORMAL)
         self.log_text.delete(1.0, tk.END)
-        
+
         from education_system.university_system.infrastructure.database.db import sqlite3
         with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
             cursor = conn.cursor()
@@ -438,7 +438,7 @@ def list_templates(self):
             ''')
 
             templates = cursor.fetchall()
-        
+
         if not templates:
             self.log_text.insert(tk.END, "No schedule templates found.\n")
         else:
@@ -446,18 +446,18 @@ def list_templates(self):
             self.log_text.insert(tk.END, "=" * 80 + "\n")
             self.log_text.insert(tk.END, f"{'Name':<20} {'Description':<30} {'Created':<15} {'By':<10}\n")
             self.log_text.insert(tk.END, "-" * 80 + "\n")
-            
+
             for template in templates:
                 name, desc, created, created_by = template
                 created_date = datetime.fromisoformat(created).strftime("%Y-%m-%d")
                 desc = desc or "N/A"
                 self.log_text.insert(tk.END, f"{name:<20} {desc[:28]:<30} {created_date:<15} {created_by:<10}\n")
-            
+
             self.log_text.insert(tk.END, "=" * 80 + "\n")
-        
+
         self.log_text.config(state=tk.DISABLED)
         self.notebook.select(7)  # Switch to management tab
-        
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to list templates: {str(e)}", parent=self.root)
 

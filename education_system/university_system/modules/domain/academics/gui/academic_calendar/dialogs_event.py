@@ -23,7 +23,7 @@ class AddEventDialog:
 
         self._create_widgets()
         self._center_dialog()
-    
+
     def _create_widgets(self):
         """Create dialog widgets"""
         main_frame = ttk.Frame(self.dialog, padding=20)
@@ -89,7 +89,7 @@ class AddEventDialog:
 
         # Initialize date fields
         self._toggle_date_fields()
-    
+
     def _toggle_date_fields(self):
         """Toggle date fields based on selection"""
         if self.date_type.get() == "single":
@@ -98,14 +98,14 @@ class AddEventDialog:
         else:
             self.single_date_frame.pack_forget()
             self.date_range_frame.pack(fill=tk.X, pady=5)
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
         y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
-    
+
     def _add_event(self):
         """Add the event"""
         try:
@@ -175,7 +175,7 @@ class EditEventDialog:
         self._create_widgets()
         self._load_event_data()
         self._center_dialog()
-    
+
     def _create_widgets(self):
         """Create dialog widgets"""
         # Buttons at the bottom — packed FIRST so they always show
@@ -253,7 +253,7 @@ class EditEventDialog:
         ttk.Label(main_frame, text=_("academic_calendar.labels.description")).pack(anchor=tk.W, pady=(10, 0))
         self.description_text = scrolledtext.ScrolledText(main_frame, height=4, width=50)
         self.description_text.pack(fill=tk.X, pady=(5, 0))
-    
+
     def _load_event_data(self):
         """Load event data into form"""
         self.id_var.set(self.event_data.get('id', ''))
@@ -262,49 +262,49 @@ class EditEventDialog:
         self.date_var.set(self.event_data.get('date', ''))
         self.start_date_var.set(self.event_data.get('date_start', ''))
         self.end_date_var.set(self.event_data.get('date_end', ''))
-        
+
         description = self.event_data.get('description', '')
         if description:
             self.description_text.insert(1.0, description)
-    
+
     def _copy_to_clipboard(self, text):
         """Copy text to clipboard"""
         self.dialog.clipboard_clear()
         self.dialog.clipboard_append(text)
         messagebox.showinfo(_("academic_calendar.messages.copied"), _("academic_calendar.messages.event_id_copied"))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()
         x = (self.dialog.winfo_screenwidth() // 2) - (self.dialog.winfo_width() // 2)
         y = (self.dialog.winfo_screenheight() // 2) - (self.dialog.winfo_height() // 2)
         self.dialog.geometry(f"+{x}+{y}")
-    
+
     def _save_event(self):
         """Save event changes"""
         try:
             updates = {}
-            
+
             # Check what changed
             if self.name_var.get() != self.event_data.get('name', ''):
                 updates['name'] = self.name_var.get().strip()
-            
+
             if self.type_var.get() != self.event_data.get('event_type', ''):
                 updates['event_type'] = self.type_var.get()
-            
+
             if self.date_var.get() != self.event_data.get('date', ''):
                 updates['date'] = self.date_var.get().strip() or None
-            
+
             if self.start_date_var.get() != self.event_data.get('date_start', ''):
                 updates['date_start'] = self.start_date_var.get().strip() or None
-            
+
             if self.end_date_var.get() != self.event_data.get('date_end', ''):
                 updates['date_end'] = self.end_date_var.get().strip() or None
-            
+
             new_description = self.description_text.get(1.0, tk.END).strip()
             if new_description != self.event_data.get('description', ''):
                 updates['description'] = new_description
-            
+
             if not updates:
                 messagebox.showinfo(_("academic_calendar.messages.no_changes"), _("academic_calendar.messages.no_changes_made"))
                 return
@@ -337,7 +337,7 @@ class EventDetailsDialog:
 
         self._create_widgets()
         self._center_dialog()
-    
+
     def _create_widgets(self):
         """Create dialog widgets"""
         main_frame = ttk.Frame(self.dialog, padding=20)
@@ -385,7 +385,7 @@ class EventDetailsDialog:
 
         # Close button
         ttk.Button(main_frame, text=_("common.close"), command=self.dialog.destroy).pack(pady=(20, 0))
-    
+
     def _center_dialog(self):
         """Center dialog on parent"""
         self.dialog.update_idletasks()

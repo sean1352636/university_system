@@ -229,7 +229,7 @@ def analyze_day_of_week_patterns(cursor):
     print(f"{'Day':<10} {'Avg Score':<12} {'Assessments':<12}")
     print("-" * 50)
 
-    day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 
+    day_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday',
                  'Thursday', 'Friday', 'Saturday']
 
     for day_num, avg_score, count in daily_patterns:
@@ -243,7 +243,7 @@ def analyze_academic_term_patterns(cursor):
     # This is a simplified version - in practice, you'd need term/semester information
     cursor.execute('''
     SELECT strftime('%Y', g.submission_date) as year,
-           CASE 
+           CASE
                WHEN strftime('%m', g.submission_date) IN ('01','02','03','04','05') THEN 'Spring'
                WHEN strftime('%m', g.submission_date) IN ('06','07','08') THEN 'Summer'
                ELSE 'Fall'

@@ -26,7 +26,7 @@ def setup_health_permissions(auth):
         'view_health_resources',
         'update_insurance_info'
     ]
-    
+
     # Add permissions to the authentication system
     for permission in health_permissions:
         if hasattr(auth, 'add_permission'):
@@ -46,9 +46,9 @@ def manage_health_records_enhanced(auth):
         print("6. Health Record Templates")
         print("7. Bulk Import Records")
         print("8. Return to Main Menu")
-        
+
         choice = input("\nEnter your choice (1-8): ")
-        
+
         if choice == '1':
             add_health_record(auth)
         elif choice == '2':

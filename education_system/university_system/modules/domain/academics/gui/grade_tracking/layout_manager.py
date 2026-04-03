@@ -69,10 +69,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -123,7 +123,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -139,7 +139,7 @@ def init_basic_database():
             status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -153,7 +153,7 @@ def init_basic_database():
             year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -167,7 +167,7 @@ def init_basic_database():
             UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -187,11 +187,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -201,7 +201,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -216,7 +216,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -229,7 +229,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -248,7 +248,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -353,7 +353,7 @@ class LayoutManager:
         # Create main container
         main_container = ttk.Frame(self.root)
         main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         # Create sidebar frame
         sidebar_frame = ttk.Frame(main_container, width=200)
         sidebar_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
@@ -405,7 +405,7 @@ class LayoutManager:
         # Create content area
         self.content_frame = ttk.Frame(main_container)
         self.content_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
-        
+
         # Current view tracking
         self.current_view = None
 
@@ -489,14 +489,14 @@ class LayoutManager:
         else:
             # Admin and Staff start with student management view
             self.show_student_view()
-        
+
         # Status bar
         self.status_var = tk.StringVar()
         self.status_var.set("Ready")
-        status_bar = tk.Label(self.root, textvariable=self.status_var, 
+        status_bar = tk.Label(self.root, textvariable=self.status_var,
                              relief='sunken', anchor='w', bg='#ecf0f1')
         status_bar.pack(side='bottom', fill='x')
-    
+
 
     def return_to_main_menu(self):
         """Return to the main menu"""
@@ -650,7 +650,7 @@ class LayoutManager:
             return bool(widget.winfo_exists())
         except Exception:
             return False
-    
+
 
     def update_status(self, message):
         """Update status bar message"""
@@ -658,4 +658,4 @@ class LayoutManager:
             self.status_var.set(message)
             if hasattr(self, 'root'):
                 self.root.update_idletasks()
-    
+

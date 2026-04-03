@@ -128,11 +128,11 @@ def create_course_details_tab(self):
     # Details display frame
     self.details_frame = ttk.LabelFrame(details_frame, text=_("course_management.labels.course_information"), padding=10)
     self.details_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-    
+
     # Create scrolled text for details
     self.details_text = ScrolledText(self.details_frame, wrap=tk.WORD, height=20)
     self.details_text.pack(fill=tk.BOTH, expand=True)
-    
+
     # Load course options
     self.load_course_selector_options()
 
@@ -158,7 +158,7 @@ def show_course_details(self, course_id):
 
             self.details_text.delete(1.0, tk.END)
             self.details_text.insert(1.0, details)
-        
+
     except sqlite3.Error as e:
         messagebox.showerror(_("common.database_error"), f"Failed to load course details: {e}")
 
@@ -168,7 +168,7 @@ def show_course_details(self, event):
     if selection:
         values = self.results_tree.item(selection[0])['values']
         course_code = values[0]
-        
+
         # Find course ID and show details
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
@@ -313,37 +313,37 @@ def view_course_details(self, cursor, course_id):
     """Enhanced course details viewer"""
     cursor.execute("SELECT * FROM courses WHERE id = ?", (course_id,))
     course = cursor.fetchone()
-    
+
     if not course:
         messagebox.showerror(_("common.error"), "Course not found")
         return
-    
+
     # Create details window
     details_window = tk.Toplevel(self.root)
     details_window.title(f"Course Details: {course[1]}")
     details_window.geometry("600x700")
     details_window.transient(self.root)
-    
+
     # Create notebook for different views
     notebook = ttk.Notebook(details_window)
     notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-    
+
     # Basic Info Tab
     basic_frame = ttk.Frame(notebook)
     notebook.add(basic_frame, text="Basic Info")
-    
+
     basic_text = ScrolledText(basic_frame, wrap=tk.WORD)
     basic_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
     basic_text.insert(tk.END, self.format_course_details(course))
     basic_text.config(state=tk.DISABLED)
-    
+
     # Prerequisites Tab
     prereq_frame = ttk.Frame(notebook)
     notebook.add(prereq_frame, text="Prerequisites")
-    
+
     prereq_text = ScrolledText(prereq_frame, wrap=tk.WORD)
     prereq_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-    
+
     # Load prerequisites
     cursor.execute("""
     SELECT c.course_code, c.course_name, cp.is_required
@@ -352,7 +352,7 @@ def view_course_details(self, cursor, course_id):
     WHERE cp.course_id = ?
     ORDER BY c.course_code
     """, (course_id,))
-    
+
     prereqs = cursor.fetchall()
     if prereqs:
         prereq_text.insert(tk.END, "PREREQUISITES:\n\n")
@@ -361,16 +361,16 @@ def view_course_details(self, cursor, course_id):
             prereq_text.insert(tk.END, f"• {code} - {name} ({req_type})\n")
     else:
         prereq_text.insert(tk.END, "No prerequisites for this course.")
-    
+
     prereq_text.config(state=tk.DISABLED)
-    
+
     # Schedule Tab
     schedule_frame = ttk.Frame(notebook)
     notebook.add(schedule_frame, text="Schedule")
-    
+
     schedule_text = ScrolledText(schedule_frame, wrap=tk.WORD)
     schedule_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-    
+
     # Load schedule
     cursor.execute("""
     SELECT cs.semester, cs.year, cs.start_time, cs.end_time, cs.days_of_week, cs.classroom,
@@ -380,7 +380,7 @@ def view_course_details(self, cursor, course_id):
     WHERE cs.course_id = ?
     ORDER BY cs.year DESC, cs.semester
     """, (course_id,))
-    
+
     schedules = cursor.fetchall()
     if schedules:
         schedule_text.insert(tk.END, "COURSE SCHEDULES:\n\n")
@@ -396,8 +396,8 @@ def view_course_details(self, cursor, course_id):
             schedule_text.insert(tk.END, f"Instructor: {instructor}\n\n")
     else:
         schedule_text.insert(tk.END, "No schedule information available.")
-    
+
     schedule_text.config(state=tk.DISABLED)
-    
+
     # Close button
     ttk.Button(details_window, text="Close", command=details_window.destroy).pack(pady=10)

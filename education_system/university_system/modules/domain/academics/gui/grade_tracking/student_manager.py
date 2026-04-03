@@ -90,10 +90,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -144,7 +144,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -160,7 +160,7 @@ def init_basic_database():
         status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -174,7 +174,7 @@ def init_basic_database():
         year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -188,7 +188,7 @@ def init_basic_database():
         UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -208,11 +208,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -222,7 +222,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -237,7 +237,7 @@ def init_enhanced_grades_db():
         FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -250,7 +250,7 @@ def init_enhanced_grades_db():
         FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -269,7 +269,7 @@ def init_enhanced_grades_db():
         FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -465,55 +465,55 @@ class StudentManager:
                   command=self.export_students).pack(side='left', padx=5)
         ttk.Button(control_frame, text="Refresh",
                   command=self.refresh_students).pack(side='left', padx=5)
-            
+
         # Search frame
         search_frame = ttk.Frame(self.content_frame)
         search_frame.pack(fill='x', padx=10, pady=5)
-            
+
         ttk.Label(search_frame, text="Search:").pack(side='left', padx=5)
         self.student_search_var = tk.StringVar()
         search_entry = ttk.Entry(search_frame, textvariable=self.student_search_var, width=30)
         search_entry.pack(side='left', padx=5)
         search_entry.bind('<KeyRelease>', self.search_students)
-            
+
         # Filter frame
         filter_frame = ttk.Frame(self.content_frame)
         filter_frame.pack(fill='x', padx=10, pady=5)
-            
+
         ttk.Label(filter_frame, text="Filter by Course:").pack(side='left', padx=5)
         self.course_filter_var = tk.StringVar()
-        self.course_filter_combo = ttk.Combobox(filter_frame, textvariable=self.course_filter_var, 
+        self.course_filter_combo = ttk.Combobox(filter_frame, textvariable=self.course_filter_var,
                                                width=20, state='readonly')
         self.course_filter_combo.pack(side='left', padx=5)
         self.course_filter_combo.bind('<<ComboboxSelected>>', self.filter_students)
-            
+
         # Student list
         list_frame = ttk.Frame(self.content_frame)
         list_frame.pack(fill='both', expand=True, padx=10, pady=5)
-            
+
         # Treeview for students
         columns = ('ID', 'Name', 'Email', 'Course', 'Registration Date')
         self.student_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=20)
-            
+
         for col in columns:
             self.student_tree.heading(col, text=col)
             self.student_tree.column(col, width=120, anchor='center')
-            
+
         # Scrollbars
         v_scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.student_tree.yview)
         h_scrollbar = ttk.Scrollbar(list_frame, orient='horizontal', command=self.student_tree.xview)
         self.student_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-            
+
         self.student_tree.pack(side='left', fill='both', expand=True)
         v_scrollbar.pack(side='right', fill='y')
         h_scrollbar.pack(side='bottom', fill='x')
-    
+
         # Load students data
         self.refresh_students()
-    
+
         # Populate filter combos now that they exist
         self.populate_filter_combos()
-    
+
 
     def show_student_management_message(self):
         """Display message directing users to main GUI for student management"""
@@ -526,32 +526,32 @@ class StudentManager:
             "• Delete student records\n\n"
             "This ensures consistent student data across all modules."
         )
-    
+
 
     def add_student_dialog(self):
         """Redirect to main GUI student management"""
         self.show_student_management_message()
-        
+
 
     def edit_student_dialog(self):
         """Redirect to main GUI student management"""
         self.show_student_management_message()
-    
+
 
     def update_student_dialog(self, student_id):
         """Redirect to main GUI student management"""
         self.show_student_management_message()
-        
+
 
     def delete_student(self):
         """Redirect to main GUI student management"""
         self.show_student_management_message()
-    
+
 
     def delete_student_dialog(self, student_id=None):
         """Redirect to main GUI student management"""
         self.show_student_management_message()
-        
+
 
     def import_students(self):
         """Import students from CSV file"""
@@ -634,7 +634,7 @@ class StudentManager:
 
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to import students: {e}")
-        
+
 
     def export_students(self):
         """Export students to CSV file"""
@@ -673,7 +673,7 @@ class StudentManager:
 
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to export students: {e}")
-        
+
 
     def refresh_students(self):
         """Refresh student list display"""
@@ -700,11 +700,11 @@ class StudentManager:
             ''')
 
             students = cursor.fetchall()
-    
+
             # Insert into treeview with formatted data
             for student in students:
                 student_id, first_name, middle_name, last_name, course, email, reg_date = student
-    
+
                 # Combine names into single field
                 full_name = f"{first_name or ''}"
                 if middle_name:
@@ -712,7 +712,7 @@ class StudentManager:
                 if last_name:
                     full_name += f" {last_name}"
                 full_name = full_name.strip()
-    
+
                 # Format data for new column structure: ('ID', 'Name', 'Email', 'Course', 'Registration Date')
                 formatted_data = (
                     student_id,
@@ -721,14 +721,14 @@ class StudentManager:
                     course or '',
                     reg_date or ''
                 )
-    
+
                 self.student_tree.insert('', 'end', values=formatted_data)
-                
+
             self.update_status(f"Loaded {len(students)} students")
-                
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to refresh students: {e}")
-        
+
 
     def search_students(self, event):
         """Search students based on text input"""
@@ -766,7 +766,7 @@ class StudentManager:
 
         except Exception as e:
             print(f"Error searching students: {e}")
-    
+
 
     def generate_individual_transcript(self):
         """Generate individual student transcript"""
@@ -779,7 +779,7 @@ class StudentManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate transcript: {e}")
-    
+
 
     def generate_student_progress_report(self):
         """Generate student progress report"""
@@ -787,9 +787,9 @@ class StudentManager:
         try:
             conn = get_connection()
             cursor = conn.cursor()
-    
+
             cursor.execute('''
-            SELECT 
+            SELECT
                 s.student_id,
                 s.first_name,
                 s.last_name,
@@ -797,9 +797,9 @@ class StudentManager:
                 COUNT(DISTINCT a.module_code) AS module_count,
                 COUNT(g.grade_id) AS grade_count,
                 AVG(
-                    CASE 
-                        WHEN a.max_points IS NOT NULL AND a.max_points > 0 
-                        THEN (g.score / a.max_points) * 100 
+                    CASE
+                        WHEN a.max_points IS NOT NULL AND a.max_points > 0
+                        THEN (g.score / a.max_points) * 100
                     END
                 ) AS avg_percentage,
                 SUM(CASE WHEN g.letter_grade = 'F' THEN 1 ELSE 0 END) AS fail_count
@@ -810,7 +810,7 @@ class StudentManager:
             ORDER BY s.last_name, s.first_name
             ''')
             rows = cursor.fetchall()
-    
+
             cursor.execute('''
             SELECT student_id, AVG(
                 CASE final_grade
@@ -826,7 +826,7 @@ class StudentManager:
             GROUP BY student_id
             ''')
             gpa_map = {row[0]: row[1] for row in cursor.fetchall()}
-    
+
             progress_records = []
             for row in rows:
                 student_id, first_name, last_name, course, modules, grades_count, avg_percent, fail_count = row
@@ -841,38 +841,38 @@ class StudentManager:
                     "failures": fail_count or 0,
                     "gpa": gpa_map.get(student_id)
                 })
-    
+
             total_students = len(progress_records)
             graded_students = sum(1 for r in progress_records if r["grades"] > 0)
             avg_scores = [r["avg_percent"] for r in progress_records if r["avg_percent"] is not None]
             avg_gpas = [r["gpa"] for r in progress_records if r["gpa"] is not None]
             low_participation = sum(1 for r in progress_records if r["grades"] < 3)
-    
+
             overall_avg = sum(avg_scores) / len(avg_scores) if avg_scores else None
             overall_gpa = sum(avg_gpas) / len(avg_gpas) if avg_gpas else None
-    
+
             high_performers = [
                 r for r in progress_records
                 if (r["avg_percent"] is not None and r["avg_percent"] >= 85) or
                    (r["gpa"] is not None and r["gpa"] >= 3.5)
             ]
-    
+
             support_candidates = [
                 r for r in progress_records
                 if r["failures"] >= 2 or (r["avg_percent"] is not None and r["avg_percent"] < 60)
             ]
-    
+
             top_students = sorted(
                 progress_records,
                 key=lambda r: ((r["avg_percent"] or 0), (r["gpa"] or 0)),
                 reverse=True
             )[:5]
-    
+
             support_priority = sorted(
                 support_candidates,
                 key=lambda r: (-r["failures"], r["avg_percent"] if r["avg_percent"] is not None else 101)
             )[:5]
-    
+
             course_summary = {}
             for record in progress_records:
                 course = record["course"]
@@ -881,7 +881,7 @@ class StudentManager:
                 if record["avg_percent"] is not None:
                     summary["scores"].append(record["avg_percent"])
                 summary["fails"] += record["failures"]
-    
+
             course_lines = []
             for course, data in sorted(
                 course_summary.items(),
@@ -897,7 +897,7 @@ class StudentManager:
                     if avg_course_score is not None else
                     f"{course}: {data['count']} students, Avg Score: N/A"
                 )
-    
+
             summary_lines = [
                 f"Total Students: {total_students}",
                 f"Students With Recorded Grades: {graded_students}",
@@ -908,7 +908,7 @@ class StudentManager:
                 f"High-Performing Students (≥85% or GPA ≥3.5): {len(high_performers)}",
                 f"Students Requiring Support: {len(support_candidates)}"
             ]
-    
+
             top_lines = [
                 f"{idx + 1}. {record['name']} ({record['course']}) - "
                 f"Avg Score: {record['avg_percent']:.1f}%"
@@ -916,14 +916,14 @@ class StudentManager:
                 f"{idx + 1}. {record['name']} ({record['course']}) - Avg Score: N/A"
                 for idx, record in enumerate(top_students)
             ]
-    
+
             if top_lines:
                 for idx, record in enumerate(top_students):
                     if record["gpa"] is not None:
                         top_lines[idx] += f", GPA: {record['gpa']:.2f}"
                     else:
                         top_lines[idx] += ", GPA: N/A"
-    
+
             support_lines = [
                 f"{idx + 1}. {record['name']} ({record['course']}) - "
                 f"Fails: {record['failures']}, "
@@ -932,21 +932,21 @@ class StudentManager:
                 f"{idx + 1}. {record['name']} ({record['course']}) - Fails: {record['failures']}, Avg Score: N/A"
                 for idx, record in enumerate(support_priority)
             ]
-    
+
             sections = [
                 ("Progress Overview", summary_lines),
                 ("Top Performing Students", top_lines),
                 ("Courses Snapshot", course_lines),
                 ("Support Priorities", support_lines)
             ]
-    
+
             footer = (
                 "Tip: Track students appearing in Support Priorities for targeted interventions "
                 "and encourage low-activity students to engage with upcoming assessments."
             )
-    
+
             self._display_report("Student Progress Report", sections, footer)
-    
+
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to generate student progress report: {e}")
         except Exception as e:
@@ -954,7 +954,7 @@ class StudentManager:
         finally:
             if conn:
                 conn.close()
-    
+
 
     def generate_competency_profile(self):
         """Generate competency profile"""
@@ -962,16 +962,16 @@ class StudentManager:
         try:
             conn = get_connection()
             cursor = conn.cursor()
-    
+
             cursor.execute('SELECT COUNT(*) FROM competencies')
             total_competencies = cursor.fetchone()[0]
-    
+
             cursor.execute('SELECT COUNT(DISTINCT student_id) FROM student_competencies')
             students_tracked = cursor.fetchone()[0]
-    
+
             cursor.execute('SELECT COUNT(*) FROM student_competencies')
             total_records = cursor.fetchone()[0]
-    
+
             cursor.execute('''
             SELECT c.competency_id, c.name, COALESCE(c.category, 'Uncategorized') AS category,
                    COUNT(sc.id) AS evidence_count,
@@ -982,7 +982,7 @@ class StudentManager:
             GROUP BY c.competency_id, c.name, c.category
             ''')
             competency_rows = cursor.fetchall()
-    
+
             cursor.execute('''
             SELECT COALESCE(c.category, 'Uncategorized') AS category,
                    COUNT(DISTINCT c.competency_id) AS competency_count,
@@ -993,7 +993,7 @@ class StudentManager:
             ORDER BY competency_count DESC
             ''')
             category_rows = cursor.fetchall()
-    
+
             cursor.execute('''
             SELECT s.course,
                    COUNT(DISTINCT sc.student_id) AS students,
@@ -1005,19 +1005,19 @@ class StudentManager:
             ORDER BY avg_level DESC
             ''')
             course_rows = cursor.fetchall()
-    
+
             summary_lines = [
                 f"Total Competencies Defined: {total_competencies}",
                 f"Students With Competency Evidence: {students_tracked}",
                 f"Total Competency Records: {total_records}",
             ]
-    
+
             avg_levels = [row[4] for row in competency_rows if row[4] is not None]
             if avg_levels:
                 summary_lines.append(f"Average Achievement Level: {sum(avg_levels) / len(avg_levels):.2f}")
             else:
                 summary_lines.append("Average Achievement Level: N/A")
-    
+
             top_competencies = [
                 row for row in competency_rows if row[3] and row[4] is not None
             ]
@@ -1026,12 +1026,12 @@ class StudentManager:
                 key=lambda r: (r[4], r[3]),
                 reverse=True
             )[:5]
-    
+
             top_lines = [
                 f"{idx + 1}. {row[1]} ({row[2]}) - Avg Level: {row[4]:.2f} across {row[3]} records"
                 for idx, row in enumerate(top_competencies)
             ]
-    
+
             development_targets = [
                 row for row in competency_rows
                 if row[3] and row[4] is not None and row[4] < 2.5
@@ -1040,24 +1040,24 @@ class StudentManager:
                 development_targets,
                 key=lambda r: (r[4], -r[3])
             )[:5]
-    
+
             development_lines = [
                 f"{idx + 1}. {row[1]} ({row[2]}) - Avg Level: {row[4]:.2f}, Evidence: {row[3]}"
                 for idx, row in enumerate(development_targets)
             ]
-    
+
             category_lines = [
                 f"{row[0]}: {row[1]} competencies, {row[2]} evidence records"
                 for row in category_rows
             ]
-    
+
             course_lines = [
                 f"{row[0]}: {row[1]} students, Avg Level: {row[2]:.2f}"
                 if row[2] is not None else
                 f"{row[0]}: {row[1]} students, Avg Level: N/A"
                 for row in course_rows
             ]
-    
+
             sections = [
                 ("Competency Overview", summary_lines),
                 ("Category Distribution", category_lines),
@@ -1065,14 +1065,14 @@ class StudentManager:
                 ("Development Priorities", development_lines),
                 ("Courses With Strong Competency Evidence", course_lines)
             ]
-    
+
             footer = (
                 "Use the development priorities list to coordinate targeted competency-building activities "
                 "and ensure evidence is captured consistently across courses."
             )
-    
+
             self._display_report("Competency Profile Summary", sections, footer)
-    
+
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to generate competency profile: {e}")
         except Exception as e:
@@ -1080,7 +1080,7 @@ class StudentManager:
         finally:
             if conn:
                 conn.close()
-    
+
 
     def generate_at_risk_report(self):
         """Generate at-risk students report"""
@@ -1088,7 +1088,7 @@ class StudentManager:
         try:
             conn = get_connection()
             cursor = conn.cursor()
-    
+
             cursor.execute('''
             SELECT ra.student_id, ra.id
             FROM student_risk_assessment ra
@@ -1099,7 +1099,7 @@ class StudentManager:
             ) latest ON ra.id = latest.max_id
             ''')
             latest_ids = [row[1] for row in cursor.fetchall()]
-    
+
             if not latest_ids:
                 self._display_report(
                     "At-Risk Student Report",
@@ -1107,7 +1107,7 @@ class StudentManager:
                     None
                 )
                 return
-    
+
             placeholders = ",".join("?" for _ in latest_ids)
             cursor.execute('''
             SELECT s.student_id,
@@ -1122,7 +1122,7 @@ class StudentManager:
             ORDER BY ra.risk_score DESC
             ''', latest_ids)
             risk_rows = cursor.fetchall()
-    
+
             cursor.execute('''
             SELECT student_id, COUNT(*) AS fail_count
             FROM grades
@@ -1130,7 +1130,7 @@ class StudentManager:
             GROUP BY student_id
             ''')
             fail_map = {row[0]: row[1] for row in cursor.fetchall()}
-    
+
             cursor.execute('''
             SELECT student_id, AVG(
                 CASE final_grade
@@ -1146,22 +1146,22 @@ class StudentManager:
             GROUP BY student_id
             ''')
             gpa_map = {row[0]: row[1] for row in cursor.fetchall()}
-    
+
             level_counts = {"High": 0, "Medium": 0, "Low": 0, "Unknown": 0}
             risk_scores = []
             high_risk_lines = []
             monitor_lines = []
-    
+
             for idx, row in enumerate(risk_rows):
                 student_id, name, course, risk_score, risk_level, assessed_on = row
                 risk_scores.append(risk_score)
-    
+
                 level = risk_level or "Unknown"
                 level_counts[level] = level_counts.get(level, 0) + 1
-    
+
                 fail_count = fail_map.get(student_id, 0)
                 gpa = gpa_map.get(student_id)
-    
+
                 line = (
                     f"{idx + 1}. {name} ({course}) - Risk Score: {risk_score:.2f} "
                     f"[{level}], Fails: {fail_count}, "
@@ -1170,14 +1170,14 @@ class StudentManager:
                     f"{idx + 1}. {name} ({course}) - Risk Score: {risk_score:.2f} "
                     f"[{level}], Fails: {fail_count}, GPA: N/A | Assessed: {assessed_on}"
                 )
-    
+
                 if level == "High":
                     high_risk_lines.append(line)
                 else:
                     monitor_lines.append(line)
-    
+
             cursor.execute('''
-            SELECT 
+            SELECT
                 substr(COALESCE(assessment_date, ''), 1, 7) AS period,
                 COUNT(*) AS assessments,
                 AVG(risk_score) AS avg_score
@@ -1188,14 +1188,14 @@ class StudentManager:
             LIMIT 6
             ''')
             trend_rows = cursor.fetchall()
-    
+
             trend_lines = [
                 f"{row[0]}: {row[1]} assessments, Avg Risk Score: {row[2]:.2f}"
                 for row in trend_rows
             ]
-    
+
             average_risk = sum(risk_scores) / len(risk_scores) if risk_scores else None
-    
+
             summary_lines = [
                 f"Students With Current Risk Assessments: {len(risk_rows)}",
                 f"High Risk: {level_counts.get('High', 0)}",
@@ -1203,21 +1203,21 @@ class StudentManager:
                 f"Low Risk: {level_counts.get('Low', 0)}",
                 f"Average Risk Score: {average_risk:.2f}" if average_risk is not None else "Average Risk Score: N/A"
             ]
-    
+
             sections = [
                 ("Risk Overview", summary_lines),
                 ("High Risk Students", high_risk_lines[:10]),
                 ("Students To Monitor", monitor_lines[:10]),
                 ("Recent Risk Trend (Last 6 Periods)", trend_lines)
             ]
-    
+
             footer = (
                 "Prioritize outreach for high risk students and monitor trend changes to evaluate "
                 "the effectiveness of support interventions."
             )
-    
+
             self._display_report("At-Risk Student Report", sections, footer)
-    
+
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Failed to generate at-risk report: {e}")
         except Exception as e:
@@ -1225,7 +1225,7 @@ class StudentManager:
         finally:
             if conn:
                 conn.close()
-    
+
 
     def load_students_for_reports(self, combo):
         """Load students for report generation"""
@@ -1233,31 +1233,31 @@ class StudentManager:
         try:
             conn = get_connection()
             cursor = conn.cursor()
-    
+
             cursor.execute('''
             SELECT student_id, first_name, last_name, course
             FROM students
             ORDER BY last_name, first_name
             ''')
-    
+
             students = cursor.fetchall()
             student_list = [f"{s[0]} - {s[1]} {s[2]} ({s[3]})" for s in students]
             combo['values'] = student_list
-    
+
         except sqlite3.Error as e:
             if conn:
                 conn.rollback()
             print(f"Database error loading students: {e}")
-    
+
         except Exception as e:
             if conn:
                 conn.rollback()
             print(f"Error loading students: {e}")
-    
+
         finally:
             if conn:
                 conn.close()
-        
+
 
     def generate_performance_dashboard(self):
         """Generate a comprehensive performance dashboard"""
@@ -1267,36 +1267,36 @@ class StudentManager:
             dashboard_window.title("Performance Dashboard")
             dashboard_window.geometry("1200x800")
             safe_grab_set(dashboard_window)
-                
+
             # Title
-            ttk.Label(dashboard_window, text="Performance Dashboard", 
+            ttk.Label(dashboard_window, text="Performance Dashboard",
                      font=('Arial', 16, 'bold')).pack(pady=10)
-                
+
             # Dashboard content
             dashboard_text = scrolledtext.ScrolledText(dashboard_window, height=30, width=100)
             dashboard_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-                
+
             # Generate dashboard content
             conn = get_connection()
             cursor = conn.cursor()
-                
+
             dashboard_content = "PERFORMANCE DASHBOARD\n" + "="*50 + "\n\n"
-                
+
             # Overall statistics
             cursor.execute('SELECT COUNT(*) FROM students')
             total_students = cursor.fetchone()[0]
-                
+
             cursor.execute('SELECT COUNT(*) FROM grades')
             total_grades = cursor.fetchone()[0]
-                
+
             cursor.execute('SELECT COUNT(*) FROM assessments')
             total_assessments = cursor.fetchone()[0]
-                
+
             dashboard_content += f"OVERVIEW:\n"
             dashboard_content += f"Total Students: {total_students}\n"
             dashboard_content += f"Total Assessments: {total_assessments}\n"
             dashboard_content += f"Total Grades Recorded: {total_grades}\n\n"
-                
+
             # Grade distribution
             cursor.execute('''
             SELECT letter_grade, COUNT(*) as count
@@ -1304,19 +1304,19 @@ class StudentManager:
             GROUP BY letter_grade
             ORDER BY letter_grade
             ''')
-                
+
             grade_dist = cursor.fetchall()
             dashboard_content += "GRADE DISTRIBUTION:\n"
             for grade, count in grade_dist:
                 percentage = (count / total_grades) * 100 if total_grades > 0 else 0
                 dashboard_content += f"{grade}: {count} ({percentage:.1f}%)\n"
-                
+
             dashboard_text.insert(1.0, dashboard_content)
             conn.close()
-                
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate dashboard: {e}")
-    
+
 
     def show_grade_trends_chart(self):
         """Show grade trends chart"""
@@ -1326,21 +1326,21 @@ class StudentManager:
             trends_window.title("Grade Trends Chart")
             trends_window.geometry("800x600")
             safe_grab_set(trends_window)
-                
-            ttk.Label(trends_window, text="Grade Trends Chart", 
+
+            ttk.Label(trends_window, text="Grade Trends Chart",
                      font=('Arial', 16, 'bold')).pack(pady=10)
-                
+
             # Chart placeholder
             chart_frame = ttk.Frame(trends_window)
             chart_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-                
+
             ttk.Label(chart_frame, text="Grade trends visualization would appear here.\n"
                                       "This feature requires matplotlib integration.",
                      font=('Arial', 12)).pack(expand=True)
-                
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to show trends chart: {e}")
-    
+
 
     def student_progress_charts(self):
         """Show student progress charts"""
@@ -1350,18 +1350,18 @@ class StudentManager:
             progress_window.title("Student Progress Charts")
             progress_window.geometry("800x600")
             safe_grab_set(progress_window)
-                
-            ttk.Label(progress_window, text="Student Progress Charts", 
+
+            ttk.Label(progress_window, text="Student Progress Charts",
                      font=('Arial', 16, 'bold')).pack(pady=10)
-                
+
             # Chart placeholder
             chart_frame = ttk.Frame(progress_window)
             chart_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-                
+
             ttk.Label(chart_frame, text="Student progress charts would appear here.\n"
                                       "This feature requires matplotlib integration.",
                      font=('Arial', 12)).pack(expand=True)
-                
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to show progress charts: {e}")
-    
+

@@ -17,7 +17,7 @@ from education_system.university_system.infrastructure.exceptions import (
     InvalidInputError,
     DatabaseError,
 )
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 logger = logging.getLogger(__name__)
 

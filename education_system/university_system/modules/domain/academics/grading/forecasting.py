@@ -29,7 +29,7 @@ def export_batch_predictions(predictions, prediction_type):
         writer = csv.writer(csvfile)
 
         if prediction_type == "next_assessment_predictions":
-            writer.writerow(['Student ID', 'Name', 'Course', 'Predicted Score (%)', 
+            writer.writerow(['Student ID', 'Name', 'Course', 'Predicted Score (%)',
                            'Predicted Grade', 'Confidence'])
 
             for pred in predictions:
@@ -396,7 +396,7 @@ def create_dashboard_visualizations(dashboard_data):
         counts = list(grade_dist.values())
 
         # Sort grades properly
-        sorted_items = sorted(zip(grades, counts), 
+        sorted_items = sorted(zip(grades, counts),
                             key=lambda x: letter_to_gpa(x[0]), reverse=True)
         grades, counts = zip(*sorted_items)
 
@@ -474,7 +474,7 @@ def create_dashboard_visualizations(dashboard_data):
     overview = dashboard_data['overview']
 
     categories = ['Students', 'Modules', 'Assessments', 'Grades']
-    values = [overview['total_students'], overview['total_modules'], 
+    values = [overview['total_students'], overview['total_modules'],
               overview['total_assessments'], overview['total_grades']]
 
     bars = ax6.bar(categories, values, color=['skyblue', 'lightcoral', 'lightgreen', 'gold'])
@@ -515,7 +515,7 @@ def create_dashboard_visualizations(dashboard_data):
 
     # 8. Grade Trends (bottom center) - placeholder for future enhancement
     ax8 = plt.subplot(3, 3, 8)
-    ax8.text(0.5, 0.5, 'Grade Trends\n(Placeholder)', ha='center', va='center', 
+    ax8.text(0.5, 0.5, 'Grade Trends\n(Placeholder)', ha='center', va='center',
              transform=ax8.transAxes, fontsize=12)
     ax8.set_title('Grade Trends Over Time')
 
@@ -582,8 +582,8 @@ def generate_dashboard_report(dashboard_data):
 
     overview = dashboard_data['overview']
     summary_text = f"""
-    This report provides a comprehensive overview of academic performance across {overview['total_students']} students, 
-    {overview['total_modules']} modules, and {overview['total_assessments']} assessments. 
+    This report provides a comprehensive overview of academic performance across {overview['total_students']} students,
+    {overview['total_modules']} modules, and {overview['total_assessments']} assessments.
     A total of {overview['total_grades']} grades have been recorded in the system.
     """
 
@@ -659,9 +659,9 @@ def generate_dashboard_report(dashboard_data):
     elements.append(Paragraph("Risk Assessment Summary", styles['Heading2']))
 
     risk_summary = f"""
-    Current risk assessment indicates {risk_stats['at_risk_students']} students requiring attention 
-    ({risk_stats['at_risk_percentage']:.1f}% of total student population). Of these, 
-    {risk_stats['high_risk_students']} students are classified as high-risk and require 
+    Current risk assessment indicates {risk_stats['at_risk_students']} students requiring attention
+    ({risk_stats['at_risk_percentage']:.1f}% of total student population). Of these,
+    {risk_stats['high_risk_students']} students are classified as high-risk and require
     immediate intervention.
     """
 
@@ -812,7 +812,7 @@ def export_comparison_data(comparison_data, comparison_type):
     with open(filename, 'w', newline='') as csvfile:
         if comparison_type == "course_comparison":
             writer = csv.writer(csvfile)
-            writer.writerow(['Course', 'Student Count', 'Avg GPA', 'Avg Score (%)', 
+            writer.writerow(['Course', 'Student Count', 'Avg GPA', 'Avg Score (%)',
                            'Passing Rate (%)', 'Excellence Rate (%)', 'Std Deviation', 'Performance Level'])
 
             for data in comparison_data:

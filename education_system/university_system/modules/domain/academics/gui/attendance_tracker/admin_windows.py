@@ -18,7 +18,7 @@ import csv
 import re
 import shutil
 from collections import deque
-from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier
+from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier  # nosec B608
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n

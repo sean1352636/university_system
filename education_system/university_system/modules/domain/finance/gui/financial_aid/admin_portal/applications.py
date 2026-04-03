@@ -20,11 +20,7 @@ class ApplicationsMixin:
 
     def show_aid_applications(self):
         """Show financial aid applications for review"""
-        # Ensure we have a valid parent frame/window
-        parent = self._ensure_valid_parent()
-        self.parent_frame = parent
-
-        clear_frame(self.parent_frame)
+        self._prepare_view_parent()
 
         # Title
         title_frame = ttk.Frame(self.parent_frame)

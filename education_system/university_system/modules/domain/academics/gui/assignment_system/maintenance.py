@@ -59,44 +59,44 @@ class MaintenanceManager:
         """System maintenance interface"""
         if not self._check_permission('manage_assignments'):
             return
-        
+
         self.gui.layout.clear_content_area()
-        
+
         title = ttk.Label(self.gui.layout.content_area, text="System Maintenance", style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
-        
+
         # Maintenance options
         maintenance_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Maintenance Options", padding=20)
         maintenance_frame.pack(fill='x', pady=(0, 20))
-        
+
         # Database maintenance
         db_frame = ttk.LabelFrame(maintenance_frame, text="Database Maintenance", padding=10)
         db_frame.pack(fill='x', pady=(0, 10))
-        
+
         ttk.Button(db_frame, text="Optimize Database", command=self.optimize_database).pack(side='left', padx=(0, 10))
         ttk.Button(db_frame, text="Check Database Integrity", command=self.check_db_integrity).pack(side='left', padx=(0, 10))
         ttk.Button(db_frame, text="View Database Stats", command=self.show_db_stats).pack(side='left')
-        
+
         # File maintenance
         file_frame = ttk.LabelFrame(maintenance_frame, text="File System Maintenance", padding=10)
         file_frame.pack(fill='x', pady=(0, 10))
-        
+
         ttk.Button(file_frame, text="Clean Temporary Files", command=self.clean_temp_files).pack(side='left', padx=(0, 10))
         ttk.Button(file_frame, text="Verify File Integrity", command=self.verify_file_integrity).pack(side='left', padx=(0, 10))
         ttk.Button(file_frame, text="Archive Old Files", command=self.archive_old_files).pack(side='left')
-        
+
         # System monitoring
         monitor_frame = ttk.LabelFrame(maintenance_frame, text="System Monitoring", padding=10)
         monitor_frame.pack(fill='x')
-        
+
         ttk.Button(monitor_frame, text="View System Logs", command=self.view_system_logs).pack(side='left', padx=(0, 10))
         ttk.Button(monitor_frame, text="Check Disk Usage", command=self.check_disk_usage).pack(side='left', padx=(0, 10))
         ttk.Button(monitor_frame, text="Generate Health Report", command=self.generate_health_report).pack(side='left')
-        
+
         # Status display
         self.maintenance_status_frame = ttk.Frame(self.gui.layout.content_area)
         self.maintenance_status_frame.pack(fill='both', expand=True, pady=(20, 0))
-    
+
 
     def optimize_database(self):
         """Optimize database performance"""
@@ -116,67 +116,67 @@ class MaintenanceManager:
 
         except Exception as e:
             self.show_maintenance_status(f"Database optimization failed: {e}", "error")
-    
+
 
     def check_db_integrity(self):
         """Check database integrity"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             cursor.execute('PRAGMA integrity_check')
             result = cursor.fetchone()
-            
+
             conn.close()
-            
+
             if result[0] == 'ok':
                 self.show_maintenance_status("Database integrity check passed", "success")
             else:
                 self.show_maintenance_status(f"Database integrity issues found: {result[0]}", "error")
-                
+
         except Exception as e:
             self.show_maintenance_status(f"Integrity check failed: {e}", "error")
-    
+
 
     def show_db_stats(self):
         """Show database statistics"""
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
-            
+
             # Get table sizes
             tables = ['assignments', 'assignment_submissions', 'students', 'users', 'modules']
             stats = []
-            
+
             for table in tables:
                 safe_table = validate_table_name(table)
                 cursor.execute('SELECT COUNT(*) FROM [' + safe_table + ']')
                 count = cursor.fetchone()[0]
                 stats.append(f"{table}: {count} records")
-            
+
             # Get database size
             import os
             db_size = os.path.getsize(str(DEFAULT_DB_PATH))
             stats.append(f"Database size: {db_size / (1024*1024):.2f} MB")
-            
+
             conn.close()
-            
+
             stats_text = "\n".join(stats)
             self.show_maintenance_status(f"Database Statistics:\n{stats_text}", "info")
-            
+
         except Exception as e:
             self.show_maintenance_status(f"Failed to get database stats: {e}", "error")
-    
+
 
     def clean_temp_files(self):
         """Clean temporary files"""
         try:
             import tempfile
             import glob
-            
+
             temp_dir = tempfile.gettempdir()
             temp_files = glob.glob(os.path.join(temp_dir, "assignment_*"))
-            
+
             deleted_count = 0
             for temp_file in temp_files:
                 try:
@@ -184,12 +184,12 @@ class MaintenanceManager:
                     deleted_count += 1
                 except (OSError, IOError):
                     pass
-            
+
             self.show_maintenance_status(f"Cleaned {deleted_count} temporary files", "success")
-            
+
         except Exception as e:
             self.show_maintenance_status(f"Failed to clean temp files: {e}", "error")
-    
+
 
     def verify_file_integrity(self):
         """Verify file integrity"""
@@ -226,7 +226,7 @@ class MaintenanceManager:
 
         except Exception as e:
             self.show_maintenance_status(f"File integrity check failed: {e}", "error")
-    
+
 
     def archive_old_files(self):
         """Archive old files"""
@@ -244,7 +244,7 @@ class MaintenanceManager:
             submitted_dir = base_dir / 'submitted'
             archive_dir = base_dir / 'archive'
             archive_dir.mkdir(parents=True, exist_ok=True)
-    
+
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
                 cursor = conn.cursor()
@@ -289,38 +289,38 @@ class MaintenanceManager:
                 conn.commit()
             finally:
                 conn.close()
-    
+
             self.show_maintenance_status(f"Archived {archived_count} submission file(s) older than one year.", "success")
         except Exception as e:
             self.show_maintenance_status(f"File archiving failed: {e}", "error")
-    
+
 
     def view_system_logs(self):
         """View system logs"""
         log_window = tk.Toplevel(self.root)
         log_window.title("System Logs")
         log_window.geometry("800x600")
-    
+
         controls_frame = ttk.Frame(log_window, padding=10)
         controls_frame.pack(fill='x')
-    
+
         ttk.Label(controls_frame, text="Select log file:").pack(side='left')
-    
+
         self.log_file_var = tk.StringVar()
         log_combo = ttk.Combobox(controls_frame, textvariable=self.log_file_var, width=40, state='readonly')
         log_combo.pack(side='left', padx=(10, 0))
-    
+
         ttk.Button(controls_frame, text="Refresh", command=lambda: self._populate_log_files(log_combo)).pack(side='left', padx=10)
         ttk.Button(controls_frame, text="Open", command=lambda: self._load_log_contents(log_text)).pack(side='left')
-    
+
         log_text = scrolledtext.ScrolledText(log_window, wrap=tk.WORD)
         log_text.pack(fill='both', expand=True, padx=10, pady=(0, 10))
         log_text.config(state='disabled')
-    
+
         self._populate_log_files(log_combo)
         if self.log_file_var.get():
             self._load_log_contents(log_text)
-    
+
 
     def _populate_log_files(self, combo):
         log_dir = Path(paths.LOG_DIR)
@@ -328,30 +328,30 @@ class MaintenanceManager:
             combo['values'] = []
             self.log_file_var.set('')
             return
-    
+
         log_files = sorted([p.name for p in log_dir.glob('*.log')])
         combo['values'] = log_files
         if log_files and not self.log_file_var.get():
             self.log_file_var.set(log_files[0])
-    
+
 
     def _load_log_contents(self, text_widget):
         log_dir = Path(paths.LOG_DIR)
         log_name = self.log_file_var.get()
         text_widget.config(state='normal')
         text_widget.delete('1.0', tk.END)
-    
+
         if not log_name:
             text_widget.insert(tk.END, "No log file selected.")
             text_widget.config(state='disabled')
             return
-    
+
         log_path = log_dir / log_name
         if not log_path.exists():
             text_widget.insert(tk.END, f"Log file '{log_name}' not found.")
             text_widget.config(state='disabled')
             return
-    
+
         try:
             with log_path.open('r', encoding='utf-8', errors='ignore') as handle:
                 last_lines = deque(handle, maxlen=500)
@@ -361,30 +361,30 @@ class MaintenanceManager:
         except Exception as exc:
             text_widget.insert(tk.END, f"Failed to read log file: {exc}")
             text_widget.config(state='disabled')
-    
+
 
     def check_disk_usage(self):
         """Check disk usage"""
         try:
             import shutil
-    
+
             # Use the directory containing the database as the base path
             base_dir = os.path.dirname(DEFAULT_DB_PATH)
             total, used, free = shutil.disk_usage(base_dir)
-            
+
             total_gb = total / (1024**3)
             used_gb = used / (1024**3)
             free_gb = free / (1024**3)
             used_percent = (used / total) * 100
-            
+
             usage_msg = f"Disk Usage:\nTotal: {total_gb:.2f} GB\nUsed: {used_gb:.2f} GB ({used_percent:.1f}%)\nFree: {free_gb:.2f} GB"
-            
+
             msg_type = "warning" if used_percent > 90 else "success"
             self.show_maintenance_status(usage_msg, msg_type)
-            
+
         except Exception as e:
             self.show_maintenance_status(f"Failed to check disk usage: {e}", "error")
-    
+
 
     def generate_health_report(self):
         """Generate comprehensive system health report and email to admin"""
@@ -507,61 +507,61 @@ class MaintenanceManager:
 
         except Exception as e:
             self.show_maintenance_status(f"Failed to generate health report: {e}", "error")
-    
+
 
     def show_maintenance_status(self, message, msg_type):
         """Show maintenance status message"""
         # Clear previous status
         for widget in self.maintenance_status_frame.winfo_children():
             widget.destroy()
-        
+
         status_frame = ttk.LabelFrame(self.maintenance_status_frame, text="Status", padding=10)
         status_frame.pack(fill='both', expand=True)
-        
+
         if msg_type == "success":
             style = 'Success.TLabel'
         elif msg_type == "error":
             style = 'Error.TLabel'
         else:
             style = 'Warning.TLabel'
-        
+
         status_label = ttk.Label(status_frame, text=message, style=style, justify='left')
         status_label.pack(anchor='w')
-    
+
 
     def cleanup_old_data(self):
         """Enhanced cleanup with GUI progress"""
         if not self._check_permission('manage_assignments'):
             return
-        
+
         # Create progress window
         cleanup_window = tk.Toplevel(self.root)
         cleanup_window.title("Data Cleanup")
         cleanup_window.geometry("400x300")
         cleanup_window.transient(self.root)
-        
+
         ttk.Label(cleanup_window, text="Data Cleanup Progress", font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         progress_var = tk.DoubleVar()
         progress_bar = ttk.Progressbar(cleanup_window, variable=progress_var, maximum=100)
         progress_bar.pack(fill='x', padx=20, pady=10)
-        
+
         status_label = ttk.Label(cleanup_window, text="Starting cleanup...")
         status_label.pack(pady=10)
-        
+
         results_text = scrolledtext.ScrolledText(cleanup_window, height=8, width=50)
         results_text.pack(fill='both', expand=True, padx=20, pady=10)
-        
+
         def run_cleanup():
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
-    
+
                 # Clean old notifications
                 progress_var.set(20)
                 status_label.config(text="Cleaning old notifications...")
                 cleanup_window.update()
-    
+
                 cutoff_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
                 try:
                     cursor.execute('PRAGMA table_info(notifications)')
@@ -576,12 +576,12 @@ class MaintenanceManager:
                 except sqlite3.OperationalError as e:
                     results_text.insert(tk.END, f"Skipped notifications cleanup: {e}\n")
                     deleted_notifications = 0
-    
+
                 # Clean old analytics cache
                 progress_var.set(40)
                 status_label.config(text="Cleaning analytics cache...")
                 cleanup_window.update()
-    
+
                 cache_cutoff = (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
                 try:
                     cursor.execute('DELETE FROM analytics_cache WHERE expires_at < ?', (cache_cutoff,))
@@ -590,12 +590,12 @@ class MaintenanceManager:
                 except sqlite3.OperationalError as e:
                     results_text.insert(tk.END, f"Skipped analytics cache cleanup: {e}\n")
                     deleted_cache = 0
-    
+
                 # Clean old audit logs
                 progress_var.set(60)
                 status_label.config(text="Cleaning old audit logs...")
                 cleanup_window.update()
-    
+
                 audit_cutoff = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d %H:%M:%S')
                 try:
                     cursor.execute('DELETE FROM audit_log WHERE timestamp < ?', (audit_cutoff,))
@@ -604,7 +604,7 @@ class MaintenanceManager:
                 except sqlite3.OperationalError as e:
                     results_text.insert(tk.END, f"Skipped audit log cleanup: {e}\n")
                     deleted_audit = 0
-                
+
                 # Clean temporary files
                 progress_var.set(80)
                 status_label.config(text="Cleaning temporary files...")
@@ -627,12 +627,12 @@ class MaintenanceManager:
                             pass
 
                 results_text.insert(tk.END, f"Deleted {temp_count} temporary files\n")
-                
+
                 # Optimize database
                 progress_var.set(90)
                 status_label.config(text="Optimizing database...")
                 cleanup_window.update()
-                
+
                 conn.commit()
                 conn.close()
                 # VACUUM must run outside a transaction
@@ -640,82 +640,82 @@ class MaintenanceManager:
                 vacuum_conn.execute('VACUUM')
                 vacuum_conn.close()
                 results_text.insert(tk.END, "Database optimized\n")
-                
+
                 progress_var.set(100)
                 status_label.config(text="Cleanup completed!")
                 results_text.insert(tk.END, "\nCleanup completed successfully!")
-                
+
             except Exception as e:
                 results_text.insert(tk.END, f"\nError during cleanup: {e}")
                 status_label.config(text="Cleanup failed")
-        
+
         # Run cleanup in thread to prevent GUI freezing
         import threading
         cleanup_thread = threading.Thread(target=run_cleanup, daemon=True)
         cleanup_thread.start()
-        
+
         ttk.Button(cleanup_window, text="Close", command=cleanup_window.destroy).pack(pady=10)
-    
+
     # MESSAGING SYSTEM METHODS
 
     def show_system_backup(self):
         """Show system backup and recovery interface"""
         self.gui.layout.clear_content_area()
-        
+
         title = ttk.Label(self.gui.layout.content_area, text="System Backup & Recovery", style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
-        
+
         # Backup section
         backup_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Create Backup", padding=20)
         backup_frame.pack(fill='x', pady=(0, 10))
-        
+
         backup_options = ttk.Frame(backup_frame)
         backup_options.pack(fill='x')
-        
+
         self.backup_type_var = tk.StringVar(value="full")
-        ttk.Radiobutton(backup_options, text="Full Backup (Database + Files)", 
+        ttk.Radiobutton(backup_options, text="Full Backup (Database + Files)",
                        variable=self.backup_type_var, value="full").pack(anchor='w')
-        ttk.Radiobutton(backup_options, text="Database Only", 
+        ttk.Radiobutton(backup_options, text="Database Only",
                        variable=self.backup_type_var, value="database").pack(anchor='w')
-        ttk.Radiobutton(backup_options, text="Files Only", 
+        ttk.Radiobutton(backup_options, text="Files Only",
                        variable=self.backup_type_var, value="files").pack(anchor='w')
-        
-        ttk.Button(backup_frame, text="Create Backup Now", 
+
+        ttk.Button(backup_frame, text="Create Backup Now",
                   command=self.create_system_backup).pack(pady=10)
-        
+
         # Backup history section
         history_frame = ttk.LabelFrame(self.gui.layout.content_area, text="Backup History", padding=10)
         history_frame.pack(fill='both', expand=True)
-        
+
         # Backup history tree
         columns = ('Date', 'Type', 'Size', 'Status', 'Location')
         backup_tree = ttk.Treeview(history_frame, columns=columns, show='headings')
-        
+
         for col in columns:
             backup_tree.heading(col, text=col)
             backup_tree.column(col, width=120)
-        
+
         backup_tree.pack(fill='both', expand=True)
-        
+
         ttk.Label(history_frame, text="No backup history recorded yet. Create a backup to populate this list.").pack(pady=10)
-    
+
 
     def create_system_backup(self):
         """Create system backup with progress"""
         backup_type = self.backup_type_var.get()
-    
+
         # Create progress dialog
         progress_window = tk.Toplevel(self.root)
         progress_window.title("Creating Backup")
         progress_window.geometry("500x200")
         progress_window.transient(self.root)
-    
+
         ttk.Label(progress_window, text=f"Creating {backup_type} backup...").pack(pady=10)
-    
+
         progress_var = tk.DoubleVar()
         progress_bar = ttk.Progressbar(progress_window, variable=progress_var, maximum=100)
         progress_bar.pack(fill='x', padx=20, pady=10)
-    
+
         status_label = ttk.Label(progress_window, text="Initializing...")
         status_label.pack(pady=5)
 
@@ -724,40 +724,40 @@ class MaintenanceManager:
         files_backup_dir = str(paths.BACKUP_FILES_DIR)
         os.makedirs(db_backup_dir, exist_ok=True)
         os.makedirs(files_backup_dir, exist_ok=True)
-    
+
         # Generate backup filename with timestamp
         from datetime import datetime
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
+
         def perform_backup():
             try:
                 progress_var.set(10)
                 status_label.config(text="Preparing backup...")
                 progress_window.update()
-    
+
                 if backup_type in ['full', 'database']:
                     progress_var.set(30)
                     status_label.config(text="Backing up database...")
                     progress_window.update()
-    
+
                     # Create database backup
                     backup_file = os.path.join(db_backup_dir, f"database_backup_{timestamp}.db")
                     import shutil
                     shutil.copy2(str(DEFAULT_DB_PATH), backup_file)
-    
+
                     progress_var.set(60)
                     status_label.config(text="Database backup created...")
                     progress_window.update()
-    
+
                 if backup_type in ['full', 'files']:
                     progress_var.set(70)
                     status_label.config(text="Backing up files...")
                     progress_window.update()
-    
+
                     # Create files backup (submission files, etc.)
                     data_dir = os.path.dirname(DEFAULT_DB_PATH)
                     files_backup = os.path.join(files_backup_dir, f"files_backup_{timestamp}.zip")
-    
+
                     import zipfile
                     with zipfile.ZipFile(files_backup, 'w', zipfile.ZIP_DEFLATED) as zipf:
                         for root, dirs, files in os.walk(data_dir):
@@ -770,15 +770,15 @@ class MaintenanceManager:
                                 file_path = os.path.join(root, file)
                                 arcname = os.path.relpath(file_path, data_dir)
                                 zipf.write(file_path, arcname)
-    
+
                     progress_var.set(90)
                     status_label.config(text="Files backup created...")
                     progress_window.update()
-    
+
                 progress_var.set(100)
                 status_label.config(text="Backup completed successfully!")
                 progress_window.update()
-    
+
                 # Show success message with backup location
                 backup_location = str(paths.BACKUP_DIR)
                 self.root.after(1000, lambda: [
@@ -788,7 +788,7 @@ class MaintenanceManager:
                                       f"Location: {backup_location}\n"
                                       f"Timestamp: {timestamp}")
                 ])
-    
+
             except Exception as e:
                 err_msg = str(e)
                 progress_var.set(0)
@@ -798,13 +798,13 @@ class MaintenanceManager:
                     progress_window.destroy(),
                     messagebox.showerror("Backup Error", f"Failed to create backup: {err_msg}")
                 ])
-    
+
         # Start backup in background
         progress_window.after(100, perform_backup)
-    
+
 
     def backup_system_data(self, *args, **kwargs):
         """Launch the system backup interface from CLI integrations."""
         self._launch_gui_feature(self.show_system_backup, "system backup")
-    
-    
+
+

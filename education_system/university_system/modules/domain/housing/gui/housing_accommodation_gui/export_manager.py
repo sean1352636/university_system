@@ -16,20 +16,20 @@ def export_data_gui(self, data_type):
         try:
             import csv
             from tkinter import filedialog
-            
+
             # Let user choose save location
             filename = filedialog.asksaveasfilename(
                 defaultextension=".csv",
                 filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
                 title=f"Save {data_type.title()} Data"
             )
-            
+
             if not filename:
                 return
-            
+
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             if data_type == 'buildings':
                 cursor.execute('''
                 SELECT building_id, building_name, address, campus_location, total_rooms, available_rooms,
@@ -37,10 +37,10 @@ def export_data_gui(self, data_type):
                 FROM housing_buildings
                 ORDER BY building_name
                 ''')
-                headers = ['Building ID', 'Building Name', 'Address', 'Campus Location', 
+                headers = ['Building ID', 'Building Name', 'Address', 'Campus Location',
                           'Total Rooms', 'Available Rooms', 'Has Elevator', 'Has Accessible Rooms',
                           'Has Kitchen', 'Has Laundry', 'Created At']
-            
+
             elif data_type == 'rooms':
                 cursor.execute('''
                 SELECT r.room_id, b.building_name, r.room_number, r.floor_number, r.room_type,
@@ -51,10 +51,10 @@ def export_data_gui(self, data_type):
                 ''')
                 headers = ['Room ID', 'Building', 'Room Number', 'Floor', 'Type',
                           'Max Occupants', 'Current Occupants', 'Accessible', 'Status', 'Monthly Rent']
-            
+
             elif data_type == 'assignments':
                 cursor.execute('''
-                SELECT a.assignment_id, a.student_id, s.first_name, s.last_name, 
+                SELECT a.assignment_id, a.student_id, s.first_name, s.last_name,
                        b.building_name, r.room_number, a.move_in_date, a.planned_move_out_date,
                        a.monthly_rent, a.status, a.assigned_by
                 FROM housing_assignments a
@@ -64,9 +64,9 @@ def export_data_gui(self, data_type):
                 ORDER BY a.created_at DESC
                 ''')
                 headers = ['Assignment ID', 'Student ID', 'First Name', 'Last Name',
-                          'Building', 'Room', 'Move In Date', 'Planned Move Out', 
+                          'Building', 'Room', 'Move In Date', 'Planned Move Out',
                           'Monthly Rent', 'Status', 'Assigned By']
-            
+
             elif data_type == 'applications':
                 cursor.execute('''
                 SELECT app.application_id, app.student_id, s.first_name, s.last_name,
@@ -80,7 +80,7 @@ def export_data_gui(self, data_type):
                 headers = ['Application ID', 'Student ID', 'First Name', 'Last Name',
                           'Application Date', 'Preferred Building', 'Preferred Room Type',
                           'Requested Move In', 'Duration (Months)', 'Status']
-            
+
             elif data_type == 'payments':
                 cursor.execute('''
                 SELECT p.source_payment_id, p.student_id, s.first_name, s.last_name,
@@ -97,7 +97,7 @@ def export_data_gui(self, data_type):
                 headers = ['Payment ID', 'Student ID', 'First Name', 'Last Name',
                           'Amount', 'Payment Date', 'Payment Method', 'Period Start',
                           'Period End', 'Status', 'Building', 'Room']
-            
+
             elif data_type == 'maintenance':
                 cursor.execute('''
                 SELECT m.request_id, m.student_id, s.first_name, s.last_name,
@@ -112,17 +112,17 @@ def export_data_gui(self, data_type):
                 headers = ['Request ID', 'Student ID', 'First Name', 'Last Name',
                           'Building', 'Room', 'Request Date', 'Issue Type',
                           'Description', 'Priority', 'Status', 'Assigned To', 'Completion Date']
-            
+
             data = cursor.fetchall()
             conn.close()
-            
+
             # Write to CSV
             with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
                 writer = csv.writer(csvfile)
                 writer.writerow(headers)
                 writer.writerows(data)
-            
+
             messagebox.showinfo("Success", f"{data_type.title()} data exported successfully to:\n{filename}")
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to export data: {str(e)}")

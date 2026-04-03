@@ -67,10 +67,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -122,7 +122,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -138,7 +138,7 @@ def init_basic_database():
             status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -152,7 +152,7 @@ def init_basic_database():
             year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -166,7 +166,7 @@ def init_basic_database():
             UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -186,11 +186,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -200,7 +200,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -215,7 +215,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -228,7 +228,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -247,7 +247,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -348,137 +348,137 @@ class ModuleEnrollmentDialog:
         self.dialog.title("Manage Module Enrollments")
         self.dialog.geometry("800x600")
         safe_grab_set(self.dialog)
-        
+
         self.setup_dialog()
-        
+
     def setup_dialog(self):
         # Title
-        ttk.Label(self.dialog, text="Manage Module Enrollments", 
+        ttk.Label(self.dialog, text="Manage Module Enrollments",
                  font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         # Control frame
         control_frame = ttk.Frame(self.dialog)
         control_frame.pack(fill=tk.X, padx=20, pady=10)
-        
-        ttk.Button(control_frame, text="Enroll Student", 
+
+        ttk.Button(control_frame, text="Enroll Student",
                   command=self.enroll_student_dialog).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Remove Enrollment", 
+        ttk.Button(control_frame, text="Remove Enrollment",
                   command=self.remove_enrollment).pack(side=tk.LEFT, padx=5)
-        ttk.Button(control_frame, text="Refresh", 
+        ttk.Button(control_frame, text="Refresh",
                   command=self.refresh_enrollments).pack(side=tk.LEFT, padx=5)
-        
+
         # Enrollments list
         list_frame = ttk.Frame(self.dialog)
         list_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
+
         columns = ('Student ID', 'Student Name', 'Module Code', 'Module Name', 'Status', 'Date')
         self.enrollment_tree = ttk.Treeview(list_frame, columns=columns, show='headings')
-        
+
         for col in columns:
             self.enrollment_tree.heading(col, text=col)
             self.enrollment_tree.column(col, width=120)
-        
+
         scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.enrollment_tree.yview)
         self.enrollment_tree.configure(yscrollcommand=scrollbar.set)
-        
+
         self.enrollment_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=10)
-        
+
         ttk.Button(button_frame, text="Close", command=self.close_dialog).pack()
-        
+
         self.refresh_enrollments()
-    
+
     def enroll_student_dialog(self):
         """Open dialog to enroll a student in a module"""
         enroll_dialog = tk.Toplevel(self.dialog)
         enroll_dialog.title("Enroll Student")
         enroll_dialog.geometry("400x200")
         safe_grab_set(enroll_dialog)
-        
+
         # Student selection
         ttk.Label(enroll_dialog, text="Student:").grid(row=0, column=0, padx=10, pady=10)
         student_var = tk.StringVar()
         student_combo = ttk.Combobox(enroll_dialog, textvariable=student_var, width=30)
-        
+
         # Load students
         self.cursor.execute("SELECT student_id, first_name, last_name FROM students ORDER BY last_name")
         students = [f"{row[0]} - {row[1]} {row[2]}" for row in self.cursor.fetchall()]
         student_combo['values'] = students
         student_combo.grid(row=0, column=1, padx=10, pady=10)
-        
+
         # Module selection
         ttk.Label(enroll_dialog, text="Module:").grid(row=1, column=0, padx=10, pady=10)
         module_var = tk.StringVar()
         module_combo = ttk.Combobox(enroll_dialog, textvariable=module_var, width=30)
-        
+
         # Load modules
         self.cursor.execute("SELECT module_code, module_name FROM modules ORDER BY module_code")
         modules = [f"{row[0]} - {row[1]}" for row in self.cursor.fetchall()]
         module_combo['values'] = modules
         module_combo.grid(row=1, column=1, padx=10, pady=10)
-        
+
         def do_enroll():
             if not student_var.get() or not module_var.get():
                 messagebox.showerror("Error", "Please select both student and module")
                 return
-            
+
             student_id = student_var.get().split(' - ')[0]
             module_code = module_var.get().split(' - ')[0]
-            
+
             try:
                 self.cursor.execute('''
                 INSERT INTO student_modules (student_id, module_code, enrollment_date, status)
                 VALUES (?, ?, ?, ?)
                 ''', (student_id, module_code, datetime.now().strftime('%Y-%m-%d'), 'Enrolled'))
-                
+
                 self.conn.commit()
                 messagebox.showinfo("Success", "Student enrolled successfully")
                 self.refresh_enrollments()
                 enroll_dialog.destroy()
-                
+
             except sqlite3.IntegrityError:
                 messagebox.showerror("Error", "Student is already enrolled in this module")
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to enroll student: {e}")
-        
+
         ttk.Button(enroll_dialog, text="Enroll", command=do_enroll).grid(row=2, column=0, pady=20)
         ttk.Button(enroll_dialog, text="Cancel", command=enroll_dialog.destroy).grid(row=2, column=1, pady=20)
-    
+
     def remove_enrollment(self):
         """Remove selected enrollment"""
         selection = self.enrollment_tree.selection()
         if not selection:
             messagebox.showwarning("Warning", "Please select an enrollment to remove")
             return
-        
+
         item = selection[0]
         values = self.enrollment_tree.item(item, 'values')
         student_id = values[0]
         module_code = values[2]
-        
+
         if messagebox.askyesno("Confirm", f"Remove enrollment of {student_id} from {module_code}?"):
             try:
                 self.cursor.execute('''
-                DELETE FROM student_modules 
+                DELETE FROM student_modules
                 WHERE student_id = ? AND module_code = ?
                 ''', (student_id, module_code))
-                
+
                 self.conn.commit()
                 messagebox.showinfo("Success", "Enrollment removed successfully")
                 self.refresh_enrollments()
-                
+
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to remove enrollment: {e}")
-    
+
     def refresh_enrollments(self):
         """Refresh the enrollments display"""
         for item in self.enrollment_tree.get_children():
             self.enrollment_tree.delete(item)
-        
+
         try:
             self.cursor.execute('''
             SELECT sm.student_id, s.first_name || ' ' || s.last_name as student_name,
@@ -488,15 +488,15 @@ class ModuleEnrollmentDialog:
             JOIN modules m ON sm.module_code = m.module_code
             ORDER BY sm.enrollment_date DESC
             ''')
-            
+
             enrollments = self.cursor.fetchall()
-            
+
             for enrollment in enrollments:
                 self.enrollment_tree.insert('', 'end', values=enrollment)
-                
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load enrollments: {e}")
-    
+
     def close_dialog(self):
         self.result = True
         self.dialog.destroy()

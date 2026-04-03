@@ -1,7 +1,13 @@
 from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.main_gui import TripManagementGUI
 from education_system.university_system.modules.domain.mobility.gui.trip_management_gui._imports import safe_db_operation
-from education_system.university_system.infrastructure.database.db import get_connection
+from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from tkinter import messagebox
+
+try:
+    from education_system.university_system.infrastructure.shared_context import get_auth as get_centralized_auth
+except ImportError:
+    def get_centralized_auth():
+        return None
 
 try:
     from education_system.university_system.core.activity_logger import log_activity

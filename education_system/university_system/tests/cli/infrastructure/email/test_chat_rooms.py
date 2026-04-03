@@ -240,12 +240,12 @@ class TestDisplayMyChatRooms:
         }
         mock_dashboard.get_room_members.return_value = []
 
-        with patch('builtins.input', side_effect=['5', '1', '7', '6']), \
+        with patch('builtins.input', side_effect=['5', '1', '1', '', '7', '6']), \
              patch('builtins.print'):
 
             chat_rooms.display_my_chat_rooms(mock_dashboard)
 
-            # Should call manage function
+            # Viewing members in manage menu triggers get_room_members
             assert mock_dashboard.get_room_members.called
 
     def test_display_my_chat_rooms_manage_room_not_admin(self):
@@ -684,7 +684,7 @@ class TestEnterChatRoom:
 
         with patch('builtins.input', side_effect=['/invite', 'otheruser', '/quit']), \
              patch('builtins.print'), \
-             patch('education_system.university_system.infrastructure.email.chat_rooms.search_users') as mock_search:
+             patch('education_system.university_system.infrastructure.email.admin.search_users') as mock_search:
 
             mock_search.return_value = [{'id': 2, 'username': 'otheruser'}]
 
@@ -779,7 +779,7 @@ class TestDisplayRoomInvitations:
             assert mock_dashboard.respond_to_invitation.called
             args, kwargs = mock_dashboard.respond_to_invitation.call_args
             assert args[0] == 1
-            assert args[1] is True
+            assert kwargs.get('accept') is True or (len(args) > 1 and args[1] is True)
 
     def test_display_room_invitations_decline_invitation(self):
         """Test declining an invitation"""
@@ -803,7 +803,7 @@ class TestDisplayRoomInvitations:
 
             assert mock_dashboard.respond_to_invitation.called
             args, kwargs = mock_dashboard.respond_to_invitation.call_args
-            assert args[1] is False
+            assert kwargs.get('accept') is False or (len(args) > 1 and args[1] is False)
 
     def test_display_room_invitations_view_details(self):
         """Test viewing invitation details"""
@@ -855,9 +855,9 @@ class TestManageChatRoom:
         mock_dashboard = Mock()
         mock_dashboard.invite_user_to_room.return_value = True
 
-        with patch('builtins.input', side_effect=['2', 'otheruser', '7']), \
+        with patch('builtins.input', side_effect=['2', 'otheruser', '', '7']), \
              patch('builtins.print'), \
-             patch('education_system.university_system.infrastructure.email.chat_rooms.search_users') as mock_search:
+             patch('education_system.university_system.infrastructure.email.admin.search_users') as mock_search:
 
             mock_search.return_value = [{'id': 2, 'username': 'otheruser', 'full_name': 'Other User', 'email': 'other@test.com'}]
 

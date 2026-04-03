@@ -157,7 +157,7 @@ def create_reports_tab(self):
         # Output format
         ttk.Label(params_grid, text=_("attendance.labels.format")).grid(row=0, column=4, sticky=tk.W, padx=(0, 5))
         self.report_format_var = tk.StringVar(value="Excel")
-        format_combo = ttk.Combobox(params_grid, textvariable=self.report_format_var, 
+        format_combo = ttk.Combobox(params_grid, textvariable=self.report_format_var,
                                    values=["Excel", "PDF", "CSV"], state="readonly", width=10)
         format_combo.grid(row=0, column=5)
 

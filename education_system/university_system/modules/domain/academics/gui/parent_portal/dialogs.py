@@ -793,7 +793,7 @@ def run_parent_portal_gui(auth=None):
         # Try to create GUI version
         app = ParentPortalGUI(auth)
         root = app.create_main_window()
-        
+
         if root:
             root.mainloop()
         else:
@@ -801,7 +801,7 @@ def run_parent_portal_gui(auth=None):
             print("GUI unavailable, falling back to CLI version...")
             from parent_portal import ParentPortal
             ParentPortal.display_parent_portal_menu(auth)
-            
+
     except ImportError as e:
         print(f"Error importing required modules: {e}")
         print("Falling back to CLI version...")
@@ -810,7 +810,7 @@ def run_parent_portal_gui(auth=None):
             ParentPortal.display_parent_portal_menu(auth)
         except ImportError:
             print("CLI version also unavailable. Please check your installation.")
-    
+
     except Exception as e:
         print(f"Error running GUI: {e}")
         print("Falling back to CLI version...")
@@ -826,27 +826,27 @@ class ParentPortalCompat:
     Backwards compatibility wrapper that provides both GUI and CLI interfaces.
     This ensures existing code continues to work while adding GUI functionality.
     """
-    
+
     def __init__(self, auth=None):
         self.auth = auth
         self.gui_available = True
-        
+
         try:
             import tkinter
         except ImportError:
             self.gui_available = False
-    
+
     def display_parent_portal_menu(self, auth=None, use_gui=True):
         """
         Display the parent portal menu.
-        
+
         Args:
             auth: Authentication object
             use_gui: Boolean to determine if GUI should be used (default: True)
         """
         if auth:
             self.auth = auth
-        
+
         if use_gui and self.gui_available:
             try:
                 run_parent_portal_gui(self.auth)
@@ -856,7 +856,7 @@ class ParentPortalCompat:
                 self._run_cli_version()
         else:
             self._run_cli_version()
-    
+
     def _run_cli_version(self):
         """Run the original CLI version"""
         try:
@@ -865,21 +865,21 @@ class ParentPortalCompat:
         except ImportError:
             print("Original parent portal module not found.")
             self._run_embedded_cli()
-    
+
     def _run_embedded_cli(self):
         """Run embedded CLI version if original is not available"""
         print("\n" + "=" * 60)
         print("PARENT PORTAL (CLI Mode)")
         print("=" * 60)
-        
+
         if not self.auth or not self.auth.current_user:
             print("You must be logged in to access the parent portal.")
             return
-        
+
         if self.auth.current_user.get('role') != 'parent':
             print("This function is only available for parent accounts.")
             return
-        
+
         while True:
             print("\n1. View Children")
             print("2. View Grades")
@@ -888,9 +888,9 @@ class ParentPortalCompat:
             print("5. View Reports")
             print("6. Update Contact Info")
             print("0. Exit")
-            
+
             choice = input("\nEnter your choice: ")
-            
+
             if choice == '0':
                 break
             elif choice == '1':
@@ -911,7 +911,7 @@ class ParentPortalCompat:
 
 class ModernMessageBox:
     """Custom message box with modern styling"""
-    
+
     @staticmethod
     def show_info(parent, title, message):
         """Show info message with custom styling"""
@@ -920,57 +920,57 @@ class ModernMessageBox:
         dialog.geometry("400x200")
         dialog.transient(parent)
         dialog.grab_set()
-        
+
         # Center the dialog
         dialog.geometry("+%d+%d" % (parent.winfo_rootx() + 100, parent.winfo_rooty() + 100))
-        
+
         main_frame = ttk.Frame(dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Icon and title
         title_frame = ttk.Frame(main_frame)
         title_frame.pack(fill=tk.X, pady=(0, 15))
-        
+
         ttk.Label(title_frame, text="ℹ️", font=('Arial', 20)).pack(side=tk.LEFT)
         ttk.Label(title_frame, text=title, font=('Arial', 14, 'bold')).pack(side=tk.LEFT, padx=(10, 0))
-        
+
         # Message
         ttk.Label(main_frame, text=message, wraplength=350).pack(pady=10)
-        
+
         # OK button
         ttk.Button(main_frame, text="OK", command=dialog.destroy).pack(pady=10)
-        
+
         dialog.wait_window()
 
 
 class ProgressDialog:
     """Progress dialog for long-running operations"""
-    
+
     def __init__(self, parent, title="Processing..."):
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
         self.dialog.geometry("300x120")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         # Center the dialog
         self.dialog.geometry("+%d+%d" % (parent.winfo_rootx() + 150, parent.winfo_rooty() + 150))
-        
+
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         self.label = ttk.Label(main_frame, text="Please wait...")
         self.label.pack(pady=10)
-        
+
         self.progress = ttk.Progressbar(main_frame, mode='indeterminate')
         self.progress.pack(fill=tk.X, pady=10)
         self.progress.start()
-    
+
     def update_text(self, text):
         """Update the progress text"""
         self.label.config(text=text)
         self.dialog.update()
-    
+
     def close(self):
         """Close the progress dialog"""
         self.progress.stop()
@@ -979,22 +979,22 @@ class ProgressDialog:
 
 class NotificationCenter:
     """Notification center for displaying alerts and messages"""
-    
+
     def __init__(self, parent):
         self.parent = parent
         self.notifications = []
-    
+
     def show_notification(self, title, message, type="info"):
         """Show a notification popup"""
         notification = tk.Toplevel(self.parent)
         notification.title("Notification")
         notification.geometry("350x120")
         notification.attributes('-topmost', True)
-        
+
         # Position in top-right corner
-        notification.geometry("+%d+%d" % (self.parent.winfo_rootx() + self.parent.winfo_width() - 370, 
+        notification.geometry("+%d+%d" % (self.parent.winfo_rootx() + self.parent.winfo_width() - 370,
                                          self.parent.winfo_rooty() + 50))
-        
+
         # Style based on type - use ttk widgets to reduce X pixmap usage
         type_prefixes = {
             "info": "ℹ️",
@@ -1013,14 +1013,14 @@ class NotificationCenter:
 
         message_label = ttk.Label(main_frame, text=message, font=('Arial', 10), wraplength=300)
         message_label.pack(anchor='w', pady=(5, 0))
-        
+
         # Auto-close after 5 seconds
         notification.after(5000, notification.destroy)
-        
+
         # Close on click
         def close_notification(event):
             notification.destroy()
-        
+
         notification.bind("<Button-1>", close_notification)
         main_frame.bind("<Button-1>", close_notification)
         title_label.bind("<Button-1>", close_notification)

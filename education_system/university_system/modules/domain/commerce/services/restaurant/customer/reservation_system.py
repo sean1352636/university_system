@@ -512,7 +512,7 @@ def view_table_reservations():
         print("-"*120)
 
         for res in reservations:
-            print(f"{res[0]:<15} {res[3]:<12} {res[4]:<8} {res[10]:<20} {res[2]:<8} {res[5]:<6} {res[6]:<10}")
+            print(f"{res[0]:<15} {res[3]:<12} {res[4]:<8} {res[9]:<20} {res[2]:<8} {res[5]:<6} {res[6]:<10}")
 
         print("="*120)
         print(f"Total reservations: {len(reservations)}")
@@ -692,7 +692,7 @@ def cancel_reservation():
             return
 
         print(f"Reservation Details:")
-        print(f"Customer: {reservation[10]}")
+        print(f"Customer: {reservation[9]}")
         print(f"Date: {reservation[3]}")
         print(f"Time: {reservation[4]}")
         print(f"Table: {reservation[2]}")

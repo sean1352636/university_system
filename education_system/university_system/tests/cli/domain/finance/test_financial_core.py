@@ -97,7 +97,8 @@ class TestInitialization:
         """Test complete finance system initialization"""
         with patch('education_system.university_system.modules.domain.finance.core.financial_core.get_connection') as mock_conn, \
              patch('education_system.university_system.modules.domain.finance.core.financial_core.get_auth') as mock_get_auth, \
-             patch('education_system.university_system.modules.domain.finance.core.financial_core.init_enhanced_finance_db'):
+             patch('education_system.university_system.modules.domain.finance.core.financial_core.init_enhanced_finance_db'), \
+             patch('education_system.university_system.modules.domain.finance.core.financial_core.warn_if_table_empty'):
 
             conn = _unclosable_connect(temp_db)
             mock_conn.return_value = conn

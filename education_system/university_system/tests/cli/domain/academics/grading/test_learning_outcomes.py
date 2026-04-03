@@ -89,7 +89,9 @@ def test_db(tmp_path):
 
     with patch('education_system.university_system.infrastructure.database.db.get_connection', mock_get_connection):
         with patch('education_system.university_system.modules.domain.academics.grading.learning_outcomes.get_connection', mock_get_connection):
-            yield mock_get_connection
+            with patch('education_system.university_system.modules.domain.academics.grading.learning_outcomes.management.get_connection', mock_get_connection):
+                with patch('education_system.university_system.modules.domain.academics.grading.learning_outcomes.achievement.get_connection', mock_get_connection):
+                    yield mock_get_connection
 
 @pytest.fixture
 def sample_data(test_db):
@@ -230,7 +232,7 @@ class TestLearningOutcomeManagement:
 class TestOutcomeAchievementRecording:
     """Tests for outcome achievement recording"""
 
-    @patch('education_system.university_system.modules.domain.academics.grading.learning_outcomes.select_student')
+    @patch('education_system.university_system.modules.domain.academics.grading.learning_outcomes.achievement.select_student')
     @patch('builtins.input', side_effect=['q'])  # Quit
     @patch('builtins.print')
     def test_record_outcome_achievement_no_student(self, mock_print, mock_input, mock_select, test_db):
@@ -241,7 +243,7 @@ class TestOutcomeAchievementRecording:
 
         mock_select.assert_called_once()
 
-    @patch('education_system.university_system.modules.domain.academics.grading.learning_outcomes.select_student')
+    @patch('education_system.university_system.modules.domain.academics.grading.learning_outcomes.achievement.select_student')
     @patch('builtins.input', side_effect=['q'])  # Quit
     @patch('builtins.print')
     def test_record_outcome_achievement_with_student_no_outcomes(self, mock_print, mock_input, mock_select, test_db):
@@ -270,7 +272,7 @@ class TestOutcomeReporting:
 class TestViewStudentOutcomeAchievement:
     """Tests for viewing student outcome achievement"""
 
-    @patch('education_system.university_system.modules.domain.academics.grading.learning_outcomes.select_student')
+    @patch('education_system.university_system.modules.domain.academics.grading.learning_outcomes.achievement.select_student')
     @patch('builtins.print')
     def test_view_student_outcome_achievement_no_student(self, mock_print, mock_select, test_db):
         """Test viewing achievement when no student is selected"""
@@ -280,7 +282,7 @@ class TestViewStudentOutcomeAchievement:
 
         mock_select.assert_called_once()
 
-    @patch('education_system.university_system.modules.domain.academics.grading.learning_outcomes.select_student')
+    @patch('education_system.university_system.modules.domain.academics.grading.learning_outcomes.achievement.select_student')
     @patch('builtins.print')
     def test_view_student_outcome_achievement_no_results(self, mock_print, mock_select, sample_data):
         """Test viewing achievement when student has no results"""
@@ -289,7 +291,7 @@ class TestViewStudentOutcomeAchievement:
         view_student_outcome_achievement()
 
         printed_output = ' '.join(str(call) for call in mock_print.call_args_list)
-        assert 'ST001' in printed_output or 'No outcome achievement' in printed_output
+        assert 'John Doe' in printed_output or 'No outcomes have been assessed' in printed_output
 
 class TestDatabaseIntegrity:
     """Tests for database integrity and constraints"""

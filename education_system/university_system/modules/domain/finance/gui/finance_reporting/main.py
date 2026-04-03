@@ -387,12 +387,12 @@ class FinancialManagementGUI:
 
         # Status label
         self.status_var = tk.StringVar(value=_("finance_reporting.status.ready"))
-        ttk.Label(status_frame, textvariable=self.status_var, 
+        ttk.Label(status_frame, textvariable=self.status_var,
                  style='Status.TLabel').grid(row=0, column=0, sticky=tk.W)
 
         # Progress bar
         self.progress_var = tk.DoubleVar()
-        self.progress_bar = ttk.Progressbar(status_frame, variable=self.progress_var, 
+        self.progress_bar = ttk.Progressbar(status_frame, variable=self.progress_var,
                                           mode='determinate', length=200)
         self.progress_bar.grid(row=0, column=1, sticky=tk.E, padx=(10, 0))
 

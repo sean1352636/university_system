@@ -2,7 +2,10 @@ import asyncio
 from datetime import datetime
 from typing import Dict, Any
 
-import requests
+try:
+    import requests
+except ImportError:  # pragma: no cover - optional dependency
+    requests = None
 
 from education_system.university_system.modules.shared.utils.simple_activity_logger.models import LogEntry
 
@@ -13,8 +16,12 @@ class CloudIntegration:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.enabled_services = config.get('enabled_services', [])
-        self.session = requests.Session()
-        self.session.timeout = config.get('timeout', 10)
+        if requests is None:
+            # Optional dependency not installed; keep a lightweight stub.
+            self.session = None
+        else:
+            self.session = requests.Session()
+            self.session.timeout = config.get('timeout', 10)
 
     async def send_to_cloud(self, log_entry: LogEntry):
         """Send log entry to configured cloud services"""
@@ -52,6 +59,8 @@ class CloudIntegration:
     async def _send_to_elasticsearch(self, log_entry: LogEntry):
         """Send to Elasticsearch"""
         try:
+            if self.session is None:
+                raise RuntimeError("requests not available for Elasticsearch integration")
             es_config = self.config.get('elasticsearch', {})
             es_url = es_config.get('url', 'http://localhost:9200')
             index_name = es_config.get('index', 'activity-logs')
@@ -86,6 +95,8 @@ class CloudIntegration:
             return
 
         try:
+            if self.session is None:
+                raise RuntimeError("requests not available for webhook integration")
             payload = {
                 'timestamp': log_entry.timestamp,
                 'event_type': 'activity_log',
@@ -112,6 +123,8 @@ class CloudIntegration:
     async def _send_to_splunk(self, log_entry: LogEntry):
         """Send to Splunk HEC (HTTP Event Collector)"""
         try:
+            if self.session is None:
+                raise RuntimeError("requests not available for Splunk integration")
             splunk_config = self.config.get('splunk', {})
             hec_url = splunk_config.get('hec_url')
             hec_token = splunk_config.get('hec_token')
@@ -149,6 +162,9 @@ class CloudIntegration:
 
         for service in self.enabled_services:
             try:
+                if self.session is None:
+                    results[service] = False
+                    continue
                 if service == 'webhook':
                     webhook_url = self.config.get('webhook_url')
                     if webhook_url:

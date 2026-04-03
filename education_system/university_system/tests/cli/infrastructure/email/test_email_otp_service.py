@@ -52,7 +52,10 @@ class TestSMTPEmailProvider:
         monkeypatch.setenv('SMTP_FROM_EMAIL', 'from@env.com')
         monkeypatch.setenv('SMTP_FROM_NAME', 'Env System')
 
-        provider = SMTPEmailProvider()
+        # _load_email_config may return values that take precedence in the or-chain,
+        # so we patch it to return empty dict so env vars are used
+        with patch.object(SMTPEmailProvider, '_load_email_config', return_value={}):
+            provider = SMTPEmailProvider()
 
         assert provider.smtp_server == 'smtp.env.com'
         assert provider.smtp_port == 465
@@ -63,8 +66,9 @@ class TestSMTPEmailProvider:
 
     def test_init_missing_credentials_raises_error(self):
         """Test that missing credentials raises ValueError"""
-        with pytest.raises(ValueError, match="SMTP credentials not configured"):
-            SMTPEmailProvider(smtp_server=None, username=None, password=None)
+        with patch.object(SMTPEmailProvider, '_load_email_config', return_value={}):
+            with pytest.raises(ValueError, match="SMTP credentials not configured"):
+                SMTPEmailProvider(smtp_server=None, username=None, password=None)
 
     @patch('education_system.university_system.infrastructure.auth.email_otp_service.smtplib.SMTP')
     def test_send_otp_success(self, mock_smtp):
@@ -197,15 +201,19 @@ class TestAWS_SES_Provider:
         with pytest.raises(ValueError, match="AWS SES from_email not configured"):
             AWS_SES_Provider(from_email=None)
 
-    @patch('education_system.university_system.infrastructure.auth.email_otp_service.boto3')
-    def test_send_otp_success(self, mock_boto3):
+    def test_send_otp_success(self):
         """Test successful OTP sending via AWS SES"""
+        mock_boto3 = MagicMock()
         mock_ses = MagicMock()
         mock_boto3.client.return_value = mock_ses
         mock_ses.send_email.return_value = {'MessageId': 'test-message-id'}
 
         provider = AWS_SES_Provider(from_email='noreply@aws.com')
-        result = provider.send_otp('recipient@test.com', '123456', 'TestUser')
+
+        # boto3 is imported locally inside send_otp; inject it via sys.modules
+        import sys
+        with patch.dict(sys.modules, {'boto3': mock_boto3}):
+            result = provider.send_otp('recipient@test.com', '123456', 'TestUser')
 
         assert result['success'] is True
         assert result['provider'] == 'aws_ses'
@@ -215,28 +223,32 @@ class TestAWS_SES_Provider:
 
     def test_send_otp_boto3_not_installed(self):
         """Test OTP sending when boto3 is not installed"""
-        with patch('education_system.university_system.infrastructure.auth.email_otp_service.boto3') as mock_boto3:
-            mock_boto3.side_effect = ImportError()
+        provider = AWS_SES_Provider(from_email='noreply@aws.com')
 
-            # Need to reload the module to trigger ImportError
-            provider = AWS_SES_Provider(from_email='noreply@aws.com')
+        # boto3 is imported locally; make it raise ImportError
+        original_import = __builtins__.__import__ if hasattr(__builtins__, '__import__') else __import__
+        def fake_import(name, *args, **kwargs):
+            if name == 'boto3':
+                raise ImportError("No module named 'boto3'")
+            return original_import(name, *args, **kwargs)
 
-            # Manually trigger the import error path
+        with patch('builtins.__import__', side_effect=fake_import):
             result = provider.send_otp('recipient@test.com', '123456')
 
-            # In actual code, ImportError would be caught
-            # For now, we'll just verify the provider was created
-            assert provider.from_email == 'noreply@aws.com'
+        assert result['success'] is False
+        assert 'boto3' in result['error']
 
-    @patch('education_system.university_system.infrastructure.auth.email_otp_service.boto3')
-    def test_send_otp_ses_error(self, mock_boto3):
+    def test_send_otp_ses_error(self):
         """Test OTP sending with AWS SES error"""
+        mock_boto3 = MagicMock()
         mock_ses = MagicMock()
         mock_boto3.client.return_value = mock_ses
         mock_ses.send_email.side_effect = Exception("SES error")
 
         provider = AWS_SES_Provider(from_email='noreply@aws.com')
-        result = provider.send_otp('recipient@test.com', '123456')
+
+        with patch('builtins.__import__', side_effect=lambda name, *args, **kwargs: mock_boto3 if name == 'boto3' else __import__(name, *args, **kwargs)):
+            result = provider.send_otp('recipient@test.com', '123456')
 
         assert result['success'] is False
         assert 'AWS SES error' in result['error']
@@ -303,7 +315,7 @@ class TestMockEmailProvider:
         assert '111111' in content
         assert '222222' in content
         assert '333333' in content
-        assert content.count('=' * 80) == 3  # Three separate entries
+        assert content.count('=' * 80) == 6  # Two separator lines per entry, three entries
 
     def test_send_otp_file_error(self, tmp_path):
         """Test OTP logging with file write error"""
@@ -321,7 +333,7 @@ class TestEmailOTPService:
 
     def test_init_with_mock_provider(self):
         """Test initialization with mock provider"""
-        service = EmailOTPService(primary_provider='mock')
+        service = EmailOTPService(primary_provider='mock', fallback_provider=None)
 
         assert isinstance(service.primary, MockEmailProvider)
         assert service.fallback is None
@@ -374,7 +386,7 @@ class TestEmailOTPService:
 
     def test_send_otp_success(self, tmp_path):
         """Test successful OTP sending"""
-        service = EmailOTPService(primary_provider='mock')
+        service = EmailOTPService(primary_provider='mock', fallback_provider=None)
 
         result = service.send_otp('test@example.com', '123456', 'TestUser')
 
@@ -383,7 +395,7 @@ class TestEmailOTPService:
 
     def test_send_otp_invalid_email(self):
         """Test OTP sending with invalid email"""
-        service = EmailOTPService(primary_provider='mock')
+        service = EmailOTPService(primary_provider='mock', fallback_provider=None)
 
         # Missing @ symbol
         result = service.send_otp('invalid-email', '123456')
@@ -440,7 +452,7 @@ class TestEmailOTPService:
 
     def test_get_provider_status_no_fallback(self):
         """Test getting provider status without fallback"""
-        service = EmailOTPService(primary_provider='mock')
+        service = EmailOTPService(primary_provider='mock', fallback_provider=None)
 
         status = service.get_provider_status()
 
@@ -478,8 +490,8 @@ class TestEmailConfiguration:
             mock_paths.CONFIG_DIR = Path('/nonexistent')
             config = load_email_config()
 
-        assert config['primary_provider'] == 'mock'  # default
-        assert config['fallback_provider'] is None
+        assert config['primary_provider'] == 'smtp'  # default from env fallback
+        assert config['fallback_provider'] == 'mock'
 
     def test_load_email_config_from_env(self, monkeypatch):
         """Test loading configuration from environment variables"""
@@ -507,8 +519,8 @@ class TestEmailConfiguration:
             mock_paths.CONFIG_DIR = config_dir
             config = load_email_config()
 
-        # Should fall back to defaults
-        assert config['primary_provider'] == 'mock'
+        # Should fall back to defaults (env-based fallback returns 'smtp')
+        assert config['primary_provider'] == 'smtp'
 
 
 class TestConvenienceFunctions:
@@ -520,17 +532,37 @@ class TestConvenienceFunctions:
         import education_system.university_system.infrastructure.auth.email_otp_service as email_module
         email_module._default_service = None
 
-        service1 = get_email_service()
-        service2 = get_email_service()
+        with patch.object(email_module, 'load_email_config', return_value={
+            'primary_provider': 'mock',
+            'fallback_provider': None,
+            'smtp_whitelist': []
+        }):
+            service1 = get_email_service()
+            service2 = get_email_service()
 
         assert service1 is service2
 
+        # Clean up singleton
+        email_module._default_service = None
+
     def test_send_otp_convenience_function(self):
         """Test send_otp convenience function"""
-        result = send_otp('test@example.com', '123456', 'TestUser')
+        import education_system.university_system.infrastructure.auth.email_otp_service as email_module
+        email_module._default_service = None
+
+        # Ensure load_email_config returns mock provider so we don't need real SMTP
+        with patch.object(email_module, 'load_email_config', return_value={
+            'primary_provider': 'mock',
+            'fallback_provider': None,
+            'smtp_whitelist': []
+        }):
+            result = send_otp('test@example.com', '123456', 'TestUser')
 
         assert result['success'] is True
         assert result['provider'] == 'mock'
+
+        # Clean up singleton
+        email_module._default_service = None
 
 
 class TestEmailTemplates:

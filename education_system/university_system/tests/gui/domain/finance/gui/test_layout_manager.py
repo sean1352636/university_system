@@ -10,8 +10,8 @@ from education_system.university_system.modules.domain.finance.gui.finance.layou
 
 class MockGUI:
     """Mock GUI for testing"""
-    def __init__(self):
-        self.root = Mock()  # Mock Tk root to avoid display issues
+    def __init__(self, root):
+        self.root = root
         self.conn = None
         self.finance_system = None
         self.return_to_main_menu = Mock()
@@ -21,9 +21,21 @@ class MockGUI:
 
 
 @pytest.fixture
-def mock_gui():
+def tk_root():
+    """Create a real Tk root window for testing"""
+    root = tk.Tk()
+    root.withdraw()  # Hide window during tests
+    yield root
+    try:
+        root.destroy()
+    except (OSError, IOError):
+        pass
+
+
+@pytest.fixture
+def mock_gui(tk_root):
     """Create mock GUI"""
-    gui = MockGUI()
+    gui = MockGUI(tk_root)
     yield gui
 
 
@@ -135,19 +147,23 @@ class TestMainInterface:
 class TestNavigation:
     """Test navigation setup"""
 
+    def _setup_nav_prerequisites(self, layout_manager):
+        """Helper to set up prerequisites for navigation tests"""
+        layout_manager.colors = {
+            'primary': '#2c3e50', 'secondary': '#3498db', 'success': '#27ae60',
+            'warning': '#f39c12', 'danger': '#e74c3c', 'light': '#ecf0f1',
+            'dark': '#2c3e50', 'info': '#17a2b8'
+        }
+        layout_manager.nav_frame = tk.Frame(layout_manager.root)
+        layout_manager.nav_canvas = tk.Canvas(layout_manager.root)
+
     def test_setup_navigation_for_admin(self, layout_manager):
         """Test navigation setup for admin user"""
         layout_manager.gui.is_admin.return_value = True
         layout_manager.gui.is_staff.return_value = False
         layout_manager.gui.is_student.return_value = False
 
-        layout_manager.colors = {
-            'primary': '#2c3e50',
-            'secondary': '#3498db'
-        }
-        layout_manager.nav_frame = tk.Frame(layout_manager.root)
-        layout_manager.nav_canvas = tk.Canvas(layout_manager.root)
-
+        self._setup_nav_prerequisites(layout_manager)
         layout_manager.setup_navigation()
 
         # Admin should see all navigation items
@@ -158,13 +174,7 @@ class TestNavigation:
         layout_manager.gui.is_staff.return_value = False
         layout_manager.gui.is_student.return_value = True
 
-        layout_manager.colors = {
-            'primary': '#2c3e50',
-            'secondary': '#3498db'
-        }
-        layout_manager.nav_frame = tk.Frame(layout_manager.root)
-        layout_manager.nav_canvas = tk.Canvas(layout_manager.root)
-
+        self._setup_nav_prerequisites(layout_manager)
         layout_manager.setup_navigation()
 
         # Student should see limited navigation items
@@ -175,13 +185,7 @@ class TestNavigation:
         layout_manager.gui.is_staff.return_value = True
         layout_manager.gui.is_student.return_value = False
 
-        layout_manager.colors = {
-            'primary': '#2c3e50',
-            'secondary': '#3498db'
-        }
-        layout_manager.nav_frame = tk.Frame(layout_manager.root)
-        layout_manager.nav_canvas = tk.Canvas(layout_manager.root)
-
+        self._setup_nav_prerequisites(layout_manager)
         layout_manager.setup_navigation()
 
         # Staff should see admin_staff items
@@ -216,6 +220,11 @@ class TestPlaceholderTab:
 
     def test_create_placeholder_tab(self, layout_manager):
         """Test creating placeholder tab"""
+        layout_manager.colors = {
+            'primary': '#2c3e50', 'secondary': '#3498db', 'success': '#27ae60',
+            'warning': '#f39c12', 'danger': '#e74c3c', 'light': '#ecf0f1',
+            'dark': '#2c3e50', 'info': '#17a2b8'
+        }
         layout_manager.content_frame = tk.Frame(layout_manager.root)
         layout_manager.tab_frames = {}
 

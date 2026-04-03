@@ -70,26 +70,26 @@ class DataExportDialog:
 
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         ttk.Label(main_frame, text="Export Student Data", font=('Arial', 16, 'bold')).pack(pady=10)
-        
+
         # Child selection
         child_frame = ttk.LabelFrame(main_frame, text="Select Student", padding=10)
         child_frame.pack(fill=tk.X, pady=10)
-        
+
         self.child_var = tk.StringVar()
         for child in children:
-            rb = ttk.Radiobutton(child_frame, text=f"{child[1]} {child[3]} (ID: {child[0]})", 
+            rb = ttk.Radiobutton(child_frame, text=f"{child[1]} {child[3]} (ID: {child[0]})",
                                 variable=self.child_var, value=child[0])
             rb.pack(anchor='w')
-        
+
         if children:
             self.child_var.set(children[0][0])
-        
+
         # Data type selection
         data_frame = ttk.LabelFrame(main_frame, text="Select Data Types", padding=10)
         data_frame.pack(fill=tk.BOTH, expand=True, pady=10)
-        
+
         self.data_types = {}
         data_options = [
             ("grades", "Academic Grades"),
@@ -100,128 +100,128 @@ class DataExportDialog:
             ("fees", "Fee Records"),
             ("activities", "Extracurricular Activities")
         ]
-        
+
         for key, label in data_options:
             var = tk.BooleanVar(value=True)
             self.data_types[key] = var
             cb = ttk.Checkbutton(data_frame, text=label, variable=var)
             cb.pack(anchor='w')
-        
+
         # Export format
         format_frame = ttk.LabelFrame(main_frame, text="Export Format", padding=10)
         format_frame.pack(fill=tk.X, pady=10)
-        
+
         self.format_var = tk.StringVar(value="json")
         ttk.Radiobutton(format_frame, text="JSON", variable=self.format_var, value="json").pack(anchor='w')
         ttk.Radiobutton(format_frame, text="CSV", variable=self.format_var, value="csv").pack(anchor='w')
         ttk.Radiobutton(format_frame, text="PDF Report", variable=self.format_var, value="pdf").pack(anchor='w')
-        
+
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=20)
-        
+
         ttk.Button(btn_frame, text="Export", command=self.export_data).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
-        
+
         self.children = children
         self.dialog.wait_window()
-    
+
     def export_data(self):
         selected_child = self.child_var.get()
         selected_types = [key for key, var in self.data_types.items() if var.get()]
         export_format = self.format_var.get()
-        
+
         if not selected_child or not selected_types:
             messagebox.showwarning("Selection Required", "Please select a child and at least one data type.")
             return
-        
+
         self.result = {
             'child_id': selected_child,
             'data_types': selected_types,
             'format': export_format
         }
-        
+
         self.dialog.destroy()
-    
+
     def cancel(self):
         self.dialog.destroy()
 
 
 class TwoFactorDialog:
     """Dialog for enabling two-factor authentication"""
-    
+
     def __init__(self, parent):
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Enable Two-Factor Authentication")
         self.dialog.geometry("500x400")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(main_frame, text="Enable Two-Factor Authentication", font=('Arial', 16, 'bold')).pack(pady=10)
-        
+
         info_text = """Two-factor authentication adds an extra layer of security to your account.
-        
+
 You'll need an authenticator app like:
 - Google Authenticator
 - Microsoft Authenticator
 - Authy
 
 After enabling, you'll need to enter a code from your authenticator app each time you log in."""
-        
+
         ttk.Label(main_frame, text=info_text, wraplength=450).pack(pady=10)
-        
+
         # QR code placeholder
         qr_frame = ttk.LabelFrame(main_frame, text="Scan QR Code with Authenticator App", padding=10)
         qr_frame.pack(fill=tk.X, pady=10)
-        
-        ttk.Label(qr_frame, text="[QR Code would appear here]", 
-                 font=('Arial', 12), background='lightgray', 
+
+        ttk.Label(qr_frame, text="[QR Code would appear here]",
+                 font=('Arial', 12), background='lightgray',
                  relief='sunken', padding=50).pack()
-        
+
         # Secret key
         secret_frame = ttk.Frame(main_frame)
         secret_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Label(secret_frame, text="Manual Entry Key:").pack(anchor='w')
         secret_var = tk.StringVar(value="ABCD EFGH IJKL MNOP")
         secret_entry = ttk.Entry(secret_frame, textvariable=secret_var, state='readonly')
         secret_entry.pack(fill=tk.X, pady=5)
-        
+
         # Verification
         verify_frame = ttk.Frame(main_frame)
         verify_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Label(verify_frame, text="Enter verification code from your app:").pack(anchor='w')
         self.code_entry = ttk.Entry(verify_frame, width=20)
         self.code_entry.pack(pady=5)
-        
+
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=20)
-        
+
         ttk.Button(btn_frame, text="Enable 2FA", command=self.enable).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
-        
+
         self.dialog.wait_window()
-    
+
     def enable(self):
         code = self.code_entry.get().strip()
         if not code:
             messagebox.showwarning("Missing Code", "Please enter the verification code.")
             return
-        
+
         # In real implementation, would verify the code
         if len(code) == 6 and code.isdigit():
             self.result = True
             self.dialog.destroy()
         else:
             messagebox.showerror("Invalid Code", "Please enter a valid 6-digit code.")
-    
+
     def cancel(self):
         self.dialog.destroy()
 
@@ -254,65 +254,65 @@ class DonationDialog:
 
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         ttk.Label(main_frame, text="Make a Donation", font=('Arial', 16, 'bold')).pack(pady=10)
-        
+
         # Campaign selection
         campaign_frame = ttk.LabelFrame(main_frame, text="Select Campaign", padding=10)
         campaign_frame.pack(fill=tk.X, pady=10)
-        
+
         self.campaign_var = tk.StringVar()
         campaigns = ["University Library Fund", "Sports Equipment Drive", "Arts Program Support"]
-        
+
         for campaign in campaigns:
             rb = ttk.Radiobutton(campaign_frame, text=campaign, variable=self.campaign_var, value=campaign)
             rb.pack(anchor='w')
-        
+
         if campaigns:
             self.campaign_var.set(campaigns[0])
-        
+
         # Amount
         amount_frame = ttk.LabelFrame(main_frame, text="Donation Amount", padding=10)
         amount_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Label(amount_frame, text="Amount (£):").pack(anchor='w')
         self.amount_entry = ttk.Entry(amount_frame, width=20)
         self.amount_entry.pack(pady=5)
-        
+
         # Child selection (optional)
         if children:
             child_frame = ttk.LabelFrame(main_frame, text="Donate on behalf of (optional)", padding=10)
             child_frame.pack(fill=tk.X, pady=10)
-            
+
             self.child_var = tk.StringVar()
-            
+
             rb = ttk.Radiobutton(child_frame, text="Anonymous donation", variable=self.child_var, value="anonymous")
             rb.pack(anchor='w')
-            
+
             for child in children:
-                rb = ttk.Radiobutton(child_frame, text=f"{child[1]} {child[3]}", 
+                rb = ttk.Radiobutton(child_frame, text=f"{child[1]} {child[3]}",
                                    variable=self.child_var, value=f"{child[0]}")
                 rb.pack(anchor='w')
-            
+
             self.child_var.set("anonymous")
-        
+
         # Buttons
         btn_frame = ttk.Frame(main_frame)
         btn_frame.pack(pady=20)
-        
+
         ttk.Button(btn_frame, text="Donate", command=self.donate).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text="Cancel", command=self.cancel).pack(side=tk.LEFT, padx=5)
-        
+
         self.dialog.wait_window()
-    
+
     def donate(self):
         campaign = self.campaign_var.get()
         amount_str = self.amount_entry.get().strip()
-        
+
         if not campaign:
             messagebox.showwarning("Missing Selection", "Please select a campaign.")
             return
-        
+
         try:
             amount = float(amount_str)
             if amount <= 0:
@@ -320,7 +320,7 @@ class DonationDialog:
         except ValueError:
             messagebox.showwarning("Invalid Amount", "Please enter a valid donation amount.")
             return
-        
+
         child = None
         if hasattr(self, 'child_var'):
             child_selection = self.child_var.get()
@@ -329,10 +329,10 @@ class DonationDialog:
                     if child_data[0] == child_selection:
                         child = child_data
                         break
-        
+
         self.result = (campaign, amount, child)
         self.dialog.destroy()
-    
+
     def cancel(self):
         self.dialog.destroy()
 
@@ -493,7 +493,7 @@ class QRCodeDialog:
 
 class DatabaseManager:
     """Simplified database manager for GUI operations"""
-    
+
     @staticmethod
     def get_connection():
         """Get database connection"""
@@ -508,7 +508,7 @@ class DatabaseManager:
         except Exception as e:
             print(f"Database connection error: {e}")
             return None
-    
+
     @staticmethod
     def execute_query(query, params=None):
         """Execute a query and return results"""
@@ -517,19 +517,19 @@ class DatabaseManager:
             conn = DatabaseManager.get_connection()
             if not conn:
                 return None
-            
+
             cursor = conn.cursor()
             if params:
                 cursor.execute(query, params)
             else:
                 cursor.execute(query)
-            
+
             if query.strip().upper().startswith('SELECT'):
                 return cursor.fetchall()
             else:
                 conn.commit()
                 return cursor.rowcount
-                
+
         except Exception as e:
             print(f"Database query error: {e}")
             if conn:
@@ -548,7 +548,7 @@ def initialize_gui_parent_portal(auth=None):
 def run_parent_portal(auth=None, prefer_gui=True):
     """
     Run the parent portal with automatic GUI/CLI selection.
-    
+
     Args:
         auth: Authentication object
         prefer_gui: Whether to prefer GUI over CLI (default: True)
@@ -563,18 +563,18 @@ def create_tooltip(widget, text):
         tooltip = tk.Toplevel()
         tooltip.wm_overrideredirect(True)
         tooltip.wm_geometry(f"+{event.x_root+10}+{event.y_root+10}")
-        
-        label = tk.Label(tooltip, text=text, background="#ffffe0", 
+
+        label = tk.Label(tooltip, text=text, background="#ffffe0",
                         relief="solid", borderwidth=1, font=("Arial", 9))
         label.pack()
-        
+
         widget.tooltip = tooltip
-    
+
     def on_leave(event):
         if hasattr(widget, 'tooltip'):
             widget.tooltip.destroy()
             del widget.tooltip
-    
+
     widget.bind("<Enter>", on_enter)
     widget.bind("<Leave>", on_leave)
 

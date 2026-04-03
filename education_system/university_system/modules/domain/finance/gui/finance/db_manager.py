@@ -86,28 +86,28 @@ except ImportError:
     # Stub implementations for missing functions
     def assign_to_collection_agency(*args, **kwargs):
         print("assign_to_collection_agency function not implemented")
-    
+
     def track_collection_progress(*args, **kwargs):
         print("track_collection_progress function not implemented")
-    
+
     def update_collection_case_status(*args, **kwargs):
         print("update_collection_case_status function not implemented")
-    
+
     def create_payment_arrangement(*args, **kwargs):
         print("create_payment_arrangement function not implemented")
-    
+
     def send_arrangement_confirmation(*args, **kwargs):
         print("send_arrangement_confirmation function not implemented")
-    
+
     def setup_collection_workflows(*args, **kwargs):
         print("setup_collection_workflows function not implemented")
-    
+
     def check_required_packages(*args, **kwargs):
         print("check_required_packages function not implemented")
-    
+
     def ensure_database_exists(*args, **kwargs):
         print("ensure_database_exists function not implemented")
-    
+
     def verify_fix(*args, **kwargs):
         print("verify_fix function not implemented")
 
@@ -249,7 +249,7 @@ class DatabaseManager:
             messagebox.showinfo(_("finance_gui.messages.success"), _("finance_gui.db_manager.init_success"))
         except Exception as e:
             messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.db_manager.init_failed", error=str(e)))
-    
+
 
 
     def initialize_database_schema(self):
@@ -833,4 +833,4 @@ class DatabaseManager:
 
         except Exception as e:
             messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.db_manager.text_window_failed", error=str(e)))
-        
+

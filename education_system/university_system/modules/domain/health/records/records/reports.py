@@ -10,12 +10,12 @@ def generate_health_report(auth):
     if not auth.check_permission('view_any_health_record'):
         print("You don't have permission to generate health reports.")
         return
-    
+
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     print("\n===== Health Report Generator =====")
-    
+
     # Report options
     report_types = [
         'Student Health Summary',
@@ -25,18 +25,18 @@ def generate_health_report(auth):
         'Provider Utilization Report',
         'Quality Metrics Dashboard'
     ]
-    
+
     print("Available Report Types:")
     for i, report_type in enumerate(report_types):
         print(f"{i+1}. {report_type}")
-    
+
     while True:
         choice = input(f"\nSelect report type (1-{len(report_types)}): ")
         if choice.isdigit() and 1 <= int(choice) <= len(report_types):
             selected_report = report_types[int(choice) - 1]
             break
         print("Invalid choice. Please try again.")
-    
+
     # Date range for report
     while True:
         start_date = input("Start date (YYYY-MM-DD): ")
@@ -47,9 +47,9 @@ def generate_health_report(auth):
             break
         except ValueError:
             print("Invalid date format. Please use YYYY-MM-DD.")
-    
+
     print(f"\nGenerating {selected_report} for period {start_date} to {end_date}...")
-    
+
     # Generate report based on type
     if selected_report == 'Population Health Statistics':
         generate_population_health_report(auth, start_date, end_date)
@@ -68,7 +68,7 @@ def generate_health_report(auth):
         generate_student_health_summary_report(auth, start_date, end_date)
     else:
         print("Report type not yet implemented.")
-    
+
     conn.close()
 
 

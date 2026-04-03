@@ -18,6 +18,8 @@ warnings.warn(
 from education_system.university_system.modules.shared.gui.security.security_dashboard_gui import (
     SecurityDashboard,
     show_security_dashboard,
+    MFA_ADMIN_AVAILABLE,
+    MFA_SETUP_AVAILABLE,
 )
 
 from education_system.university_system.infrastructure.security.init_security_tables import init_security_tables
@@ -26,4 +28,6 @@ __all__ = [
     'SecurityDashboard',
     'show_security_dashboard',
     'init_security_tables',
+    'MFA_ADMIN_AVAILABLE',
+    'MFA_SETUP_AVAILABLE',
 ]

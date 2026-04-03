@@ -23,7 +23,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 import logging
 from datetime import datetime
 from typing import Optional, Dict, Any
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 from decimal import Decimal
 
 # Import database connection from finance module

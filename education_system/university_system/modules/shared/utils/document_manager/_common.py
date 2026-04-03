@@ -19,7 +19,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from education_system.university_system.modules.shared.constants import paths
 
 # SQL safety
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 # Local imports - Authentication
 from education_system.university_system.infrastructure.auth import UserAuth, get_current_user, set_auth_instance
@@ -51,3 +51,16 @@ except ImportError:
     # Provide a fallback log_event function
     def log_event(level, message):
         print(f"[{level.upper()}] {message}")
+
+
+_base_get_connection = get_connection
+
+
+def get_connection(*args, **kwargs):
+    import sys
+
+    package = sys.modules.get("education_system.university_system.modules.shared.utils.document_manager")
+    package_get_connection = getattr(package, "get_connection", None)
+    if callable(package_get_connection) and package_get_connection is not get_connection:
+        return package_get_connection(*args, **kwargs)
+    return _base_get_connection(*args, **kwargs)

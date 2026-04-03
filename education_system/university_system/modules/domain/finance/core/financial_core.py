@@ -291,7 +291,7 @@ def init_enhanced_finance_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create scholarships table if it doesn't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS scholarships (
@@ -307,7 +307,7 @@ def init_enhanced_finance_db():
             updated_at TEXT
         )
         ''')
-        
+
         # Create student_scholarships table if it doesn't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_scholarships (
@@ -322,7 +322,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (scholarship_id) REFERENCES scholarships (scholarship_id)
         )
         ''')
-        
+
         # Fee types table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS fee_types (
@@ -339,7 +339,7 @@ def init_enhanced_finance_db():
             updated_at TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS program_fees (
             program_fee_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -356,7 +356,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (fee_type_id) REFERENCES fee_types (fee_type_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_fees (
             student_fee_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -374,7 +374,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (fee_type_id) REFERENCES fee_types (fee_type_id)
         )
         ''')
-        
+
         # Enhanced payments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS payments (
@@ -396,7 +396,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Payment allocations
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS payment_allocations (
@@ -409,7 +409,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (student_fee_id) REFERENCES student_fees (student_fee_id)
         )
         ''')
-        
+
         # Payment Plans System
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS payment_plan_templates (
@@ -427,7 +427,7 @@ def init_enhanced_finance_db():
             updated_at TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_payment_plans (
             payment_plan_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -449,7 +449,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (template_id) REFERENCES payment_plan_templates (template_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS payment_plan_installments (
             installment_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -466,7 +466,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (payment_id) REFERENCES payments (payment_id)
         )
         ''')
-        
+
         # Refunds and Credits System (unified_refunds)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS unified_refunds (
@@ -497,7 +497,7 @@ def init_enhanced_finance_db():
             created_at TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_credits (
             credit_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -515,7 +515,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Late Fees and Penalties
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS late_fees (
@@ -533,7 +533,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (student_fee_id) REFERENCES student_fees (student_fee_id)
         )
         ''')
-        
+
         # Multi-Currency Support
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS exchange_rates (
@@ -546,7 +546,7 @@ def init_enhanced_finance_db():
             created_at TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS currency_settings (
             setting_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -558,7 +558,7 @@ def init_enhanced_finance_db():
             updated_at TEXT
         )
         ''')
-        
+
         # Financial Aid and Loans
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS financial_aid_types (
@@ -578,7 +578,7 @@ def init_enhanced_finance_db():
             updated_at TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_financial_aid (
             aid_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -603,7 +603,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (aid_type_id) REFERENCES financial_aid_types (aid_type_id)
         )
         ''')
-        
+
         # Budgeting and Forecasting
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS budget_categories (
@@ -617,7 +617,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (parent_category_id) REFERENCES budget_categories (category_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS budget_plans (
             budget_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -634,7 +634,7 @@ def init_enhanced_finance_db():
             updated_at TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS budget_line_items (
             line_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -650,7 +650,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (category_id) REFERENCES budget_categories (category_id)
         )
         ''')
-        
+
         # Automated Notifications
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS notification_templates (
@@ -665,7 +665,7 @@ def init_enhanced_finance_db():
             updated_at TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS notification_schedules (
             schedule_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -680,7 +680,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (template_id) REFERENCES notification_templates (template_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS sent_notifications (
             notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -699,7 +699,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (template_id) REFERENCES notification_templates (template_id)
         )
         ''')
-        
+
         # Analytics and Reporting
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS financial_kpis (
@@ -713,7 +713,7 @@ def init_enhanced_finance_db():
             created_at TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS payment_risk_scores (
             score_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -726,7 +726,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # External Integrations
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS payment_gateways (
@@ -743,10 +743,10 @@ def init_enhanced_finance_db():
             updated_at TEXT
         )
         ''')
-        
+
         # NOTE: gateway transactions now use the unified 'transactions' table
         # with source_type = 'gateway'
-        
+
         # Audit and Compliance
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS audit_log (
@@ -763,7 +763,7 @@ def init_enhanced_finance_db():
             timestamp TEXT NOT NULL
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS data_retention_policies (
             policy_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -776,7 +776,7 @@ def init_enhanced_finance_db():
             updated_at TEXT
         )
         ''')
-        
+
         # API and Integration
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS api_keys (
@@ -793,7 +793,7 @@ def init_enhanced_finance_db():
             created_at TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS api_usage_log (
             usage_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -808,7 +808,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (api_key_id) REFERENCES api_keys (key_id)
         )
         ''')
-        
+
         # Collection Management
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS collection_agencies (
@@ -823,7 +823,7 @@ def init_enhanced_finance_db():
             updated_at TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS collection_cases (
             case_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -842,7 +842,7 @@ def init_enhanced_finance_db():
             FOREIGN KEY (agency_id) REFERENCES collection_agencies (agency_id)
         )
         ''')
-        
+
         # Workflow System
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS workflows (
@@ -857,7 +857,7 @@ def init_enhanced_finance_db():
             updated_at TEXT
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS workflow_instances (
             instance_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -873,14 +873,14 @@ def init_enhanced_finance_db():
             FOREIGN KEY (workflow_id) REFERENCES workflows (workflow_id)
         )
         ''')
-        
+
         # Initialize default data
         init_default_enhanced_data(cursor)
-        
+
         conn.commit()
         conn.close()
         print(get_text("finance.core.db_init_success", default="Enhanced finance database initialized successfully!"))
-        
+
     except sqlite3.Error as e:
         print(get_text("finance.core.db_init_error", default="An error occurred while initializing the enhanced finance database: {error}").format(error=e))
         if 'conn' in locals():
@@ -1018,7 +1018,7 @@ def init_default_enhanced_data(cursor):
 def initialize_finance():
     """Initialize the finance database"""
     global auth
-    
+
     print(get_text("finance.core.initializing", default="Initializing Enhanced Finance Management System..."))
 
     # Import and use centralized authentication system
@@ -1029,7 +1029,7 @@ def initialize_finance():
 
     # Initialize database
     init_enhanced_finance_db()
-    
+
     conn = get_connection()
     try:
         cursor = conn.cursor()
@@ -1040,7 +1040,7 @@ def initialize_finance():
         )
     finally:
         conn.close()
-    
+
     print(get_text("finance.core.init_success", default="Finance system initialized successfully!"))
 
 def display_enhanced_finance_menu():

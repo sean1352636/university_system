@@ -129,7 +129,7 @@ def approve_reject_aid_application():
 
             cursor.execute('''
             UPDATE student_financial_aid
-            SET status = ?, awarded_amount = ?, remaining_amount = ?, approved_by = ?, 
+            SET status = ?, awarded_amount = ?, remaining_amount = ?, approved_by = ?,
                 approval_date = ?, updated_at = ?
             WHERE aid_id = ?
             ''', (new_status, approved_amount, approved_amount, get_current_user()['username'] if get_current_user() else 'system',
@@ -149,7 +149,7 @@ def approve_reject_aid_application():
 
             cursor.execute('''
             UPDATE student_financial_aid
-            SET status = ?, approved_by = ?, approval_date = ?, 
+            SET status = ?, approved_by = ?, approval_date = ?,
                 notes = notes || ' | REJECTED: ' || ?, updated_at = ?
             WHERE aid_id = ?
             ''', (new_status, get_current_user()['username'] if get_current_user() else 'system', approval_date,
@@ -230,7 +230,7 @@ def view_aid_types():
         cursor = conn.cursor()
 
         cursor.execute('''
-        SELECT aid_type_id, aid_name, aid_category, max_amount, 
+        SELECT aid_type_id, aid_name, aid_category, max_amount,
                eligibility_criteria, requires_repayment, interest_rate, is_active
         FROM financial_aid_types
         ORDER BY aid_category, aid_name
@@ -317,7 +317,7 @@ def create_aid_type():
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         cursor.execute('''
-        INSERT INTO financial_aid_types 
+        INSERT INTO financial_aid_types
         (aid_name, aid_category, description, max_amount, eligibility_criteria,
          is_renewable, requires_repayment, interest_rate, grace_period_months,
          is_active, created_at, updated_at)
@@ -376,7 +376,7 @@ def edit_aid_type():
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         cursor.execute('''
-        UPDATE financial_aid_types 
+        UPDATE financial_aid_types
         SET aid_name = ?, description = ?, updated_at = ?
         WHERE aid_type_id = ?
         ''', (new_name, new_description, now, aid_type_id))
@@ -416,7 +416,7 @@ def deactivate_aid_type():
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         cursor.execute('''
-        UPDATE financial_aid_types 
+        UPDATE financial_aid_types
         SET is_active = 0, updated_at = ?
         WHERE aid_type_id = ?
         ''', (now, aid_type_id))
@@ -590,7 +590,7 @@ def process_loan_payment(loans):
         payment_date = datetime.now().strftime('%Y-%m-%d')
 
         cursor.execute('''
-        INSERT INTO payments 
+        INSERT INTO payments
         (student_id, amount, payment_method, payment_date, notes, created_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (student_id, payment_amount, 'Loan Repayment', payment_date,
@@ -601,7 +601,7 @@ def process_loan_payment(loans):
         new_total_repaid = (repaid or 0) + payment_amount
 
         cursor.execute('''
-        UPDATE student_financial_aid 
+        UPDATE student_financial_aid
         SET total_repaid = ?, updated_at = ?
         WHERE aid_id = ?
         ''', (new_total_repaid, now, aid_id))
@@ -624,7 +624,7 @@ def aid_distribution_summary():
         cursor = conn.cursor()
 
         cursor.execute('''
-        SELECT fat.aid_category, fat.aid_name, 
+        SELECT fat.aid_category, fat.aid_name,
                COUNT(sfa.aid_id) as applications,
                SUM(CASE WHEN sfa.status = 'approved' THEN 1 ELSE 0 END) as approved,
                SUM(CASE WHEN sfa.status = 'approved' THEN sfa.awarded_amount ELSE 0 END) as total_awarded,
@@ -725,7 +725,7 @@ def aid_effectiveness_analysis():
 
         # Analyze aid impact on student retention and performance
         cursor.execute('''
-        SELECT 
+        SELECT
             CASE WHEN sfa.aid_id IS NOT NULL THEN 'With Aid' ELSE 'Without Aid' END as aid_status,
             COUNT(DISTINCT s.student_id) as student_count,
             SUM(CASE WHEN s.status = 'active' THEN 1 ELSE 0 END) as active_students,
@@ -750,7 +750,7 @@ def aid_effectiveness_analysis():
 
         # Aid utilization by type
         cursor.execute('''
-        SELECT fat.aid_name, 
+        SELECT fat.aid_name,
                COUNT(sfa.aid_id) as applications,
                SUM(CASE WHEN sfa.status = 'approved' THEN 1 ELSE 0 END) as approved,
                (SUM(CASE WHEN sfa.status = 'approved' THEN 1 ELSE 0 END) * 100.0 / COUNT(sfa.aid_id)) as approval_rate
@@ -802,8 +802,8 @@ def view_aid_application_detail(aid_id):
             print(f"Aid application {aid_id} not found.")
             return
 
-        (aid_id, student_id, first_name, last_name, email, aid_name, category, 
-         awarded, disbursed, status, app_date, approval_date, approved_by, 
+        (aid_id, student_id, first_name, last_name, email, aid_name, category,
+         awarded, disbursed, status, app_date, approval_date, approved_by,
          notes, requires_repayment, repayment_start) = application
 
         print(f"\nFinancial Aid Application Details - ID: {aid_id}")
@@ -876,7 +876,7 @@ def apply_aid_to_fees(student_id, amount, aid_id):
 
             # Create payment record
             cursor.execute('''
-            INSERT INTO payments 
+            INSERT INTO payments
             (student_id, amount, payment_method, payment_date, notes, created_by, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (student_id, application_amount, 'Financial Aid',
@@ -888,7 +888,7 @@ def apply_aid_to_fees(student_id, amount, aid_id):
 
             # Create payment allocation
             cursor.execute('''
-            INSERT INTO payment_allocations 
+            INSERT INTO payment_allocations
             (payment_id, student_fee_id, amount, created_at)
             VALUES (?, ?, ?, ?)
             ''', (payment_id, fee_id, application_amount, now))
@@ -898,7 +898,7 @@ def apply_aid_to_fees(student_id, amount, aid_id):
             new_status = 'paid' if new_paid_amount >= total_amount else 'partial'
 
             cursor.execute('''
-            UPDATE student_fees 
+            UPDATE student_fees
             SET status = ?, updated_at = ?
             WHERE student_fee_id = ?
             ''', (new_status, now, fee_id))
@@ -998,9 +998,9 @@ def create_payment_arrangement():
         arrangement_notes = f"PAYMENT ARRANGEMENT: {schedule_info}. Terms: {terms}. Arranged by: {get_current_user()['username'] if get_current_user() else 'system'}"
 
         cursor.execute('''
-        UPDATE collection_cases 
+        UPDATE collection_cases
         SET case_status = 'in_progress',
-            notes = COALESCE(notes, '') || ' | ' || ?, 
+            notes = COALESCE(notes, '') || ' | ' || ?,
             updated_at = ?
         WHERE case_id = ?
         ''', (arrangement_notes, now, case_id))

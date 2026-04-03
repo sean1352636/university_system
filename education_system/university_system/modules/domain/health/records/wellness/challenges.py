@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 def health_challenges(auth):
     """Health challenges and competitions"""
     print("\n===== Health Challenges =====")
-    
+
     challenges = [
         {
             "name": "10,000 Steps Challenge",
@@ -35,7 +35,7 @@ def health_challenges(auth):
             "reward": "Healthy cooking class"
         }
     ]
-    
+
     print("Current Active Challenges:")
     for i, challenge in enumerate(challenges):
         print(f"\n{i+1}. {challenge['name']}")
@@ -43,7 +43,7 @@ def health_challenges(auth):
         print(f"   Duration: {challenge['duration']}")
         print(f"   Participants: {challenge['participants']}")
         print(f"   Reward: {challenge['reward']}")
-    
+
     if auth.current_user['role'] == 'student':
         join_challenge = input("\nJoin a challenge? (enter number or 'n'): ")
         if join_challenge.isdigit() and 1 <= int(join_challenge) <= len(challenges):

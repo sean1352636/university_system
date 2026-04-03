@@ -321,13 +321,12 @@ class TestRecordStudentCompetencies:
                 INSERT INTO students (student_id, first_name, last_name, email)
                 VALUES ('COMP002', 'Test', 'User', 'test@test.com')
             """)
+        inputs = ['1']  # Select first student from numbered list
 
-            inputs = ['1']  # Select first student from numbered list
+        with mock.patch('builtins.input', side_effect=inputs):
+            record_student_competencies()
 
-            with mock.patch('builtins.input', side_effect=inputs):
-                record_student_competencies()
-
-            captured = capsys.readouterr()
+        captured = capsys.readouterr()
         assert ("No competencies defined" in captured.out
                 or "no competencies" in captured.out.lower()
                 or "No students found" in captured.out)

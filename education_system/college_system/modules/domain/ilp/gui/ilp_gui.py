@@ -35,7 +35,7 @@ class ILPFrame(tk.Frame):
         self._build_plans_tab()
         self._build_targets_tab()
         self._build_reviews_tab()
-        
+
 
     def _build_plans_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)

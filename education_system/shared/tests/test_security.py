@@ -77,7 +77,7 @@ def role_mgr(auth_db):
 # ===================================================================
 
 class TestValidateIdentifier:
-    """validate_identifier must reject anything that isn't a safe SQL name."""
+    """validate_identifier must reject anything that isn't a safe SQL name."""  # nosec B608
 
     @pytest.mark.parametrize("bad_name", [
         "students; DROP TABLE",

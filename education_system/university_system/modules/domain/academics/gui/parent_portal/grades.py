@@ -47,23 +47,23 @@ def view_child_grades(self, child):
     """View grades for a specific child"""
     self.clear_content()
     self.update_status(f"Viewing grades for {child[1]} {child[3]}")
-    
-    title = ttk.Label(self.content_frame, text=f"Grades for {child[1]} {child[3]}", 
+
+    title = ttk.Label(self.content_frame, text=f"Grades for {child[1]} {child[3]}",
                      style='Title.TLabel', font=('Arial', 18, 'bold'))
     title.pack(pady=20)
-    
+
     # Create grades table
     grades_frame = ttk.Frame(self.content_frame)
     grades_frame.pack(fill=tk.BOTH, expand=True, padx=20)
-    
+
     # Table headers
     columns = ('Module', 'Assessment', 'Grade', 'Date', 'Comments')
     tree = ttk.Treeview(grades_frame, columns=columns, show='headings', height=15)
-    
+
     for col in columns:
         tree.heading(col, text=col)
         tree.column(col, width=150)
-    
+
     # Load real grades data from database
     student_id = child[0]  # Get student ID from child tuple
     try:
@@ -281,27 +281,27 @@ def show_grades_interface(self):
     """Show grades interface"""
     self.clear_content()
     self.update_status("Grades Interface")
-    
+
     title = ttk.Label(self.content_frame, text="Grade Management", style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
-    
+
     # Child selection
     if self.children:
         child_var = tk.StringVar()
         child_frame = ttk.LabelFrame(self.content_frame, text="Select Student", padding=10)
         child_frame.pack(fill=tk.X, padx=20, pady=10)
-        
+
         child_combo = ttk.Combobox(child_frame, textvariable=child_var, width=50)
         child_combo['values'] = [f"{child[1]} {child[3]} (ID: {child[0]})" for child in self.children]
         child_combo.pack(pady=5)
         child_combo.set(child_combo['values'][0] if child_combo['values'] else "")
-        
+
         def view_selected_grades():
             if child_var.get():
                 selected_index = child_combo.current()
                 if selected_index >= 0:
                     self.view_child_grades(self.children[selected_index])
-        
+
         view_btn = ttk.Button(child_frame, text="View Grades", command=view_selected_grades)
         view_btn.pack(pady=5)
     else:
@@ -312,19 +312,19 @@ def show_reports_interface(self):
     """Show reports interface"""
     self.clear_content()
     self.update_status("Instructor Reports")
-    
+
     title = ttk.Label(self.content_frame, text="Instructor Reports", style='Title.TLabel', font=('Arial', 20, 'bold'))
     title.pack(pady=20)
-    
+
     if self.children:
         for child in self.children:
             child_frame = ttk.LabelFrame(self.content_frame, text=f"{child[1]} {child[3]}", padding=15)
             child_frame.pack(fill=tk.X, padx=20, pady=10)
-            
+
             info_label = ttk.Label(child_frame, text=f"Student ID: {child[0]} | Course: {child[4]}")
             info_label.pack()
-            
-            view_btn = ttk.Button(child_frame, text="View Reports", 
+
+            view_btn = ttk.Button(child_frame, text="View Reports",
                                  command=lambda c=child: self.view_teacher_reports(c))
             view_btn.pack(pady=5)
     else:

@@ -54,7 +54,7 @@ except ImportError:
     TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
     SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
     ROOM_TYPES = ['Lecture Hall', 'Lab', 'Tutorial Room', 'Seminar Room', 'Workshop Room', 'Computer Lab', 'Other']
-    
+
     # Import the ModuleScheduler class from the document
     try:
         from education_system.university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
@@ -125,15 +125,15 @@ class ModuleSchedulingGUI:
     def setup_styles(self):
         """Configure ttk styles for better appearance"""
         style = ttk.Style()
-        
+
         # Configure notebook styles
         style.configure('Main.TNotebook', tabposition='n')
         style.configure('Main.TNotebook.Tab', padding=[20, 8])
-        
+
         # Configure treeview styles
         style.configure('Data.Treeview', rowheight=25)
         style.configure('Data.Treeview.Heading', font=('Arial', 10, 'bold'))
-        
+
         # Configure button styles
         style.configure('Action.TButton', font=('Arial', 9, 'bold'))
         style.configure('Danger.TButton', foreground='red')
@@ -277,7 +277,7 @@ class ModuleSchedulingGUI:
         """Update activity log"""
         timestamp = datetime.now().strftime("%H:%M:%S")
         log_entry = f"[{timestamp}] {message}\n"
-        
+
         # Update dashboard activity
         self.activity_text.config(state=tk.NORMAL)
         self.activity_text.insert(1.0, log_entry)
@@ -287,7 +287,7 @@ class ModuleSchedulingGUI:
             self.activity_text.delete(1.0, tk.END)
             self.activity_text.insert(1.0, '\n'.join(lines[:100]))
         self.activity_text.config(state=tk.DISABLED)
-        
+
         # Update management log
         self.log_text.config(state=tk.NORMAL)
         self.log_text.insert(1.0, log_entry)
@@ -327,10 +327,10 @@ class ModuleSchedulingGUI:
         help_window = tk.Toplevel(self.root)
         help_window.title("User Guide")
         help_window.geometry("700x500")
-        
+
         help_text = scrolledtext.ScrolledText(help_window, font=('Arial', 10))
         help_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         guide_content = """
 ENHANCED MODULE SCHEDULING SYSTEM - USER GUIDE
 
@@ -407,7 +407,7 @@ TIPS:
 For technical support or additional features, refer to the original
 command-line interface using the CLI Mode button.
         """
-        
+
         help_text.insert(tk.END, guide_content)
         help_text.config(state=tk.DISABLED)
 
@@ -420,7 +420,7 @@ A comprehensive solution for academic scheduling and timetable management.
 
 Features:
 • Advanced scheduling with conflict detection
-• Analytics and reporting capabilities  
+• Analytics and reporting capabilities
 • Multiple export formats
 • Data backup and validation
 • Template management
@@ -432,7 +432,7 @@ command-line interface while providing an intuitive graphical interface.
 Version: 2.0
 Developer: Academic Systems Team
         """
-        
+
         messagebox.showinfo("About", about_text, parent=self.root)
 
     def show_language_selector(self):
@@ -502,26 +502,26 @@ def main():
         # Check if the original module is available
         if not os.path.exists('module_scheduling.py'):
             print("Warning: module_scheduling.py not found. Some features may be limited.")
-        
+
         # Create the main window
         root = tk.Tk()
-        
+
         # Set application icon (if available)
         try:
             root.iconbitmap('icon.ico')  # You can add an icon file
         except (FileNotFoundError, Exception):
             pass
-        
+
         # Create and run the application
         app = ModuleSchedulingGUI(root)
-        
+
         # Start the GUI event loop
         root.mainloop()
-        
+
     except Exception as e:
         print(f"Error starting GUI application: {e}")
         print("\nTrying to launch CLI mode instead...")
-        
+
         # Fallback to CLI mode if GUI fails
         try:
             from education_system.university_system.modules.domain.academics.services.module_scheduling import display_enhanced_scheduling_menu
@@ -546,13 +546,13 @@ def create_desktop_shortcut():
     try:
         import winshell
         from win32com.client import Dispatch
-        
+
         desktop = winshell.desktop()
         path = os.path.join(desktop, "Module Scheduler.lnk")
         target = sys.executable
         wDir = os.path.dirname(os.path.abspath(__file__))
         icon = os.path.join(wDir, "icon.ico")
-        
+
         shell = Dispatch('WScript.Shell')
         shortcut = shell.CreateShortCut(path)
         shortcut.Targetpath = target
@@ -560,9 +560,9 @@ def create_desktop_shortcut():
         shortcut.WorkingDirectory = wDir
         shortcut.IconLocation = icon if os.path.exists(icon) else target
         shortcut.save()
-        
+
         print(f"Desktop shortcut created: {path}")
-        
+
     except ImportError:
         print("winshell and pywin32 packages required for creating Windows shortcuts.")
     except Exception as e:
@@ -575,15 +575,15 @@ def setup_application():
         directories = ['timetable_reports', 'backups', 'analytics', 'templates']
         for directory in directories:
             os.makedirs(directory, exist_ok=True)
-        
+
         # Initialize database if it doesn't exist
         if not os.path.exists(str(DEFAULT_DB_PATH)):
             print("Initializing database for first-time use...")
             scheduler = ModuleScheduler()
             print("Database initialized successfully.")
-        
+
         print("Application setup complete!")
-        
+
     except Exception as e:
         print(f"Error during application setup: {e}")
 

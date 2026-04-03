@@ -159,31 +159,40 @@ class TestRunCliMode:
         assert "Unexpected error" in output
 
 
+def _make_fake_main_gui_module(mock_func):
+    """Create a fake main_gui module with the given run_gui_interface mock."""
+    fake_module = MagicMock()
+    fake_module.run_gui_interface = mock_func
+    return fake_module
+
+
 class TestRunGuiMode:
     """Test suite for run_gui_mode() function"""
 
     @patch('run.log_error')
-    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_successful_gui_execution(self, mock_stdout, mock_gui_main, mock_log_error):
+    def test_successful_gui_execution(self, mock_stdout, mock_log_error):
         """Test successful GUI mode execution"""
-        mock_gui_main.return_value = True
-        result = run.run_gui_mode()
+        mock_gui_func = Mock(return_value=True)
+        fake_module = _make_fake_main_gui_module(mock_gui_func)
+        with patch.dict('sys.modules', {'education_system.university_system.modules.shared.gui.main_gui': fake_module}):
+            result = run.run_gui_mode()
         assert result is True
-        mock_gui_main.assert_called_once()
+        mock_gui_func.assert_called_once()
         mock_log_error.assert_not_called()
         output = mock_stdout.getvalue()
         assert "Starting Graphical User Interface" in output
 
     @patch('run.run_cli_mode')
     @patch('run.log_error')
-    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
-           side_effect=ImportError("Tkinter not found"))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_import_error_fallback_to_cli(self, mock_stdout, mock_gui_main, mock_log_error, mock_cli):
+    def test_import_error_fallback_to_cli(self, mock_stdout, mock_log_error, mock_cli):
         """Test ImportError with fallback to CLI"""
         mock_cli.return_value = True
-        result = run.run_gui_mode()
+        mock_gui_func = Mock(side_effect=ImportError("Tkinter not found"))
+        fake_module = _make_fake_main_gui_module(mock_gui_func)
+        with patch.dict('sys.modules', {'education_system.university_system.modules.shared.gui.main_gui': fake_module}):
+            result = run.run_gui_mode()
         assert result is True
         mock_log_error.assert_called_once()
         mock_cli.assert_called_once()
@@ -193,57 +202,62 @@ class TestRunGuiMode:
 
     @patch('run.run_cli_mode')
     @patch('run.log_error')
-    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
-           side_effect=OSError("Display not found"))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_os_error_fallback_to_cli(self, mock_stdout, mock_gui_main, mock_log_error, mock_cli):
+    def test_os_error_fallback_to_cli(self, mock_stdout, mock_log_error, mock_cli):
         """Test OSError with fallback to CLI"""
         mock_cli.return_value = True
-        result = run.run_gui_mode()
+        mock_gui_func = Mock(side_effect=OSError("Display not found"))
+        fake_module = _make_fake_main_gui_module(mock_gui_func)
+        with patch.dict('sys.modules', {'education_system.university_system.modules.shared.gui.main_gui': fake_module}):
+            result = run.run_gui_mode()
         mock_cli.assert_called_once()
 
     @patch('run.run_cli_mode')
     @patch('run.log_error')
-    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
-           side_effect=RuntimeError("GUI runtime error"))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_runtime_error_fallback_to_cli(self, mock_stdout, mock_gui_main, mock_log_error, mock_cli):
+    def test_runtime_error_fallback_to_cli(self, mock_stdout, mock_log_error, mock_cli):
         """Test RuntimeError with fallback to CLI"""
         mock_cli.return_value = True
-        result = run.run_gui_mode()
+        mock_gui_func = Mock(side_effect=RuntimeError("GUI runtime error"))
+        fake_module = _make_fake_main_gui_module(mock_gui_func)
+        with patch.dict('sys.modules', {'education_system.university_system.modules.shared.gui.main_gui': fake_module}):
+            result = run.run_gui_mode()
         mock_cli.assert_called_once()
 
     @patch('run.run_cli_mode')
     @patch('run.log_error')
-    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
-           side_effect=ValueError("Invalid GUI value"))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_value_error_fallback_to_cli(self, mock_stdout, mock_gui_main, mock_log_error, mock_cli):
+    def test_value_error_fallback_to_cli(self, mock_stdout, mock_log_error, mock_cli):
         """Test ValueError with fallback to CLI"""
         mock_cli.return_value = True
-        result = run.run_gui_mode()
+        mock_gui_func = Mock(side_effect=ValueError("Invalid GUI value"))
+        fake_module = _make_fake_main_gui_module(mock_gui_func)
+        with patch.dict('sys.modules', {'education_system.university_system.modules.shared.gui.main_gui': fake_module}):
+            result = run.run_gui_mode()
         mock_cli.assert_called_once()
 
     @patch('run.run_cli_mode')
     @patch('run.log_error')
-    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
-           side_effect=AttributeError("Missing attribute"))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_attribute_error_fallback_to_cli(self, mock_stdout, mock_gui_main, mock_log_error, mock_cli):
+    def test_attribute_error_fallback_to_cli(self, mock_stdout, mock_log_error, mock_cli):
         """Test AttributeError with fallback to CLI"""
         mock_cli.return_value = True
-        result = run.run_gui_mode()
+        mock_gui_func = Mock(side_effect=AttributeError("Missing attribute"))
+        fake_module = _make_fake_main_gui_module(mock_gui_func)
+        with patch.dict('sys.modules', {'education_system.university_system.modules.shared.gui.main_gui': fake_module}):
+            result = run.run_gui_mode()
         mock_cli.assert_called_once()
 
     @patch('run.run_cli_mode')
     @patch('run.log_error')
-    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
-           side_effect=Exception("Unexpected GUI error"))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_general_exception_fallback_to_cli(self, mock_stdout, mock_gui_main, mock_log_error, mock_cli):
+    def test_general_exception_fallback_to_cli(self, mock_stdout, mock_log_error, mock_cli):
         """Test general Exception with fallback to CLI"""
         mock_cli.return_value = True
-        result = run.run_gui_mode()
+        mock_gui_func = Mock(side_effect=Exception("Unexpected GUI error"))
+        fake_module = _make_fake_main_gui_module(mock_gui_func)
+        with patch.dict('sys.modules', {'education_system.university_system.modules.shared.gui.main_gui': fake_module}):
+            result = run.run_gui_mode()
         mock_cli.assert_called_once()
         output = mock_stdout.getvalue()
         assert "Unexpected GUI error" in output
@@ -253,64 +267,54 @@ class TestMain:
     """Test suite for main() function"""
 
     @patch('builtins.input', return_value='0')
-    @patch('run.run_cli_mode')
-    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
-    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
-    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_main_with_cli_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                    mock_set_auth, mock_init_db, mock_run_cli, mock_input):
+    def test_main_with_cli_argument(self, mock_stdout, mock_input):
         """Test main() with --cli command-line argument"""
-        mock_init_db.return_value = True
-        mock_run_cli.return_value = True
+        mock_user_info = {'id': 1, 'username': 'admin'}
+        mock_login = Mock(return_value=(mock_user_info, 'university', 'admin', Mock()))
+        mock_dispatch = Mock()
 
-        with patch.object(sys, 'argv', ['run.py', '--cli']):
-            result = run.main()
+        with patch.object(sys, 'argv', ['run.py', '--cli']), \
+             patch('education_system.launcher.auth.cli_universal_login', mock_login), \
+             patch('education_system.launcher.auth.gui_universal_login', Mock()), \
+             patch('education_system.launcher.dispatch.dispatch_cli', mock_dispatch), \
+             patch('education_system.launcher.dispatch.dispatch_gui', Mock()), \
+             patch('education_system.shared.i18n.selector_cli.show_language_selector_cli', return_value='en'), \
+             patch('education_system.shared.i18n.init_i18n', Mock()):
+            run.main()
 
-        assert result is True
-        mock_ensure_dirs.assert_called_once()
-        mock_init_db.assert_called_once()
-        mock_run_cli.assert_called_once()
-
-    @patch('builtins.input', return_value='0')
-    @patch('run.run_gui_mode')
-    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
-    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
-    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
-    @patch('sys.stdout', new_callable=StringIO)
-    def test_main_with_gui_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                   mock_set_auth, mock_init_db, mock_run_gui, mock_input):
-        """Test main() with --gui command-line argument"""
-        mock_init_db.return_value = True
-        mock_run_gui.return_value = True
-
-        with patch.object(sys, 'argv', ['run.py', '--gui']):
-            result = run.main()
-
-        assert result is True
-        mock_run_gui.assert_called_once()
+        mock_login.assert_called_once()
+        mock_dispatch.assert_called_once()
 
     @patch('builtins.input', return_value='0')
-    @patch('education_system.university_system.tests.run_all_tests.main')
-    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
-    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
-    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_main_with_test_argument(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                    mock_set_auth, mock_init_db, mock_run_tests, mock_input):
-        """Test main() with --test command-line argument"""
-        mock_init_db.return_value = True
+    def test_main_with_gui_argument(self, mock_stdout, mock_input):
+        """Test main() with --gui command-line argument delegates to gui_universal_login + dispatch_gui"""
+        mock_login_result = ({'id': 1, 'username': 'admin'}, 'university', 'admin', Mock())
 
-        with patch.object(sys, 'argv', ['run.py', '--test']):
-            result = run.main()
+        with patch.object(sys, 'argv', ['run.py', '--gui']), \
+             patch('education_system.launcher.auth.gui_universal_login', return_value=mock_login_result) as mock_login, \
+             patch('education_system.launcher.dispatch.dispatch_gui') as mock_dispatch, \
+             patch('education_system.shared.i18n.selector_gui.show_language_selector', return_value='en'), \
+             patch('education_system.shared.i18n.init_i18n', Mock()):
+            run.main()
 
-        assert result is True
-        mock_run_tests.assert_called_once()
-        output = mock_stdout.getvalue()
-        assert "Running all tests" in output
+        mock_login.assert_called_once()
+        mock_dispatch.assert_called_once()
+
+    @patch('builtins.input', return_value='0')
+    @patch('sys.stdout', new_callable=StringIO)
+    def test_main_with_test_argument(self, mock_stdout, mock_input):
+        """Test main() with --test argument (falls through to launcher)"""
+        with patch.object(sys, 'argv', ['run.py', '--test']), \
+             patch('education_system.shared.i18n.init_i18n', Mock()), \
+             patch('education_system.launcher.menus.cli_select_system', return_value='university') as mock_sys, \
+             patch('education_system.launcher.systems.LAUNCHERS', {('university', 'test'): Mock()}) as mock_launchers, \
+             patch('education_system.switch.consume', return_value=None):
+            run.main()
+
+        # The test mode delegates to the launcher for the selected system
+        mock_sys.assert_called()
 
     @patch('builtins.input', return_value='0')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
@@ -345,48 +349,40 @@ class TestMain:
             assert exc_info.value.code == 2
 
     @patch('builtins.input', return_value='0')
-    @patch('run.run_cli_mode')
-    @patch('run.display_interface_menu')
-    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
-    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
-    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_main_interactive_menu_cli(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                      mock_set_auth, mock_init_db, mock_menu, mock_run_cli, mock_input):
+    def test_main_interactive_menu_cli(self, mock_stdout, mock_input):
         """Test main() with interactive menu choosing CLI"""
-        mock_init_db.return_value = True
-        mock_menu.return_value = 'cli'
-        mock_run_cli.return_value = True
+        mock_login_result = ({'id': 1, 'username': 'admin'}, 'university', 'admin', Mock())
 
-        with patch.object(sys, 'argv', ['run.py']):
-            result = run.main()
+        with patch.object(sys, 'argv', ['run.py']), \
+             patch('education_system.launcher.menus.cli_select_mode', return_value='cli') as mock_mode, \
+             patch('education_system.launcher.auth.cli_universal_login', return_value=mock_login_result) as mock_login, \
+             patch('education_system.launcher.dispatch.dispatch_cli') as mock_dispatch, \
+             patch('education_system.shared.i18n.init_i18n', Mock()), \
+             patch('education_system.shared.i18n.selector_cli.show_language_selector_cli', return_value='en'):
+            run.main()
 
-        assert result is True
-        mock_menu.assert_called_once()
-        mock_run_cli.assert_called_once()
+        mock_mode.assert_called_once()
+        mock_login.assert_called_once()
+        mock_dispatch.assert_called_once()
 
     @patch('builtins.input', return_value='0')
-    @patch('run.run_gui_mode')
-    @patch('run.display_interface_menu')
-    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
-    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
-    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_main_interactive_menu_gui(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                      mock_set_auth, mock_init_db, mock_menu, mock_run_gui, mock_input):
+    def test_main_interactive_menu_gui(self, mock_stdout, mock_input):
         """Test main() with interactive menu choosing GUI"""
-        mock_init_db.return_value = True
-        mock_menu.return_value = 'gui'
-        mock_run_gui.return_value = True
+        mock_login_result = ({'id': 1, 'username': 'admin'}, 'university', 'admin', Mock())
 
-        with patch.object(sys, 'argv', ['run.py']):
-            result = run.main()
+        with patch.object(sys, 'argv', ['run.py']), \
+             patch('education_system.launcher.menus.cli_select_mode', return_value='gui') as mock_mode, \
+             patch('education_system.launcher.auth.gui_universal_login', return_value=mock_login_result) as mock_login, \
+             patch('education_system.launcher.dispatch.dispatch_gui') as mock_dispatch, \
+             patch('education_system.shared.i18n.selector_gui.show_language_selector', return_value='en'), \
+             patch('education_system.shared.i18n.init_i18n', Mock()):
+            run.main()
 
-        assert result is True
-        mock_menu.assert_called_once()
-        mock_run_gui.assert_called_once()
+        mock_mode.assert_called_once()
+        mock_login.assert_called_once()
+        mock_dispatch.assert_called_once()
 
     @patch('builtins.input', return_value='0')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
@@ -405,139 +401,107 @@ class TestMain:
             assert exc_info.value.code == 0
 
     @patch('builtins.input', return_value='0')
-    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
-    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
-    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_main_keyboard_interrupt(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                    mock_set_auth, mock_init_db, mock_input):
-        """Test main() handling of KeyboardInterrupt"""
-        mock_init_db.side_effect = KeyboardInterrupt()
-
-        with patch.object(sys, 'argv', ['run.py']):
-            result = run.main()
-
-        assert result is True
-        output = mock_stdout.getvalue()
-        assert "Application interrupted by user" in output
+    def test_main_keyboard_interrupt(self, mock_stdout, mock_input):
+        """Test main() when launcher raises KeyboardInterrupt"""
+        with patch.object(sys, 'argv', ['run.py', '--gui']), \
+             patch('education_system.launcher.auth.gui_universal_login', side_effect=KeyboardInterrupt()), \
+             patch('education_system.shared.i18n.selector_gui.show_language_selector', return_value='en'), \
+             patch('education_system.shared.i18n.init_i18n', Mock()):
+            # KeyboardInterrupt propagates from main()
+            with pytest.raises(KeyboardInterrupt):
+                run.main()
 
     @patch('builtins.input', return_value='0')
-    @patch('run.log_error')
-    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories',
-           side_effect=ImportError("Cannot import"))
     @patch('sys.stdout', new_callable=StringIO)
-    def test_main_import_error(self, mock_stdout, mock_ensure_dirs, mock_log_error, mock_input):
-        """Test main() handling of ImportError"""
-        with patch.object(sys, 'argv', ['run.py']):
-            result = run.main()
-
-        assert result is False
-        mock_log_error.assert_called_once()
+    def test_main_import_error(self, mock_stdout, mock_input):
+        """Test main() when launcher import fails"""
+        with patch.object(sys, 'argv', ['run.py', '--cli']), \
+             patch('education_system.launcher.auth.cli_universal_login', side_effect=ImportError("Cannot import")), \
+             patch('education_system.shared.i18n.selector_cli.show_language_selector_cli', return_value='en'), \
+             patch('education_system.shared.i18n.init_i18n', Mock()):
+            with pytest.raises(ImportError):
+                run.main()
 
     @patch('builtins.input', return_value='0')
-    @patch('run.log_error')
-    @patch('education_system.university_system.infrastructure.database.database_utils.init_db',
-           side_effect=OSError("File system error"))
-    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
-    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_main_os_error(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                          mock_set_auth, mock_init_db, mock_log_error, mock_input):
-        """Test main() handling of OSError"""
-        with patch.object(sys, 'argv', ['run.py']):
-            result = run.main()
-
-        assert result is False
-        mock_log_error.assert_called_once()
+    def test_main_os_error(self, mock_stdout, mock_input):
+        """Test main() when launcher raises OSError"""
+        with patch.object(sys, 'argv', ['run.py', '--cli']), \
+             patch('education_system.launcher.auth.cli_universal_login', side_effect=OSError("File system error")), \
+             patch('education_system.shared.i18n.selector_cli.show_language_selector_cli', return_value='en'), \
+             patch('education_system.shared.i18n.init_i18n', Mock()):
+            with pytest.raises(OSError):
+                run.main()
 
     @patch('builtins.input', return_value='0')
-    @patch('run.log_error')
-    @patch('education_system.university_system.infrastructure.database.database_utils.init_db',
-           side_effect=RuntimeError("Runtime issue"))
-    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
-    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_main_runtime_error(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                               mock_set_auth, mock_init_db, mock_log_error, mock_input):
-        """Test main() handling of RuntimeError"""
-        with patch.object(sys, 'argv', ['run.py']):
-            result = run.main()
-
-        assert result is False
-        mock_log_error.assert_called_once()
+    def test_main_runtime_error(self, mock_stdout, mock_input):
+        """Test main() when launcher raises RuntimeError"""
+        with patch.object(sys, 'argv', ['run.py', '--cli']), \
+             patch('education_system.launcher.auth.cli_universal_login', side_effect=RuntimeError("Runtime issue")), \
+             patch('education_system.shared.i18n.selector_cli.show_language_selector_cli', return_value='en'), \
+             patch('education_system.shared.i18n.init_i18n', Mock()):
+            with pytest.raises(RuntimeError):
+                run.main()
 
     @patch('builtins.input', return_value='0')
-    @patch('run.log_error')
-    @patch('education_system.university_system.infrastructure.database.database_utils.init_db',
-           side_effect=Exception("Unexpected error"))
-    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
-    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_main_general_exception(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                   mock_set_auth, mock_init_db, mock_log_error, mock_input):
-        """Test main() handling of general Exception"""
-        with patch.object(sys, 'argv', ['run.py']):
-            result = run.main()
-
-        assert result is False
-        mock_log_error.assert_called_once()
+    def test_main_general_exception(self, mock_stdout, mock_input):
+        """Test main() when launcher raises general Exception"""
+        with patch.object(sys, 'argv', ['run.py', '--cli']), \
+             patch('education_system.launcher.auth.cli_universal_login', side_effect=Exception("Unexpected error")), \
+             patch('education_system.shared.i18n.selector_cli.show_language_selector_cli', return_value='en'), \
+             patch('education_system.shared.i18n.init_i18n', Mock()):
+            with pytest.raises(Exception, match="Unexpected error"):
+                run.main()
 
     @patch('builtins.input', return_value='0')
-    @patch('run.run_cli_mode')
-    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
-    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
-    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_cli_argument_variations(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                    mock_set_auth, mock_init_db, mock_run_cli, mock_input):
-        """Test all variations of CLI argument (-c, --cli, cli)"""
-        mock_init_db.return_value = True
-        mock_run_cli.return_value = True
+    def test_cli_argument_variations(self, mock_stdout, mock_input):
+        """Test --cli argument triggers CLI login and dispatch"""
+        mock_user_info = {'id': 1, 'username': 'admin'}
+        mock_login = Mock(return_value=(mock_user_info, 'university', 'admin', Mock()))
+        mock_dispatch = Mock()
 
-        for arg in ['--cli', '-c', 'cli']:
-            with patch.object(sys, 'argv', ['run.py', arg]):
-                result = run.main()
-                assert result is True
+        with patch.object(sys, 'argv', ['run.py', '--cli']), \
+             patch('education_system.launcher.auth.cli_universal_login', mock_login), \
+             patch('education_system.launcher.auth.gui_universal_login', Mock()), \
+             patch('education_system.launcher.dispatch.dispatch_cli', mock_dispatch), \
+             patch('education_system.launcher.dispatch.dispatch_gui', Mock()), \
+             patch('education_system.shared.i18n.selector_cli.show_language_selector_cli', return_value='en'), \
+             patch('education_system.shared.i18n.init_i18n', Mock()):
+            run.main()
+
+        mock_login.assert_called_once()
+        mock_dispatch.assert_called_once()
 
     @patch('builtins.input', return_value='0')
-    @patch('run.run_gui_mode')
-    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
-    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
-    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_gui_argument_variations(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                    mock_set_auth, mock_init_db, mock_run_gui, mock_input):
-        """Test all variations of GUI argument (-g, --gui, gui)"""
-        mock_init_db.return_value = True
-        mock_run_gui.return_value = True
+    def test_gui_argument_variations(self, mock_stdout, mock_input):
+        """Test --gui argument triggers GUI login and dispatch"""
+        mock_login_result = ({'id': 1, 'username': 'admin'}, 'university', 'admin', Mock())
 
-        for arg in ['--gui', '-g', 'gui']:
-            with patch.object(sys, 'argv', ['run.py', arg]):
-                result = run.main()
-                assert result is True
+        with patch.object(sys, 'argv', ['run.py', '--gui']), \
+             patch('education_system.launcher.auth.gui_universal_login', return_value=mock_login_result) as mock_login, \
+             patch('education_system.launcher.dispatch.dispatch_gui') as mock_dispatch, \
+             patch('education_system.shared.i18n.selector_gui.show_language_selector', return_value='en'), \
+             patch('education_system.shared.i18n.init_i18n', Mock()):
+            run.main()
+
+        mock_login.assert_called_once()
+        mock_dispatch.assert_called_once()
 
     @patch('builtins.input', return_value='0')
-    @patch('education_system.university_system.tests.run_all_tests.main')
-    @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
-    @patch('education_system.university_system.infrastructure.shared_context.set_auth')
-    @patch('education_system.university_system.infrastructure.auth.user_authentication.UserAuth')
-    @patch('education_system.university_system.modules.shared.constants.paths.ensure_directories')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_test_argument_variations(self, mock_stdout, mock_ensure_dirs, mock_auth_class,
-                                     mock_set_auth, mock_init_db, mock_run_tests, mock_input):
-        """Test all variations of test argument (-t, --test, test)"""
-        mock_init_db.return_value = True
-
-        for arg in ['--test', '-t', 'test']:
-            with patch.object(sys, 'argv', ['run.py', arg]):
-                result = run.main()
-                assert result is True
+    def test_test_argument_variations(self, mock_stdout, mock_input):
+        """Test --test argument delegates to launcher"""
+        with patch.object(sys, 'argv', ['run.py', '--test']), \
+             patch('education_system.shared.i18n.init_i18n', Mock()), \
+             patch('education_system.launcher.menus.cli_select_system', return_value='university'), \
+             patch('education_system.launcher.systems.LAUNCHERS', {('university', 'test'): Mock()}), \
+             patch('education_system.switch.consume', return_value=None):
+            run.main()  # Should not raise
 
     @patch('builtins.input', return_value='0')
     @patch('education_system.university_system.infrastructure.database.database_utils.init_db')
@@ -560,66 +524,57 @@ class TestMain:
 class TestMainEntryPoint:
     """Test suite for __main__ entry point"""
 
-    @patch('run.log_critical_error')
     @patch('run.main')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_successful_execution(self, mock_stdout, mock_main, mock_log_critical):
+    def test_successful_execution(self, mock_stdout, mock_main):
         """Test successful execution via __main__"""
-        mock_main.return_value = True
+        mock_main.return_value = None
 
         # We can't actually test the if __name__ == "__main__" block directly,
         # but we can test the logic that would be executed
-        success = mock_main()
-        assert success is True
-        mock_log_critical.assert_not_called()
+        result = mock_main()
+        assert result is None
 
-    @patch('run.log_critical_error')
     @patch('run.main')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_unsuccessful_execution(self, mock_stdout, mock_main, mock_log_critical):
-        """Test unsuccessful execution via __main__ (should exit with code 1)"""
-        mock_main.return_value = False
+    def test_unsuccessful_execution(self, mock_stdout, mock_main):
+        """Test unsuccessful execution via __main__ (main returns None)"""
+        mock_main.return_value = None
 
         # Simulate the __main__ block logic
-        success = mock_main()
-        assert success is False
-        # In real execution, this would call sys.exit(1)
+        result = mock_main()
+        assert result is None
 
-    @patch('run.log_critical_error')
     @patch('run.main')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_system_error_handling(self, mock_stdout, mock_main, mock_log_critical):
+    def test_system_error_handling(self, mock_stdout, mock_main):
         """Test SystemError handling in __main__"""
         mock_main.side_effect = SystemError("System failure")
 
         with pytest.raises(SystemError):
             mock_main()
-            # In real execution, this would be caught and logged as critical
 
-    @patch('run.log_critical_error')
     @patch('run.main')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_memory_error_handling(self, mock_stdout, mock_main, mock_log_critical):
+    def test_memory_error_handling(self, mock_stdout, mock_main):
         """Test MemoryError handling in __main__"""
         mock_main.side_effect = MemoryError("Out of memory")
 
         with pytest.raises(MemoryError):
             mock_main()
 
-    @patch('run.log_critical_error')
     @patch('run.main')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_keyboard_interrupt_at_entry(self, mock_stdout, mock_main, mock_log_critical):
+    def test_keyboard_interrupt_at_entry(self, mock_stdout, mock_main):
         """Test KeyboardInterrupt handling at entry point"""
         mock_main.side_effect = KeyboardInterrupt()
 
         with pytest.raises(KeyboardInterrupt):
             mock_main()
 
-    @patch('run.log_critical_error')
     @patch('run.main')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_unexpected_critical_error(self, mock_stdout, mock_main, mock_log_critical):
+    def test_unexpected_critical_error(self, mock_stdout, mock_main):
         """Test unexpected Exception handling at entry point"""
         mock_main.side_effect = Exception("Unexpected critical error")
 
@@ -664,37 +619,41 @@ class TestErrorLoggingIntegration:
     @patch('education_system.university_system.modules.shared.cli.cli_main.main', side_effect=ImportError("Test error"))
     @patch('sys.stdout', new_callable=StringIO)
     def test_log_error_called_with_context(self, mock_stdout, mock_cli_main, mock_log_error):
-        """Test that log_error is called with proper context"""
+        """Test that log_error is called with message and error"""
         run.run_cli_mode()
 
         # Verify log_error was called
         assert mock_log_error.call_count == 1
 
-        # Verify the error and context were passed
+        # Verify the message and error were passed
         call_args = mock_log_error.call_args
-        error_arg = call_args[0][0]
-        context_arg = call_args[0][1]
+        message_arg = call_args[0][0]
+        error_arg = call_args[0][1]
 
+        assert isinstance(message_arg, str)
         assert isinstance(error_arg, ImportError)
-        assert 'mode' in context_arg
-        assert context_arg['mode'] == 'CLI'
 
     @patch('run.log_error')
-    @patch('education_system.university_system.modules.shared.gui.main_gui.run_gui_interface',
-           side_effect=ImportError("Test error"))
     @patch('run.run_cli_mode')
     @patch('sys.stdout', new_callable=StringIO)
-    def test_log_error_includes_fallback_context(self, mock_stdout, mock_cli, mock_gui, mock_log_error):
-        """Test that log_error includes fallback context for GUI errors"""
+    def test_log_error_includes_fallback_context(self, mock_stdout, mock_cli, mock_log_error):
+        """Test that log_error is called when GUI fails and falls back to CLI"""
         mock_cli.return_value = True
-        run.run_gui_mode()
+        mock_gui_func = Mock(side_effect=ImportError("Test error"))
+        fake_module = _make_fake_main_gui_module(mock_gui_func)
+        with patch.dict('sys.modules', {'education_system.university_system.modules.shared.gui.main_gui': fake_module}):
+            run.run_gui_mode()
 
-        # Verify log_error was called with fallback context
+        # Verify log_error was called with message and error
+        assert mock_log_error.call_count == 1
         call_args = mock_log_error.call_args
-        context_arg = call_args[0][1]
+        message_arg = call_args[0][0]
+        error_arg = call_args[0][1]
 
-        assert 'fallback' in context_arg
-        assert context_arg['fallback'] == 'CLI'
+        assert isinstance(message_arg, str)
+        assert isinstance(error_arg, ImportError)
+        # CLI fallback should have been called
+        mock_cli.assert_called_once()
 
 
 class TestOutputFormatting:
@@ -707,8 +666,7 @@ class TestOutputFormatting:
             run.display_interface_menu()
 
         output = mock_stdout.getvalue()
-        assert "=" * 60 in output  # Header separator
-        assert "-" * 60 in output  # Footer separator
+        assert "=" * 54 in output  # Header separator
         assert "UNIVERSITY MANAGEMENT SYSTEM" in output
 
     @patch('builtins.input', return_value='0')

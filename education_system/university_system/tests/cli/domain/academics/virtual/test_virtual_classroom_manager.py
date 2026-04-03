@@ -409,8 +409,8 @@ class TestUpdateClassroom:
         """Test updating with non-allowed fields."""
         classroom_id = manager.create_classroom("Test", 1, "zoom")
 
-        # Try to update classroom_id (not allowed)
-        result = manager.update_classroom(classroom_id, classroom_id=999)
+        # Try to update with a non-allowed field
+        result = manager.update_classroom(classroom_id, instructor_id=999)
         assert result is False
 
     def test_update_nonexistent_classroom(self, manager):

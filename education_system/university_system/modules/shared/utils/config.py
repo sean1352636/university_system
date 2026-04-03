@@ -5,8 +5,7 @@ from __future__ import annotations
 import json
 import ssl
 import smtplib
-
-from jsonschema import validate
+import jsonschema
 
 from education_system.university_system.modules.shared.utils.logs import handle_exception, log_event
 from education_system.university_system.modules.shared.constants import paths
@@ -57,36 +56,40 @@ DEFAULT_CONFIG = {
 config = DEFAULT_CONFIG.copy()
 
 
+def _config_path():
+    return paths.EMAIL_CONFIG_PATH
+
+
 
 def validate_email_config(config):
     """Enhanced configuration validation"""
     errors = []
-    
+
     # Required fields
     required_fields = ['sender_email', 'sender_name']
     for field in required_fields:
         if not config.get(field):
             errors.append(f"Missing required field: {field}")
-    
+
     # Email format validation
     if config.get('sender_email'):
         import re
         email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
         if not re.match(email_pattern, config['sender_email']):
             errors.append("Invalid sender email format")
-    
+
     # SMTP-specific validation (only if not in database mode)
     if not config.get('database_only_mode', True):
         smtp_required = ['smtp_server', 'smtp_port']
         for field in smtp_required:
             if not config.get(field):
                 errors.append(f"SMTP mode requires: {field}")
-        
+
         # Port validation
         port = config.get('smtp_port')
         if port and (not isinstance(port, int) or port < 1 or port > 65535):
             errors.append("Invalid SMTP port number")
-    
+
     return errors
 
 
@@ -95,8 +98,8 @@ def validate_email_config(config):
 def load_config():
     """Load email configuration from file"""
     global config
-    
-    config_path = paths.EMAIL_CONFIG_PATH
+
+    config_path = _config_path()
     if config_path.exists():
         try:
             with open(config_path, "r", encoding="utf-8") as f:
@@ -108,11 +111,11 @@ def load_config():
     else:
         log_event('warning', "No email configuration file found. Using defaults.")
         save_config()
-    
+
     # Force single thread and longer delays to reduce contention
     config['max_threads'] = 1
     config['send_delay'] = max(config.get('send_delay', 2.0), 2.0)
-    
+
     return config
 
 
@@ -121,14 +124,15 @@ def load_config():
 def save_config():
     """Save current email configuration to file"""
     try:
-        config_path = paths.EMAIL_CONFIG_PATH
-        config_path.parent.mkdir(parents=True, exist_ok=True)
+        config_path = _config_path()
+        from pathlib import Path
+        Path(config_path).parent.mkdir(parents=True, exist_ok=True)
         with open(config_path, "w", encoding="utf-8") as f:
             # Don't save password to file unless explicitly told to
             config_to_save = config.copy()
             if 'save_password' not in config or not config['save_password']:
                 config_to_save['password'] = ""
-            
+
             json.dump(config_to_save, f, indent=4)
         log_event('info', "Email configuration saved successfully")
         return True
@@ -149,10 +153,10 @@ def validate_config(config_path=None):
         else:
             # Use current config
             cfg = config
-        
+
         # Validate against schema
-        validate(instance=cfg, schema=CONFIG_SCHEMA)
-        
+        jsonschema.validate(instance=cfg, schema=CONFIG_SCHEMA)
+
         # Skip SMTP validation if in database-only mode
         if cfg.get('database_only_mode', True):
             log_event('info', "Database-only mode enabled - skipping SMTP validation")
@@ -205,21 +209,21 @@ def configure_email_settings():
 
     print("\n" + get_text("config.email_configuration"))
     print("===================")
-    
+
     # NEW: Database-only mode setting
     print("\n" + get_text("config.email_mode"))
     current_mode = get_text("config.mode_database_only") if config.get('database_only_mode', True) else get_text("config.mode_smtp_sending")
     print(get_text("config.current_mode", mode=current_mode))
-    
+
     mode_choice = input("Choose mode:\n1. Database Only (emails stored in database)\n2. SMTP Sending (emails actually sent)\nEnter choice (1-2): ")
-    
+
     if mode_choice == '1':
         config['database_only_mode'] = True
         print(get_text("config.set_database_only_mode"))
     elif mode_choice == '2':
         config['database_only_mode'] = False
         print(get_text("config.set_smtp_sending_mode"))
-        
+
         # Only configure SMTP settings if not in database-only mode
         print("\n" + get_text("config.smtp_settings"))
         config['smtp_server'] = input(f"SMTP Server [{config['smtp_server']}]: ") or config['smtp_server']
@@ -232,36 +236,36 @@ def configure_email_settings():
                 print(get_text("config.invalid_port_using_previous"))
         except ValueError:
             print(get_text("config.invalid_port_using_previous"))
-        
+
         use_tls = input(f"Use TLS (y/n) [{('y' if config['use_tls'] else 'n')}]: ") or ('y' if config['use_tls'] else 'n')
         config['use_tls'] = use_tls.lower() == 'y'
 
         print("\n" + get_text("config.authentication_settings"))
         use_auth = input(f"Use Authentication (y/n) [{('y' if config['use_authentication'] else 'n')}]: ") or ('y' if config['use_authentication'] else 'n')
         config['use_authentication'] = use_auth.lower() == 'y'
-        
+
         if config['use_authentication']:
             config['username'] = input(f"Username [{config['username']}]: ") or config['username']
             password = input("Password (leave empty to keep current): ")
             if password:
                 config['password'] = password
-            
+
             save_pwd = input("Save password in configuration file? (Not recommended) (y/n): ")
             config['save_password'] = save_pwd.lower() == 'y'
     else:
         print("Invalid choice. Keeping current mode.")
-    
+
     print("\nSender Information:")
     config['sender_email'] = input(f"Sender Email [{config['sender_email']}]: ") or config['sender_email']
     config['sender_name'] = input(f"Sender Name [{config['sender_name']}]: ") or config['sender_name']
-    
+
     print("\nEmail Signature:")
     print("Current signature:")
     print(config['email_signature'])
     new_signature = input("New signature (leave empty to keep current):\n")
     if new_signature:
         config['email_signature'] = new_signature
-    
+
     print("\nAdvanced Settings:")
     try:
         delay = float(input(f"Send Delay (seconds) [{config['send_delay']}]: ") or config['send_delay'])
@@ -271,7 +275,7 @@ def configure_email_settings():
             print("Invalid delay. Using previous value.")
     except ValueError:
         print("Invalid delay. Using previous value.")
-    
+
     try:
         threads = int(input(f"Max Threads [{config['max_threads']}]: ") or config['max_threads'])
         if 1 <= threads <= 10:
@@ -280,10 +284,10 @@ def configure_email_settings():
             print("Invalid thread count. Using previous value.")
     except ValueError:
         print("Invalid thread count. Using previous value.")
-    
+
     # Save configuration
     save_config()
-    
+
     if not config.get('database_only_mode', True):
         # Validate configuration only if in SMTP mode
         print("\nValidating configuration...")
@@ -291,7 +295,7 @@ def configure_email_settings():
             print("Configuration is valid!")
         else:
             print("Configuration has issues. Please review settings.")
-        
+
         # Offer to send a test email
         test = input("\nWould you like to send a test email to verify your configuration? (y/n): ")
         if test.lower() == 'y':
@@ -366,14 +370,14 @@ Configuration:
 def ensure_email_config_for_database_mode():
     """Ensure email configuration is set up properly for database-only mode"""
     global config
-    
+
     if config.get('database_only_mode', True):
         if not config['sender_email']:
             config['sender_email'] = "noreply@university.edu"
             log_event('info', "Set default sender email for database-only mode")
-        
+
         if not config['sender_name']:
             config['sender_name'] = "University System"
             log_event('info', "Set default sender name for database-only mode")
-    
+
     return True

@@ -25,13 +25,14 @@ from education_system.university_system.infrastructure.database.db import sqlite
 
 def display_enhanced_grade_menu():
     """Display the enhanced grade and performance tracking menu and handle user choices"""
+    from education_system.university_system.modules.domain.academics.grading import grade_calculation
     # Initialize basic tables first
-    if not init_basic_database():
+    if not grade_calculation.init_basic_database():
         print("Failed to initialize basic database tables.")
         return
 
     # Initialize all tables for the enhanced system
-    init_enhanced_grades_db()
+    grade_calculation.init_enhanced_grades_db()
 
     while True:
         print("\nGrade and Performance Tracking:")
@@ -52,15 +53,15 @@ def display_enhanced_grade_menu():
         choice = input("Enter your choice (1-11): ")
 
         if choice == '1':
-            record_assessment_grades()
+            grade_calculation.record_assessment_grades()
         elif choice == '2':
-            update_grades()
+            grade_calculation.update_grades()
         elif choice == '3':
-            view_student_grades()
+            grade_calculation.view_student_grades()
         elif choice == '4':
-            calculate_gpa()
+            grade_calculation.calculate_gpa()
         elif choice == '5':
-            generate_transcript()
+            grade_calculation.generate_transcript()
         elif choice == '6':
             grade_curve_analysis_menu()
         elif choice == '7':

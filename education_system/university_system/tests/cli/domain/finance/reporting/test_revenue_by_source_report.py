@@ -45,6 +45,16 @@ def temp_db():
             notes TEXT,
             FOREIGN KEY (student_id) REFERENCES students(student_id)
         );
+
+        CREATE TABLE IF NOT EXISTS transactions (
+            transaction_id TEXT PRIMARY KEY,
+            source_type TEXT,
+            source_transaction_id TEXT,
+            amount REAL,
+            total_amount REAL,
+            status TEXT DEFAULT 'completed',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
     """)
 
     # Insert test data with various sources

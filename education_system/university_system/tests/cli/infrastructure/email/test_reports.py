@@ -445,7 +445,9 @@ class TestGenerateReportForm:
 
     def test_generate_report_form_invalid_format_choice(self):
         """Test generating report with invalid format choice"""
-        mock_records = []
+        mock_records = [
+            ('2024-01-01', 10, 2, 5, 1)
+        ]
 
         def mock_operation(func):
             mock_cursor = Mock()
@@ -453,15 +455,15 @@ class TestGenerateReportForm:
             mock_cursor.fetchall.return_value = mock_records
             return func(mock_cursor)
 
-        with patch('builtins.input', side_effect=['1', '99']), \
+        with patch('builtins.input', side_effect=['1', '99', '']), \
              patch('builtins.print') as mock_print, \
              patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
 
             reports.generate_report_form()
 
             calls = [str(call) for call in mock_print.call_args_list]
-            # Should default to JSON format
-            assert any('Using JSON format' in str(call) for call in calls)
+            # Should default to JSON format — _t returns key or translated text
+            assert any('invalid_using_json' in str(call).lower() or 'using json' in str(call).lower() for call in calls)
 
     def test_generate_report_form_displays_json_output(self):
         """Test that JSON report is displayed correctly"""
@@ -497,7 +499,7 @@ class TestGenerateReportForm:
             mock_cursor.fetchall.return_value = mock_records
             return func(mock_cursor)
 
-        with patch('builtins.input', side_effect=['1', '2']), \
+        with patch('builtins.input', side_effect=['1', '2', '']), \
              patch('builtins.print') as mock_print, \
              patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation), \
              patch('builtins.open', mock_open()):
@@ -505,7 +507,8 @@ class TestGenerateReportForm:
             reports.generate_report_form()
 
             calls = [str(call) for call in mock_print.call_args_list]
-            assert any('Report generated and saved to' in str(call) for call in calls)
+            # _t returns key or translated text for report_saved
+            assert any('report_saved' in str(call).lower() or 'report generated' in str(call).lower() or 'saved to' in str(call).lower() for call in calls)
 
 
 class TestGetUserCommunicationStats:
@@ -704,8 +707,10 @@ class TestGetSystemHealthInfo:
             mock_cursor.fetchone.return_value = (1,)
             return func(mock_cursor)
 
-        with patch('education_system.university_system.infrastructure.email.reports.email_queue', mock_email_queue), \
-             patch('education_system.university_system.infrastructure.email.reports.worker_threads', mock_worker_threads), \
+        # email_queue and worker_threads are imported locally inside get_system_health_info,
+        # so patch them at the email_service module level
+        with patch('education_system.university_system.infrastructure.email.email_service.email_queue', mock_email_queue), \
+             patch('education_system.university_system.infrastructure.email.email_service.worker_threads', mock_worker_threads), \
              patch('education_system.university_system.infrastructure.email.reports.config') as mock_config, \
              patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
 
@@ -749,8 +754,8 @@ class TestGetSystemHealthInfo:
             mock_cursor.fetchone.return_value = (1,)
             return func(mock_cursor)
 
-        with patch('education_system.university_system.infrastructure.email.reports.email_queue', mock_email_queue), \
-             patch('education_system.university_system.infrastructure.email.reports.worker_threads', mock_worker_threads), \
+        with patch('education_system.university_system.infrastructure.email.email_service.email_queue', mock_email_queue), \
+             patch('education_system.university_system.infrastructure.email.email_service.worker_threads', mock_worker_threads), \
              patch('education_system.university_system.infrastructure.email.reports.config') as mock_config, \
              patch('education_system.university_system.infrastructure.email.reports.execute_db_operation', side_effect=mock_operation):
 

@@ -14,7 +14,7 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 
 # Import database connection
 from education_system.university_system.infrastructure.database.db import get_db_connection, get_connection, transaction
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +143,7 @@ def view_students(self):
             if self.auth.check_permission('view_any_student'):
                 cursor.execute('SELECT * FROM students ORDER BY last_name, first_name')
             else:
-                cursor.execute('SELECT * FROM students WHERE student_id = ?', 
+                cursor.execute('SELECT * FROM students WHERE student_id = ?',
                              (self.auth.current_user.get('student_id'),))
 
             students = cursor.fetchall()
@@ -274,7 +274,7 @@ def show_student_details(self, student_id):
         personal_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Create scrollable text for personal info
-        personal_text = scrolledtext.ScrolledText(personal_frame, wrap=tk.WORD, height=25, 
+        personal_text = scrolledtext.ScrolledText(personal_frame, wrap=tk.WORD, height=25,
                                                  font=('Courier', 11))
         personal_text.pack(fill=tk.BOTH, expand=True)
 

@@ -506,6 +506,7 @@ class TestDefaultValues:
     def test_communication_preferences_defaults(self, temp_db):
         """Test communication_preferences default values."""
         conn = sqlite3.connect(temp_db)
+        conn.execute("PRAGMA foreign_keys = OFF")
         create_communication_tables(conn)
 
         cursor = conn.cursor()
@@ -539,6 +540,7 @@ class TestIntegration:
     def test_full_schema_creation_and_usage(self, temp_db):
         """Test creating schema and using tables."""
         conn = sqlite3.connect(temp_db)
+        conn.execute("PRAGMA foreign_keys = OFF")
         create_communication_tables(conn)
 
         cursor = conn.cursor()

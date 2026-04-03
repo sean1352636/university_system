@@ -7,7 +7,10 @@ import threading
 import time
 from datetime import datetime
 
-import schedule
+try:
+    import schedule
+except ImportError:  # pragma: no cover - optional dependency
+    schedule = None
 
 from education_system.university_system.infrastructure.database.db import sqlite3
 
@@ -252,6 +255,9 @@ def ensure_scheduler_running():
     if config.get('database_only_mode', True):
         log_event('info', "Database-only mode - scheduler not needed")
         return True
+    if schedule is None:
+        log_event('warning', "Scheduling library not available; skipping scheduler startup")
+        return False
 
     # Check if scheduler is already running
     if 'process_emails' in scheduled_jobs:
@@ -272,6 +278,9 @@ def ensure_scheduler_running():
 
 def run_scheduler():
     """Run the scheduler in a loop"""
+    if schedule is None:
+        log_event('warning', "Scheduling library not available; scheduler loop not started")
+        return
     while True:
         try:
             schedule.run_pending()

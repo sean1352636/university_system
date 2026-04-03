@@ -207,7 +207,7 @@ def safe_db_operation_with_retry(
     """
     retry_delay = 0.1
     last_error = None
-    
+
     for attempt in range(max_retries):
         conn = None
         try:
@@ -221,22 +221,22 @@ def safe_db_operation_with_retry(
                     continue
                 logging.error(f"Database connection failed after {max_retries} attempts")
                 return False
-            
+
             # Execute the database operation
             result = operation_func(conn, *args, **kwargs)
-            
+
             # Commit the transaction
             conn.commit()
-            
+
             # Log successful operation if there were previous failures
             if attempt > 0:
                 logging.info(f"Database operation succeeded on attempt {attempt + 1}")
-            
+
             return result
-            
+
         except sqlite3.OperationalError as e:
             last_error = e
-            
+
             # Handle rollback for operational errors
             if conn:
                 try:
@@ -246,7 +246,7 @@ def safe_db_operation_with_retry(
                     logging.warning(f"Failed to rollback transaction: {rollback_error}")
                 except (sqlite3.Error, DatabaseError) as rollback_error:
                     logging.error(f"Unexpected error during rollback: {rollback_error}")
-            
+
             # Check if this is a database lock error that we can retry
             if "database is locked" in str(e).lower() and attempt < max_retries - 1:
                 wait_time = retry_delay * (2 ** attempt)
@@ -258,10 +258,10 @@ def safe_db_operation_with_retry(
                 if attempt >= max_retries - 1:
                     logging.error(f"Database operation failed permanently after {max_retries} attempts")
                     return False
-                    
+
         except sqlite3.IntegrityError as e:
             last_error = e
-            
+
             # Handle rollback for integrity errors
             if conn:
                 try:
@@ -271,14 +271,14 @@ def safe_db_operation_with_retry(
                     logging.warning(f"Failed to rollback transaction after integrity error: {rollback_error}")
                 except (RuntimeError, OSError) as rollback_error:
                     logging.error(f"Unexpected error during integrity error rollback: {rollback_error}")
-            
+
             # Integrity errors usually shouldn't be retried as they indicate data conflicts
             logging.error(f"Database integrity error (attempt {attempt + 1}): {e}")
             return False
-            
+
         except sqlite3.Error as e:
             last_error = e
-            
+
             # Handle rollback for other SQLite errors
             if conn:
                 try:
@@ -288,9 +288,9 @@ def safe_db_operation_with_retry(
                     logging.warning(f"Failed to rollback transaction after SQLite error: {rollback_error}")
                 except (RuntimeError, OSError) as rollback_error:
                     logging.error(f"Unexpected error during SQLite error rollback: {rollback_error}")
-            
+
             logging.error(f"SQLite error (attempt {attempt + 1}): {e}")
-            
+
             # Retry for certain types of SQLite errors
             if attempt < max_retries - 1:
                 wait_time = retry_delay * (2 ** attempt)
@@ -311,9 +311,9 @@ def safe_db_operation_with_retry(
                     logging.warning(f"Failed to rollback transaction after unexpected error: {rollback_error}")
                 except (RuntimeError, OSError) as rollback_error:
                     logging.error(f"Critical: Multiple errors during rollback - original: {e}, rollback: {rollback_error}")
-            
+
             logging.error(f"Unexpected error in database operation (attempt {attempt + 1}): {e}")
-            
+
             # Retry for unexpected errors, but with caution
             if attempt < max_retries - 1:
                 wait_time = retry_delay * (2 ** attempt)
@@ -321,7 +321,7 @@ def safe_db_operation_with_retry(
                 time.sleep(wait_time)
                 continue
             return False
-            
+
         finally:
             # Ensure connection is properly closed
             if conn:
@@ -333,13 +333,13 @@ def safe_db_operation_with_retry(
                 except (RuntimeError, OSError) as close_error:
                     logging.error(f"Unexpected error while closing database connection: {close_error}")
                     # Don't re-raise here as we want to preserve the original error
-    
+
     # If we've exhausted all retries
     if last_error:
         logging.error(f"Database operation failed permanently after {max_retries} attempts. Last error: {last_error}")
     else:
         logging.error(f"Database operation failed permanently after {max_retries} attempts due to unknown error")
-    
+
     return False
 
 # Add this function to fix the missing parent_user_mapping table
@@ -348,27 +348,27 @@ def safe_db_operation_with_retry(
 def enhanced_db_operation(operation_func, *args, **kwargs):
     """
     Enhanced wrapper for database operations with better error categorization.
-    
+
     Args:
         operation_func: The database operation function to execute
         *args: Arguments to pass to the operation function
         **kwargs: Keyword arguments to pass to the operation function
-    
+
     Returns:
         Tuple of (success: bool, result: any, error_type: str)
     """
     try:
         result = safe_db_operation_with_retry(operation_func, *args, **kwargs)
-        
+
         if result is False:
             return False, None, "operation_failed"
-        
+
         return True, result, None
-        
+
     except sqlite3.IntegrityError as e:
         logging.error(f"Data integrity violation: {e}")
         return False, None, "integrity_error"
-        
+
     except sqlite3.OperationalError as e:
         if "database is locked" in str(e).lower():
             logging.error(f"Database access conflict: {e}")
@@ -402,9 +402,9 @@ def fix_accommodation_schema():
         conn = get_db_connection()
         if not conn:
             return False
-            
+
         cursor = conn.cursor()
-        
+
         # Fix audit_log table - check if it exists first
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='audit_log'")
         if not cursor.fetchone():
@@ -425,13 +425,13 @@ def fix_accommodation_schema():
             # Table exists, add missing columns
             cursor.execute("PRAGMA table_info(audit_log)")
             columns = [row[1] for row in cursor.fetchall()]
-            
+
             missing_columns = {
                 'accommodation_id': 'INTEGER',
-                'details': 'TEXT', 
+                'details': 'TEXT',
                 'ip_address': 'TEXT'
             }
-            
+
             for col_name, col_type in missing_columns.items():
                 if col_name not in columns:
                     try:
@@ -448,14 +448,14 @@ def fix_accommodation_schema():
         if cursor.fetchone():
             cursor.execute("PRAGMA table_info(accommodations)")
             acc_columns = [row[1] for row in cursor.fetchall()]
-            
+
             required_acc_columns = {
                 'status': 'TEXT DEFAULT "active"',
                 'approved_by': 'TEXT',
                 'approval_date': 'TEXT',
                 'notes': 'TEXT'
             }
-            
+
             for col_name, col_type in required_acc_columns.items():
                 if col_name not in acc_columns:
                     try:
@@ -466,11 +466,11 @@ def fix_accommodation_schema():
                     except SQLIdentifierError as e:
                         logger.warning(f"Invalid column definition for '{col_name}': {e}")
                         continue
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except (sqlite3.Error, DatabaseError) as e:
         logging.error(f"Error fixing accommodation schema: {e}")
         logger.warning(f"Could not fix accommodation schema: {e}")
@@ -485,9 +485,9 @@ def fix_parent_portal_database():
         # Use centralized connection for schema corrections
         conn = get_connection(db_path=DB_PATH, row_factory=False, timeout=30)
         cursor = conn.cursor()
-        
+
         logger.info("Fixing parent portal database schema...")
-        
+
         # Create parent_user_mapping table if it doesn't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS parent_user_mapping (
@@ -498,7 +498,7 @@ def fix_parent_portal_database():
             FOREIGN KEY (parent_id) REFERENCES parent_accounts (parent_id)
         )
         ''')
-        
+
         # Ensure parent_accounts table exists with all required columns
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS parent_accounts (
@@ -516,17 +516,17 @@ def fix_parent_portal_database():
             profile_photo TEXT
         )
         ''')
-        
+
         # Check if parent_accounts table is missing any columns and add them
         cursor.execute("PRAGMA table_info(parent_accounts)")
         existing_columns = [column[1] for column in cursor.fetchall()]
-        
+
         required_columns = {
             'two_factor_enabled': 'BOOLEAN DEFAULT 0',
             'two_factor_secret': 'TEXT',
             'profile_photo': 'TEXT'
         }
-        
+
         for column_name, column_type in required_columns.items():
             if column_name not in existing_columns:
                 try:
@@ -539,7 +539,7 @@ def fix_parent_portal_database():
                     continue
                 except (sqlite3.Error, DatabaseError) as e:
                     logger.warning(f"Could not add column '{column_name}': {e}")
-        
+
         # Create parent_student_relationships table if it doesn't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS parent_student_relationships (
@@ -553,7 +553,7 @@ def fix_parent_portal_database():
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')
-        
+
         # Create parent_preferences table if it doesn't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS parent_preferences (
@@ -572,7 +572,7 @@ def fix_parent_portal_database():
             FOREIGN KEY (parent_id) REFERENCES parent_accounts (parent_id)
         )
         ''')
-        
+
         # Create other essential parent portal tables
         essential_tables = [
             ('parent_notifications', '''
@@ -588,7 +588,7 @@ def fix_parent_portal_database():
                 FOREIGN KEY (student_id) REFERENCES students (student_id)
             )
             '''),
-            
+
             ('parent_messages', '''
             CREATE TABLE IF NOT EXISTS parent_messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -606,7 +606,7 @@ def fix_parent_portal_database():
                 FOREIGN KEY (student_id) REFERENCES students (student_id)
             )
             '''),
-            
+
             ('parent_activity_log', '''
             CREATE TABLE IF NOT EXISTS parent_activity_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -620,7 +620,7 @@ def fix_parent_portal_database():
             )
             ''')
         ]
-        
+
         for table_name, create_sql in essential_tables:
             cursor.execute(create_sql)
             logger.info(f"Ensured {table_name} table exists")
@@ -630,7 +630,7 @@ def fix_parent_portal_database():
 
         logger.info("Parent portal database schema fix completed successfully!")
         return True
-        
+
     except (sqlite3.Error, DatabaseError) as e:
         logger.error(f"Error fixing parent portal database schema: {e}")
         return False
@@ -642,11 +642,11 @@ def fix_ai_detector_database_schema():
         conn = get_db_connection()
         if not conn:
             return False
-            
+
         cursor = conn.cursor()
-        
+
         logger.info("Fixing AI detector database schema...")
-        
+
         # Create AI detector submissions table with correct column names
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS ai_detector_submissions (
@@ -662,7 +662,7 @@ def fix_ai_detector_database_schema():
             institution_id TEXT
         )
         ''')
-        
+
         # Create AI detector results table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS ai_detector_results (
@@ -676,21 +676,21 @@ def fix_ai_detector_database_schema():
             FOREIGN KEY (submission_id) REFERENCES ai_detector_submissions (id)
         )
         ''')
-        
+
         # Check if we need to migrate old data or add missing columns
         cursor.execute("PRAGMA table_info(ai_detector_submissions)")
         existing_columns = [column[1] for column in cursor.fetchall()]
-        
+
         # Add missing columns if they don't exist
         required_columns = {
             'title': 'TEXT',
-            'course_code': 'TEXT', 
+            'course_code': 'TEXT',
             'assignment_id': 'TEXT',
             'word_count': 'INTEGER',
             'character_count': 'INTEGER',
             'institution_id': 'TEXT'
         }
-        
+
         # Use centralized SQL safety validation for column definitions
         for column_name, column_def in required_columns.items():
             if column_name not in existing_columns:
@@ -704,7 +704,7 @@ def fix_ai_detector_database_schema():
                     continue
                 except (sqlite3.Error, DatabaseError) as e:
                     logger.warning(f"Could not add column '{column_name}': {e}")
-        
+
         # Check if we have the wrong column name and need to rename
         if 'submission_title' in existing_columns and 'title' not in existing_columns:
             try:
@@ -724,32 +724,32 @@ def fix_ai_detector_database_schema():
                     institution_id TEXT
                 )
                 ''')
-                
+
                 # Copy data from old table to new table
                 cursor.execute('''
-                INSERT INTO ai_detector_submissions_new 
-                (id, student_id, submission_text, title, course_code, assignment_id, 
+                INSERT INTO ai_detector_submissions_new
+                (id, student_id, submission_text, title, course_code, assignment_id,
                  submission_date, word_count, character_count, institution_id)
                 SELECT id, student_id, submission_text, submission_title, course_code, assignment_id,
                        submission_date, word_count, character_count, institution_id
                 FROM ai_detector_submissions
                 ''')
-                
+
                 # Drop old table and rename new one
                 cursor.execute('DROP TABLE ai_detector_submissions')
                 cursor.execute('ALTER TABLE ai_detector_submissions_new RENAME TO ai_detector_submissions')
-                
+
                 logger.info("Migrated 'submission_title' column to 'title'")
-                
+
             except (sqlite3.Error, DatabaseError) as e:
                 logger.warning(f"Could not migrate submission_title column: {e}")
-        
+
         conn.commit()
         conn.close()
-        
+
         logger.info("AI detector database schema fix completed!")
         return True
-        
+
     except (sqlite3.Error, DatabaseError) as e:
         logger.error(f"Error fixing AI detector database schema: {e}")
         return False
@@ -765,9 +765,9 @@ def fix_support_database_schema():
     try:
         conn = get_connection(db_path=DB_PATH, row_factory=False)
         cursor = conn.cursor()
-        
+
         logger.info("Fixing support database schema...")
-        
+
         # Check if support_tickets table exists
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='support_tickets'")
         if not cursor.fetchone():
@@ -803,7 +803,7 @@ def fix_support_database_schema():
             # Table exists, check and add missing columns
             cursor.execute("PRAGMA table_info(support_tickets)")
             existing_columns = [column[1] for column in cursor.fetchall()]
-            
+
             # Ensure core columns exist for analytics and SLA tracking
             required_columns = {
                 'created_datetime': 'TEXT',
@@ -843,21 +843,21 @@ def fix_support_database_schema():
                     logger.warning(f"Invalid column definition for 'user_id': {e}")
                 except (sqlite3.Error, DatabaseError) as e:
                     logger.warning(f"Could not add column 'user_id': {e}")
-        
+
         # Fix any existing tickets that have NULL created_datetime
         cursor.execute("SELECT COUNT(*) FROM support_tickets WHERE created_datetime IS NULL OR created_datetime = ''")
         null_datetime_count = cursor.fetchone()[0]
-        
+
         if null_datetime_count > 0:
             logger.info(f"Fixing {null_datetime_count} tickets with missing created_datetime...")
             current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             cursor.execute('''
-            UPDATE support_tickets 
-            SET created_datetime = ? 
+            UPDATE support_tickets
+            SET created_datetime = ?
             WHERE created_datetime IS NULL OR created_datetime = ''
             ''', (current_time,))
             logger.info(f"Fixed {null_datetime_count} tickets with missing created_datetime")
-        
+
         # Create other required tables
         required_tables = {
             'system_metrics': '''
@@ -886,7 +886,7 @@ def fix_support_database_schema():
             )
             '''
         }
-        
+
         for table_name, create_sql in required_tables.items():
             cursor.execute(create_sql)
             logger.info(f"Ensured {table_name} table exists")
@@ -896,7 +896,7 @@ def fix_support_database_schema():
 
         logger.info("Support database schema fix completed successfully!")
         return True
-        
+
     except (sqlite3.Error, DatabaseError) as e:
         logger.error(f"Error fixing support database schema: {e}")
         return False
@@ -910,50 +910,50 @@ def fix_duplicate_emails():
         conn = get_db_connection()
         if not conn:
             return False
-            
+
         cursor = conn.cursor()
-        
+
         # Find duplicate emails
         cursor.execute('''
-        SELECT email, COUNT(*) as count 
-        FROM users 
-        GROUP BY email 
+        SELECT email, COUNT(*) as count
+        FROM users
+        GROUP BY email
         HAVING count > 1
         ''')
-        
+
         duplicates = cursor.fetchall()
-        
+
         if not duplicates:
             logger.info("No duplicate emails found.")
             conn.close()
             return True
-        
+
         logger.info(f"Found {len(duplicates)} duplicate email(s). Fixing...")
-        
+
         for email, count in duplicates:
             logger.info(f"Fixing duplicate email: {email} (found {count} times)")
-            
+
             # Get all users with this email
             cursor.execute('''
-            SELECT id, username, email 
-            FROM users 
-            WHERE email = ? 
+            SELECT id, username, email
+            FROM users
+            WHERE email = ?
             ORDER BY id
             ''', (email,))
-            
+
             users_with_email = cursor.fetchall()
-            
+
             # Keep the first user with the original email, modify others
             for i, (user_id, username, user_email) in enumerate(users_with_email):
                 if i == 0:
                     logger.info(f"Keeping original email for user {username}")
                     continue
-                
+
                 # Generate unique email for subsequent users
                 base_email = email.split('@')[0]
                 domain = email.split('@')[1]
                 new_email = f"{base_email}_{username}@{domain}"
-                
+
                 # Make sure this new email is also unique
                 counter = 1
                 while True:
@@ -962,22 +962,22 @@ def fix_duplicate_emails():
                         break
                     new_email = f"{base_email}_{username}_{counter}@{domain}"
                     counter += 1
-                
+
                 # Update the user's email
                 current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 cursor.execute('''
-                UPDATE users 
-                SET email = ?, updated_at = ? 
+                UPDATE users
+                SET email = ?, updated_at = ?
                 WHERE id = ?
                 ''', (new_email, current_time, user_id))
-                
+
                 logger.info(f"Updated user {username} email to: {new_email}")
-        
+
         conn.commit()
         conn.close()
         logger.info("Duplicate email fix completed successfully!")
         return True
-        
+
     except sqlite3.Error as e:
         logging.error(f"Database error while fixing duplicate emails: {e}")
         return False
@@ -992,39 +992,39 @@ def silent_integrity_check():
         conn = get_db_connection()
         if not conn:
             return False
-            
+
         cursor = conn.cursor()
-        
+
         # Check if users table exists first
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='users'")
         if not cursor.fetchone():
             # Users table doesn't exist yet, skip integrity check
             conn.close()
             return True
-        
+
         # Check for and fix duplicate emails silently
         cursor.execute('''
-        SELECT email, COUNT(*) as count 
-        FROM users 
-        GROUP BY email 
+        SELECT email, COUNT(*) as count
+        FROM users
+        GROUP BY email
         HAVING count > 1
         ''')
         duplicate_emails = cursor.fetchall()
-        
+
         if duplicate_emails:
             conn.close()
             fix_duplicate_emails()
             return silent_integrity_check()  # Re-check after fix
-        
+
         # Check for and fix orphaned users silently
         cursor.execute('''
-        SELECT u.id, u.username 
-        FROM users u 
-        LEFT JOIN user_accounts ua ON u.id = ua.user_id 
+        SELECT u.id, u.username
+        FROM users u
+        LEFT JOIN user_accounts ua ON u.id = ua.user_id
         WHERE ua.user_id IS NULL
         ''')
         orphaned_users = cursor.fetchall()
-        
+
         if orphaned_users:
             conn.close()
             # Only try to fix if we have an auth context
@@ -1036,10 +1036,10 @@ def silent_integrity_check():
             except (sqlite3.Error, DatabaseError) as e:
                 logging.debug(f"Could not fix orphaned users during startup: {e}")
             return True
-        
+
         conn.close()
         return True
-        
+
     except (sqlite3.Error, DatabaseError) as e:
         logging.debug(f"Silent integrity check info: {e}")  # Changed from warning to debug
         return False
@@ -1050,67 +1050,67 @@ def validate_database_integrity():
     Validate database integrity and fix common issues
     """
     logger.info("Validating database integrity...")
-    
+
     try:
         conn = get_db_connection()
         if not conn:
             return False
-            
+
         cursor = conn.cursor()
-        
+
         issues_found = []
         fixes_applied = []
-        
+
         # Check 1: Duplicate emails in users table
         cursor.execute('''
-        SELECT email, COUNT(*) as count 
-        FROM users 
-        GROUP BY email 
+        SELECT email, COUNT(*) as count
+        FROM users
+        GROUP BY email
         HAVING count > 1
         ''')
         duplicate_emails = cursor.fetchall()
-        
+
         if duplicate_emails:
             issues_found.append(f"Found {len(duplicate_emails)} duplicate email addresses")
-        
+
         # Check 2: Duplicate usernames in users table
         cursor.execute('''
-        SELECT username, COUNT(*) as count 
-        FROM users 
-        GROUP BY username 
+        SELECT username, COUNT(*) as count
+        FROM users
+        GROUP BY username
         HAVING count > 1
         ''')
         duplicate_usernames = cursor.fetchall()
-        
+
         if duplicate_usernames:
             issues_found.append(f"Found {len(duplicate_usernames)} duplicate usernames")
-        
+
         # Check 3: Users without corresponding user_accounts
         cursor.execute('''
-        SELECT u.id, u.username 
-        FROM users u 
-        LEFT JOIN user_accounts ua ON u.id = ua.user_id 
+        SELECT u.id, u.username
+        FROM users u
+        LEFT JOIN user_accounts ua ON u.id = ua.user_id
         WHERE ua.user_id IS NULL
         ''')
         orphaned_users = cursor.fetchall()
-        
+
         if orphaned_users:
             issues_found.append(f"Found {len(orphaned_users)} users without accounts")
-        
+
         # Check 4: User accounts without corresponding users
         cursor.execute('''
-        SELECT ua.id, ua.username 
-        FROM user_accounts ua 
-        LEFT JOIN users u ON ua.user_id = u.id 
+        SELECT ua.id, ua.username
+        FROM user_accounts ua
+        LEFT JOIN users u ON ua.user_id = u.id
         WHERE u.id IS NULL
         ''')
         orphaned_accounts = cursor.fetchall()
-        
+
         if orphaned_accounts:
             issues_found.append(f"Found {len(orphaned_accounts)} accounts without user profiles")
-        
+
         conn.close()
-        
+
         # Report findings
         if issues_found:
             logger.info("Database integrity issues found:")
@@ -1123,13 +1123,13 @@ def validate_database_integrity():
                 if duplicate_emails:
                     if fix_duplicate_emails():
                         fixes_applied.append("Fixed duplicate emails")
-                
+
                 # Fix other issues using existing auth methods
                 auth_instance = get_auth()
                 if auth_instance and (orphaned_users or orphaned_accounts):
                     if auth_instance.fix_database_consistency():
                         fixes_applied.append("Fixed orphaned users/accounts")
-                
+
                 if fixes_applied:
                     logger.info("Fixes applied:")
                     for fix in fixes_applied:
@@ -1139,9 +1139,9 @@ def validate_database_integrity():
                     logger.info("No fixes could be applied automatically.")
         else:
             logger.info("Database integrity check passed - no issues found!")
-        
+
         return len(issues_found) == 0
-        
+
     except (ValueError, TypeError, ValidationError) as e:
         logging.error(f"Error during database integrity validation: {e}")
         return False
@@ -1166,19 +1166,19 @@ def validate_database_integrity_with_admin_context():
             logger.info(_t("cli.system.users_table_pending"))
             conn.close()
             return True
-        
+
         issues_found = []
         fixes_applied = []
-        
+
         # Check 1: Duplicate emails in users table
         cursor.execute('''
-        SELECT email, COUNT(*) as count 
-        FROM users 
-        GROUP BY email 
+        SELECT email, COUNT(*) as count
+        FROM users
+        GROUP BY email
         HAVING count > 1
         ''')
         duplicate_emails = cursor.fetchall()
-        
+
         if duplicate_emails:
             issues_found.append(f"Found {len(duplicate_emails)} duplicate email addresses")
             # Auto-fix duplicate emails during startup
@@ -1187,31 +1187,31 @@ def validate_database_integrity_with_admin_context():
                 fixes_applied.append("Fixed duplicate emails")
         else:
             conn.close()
-        
+
         # Check 2: Users without corresponding user_accounts
         conn = get_db_connection()
         if conn:
             cursor = conn.cursor()
-            
+
             # Check if user_accounts table exists
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user_accounts'")
             if cursor.fetchone():
                 cursor.execute('''
-                SELECT u.id, u.username 
-                FROM users u 
-                LEFT JOIN user_accounts ua ON u.id = ua.user_id 
+                SELECT u.id, u.username
+                FROM users u
+                LEFT JOIN user_accounts ua ON u.id = ua.user_id
                 WHERE ua.user_id IS NULL
                 ''')
                 orphaned_users = cursor.fetchall()
-                
+
                 if orphaned_users:
                     issues_found.append(f"Found {len(orphaned_users)} users without accounts")
                     # We'll let the user authentication system handle this later
                     # to avoid permission issues during startup
                     fixes_applied.append("Marked orphaned users for later fixing")
-            
+
             conn.close()
-        
+
         # Report findings
         if issues_found:
             logger.info("Database integrity issues found:")
@@ -1223,9 +1223,9 @@ def validate_database_integrity_with_admin_context():
                     logger.info(f"{fix}")
         else:
             logger.info("Database integrity check passed - no issues found!")
-        
+
         return len(issues_found) == 0
-        
+
     except (AuthenticationError, PermissionDeniedError) as e:
         logging.error(f"Error during database integrity validation: {e}")
         return False
@@ -1238,25 +1238,25 @@ def emergency_fix_database():
     """
     logger.info("Emergency Database Fix Utility")
     logger.info("=" * 40)
-    
+
     try:
         # Fix duplicate emails
         logger.info("Step 1: Fixing duplicate email addresses...")
         fix_duplicate_emails()
-        
+
         # Fix orphaned records
         logger.info("Step 2: Fixing orphaned user records...")
         auth_instance = get_auth()
         if auth_instance:
             auth_instance.fix_database_consistency()
-        
+
         # Validate integrity
         logger.info("Step 3: Final integrity check...")
         validate_database_integrity()
-        
+
         logger.info("Emergency fix completed!")
         return True
-        
+
     except (ValueError, TypeError, ValidationError) as e:
         logging.error(f"Emergency fix failed: {e}")
         return False
@@ -1266,16 +1266,16 @@ def cleanup_database_on_startup():
     """Clean up any hanging database connections on startup"""
     try:
         import gc
-        
+
         # First, try to checkpoint the WAL file - use correct DB path
         conn = get_db_connection(timeout=5.0)
         if conn:
             conn.execute("PRAGMA wal_checkpoint(TRUNCATE)")
             conn.close()
-        
+
         # Force garbage collection
         gc.collect()
-        
+
         logger.info("Database cleanup completed successfully.")
         return True
     except (sqlite3.Error, DatabaseError) as e:
@@ -1286,7 +1286,7 @@ def cleanup_database_on_startup():
 def cleanup_database_connections():
     """Function to cleanup database connections - can be called anywhere"""
     cleanup_success = False
-    
+
     try:
         from education_system.university_system.infrastructure.database.database_utils import cleanup_database_connections
         cleanup_database_connections()
@@ -1298,7 +1298,7 @@ def cleanup_database_connections():
         logging.warning("cleanup_database_connections function not found in database_utils")
     except (ValueError, TypeError, ValidationError) as e:
         logging.error(f"Error during database cleanup: {e}")
-    
+
     try:
         # Additional cleanup - force garbage collection
         import gc
@@ -1310,10 +1310,10 @@ def cleanup_database_connections():
         logging.error("Failed to import gc module for garbage collection")
     except (RuntimeError, MemoryError) as e:
         logging.error(f"Error during garbage collection: {e}")
-    
+
     if not cleanup_success:
         logging.warning("Database cleanup completed with some issues")
-    
+
     return cleanup_success
 
 
@@ -1322,12 +1322,12 @@ def init_db():
         conn = get_db_connection()
         if not conn:
             return False
-            
+
         cursor = conn.cursor()
-        
+
         # IMPORTANT: Disable foreign keys during initial setup to avoid constraint issues
         cursor.execute("PRAGMA foreign_keys = OFF")
-        
+
         # Create students table first (no dependencies)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -1366,7 +1366,7 @@ def init_db():
             except (sqlite3.Error, DatabaseError) as e:
                 logger.error(f"Error adding enrollment_date column: {e}")
 
-        # Create modules table (no dependencies) 
+        # Create modules table (no dependencies)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
             module_code TEXT PRIMARY KEY,
@@ -1496,7 +1496,7 @@ def init_db():
 
         # ——— PARKING TABLES (these have their own dependencies) ———
         # Create users table dependency first for parking (already created above)
-        
+
         # Vehicles table (depends on users)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS vehicles (
@@ -1586,7 +1586,7 @@ def init_db():
             UNIQUE (trip_id, event_id)
         )
         ''')
-        
+
         # Commit table creation before inserting data
         conn.commit()
 
@@ -1600,7 +1600,7 @@ def init_db():
             registration_time = now_dt.strftime('%Y-%m-%d %H:%M:%S')
             dob = datetime(2000, 1, 1)
             age = now_dt.year - dob.year - ((now_dt.month, now_dt.day) < (dob.month, dob.day))
-            
+
             # Create student record
             cursor.execute(
                 'INSERT INTO students VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -1610,7 +1610,7 @@ def init_db():
                     'Active', registration_time
                 )
             )
-            
+
             # Create student modules - now safe since student exists
             module_data = [
                 ('S12345', compulsory_module_1['code']),
@@ -1630,11 +1630,11 @@ def init_db():
 
         # Commit all student data before creating users
         conn.commit()
-        
+
         # COMMIT ALL CHANGES AND CLOSE
         conn.commit()
         conn.close()
-        
+
         # CREATE DEFAULT USERS USING CENTRALIZED FUNCTION - Now safe since student exists
         # Call this AFTER closing the connection to avoid lock issues
         auth_manager.ensure_default_users_exist_once()
@@ -1659,9 +1659,9 @@ def init_integration_tables():
         conn = get_db_connection()
         if not conn:
             return False
-            
+
         cursor = conn.cursor()
-        
+
         # Create integration tables
         integration_tables = [
             '''CREATE TABLE IF NOT EXISTS attendance_calendar_links (
@@ -1674,7 +1674,7 @@ def init_integration_tables():
                 FOREIGN KEY (attendance_record_id) REFERENCES attendance_records (id),
                 FOREIGN KEY (event_id) REFERENCES events (id)
             )''',
-            
+
             '''CREATE TABLE IF NOT EXISTS system_integration_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 source_system TEXT,
@@ -1685,16 +1685,16 @@ def init_integration_tables():
                 timestamp TEXT
             )'''
         ]
-        
+
         for table_sql in integration_tables:
             cursor.execute(table_sql)
-        
+
         conn.commit()
         conn.close()
-        
+
         logger.info("Integration tables created successfully!")
         return True
-        
+
     except (sqlite3.Error, DatabaseError) as e:
         logging.error(f"Error creating integration tables: {e}")
         return False
@@ -1706,9 +1706,9 @@ def init_all_databases():
     if hasattr(init_all_databases, '_initialization_complete'):
         logger.info("Databases already initialized, skipping...")
         return True
-    
+
     logger.info("Initializing all databases...")
-    
+
     # Initialize main database first
     if not init_db():
         logger.error("Failed to initialize main database")
@@ -1777,14 +1777,14 @@ def init_all_databases():
             logger.warning("Assignment submission system initialization failed")
     except (ValueError, TypeError, ValidationError) as e:
         logging.warning(f"Failed to initialize assignment system: {e}")
-    
+
     # FIX THE ACCOMMODATION SCHEMA IMMEDIATELY AFTER MAIN DB INIT
     logger.info("Fixing accommodation database schema...")
     fix_accommodation_schema()
 
     logger.info("Fixing support database schema...")
     fix_support_database_schema()
-    
+
     # Initialize user authentication database to ensure users table has correct schema
     global auth
     if auth is None:
@@ -1793,13 +1793,13 @@ def init_all_databases():
             # Create if doesn't exist
             auth = UserAuth()
             set_auth(auth)
-    
+
     # Wait a moment to ensure the main database is fully initialized
     time.sleep(0.1)
-        
+
     # Ensure communication system integration
     ensure_communication_integration_on_startup()
-    
+
     # Initialize other databases one by one (ONLY ONCE)
     databases = [
         ('parent portal', integrate_parent_portal_with_main),
@@ -1835,7 +1835,7 @@ def init_all_databases():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS chatbot_conversations (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1850,7 +1850,7 @@ def init_all_databases():
             FOREIGN KEY (user_id) REFERENCES users (id)
         )
         ''')
-        
+
         conn.commit()
         conn.close()
         logger.info("Chatbot conversations table created")
@@ -1883,10 +1883,10 @@ def init_all_databases():
         time.sleep(0.05)
     except (ValueError, TypeError, ValidationError) as e:
         logging.warning(f"Failed to initialize AI detector: {e}")
-    
+
     # Mark initialization as complete
     init_all_databases._initialization_complete = True
-    
+
     logger.info("All databases initialization completed!")
     return True
 
@@ -1896,7 +1896,7 @@ def init_auth_for_modules():
     if auth:
         # Set global auth instance for modules that can read it
         set_auth_instance(auth)
-        
+
         # Configure existing modules with auth
         set_student_union_auth(auth)   # student_union
         set_finance_auth(auth)         # finance
@@ -1936,7 +1936,7 @@ def init_auth_for_modules():
         set_grocery_auth(auth)         # grocery shop
         set_calendar_auth(auth)        # academic calendar
         setup_chatbot_permissions()
-        
+
         # Wire the Student Union modules that keep their own module-level `auth`
         for m in (su_club, su_event, su_fac, su_admin, su_elec, su_fin, su_misc):
             if hasattr(m, "set_auth"):

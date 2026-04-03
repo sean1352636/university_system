@@ -74,28 +74,28 @@ def view_menu_items(self):
         if not conn:
             messagebox.showerror(_t("common.error"), _t("common.database_connection_failed"))
             return
-            
+
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT item_id, name, category, price, available, vegetarian, vegan 
-            FROM menu_items 
+            SELECT item_id, name, category, price, available, vegetarian, vegan
+            FROM menu_items
             ORDER BY category, name
         ''')
         items = cursor.fetchall()
-        
+
         for item in self.menu_tree.get_children():
             self.menu_tree.delete(item)
-            
+
         for item in items:
             available = "Yes" if item[4] else "No"
             vegetarian = "Yes" if item[5] else "No"
             vegan = "Yes" if item[6] else "No"
-            
+
             self.menu_tree.insert('', 'end', values=(
-                item[0], item[1], item[2], f"£{item[3]:.2f}", 
+                item[0], item[1], item[2], f"£{item[3]:.2f}",
                 available, vegetarian, vegan
             ))
-            
+
         conn.close()
         messagebox.showinfo(_t("common.success"), _t("commerce.menu.loaded_items", count=len(items)))
 
@@ -128,10 +128,10 @@ def show_menu_analytics(self):
         analytics_window = tk.Toplevel(self.root)
         analytics_window.title(_t("commerce.menu.menu_analytics"))
         analytics_window.geometry("800x600")
-        
+
         text_area = ScrolledText(analytics_window, height=30, width=80)
         text_area.pack(fill='both', expand=True, padx=10, pady=10)
-        
+
         analytics_text = self.generate_menu_analytics_text()
         text_area.insert('1.0', analytics_text)
         text_area.config(state='disabled')
@@ -175,18 +175,18 @@ class MenuItemDialog:
     def __init__(self, parent, title, item_id=None):
         self.result = False
         self.item_id = item_id
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title(title)
         self.dialog.geometry("500x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
-        
+
         if item_id:
             self.load_item_data()
-            
+
     def create_widgets(self):
         """Create dialog widgets"""
         main_frame = ttk.Frame(self.dialog, padding="20")
@@ -228,18 +228,18 @@ class MenuItemDialog:
 
         ttk.Button(button_frame, text=_t("common.save"), command=self.save).pack(side='left', padx=10)
         ttk.Button(button_frame, text=_t("common.cancel"), command=self.cancel).pack(side='left', padx=10)
-        
+
     def load_item_data(self):
         """Load existing item data for editing"""
         try:
             conn = get_db_connection()
             if not conn:
                 return
-                
+
             cursor = conn.cursor()
             cursor.execute('SELECT * FROM menu_items WHERE item_id = ?', (self.item_id,))
             item = cursor.fetchone()
-            
+
             if item:
                 self.name_var.set(item[1])
                 self.desc_text.insert(1.0, item[2] or '')
@@ -249,11 +249,11 @@ class MenuItemDialog:
                 self.vegetarian_var.set(bool(item[6]))
                 self.vegan_var.set(bool(item[7]))
                 self.available_var.set(bool(item[8]))
-                
+
             conn.close()
         except sqlite3.Error as e:
             messagebox.showerror(_t("common.error"), _t("commerce.menu.load_item_failed", error=str(e)))
-            
+
     def save(self):
         """Save the menu item"""
         try:
@@ -266,16 +266,16 @@ class MenuItemDialog:
             except ValueError:
                 messagebox.showerror(_t("common.error"), _t("commerce.menu.invalid_price"))
                 return
-            
+
             conn = get_db_connection()
             if conn:
                 cursor = conn.cursor()
                 description = self.desc_text.get(1.0, tk.END).strip()
-                
+
                 if self.item_id:
                     cursor.execute('''
-                        UPDATE menu_items 
-                        SET name=?, description=?, price=?, category=?, allergens=?, 
+                        UPDATE menu_items
+                        SET name=?, description=?, price=?, category=?, allergens=?,
                             vegetarian=?, vegan=?, available=?
                         WHERE item_id=?
                     ''', (self.name_var.get(), description, price, self.category_var.get(),
@@ -283,23 +283,23 @@ class MenuItemDialog:
                           self.vegan_var.get(), self.available_var.get(), self.item_id))
                 else:
                     cursor.execute('''
-                        INSERT INTO menu_items (name, description, price, category, allergens, 
+                        INSERT INTO menu_items (name, description, price, category, allergens,
                                               vegetarian, vegan, available)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (self.name_var.get(), description, price, self.category_var.get(),
                           self.allergens_var.get(), self.vegetarian_var.get(),
                           self.vegan_var.get(), self.available_var.get()))
-                
+
                 conn.commit()
                 conn.close()
-            
+
             messagebox.showinfo(_t("common.success"), _t("commerce.menu.item_saved"))
             self.result = True
             self.dialog.destroy()
 
         except sqlite3.Error as e:
             messagebox.showerror(_t("common.error"), _t("commerce.menu.save_failed", error=str(e)))
-            
+
     def cancel(self):
         """Cancel the dialog"""
         self.dialog.destroy()

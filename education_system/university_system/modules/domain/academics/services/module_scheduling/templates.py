@@ -121,7 +121,7 @@ class TemplatesMixin:
 
         if not templates:
             print("No schedule templates found.")
-            return
+            return []
 
         print("\nSchedule Templates:")
         print("=" * 80)
@@ -134,3 +134,4 @@ class TemplatesMixin:
             print(f"{name:<20} {desc[:28]:<30} {created_date:<15} {created_by:<10}")
 
         print("=" * 80)
+        return templates

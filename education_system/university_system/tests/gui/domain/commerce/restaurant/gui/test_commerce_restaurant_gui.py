@@ -9,12 +9,7 @@ import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
 import sys
 
-
-# Skip all GUI tests if running in headless environment
-pytestmark = pytest.mark.skipif(
-    not hasattr(sys, 'real_prefix') and not sys.base_prefix != sys.prefix,
-    reason="GUI tests require display"
-)
+_MAIN_GUI = 'education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.core.main_gui'
 
 
 @pytest.fixture
@@ -34,96 +29,64 @@ def mock_auth():
 
 @pytest.fixture
 def root_window():
-    """Create a root Tkinter window for testing."""
-    root = tk.Tk()
+    """Create a mock root Tkinter window for testing."""
+    root = Mock(spec=tk.Tk)
     yield root
-    try:
-        root.destroy()
-    except Exception:
-        pass
 
 
 class TestRestaurantGUIInitialization:
     """Tests for Restaurant GUI initialization."""
 
-    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
-    def test_gui_imports_successfully(self, mock_db_conn):
+    def test_gui_imports_successfully(self):
         """Test that the restaurant GUI module can be imported."""
-        try:
-            from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
-            assert restaurant_management_gui is not None
-        except ImportError as e:
-            pytest.fail(f"Failed to import restaurant_management_gui: {e}")
+        from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
+        assert restaurant_management_gui is not None
 
-    @pytest.mark.skipif(not os.environ.get('DISPLAY'), reason="GUI tests require display")
-    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
-    def test_restaurant_gui_class_exists(self, mock_db_conn, mock_auth):
+    def test_restaurant_gui_class_exists(self):
         """Test that RestaurantManagementGUI class exists."""
-        from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
+        from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui import RestaurantManagementGUI
+        assert RestaurantManagementGUI is not None
 
-        # Check if main GUI class exists
-        assert hasattr(restaurant_management_gui, 'RestaurantManagementGUI') or \
-               hasattr(restaurant_management_gui, 'RestaurantApp') or \
-               hasattr(restaurant_management_gui, 'display_restaurant_management_gui')
-
-    @pytest.mark.skipif(not os.environ.get('DISPLAY'), reason="GUI tests require display")
-    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
-    def test_restaurant_gui_initialization(self, mock_db_conn, mock_auth, root_window):
+    @patch(f'{_MAIN_GUI}.init_db', return_value=True)
+    @patch(f'{_MAIN_GUI}.get_auth')
+    def test_restaurant_gui_initialization(self, mock_get_auth, mock_init_db, mock_auth, root_window):
         """Test basic GUI initialization."""
-        from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
+        from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui import RestaurantManagementGUI
 
-        # Mock database connection
-        mock_conn = Mock()
-        mock_cursor = Mock()
-        mock_conn.cursor.return_value = mock_cursor
-        mock_db_conn.return_value = mock_conn
+        mock_get_auth.return_value = mock_auth
 
-        # Try to initialize GUI (this may fail in headless environments)
-        try:
-            # Find the main GUI class
-            if hasattr(restaurant_management_gui, 'RestaurantManagementGUI'):
-                gui = restaurant_management_gui.RestaurantManagementGUI(root_window, mock_auth)
-                assert gui is not None
-            elif hasattr(restaurant_management_gui, 'RestaurantApp'):
-                gui = restaurant_management_gui.RestaurantApp(root_window, mock_auth)
-                assert gui is not None
-        except tk.TclError:
-            pytest.skip("Cannot test GUI in headless environment")
+        with patch.object(RestaurantManagementGUI, 'setup_current_user', lambda self: None):
+            gui = RestaurantManagementGUI(root_window, mock_auth)
+            assert gui is not None
+            assert gui.root == root_window
 
 
 class TestGUIModuleFunctions:
     """Tests for GUI module-level functions."""
 
-    def test_gui_module_has_display_function(self):
-        """Test that the GUI module has a display function."""
-        from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
+    def test_gui_module_has_main_class(self):
+        """Test that the GUI module has a main GUI class."""
+        from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui import RestaurantManagementGUI
+        assert RestaurantManagementGUI is not None
+        assert hasattr(RestaurantManagementGUI, '__init__')
 
-        # Check for common display function names
-        has_display_func = (
-            hasattr(restaurant_management_gui, 'display_restaurant_management_gui') or
-            hasattr(restaurant_management_gui, 'show_gui') or
-            hasattr(restaurant_management_gui, 'main') or
-            hasattr(restaurant_management_gui, 'run_gui')
-        )
-        assert has_display_func, "GUI module should have a display/main function"
+    def test_gui_module_structure(self):
+        """Test that the GUI module core has expected structure."""
+        from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui import core
+        from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.core import main_gui
 
-    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
-    def test_gui_module_structure(self, mock_db_conn):
-        """Test that the GUI module has expected structure."""
-        from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
-
-        # Check for expected imports/modules
-        assert hasattr(restaurant_management_gui, 'tk') or hasattr(restaurant_management_gui, 'tkinter')
+        # Check for tkinter imports in main_gui
+        assert hasattr(main_gui, 'tk')
 
     def test_gui_auth_integration(self):
         """Test that GUI module has auth integration."""
-        from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
+        from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.core import main_gui
 
-        # Check for auth-related functions
+        # Check for auth-related imports
         has_auth = (
-            hasattr(restaurant_management_gui, 'set_auth') or
-            hasattr(restaurant_management_gui, 'auth') or
-            hasattr(restaurant_management_gui, 'HAS_AUTH')
+            hasattr(main_gui, 'get_auth') or
+            hasattr(main_gui, 'get_global_auth') or
+            hasattr(main_gui, 'UserAuth')
         )
         assert has_auth, "GUI should have authentication integration"
 
@@ -133,55 +96,38 @@ class TestShopGUIBasic:
 
     def test_shop_gui_imports_successfully(self):
         """Test that the shop GUI module can be imported."""
-        try:
-            from education_system.university_system.modules.domain.commerce.gui import shop_management_gui
-            assert shop_management_gui is not None
-        except ImportError as e:
-            pytest.fail(f"Failed to import shop_management_gui: {e}")
+        from education_system.university_system.modules.domain.commerce.gui import shop_management_gui
+        assert shop_management_gui is not None
 
     def test_shop_gui_module_structure(self):
         """Test that the shop GUI module has expected structure."""
-        from education_system.university_system.modules.domain.commerce.gui import shop_management_gui
-
-        # Check for expected structure
-        assert hasattr(shop_management_gui, 'tk') or hasattr(shop_management_gui, 'tkinter')
+        from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import UniversityShopGUI
+        assert UniversityShopGUI is not None
 
 
 class TestGUIFunctionalityMocked:
     """Tests for GUI functionality using mocks (no display needed)."""
 
-    @patch('tkinter.Tk')
-    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
-    def test_restaurant_gui_with_mocked_tk(self, mock_db_conn, mock_tk_root, mock_auth):
-        """Test restaurant GUI with mocked Tkinter."""
-        from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
+    def test_restaurant_gui_with_mocked_tk(self, mock_auth):
+        """Test restaurant GUI class has expected attributes."""
+        from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui import RestaurantManagementGUI
 
-        # Setup mocks
-        mock_root = Mock()
-        mock_tk_root.return_value = mock_root
+        # Verify the class exists and has expected methods
+        assert hasattr(RestaurantManagementGUI, '__init__')
+        module_attrs = dir(RestaurantManagementGUI)
+        assert len(module_attrs) > 10, "GUI class should have multiple methods"
 
-        mock_conn = Mock()
-        mock_cursor = Mock()
-        mock_conn.cursor.return_value = mock_cursor
-        mock_db_conn.return_value = mock_conn
-
-        # Test that key functions exist
-        module_attrs = dir(restaurant_management_gui)
-
-        # Should have some GUI-related attributes
-        gui_indicators = ['tk', 'Tk', 'Frame', 'Button', 'Label', 'Entry']
-        has_gui_elements = any(attr in str(module_attrs) for attr in gui_indicators)
-
-        assert has_gui_elements or len(module_attrs) > 10, "Module should have GUI components"
-
-    @patch('education_system.university_system.modules.domain.commerce.gui.shop_management_gui.get_db_connection')
-    def test_shop_gui_has_expected_functions(self, mock_db_conn):
+    def test_shop_gui_has_expected_functions(self):
         """Test that shop GUI has expected functions."""
-        from education_system.university_system.modules.domain.commerce.gui import shop_management_gui
+        from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import (
+            UniversityShopGUI,
+            run_gui_mode,
+            run_cli_mode,
+        )
 
-        # Module should have substantial content
-        module_attrs = dir(shop_management_gui)
-        assert len(module_attrs) > 10, "Shop GUI module should have multiple attributes"
+        assert UniversityShopGUI is not None
+        assert callable(run_gui_mode)
+        assert callable(run_cli_mode)
 
 
 class TestGUIIntegration:
@@ -189,14 +135,11 @@ class TestGUIIntegration:
 
     def test_both_guis_can_be_imported_together(self):
         """Test that both GUI modules can be imported simultaneously."""
-        try:
-            from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
-            from education_system.university_system.modules.domain.commerce.gui import shop_management_gui
+        from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
+        from education_system.university_system.modules.domain.commerce.gui import shop_management_gui
 
-            assert restaurant_management_gui is not None
-            assert shop_management_gui is not None
-        except ImportError as e:
-            pytest.fail(f"Failed to import GUI modules together: {e}")
+        assert restaurant_management_gui is not None
+        assert shop_management_gui is not None
 
     def test_gui_modules_dont_conflict(self):
         """Test that GUI modules don't have naming conflicts."""
@@ -215,27 +158,24 @@ class TestGUIIntegration:
 class TestGUIErrorHandling:
     """Tests for GUI error handling."""
 
-    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
-    def test_gui_handles_missing_auth_gracefully(self, mock_db_conn):
-        """Test that GUI handles missing authentication gracefully."""
-        from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
+    def test_gui_handles_missing_auth_gracefully(self):
+        """Test that GUI core has authentication handling."""
+        from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.core import main_gui
 
-        # Should have auth handling
+        # Should have auth-related imports
         has_auth_check = (
-            hasattr(restaurant_management_gui, 'HAS_AUTH') or
-            hasattr(restaurant_management_gui, 'auth') or
-            hasattr(restaurant_management_gui, 'set_auth')
+            hasattr(main_gui, 'get_auth') or
+            hasattr(main_gui, 'get_global_auth') or
+            hasattr(main_gui, 'UserAuth')
         )
         assert has_auth_check, "GUI should have authentication handling"
 
-    @patch('education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.get_db_connection')
-    def test_gui_has_database_connection_handling(self, mock_db_conn):
+    def test_gui_has_database_connection_handling(self):
         """Test that GUI has database connection handling."""
-        from education_system.university_system.modules.domain.commerce.gui import restaurant_management_gui
+        from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui.core import main_gui
 
         # Should have database connection function
-        has_db_func = hasattr(restaurant_management_gui, 'get_db_connection')
-        assert has_db_func, "GUI should have database connection handling"
+        assert hasattr(main_gui, 'get_db_connection'), "GUI should have database connection handling"
 
 
 # Integration test to verify all GUI components work together

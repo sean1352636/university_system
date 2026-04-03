@@ -55,7 +55,7 @@ except ImportError:
     TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
     SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
     ROOM_TYPES = ['Lecture Hall', 'Lab', 'Tutorial Room', 'Seminar Room', 'Workshop Room', 'Computer Lab', 'Other']
-    
+
     # Import the ModuleScheduler class from the document
     try:
         from education_system.university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
@@ -68,7 +68,7 @@ def create_management_tab(self):
     """Create the data management tab"""
     management_frame = ttk.Frame(self.notebook)
     self.notebook.add(management_frame, text=_t("scheduling.tabs.management"))
-    
+
     # Backup section
     backup_frame = ttk.LabelFrame(management_frame, text=_t("scheduling.backup_restore"), padding=15)
     backup_frame.pack(fill=tk.X, padx=20, pady=10)
@@ -128,7 +128,7 @@ def create_management_tab(self):
     # Activity log
     log_frame = ttk.LabelFrame(management_frame, text=_t("scheduling.activity_log"), padding=15)
     log_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-    
+
     self.log_text = scrolledtext.ScrolledText(log_frame, height=15, state=tk.DISABLED)
     self.log_text.pack(fill=tk.BOTH, expand=True)
 
@@ -285,31 +285,31 @@ def validate_data(self):
     """Validate data consistency"""
     try:
         self.update_status("Validating data...")
-        
+
         issues = self.scheduler.validate_data_consistency()
-        
+
         self.log_text.config(state=tk.NORMAL)
         self.log_text.delete(1.0, tk.END)
-        
+
         if issues:
             self.log_text.insert(tk.END, "Data Consistency Issues Found:\n")
             self.log_text.insert(tk.END, "=" * 50 + "\n")
             for i, issue in enumerate(issues, 1):
                 self.log_text.insert(tk.END, f"{i}. {issue}\n")
             self.log_text.insert(tk.END, "=" * 50 + "\n")
-            
+
             if messagebox.askyesno("Issues Found", f"Found {len(issues)} data consistency issues.\n\nWould you like to fix them automatically?", parent=self.root):
                 self.clean_orphaned_records()
         else:
             self.log_text.insert(tk.END, "No data consistency issues found.\n")
             messagebox.showinfo("Validation Complete", "No data consistency issues found.", parent=self.root)
-        
+
         self.log_text.config(state=tk.DISABLED)
         self.notebook.select(7)  # Switch to management tab
-        
+
         self.update_activity_log("Performed data validation")
         self.update_status("Ready")
-        
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to validate data: {str(e)}", parent=self.root)
         self.update_status("Ready")
@@ -361,7 +361,7 @@ def repair_issues(self):
     """Repair common data issues"""
     try:
         self.update_status("Repairing issues...")
-        
+
         # Run validation and cleanup
         issues = self.scheduler.validate_data_consistency()
         if issues:
@@ -369,11 +369,11 @@ def repair_issues(self):
             messagebox.showinfo("Success", "Common issues repaired.", parent=self.root)
         else:
             messagebox.showinfo("Info", "No issues found to repair.", parent=self.root)
-        
+
         self.refresh_all_data()
         self.update_activity_log("Repaired data issues")
         self.update_status("Ready")
-        
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to repair issues: {str(e)}", parent=self.root)
         self.update_status("Ready")
@@ -387,21 +387,21 @@ def import_csv(self):
             title="Select CSV file to import",
             filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
         )
-        
+
         if file_path:
             self.update_status("Importing CSV...")
-            
+
             success = self.scheduler.import_schedules_from_csv(file_path)
-            
+
             if success:
                 messagebox.showinfo("Success", "CSV imported successfully!", parent=self.root)
                 self.refresh_all_data()
                 self.update_activity_log(f"Imported data from {os.path.basename(file_path)}")
             else:
                 messagebox.showerror("Error", "Failed to import CSV file.", parent=self.root)
-            
+
             self.update_status("Ready")
-        
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to import CSV: {str(e)}", parent=self.root)
         self.update_status("Ready")
@@ -412,20 +412,20 @@ def export_all_data(self):
     """Export all schedule data"""
     try:
         self.update_status("Exporting data...")
-        
+
         filename = self.scheduler.export_all_schedules_to_csv()
-        
+
         if filename:
             if messagebox.askyesno("Export Complete", f"Data exported successfully!\n\nFile: {filename}\n\nWould you like to open the file location?", parent=self.root):
                 folder_path = os.path.dirname(os.path.abspath(filename))
                 webbrowser.open(f"file://{folder_path}")
-            
+
             self.update_activity_log("Exported all schedule data")
         else:
             messagebox.showerror("Error", "Failed to export data.", parent=self.root)
-        
+
         self.update_status("Ready")
-        
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to export data: {str(e)}", parent=self.root)
         self.update_status("Ready")

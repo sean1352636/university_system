@@ -18,7 +18,7 @@ import csv
 import re
 import shutil
 from collections import deque
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
@@ -70,99 +70,99 @@ FACE_RECOGNITION_SUPPORT = True
 class BackupRecoveryWindow:
     def __init__(self, parent):
         self.parent = parent
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.backup_recovery"))
         self.window.geometry("700x500")
         self.window.transient(parent)
-        
+
         self.create_widgets()
         self.load_backups()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="💾 Backup & Recovery System", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Backup operations frame
         operations_frame = ttk.LabelFrame(self.window, text="Backup Operations", padding=10)
         operations_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         operations_grid = ttk.Frame(operations_frame)
         operations_grid.pack(fill=tk.X)
-        
-        ttk.Button(operations_grid, text="Create Backup", 
+
+        ttk.Button(operations_grid, text="Create Backup",
                   command=self.create_backup, style='Success.TButton').grid(row=0, column=0, padx=5)
-        ttk.Button(operations_grid, text="Restore Backup", 
+        ttk.Button(operations_grid, text="Restore Backup",
                   command=self.restore_backup, style='Warning.TButton').grid(row=0, column=1, padx=5)
-        ttk.Button(operations_grid, text="Schedule Settings", 
+        ttk.Button(operations_grid, text="Schedule Settings",
                   command=self.backup_settings, style='Primary.TButton').grid(row=0, column=2, padx=5)
-        ttk.Button(operations_grid, text="Cleanup Old", 
+        ttk.Button(operations_grid, text="Cleanup Old",
                   command=self.cleanup_backups, style='Primary.TButton').grid(row=0, column=3, padx=5)
-        
+
         # Available backups frame
         backups_frame = ttk.LabelFrame(self.window, text="Available Backups", padding=10)
         backups_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
+
         # Backups treeview
         backup_columns = ("Filename", "Size", "Type", "Created", "Status")
         self.backups_tree = ttk.Treeview(backups_frame, columns=backup_columns, show="headings")
-        
+
         for col in backup_columns:
             self.backups_tree.heading(col, text=col)
             self.backups_tree.column(col, width=120)
-        
+
         backup_scrollbar = ttk.Scrollbar(backups_frame, orient=tk.VERTICAL, command=self.backups_tree.yview)
         self.backups_tree.configure(yscrollcommand=backup_scrollbar.set)
-        
+
         self.backups_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         backup_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Bind double-click to restore
         self.backups_tree.bind('<Double-1>', self.restore_selected_backup)
-        
+
         # Status frame
         status_frame = ttk.LabelFrame(self.window, text="Backup Status", padding=10)
         status_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         self.status_text = tk.Text(status_frame, height=4, wrap=tk.WORD)
         status_scrollbar = ttk.Scrollbar(status_frame, orient=tk.VERTICAL, command=self.status_text.yview)
         self.status_text.configure(yscrollcommand=status_scrollbar.set)
-        
+
         self.status_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         status_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Load initial status
         self.load_backup_status()
-        
+
         # Close button
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy, style='Danger.TButton').pack(pady=10)
-    
+
     def load_backups(self):
         # Clear existing items
         for item in self.backups_tree.get_children():
             self.backups_tree.delete(item)
-        
+
         # Sample backup data
         sample_backups = [
             ("attendance_backup_full_20241220_143022.db", "2.4 MB", "Full", "2024-12-20 14:30", "Valid"),
             ("attendance_backup_manual_20241219_091500.db", "2.3 MB", "Manual", "2024-12-19 09:15", "Valid"),
             ("attendance_backup_scheduled_20241218_000000.db", "2.2 MB", "Scheduled", "2024-12-18 00:00", "Valid"),
         ]
-        
+
         for backup in sample_backups:
             self.backups_tree.insert('', 'end', values=backup)
-    
+
     def create_backup(self):
         backup_type = simpledialog.askstring("Backup Type", "Enter backup type (full/manual/custom):", initialvalue="manual")
         if not backup_type:
             return
-        
+
         if ORIGINAL_FUNCTIONS_AVAILABLE:
             try:
                 backup_system = BackupRecoverySystem()
                 backup_path = backup_system.create_backup(backup_type)
-                
+
                 if backup_path:
                     messagebox.showinfo(_("common.success"), f"Backup created: {backup_path}")
                     self.load_backups()
@@ -174,35 +174,35 @@ class BackupRecoveryWindow:
         else:
             messagebox.showinfo("Demo", f"Backup of type '{backup_type}' would be created here")
             self.load_backups()
-    
+
     def restore_backup(self):
         filename = filedialog.askopenfilename(
             title="Select backup file to restore",
             filetypes=[("Database files", "*.db"), ("All files", "*.*")]
         )
-        
+
         if filename:
-            if messagebox.askyesno("Confirm Restore", 
+            if messagebox.askyesno("Confirm Restore",
                                  "This will overwrite current data. Are you sure?"):
                 self.perform_restore(filename)
-    
+
     def restore_selected_backup(self, event):
         selection = self.backups_tree.selection()
         if selection:
             item = self.backups_tree.item(selection[0])
             filename = item['values'][0]
-            
+
             if messagebox.askyesno("Confirm Restore",
                                  f"Restore from {filename}? This will overwrite current data."):
                 backup_path = str(BACKUP_ATTENDANCE_DIR / filename)
                 self.perform_restore(backup_path)
-    
+
     def perform_restore(self, backup_path):
         if ORIGINAL_FUNCTIONS_AVAILABLE:
             try:
                 backup_system = BackupRecoverySystem()
                 success, message = backup_system.restore_backup(backup_path)
-                
+
                 if success:
                     messagebox.showinfo(_("common.success"), message)
                     self.load_backup_status()
@@ -212,15 +212,15 @@ class BackupRecoveryWindow:
                 messagebox.showerror(_("common.error"), f"Restore failed: {e}")
         else:
             messagebox.showinfo("Demo", f"Database would be restored from {backup_path}")
-    
+
     def backup_settings(self):
         BackupSettingsWindow(self.window, self.load_backup_status)
-    
+
     def cleanup_backups(self):
         try:
             keep_days = int(simpledialog.askstring("Cleanup", "Keep backups newer than how many days?", initialvalue="30"))
-            
-            if messagebox.askyesno("Confirm Cleanup", 
+
+            if messagebox.askyesno("Confirm Cleanup",
                                  f"Delete backups older than {keep_days} days?"):
                 if ORIGINAL_FUNCTIONS_AVAILABLE:
                     backup_system = BackupRecoverySystem()
@@ -228,11 +228,11 @@ class BackupRecoveryWindow:
                     messagebox.showinfo(_("common.success"), f"Cleaned up backups older than {keep_days} days")
                 else:
                     messagebox.showinfo("Demo", f"Would cleanup backups older than {keep_days} days")
-                
+
                 self.load_backups()
         except (ValueError, TypeError):
             messagebox.showerror(_("common.error"), "Invalid number of days")
-    
+
     def load_backup_status(self):
         status_text = """BACKUP SYSTEM STATUS
 ==================
@@ -252,7 +252,7 @@ Configuration:
 - Maximum backup size: 100 MB
 - Compression: Enabled
 """
-        
+
         self.status_text.delete(1.0, tk.END)
         self.status_text.insert(tk.END, status_text)
 
@@ -260,70 +260,70 @@ class BackupSettingsWindow:
     def __init__(self, parent, callback):
         self.parent = parent
         self.callback = callback
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.backup_settings"))
         self.window.geometry("500x400")
         self.window.transient(parent)
         self.window.grab_set()
-        
+
         self.create_widgets()
         self.load_current_settings()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text="Backup Settings", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Settings frame
         settings_frame = ttk.LabelFrame(self.window, text="Backup Configuration", padding=20)
         settings_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
+
         # Automatic backups
         self.auto_backup_var = tk.BooleanVar()
-        ttk.Checkbutton(settings_frame, text="Enable automatic backups", 
+        ttk.Checkbutton(settings_frame, text="Enable automatic backups",
                        variable=self.auto_backup_var).grid(row=0, column=0, columnspan=2, sticky=tk.W, pady=5)
-        
+
         # Backup frequency
         ttk.Label(settings_frame, text="Backup frequency (hours):").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.frequency_var = tk.StringVar()
         ttk.Entry(settings_frame, textvariable=self.frequency_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         # Retention period
         ttk.Label(settings_frame, text="Keep backups for (days):").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.retention_var = tk.StringVar()
         ttk.Entry(settings_frame, textvariable=self.retention_var, width=10).grid(row=2, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         # Backup location
         ttk.Label(settings_frame, text="Backup location:").grid(row=3, column=0, sticky=tk.W, pady=5)
         location_frame = ttk.Frame(settings_frame)
         location_frame.grid(row=3, column=1, sticky=tk.W, padx=(10, 0), pady=5)
-        
+
         self.location_var = tk.StringVar()
         ttk.Entry(location_frame, textvariable=self.location_var, width=30).pack(side=tk.LEFT)
         ttk.Button(location_frame, text=_("common.browse"), command=self.browse_location).pack(side=tk.LEFT, padx=(5, 0))
-        
+
         # Compression
         self.compression_var = tk.BooleanVar()
-        ttk.Checkbutton(settings_frame, text="Enable compression", 
+        ttk.Checkbutton(settings_frame, text="Enable compression",
                        variable=self.compression_var).grid(row=4, column=0, columnspan=2, sticky=tk.W, pady=5)
-        
+
         # Notifications
         self.notifications_var = tk.BooleanVar()
-        ttk.Checkbutton(settings_frame, text="Email notifications on backup completion", 
+        ttk.Checkbutton(settings_frame, text="Email notifications on backup completion",
                        variable=self.notifications_var).grid(row=5, column=0, columnspan=2, sticky=tk.W, pady=5)
-        
+
         # Buttons
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
-        
+
         ttk.Button(buttons_frame, text="Save Settings",
                   command=self.save_settings, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text="Test Backup",
                   command=self.test_backup, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.cancel"),
                   command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
-    
+
     def load_current_settings(self):
         # Load current settings from database or use defaults
         if ORIGINAL_FUNCTIONS_AVAILABLE:
@@ -332,40 +332,40 @@ class BackupSettingsWindow:
         else:
             self.auto_backup_var.set(True)
             self.frequency_var.set("24")
-        
+
         self.retention_var.set("30")
         from education_system.university_system.modules.shared.constants import paths
         self.location_var.set(str(paths.BACKUP_ATTENDANCE_DIR / ""))
         self.compression_var.set(True)
         self.notifications_var.set(False)
-    
+
     def browse_location(self):
         directory = filedialog.askdirectory(title="Select backup location")
         if directory:
             self.location_var.set(directory)
-    
+
     def save_settings(self):
         try:
             # Validate inputs
             frequency = int(self.frequency_var.get())
             retention = int(self.retention_var.get())
-            
+
             if frequency < 1 or retention < 1:
                 messagebox.showerror(_("common.error"), "Frequency and retention must be positive numbers")
                 return
-            
+
             # Save settings
             if ORIGINAL_FUNCTIONS_AVAILABLE:
                 set_enhanced_setting('auto_backup_enabled', self.auto_backup_var.get(), data_type='boolean')
                 set_enhanced_setting('backup_frequency_hours', frequency, data_type='integer')
-            
+
             messagebox.showinfo(_("common.success"), "Backup settings saved successfully!")
             self.callback()  # Refresh parent status
             self.window.destroy()
-            
+
         except ValueError:
             messagebox.showerror(_("common.error"), "Please enter valid numbers for frequency and retention")
-    
+
     def test_backup(self):
         messagebox.showinfo("Test Backup", "Test backup would be created here")
 

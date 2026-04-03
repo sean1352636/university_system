@@ -41,67 +41,67 @@ class TemplateEditor:
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
-        
+
         self.create_widgets()
         if template_name:
             self.load_template()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Template info
         info_frame = ttk.Frame(main_frame)
         info_frame.pack(fill=tk.X, pady=(0, 10))
-        
+
         ttk.Label(info_frame, text="Name:").grid(row=0, column=0, sticky=tk.W)
         self.name_entry = ttk.Entry(info_frame, width=30)
         self.name_entry.grid(row=0, column=1, sticky=tk.W, padx=5)
-        
+
         # Subject
         ttk.Label(main_frame, text="Subject:").pack(anchor=tk.W)
         self.subject_entry = ttk.Entry(main_frame, width=80)
         self.subject_entry.pack(fill=tk.X, pady=5)
-        
+
         # Body with variable hints
         body_frame = ttk.Frame(main_frame)
         body_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Variables panel
         vars_frame = ttk.LabelFrame(body_frame, text="Available Variables", padding=5)
         vars_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=(10, 0))
-        
+
         variables = [
-            "$student_id", "$email_address", "$title", "$first_name", 
+            "$student_id", "$email_address", "$title", "$first_name",
             "$last_name", "$course", "$modules_list", "$signature"
         ]
-        
+
         for var in variables:
             btn = ttk.Button(vars_frame, text=var, width=15,
                            command=lambda v=var: self.insert_variable(v))
             btn.pack(fill=tk.X, pady=1)
-        
+
         # Body editor
         editor_frame = ttk.Frame(body_frame)
         editor_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(editor_frame, text="Body:").pack(anchor=tk.W)
         self.body_text = scrolledtext.ScrolledText(editor_frame, wrap=tk.WORD)
         self.body_text.pack(fill=tk.BOTH, expand=True)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Save", command=self.save_template).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Preview", command=self.preview_template).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def insert_variable(self, variable):
         """Insert variable at cursor position"""
         self.body_text.insert(tk.INSERT, variable)
         self.body_text.focus()
-    
+
     def load_template(self):
         """Load existing template"""
         if self.template_name and 'load_template' in globals():
@@ -113,18 +113,18 @@ class TemplateEditor:
                     self.body_text.insert(1.0, template_data['body'])
             except Exception as e:
                 messagebox.showerror("Error", f"Error loading template: {e}")
-    
+
     def save_template(self):
         """Save template"""
         try:
             name = self.name_entry.get().strip()
             subject = self.subject_entry.get().strip()
             body = self.body_text.get(1.0, tk.END).strip()
-            
+
             if not name or not subject or not body:
                 messagebox.showerror("Error", "Please fill in all fields")
                 return
-            
+
             if 'create_template' in globals():
                 if create_template(name, subject, body):
                     messagebox.showinfo("Success", f"Template '{name}' saved successfully")
@@ -133,15 +133,15 @@ class TemplateEditor:
                     messagebox.showerror("Error", "Failed to save template")
             else:
                 messagebox.showerror("Error", "Template system not available")
-                
+
         except Exception as e:
             messagebox.showerror("Error", f"Error saving template: {e}")
-    
+
     def preview_template(self):
         """Preview template with sample data"""
         subject = self.subject_entry.get()
         body = self.body_text.get(1.0, tk.END).strip()
-        
+
         # Sample template variables
         sample_vars = {
             'student_id': 'STU12345',
@@ -153,32 +153,32 @@ class TemplateEditor:
             'modules_list': '- CS101: Programming\n- CS102: Data Structures',
             'signature': '\n\nBest regards,\nUniversity Administration'
         }
-        
+
         # Simple variable substitution
         preview_subject = subject
         preview_body = body
-        
+
         for var, value in sample_vars.items():
             preview_subject = preview_subject.replace(f'${var}', str(value))
             preview_body = preview_body.replace(f'${var}', str(value))
-        
+
         # Show preview
         preview_dialog = tk.Toplevel(self.dialog)
         preview_dialog.title("Template Preview")
         preview_dialog.geometry("500x400")
-        
+
         preview_frame = ttk.Frame(preview_dialog, padding=10)
         preview_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(preview_frame, text=f"Subject: {preview_subject}", font=('Arial', 10, 'bold')).pack(anchor=tk.W, pady=5)
-        
+
         preview_text = scrolledtext.ScrolledText(preview_frame, wrap=tk.WORD, state=tk.DISABLED)
         preview_text.pack(fill=tk.BOTH, expand=True)
-        
+
         preview_text.config(state=tk.NORMAL)
         preview_text.insert(1.0, preview_body)
         preview_text.config(state=tk.DISABLED)
-        
+
         ttk.Button(preview_frame, text="Close", command=preview_dialog.destroy).pack(pady=10)
 
 
@@ -206,18 +206,18 @@ class ThemeManager:
             }
         }
         self.current_theme = 'default'
-    
+
     def apply_theme(self, root, theme_name):
         """Apply theme to application"""
         if theme_name in self.themes:
             self.current_theme = theme_name
             theme = self.themes[theme_name]
-            
+
             # Apply to ttk styles
             style = ttk.Style()
             style.configure('TLabel', background=theme['bg'], foreground=theme['fg'])
             style.configure('TFrame', background=theme['bg'])
-            
+
             # Configure root
             root.configure(bg=theme['bg'])
 
@@ -234,7 +234,7 @@ class ConfigManager:
             'show_notifications': True
         }
         self.config = self.load_config()
-    
+
     def load_config(self):
         """Load configuration from file"""
         try:
@@ -244,7 +244,7 @@ class ConfigManager:
         except Exception as e:
             print(f"Error loading config: {e}")
         return self.default_config.copy()
-    
+
     def save_config(self):
         """Save configuration to file"""
         try:
@@ -252,11 +252,11 @@ class ConfigManager:
                 json.dump(self.config, f, indent=4)
         except Exception as e:
             print(f"Error saving config: {e}")
-    
+
     def get(self, key, default=None):
         """Get configuration value"""
         return self.config.get(key, default)
-    
+
     def set(self, key, value):
         """Set configuration value"""
         self.config[key] = value
@@ -268,7 +268,7 @@ class SingletonApp:
     def __init__(self):
         self.socket = None
         self.port = 9999
-    
+
     def is_running(self):
         """Check if another instance is running"""
         try:
@@ -278,7 +278,7 @@ class SingletonApp:
             return False
         except OSError:
             return True
-    
+
     def cleanup(self):
         """Cleanup socket"""
         if self.socket:
@@ -294,7 +294,7 @@ def handle_gui_error(func):
             import traceback
             error_msg = f"Error in {func.__name__}: {e}\n\nTraceback:\n{traceback.format_exc()}"
             print(error_msg)
-            
+
             # Show error dialog if GUI is available
             try:
                 messagebox.showerror("Error", f"An error occurred: {e}")

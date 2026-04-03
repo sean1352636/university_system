@@ -55,7 +55,7 @@ except ImportError:
     TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
     SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
     ROOM_TYPES = ['Lecture Hall', 'Lab', 'Tutorial Room', 'Seminar Room', 'Workshop Room', 'Computer Lab', 'Other']
-    
+
     # Import the ModuleScheduler class from the document
     try:
         from education_system.university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
@@ -68,11 +68,11 @@ def create_modules_tab(self):
     """Create the modules management tab"""
     modules_frame = ttk.Frame(self.notebook)
     self.notebook.add(modules_frame, text=_t("scheduling.tabs.modules"))
-    
+
     # Controls frame
     controls_frame = ttk.Frame(modules_frame)
     controls_frame.pack(fill=tk.X, padx=10, pady=5)
-    
+
     ttk.Button(controls_frame, text=_t("scheduling.buttons.add_module"),
               command=self.show_add_module_dialog).pack(side=tk.LEFT, padx=5)
     ttk.Button(controls_frame, text=_t("common.edit_selected"),
@@ -90,14 +90,14 @@ def create_modules_tab(self):
     self.module_search_var = tk.StringVar()
     self.module_search_var.trace('w', self.filter_modules)
     ttk.Entry(search_frame, textvariable=self.module_search_var, width=20).pack(side=tk.LEFT, padx=5)
-    
+
     # Modules treeview
     tree_frame = ttk.Frame(modules_frame)
     tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-    
+
     columns = ("ID", "Code", "Name", "Credits", "Semester", "Type", "Instructor")
     self.modules_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", style='Data.Treeview')
-    
+
     for col in columns:
         self.modules_tree.heading(col, text=col)
         if col == "ID":
@@ -106,14 +106,14 @@ def create_modules_tab(self):
             self.modules_tree.column(col, width=200)
         else:
             self.modules_tree.column(col, width=100)
-    
+
     # Scrollbars
     v_scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.modules_tree.yview)
     self.modules_tree.configure(yscrollcommand=v_scrollbar.set)
-    
+
     self.modules_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    
+
     self.modules_tree.bind("<Double-1>", lambda e: self.edit_selected_module())
 
 ModuleSchedulingGUI.create_modules_tab = create_modules_tab
@@ -167,7 +167,7 @@ def get_all_modules(self):
         # preserves compatibility with code that expects an id field.
         cursor.execute('SELECT rowid AS id, module_code, module_name, module_type FROM modules')
         modules = cursor.fetchall()
-    
+
     result = []
     for module in modules:
         result.append({
@@ -179,7 +179,7 @@ def get_all_modules(self):
             'type': module[3],
             'instructor': ''  # Not available in modules table
         })
-    
+
     return result
 
 ModuleSchedulingGUI.get_all_modules = get_all_modules

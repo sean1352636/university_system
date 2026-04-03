@@ -143,7 +143,7 @@ def create_analysis_tab(self):
     # Analysis type selection
     ttk.Label(controls_frame, text=_("finance_reporting.analysis.type")).grid(row=0, column=0, sticky=tk.W)
     self.analysis_type = tk.StringVar(value="forecasting")
-    analysis_combo = ttk.Combobox(controls_frame, textvariable=self.analysis_type, 
+    analysis_combo = ttk.Combobox(controls_frame, textvariable=self.analysis_type,
                                  values=["forecasting", "risk_analysis", "cash_flow", "scenario_planning"],
                                  state="readonly")
     analysis_combo.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(10, 0))
@@ -220,7 +220,7 @@ def show_lifecycle_results(self, lifecycle_data):
     main_frame = ttk.Frame(lifecycle_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Student Lifecycle Analysis Results", 
+    ttk.Label(main_frame, text="Student Lifecycle Analysis Results",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Summary stats
@@ -286,7 +286,7 @@ def show_comparative_results(self, yoy_data, dept_data):
     main_frame = ttk.Frame(comp_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Comparative Analysis Results", 
+    ttk.Label(main_frame, text="Comparative Analysis Results",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Create notebook for different analyses
@@ -401,7 +401,7 @@ def show_optimization_results(self, steps, table_info):
     main_frame = ttk.Frame(opt_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Performance Optimization Results", 
+    ttk.Label(main_frame, text="Performance Optimization Results",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Optimization steps
@@ -487,7 +487,7 @@ def show_data_quality_results(self, quality_checks):
     main_frame = ttk.Frame(quality_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Data Quality Assessment Results", 
+    ttk.Label(main_frame, text="Data Quality Assessment Results",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Results treeview
@@ -1049,7 +1049,7 @@ def run_payment_frequency_analysis(self):
 
             # Payment frequency analysis
             cursor.execute('''
-            SELECT 
+            SELECT
                 strftime('%w', payment_date) as day_of_week,
                 strftime('%H', payment_date) as hour_of_day,
                 COUNT(*) as payment_count,
@@ -1089,7 +1089,7 @@ def show_frequency_analysis_results(self, frequency_data):
     main_frame = ttk.Frame(freq_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Payment Frequency Analysis", 
+    ttk.Label(main_frame, text="Payment Frequency Analysis",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Results table
@@ -1122,7 +1122,7 @@ def run_fee_structure_analysis(self):
 
             # Fee structure analysis
             cursor.execute('''
-            SELECT 
+            SELECT
                 ft.fee_name,
                 ft.amount as standard_amount,
                 COUNT(DISTINCT sf.student_id) as students_assigned,
@@ -1165,7 +1165,7 @@ def show_fee_structure_results(self, fee_data):
     main_frame = ttk.Frame(fee_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Fee Structure Analysis", 
+    ttk.Label(main_frame, text="Fee Structure Analysis",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Results table
@@ -1203,19 +1203,19 @@ def run_student_retention_analysis(self):
 
             # Student retention analysis
             cursor.execute('''
-            SELECT 
+            SELECT
                 s.status,
                 COUNT(*) as student_count,
-                AVG(CASE WHEN sf.amount > 0 THEN 
+                AVG(CASE WHEN sf.amount > 0 THEN
                     (sf.paid_amount * 100.0 / sf.amount) ELSE 0 END) as avg_collection_rate,
                 AVG(sf.amount) as avg_fees,
                 SUM(sf.amount) as total_fees
             FROM students s
             LEFT JOIN (
-                SELECT student_id, 
+                SELECT student_id,
                        SUM(amount) as amount,
                        SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) as paid_amount
-                FROM student_fees 
+                FROM student_fees
                 GROUP BY student_id
             ) sf ON s.student_id = sf.student_id
             GROUP BY s.status
@@ -1251,7 +1251,7 @@ def show_retention_analysis_results(self, retention_data):
     main_frame = ttk.Frame(retention_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Student Retention Analysis", 
+    ttk.Label(main_frame, text="Student Retention Analysis",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Results table

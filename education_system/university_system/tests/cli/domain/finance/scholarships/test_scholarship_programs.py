@@ -148,9 +148,10 @@ class TestScholarshipManagement:
 
     def test_view_available_scholarships_no_data(self, temp_db, capsys):
         """Test viewing scholarships when none exist"""
-        # Create empty database
+        # Create empty database - delete child records first to avoid FK constraint
         conn = sqlite3.connect(temp_db)
         cursor = conn.cursor()
+        cursor.execute("DELETE FROM student_scholarships")
         cursor.execute("DELETE FROM scholarships")
         conn.commit()
         conn.close()

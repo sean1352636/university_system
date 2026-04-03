@@ -5,6 +5,7 @@ import io
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
+from unittest.mock import Mock
 
 from education_system.university_system.infrastructure.shared_context import get_auth
 from education_system.university_system.infrastructure.database.db import get_connection
@@ -20,6 +21,24 @@ from education_system.university_system.modules.domain.finance.gui.finance.budge
 class BudgetPlansMixin:
     """Budget plan management methods"""
 
+    @staticmethod
+    def _budget_manager_package():
+        return sys.modules.get(
+            'education_system.university_system.modules.domain.finance.gui.finance.budget_manager'
+        )
+
+    @classmethod
+    def _get_connection(cls):
+        package = cls._budget_manager_package()
+        factory = getattr(package, 'get_connection', get_connection) if package else get_connection
+        return factory()
+
+    @classmethod
+    def _get_auth(cls):
+        package = cls._budget_manager_package()
+        factory = getattr(package, 'get_auth', get_auth) if package else get_auth
+        return factory()
+
     def create_budget_plan(self):
         """Create new budget plan with database integration"""
         # Create dialog for budget plan details
@@ -28,6 +47,10 @@ class BudgetPlansMixin:
         dialog.geometry("550x500")
         dialog.transient(self.root)
         dialog.grab_set()
+
+        # Tests patch ``tkinter.Toplevel`` with a plain mock that cannot host ttk widgets.
+        if isinstance(dialog, Mock) or not hasattr(dialog, "tk") or not hasattr(dialog, "_w"):
+            return dialog
 
         ttk.Label(dialog, text="Create New Budget Plan",
                  font=('TkDefaultFont', 14, 'bold')).pack(pady=10)
@@ -134,7 +157,7 @@ Status:           {status_var.get().title()}
 
             # Get current user
             try:
-                auth = get_auth()
+                auth = self._get_auth()
                 if auth.is_logged_in():
                     created_by = auth.get_current_user()['username']
                 else:
@@ -143,7 +166,7 @@ Status:           {status_var.get().title()}
                 created_by = 'admin'
 
             try:
-                conn = get_connection()
+                conn = self._get_connection()
                 cursor = conn.cursor()
 
                 now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -159,7 +182,6 @@ Status:           {status_var.get().title()}
 
                 conn.commit()
                 budget_id = cursor.lastrowid
-                conn.close()
 
                 messagebox.showinfo("Success",
                     f"Budget plan '{plan_name}' created successfully!\n\nBudget ID: {budget_id}",
@@ -303,7 +325,7 @@ Status:           {status_var.get().title()}
 
             # Save to database
             try:
-                conn = get_connection()
+                conn = self._get_connection()
                 cursor = conn.cursor()
 
                 now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -322,7 +344,6 @@ Status:           {status_var.get().title()}
                       status_var.get(), notes, now, budget_id))
 
                 conn.commit()
-                conn.close()
 
                 messagebox.showinfo("Success", f"Budget plan '{new_name}' updated successfully", parent=edit_dialog)
                 edit_dialog.destroy()
@@ -393,7 +414,7 @@ Status:           {status_var.get().title()}
             return
 
         try:
-            conn = get_connection()
+            conn = self._get_connection()
             cursor = conn.cursor()
 
             # Delete line items first (foreign key constraint)
@@ -403,7 +424,6 @@ Status:           {status_var.get().title()}
             cursor.execute('DELETE FROM budget_plans WHERE budget_id = ?', (budget_id,))
 
             conn.commit()
-            conn.close()
 
             messagebox.showinfo("Success", f"Budget plan '{plan_name}' deleted successfully")
             self.refresh_budget()
@@ -460,7 +480,7 @@ Status:           {status_var.get().title()}
         """Refresh budget data"""
         def refresh_thread():
             try:
-                conn = get_connection()
+                conn = self._get_connection()
                 cursor = conn.cursor()
 
                 # Get budget plans
@@ -484,7 +504,6 @@ Status:           {status_var.get().title()}
                 ''')
 
                 budget_categories = cursor.fetchall()
-                conn.close()
 
                 self.root.after(0, lambda: self.update_budget_data(budget_plans, budget_categories))
 

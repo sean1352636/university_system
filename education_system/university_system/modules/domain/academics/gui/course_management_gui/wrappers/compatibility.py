@@ -209,33 +209,33 @@ def department_statistics_wrapper(self):
 
 class BackwardsCompatibilityWrapper:
     """Wrapper to provide backwards compatibility with original CLI functions"""
-    
+
     def __init__(self, gui_app):
         self.gui_app = gui_app
         self.auth = gui_app.auth
-    
+
     def display_enhanced_course_menu(self, auth=None):
         """Backwards compatible menu display - launches GUI instead"""
         if not auth:
             auth = self.auth
-        
+
         # If GUI is already running, just bring it to front
         if hasattr(self.gui_app, 'root') and self.gui_app.root.winfo_exists():
             self.gui_app.root.lift()
             self.gui_app.root.focus_force()
             return
-        
+
         # Otherwise show a message
         print(_("course_management.cli.gui_running"))
         print(_("course_management.cli.use_gui"))
-    
+
     def create_enhanced_course(self, auth=None):
         """Backwards compatible course creation"""
         if not auth:
             auth = self.auth
         self.gui_app.show_create_course()
         return True
-    
+
     def view_all_courses(self, auth=None):
         """Backwards compatible course viewing"""
         if not auth:
@@ -243,14 +243,14 @@ class BackwardsCompatibilityWrapper:
         self.gui_app.refresh_course_list()
         self.gui_app.notebook.select(0)  # Switch to course list tab
         return True
-    
+
     def search_courses(self, auth=None):
         """Backwards compatible course search"""
         if not auth:
             auth = self.auth
         self.gui_app.show_search_dialog()
         return True
-    
+
     def generate_course_analytics(self, auth=None):
         """Backwards compatible analytics"""
         if not auth:

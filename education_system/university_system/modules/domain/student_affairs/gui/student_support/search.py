@@ -158,24 +158,24 @@ class SearchMixin:
     def show_search(self):
         """Show advanced search interface"""
         self.clear_content()
-        
+
         search_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(search_frame, text="🔍 Advanced Search")
 
         # Configure frame to expand
         search_frame.rowconfigure(0, weight=1)
         search_frame.columnconfigure(0, weight=1)
-        
+
         # Search form
         form_frame = ttk.LabelFrame(search_frame, text="Search Parameters", padding="10")
         form_frame.pack(fill="x", pady=(0, 10))
-        
+
         # Search query
         ttk.Label(form_frame, text="Search Query:").grid(row=0, column=0, sticky="w", pady=5)
         self.search_query = ttk.Entry(form_frame, width=50)
         self.search_query.grid(row=0, column=1, sticky="ew", padx=(10, 0), pady=5)
         self.search_query.bind('<Return>', lambda e: self.perform_search())
-        
+
         # Search type
         ttk.Label(form_frame, text="Search In:").grid(row=1, column=0, sticky="w", pady=5)
         self.search_type = ttk.Combobox(form_frame, values=[
@@ -183,20 +183,20 @@ class SearchMixin:
         ], state="readonly")
         self.search_type.set("Everything")
         self.search_type.grid(row=1, column=1, sticky="ew", padx=(10, 0), pady=5)
-        
+
         # Search button
         search_btn_frame = ttk.Frame(form_frame)
         search_btn_frame.grid(row=2, column=0, columnspan=2, pady=10)
-        
-        ttk.Button(search_btn_frame, text="🔍 Search", 
+
+        ttk.Button(search_btn_frame, text="🔍 Search",
                   command=self.perform_search, style='Primary.TButton').pack()
-        
+
         form_frame.columnconfigure(1, weight=1)
-        
+
         # Results area
         self.search_results_frame = ttk.LabelFrame(search_frame, text="Search Results", padding="10")
         self.search_results_frame.pack(fill="both", expand=True)
-        
+
         # Results notebook
         self.results_notebook = ttk.Notebook(self.search_results_frame)
         self.results_notebook.pack(fill="both", expand=True)
@@ -207,25 +207,25 @@ class SearchMixin:
         if not query:
             messagebox.showwarning("Search", "Please enter a search query")
             return
-        
+
         if not self.support:
             messagebox.showerror("Error", "Support system not initialized")
             return
-        
+
         # Clear previous results
         for tab in self.results_notebook.tabs():
             self.results_notebook.forget(tab)
-        
+
         search_type_map = {
             "Everything": "global",
-            "Tickets": "tickets", 
+            "Tickets": "tickets",
             "FAQs": "faqs",
             "Resources": "resources",
             "Knowledge Base": "kb"
         }
-        
+
         search_type = search_type_map.get(self.search_type.get(), "global")
-        
+
         try:
             self.update_status(f"Searching for '{query}'...")
             results = self.support.advanced_search(query, search_type)
@@ -238,7 +238,7 @@ class SearchMixin:
     def display_search_results(self, results):
         """Display search results in tabs"""
         total_results = 0
-        
+
         # Tickets results
         if 'tickets' in results and results['tickets'] is not None:
             ticket_data = results['tickets']
@@ -246,52 +246,52 @@ class SearchMixin:
             if tickets:
                 self.create_tickets_results_tab(tickets)
                 total_results += len(tickets)
-        
+
         # FAQs results
         if 'faqs' in results:
             faqs = results['faqs']
             if faqs:
                 self.create_faqs_results_tab(faqs)
                 total_results += len(faqs)
-        
+
         # Resources results
         if 'resources' in results:
             resources = results['resources']
             if resources:
                 self.create_resources_results_tab(resources)
                 total_results += len(resources)
-        
+
         # Knowledge base results
         if 'kb_articles' in results:
             articles = results['kb_articles']
             if articles:
                 self.create_kb_results_tab(articles)
                 total_results += len(articles)
-        
+
         # Suggestions
         if 'suggestions' in results and results['suggestions']:
             self.create_suggestions_tab(results['suggestions'])
-        
+
         if total_results == 0:
             # No results found
             no_results_frame = ttk.Frame(self.results_notebook, padding="20")
             self.results_notebook.add(no_results_frame, text="No Results")
-            
-            ttk.Label(no_results_frame, text="🔍 No results found", 
+
+            ttk.Label(no_results_frame, text="🔍 No results found",
                      style='Title.TLabel').pack(pady=20)
             ttk.Label(no_results_frame, text="Try different keywords or check spelling").pack()
-        
+
         self.search_results_frame.config(text=f"Search Results ({total_results} found)")
 
     def create_tickets_results_tab(self, tickets):
         """Create tickets results tab"""
         tickets_frame = ttk.Frame(self.results_notebook, padding="10")
         self.results_notebook.add(tickets_frame, text=f"🎫 Tickets ({len(tickets)})")
-        
+
         # Create treeview for tickets
         columns = ('ID', 'Title', 'Status', 'Priority', 'Category', 'Created')
         tree = ttk.Treeview(tickets_frame, columns=columns, show='headings', height=15)
-        
+
         # Configure columns
         tree.heading('ID', text='ID')
         tree.heading('Title', text='Title')
@@ -299,14 +299,14 @@ class SearchMixin:
         tree.heading('Priority', text='Priority')
         tree.heading('Category', text='Category')
         tree.heading('Created', text='Created')
-        
+
         tree.column('ID', width=80)
         tree.column('Title', width=300)
         tree.column('Status', width=100)
         tree.column('Priority', width=100)
         tree.column('Category', width=120)
         tree.column('Created', width=150)
-        
+
         # Add tickets to tree
         for ticket in tickets:
             # Skip None or invalid ticket entries
@@ -329,14 +329,14 @@ class SearchMixin:
                 ticket_category,
                 ticket_created
             ))
-        
+
         # Scrollbar
         scrollbar = ttk.Scrollbar(tickets_frame, orient='vertical', command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
-        
+
         tree.pack(side='left', fill='both', expand=True)
         scrollbar.pack(side='right', fill='y')
-        
+
         # Double-click to view ticket
         tree.bind('<Double-1>', lambda e: self.on_ticket_double_click(tree))
 
@@ -344,20 +344,20 @@ class SearchMixin:
         """Create FAQs results tab"""
         faqs_frame = ttk.Frame(self.results_notebook, padding="10")
         self.results_notebook.add(faqs_frame, text=f"❓ FAQs ({len(faqs)})")
-        
+
         # Create scrollable list
         canvas = tk.Canvas(faqs_frame)
         scrollbar = ttk.Scrollbar(faqs_frame, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
-        
+
         scrollable_frame.bind(
             "<Configure>",
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
-        
+
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
-        
+
         # Add FAQs
         for faq in faqs:
             # Skip None or invalid FAQ entries
@@ -383,7 +383,7 @@ class SearchMixin:
             # View full answer button
             ttk.Button(faq_frame, text="View Full Answer",
                       command=lambda f=faq: self.show_faq_detail(f)).pack(anchor="w", pady=(5, 0))
-        
+
         canvas.grid(row=0, column=0, sticky="nsew")
         scrollbar.grid(row=0, column=1, sticky="ns")
 
@@ -391,20 +391,20 @@ class SearchMixin:
         """Create resources results tab"""
         resources_frame = ttk.Frame(self.results_notebook, padding="10")
         self.results_notebook.add(resources_frame, text=f"📋 Resources ({len(resources)})")
-        
+
         # Create scrollable list
         canvas = tk.Canvas(resources_frame)
         scrollbar = ttk.Scrollbar(resources_frame, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
-        
+
         scrollable_frame.bind(
             "<Configure>",
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
-        
+
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
-        
+
         # Add resources
         for resource in resources:
             # Skip None or invalid resource entries
@@ -432,7 +432,7 @@ class SearchMixin:
 
             ttk.Button(btn_frame, text="View Resource",
                       command=lambda r=resource: self.open_resource(r)).pack(side="left")
-        
+
         canvas.grid(row=0, column=0, sticky="nsew")
         scrollbar.grid(row=0, column=1, sticky="ns")
 
@@ -440,20 +440,20 @@ class SearchMixin:
         """Create knowledge base results tab"""
         kb_frame = ttk.Frame(self.results_notebook, padding="10")
         self.results_notebook.add(kb_frame, text=f"📚 Knowledge Base ({len(articles)})")
-        
+
         # Create scrollable list
         canvas = tk.Canvas(kb_frame)
         scrollbar = ttk.Scrollbar(kb_frame, orient="vertical", command=canvas.yview)
         scrollable_frame = ttk.Frame(canvas)
-        
+
         scrollable_frame.bind(
             "<Configure>",
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
-        
+
         canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
-        
+
         # Add articles
         for article in articles:
             # Skip None or invalid article entries
@@ -483,7 +483,7 @@ class SearchMixin:
             # View full article button
             ttk.Button(article_frame, text="View Full Article",
                       command=lambda a=article: self.show_article_detail(a)).pack(anchor="w", pady=(5, 0))
-        
+
         canvas.grid(row=0, column=0, sticky="nsew")
         scrollbar.grid(row=0, column=1, sticky="ns")
 
@@ -491,16 +491,16 @@ class SearchMixin:
         """Create suggestions tab"""
         suggestions_frame = ttk.Frame(self.results_notebook, padding="10")
         self.results_notebook.add(suggestions_frame, text="💡 Suggestions")
-        
-        ttk.Label(suggestions_frame, text="💡 Search Suggestions", 
+
+        ttk.Label(suggestions_frame, text="💡 Search Suggestions",
                  style='Heading.TLabel').pack(anchor="w", pady=(0, 10))
-        
+
         for suggestion in suggestions:
             suggestion_frame = ttk.Frame(suggestions_frame)
             suggestion_frame.pack(fill="x", pady=2)
-            
+
             ttk.Label(suggestion_frame, text=f"💭 {suggestion}").pack(side="left")
-            ttk.Button(suggestion_frame, text="Search", 
+            ttk.Button(suggestion_frame, text="Search",
                       command=lambda s=suggestion: self.search_suggestion(s)).pack(side="right")
 
     def search_suggestion(self, suggestion):

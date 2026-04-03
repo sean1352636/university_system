@@ -147,7 +147,8 @@ def browse_products():
 
         for product in products:
             price_formatted = f"£{product['price']:.2f}"
-            print(f"{product['product_id']:<8} {product['name'][:28]:<30} {price_formatted:<10} {product['category'][:13]:<15} {product['quantity']:<8} {product['description'][:30]}...")
+            desc = product['description'] or ''
+            print(f"{product['source_product_id']:<8} {product['name'][:28]:<30} {price_formatted:<10} {product['category'][:13]:<15} {product['quantity']:<8} {desc[:30]}...")
 
         # Option to add to cart
         if config.auth.check_permission('make_purchase'):

@@ -51,7 +51,7 @@ class CollectionCaseDialog:
         self.parent = parent
         self.result = False
         self.create_dialog()
-    
+
     def create_dialog(self):
         """Create collection case dialog"""
         self.dialog = tk.Toplevel(self.parent)
@@ -59,7 +59,7 @@ class CollectionCaseDialog:
         self.dialog.geometry("600x500")
         self.dialog.transient(self.parent)
         self.dialog.grab_set()
-        
+
         # Add dialog content here
         ttk.Label(self.dialog, text=_("finance_reporting.dialogs.collection_case_pending")).pack(pady=20)
 
@@ -69,12 +69,12 @@ class CollectionCaseDialog:
 
         ttk.Button(button_frame, text=_("common.create"), command=self.create_case).pack(side='left', padx=10)
         ttk.Button(button_frame, text=_("common.cancel"), command=self.cancel).pack(side='left', padx=10)
-    
+
     def create_case(self):
         """Create collection case"""
         self.result = True
         self.dialog.destroy()
-    
+
     def cancel(self):
         """Cancel dialog"""
         self.result = False
@@ -89,7 +89,7 @@ class StudentDialog:
         self.student_id = student_id
         self.result = False
         self.create_dialog()
-    
+
     def create_dialog(self):
         """Create student dialog"""
         self.dialog = tk.Toplevel(self.parent)
@@ -107,12 +107,12 @@ class StudentDialog:
 
         ttk.Button(button_frame, text=_("common.save"), command=self.save_student).pack(side='left', padx=10)
         ttk.Button(button_frame, text=_("common.cancel"), command=self.cancel).pack(side='left', padx=10)
-    
+
     def save_student(self):
         """Save student data"""
         self.result = True
         self.dialog.destroy()
-    
+
     def cancel(self):
         """Cancel dialog"""
         self.result = False
@@ -125,7 +125,7 @@ class StudentFinancesDialog:
         self.parent = parent
         self.student_id = student_id
         self.create_dialog()
-    
+
     def create_dialog(self):
         """Create student finances dialog"""
         self.dialog = tk.Toplevel(self.parent)
@@ -145,7 +145,7 @@ class CollectionAgenciesDialog:
     def __init__(self, parent):
         self.parent = parent
         self.create_dialog()
-    
+
     def create_dialog(self):
         """Create collection agencies dialog"""
         self.dialog = tk.Toplevel(self.parent)

@@ -54,7 +54,7 @@ except ImportError:
     TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
     SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
     ROOM_TYPES = ['Lecture Hall', 'Lab', 'Tutorial Room', 'Seminar Room', 'Workshop Room', 'Computer Lab', 'Other']
-    
+
     # Import the ModuleScheduler class from the document
     try:
         from education_system.university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
@@ -68,11 +68,11 @@ def create_rooms_tab(self):
     """Create the rooms management tab"""
     rooms_frame = ttk.Frame(self.notebook)
     self.notebook.add(rooms_frame, text=_t("scheduling.tabs.rooms"))
-    
+
     # Controls frame
     controls_frame = ttk.Frame(rooms_frame)
     controls_frame.pack(fill=tk.X, padx=10, pady=5)
-    
+
     ttk.Button(controls_frame, text=_t("scheduling.buttons.add_room"),
               command=self.show_add_room_dialog).pack(side=tk.LEFT, padx=5)
     ttk.Button(controls_frame, text=_t("common.edit_selected"),
@@ -92,14 +92,14 @@ def create_rooms_tab(self):
     self.room_search_var = tk.StringVar()
     self.room_search_var.trace('w', self.filter_rooms)
     ttk.Entry(search_frame, textvariable=self.room_search_var, width=20).pack(side=tk.LEFT, padx=5)
-    
+
     # Rooms treeview
     tree_frame = ttk.Frame(rooms_frame)
     tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-    
+
     columns = ("ID", "Building", "Room", "Capacity", "Type", "Equipment", "Status")
     self.rooms_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", style='Data.Treeview')
-    
+
     for col in columns:
         self.rooms_tree.heading(col, text=col)
         if col == "ID":
@@ -108,14 +108,14 @@ def create_rooms_tab(self):
             self.rooms_tree.column(col, width=200)
         else:
             self.rooms_tree.column(col, width=100)
-    
+
     # Scrollbars
     v_scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.rooms_tree.yview)
     self.rooms_tree.configure(yscrollcommand=v_scrollbar.set)
-    
+
     self.rooms_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    
+
     self.rooms_tree.bind("<Double-1>", lambda e: self.edit_selected_room())
 
 ModuleSchedulingGUI.create_rooms_tab = create_rooms_tab
@@ -126,7 +126,7 @@ def refresh_rooms(self):
         # Clear existing items
         for item in self.rooms_tree.get_children():
             self.rooms_tree.delete(item)
-        
+
         from education_system.university_system.infrastructure.database.db import sqlite3
         with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
             cursor = conn.cursor()
@@ -138,16 +138,16 @@ def refresh_rooms(self):
             ''')
 
             rooms = cursor.fetchall()
-        
+
         for room in rooms:
             room_id, room_number, building, capacity, room_type, equipment, is_active = room
             status = "Active" if is_active else "Inactive"
             equipment = equipment or "N/A"
-            
+
             self.rooms_tree.insert("", tk.END, values=(
                 room_id, building, room_number, capacity, room_type, equipment, status
             ))
-            
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to refresh rooms: {str(e)}", parent=self.root)
 
@@ -156,15 +156,15 @@ ModuleSchedulingGUI.refresh_rooms = refresh_rooms
 def filter_rooms(self, *args):
     """Filter rooms based on search term"""
     search_term = self.room_search_var.get().lower()
-    
+
     # Clear current items
     for item in self.rooms_tree.get_children():
         self.rooms_tree.delete(item)
-    
+
     if not search_term:
         self.refresh_rooms()
         return
-    
+
     try:
         from education_system.university_system.infrastructure.database.db import sqlite3
         with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
@@ -181,16 +181,16 @@ def filter_rooms(self, *args):
             ''', [f'%{search_term}%'] * 4)
 
             rooms = cursor.fetchall()
-        
+
         for room in rooms:
             room_id, room_number, building, capacity, room_type, equipment, is_active = room
             status = "Active" if is_active else "Inactive"
             equipment = equipment or "N/A"
-            
+
             self.rooms_tree.insert("", tk.END, values=(
                 room_id, building, room_number, capacity, room_type, equipment, status
             ))
-            
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to filter rooms: {str(e)}", parent=self.root)
 
@@ -212,10 +212,10 @@ def edit_selected_room(self):
     if not selected:
         messagebox.showwarning("Warning", "Please select a room to edit.", parent=self.root)
         return
-    
+
     room_data = self.rooms_tree.item(selected[0])['values']
     room_id = room_data[0]
-    
+
     dialog = EditRoomDialog(self.root, self.scheduler, room_id)
     if dialog.result:
         self.refresh_rooms()

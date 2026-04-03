@@ -33,7 +33,7 @@ class ValueAddedFrame(tk.Frame):
         self._build_baselines_tab()
         self._build_predictions_tab()
         self._build_analysis_tab()
-        
+
 
     def _build_baselines_tab(self):
         tab = tk.Frame(self._nb, bg="#ecf0f1", padx=10, pady=10)

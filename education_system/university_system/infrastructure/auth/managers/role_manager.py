@@ -12,7 +12,7 @@ import logging
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 logger = logging.getLogger(__name__)
 

@@ -13,6 +13,7 @@ from education_system.college_system.modules.domain.intervention_tracking.servic
 from education_system.college_system.modules.domain.destinations.services.destination_service import DestinationService
 from education_system.college_system.modules.domain.surveys.services.surveys_service import SurveyService
 from education_system.college_system.modules.domain.absence_requests.services.absence_requests_service import AbsenceRequestService
+from education_system.college_system.modules.domain.alumni.services.alumni_service import AlumniService
 
 
 @pytest.fixture
@@ -68,3 +69,8 @@ def surveys_service(db_path):
 @pytest.fixture
 def absence_requests_service(db_path):
     return AbsenceRequestService(db_path)
+
+
+@pytest.fixture
+def alumni_service(db_path):
+    return AlumniService(db_path)

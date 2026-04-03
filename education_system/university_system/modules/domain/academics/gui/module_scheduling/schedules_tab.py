@@ -54,7 +54,7 @@ except ImportError:
     TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
     SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
     ROOM_TYPES = ['Lecture Hall', 'Lab', 'Tutorial Room', 'Seminar Room', 'Workshop Room', 'Computer Lab', 'Other']
-    
+
     # Import the ModuleScheduler class from the document
     try:
         from education_system.university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
@@ -68,11 +68,11 @@ def create_schedules_tab(self):
     """Create the schedules management tab"""
     schedules_frame = ttk.Frame(self.notebook)
     self.notebook.add(schedules_frame, text=_t("scheduling.tabs.schedules"))
-    
+
     # Controls frame
     controls_frame = ttk.Frame(schedules_frame)
     controls_frame.pack(fill=tk.X, padx=10, pady=5)
-    
+
     # Add schedule button
     ttk.Button(controls_frame, text=_t("scheduling.buttons.add_schedule"),
               command=self.show_add_schedule_dialog).pack(side=tk.LEFT, padx=5)
@@ -94,14 +94,14 @@ def create_schedules_tab(self):
     self.schedule_search_var.trace('w', self.filter_schedules)
     search_entry = ttk.Entry(search_frame, textvariable=self.schedule_search_var, width=20)
     search_entry.pack(side=tk.LEFT, padx=5)
-    
+
     # Schedules treeview
     tree_frame = ttk.Frame(schedules_frame)
     tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-    
+
     columns = ("ID", "Module", "Module Name", "Day", "Time", "Room", "Instructor", "Type")
     self.schedules_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", style='Data.Treeview')
-    
+
     # Configure columns
     for col in columns:
         self.schedules_tree.heading(col, text=col)
@@ -111,17 +111,17 @@ def create_schedules_tab(self):
             self.schedules_tree.column(col, width=200)
         else:
             self.schedules_tree.column(col, width=100)
-    
+
     # Scrollbars
     v_scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.schedules_tree.yview)
     h_scrollbar = ttk.Scrollbar(tree_frame, orient=tk.HORIZONTAL, command=self.schedules_tree.xview)
     self.schedules_tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-    
+
     # Pack treeview and scrollbars
     self.schedules_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
     h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
-    
+
     # Double-click to edit
     self.schedules_tree.bind("<Double-1>", lambda e: self.edit_selected_schedule())
 
@@ -133,7 +133,7 @@ def refresh_schedules(self):
         # Clear existing items
         for item in self.schedules_tree.get_children():
             self.schedules_tree.delete(item)
-        
+
         # Get schedule data from backend
         from education_system.university_system.infrastructure.database.db import sqlite3
         with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
@@ -151,7 +151,7 @@ def refresh_schedules(self):
             ''')
 
             schedules = cursor.fetchall()
-        
+
         # Populate treeview
         for schedule in schedules:
             schedule_id, module_code, module_name, day, start_time, end_time, building, room_number, first_name, last_name, session_type = schedule
@@ -159,11 +159,11 @@ def refresh_schedules(self):
             time_slot = f"{start_time}-{end_time}"
             room_str = f"{building}-{room_number}" if building and room_number else "TBA"
             instructor = f"{first_name} {last_name}" if first_name and last_name else "TBA"
-            
+
             self.schedules_tree.insert("", tk.END, values=(
                 schedule_id, module_code, module_name, day, time_slot, room_str, instructor, session_type
             ))
-            
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to refresh schedules: {str(e)}", parent=self.root)
 
@@ -172,15 +172,15 @@ ModuleSchedulingGUI.refresh_schedules = refresh_schedules
 def filter_schedules(self, *args):
     """Filter schedules based on search term"""
     search_term = self.schedule_search_var.get().lower()
-    
+
     # Clear current items
     for item in self.schedules_tree.get_children():
         self.schedules_tree.delete(item)
-    
+
     if not search_term:
         self.refresh_schedules()
         return
-    
+
     # Refresh with filter
     try:
         from education_system.university_system.infrastructure.database.db import sqlite3
@@ -205,18 +205,18 @@ def filter_schedules(self, *args):
             ''', [f'%{search_term}%'] * 6)
 
             schedules = cursor.fetchall()
-        
+
         for schedule in schedules:
             schedule_id, module_code, module_name, day, start_time, end_time, building, room_number, first_name, last_name, session_type = schedule
             module_name = module_name or "Unknown"
             time_slot = f"{start_time}-{end_time}"
             room_str = f"{building}-{room_number}" if building and room_number else "TBA"
             instructor = f"{first_name} {last_name}" if first_name and last_name else "TBA"
-            
+
             self.schedules_tree.insert("", tk.END, values=(
                 schedule_id, module_code, module_name, day, time_slot, room_str, instructor, session_type
             ))
-            
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to filter schedules: {str(e)}", parent=self.root)
 
@@ -238,10 +238,10 @@ def edit_selected_schedule(self):
     if not selected:
         messagebox.showwarning("Warning", "Please select a schedule to edit.", parent=self.root)
         return
-    
+
     schedule_data = self.schedules_tree.item(selected[0])['values']
     schedule_id = schedule_data[0]
-    
+
     dialog = EditScheduleDialog(self.root, self.scheduler, schedule_id, gui=self)
     if dialog.result:
         self.refresh_schedules()
@@ -255,11 +255,11 @@ def delete_selected_schedule(self):
     if not selected:
         messagebox.showwarning("Warning", "Please select a schedule to delete.", parent=self.root)
         return
-    
+
     schedule_data = self.schedules_tree.item(selected[0])['values']
     schedule_id = schedule_data[0]
     module_code = schedule_data[1]
-    
+
     if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete the schedule for {module_code}?", parent=self.root):
         try:
             from education_system.university_system.infrastructure.database.db import sqlite3
@@ -267,12 +267,12 @@ def delete_selected_schedule(self):
                 cursor = conn.cursor()
                 cursor.execute('DELETE FROM module_schedule WHERE id = ?', (schedule_id,))
                 conn.commit()
-            
+
             self.refresh_schedules()
             self.refresh_dashboard()
             self.update_activity_log(f"Schedule {schedule_id} deleted")
             messagebox.showinfo("Success", "Schedule deleted successfully.", parent=self.root)
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to delete schedule: {str(e)}", parent=self.root)
 

@@ -146,6 +146,7 @@ class DatabaseLogger:
     def __init__(self, db_path: str):
         self.db_path = db_path
         self.db_manager = DatabaseManager(db_path)
+        self.db_manager.get_connection().close()
 
     def _build_details(self, log_entry: LogEntry) -> str:
         """Pack extra log fields into a JSON details string."""

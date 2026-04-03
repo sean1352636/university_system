@@ -224,7 +224,7 @@ def generate_barcodes(self):
         self.barcode_results.insert(tk.END, f"✅ Generated {generated_count} barcode labels\n")
 
         # Log the action
-        log_audit_event(get_current_user_id(), 
+        log_audit_event(get_current_user_id(),
                        f"Generated {generated_count} barcode labels",
                        "books")
 

@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -121,7 +121,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -132,7 +132,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -260,7 +260,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -882,111 +882,111 @@ def show_scheduled_reports_manager(self):
     dialog.geometry("800x600")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text="Scheduled Reports Manager", style='Title.TLabel').pack(pady=(0, 20))
-    
+
     # Reports management notebook
     notebook = ttk.Notebook(frame)
     notebook.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     # Current reports tab
     current_reports_frame = ttk.Frame(notebook, padding="10")
     notebook.add(current_reports_frame, text="Scheduled Reports")
-    
+
     # Reports tree
     report_columns = ('ID', 'Name', 'Type', 'Schedule', 'Next Run', 'Status', 'Recipients')
     self.reports_tree = ttk.Treeview(current_reports_frame, columns=report_columns, show='headings', height=12)
-    
+
     for col in report_columns:
         self.reports_tree.heading(col, text=col)
         self.reports_tree.column(col, width=100)
-    
+
     reports_scrollbar = ttk.Scrollbar(current_reports_frame, orient=tk.VERTICAL, command=self.reports_tree.yview)
     self.reports_tree.configure(yscrollcommand=reports_scrollbar.set)
-    
+
     self.reports_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     reports_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    
+
     # Load scheduled reports
     self.load_scheduled_reports()
-    
+
     # Report actions
     report_actions = ttk.Frame(current_reports_frame)
     report_actions.pack(fill=tk.X, pady=(10, 0))
-    
-    ttk.Button(report_actions, text="Run Now", 
+
+    ttk.Button(report_actions, text="Run Now",
               command=self.run_selected_report).pack(side=tk.LEFT, padx=(0, 10))
-    ttk.Button(report_actions, text="Modify", 
+    ttk.Button(report_actions, text="Modify",
               command=self.modify_selected_report).pack(side=tk.LEFT, padx=(0, 10))
-    ttk.Button(report_actions, text="Delete", 
+    ttk.Button(report_actions, text="Delete",
               command=self.delete_selected_report).pack(side=tk.LEFT)
-    
+
     # Create report tab
     create_report_frame = ttk.Frame(notebook, padding="10")
     notebook.add(create_report_frame, text="Create Report")
-    
+
     ttk.Label(create_report_frame, text="Create New Scheduled Report", style='Header.TLabel').pack(pady=(0, 20))
-    
+
     # Report creation form
     create_form = ttk.LabelFrame(create_report_frame, text="Report Configuration", padding="10")
     create_form.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-    
+
     # Basic info
     basic_frame = ttk.Frame(create_form)
     basic_frame.pack(fill=tk.X, pady=(0, 10))
-    
+
     ttk.Label(basic_frame, text="Report Name:").pack(anchor='w')
     report_name_var = tk.StringVar()
     ttk.Entry(basic_frame, textvariable=report_name_var, width=40).pack(fill=tk.X, pady=(0, 10))
-    
+
     ttk.Label(basic_frame, text="Report Type:").pack(anchor='w')
     report_type_var = tk.StringVar(value="demographics")
-    report_type_combo = ttk.Combobox(basic_frame, textvariable=report_type_var, 
+    report_type_combo = ttk.Combobox(basic_frame, textvariable=report_type_var,
                                    values=["demographics", "performance", "enrollment", "custom_sql"])
     report_type_combo.pack(anchor='w', pady=(0, 10))
-    
+
     # Schedule configuration
     schedule_frame = ttk.LabelFrame(create_form, text="Schedule Configuration", padding="10")
     schedule_frame.pack(fill=tk.X, pady=(0, 10))
-    
+
     ttk.Label(schedule_frame, text="Frequency:").pack(anchor='w')
     frequency_var = tk.StringVar(value="weekly")
-    
+
     frequencies = [("Daily", "daily"), ("Weekly", "weekly"), ("Monthly", "monthly"), ("Quarterly", "quarterly")]
     for text, value in frequencies:
         ttk.Radiobutton(schedule_frame, text=text, variable=frequency_var, value=value).pack(anchor='w')
-    
+
     # Recipients
     recipients_frame = ttk.LabelFrame(create_form, text="Recipients", padding="10")
     recipients_frame.pack(fill=tk.X, pady=(0, 10))
-    
+
     ttk.Label(recipients_frame, text="Email Recipients (comma-separated):").pack(anchor='w')
     recipients_var = tk.StringVar()
     ttk.Entry(recipients_frame, textvariable=recipients_var, width=50).pack(fill=tk.X)
-    
+
     def create_scheduled_report():
         name = report_name_var.get().strip()
         if not name:
             messagebox.showwarning("_t('advanced_search.missing_name')", "Please enter a report name.")
             return
-        
+
         report_type = report_type_var.get()
         frequency = frequency_var.get()
         recipients = recipients_var.get().strip()
-        
+
         self.create_scheduled_report_in_db(name, report_type, frequency, recipients)
         self.load_scheduled_reports()
         messagebox.showinfo(_t("advanced_search.scheduled_reports.report_created_title"), _t("advanced_search.scheduled_reports.report_created_msg", name=name))
-        
+
         # Clear form
         report_name_var.set("")
         recipients_var.set("")
-    
+
     ttk.Button(create_form, text="Create Scheduled Report", command=create_scheduled_report).pack(pady=10)
-    
+
     ttk.Button(frame, text=_t('advanced_search.close_button'), command=dialog.destroy).pack()
 AdvancedSearchGUI.show_scheduled_reports_manager = show_scheduled_reports_manager
 
@@ -995,7 +995,7 @@ def load_scheduled_reports(self):
     # Clear existing items
     for item in self.reports_tree.get_children():
         self.reports_tree.delete(item)
-    
+
     # Sample scheduled reports
     sample_reports = [
         (1, "Weekly Demographics", "Demographics", "Weekly", "2024-02-05", "Active", "admin@school.edu"),
@@ -1003,7 +1003,7 @@ def load_scheduled_reports(self):
         (3, "Daily Enrollments", "Enrollment", "Daily", "2024-01-26", "Paused", "office@school.edu"),
         (4, "Quarterly Analysis", "Custom SQL", "Quarterly", "2024-04-01", "Active", "director@school.edu")
     ]
-    
+
     for report in sample_reports:
         self.reports_tree.insert('', 'end', values=report)
 AdvancedSearchGUI.load_scheduled_reports = load_scheduled_reports
@@ -1014,14 +1014,14 @@ def run_selected_report(self):
     if not selection:
         messagebox.showwarning("_t('advanced_search.no_selection')", "Please select a report to run.")
         return
-    
+
     item = self.reports_tree.item(selection[0])
     report_name = item['values'][1]
     report_type = item['values'][2]
-    
+
     self.update_status(f"Running scheduled report: {report_name}...")
     self.start_progress()
-    
+
     def run_report():
         try:
             report_result = self.execute_scheduled_report(report_name, report_type)
@@ -1031,7 +1031,7 @@ def run_selected_report(self):
             self.output_queue.put(("error", f"Report execution error: {str(e)}"))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_report, daemon=True).start()
 AdvancedSearchGUI.run_selected_report = run_selected_report
 
@@ -1041,10 +1041,10 @@ def modify_selected_report(self):
     if not selection:
         messagebox.showwarning("_t('advanced_search.no_selection')", "Please select a report to modify.")
         return
-    
+
     item = self.reports_tree.item(selection[0])
     report_name = item['values'][1]
-    
+
     messagebox.showinfo(_t("advanced_search.scheduled_reports.modify_report_title"), _t("advanced_search.scheduled_reports.modify_report_msg", name=report_name))
 AdvancedSearchGUI.modify_selected_report = modify_selected_report
 
@@ -1054,10 +1054,10 @@ def delete_selected_report(self):
     if not selection:
         messagebox.showwarning("_t('advanced_search.no_selection')", "Please select a report to delete.")
         return
-    
+
     item = self.reports_tree.item(selection[0])
     report_name = item['values'][1]
-    
+
     if messagebox.askyesno("Confirm Delete", f"Delete scheduled report '{report_name}'?"):
         self.reports_tree.delete(selection[0])
         messagebox.showinfo(_t("advanced_search.scheduled_reports.report_deleted_title"), _t("advanced_search.scheduled_reports.report_deleted_msg", name=report_name))
@@ -1074,12 +1074,12 @@ def create_scheduled_report_in_db(self, name, report_type, frequency, recipients
             "created": datetime.now().isoformat(),
             "status": "active"
         }
-        
+
         # Simulate database save
         filename = f"scheduled_report_{name.replace(' ', '_')}.json"
         with open(filename, 'w', encoding='utf-8') as f:
             json.dump(report_data, f, indent=2)
-            
+
     except Exception as e:
         raise Exception(f"Error creating scheduled report: {str(e)}")
 AdvancedSearchGUI.create_scheduled_report_in_db = create_scheduled_report_in_db
@@ -1089,39 +1089,39 @@ def execute_scheduled_report(self, report_name, report_type):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         result = f"SCHEDULED REPORT: {report_name}\n"
         result += f"=" * 50 + "\n"
         result += f"Report Type: {report_type}\n"
         result += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        
+
         if report_type.lower() == "demographics":
             cursor.execute("SELECT gender, COUNT(*) FROM students GROUP BY gender")
             gender_data = cursor.fetchall()
-            
+
             cursor.execute("SELECT course, COUNT(*) FROM students GROUP BY course")
             course_data = cursor.fetchall()
-            
+
             result += "DEMOGRAPHICS SUMMARY:\n"
             result += "-" * 25 + "\n"
             result += "Gender Distribution:\n"
             for gender, count in gender_data:
                 result += f"  {gender}: {count} students\n"
-            
+
             result += "\nCourse Distribution:\n"
             for course, count in course_data:
                 result += f"  {course}: {count} students\n"
-        
+
         elif report_type.lower() == "performance":
             cursor.execute("""
-            SELECT grade, COUNT(*) 
-            FROM student_modules 
-            WHERE grade IS NOT NULL 
+            SELECT grade, COUNT(*)
+            FROM student_modules
+            WHERE grade IS NOT NULL
             GROUP BY grade
             ORDER BY grade
             """)
             grade_data = cursor.fetchall()
-            
+
             result += "PERFORMANCE ANALYSIS:\n"
             result += "-" * 25 + "\n"
             result += "Grade Distribution:\n"
@@ -1129,35 +1129,35 @@ def execute_scheduled_report(self, report_name, report_type):
             for grade, count in grade_data:
                 percentage = (count / total_grades) * 100 if total_grades > 0 else 0
                 result += f"  Grade {grade}: {count} ({percentage:.1f}%)\n"
-        
+
         elif report_type.lower() == "enrollment":
             cursor.execute("""
             SELECT strftime('%Y-%m', registration_datetime) as month, COUNT(*)
-            FROM students 
+            FROM students
             WHERE registration_datetime IS NOT NULL
             GROUP BY month
             ORDER BY month DESC
             LIMIT 6
             """)
             enrollment_data = cursor.fetchall()
-            
+
             result += "ENROLLMENT TRENDS (Last 6 months):\n"
             result += "-" * 35 + "\n"
             for month, count in enrollment_data:
                 result += f"  {month}: {count} new students\n"
-        
+
         else:  # custom_sql
             result += "CUSTOM SQL REPORT:\n"
             result += "-" * 20 + "\n"
             result += "Custom SQL reports would execute user-defined queries here.\n"
-        
+
         conn.close()
-        
+
         result += f"\n" + "=" * 50 + "\n"
         result += "Report completed successfully.\n"
-        
+
         return result
-        
+
     except Exception as e:
         raise Exception(f"Scheduled report execution error: {str(e)}")
 AdvancedSearchGUI.execute_scheduled_report = execute_scheduled_report

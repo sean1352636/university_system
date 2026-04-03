@@ -124,7 +124,7 @@ def show_payment_optimization_dialog(self):
     main_frame = ttk.Frame(opt_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Payment Plan Optimization Analysis", 
+    ttk.Label(main_frame, text="Payment Plan Optimization Analysis",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Analysis options
@@ -172,7 +172,7 @@ def show_collection_strategy_dialog(self):
     main_frame = ttk.Frame(strategy_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Collection Strategy Effectiveness Analysis", 
+    ttk.Label(main_frame, text="Collection Strategy Effectiveness Analysis",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Strategy metrics
@@ -195,17 +195,17 @@ def show_collection_strategy_dialog(self):
         method_data = cursor.fetchall()
 
         if method_data:
-            ttk.Label(metrics_frame, text="Collection Method Effectiveness:", 
+            ttk.Label(metrics_frame, text="Collection Method Effectiveness:",
                      font=('Arial', 10, 'bold')).pack(anchor=tk.W)
 
             for method, count, total, avg in method_data:
-                ttk.Label(metrics_frame, 
+                ttk.Label(metrics_frame,
                          text=f"  {method}: {count} transactions, £{total:,.2f} total, £{avg:,.2f} average").pack(anchor=tk.W)
 
         conn.close()
 
     except Exception as e:
-        ttk.Label(metrics_frame, text=f"Error loading data: {e}", 
+        ttk.Label(metrics_frame, text=f"Error loading data: {e}",
                  foreground="red").pack(anchor=tk.W)
 
     # Strategy recommendations
@@ -267,7 +267,7 @@ def show_scholarship_analysis_dialog(self):
     main_frame = ttk.Frame(scholarship_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Scholarship Impact Analysis", 
+    ttk.Label(main_frame, text="Scholarship Impact Analysis",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Create notebook for different analyses
@@ -285,18 +285,18 @@ def show_scholarship_analysis_dialog(self):
 
         # Scholarship vs collection rate analysis
         cursor.execute('''
-        SELECT 
-            CASE 
+        SELECT
+            CASE
                 WHEN ss.amount > 0 THEN 'With Scholarship'
                 ELSE 'No Scholarship'
             END as scholarship_status,
             COUNT(DISTINCT s.student_id) as student_count,
-            AVG(CASE WHEN sf.amount > 0 THEN 
+            AVG(CASE WHEN sf.amount > 0 THEN
                 (sf.paid_amount * 100.0 / sf.amount) ELSE 0 END) as avg_collection_rate
         FROM students s
         LEFT JOIN student_scholarships ss ON s.student_id = ss.student_id
         LEFT JOIN (
-            SELECT student_id, SUM(amount) as amount, 
+            SELECT student_id, SUM(amount) as amount,
                    SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) as paid_amount
             FROM student_fees GROUP BY student_id
         ) sf ON s.student_id = sf.student_id
@@ -318,7 +318,7 @@ def show_scholarship_analysis_dialog(self):
         conn.close()
 
     except Exception as e:
-        ttk.Label(impact_frame, text=f"Error loading scholarship data: {e}", 
+        ttk.Label(impact_frame, text=f"Error loading scholarship data: {e}",
                  foreground="red").pack()
 
     # ROI Analysis Tab
@@ -382,7 +382,7 @@ def show_revenue_optimization_dialog(self):
     main_frame = ttk.Frame(revenue_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Revenue Optimization Recommendations", 
+    ttk.Label(main_frame, text="Revenue Optimization Recommendations",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Quick metrics
@@ -392,7 +392,7 @@ def show_revenue_optimization_dialog(self):
         cursor = conn.cursor()
 
         cursor.execute('''
-        SELECT 
+        SELECT
             SUM(sf.amount) as total_expected,
             SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END) as total_collected
         FROM student_fees sf
@@ -417,7 +417,7 @@ def show_revenue_optimization_dialog(self):
     recommendations_frame = ttk.LabelFrame(main_frame, text="Optimization Recommendations", padding="10")
     recommendations_frame.pack(fill=tk.BOTH, expand=True)
 
-    recommendations_tree = ttk.Treeview(recommendations_frame, 
+    recommendations_tree = ttk.Treeview(recommendations_frame,
                                        columns=('Impact', 'Priority', 'Cost'), height=15)
     recommendations_tree.heading('#0', text='Recommendation')
     recommendations_tree.heading('Impact', text='Potential Impact')
@@ -446,7 +446,7 @@ def show_revenue_optimization_dialog(self):
     summary_frame.pack(fill=tk.X, pady=(10, 0))
 
     total_potential = sum(int(rec[1].replace('£', '').replace(',', '')) for rec in recommendations)
-    ttk.Label(summary_frame, text=f"Total Optimization Potential: £{total_potential:,}", 
+    ttk.Label(summary_frame, text=f"Total Optimization Potential: £{total_potential:,}",
              font=('Arial', 12, 'bold')).pack()
 
     ttk.Button(main_frame, text="Close", command=revenue_window.destroy).pack(pady=10)
@@ -460,7 +460,7 @@ def show_api_configuration_dialog(self):
     main_frame = ttk.Frame(api_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="API Data Feed Configuration", 
+    ttk.Label(main_frame, text="API Data Feed Configuration",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # API Settings
@@ -632,7 +632,7 @@ def show_regulatory_reporting_dialog(self):
     main_frame = ttk.Frame(regulatory_window, padding="10")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    ttk.Label(main_frame, text="Regulatory Reporting Status", 
+    ttk.Label(main_frame, text="Regulatory Reporting Status",
              style='Title.TLabel').pack(pady=(0, 20))
 
     # Reporting status
@@ -655,7 +655,7 @@ def show_regulatory_reporting_dialog(self):
 
     for report_type, frequency, deadline, status in reports:
         status_icon = "✓" if status in ['Up to date', 'Active', 'Completed'] else "⚠" if status == 'In progress' else "✗"
-        status_tree.insert('', 'end', text=f"{status_icon} {report_type}", 
+        status_tree.insert('', 'end', text=f"{status_icon} {report_type}",
                           values=(frequency, deadline, status))
 
     # Control buttons

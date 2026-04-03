@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -121,7 +121,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -132,7 +132,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -260,7 +260,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -880,15 +880,15 @@ def view_academic_history_detailed(self, student_id):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Get student basic info
         cursor.execute("SELECT * FROM students WHERE student_id = ?", (student_id,))
         student = cursor.fetchone()
-        
+
         if not student:
             messagebox.showerror(_t("advanced_search.error_title"), _t("advanced_search.student_details.student_not_found"))
             return
-        
+
         # Get academic history
         cursor.execute("""
         SELECT module_type, module_code, module_name, grade, enrollment_date, completion_date
@@ -896,80 +896,80 @@ def view_academic_history_detailed(self, student_id):
         WHERE student_id = ?
         ORDER BY enrollment_date DESC
         """, (student_id,))
-        
+
         modules = cursor.fetchall()
         conn.close()
-        
+
         # Create detailed history window
         history_window = tk.Toplevel(self.master)
         history_window.title(f"Academic History - {student_id}")
         history_window.geometry("800x600")
         history_window.transient(self.master)
-        
+
         main_frame = ttk.Frame(history_window, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Student info header
         info_frame = ttk.LabelFrame(main_frame, text="Student Information", padding="10")
         info_frame.pack(fill=tk.X, pady=(0, 20))
-        
+
         info_text = f"""
 Student ID: {student[0]}
 Name: {student[2]} {student[3]} {student[4] or ''} {student[5]}
 Email: {student[1]}
 Course: {student[9]}
         """
-        
+
         ttk.Label(info_frame, text=info_text, font=('Arial', 10)).pack(anchor='w')
-        
+
         # Academic history table
         history_frame = ttk.LabelFrame(main_frame, text="Module History", padding="10")
         history_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 20))
-        
+
         # Create treeview for history
         columns = ('Type', 'Code', 'Name', 'Grade', 'Enrolled', 'Completed')
         history_tree = ttk.Treeview(history_frame, columns=columns, show='headings', height=15)
-        
+
         for col in columns:
             history_tree.heading(col, text=col)
             history_tree.column(col, width=120)
-        
+
         history_scrollbar = ttk.Scrollbar(history_frame, orient=tk.VERTICAL, command=history_tree.yview)
         history_tree.configure(yscrollcommand=history_scrollbar.set)
-        
+
         history_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         history_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Populate history data
         for module in modules:
             module_type, code, name, grade, enrolled_date, completed_date = module
             grade_display = grade if grade else "In Progress"
             enrolled_display = enrolled_date[:10] if enrolled_date else "N/A"
             completed_display = completed_date[:10] if completed_date else "N/A"
-            
+
             history_tree.insert('', 'end', values=(
                 module_type, code, name, grade_display, enrolled_display, completed_display
             ))
-        
+
         # Summary info
         if modules:
             completed_count = sum(1 for m in modules if m[3] is not None)
             completion_rate = (completed_count / len(modules)) * 100
-            
+
             summary_frame = ttk.LabelFrame(main_frame, text="Summary", padding="10")
             summary_frame.pack(fill=tk.X)
-            
+
             summary_text = f"""
 Total Modules: {len(modules)}
 Completed: {completed_count}
 In Progress: {len(modules) - completed_count}
 Completion Rate: {completion_rate:.1f}%
             """
-            
+
             ttk.Label(summary_frame, text=summary_text, font=('Arial', 10)).pack(anchor='w')
-        
+
         ttk.Button(main_frame, text=_t('advanced_search.close_button'), command=history_window.destroy).pack(pady=(10, 0))
-        
+
     except Exception as e:
         messagebox.showerror(_t("advanced_search.error_title"), _t("advanced_search.student_details.error_loading_history", error=str(e)))
 AdvancedSearchGUI.view_academic_history_detailed = view_academic_history_detailed
@@ -979,39 +979,39 @@ def show_detailed_student_view(self, student_data):
     if not student_data:
         messagebox.showerror(_t("advanced_search.error_title"), _t("advanced_search.student_details.no_student_data"))
         return
-    
+
     # Create detailed view window
     detail_window = tk.Toplevel(self.master)
     detail_window.title(f"Student Details - {student_data[0]}")
     detail_window.geometry("900x700")
     detail_window.transient(self.master)
-    
+
     # Create notebook for tabbed interface
     notebook = ttk.Notebook(detail_window)
     notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-    
+
     # Basic Info Tab
     basic_frame = ttk.Frame(notebook, padding="20")
     notebook.add(basic_frame, text="Basic Information")
-    
+
     self.create_basic_info_tab(basic_frame, student_data)
-    
+
     # Academic History Tab
     academic_frame = ttk.Frame(notebook, padding="20")
     notebook.add(academic_frame, text="Academic History")
-    
+
     self.create_academic_history_tab(academic_frame, student_data[0])
-    
+
     # Analytics Tab
     analytics_frame = ttk.Frame(notebook, padding="20")
     notebook.add(analytics_frame, text="Performance Analytics")
-    
+
     self.create_performance_analytics_tab(analytics_frame, student_data[0])
-    
+
     # Actions Tab
     actions_frame = ttk.Frame(notebook, padding="20")
     notebook.add(actions_frame, text="Actions")
-    
+
     self.create_student_actions_tab(actions_frame, student_data)
 AdvancedSearchGUI.show_detailed_student_view = show_detailed_student_view
 
@@ -1030,9 +1030,9 @@ Age: {student_data[8]}
 Course: {student_data[9]}
 Registration: {student_data[10]}
     """
-    
+
     ttk.Label(parent, text="Personal Information", style='Header.TLabel').pack(anchor='w', pady=(0, 20))
-    
+
     info_label = tk.Label(parent, text=info_text, justify=tk.LEFT, font=('Arial', 11), bg='white')
     info_label.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 AdvancedSearchGUI.create_basic_info_tab = create_basic_info_tab
@@ -1040,50 +1040,50 @@ AdvancedSearchGUI.create_basic_info_tab = create_basic_info_tab
 def create_academic_history_tab(self, parent, student_id):
     """Create academic history tab"""
     ttk.Label(parent, text="Academic History", style='Header.TLabel').pack(anchor='w', pady=(0, 20))
-    
+
     # Load and display academic history
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         cursor.execute("""
         SELECT module_type, module_code, module_name, grade, enrollment_date, completion_date
         FROM student_modules
         WHERE student_id = ?
         ORDER BY enrollment_date DESC
         """, (student_id,))
-        
+
         modules = cursor.fetchall()
         conn.close()
-        
+
         if modules:
             # Create treeview for modules
             columns = ('Type', 'Code', 'Name', 'Grade', 'Enrolled', 'Completed')
             modules_tree = ttk.Treeview(parent, columns=columns, show='headings', height=15)
-            
+
             for col in columns:
                 modules_tree.heading(col, text=col)
                 modules_tree.column(col, width=120)
-            
+
             modules_scrollbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=modules_tree.yview)
             modules_tree.configure(yscrollcommand=modules_scrollbar.set)
-            
+
             modules_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             modules_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-            
+
             # Populate data
             for module in modules:
                 module_type, code, name, grade, enrolled_date, completed_date = module
                 grade_display = grade if grade else "In Progress"
                 enrolled_display = enrolled_date[:10] if enrolled_date else "N/A"
                 completed_display = completed_date[:10] if completed_date else "N/A"
-                
+
                 modules_tree.insert('', 'end', values=(
                     module_type, code, name, grade_display, enrolled_display, completed_display
                 ))
         else:
             ttk.Label(parent, text="No academic history found.").pack()
-            
+
     except Exception as e:
         ttk.Label(parent, text=f"Error loading academic history: {str(e)}").pack()
 AdvancedSearchGUI.create_academic_history_tab = create_academic_history_tab
@@ -1091,20 +1091,20 @@ AdvancedSearchGUI.create_academic_history_tab = create_academic_history_tab
 def create_performance_analytics_tab(self, parent, student_id):
     """Create performance analytics tab"""
     ttk.Label(parent, text="Performance Analytics", style='Header.TLabel').pack(anchor='w', pady=(0, 20))
-    
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Get performance metrics
         cursor.execute("""
-        SELECT 
+        SELECT
             COUNT(*) as total_modules,
             SUM(CASE WHEN grade IS NOT NULL THEN 1 ELSE 0 END) as completed_modules,
             SUM(CASE WHEN grade IN ('A', 'B', 'C') THEN 1 ELSE 0 END) as passed_modules,
-            AVG(CASE 
+            AVG(CASE
                 WHEN grade = 'A' THEN 4.0
-                WHEN grade = 'B' THEN 3.0  
+                WHEN grade = 'B' THEN 3.0
                 WHEN grade = 'C' THEN 2.0
                 WHEN grade = 'D' THEN 1.0
                 ELSE 0.0
@@ -1112,10 +1112,10 @@ def create_performance_analytics_tab(self, parent, student_id):
         FROM student_modules
         WHERE student_id = ?
         """, (student_id,))
-        
+
         metrics = cursor.fetchone()
         conn.close()
-        
+
         if metrics and metrics[0] > 0:
             total, completed, passed, gpa = metrics
             completion_rate = (completed / total) * 100 if total > 0 else 0
@@ -1135,13 +1135,13 @@ Current GPA: {gpa_display:.2f}
 ACADEMIC STATUS
 {"✅ On Track" if completion_rate > 70 else "⚠️ Needs Attention" if completion_rate > 40 else "🚨 At Risk"}
             """
-            
-            analytics_label = tk.Label(parent, text=analytics_text, justify=tk.LEFT, 
+
+            analytics_label = tk.Label(parent, text=analytics_text, justify=tk.LEFT,
                                      font=('Courier', 11), bg='white')
             analytics_label.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         else:
             ttk.Label(parent, text="No performance data available.").pack()
-            
+
     except Exception as e:
         ttk.Label(parent, text=f"Error loading performance data: {str(e)}").pack()
 AdvancedSearchGUI.create_performance_analytics_tab = create_performance_analytics_tab
@@ -1149,7 +1149,7 @@ AdvancedSearchGUI.create_performance_analytics_tab = create_performance_analytic
 def create_student_actions_tab(self, parent, student_data):
     """Create student actions tab"""
     ttk.Label(parent, text="Available Actions", style='Header.TLabel').pack(anchor='w', pady=(0, 20))
-    
+
     actions = [
         ("📧 Send Email", lambda: self.simulate_send_email(student_data)),
         ("💾 Export Student Data", lambda: self.export_single_student(student_data)),
@@ -1158,7 +1158,7 @@ def create_student_actions_tab(self, parent, student_data):
         ("🏷️ Add to Favorites", lambda: self.add_student_to_favorites(student_data)),
         ("📌 Mark for Follow-up", lambda: self.mark_single_student_followup(student_data))
     ]
-    
+
     for text, command in actions:
         ttk.Button(parent, text=text, command=command, width=30).pack(pady=5)
 AdvancedSearchGUI.create_student_actions_tab = create_student_actions_tab
@@ -1169,15 +1169,15 @@ def add_student_to_favorites(self, student_data):
         # Initialize favorites if it doesn't exist
         if not hasattr(self, 'favorite_students'):
             self.favorite_students = []
-        
+
         student_id = student_data[0]
         student_name = f"{student_data[3]} {student_data[5]}"
-        
+
         # Check if already in favorites
         if any(fav['id'] == student_id for fav in self.favorite_students):
             messagebox.showinfo(_t("advanced_search.student_details.already_favorited"), _t("advanced_search.student_details.already_in_favorites", name=student_name))
             return
-        
+
         # Add to favorites
         favorite_entry = {
             'id': student_id,
@@ -1186,16 +1186,16 @@ def add_student_to_favorites(self, student_data):
             'course': student_data[9],
             'added_date': datetime.now().isoformat()
         }
-        
+
         self.favorite_students.append(favorite_entry)
-        
+
         # Save to file
         with open('favorite_students.json', 'w') as f:
             json.dump(self.favorite_students, f, indent=2)
-        
+
         messagebox.showinfo(_t("advanced_search.student_details.added_to_favorites_title"), _t("advanced_search.student_details.added_to_favorites_msg", name=student_name))
         self.log_output(f"Student {student_id} added to favorites")
-        
+
     except Exception as e:
         messagebox.showerror(_t("advanced_search.error_title"), _t("advanced_search.student_details.could_not_add_favorites", error=str(e)))
 AdvancedSearchGUI.add_student_to_favorites = add_student_to_favorites
@@ -1213,30 +1213,30 @@ def mark_single_student_followup(self, student_data):
 
     student_name = f"{student_data[3]} {student_data[5]}"
     ttk.Label(frame, text=f"Mark {student_name} for Follow-up", style='Title.TLabel').pack(pady=(0, 20))
-    
+
     ttk.Label(frame, text="Follow-up Reason:").pack(anchor='w')
     reason_var = tk.StringVar()
     ttk.Entry(frame, textvariable=reason_var, width=40).pack(fill=tk.X, pady=(0, 10))
-    
+
     ttk.Label(frame, text="Priority:").pack(anchor='w')
     priority_var = tk.StringVar(value="medium")
-    
+
     for priority in ["high", "medium", "low"]:
         ttk.Radiobutton(frame, text=priority.title(), variable=priority_var, value=priority).pack(anchor='w')
-    
+
     ttk.Label(frame, text="Notes:").pack(anchor='w', pady=(10, 0))
     notes_text = tk.Text(frame, height=4, wrap=tk.WORD)
     notes_text.pack(fill=tk.X, pady=(0, 20))
-    
+
     def save_followup():
         reason = reason_var.get().strip()
         if not reason:
             messagebox.showwarning(_t("advanced_search.student_details.missing_reason"), _t("advanced_search.student_details.enter_followup_reason"))
             return
-        
+
         priority = priority_var.get()
         notes = notes_text.get(1.0, tk.END).strip()
-        
+
         followup_data = {
             'student_id': student_data[0],
             'student_name': student_name,
@@ -1247,24 +1247,24 @@ def mark_single_student_followup(self, student_data):
             'marked_date': datetime.now().isoformat(),
             'marked_by': 'current_user'
         }
-        
+
         # Save to file
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"followup_{student_data[0]}_{timestamp}.json"
-        
+
         with open(filename, 'w') as f:
             json.dump(followup_data, f, indent=2)
-        
-        messagebox.showinfo("Follow-up Marked", 
+
+        messagebox.showinfo("Follow-up Marked",
                           f"✅ {student_name} marked for follow-up\n"
                           f"Priority: {priority}\n"
                           f"Saved to: {filename}")
-        
+
         dialog.destroy()
-    
+
     button_frame = ttk.Frame(frame)
     button_frame.pack(fill=tk.X)
-    
+
     ttk.Button(button_frame, text="📌 Mark", command=save_followup).pack(side=tk.LEFT)
     ttk.Button(button_frame, text=f"❌ {_t('advanced_search.cancel_button')}", command=dialog.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.mark_single_student_followup = mark_single_student_followup
@@ -1273,7 +1273,7 @@ def generate_student_performance_report(self, student_id):
     """Generate detailed performance report for a student"""
     self.update_status(f"Generating performance report for {student_id}...")
     self.start_progress()
-    
+
     def run_report_generation():
         try:
             report = self.create_student_performance_report(student_id)
@@ -1283,7 +1283,7 @@ def generate_student_performance_report(self, student_id):
             self.output_queue.put(("error", f"Report generation error: {str(e)}"))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_report_generation, daemon=True).start()
 AdvancedSearchGUI.generate_student_performance_report = generate_student_performance_report
 
@@ -1292,14 +1292,14 @@ def create_student_performance_report(self, student_id):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Get student info
         cursor.execute("SELECT * FROM students WHERE student_id = ?", (student_id,))
         student = cursor.fetchone()
-        
+
         if not student:
             return "Student not found"
-        
+
         # Get module performance
         cursor.execute("""
         SELECT module_type, module_code, module_name, grade, enrollment_date, completion_date
@@ -1307,45 +1307,45 @@ def create_student_performance_report(self, student_id):
         WHERE student_id = ?
         ORDER BY enrollment_date
         """, (student_id,))
-        
+
         modules = cursor.fetchall()
         conn.close()
-        
+
         report = f"STUDENT PERFORMANCE REPORT\n"
         report += f"=" * 50 + "\n"
         report += f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-        
+
         report += f"STUDENT INFORMATION:\n"
         report += f"ID: {student[0]}\n"
         report += f"Name: {student[3]} {student[5]}\n"
         report += f"Email: {student[1]}\n"
         report += f"Course: {student[9]}\n"
         report += f"Registration: {student[10]}\n\n"
-        
+
         if modules:
             completed = [m for m in modules if m[3] is not None]
             in_progress = [m for m in modules if m[3] is None]
             passed = [m for m in modules if m[3] in ['A', 'B', 'C']]
-            
+
             report += f"ACADEMIC SUMMARY:\n"
             report += f"Total Modules: {len(modules)}\n"
             report += f"Completed: {len(completed)}\n"
             report += f"In Progress: {len(in_progress)}\n"
             report += f"Passed (A-C): {len(passed)}\n"
-            
+
             if completed:
                 completion_rate = (len(completed) / len(modules)) * 100
                 success_rate = (len(passed) / len(completed)) * 100
                 report += f"Completion Rate: {completion_rate:.1f}%\n"
                 report += f"Success Rate: {success_rate:.1f}%\n"
-            
+
             report += f"\nDETAILED MODULE HISTORY:\n"
             report += f"-" * 40 + "\n"
-            
+
             for module in modules:
                 module_type, code, name, grade, enrolled_date, completed_date = module
                 grade_display = grade if grade else "In Progress"
-                
+
                 report += f"{code} - {name}\n"
                 report += f"  Type: {module_type} | Grade: {grade_display}\n"
                 report += f"  Enrolled: {enrolled_date[:10] if enrolled_date else 'N/A'}\n"
@@ -1354,9 +1354,9 @@ def create_student_performance_report(self, student_id):
                 report += f"\n"
         else:
             report += f"No module enrollment history found.\n"
-        
+
         return report
-        
+
     except Exception as e:
         return f"Error generating performance report: {str(e)}"
 AdvancedSearchGUI.create_student_performance_report = create_student_performance_report
@@ -1366,14 +1366,14 @@ def view_academic_history(self, student_id):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Get student basic info
         cursor.execute("SELECT * FROM students WHERE student_id = ?", (student_id,))
         student = cursor.fetchone()
-        
+
         if not student:
             return "Student not found"
-        
+
         # Get academic history
         cursor.execute("""
         SELECT module_type, module_code, module_name, grade, enrollment_date
@@ -1381,20 +1381,20 @@ def view_academic_history(self, student_id):
         WHERE student_id = ?
         ORDER BY enrollment_date DESC
         """, (student_id,))
-        
+
         modules = cursor.fetchall()
         conn.close()
-        
+
         history = f"📚 ACADEMIC HISTORY - {student[0]}\n"
         history += f"═" * 50 + "\n"
         history += f"Student: {student[3]} {student[5]}\n"
         history += f"Email: {student[1]}\n"
         history += f"Course: {student[9]}\n\n"
-        
+
         if modules:
             history += f"MODULE HISTORY ({len(modules)} modules):\n"
             history += "-" * 40 + "\n"
-            
+
             for module_type, code, name, grade, enrolled_date in modules:
                 grade_display = grade if grade else "In Progress"
                 history += f"{code} - {name}\n"
@@ -1402,9 +1402,9 @@ def view_academic_history(self, student_id):
                 history += f"  Enrolled: {enrolled_date}\n\n"
         else:
             history += "No module enrollment history found.\n"
-        
+
         return history
-        
+
     except Exception as e:
         return f"Error retrieving academic history: {str(e)}"
 AdvancedSearchGUI.view_academic_history = view_academic_history

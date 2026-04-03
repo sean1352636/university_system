@@ -93,7 +93,7 @@ class TestManageCompetencyLevels:
         with patch('builtins.print') as mock_print:
             manage_competency_levels()
 
-        assert any('not found' in str(call).lower() for call in mock_print.call_args_list)
+        assert any('no competency found' in str(call).lower() for call in mock_print.call_args_list)
 
 class TestViewStudentCompetencyProfile:
     """Test the view_student_competency_profile function"""

@@ -99,23 +99,28 @@ class TestReportManager(unittest.TestCase):
 
     @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
     @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showinfo')
-    def test_gui_revenue_summary_report(self, mock_showinfo, mock_get_connection):
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.tk.StringVar')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.ttk.Entry')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.ttk.Label')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.ttk.Button')
+    @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.tk.Toplevel')
+    def test_gui_revenue_summary_report(self, mock_toplevel, mock_button, mock_label,
+                                         mock_entry, mock_stringvar, mock_showinfo,
+                                         mock_get_connection):
         """Test revenue summary report generation"""
-        # Create mock dialog
-        with patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.tk.Toplevel') as mock_toplevel:
-            mock_dialog = Mock()
-            mock_toplevel.return_value = mock_dialog
+        mock_dialog = Mock()
+        mock_toplevel.return_value = mock_dialog
 
-            # Create manager and call method
-            self.manager.report_text = Mock()
-            self.manager.update_status = Mock()
-            self.manager.show_tab = Mock()
+        # Create manager and call method
+        self.manager.report_text = Mock()
+        self.manager.update_status = Mock()
+        self.manager.show_tab = Mock()
 
-            self.manager.gui_revenue_summary_report()
+        self.manager.gui_revenue_summary_report()
 
-            # Verify dialog was created
-            mock_toplevel.assert_called_once()
-            mock_dialog.title.assert_called_with("Revenue Summary Report")
+        # Verify dialog was created
+        mock_toplevel.assert_called_once()
+        mock_dialog.title.assert_called_with("Revenue Summary Report")
 
     @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.get_connection')
     def test_gui_outstanding_fees_report_with_data(self, mock_get_connection):
@@ -214,9 +219,10 @@ class TestReportManager(unittest.TestCase):
         mock_cursor = Mock()
         mock_conn.cursor.return_value = mock_cursor
 
-        # Mock student data
+        # Mock student data (8 columns: student_id, first_name, last_name, course,
+        # fee_count, charged, paid, balance)
         mock_cursor.fetchall.return_value = [
-            ('S001', 'John', 'Doe', 'Computer Science', 3, 15000.00, 2, 10000.00, 5000.00)
+            ('S001', 'John', 'Doe', 'Computer Science', 3, 15000.00, 10000.00, 5000.00)
         ]
 
         mock_get_connection.return_value = mock_conn
@@ -345,15 +351,16 @@ class TestReportManager(unittest.TestCase):
 
     def test_show_text_window(self):
         """Test showing content in a text window"""
-        with patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.tk.Toplevel') as mock_toplevel:
-            with patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.ScrolledText') as mock_text:
-                mock_window = Mock()
-                mock_toplevel.return_value = mock_window
+        with patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.tk.Toplevel') as mock_toplevel, \
+             patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.ScrolledText') as mock_text, \
+             patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.ttk.Button'):
+            mock_window = Mock()
+            mock_toplevel.return_value = mock_window
 
-                self.manager.show_text_window("Test Title", "Test Content")
+            self.manager.show_text_window("Test Title", "Test Content")
 
-                mock_toplevel.assert_called_once()
-                mock_window.title.assert_called_with("Test Title")
+            mock_toplevel.assert_called_once()
+            mock_window.title.assert_called_with("Test Title")
 
     @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.threading.Thread')
     def test_gui_generate_revenue_forecast(self, mock_thread):

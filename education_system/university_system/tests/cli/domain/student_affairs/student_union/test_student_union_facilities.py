@@ -34,8 +34,8 @@ class TestViewFacilities:
     """Tests for view_facilities function."""
 
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.facilities.get_connection')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities.ctx')
     def test_view_facilities_success(self, mock_ctx, mock_get_conn, mock_print, sample_facilities):
         """Test viewing facilities successfully."""
         # Setup mocks
@@ -52,46 +52,48 @@ class TestViewFacilities:
         # Call function
         facilities.view_facilities()
 
-        # Verify results
-        assert any('Available Facilities' in str(call)
-                  for call in mock_print.call_args_list)
+        # Verify results (source uses i18n keys, so check for facility name in output)
         assert any('Conference Room A' in str(call)
                   for call in mock_print.call_args_list)
         mock_conn.close.assert_called_once()
 
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
-    def test_view_facilities_not_logged_in(self, mock_ctx, mock_print):
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities._')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities.ctx')
+    def test_view_facilities_not_logged_in(self, mock_ctx, mock_i18n, mock_print):
         """Test viewing facilities when not logged in."""
         # Setup mocks
         mock_ctx.auth = None
+        mock_i18n.side_effect = lambda key, **kw: key
 
         # Call function
         facilities.view_facilities()
 
         # Verify results
-        assert any('must be logged in' in str(call).lower()
+        assert any('errors.login_required' in str(call)
                   for call in mock_print.call_args_list)
 
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
-    def test_view_facilities_no_permission(self, mock_ctx, mock_print):
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities._')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities.ctx')
+    def test_view_facilities_no_permission(self, mock_ctx, mock_i18n, mock_print):
         """Test viewing facilities without permission."""
         # Setup mocks
         mock_ctx.auth = Mock()
         mock_ctx.auth.current_user = {'id': 1}
         mock_ctx.auth.check_permission = Mock(return_value=False)
+        mock_i18n.side_effect = lambda key, **kw: key
 
         # Call function
         facilities.view_facilities()
 
         # Verify results
-        assert any("don't have permission" in str(call).lower()
+        assert any("errors.permission_denied" in str(call)
                   for call in mock_print.call_args_list)
 
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.facilities.get_connection')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities.ctx')
     def test_view_facilities_no_facilities(self, mock_ctx, mock_get_conn, mock_print):
         """Test viewing when no facilities available."""
         # Setup mocks
@@ -108,20 +110,22 @@ class TestViewFacilities:
         # Call function
         facilities.view_facilities()
 
-        # Verify results
-        assert any('No available facilities' in str(call)
+        # Verify results (translated text: "No available facilities found.")
+        assert any('no available facilities' in str(call).lower()
                   for call in mock_print.call_args_list)
         mock_conn.close.assert_called_once()
 
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.facilities.get_connection')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
-    def test_view_facilities_database_error(self, mock_ctx, mock_get_conn, mock_print):
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities._')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities.ctx')
+    def test_view_facilities_database_error(self, mock_ctx, mock_get_conn, mock_i18n, mock_print):
         """Test handling of database errors."""
         # Setup mocks
         mock_ctx.auth = Mock()
         mock_ctx.auth.current_user = {'id': 1}
         mock_ctx.auth.check_permission = Mock(return_value=True)
+        mock_i18n.side_effect = lambda key, **kw: key if not kw else f"{key}: {kw.get('error', '')}"
 
         mock_cursor = Mock()
         mock_cursor.execute.side_effect = sqlite3.Error("Database error")
@@ -133,19 +137,22 @@ class TestViewFacilities:
         facilities.view_facilities()
 
         # Verify results
-        assert any('Database error' in str(call)
+        assert any('database_error' in str(call).lower()
                   for call in mock_print.call_args_list)
 
     @patch('builtins.print')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.facilities.get_connection')
-    @patch('education_system.university_system.modules.core.services.student_union_misc.context')
-    def test_view_facilities_displays_all_fields(self, mock_ctx, mock_get_conn, mock_print,
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities._')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities.get_connection')
+    @patch('education_system.university_system.modules.domain.student_affairs.student_union.services.facilities.ctx')
+    def test_view_facilities_displays_all_fields(self, mock_ctx, mock_get_conn, mock_i18n, mock_print,
                                                   sample_facilities):
         """Test that all facility fields are displayed."""
         # Setup mocks
         mock_ctx.auth = Mock()
         mock_ctx.auth.current_user = {'id': 1}
         mock_ctx.auth.check_permission = Mock(return_value=True)
+        # Return the key itself so we can match on i18n keys
+        mock_i18n.side_effect = lambda key, **kw: key
 
         mock_cursor = Mock()
         mock_cursor.fetchall.return_value = sample_facilities
@@ -156,14 +163,15 @@ class TestViewFacilities:
         # Call function
         facilities.view_facilities()
 
-        # Verify all fields are displayed
-        assert any('ID:' in str(call) for call in mock_print.call_args_list)
-        assert any('Name:' in str(call) for call in mock_print.call_args_list)
-        assert any('Location:' in str(call) for call in mock_print.call_args_list)
-        assert any('Capacity:' in str(call) for call in mock_print.call_args_list)
-        assert any('Description:' in str(call) for call in mock_print.call_args_list)
-        assert any('Equipment:' in str(call) for call in mock_print.call_args_list)
-        assert any('Booking Fee:' in str(call) for call in mock_print.call_args_list)
+        # Verify all fields are displayed (using i18n keys as labels)
+        printed = ' '.join(str(call) for call in mock_print.call_args_list)
+        assert 'common.id' in printed
+        assert 'common.name' in printed
+        assert 'student_union.facilities.location' in printed
+        assert 'student_union.facilities.capacity' in printed
+        assert 'common.description' in printed
+        assert 'student_union.facilities.equipment' in printed
+        assert 'student_union.facilities.booking_fee' in printed
 
 class TestIntegrationFacilities:
     """Integration tests using real database."""

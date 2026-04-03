@@ -12,7 +12,7 @@ def health_analytics_dashboard(auth):
     if not auth.check_permission('view_any_health_record'):
         print("You don't have permission to view health analytics.")
         return
-    
+
     while True:
         print("\n===== Health Analytics Dashboard =====")
         print("1. Population Health Metrics")
@@ -23,9 +23,9 @@ def health_analytics_dashboard(auth):
         print("6. Quality Metrics")
         print("7. Generate Custom Report")
         print("8. Return to Main Menu")
-        
+
         choice = input("\nEnter your choice (1-8): ")
-        
+
         if choice == '1':
             show_population_health_metrics(auth)
         elif choice == '2':
@@ -51,14 +51,14 @@ def analyze_health_trends(auth):
     """Analyze health trends over time"""
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     print("\n===== Health Trends Analysis =====")
-    
+
     # Monthly health records trend (last 12 months)
     twelve_months_ago = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
-    
+
     cursor.execute('''
-    SELECT 
+    SELECT
         strftime('%Y-%m', record_date) as month,
         COUNT(*) as record_count
     FROM health_records
@@ -66,17 +66,17 @@ def analyze_health_trends(auth):
     GROUP BY strftime('%Y-%m', record_date)
     ORDER BY month
     ''', (twelve_months_ago,))
-    
+
     monthly_records = cursor.fetchall()
-    
+
     if monthly_records:
         print("Monthly Health Records (Last 12 Months):")
         for month, count in monthly_records:
             print(f"  {month}: {count} records")
-    
+
     # Seasonal illness patterns
     cursor.execute('''
-    SELECT 
+    SELECT
         strftime('%m', record_date) as month,
         record_type,
         COUNT(*) as count
@@ -85,9 +85,9 @@ def analyze_health_trends(auth):
     GROUP BY strftime('%m', record_date), record_type
     ORDER BY month, count DESC
     ''', (twelve_months_ago,))
-    
+
     seasonal_patterns = cursor.fetchall()
-    
+
     if seasonal_patterns:
         print("\nSeasonal Illness Patterns:")
         current_month = ""
@@ -97,10 +97,10 @@ def analyze_health_trends(auth):
                 print(f"  {month_name}:")
                 current_month = month_name
             print(f"    {record_type}: {count}")
-    
+
     # Emergency contact usage trends
     cursor.execute('''
-    SELECT 
+    SELECT
         strftime('%Y-%m', created_at) as month,
         COUNT(*) as emergency_contacts
     FROM emergency_contacts
@@ -108,14 +108,14 @@ def analyze_health_trends(auth):
     GROUP BY strftime('%Y-%m', created_at)
     ORDER BY month
     ''', (twelve_months_ago,))
-    
+
     emergency_trends = cursor.fetchall()
-    
+
     if emergency_trends:
         print("\nEmergency Contact Updates (Last 12 Months):")
         for month, count in emergency_trends:
             print(f"  {month}: {count} updates")
-    
+
     conn.close()
 
 
@@ -124,9 +124,9 @@ def generate_health_condition_analysis(auth):
     """Generate health condition analysis report"""
     conn = get_connection()
     cursor = conn.cursor()
-    
+
     print("\n===== Health Condition Analysis =====")
-    
+
     # Top health conditions
     cursor.execute('''
     SELECT condition_name, severity, COUNT(*) as patient_count,
@@ -136,22 +136,22 @@ def generate_health_condition_analysis(auth):
     ORDER BY patient_count DESC
     LIMIT 20
     ''')
-    
+
     conditions = cursor.fetchall()
-    
+
     if conditions:
         print("Top Health Conditions:")
         print("-" * 60)
         print(f"{'Condition':<25} {'Severity':<10} {'Count':<6} {'Active %':<8}")
         print("-" * 60)
-        
+
         for condition, severity, count, active_pct in conditions:
             print(f"{condition:<25} {severity:<10} {count:<6} {active_pct:.1f}%")
-    
+
     # Condition trends by age group
     cursor.execute('''
-    SELECT 
-        CASE 
+    SELECT
+        CASE
             WHEN s.age < 20 THEN '18-19'
             WHEN s.age < 25 THEN '20-24'
             WHEN s.age < 30 THEN '25-29'
@@ -166,20 +166,20 @@ def generate_health_condition_analysis(auth):
     HAVING count >= 2
     ORDER BY age_group, count DESC
     ''')
-    
+
     age_trends = cursor.fetchall()
-    
+
     if age_trends:
         print(f"\nCondition Distribution by Age Group:")
         print("-" * 50)
-        
+
         current_age_group = ""
         for age_group, condition, count in age_trends:
             if age_group != current_age_group:
                 print(f"\nAge {age_group}:")
                 current_age_group = age_group
             print(f"  {condition}: {count} cases")
-    
+
     # Severity analysis
     cursor.execute('''
     SELECT severity, COUNT(*) as count,
@@ -189,15 +189,15 @@ def generate_health_condition_analysis(auth):
     GROUP BY severity
     ORDER BY count DESC
     ''')
-    
+
     severity_data = cursor.fetchall()
-    
+
     if severity_data:
         print(f"\nCondition Severity Distribution:")
         print("-" * 35)
         for severity, count, percentage in severity_data:
             print(f"{severity}: {count} ({percentage:.1f}%)")
-    
+
     conn.close()
 
 

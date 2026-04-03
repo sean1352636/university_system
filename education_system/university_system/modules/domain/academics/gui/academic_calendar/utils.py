@@ -223,7 +223,7 @@ def _attempt_grab(dialog, retries=5):
 def safe_show_error(title, message, parent=None):
     """
     Safely show error message without grab conflicts
-    
+
     Args:
         title: Error dialog title
         message: Error message

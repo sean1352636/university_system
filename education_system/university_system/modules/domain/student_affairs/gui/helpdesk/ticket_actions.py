@@ -47,12 +47,12 @@ try:
 except ImportError:
     # If helpdesk.py is not available, we'll define minimal stubs
     print("Warning: helpdesk.py not found. Running in standalone mode.")
-    
+
     def init_helpdesk_db():
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Create support_tickets table with enhanced fields
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS support_tickets (
@@ -118,7 +118,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_attachments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_attachments (
@@ -138,7 +138,7 @@ except ImportError:
                 FOREIGN KEY (uploaded_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_assignments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_assignments (
@@ -153,7 +153,7 @@ except ImportError:
                 FOREIGN KEY (assigned_to) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_templates table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_templates (
@@ -174,7 +174,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create sla_policies table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS sla_policies (
@@ -193,7 +193,7 @@ except ImportError:
                 updated_at TEXT
             )
             ''')
-            
+
             # Create ticket_workflows table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_workflows (
@@ -210,7 +210,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_time_tracking table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_time_tracking (
@@ -227,7 +227,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_escalations table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_escalations (
@@ -244,7 +244,7 @@ except ImportError:
                 FOREIGN KEY (escalated_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_links table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_links (
@@ -259,7 +259,7 @@ except ImportError:
                 FOREIGN KEY (created_by) REFERENCES users (id)
             )
             ''')
-            
+
             # Create ticket_audit_log table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS ticket_audit_log (
@@ -276,7 +276,7 @@ except ImportError:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create knowledge_base table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS knowledge_base (
@@ -296,7 +296,7 @@ except ImportError:
                 FOREIGN KEY (author_id) REFERENCES users (id)
             )
             ''')
-            
+
             # Create departments table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS departments (
@@ -313,7 +313,7 @@ except ImportError:
                 FOREIGN KEY (sla_policy_id) REFERENCES sla_policies (sla_id)
             )
             ''')
-            
+
             # Create organizations table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS organizations (
@@ -328,7 +328,7 @@ except ImportError:
                 updated_at TEXT
             )
             ''')
-            
+
             # Create saved_searches table
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS saved_searches (
@@ -344,13 +344,13 @@ except ImportError:
             conn.commit()
             conn.close()
             print("Enhanced helpdesk database initialized successfully!")
-            
+
             # Initialize default data
             init_default_data()
-            
+
         except sqlite3.Error as e:
             print(f"An error occurred while initializing the helpdesk database: {e}")
-        
+
     def setup_enhanced_helpdesk_permissions():
         """
         Setup enhanced helpdesk permissions
@@ -431,7 +431,7 @@ def show_reply_dialog(self, ticket_id):
     reply_window.grab_set()
 
     # Title
-    ttk.Label(reply_window, text=f"Reply to Ticket #{ticket_id}", 
+    ttk.Label(reply_window, text=f"Reply to Ticket #{ticket_id}",
              style='Heading.TLabel').pack(pady=10)
 
     # Message frame
@@ -475,7 +475,7 @@ def show_reply_dialog(self, ticket_id):
         else:
             messagebox.showerror("Error", "Failed to add reply")
 
-    ttk.Button(button_frame, text="Send Reply", command=send_reply, 
+    ttk.Button(button_frame, text="Send Reply", command=send_reply,
               style='Primary.TButton').pack(side='right', padx=5)
     ttk.Button(button_frame, text="Cancel", command=reply_window.destroy).pack(side='right')
 
@@ -492,7 +492,7 @@ def add_ticket_reply(self, ticket_id, message, time_spent=0, is_internal=False):
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         cursor.execute('''
-        INSERT INTO ticket_replies 
+        INSERT INTO ticket_replies
         (ticket_id, user_id, message, is_internal, time_spent, created_at)
         VALUES (?, ?, ?, ?, ?, ?)
         ''', (ticket_id, self.current_user.get('id', 0), message, is_internal, time_spent, now))
@@ -535,7 +535,7 @@ def show_status_dialog(self, ticket_id):
     status_window.grab_set()
 
     # Title
-    ttk.Label(status_window, text=f"Change Status for Ticket #{ticket_id}", 
+    ttk.Label(status_window, text=f"Change Status for Ticket #{ticket_id}",
              style='Heading.TLabel').pack(pady=10)
 
     # Status selection
@@ -546,7 +546,7 @@ def show_status_dialog(self, ticket_id):
     statuses = ["open", "in progress", "waiting for customer", "resolved", "closed"]
 
     for status in statuses:
-        ttk.Radiobutton(status_frame, text=status.title(), variable=status_var, 
+        ttk.Radiobutton(status_frame, text=status.title(), variable=status_var,
                        value=status).pack(anchor='w', padx=5, pady=2)
 
     # Resolution field (for resolved/closed)
@@ -575,7 +575,7 @@ def show_status_dialog(self, ticket_id):
         else:
             messagebox.showerror("Error", "Failed to update status")
 
-    ttk.Button(button_frame, text="Update Status", command=update_status, 
+    ttk.Button(button_frame, text="Update Status", command=update_status,
               style='Primary.TButton').pack(side='right', padx=5)
     ttk.Button(button_frame, text="Cancel", command=status_window.destroy).pack(side='right')
 
@@ -633,7 +633,7 @@ def show_assign_dialog(self, ticket_id):
     assign_window.grab_set()
 
     # Title
-    ttk.Label(assign_window, text=f"Assign Ticket #{ticket_id}", 
+    ttk.Label(assign_window, text=f"Assign Ticket #{ticket_id}",
              style='Heading.TLabel').pack(pady=10)
 
     # Staff selection
@@ -646,12 +646,12 @@ def show_assign_dialog(self, ticket_id):
     staff_var = tk.StringVar()
 
     # Add "Unassigned" option
-    ttk.Radiobutton(staff_frame, text="Unassigned", variable=staff_var, 
+    ttk.Radiobutton(staff_frame, text="Unassigned", variable=staff_var,
                    value="").pack(anchor='w', padx=5, pady=2)
 
     for staff in staff_list:
         display_text = f"{staff['username']} ({staff['role']} - {staff.get('department', 'No Dept')})"
-        ttk.Radiobutton(staff_frame, text=display_text, variable=staff_var, 
+        ttk.Radiobutton(staff_frame, text=display_text, variable=staff_var,
                        value=str(staff['id'])).pack(anchor='w', padx=5, pady=2)
 
     # Buttons
@@ -669,7 +669,7 @@ def show_assign_dialog(self, ticket_id):
         else:
             messagebox.showerror("Error", "Failed to assign ticket")
 
-    ttk.Button(button_frame, text="Assign", command=assign_ticket, 
+    ttk.Button(button_frame, text="Assign", command=assign_ticket,
               style='Primary.TButton').pack(side='right', padx=5)
     ttk.Button(button_frame, text="Cancel", command=assign_window.destroy).pack(side='right')
 
@@ -737,7 +737,7 @@ def show_internal_note_dialog(self, ticket_id):
     note_window.grab_set()
 
     # Title
-    ttk.Label(note_window, text=f"Add Internal Note to Ticket #{ticket_id}", 
+    ttk.Label(note_window, text=f"Add Internal Note to Ticket #{ticket_id}",
              style='Heading.TLabel').pack(pady=10)
 
     # Message frame
@@ -764,7 +764,7 @@ def show_internal_note_dialog(self, ticket_id):
         else:
             messagebox.showerror("Error", "Failed to add internal note")
 
-    ttk.Button(button_frame, text="Add Note", command=add_note, 
+    ttk.Button(button_frame, text="Add Note", command=add_note,
               style='Primary.TButton').pack(side='right', padx=5)
     ttk.Button(button_frame, text="Cancel", command=note_window.destroy).pack(side='right')
 
@@ -798,7 +798,7 @@ def escalate_ticket_manual(self, ticket_id):
         else:
             messagebox.showerror("Error", "Failed to escalate ticket")
 
-    ttk.Button(button_frame, text="Escalate", command=perform_escalation, 
+    ttk.Button(button_frame, text="Escalate", command=perform_escalation,
               style='Primary.TButton').pack(side='right', padx=5)
     ttk.Button(button_frame, text="Cancel", command=escalate_window.destroy).pack(side='right')
 
@@ -814,8 +814,8 @@ def escalate_ticket(self, ticket_id, reason='manual'):
 
         # Get current ticket info
         cursor.execute('''
-        SELECT assigned_to, department, escalation_level 
-        FROM support_tickets 
+        SELECT assigned_to, department, escalation_level
+        FROM support_tickets
         WHERE ticket_id = ?
         ''', (ticket_id,))
 
@@ -850,14 +850,14 @@ def escalate_ticket(self, ticket_id, reason='manual'):
             # Update ticket
             now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             cursor.execute('''
-            UPDATE support_tickets 
+            UPDATE support_tickets
             SET assigned_to = ?, escalation_level = ?, updated_at = ?
             WHERE ticket_id = ?
             ''', (escalate_to, new_level, now, ticket_id))
 
             # Record escalation
             cursor.execute('''
-            INSERT INTO ticket_escalations 
+            INSERT INTO ticket_escalations
             (ticket_id, escalation_level, escalated_to, escalation_reason, created_at)
             VALUES (?, ?, ?, ?, ?)
             ''', (ticket_id, new_level, escalate_to, reason, now))

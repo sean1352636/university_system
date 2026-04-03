@@ -35,10 +35,7 @@ class BudgetManager(
         self.gui = gui
         self.root = gui.root
         self.conn = gui.conn
-        try:
-            self.finance_system = gui.finance_system
-        except Exception:
-            self.finance_system = None
+        self.finance_system = vars(gui).get('finance_system')
 
     def create_budget_tab(self):
         """Create comprehensive budget management tab with Budget Tracker integration"""

@@ -54,7 +54,7 @@ except ImportError:
     TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
     SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
     ROOM_TYPES = ['Lecture Hall', 'Lab', 'Tutorial Room', 'Seminar Room', 'Workshop Room', 'Computer Lab', 'Other']
-    
+
     # Import the ModuleScheduler class from the document
     try:
         from education_system.university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
@@ -69,24 +69,24 @@ def _export_text_to_pdf(self, content):
         from reportlab.lib.pagesizes import letter
         from reportlab.platypus import SimpleDocTemplate, Paragraph
         from reportlab.lib.styles import getSampleStyleSheet
-        
+
         filename = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             filetypes=[("PDF files", "*.pdf")],
             title="Save PDF"
         )
-        
+
         if filename:
             doc = SimpleDocTemplate(filename, pagesize=letter)
             styles = getSampleStyleSheet()
             story = []
-            
+
             for line in content.split('\n'):
                 story.append(Paragraph(line or ' ', styles['Normal']))
-            
+
             doc.build(story)
             messagebox.showinfo("Success", f"PDF exported to {filename}", parent=self.root)
-            
+
     except ImportError:
         messagebox.showerror("Error", "ReportLab library not available for PDF export.", parent=self.root)
     except Exception as e:
@@ -98,22 +98,22 @@ def _export_text_to_csv(self, content):
     """Export text content to CSV"""
     try:
         import csv
-        
+
         filename = filedialog.asksaveasfilename(
             defaultextension=".csv",
             filetypes=[("CSV files", "*.csv")],
             title="Save CSV"
         )
-        
+
         if filename:
             with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
                 writer = csv.writer(csvfile)
                 for line in content.split('\n'):
                     if line.strip():
                         writer.writerow([line])
-            
+
             messagebox.showinfo("Success", f"CSV exported to {filename}", parent=self.root)
-            
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to export CSV: {str(e)}", parent=self.root)
 

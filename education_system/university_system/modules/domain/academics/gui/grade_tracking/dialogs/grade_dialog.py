@@ -67,10 +67,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -122,7 +122,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -138,7 +138,7 @@ def init_basic_database():
             status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -152,7 +152,7 @@ def init_basic_database():
             year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -166,7 +166,7 @@ def init_basic_database():
             UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -186,11 +186,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -200,7 +200,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -215,7 +215,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -228,7 +228,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -247,7 +247,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -347,23 +347,23 @@ class GradeDialog:
         self.dialog.title(title)
         self.dialog.geometry("400x350")
         safe_grab_set(self.dialog)
-        
+
         self.setup_dialog(data)
-        
+
     def setup_dialog(self, data):
         # Title
-        ttk.Label(self.dialog, text=self.dialog.title(), 
+        ttk.Label(self.dialog, text=self.dialog.title(),
                  font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         # Form frame
         form_frame = ttk.Frame(self.dialog)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
+
         # Student selection
         ttk.Label(form_frame, text="Student:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.student_var = tk.StringVar()
         student_combo = ttk.Combobox(form_frame, textvariable=self.student_var, width=30)
-        
+
         # Load students
         try:
             self.cursor.execute("SELECT student_id, first_name, last_name FROM students ORDER BY last_name")
@@ -371,14 +371,14 @@ class GradeDialog:
             student_combo['values'] = students
         except Exception:
             pass
-        
+
         student_combo.grid(row=0, column=1, pady=5)
-        
+
         # Assessment selection
         ttk.Label(form_frame, text="Assessment:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.assessment_var = tk.StringVar()
         assessment_combo = ttk.Combobox(form_frame, textvariable=self.assessment_var, width=30)
-        
+
         # Load assessments
         try:
             self.cursor.execute("SELECT assessment_id, assessment_name, module_code FROM assessments ORDER BY assessment_name")
@@ -386,47 +386,47 @@ class GradeDialog:
             assessment_combo['values'] = assessments
         except Exception:
             pass
-        
+
         assessment_combo.grid(row=1, column=1, pady=5)
-        
+
         # Score
         ttk.Label(form_frame, text="Score:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.score_var = tk.StringVar(value=str(data[2]) if data else "")
         ttk.Entry(form_frame, textvariable=self.score_var, width=30).grid(row=2, column=1, pady=5)
-        
+
         # Max Points (read-only, filled when assessment selected)
         ttk.Label(form_frame, text="Max Points:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.max_points_var = tk.StringVar(value=str(data[3]) if data else "100")
         max_points_entry = ttk.Entry(form_frame, textvariable=self.max_points_var, width=30, state='readonly')
         max_points_entry.grid(row=3, column=1, pady=5)
-        
+
         # Submission Date
         ttk.Label(form_frame, text="Submission Date:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.submission_date_var = tk.StringVar(value=data[4] if data else datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(form_frame, textvariable=self.submission_date_var, width=30).grid(row=4, column=1, pady=5)
-        
+
         # Feedback
         ttk.Label(form_frame, text="Feedback:").grid(row=5, column=0, sticky=tk.NW, pady=5)
         self.feedback_text = tk.Text(form_frame, height=4, width=30)
         self.feedback_text.grid(row=5, column=1, pady=5)
         if data and len(data) > 5:
             self.feedback_text.insert(1.0, data[5])
-        
+
         # Bind assessment selection to update max points
         assessment_combo.bind('<<ComboboxSelected>>', self.update_max_points)
-        
+
         # Set initial values if editing
         if data:
             self.student_var.set(f"{data[0]} - {data[1]}")  # Assuming data format
             self.assessment_var.set(f"{data[1]} - {data[2]}")  # Assuming data format
-        
+
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=20)
-        
+
         ttk.Button(button_frame, text="Save", command=self.save_grade).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
-    
+
     def update_max_points(self, event):
         """Update max points when assessment is selected"""
         if self.assessment_var.get():
@@ -438,26 +438,26 @@ class GradeDialog:
                     self.max_points_var.set(str(result[0]))
             except (ValueError, IndexError, Exception):
                 pass
-    
+
     def save_grade(self):
         if not all([self.student_var.get(), self.assessment_var.get(), self.score_var.get()]):
             messagebox.showerror("Error", "Please fill in all required fields")
             return
-        
+
         try:
             score = float(self.score_var.get())
             max_points = float(self.max_points_var.get())
         except ValueError:
             messagebox.showerror("Error", "Score and max points must be numbers")
             return
-        
+
         if score < 0 or score > max_points:
             messagebox.showerror("Error", f"Score must be between 0 and {max_points}")
             return
-        
+
         student_id = self.student_var.get().split(' - ')[0]
         assessment_id = int(self.assessment_var.get().split(' - ')[0])
-        
+
         self.result = (
             student_id,
             assessment_id,

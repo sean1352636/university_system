@@ -8,12 +8,12 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 def create_gui_launcher(title, description, cli_instruction=""):
     """
     Factory function to create a standardized GUI launcher.
-    
+
     Args:
         title: Window title
-        description: Multi-line feature description  
+        description: Multi-line feature description
         cli_instruction: CLI access instruction
-    
+
     Returns:
         A GUI launcher function that can be called with root and auth parameters
     """
@@ -49,7 +49,7 @@ def create_gui_launcher(title, description, cli_instruction=""):
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open {title}: {str(e)}")
             print(f"❌ {title} error: {e}")
-    
+
     return launcher_function
 
 

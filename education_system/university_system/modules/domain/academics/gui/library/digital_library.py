@@ -197,7 +197,7 @@ def load_digital_resources(self):
 
             cursor = conn.cursor()
             cursor.execute('''
-            SELECT digital_id, title, author, file_type, access_level, 
+            SELECT digital_id, title, author, file_type, access_level,
                    download_count, added_date
             FROM digital_library
             ORDER BY title
@@ -209,7 +209,7 @@ def load_digital_resources(self):
             for resource in resources:
                 digital_id, title, author, file_type, access_level, downloads, added_date = resource
                 self.digital_tree.insert('', 'end', values=(
-                    digital_id, title[:30], author[:20], file_type, 
+                    digital_id, title[:30], author[:20], file_type,
                     access_level, downloads, added_date[:10]
                 ))
         else:
@@ -406,8 +406,8 @@ def add_digital_resource_database(self, file_path, title, author, category, desc
 
         cursor = conn.cursor()
         cursor.execute('''
-        INSERT INTO digital_library 
-        (title, author, file_path, file_type, file_size, category, 
+        INSERT INTO digital_library
+        (title, author, file_path, file_type, file_size, category,
          description, access_level, added_date)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (

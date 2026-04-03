@@ -4,6 +4,9 @@ Tests for Enhanced Reporting Module
 Tests all functionality in university_system/modules/shared/services/analytics/enhanced_reporting.py
 """
 
+import matplotlib
+matplotlib.use('Agg')
+
 import pytest
 import os
 import json
@@ -87,7 +90,7 @@ class TestCacheManager:
         )
 
         assert isinstance(key, str)
-        assert len(key) == 32  # MD5 hash length
+        assert len(key) == 64  # SHA-256 hash length
 
     def test_get_cache_key_same_inputs_same_key(self):
         """Test that same inputs produce same cache key"""
@@ -110,23 +113,20 @@ class TestCacheManager:
 
     def test_get_cached_report_expired(self):
         """Test getting cached report when cache is expired"""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-            json.dump({'data': 'test'}, f)
-            cache_file = f.name
+        with tempfile.TemporaryDirectory() as tmpdir:
+            cache_key = 'test_expired_key'
+            cache_file = os.path.join(tmpdir, f'{cache_key}.json')
+            with open(cache_file, 'w') as f:
+                json.dump({'data': 'test'}, f)
 
-        try:
             # Make file old
             old_time = datetime.now() - timedelta(hours=25)
             os.utime(cache_file, (old_time.timestamp(), old_time.timestamp()))
 
-            cache_key = Path(cache_file).stem
-            with patch.object(CONFIG, '__getitem__', return_value=cache_file.replace('.json', '')):
+            with patch.dict(CONFIG, {'cache_dir': tmpdir, 'cache_expiry_hours': 24}):
                 result = CacheManager.get_cached_report(cache_key)
                 # Cache should be expired and deleted
-                assert result is None or not os.path.exists(cache_file)
-        finally:
-            if os.path.exists(cache_file):
-                os.remove(cache_file)
+                assert result is None
 
     def test_cache_report(self):
         """Test caching a report"""
@@ -134,7 +134,7 @@ class TestCacheManager:
             cache_key = 'test_cache_key'
             report_data = {'data': 'test_report', 'timestamp': datetime.now().isoformat()}
 
-            with patch.object(CONFIG, '__getitem__', return_value=tmpdir):
+            with patch.dict(CONFIG, {'cache_dir': tmpdir, 'max_cache_size_mb': 500}):
                 CacheManager.cache_report(cache_key, report_data)
 
                 cache_file = os.path.join(tmpdir, f"{cache_key}.json")
@@ -152,7 +152,8 @@ class TestCacheManager:
                 with open(os.path.join(tmpdir, f'cache_{i}.json'), 'w') as f:
                     json.dump({'data': 'x' * 1000}, f)
 
-            with patch.object(CONFIG, '__getitem__', side_effect=lambda k: tmpdir if k == 'cache_dir' else 1):
+            # Set max_cache_size_mb very small so cleanup triggers removal
+            with patch.dict(CONFIG, {'cache_dir': tmpdir, 'max_cache_size_mb': 0}):
                 CacheManager.cleanup_cache()
                 # Should remove some files due to size limit
 
@@ -250,76 +251,78 @@ class TestPredictiveAnalytics:
     """Test PredictiveAnalytics class"""
 
     def test_init(self):
-        """Test PredictiveAnalytics initialization"""
-        with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
-            pa = PredictiveAnalytics()
-            assert hasattr(pa, 'conn')
+        """Test PredictiveAnalytics can be instantiated"""
+        pa = PredictiveAnalytics()
+        # PredictiveAnalytics uses static methods; verify it can be created
+        assert pa is not None
 
     def test_prepare_retention_data(self):
-        """Test preparing retention prediction data"""
+        """Test predict_dropout_risk returns error when no attendance data"""
         mock_conn = Mock()
         mock_cursor = Mock()
-        mock_cursor.fetchall.return_value = [
-            {'student_id': '1', 'gpa': 3.5, 'attendance_rate': 90, 'is_retained': 1},
-            {'student_id': '2', 'gpa': 2.0, 'attendance_rate': 60, 'is_retained': 0}
-        ]
-        mock_conn.execute.return_value = mock_cursor
+        mock_cursor.fetchone.return_value = None  # No attendance_records table
+        mock_conn.cursor.return_value = mock_cursor
 
-        pa = PredictiveAnalytics()
-        pa.conn = mock_conn
-
-        with patch('pandas.DataFrame.dropna', return_value=Mock(empty=False)):
-            result = pa.prepare_retention_data()
-            # Method should return data or None
-            assert result is not None or result is None
+        with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.predictive.get_reporting_db_connection', return_value=mock_conn):
+            result = PredictiveAnalytics.predict_dropout_risk()
+            # When no attendance data, should return error dict
+            assert isinstance(result, dict)
+            assert 'error' in result
 
     def test_detect_anomalies(self):
-        """Test anomaly detection"""
-        mock_conn = Mock()
-        pa = PredictiveAnalytics()
-        pa.conn = mock_conn
+        """Test anomaly detection with insufficient data"""
+        import pandas as pd
 
-        with patch.object(pa, 'prepare_retention_data', return_value=None):
-            anomalies = pa.detect_anomalies()
-            # When no data, should return empty or handle gracefully
-            assert isinstance(anomalies, (list, type(None)))
+        mock_conn = Mock()
+        with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.predictive.get_reporting_db_connection', return_value=mock_conn):
+            with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.predictive.pd.read_sql_query', return_value=pd.DataFrame()):
+                result = PredictiveAnalytics.detect_anomalies()
+                # When no data, should return error dict
+                assert isinstance(result, dict)
 
 
 class TestAdvancedVisualization:
     """Test AdvancedVisualization class"""
 
     def test_create_correlation_heatmap(self):
-        """Test creating correlation heatmap"""
+        """Test creating correlation matrix via create_correlation_matrix"""
+        mock_conn = Mock()
+        mock_cursor = Mock()
+        # Simulate attendance_records table exists
+        mock_cursor.fetchone.return_value = ('attendance_records',)
+        mock_conn.cursor.return_value = mock_cursor
+
         import pandas as pd
         import numpy as np
 
         df = pd.DataFrame({
-            'col1': np.random.rand(10),
-            'col2': np.random.rand(10),
-            'col3': np.random.rand(10)
+            'age': np.random.randint(18, 30, 10),
+            'module_count': np.random.randint(1, 5, 10),
+            'avg_grade': np.random.rand(10) * 100,
+            'attendance_records': np.random.randint(10, 50, 10),
+            'present_count': np.random.randint(5, 40, 10),
         })
 
-        viz = AdvancedVisualization()
-
-        with patch('matplotlib.pyplot.savefig'):
-            with patch('matplotlib.pyplot.close'):
-                result = viz.create_correlation_heatmap(df, 'test_output')
-                # Should create visualization without error
+        with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.visualization.pd.read_sql_query', return_value=df):
+            with patch('matplotlib.pyplot.savefig'):
+                with patch('matplotlib.pyplot.close'):
+                    result = AdvancedVisualization.create_correlation_matrix(mock_conn)
+                    # Should create visualization without error
 
     def test_create_trend_analysis(self):
-        """Test creating trend analysis visualization"""
+        """Test creating heatmap visualization"""
         import pandas as pd
 
         df = pd.DataFrame({
-            'date': pd.date_range('2024-01-01', periods=10),
-            'value': range(10)
+            'x': ['A', 'A', 'B', 'B'],
+            'y': ['C', 'D', 'C', 'D'],
+            'value': [1.0, 2.0, 3.0, 4.0]
         })
-
-        viz = AdvancedVisualization()
 
         with patch('matplotlib.pyplot.savefig'):
             with patch('matplotlib.pyplot.close'):
-                result = viz.create_trend_analysis(df, 'date', 'value', 'test_output')
+                with patch.dict(CONFIG, {'reports_dir': '/tmp'}):
+                    result = AdvancedVisualization.create_heatmap(df, 'Test Heatmap', 'x', 'y', 'value')
 
 
 class TestReportTemplate:
@@ -399,18 +402,24 @@ class TestUtilityFunctions:
 
         result = serialize_dataframe(df)
 
-        assert isinstance(result, dict)
-        assert 'columns' in result
-        assert 'data' in result
+        assert isinstance(result, list)
+        assert len(result) == 3
+        assert result[0]['col1'] == 1
+        assert result[0]['col2'] == 'a'
 
     def test_save_template(self):
         """Test saving a template"""
         template = ReportTemplate(name="Test", description="Test", sections=[])
 
-        with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
-            with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.save_template_dict'):
-                result = save_template(template)
-                # Should complete without error
+        mock_conn = Mock()
+        mock_cursor = Mock()
+        mock_cursor.fetchone.return_value = None  # No existing template
+        mock_conn.cursor.return_value = mock_cursor
+
+        with patch('education_system.university_system.infrastructure.database.db.get_connection', return_value=mock_conn):
+            result = save_template(template)
+            # Should complete without error and return the template
+            assert result is not None
 
     def test_load_templates(self):
         """Test loading templates"""
@@ -420,9 +429,14 @@ class TestUtilityFunctions:
 
     def test_delete_template_from_db(self):
         """Test deleting a template"""
-        with patch('education_system.university_system.modules.shared.services.analytics.enhanced_reporting.get_reporting_db_connection'):
+        mock_conn = Mock()
+        mock_cursor = Mock()
+        mock_cursor.rowcount = 1
+        mock_conn.cursor.return_value = mock_cursor
+
+        with patch('education_system.university_system.infrastructure.database.db.get_connection', return_value=mock_conn):
             result = delete_template_from_db("test_template")
-            # Should complete without error
+            assert result is True
 
     def test_cleanup_old_reports(self):
         """Test cleaning up old reports"""
@@ -433,11 +447,12 @@ class TestUtilityFunctions:
                 f.write('test')
 
             old_time = datetime.now() - timedelta(days=40)
-            os.utime(old_file, (old_time.timestamp(), old_time.timestamp()))
 
-            with patch.object(CONFIG, '__getitem__', return_value=tmpdir):
-                cleanup_old_reports(days_to_keep=30)
-                # Old file should be removed
+            with patch.dict(CONFIG, {'reports_dir': tmpdir}):
+                with patch('os.path.getctime', return_value=old_time.timestamp()):
+                    cleanup_old_reports(days_to_keep=30)
+                    # Old file should be removed
+                    assert not os.path.exists(old_file)
 
     def test_load_scheduled_reports(self):
         """Test loading scheduled reports"""

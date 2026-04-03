@@ -66,11 +66,11 @@ class TestPredictiveAnalyticsGUI:
 
     def test_init_database(self, root_window, mock_auth):
         """Test database initialization"""
-        with patch(f'{_PA_MOD}.init_analytics_dashboard_system_db') as mock_init:
+        with patch('education_system.university_system.infrastructure.database.schemas.analytics_bi_schemas.init_analytics_dashboard_system_db') as mock_init:
             with patch.object(PredictiveAnalyticsGUI, '_create_widgets'):
                 with patch(f'{_PA_MOD}.log_activity'):
                     gui = PredictiveAnalyticsGUI(root_window, mock_auth)
-                    # Database init should be called
+                    mock_init.assert_called_once()
 
     def test_create_widgets(self, root_window, mock_auth):
         """Test widget creation"""

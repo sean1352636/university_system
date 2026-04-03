@@ -74,26 +74,26 @@ def view_tables_gui(self):
         if not conn:
             messagebox.showerror("Error", "Database connection failed")
             return
-            
+
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT table_id, capacity, status, location, table_type 
-            FROM restaurant_tables 
+            SELECT table_id, capacity, status, location, table_type
+            FROM restaurant_tables
             ORDER BY table_id
         ''')
         tables = cursor.fetchall()
-        
+
         for item in self.tables_tree.get_children():
             self.tables_tree.delete(item)
-            
+
         for table in tables:
             self.tables_tree.insert('', 'end', values=(
                 table[0], table[1], table[2], table[3] or 'N/A', table[4] or 'Standard'
             ))
-            
+
         conn.close()
         messagebox.showinfo("Success", f"Loaded {len(tables)} tables")
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Error", f"Failed to load tables: {str(e)}")
 

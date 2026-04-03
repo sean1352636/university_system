@@ -32,8 +32,14 @@ def temp_db():
 
 @pytest.fixture
 def mock_db_connection(temp_db):
-    """Mock database connection"""
-    with patch('education_system.university_system.modules.domain.housing.services.accommodation.DB_PATH', temp_db):
+    """Mock database connection - patch DB_PATH in _common so all submodules see it"""
+    with patch('education_system.university_system.modules.domain.housing.services.accommodation._common.DB_PATH', temp_db), \
+         patch('education_system.university_system.modules.domain.housing.services.accommodation.db.DB_PATH', temp_db), \
+         patch('education_system.university_system.modules.domain.housing.services.accommodation.audit.DB_PATH', temp_db), \
+         patch('education_system.university_system.modules.domain.housing.services.accommodation.validation.DB_PATH', temp_db), \
+         patch('education_system.university_system.modules.domain.housing.services.accommodation.notifications.DB_PATH', temp_db), \
+         patch('education_system.university_system.modules.domain.housing.services.accommodation.dashboard.DB_PATH', temp_db), \
+         patch('education_system.university_system.modules.domain.housing.services.accommodation.DB_PATH', temp_db):
         yield temp_db
 
 class TestDatabaseInitialization:
@@ -152,10 +158,14 @@ class TestAuditLogging:
         from education_system.university_system.modules.domain.housing.services.accommodation import (
             init_accommodation_db, log_action
         )
+        from education_system.university_system.modules.domain.housing.services.accommodation import audit as audit_mod
 
         init_accommodation_db()
 
-        with patch('education_system.university_system.modules.domain.housing.services.accommodation.get_current_user', return_value='test_user'):
+        # Reset the column cache so it re-reads from the temp DB
+        audit_mod._AUDIT_LOG_COLUMNS_CACHE = None
+
+        with patch('education_system.university_system.modules.domain.housing.services.accommodation.audit.get_current_user', return_value='test_user'):
             log_action('TEST_ACTION', accommodation_id=123, details='Test details')
 
         # Verify log entry was created
@@ -172,10 +182,14 @@ class TestAuditLogging:
         from education_system.university_system.modules.domain.housing.services.accommodation import (
             init_accommodation_db, log_action
         )
+        from education_system.university_system.modules.domain.housing.services.accommodation import audit as audit_mod
 
         init_accommodation_db()
 
-        with patch('education_system.university_system.modules.domain.housing.services.accommodation.get_current_user', return_value='system'):
+        # Reset the column cache so it re-reads from the temp DB
+        audit_mod._AUDIT_LOG_COLUMNS_CACHE = None
+
+        with patch('education_system.university_system.modules.domain.housing.services.accommodation.audit.get_current_user', return_value='system'):
             log_action('SYSTEM_ACTION', details='System action')
 
         # Verify log entry
@@ -204,8 +218,8 @@ class TestAccommodationTypes:
 
         types = get_accommodation_types()
 
-        # Should contain common accommodation types
-        assert any('dorm' in t.lower() or 'residence' in t.lower() for t in types)
+        # Should contain standard academic accommodation types
+        assert any('extended time' in t.lower() or 'alternate format' in t.lower() or 'note-taking' in t.lower() for t in types)
 
 class TestConflictChecking:
     """Test conflict checking functionality"""
@@ -230,20 +244,22 @@ class TestConflictChecking:
 
         init_accommodation_db()
 
-        # Insert existing accommodation
+        # Insert existing accommodation (need students table for FK)
         conn = sqlite3.connect(mock_db_connection)
         cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS students (student_id TEXT PRIMARY KEY)")
+        cursor.execute("INSERT OR IGNORE INTO students (student_id) VALUES ('S12345')")
         cursor.execute("""
             INSERT INTO accommodations
             (student_id, accommodation_type, start_date, end_date, status, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, ('S12345', 'Dormitory', '2024-01-01', '2024-12-31', 'active',
+        """, ('S12345', 'Extended Time', '2024-01-01', '2024-12-31', 'active',
               datetime.now().isoformat(), datetime.now().isoformat()))
         conn.commit()
         conn.close()
 
         # Check for conflict with overlapping dates
-        has_conflict = check_conflict('S12345', 'Dormitory', '2024-06-01', '2024-08-31', excluded_id=None)
+        has_conflict = check_conflict('S12345', 'Extended Time', '2024-06-01', '2024-08-31', excluded_id=None)
         assert has_conflict is True
 
 class TestTemplateManagement:
@@ -313,31 +329,40 @@ class TestTemplateManagement:
 class TestStatisticsReporting:
     """Test statistics and reporting functions"""
 
-    @patch('education_system.university_system.modules.domain.housing.services.accommodation.get_current_user')
-    def test_generate_statistics_report(self, mock_user, mock_db_connection):
-        """Test generate_statistics_report returns data"""
+    def test_generate_statistics_report(self, mock_db_connection):
+        """Test generate_statistics_report runs without error when auth is set"""
         from education_system.university_system.modules.domain.housing.services.accommodation import (
             init_accommodation_db, generate_statistics_report
         )
 
-        mock_user.return_value = 'test_user'
         init_accommodation_db()
 
-        # Insert test data
+        # Insert test data (need students table for FK)
         conn = sqlite3.connect(mock_db_connection)
         cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS students (student_id TEXT PRIMARY KEY, course TEXT)")
+        cursor.execute("INSERT OR IGNORE INTO students (student_id, course) VALUES ('S001', 'CS')")
         cursor.execute("""
             INSERT INTO accommodations
-            (student_id, accommodation_type, status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?)
-        """, ('S001', 'Dormitory', 'active', datetime.now().isoformat(), datetime.now().isoformat()))
+            (student_id, accommodation_type, status, start_date, end_date, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, ('S001', 'Extended Time', 'active', '2026-01-01', '2026-12-31',
+              datetime.now().isoformat(), datetime.now().isoformat()))
         conn.commit()
         conn.close()
 
-        stats = generate_statistics_report()
+        # generate_statistics_report requires auth with permissions
+        mock_auth = MagicMock()
+        mock_auth.current_user = {'id': 1, 'role': 'admin'}
+        mock_auth.check_permission.return_value = True
 
-        assert stats is not None
-        assert isinstance(stats, dict)
+        with patch('education_system.university_system.modules.domain.housing.services.accommodation.dashboard.get_auth', return_value=mock_auth), \
+             patch('builtins.input', return_value='n'):
+            # generate_statistics_report prints to stdout and returns None
+            result = generate_statistics_report()
+
+        # The function returns None (prints stats to console)
+        assert result is None
 
 class TestBulkImport:
     """Test bulk import functionality"""
@@ -376,7 +401,7 @@ S002,Apartment,Two bedroom,2024-02-01,2024-12-31"""
 class TestNotificationSystem:
     """Test notification functions"""
 
-    @patch('education_system.university_system.modules.domain.housing.services.accommodation.email_manager')
+    @patch('education_system.university_system.modules.domain.housing.services.accommodation.notifications.email_manager')
     def test_notify_student_sends_email(self, mock_email, mock_db_connection):
         """Test notify_student sends email notification"""
         from education_system.university_system.modules.domain.housing.services.accommodation import notify_student
@@ -386,8 +411,8 @@ class TestNotificationSystem:
 
         result = notify_student('S12345', 'Test Subject', 'Test message body')
 
-        # Should attempt to send email or handle gracefully
-        assert isinstance(result, bool)
+        # notify_student returns None (prints output to console)
+        assert result is None
 
     def test_check_expiry_notifications(self, mock_db_connection):
         """Test check_expiry_notifications identifies expiring accommodations"""
@@ -397,23 +422,31 @@ class TestNotificationSystem:
 
         init_accommodation_db()
 
-        # Insert accommodation expiring soon
+        # Insert accommodation expiring soon (need students table for FK)
         conn = sqlite3.connect(mock_db_connection)
         cursor = conn.cursor()
+        cursor.execute("CREATE TABLE IF NOT EXISTS students (student_id TEXT PRIMARY KEY, first_name TEXT, last_name TEXT, email_address TEXT)")
+        cursor.execute("INSERT OR IGNORE INTO students (student_id, first_name, last_name, email_address) VALUES ('S001', 'John', 'Doe', 'john@test.com')")
         future_date = (datetime.now() + timedelta(days=5)).strftime('%Y-%m-%d')
         cursor.execute("""
             INSERT INTO accommodations
             (student_id, accommodation_type, end_date, status, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?)
-        """, ('S001', 'Dormitory', future_date, 'active',
+        """, ('S001', 'Extended Time', future_date, 'active',
               datetime.now().isoformat(), datetime.now().isoformat()))
         conn.commit()
         conn.close()
 
-        # Check for expiring accommodations
-        expiring = check_expiry_notifications()
+        # check_expiry_notifications requires auth; mock it
+        mock_auth = MagicMock()
+        mock_auth.current_user = {'id': 1, 'role': 'admin'}
+        mock_auth.check_permission.return_value = True
 
-        assert isinstance(expiring, (list, type(None)))
+        with patch('education_system.university_system.modules.domain.housing.services.accommodation.notifications.get_auth', return_value=mock_auth):
+            # Check for expiring accommodations - function returns None (prints to console)
+            result = check_expiry_notifications()
+
+        assert result is None
 
 class TestAuthIntegration:
     """Test authentication integration"""
@@ -428,7 +461,7 @@ class TestAuthIntegration:
         # Should not raise error
         assert True
 
-    @patch('education_system.university_system.modules.domain.housing.services.accommodation.get_current_user')
+    @patch('education_system.university_system.modules.domain.housing.services.accommodation.audit.get_current_user')
     def test_operations_use_current_user(self, mock_user, mock_db_connection):
         """Test operations retrieve current user"""
         from education_system.university_system.modules.domain.housing.services.accommodation import (

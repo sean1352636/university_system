@@ -71,7 +71,7 @@ class TestApplyGradingCurve:
         apply_grading_curve()
 
         # Verify curve was applied
-        mock_cursor_with_grades.connection.commit.assert_called_once()
+        conn.commit.assert_called_once()
 
     @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.get_connection')
     @patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.select_assessment')
@@ -263,7 +263,7 @@ class TestAnalyzeDistributionByCourse:
             ('Data Science', 'B', 12),
         ]
 
-        with patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.letter_to_gpa'):
+        with patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.letter_to_gpa', return_value=4.0):
             analyze_distribution_by_course(cursor)
 
         # Verify output was printed
@@ -293,7 +293,7 @@ class TestAnalyzeDistributionByModuleType:
             ('Elective', 'B', 25),
         ]
 
-        with patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.letter_to_gpa'):
+        with patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.letter_to_gpa', return_value=4.0):
             analyze_distribution_by_module_type(cursor)
 
         assert mock_print.call_count > 0
@@ -322,7 +322,7 @@ class TestAnalyzeOverallDistribution:
             [('A', 100), ('B', 150), ('C', 50)],  # Assessment grades
         ]
 
-        with patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.letter_to_gpa'):
+        with patch('education_system.university_system.modules.domain.academics.grading.curve_analysis.letter_to_gpa', return_value=4.0):
             analyze_overall_distribution(cursor)
 
         # Should print both module and assessment distributions

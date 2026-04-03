@@ -215,7 +215,7 @@ def lookup_checkout_book(self):
             # Try to find book by ID or barcode
             cursor.execute('''
             SELECT book_id, title, author, status, location
-            FROM books 
+            FROM books
             WHERE book_id = ? OR barcode = ?
             ''', (book_identifier, book_identifier))
 
@@ -355,7 +355,7 @@ def checkout_book_database(self, book_id, user_id):
 
         # Create loan record
         cursor.execute('''
-        INSERT INTO book_loans 
+        INSERT INTO book_loans
         (book_id, user_id, checkout_date, due_date, status, checkout_method, staff_id)
         VALUES (?, ?, ?, ?, 'active', 'gui', ?)
         ''', (
@@ -695,7 +695,7 @@ def return_book_database(self):
 
         # Update book status
         new_status = 'available' if condition == 'Good' else 'damaged'
-        cursor.execute('UPDATE books SET status = ? WHERE book_id = ?', 
+        cursor.execute('UPDATE books SET status = ? WHERE book_id = ?',
                       (new_status, self.selected_return_book_id))
 
         # Add condition notes to book if damaged

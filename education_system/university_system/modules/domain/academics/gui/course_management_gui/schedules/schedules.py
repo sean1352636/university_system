@@ -1309,41 +1309,41 @@ class UpdateScheduleDialog:
         self.parent = parent
         self.auth = auth
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Update Course Schedule")
         self.dialog.geometry("600x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.dialog.focus_set()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         # Show existing schedules
         self.schedule_tree = ttk.Treeview(main_frame, columns=("ID", "Code", "Name", "Semester", "Year", "Time"), show="headings")
         for col in ["ID", "Code", "Name", "Semester", "Year", "Time"]:
             self.schedule_tree.heading(col, text=col)
         self.schedule_tree.pack(fill=tk.BOTH, expand=True, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Update Selected", command=self.update_schedule).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Refresh", command=self.load_schedules).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-        
+
         self.load_schedules()
-    
+
     def load_schedules(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             cursor.execute("""
             SELECT cs.id, c.course_code, c.course_name, cs.semester, cs.year,
                    COALESCE(cs.start_time || '-' || cs.end_time, 'TBA') as time_slot
@@ -1351,28 +1351,28 @@ class UpdateScheduleDialog:
             JOIN courses c ON cs.course_id = c.id
             ORDER BY cs.year DESC, cs.semester, c.course_code
             """)
-            
+
             schedules = cursor.fetchall()
-            
+
             for item in self.schedule_tree.get_children():
                 self.schedule_tree.delete(item)
-            
+
             for schedule in schedules:
                 self.schedule_tree.insert("", tk.END, values=schedule)
-            
+
             conn.close()
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load schedules: {e}")
-    
+
     def update_schedule(self):
         selection = self.schedule_tree.selection()
         if not selection:
             messagebox.showwarning(_("course_management.messages.no_selection"), "Please select a schedule to update.")
             return
-        
+
         schedule_data = self.schedule_tree.item(selection[0])['values']
         schedule_id = schedule_data[0]
-        
+
         # Open update form dialog
         UpdateScheduleFormDialog(self.dialog, schedule_id, self.auth)
         self.load_schedules()
@@ -1383,78 +1383,78 @@ class UpdateScheduleFormDialog:
         self.parent = parent
         self.schedule_id = schedule_id
         self.auth = auth
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Update Schedule Details")
         self.dialog.geometry("500x600")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.load_current_data()
         self.create_widgets()
         self.dialog.focus_set()
-    
+
     def load_current_data(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             cursor.execute("SELECT * FROM course_schedule WHERE id = ?", (self.schedule_id,))
             self.current_data = cursor.fetchone()
-            
+
             conn.close()
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load schedule: {e}")
             self.dialog.destroy()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         # Time fields
         ttk.Label(main_frame, text="Start Time (HH:MM):").pack(anchor=tk.W)
         self.start_time_var = tk.StringVar(value=self.current_data[4] or "")
         ttk.Entry(main_frame, textvariable=self.start_time_var, width=30).pack(anchor=tk.W, pady=2)
-        
+
         ttk.Label(main_frame, text="End Time (HH:MM):").pack(anchor=tk.W, pady=(10,0))
         self.end_time_var = tk.StringVar(value=self.current_data[5] or "")
         ttk.Entry(main_frame, textvariable=self.end_time_var, width=30).pack(anchor=tk.W, pady=2)
-        
+
         ttk.Label(main_frame, text="Days of Week:").pack(anchor=tk.W, pady=(10,0))
         self.days_var = tk.StringVar(value=self.current_data[6] or "")
         ttk.Entry(main_frame, textvariable=self.days_var, width=40).pack(anchor=tk.W, pady=2)
-        
+
         ttk.Label(main_frame, text="Classroom:").pack(anchor=tk.W, pady=(10,0))
         self.classroom_var = tk.StringVar(value=self.current_data[7] or "")
         ttk.Entry(main_frame, textvariable=self.classroom_var, width=30).pack(anchor=tk.W, pady=2)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=20)
-        
+
         ttk.Button(button_frame, text="Update", command=self.update_schedule).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def update_schedule(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
-            
+
             cursor.execute("""
-            UPDATE course_schedule 
+            UPDATE course_schedule
             SET start_time = ?, end_time = ?, days_of_week = ?, classroom = ?
             WHERE id = ?
-            """, (self.start_time_var.get() or None, 
+            """, (self.start_time_var.get() or None,
                   self.end_time_var.get() or None,
                   self.days_var.get() or None,
                   self.classroom_var.get() or None,
                   self.schedule_id))
-            
+
             conn.commit()
             conn.close()
-            
+
             messagebox.showinfo(_("common.success"), "Schedule updated successfully!")
             self.dialog.destroy()
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to update schedule: {e}")

@@ -67,10 +67,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -122,7 +122,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -138,7 +138,7 @@ def init_basic_database():
             status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -152,7 +152,7 @@ def init_basic_database():
             year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -166,7 +166,7 @@ def init_basic_database():
             UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -186,11 +186,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -200,7 +200,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -215,7 +215,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -228,7 +228,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -247,7 +247,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -346,103 +346,103 @@ class StudentDialog:
         self.dialog.title(title)
         self.dialog.geometry("500x600")
         safe_grab_set(self.dialog)
-        
+
         self.setup_dialog(data)
-        
+
     def setup_dialog(self, data):
         # Title
-        ttk.Label(self.dialog, text=self.dialog.title(), 
+        ttk.Label(self.dialog, text=self.dialog.title(),
                  font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         # Form frame
         form_frame = ttk.Frame(self.dialog)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
+
         # Student ID
         ttk.Label(form_frame, text="Student ID:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.student_id_var = tk.StringVar(value=data[0] if data else "")
         ttk.Entry(form_frame, textvariable=self.student_id_var, width=30).grid(row=0, column=1, pady=5)
-        
+
         # First Name
         ttk.Label(form_frame, text="First Name:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.first_name_var = tk.StringVar(value=data[1] if data else "")
         ttk.Entry(form_frame, textvariable=self.first_name_var, width=30).grid(row=1, column=1, pady=5)
-        
+
         # Middle Name
         ttk.Label(form_frame, text="Middle Name:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.middle_name_var = tk.StringVar(value=data[2] if data else "")
         ttk.Entry(form_frame, textvariable=self.middle_name_var, width=30).grid(row=2, column=1, pady=5)
-        
+
         # Last Name
         ttk.Label(form_frame, text="Last Name:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.last_name_var = tk.StringVar(value=data[3] if data else "")
         ttk.Entry(form_frame, textvariable=self.last_name_var, width=30).grid(row=3, column=1, pady=5)
-        
+
         # Course
         ttk.Label(form_frame, text="Course:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.course_var = tk.StringVar(value=data[4] if data else "")
         course_combo = ttk.Combobox(form_frame, textvariable=self.course_var, width=27)
         course_combo['values'] = ("Computer Science", "Engineering", "Mathematics", "Physics", "Chemistry", "Biology")
         course_combo.grid(row=4, column=1, pady=5)
-        
+
         # Email
         ttk.Label(form_frame, text="Email:").grid(row=5, column=0, sticky=tk.W, pady=5)
         self.email_var = tk.StringVar(value=data[5] if data else "")
         ttk.Entry(form_frame, textvariable=self.email_var, width=30).grid(row=5, column=1, pady=5)
-        
+
         # Phone
         ttk.Label(form_frame, text="Phone:").grid(row=6, column=0, sticky=tk.W, pady=5)
         self.phone_var = tk.StringVar(value=data[6] if data else "")
         ttk.Entry(form_frame, textvariable=self.phone_var, width=30).grid(row=6, column=1, pady=5)
-        
+
         # Address
         ttk.Label(form_frame, text="Address:").grid(row=7, column=0, sticky=tk.W, pady=5)
         self.address_var = tk.StringVar(value=data[7] if data else "")
         ttk.Entry(form_frame, textvariable=self.address_var, width=30).grid(row=7, column=1, pady=5)
-        
+
         # Enrollment Date
         ttk.Label(form_frame, text="Enrollment Date:").grid(row=8, column=0, sticky=tk.W, pady=5)
         self.enrollment_date_var = tk.StringVar(value=data[8] if data else datetime.now().strftime('%Y-%m-%d'))
         ttk.Entry(form_frame, textvariable=self.enrollment_date_var, width=30).grid(row=8, column=1, pady=5)
-        
+
         # Status
         ttk.Label(form_frame, text="Status:").grid(row=9, column=0, sticky=tk.W, pady=5)
         self.status_var = tk.StringVar(value=data[9] if data else "Active")
         status_combo = ttk.Combobox(form_frame, textvariable=self.status_var, width=27)
         status_combo['values'] = ("Active", "Inactive", "Graduated", "Withdrawn")
         status_combo.grid(row=9, column=1, pady=5)
-        
+
         # DOB
         ttk.Label(form_frame, text="Date of Birth:").grid(row=10, column=0, sticky=tk.W, pady=5)
         self.dob_var = tk.StringVar(value=data[10] if data else "")
         ttk.Entry(form_frame, textvariable=self.dob_var, width=30).grid(row=10, column=1, pady=5)
-        
+
         # Gender
         ttk.Label(form_frame, text="Gender:").grid(row=11, column=0, sticky=tk.W, pady=5)
         self.gender_var = tk.StringVar(value=data[11] if data else "")
         gender_combo = ttk.Combobox(form_frame, textvariable=self.gender_var, width=27)
         gender_combo['values'] = ("Male", "Female", "Other", "Prefer not to say")
         gender_combo.grid(row=11, column=1, pady=5)
-        
+
         # Nationality
         ttk.Label(form_frame, text="Nationality:").grid(row=12, column=0, sticky=tk.W, pady=5)
         self.nationality_var = tk.StringVar(value=data[12] if data else "")
         ttk.Entry(form_frame, textvariable=self.nationality_var, width=30).grid(row=12, column=1, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=20)
-        
+
         ttk.Button(button_frame, text="Save", command=self.save_student).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
-    
+
     def save_student(self):
         # Validate required fields
-        if not all([self.student_id_var.get(), self.first_name_var.get(), 
+        if not all([self.student_id_var.get(), self.first_name_var.get(),
                    self.last_name_var.get(), self.course_var.get()]):
             messagebox.showerror("Error", "Please fill in all required fields")
             return
-        
+
         self.result = (
             self.student_id_var.get().strip(),
             self.first_name_var.get().strip(),

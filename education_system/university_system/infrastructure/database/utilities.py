@@ -8,14 +8,12 @@ combining functionality from various database.py files across the system.
 from __future__ import annotations
 
 # Core database functionality
+from education_system.university_system.infrastructure.database import db as _db_module
 from education_system.university_system.infrastructure.database.db import (
     sqlite3,
     DatabaseManager,
     get_connection,
     get_db_connection,
-    DEFAULT_DB_PATH,
-    DB_DIR,
-    EXPORTS_DIR,
 )
 
 # Email database utilities
@@ -93,3 +91,9 @@ __all__ = [
     'init_email_system_db',
     'initialize_all_schemas',
 ]
+
+
+def __getattr__(name):
+    if name in {'DEFAULT_DB_PATH', 'DB_DIR', 'EXPORTS_DIR'}:
+        return getattr(_db_module, name)
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

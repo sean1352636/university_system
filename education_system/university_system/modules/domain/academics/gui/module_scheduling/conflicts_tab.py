@@ -54,7 +54,7 @@ except ImportError:
     TIME_SLOTS = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00']
     SESSION_TYPES = ['Lecture', 'Lab', 'Tutorial', 'Seminar', 'Workshop']
     ROOM_TYPES = ['Lecture Hall', 'Lab', 'Tutorial Room', 'Seminar Room', 'Workshop Room', 'Computer Lab', 'Other']
-    
+
     # Import the ModuleScheduler class from the document
     try:
         from education_system.university_system.modules.domain.academics.services.module_scheduling import (ModuleScheduler, DAYS_OF_WEEK, TIME_SLOTS, SESSION_TYPES, ROOM_TYPES, display_enhanced_scheduling_menu)
@@ -67,36 +67,36 @@ def create_conflicts_tab(self):
     """Create the conflicts management tab"""
     conflicts_frame = ttk.Frame(self.notebook)
     self.notebook.add(conflicts_frame, text=_t("scheduling.tabs.conflicts"))
-    
+
     # Controls frame
     controls_frame = ttk.Frame(conflicts_frame)
     controls_frame.pack(fill=tk.X, padx=10, pady=5)
-    
+
     ttk.Button(controls_frame, text=_t("scheduling.detect_all_conflicts"),
               command=self.detect_all_conflicts).pack(side=tk.LEFT, padx=5)
     ttk.Button(controls_frame, text=_t("scheduling.resolve_selected"),
               command=self.resolve_selected_conflict).pack(side=tk.LEFT, padx=5)
     ttk.Button(controls_frame, text=_t("common.refresh"),
               command=self.refresh_conflicts).pack(side=tk.LEFT, padx=5)
-    
+
     # Conflicts treeview
     tree_frame = ttk.Frame(conflicts_frame)
     tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-    
+
     columns = ("ID", "Type", "Description", "Status", "Detected Date")
     self.conflicts_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", style='Data.Treeview')
-    
+
     for col in columns:
         self.conflicts_tree.heading(col, text=col)
         if col == "Description":
             self.conflicts_tree.column(col, width=400)
         else:
             self.conflicts_tree.column(col, width=120)
-    
+
     # Scrollbars
     v_scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.conflicts_tree.yview)
     self.conflicts_tree.configure(yscrollcommand=v_scrollbar.set)
-    
+
     self.conflicts_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
@@ -108,17 +108,17 @@ def refresh_conflicts(self):
         # Clear existing items
         for item in self.conflicts_tree.get_children():
             self.conflicts_tree.delete(item)
-        
+
         conflicts = self.scheduler._get_all_conflicts()
-        
+
         for conflict in conflicts:
             status = "Resolved" if conflict['resolved'] else "Active"
             detected_date = conflict['detected_date'][:19] if conflict['detected_date'] else "Unknown"
-            
+
             self.conflicts_tree.insert("", tk.END, values=(
                 conflict['id'], conflict['type'], conflict['description'], status, detected_date
             ))
-            
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to refresh conflicts: {str(e)}", parent=self.root)
 
@@ -174,15 +174,15 @@ def resolve_selected_conflict(self):
     if not selected:
         messagebox.showwarning("Warning", "Please select a conflict to resolve.", parent=self.root)
         return
-    
+
     conflict_data = self.conflicts_tree.item(selected[0])['values']
     conflict_id = conflict_data[0]
-    
+
     # Show resolution dialog
-    resolution_notes = tk.simpledialog.askstring("Resolve Conflict", 
-                                                "Enter resolution notes:", 
+    resolution_notes = tk.simpledialog.askstring("Resolve Conflict",
+                                                "Enter resolution notes:",
                                                 parent=self.root)
-    
+
     if resolution_notes:
         try:
             self.scheduler.resolve_conflict(conflict_id, resolution_notes)
@@ -190,7 +190,7 @@ def resolve_selected_conflict(self):
             self.refresh_dashboard()
             self.update_activity_log(f"Resolved conflict {conflict_id}")
             messagebox.showinfo("Success", "Conflict resolved successfully.", parent=self.root)
-            
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to resolve conflict: {str(e)}", parent=self.root)
 

@@ -67,10 +67,10 @@ except ImportError:
         """Fallback database connection function"""
         base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
         db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-        
+
         # Ensure directory exists
         db_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
 # Global variables for grade systems
@@ -122,7 +122,7 @@ def init_basic_database():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create students table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS students (
@@ -138,7 +138,7 @@ def init_basic_database():
             status TEXT DEFAULT 'Active'
         )
         ''')
-        
+
         # Create modules table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS modules (
@@ -152,7 +152,7 @@ def init_basic_database():
             year INTEGER
         )
         ''')
-        
+
         # Create student_modules table (enrollment)
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -166,7 +166,7 @@ def init_basic_database():
             UNIQUE(student_id, module_code)
         )
         ''')
-        
+
         # Create assessments table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessments (
@@ -186,11 +186,11 @@ def init_basic_database():
 
         # Ensure rubric column exists for legacy databases.
         ensure_column_exists(cursor, 'assessments', 'rubric', 'TEXT')
-        
+
         conn.commit()
         conn.close()
         return True
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Database Error", f"Database error: {e}")
         return False
@@ -200,7 +200,7 @@ def init_enhanced_grades_db():
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Create base grade tables if they don't exist
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grades (
@@ -215,7 +215,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS module_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -228,7 +228,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (module_code) REFERENCES modules (module_code)
         )
         ''')
-        
+
         # Enhanced tables for statistics and analytics
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS grade_statistics (
@@ -247,7 +247,7 @@ def init_enhanced_grades_db():
             FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
         )
         ''')
-        
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS normalized_grades (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -347,38 +347,38 @@ class AssessmentDialog:
         self.dialog.title(title)
         self.dialog.geometry("500x450")
         safe_grab_set(self.dialog)
-        
+
         self.setup_dialog(data, copy_data)
-        
+
     def setup_dialog(self, data, copy_data):
         # Title
-        ttk.Label(self.dialog, text=self.dialog.title(), 
+        ttk.Label(self.dialog, text=self.dialog.title(),
                  font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         # Form frame
         form_frame = ttk.Frame(self.dialog)
         form_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-        
+
         # Use copy_data if provided, otherwise use data
         source_data = copy_data if copy_data else data
-        
+
         # Assessment Name
         ttk.Label(form_frame, text="Assessment Name:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.name_var = tk.StringVar(value=source_data[0] if source_data else "")
         ttk.Entry(form_frame, textvariable=self.name_var, width=30).grid(row=0, column=1, pady=5)
-        
+
         # Assessment Type
         ttk.Label(form_frame, text="Assessment Type:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.type_var = tk.StringVar(value=source_data[1] if source_data else "")
         type_combo = ttk.Combobox(form_frame, textvariable=self.type_var, width=27)
         type_combo['values'] = ("Assignment", "Exam", "Quiz", "Project", "Lab", "Presentation", "Essay")
         type_combo.grid(row=1, column=1, pady=5)
-        
+
         # Module Code
         ttk.Label(form_frame, text="Module Code:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.module_var = tk.StringVar(value=source_data[2] if source_data else "")
         module_combo = ttk.Combobox(form_frame, textvariable=self.module_var, width=27)
-        
+
         # Load modules
         try:
             self.cursor.execute("SELECT module_code FROM modules ORDER BY module_code")
@@ -386,58 +386,58 @@ class AssessmentDialog:
             module_combo['values'] = modules
         except Exception:
             pass
-        
+
         module_combo.grid(row=2, column=1, pady=5)
-        
+
         # Max Points
         ttk.Label(form_frame, text="Max Points:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.max_points_var = tk.StringVar(value=str(source_data[3]) if source_data else "100")
         ttk.Entry(form_frame, textvariable=self.max_points_var, width=30).grid(row=3, column=1, pady=5)
-        
+
         # Weight
         ttk.Label(form_frame, text="Weight (%):").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.weight_var = tk.StringVar(value=str(source_data[4]) if source_data else "10")
         ttk.Entry(form_frame, textvariable=self.weight_var, width=30).grid(row=4, column=1, pady=5)
-        
+
         # Due Date
         ttk.Label(form_frame, text="Due Date:").grid(row=5, column=0, sticky=tk.W, pady=5)
         self.due_date_var = tk.StringVar(value=source_data[5] if source_data else "")
         ttk.Entry(form_frame, textvariable=self.due_date_var, width=30).grid(row=5, column=1, pady=5)
-        
+
         # Description
         ttk.Label(form_frame, text="Description:").grid(row=6, column=0, sticky=tk.NW, pady=5)
         self.description_text = tk.Text(form_frame, height=4, width=30)
         self.description_text.grid(row=6, column=1, pady=5)
         if source_data and len(source_data) > 6:
             self.description_text.insert(1.0, source_data[6])
-        
+
         # Rubric
         ttk.Label(form_frame, text="Rubric:").grid(row=7, column=0, sticky=tk.NW, pady=5)
         self.rubric_text = tk.Text(form_frame, height=3, width=30)
         self.rubric_text.grid(row=7, column=1, pady=5)
         if source_data and len(source_data) > 7:
             self.rubric_text.insert(1.0, source_data[7])
-        
+
         # Buttons
         button_frame = ttk.Frame(self.dialog)
         button_frame.pack(pady=20)
-        
+
         ttk.Button(button_frame, text="Save", command=self.save_assessment).pack(side=tk.LEFT, padx=10)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=10)
-    
+
     def save_assessment(self):
-        if not all([self.name_var.get(), self.type_var.get(), 
+        if not all([self.name_var.get(), self.type_var.get(),
                    self.module_var.get(), self.max_points_var.get(), self.weight_var.get()]):
             messagebox.showerror("Error", "Please fill in all required fields")
             return
-        
+
         try:
             max_points = float(self.max_points_var.get())
             weight = float(self.weight_var.get())
         except ValueError:
             messagebox.showerror("Error", "Max points and weight must be numbers")
             return
-        
+
         self.result = (
             self.name_var.get().strip(),
             self.type_var.get().strip(),

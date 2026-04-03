@@ -312,7 +312,7 @@ def restore_system_gui(self):
 
     if backup_dir:
         # Confirm restore operation
-        result = messagebox.askyesno("Confirm Restore", 
+        result = messagebox.askyesno("Confirm Restore",
                                    "This will overwrite current data. Are you sure you want to restore from backup?")
 
         if result:
@@ -322,7 +322,7 @@ def restore_system_gui(self):
                     if success:
                         messagebox.showinfo(_("common.success"), "System restored successfully!")
                         # Restart application to reload data
-                        restart = messagebox.askyesno("Restart Required", 
+                        restart = messagebox.askyesno("Restart Required",
                                                     "Application needs to restart to complete restore. Restart now?")
                         if restart:
                             self.exit_application(restart=True)
@@ -926,7 +926,7 @@ def generate_library_statistics_export(self):
 
         messagebox.showinfo(_("common.success"), f"Statistics exported to: {export_filename}")
 
-        log_audit_event(get_current_user_id(), 
+        log_audit_event(get_current_user_id(),
                        f"Exported library statistics to {export_filename}",
                        "system")
 

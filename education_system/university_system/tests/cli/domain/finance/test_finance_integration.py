@@ -47,26 +47,29 @@ def temp_db():
     )
     ''')
 
-    # Create refunds table
+    # Create unified_refunds table (matches _ensure_finance_tables_exist schema)
     cursor.execute('''
-    CREATE TABLE refunds (
+    CREATE TABLE unified_refunds (
         refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id TEXT,
-        original_payment_id INTEGER,
-        refund_amount REAL,
-        currency TEXT,
-        refund_reason TEXT,
+        refund_reference TEXT,
+        source_type TEXT NOT NULL DEFAULT 'general',
+        department TEXT,
+        reference_id TEXT,
+        reference_type TEXT,
+        amount DECIMAL(10,2) NOT NULL,
         refund_type TEXT,
         refund_method TEXT,
-        status TEXT,
-        requested_by TEXT,
+        reason TEXT,
+        status TEXT DEFAULT 'pending',
+        refund_date TEXT,
         request_date TEXT,
-        approved_by TEXT,
         approval_date TEXT,
+        requested_by TEXT,
+        approved_by TEXT,
         processed_by TEXT,
-        processed_date TEXT,
         notes TEXT,
-        created_at TEXT
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     ''')
 
@@ -123,7 +126,7 @@ class TestRecordPaymentToFinance:
         """Test recording a basic payment"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S001',
                 amount=250.00,
@@ -150,7 +153,7 @@ class TestRecordPaymentToFinance:
         """Test recording payment with all optional parameters"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S002',
                 amount=500.50,
@@ -184,7 +187,7 @@ class TestRecordPaymentToFinance:
         """Test that transaction_id is properly formatted"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S003',
                 amount=100.00,
@@ -205,7 +208,7 @@ class TestRecordPaymentToFinance:
         """Test that notes are properly formatted with source and ref"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S004',
                 amount=75.00,
@@ -230,7 +233,7 @@ class TestRecordPaymentToFinance:
         from education_system.university_system.modules.shared.utils import finance_integration
 
         # Use non-existent database path
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', '/nonexistent/db.db'):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', '/nonexistent/db.db'):
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S005',
                 amount=100.00,
@@ -245,7 +248,7 @@ class TestRecordPaymentToFinance:
         """Test that amount is rounded to 2 decimal places"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S006',
                 amount=123.456789,
@@ -275,7 +278,7 @@ class TestRecordRefundToFinance:
         """Test recording a basic refund"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             refund_id = finance_integration.record_refund_to_finance(
                 student_id='S001',
                 refund_amount=50.00,
@@ -292,19 +295,19 @@ class TestRecordRefundToFinance:
             # Verify refund was recorded
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
-            cursor.execute('SELECT * FROM refunds WHERE refund_id = ?', (refund_id,))
+            cursor.execute('SELECT * FROM unified_refunds WHERE refund_id = ?', (refund_id,))
             refund = cursor.fetchone()
             conn.close()
 
             assert refund is not None
             assert refund[1] == 'S001'  # student_id
-            assert refund[3] == 50.00  # refund_amount
+            assert refund[7] == 50.00  # amount
 
     def test_record_refund_with_all_parameters(self, temp_db):
         """Test recording refund with all parameters"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             refund_id = finance_integration.record_refund_to_finance(
                 student_id='S002',
                 refund_amount=100.00,
@@ -324,20 +327,20 @@ class TestRecordRefundToFinance:
             # Verify all fields
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
-            cursor.execute('SELECT * FROM refunds WHERE refund_id = ?', (refund_id,))
+            cursor.execute('SELECT * FROM unified_refunds WHERE refund_id = ?', (refund_id,))
             refund = cursor.fetchone()
             conn.close()
 
             assert refund[1] == 'S002'  # student_id
-            assert refund[2] == 5  # original_payment_id
-            assert refund[4] == 'USD'  # currency
-            assert refund[5] == 'Course withdrawal'  # refund_reason
+            assert refund[5] == '5'  # reference_id (original_payment_id)
+            assert refund[4] == 'Finance'  # department (transaction_source)
+            assert refund[10] == 'Course withdrawal'  # reason
 
     def test_record_refund_auto_processes(self, temp_db):
         """Test that refund is auto-approved and processed"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             refund_id = finance_integration.record_refund_to_finance(
                 student_id='S003',
                 refund_amount=25.00,
@@ -350,19 +353,18 @@ class TestRecordRefundToFinance:
 
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
-            cursor.execute('SELECT status, approved_by, processed_by FROM refunds WHERE refund_id = ?', (refund_id,))
-            status, approved_by, processed_by = cursor.fetchone()
+            cursor.execute('SELECT status, processed_by FROM unified_refunds WHERE refund_id = ?', (refund_id,))
+            status, processed_by = cursor.fetchone()
             conn.close()
 
             assert status == 'processed'
-            assert approved_by == 'System'
             assert processed_by == 'System'
 
     def test_record_refund_handles_error(self, temp_db):
         """Test that refund handles database errors"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', '/nonexistent/db.db'):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', '/nonexistent/db.db'):
             refund_id = finance_integration.record_refund_to_finance(
                 student_id='S004',
                 refund_amount=50.00,
@@ -388,7 +390,7 @@ class TestRecordRevenueToFinance:
         """Test recording basic revenue"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_revenue_to_finance(
                 student_id='EXTERNAL',
                 amount=1000.00,
@@ -412,7 +414,7 @@ class TestRecordRevenueToFinance:
         """Test recording revenue with additional notes"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             payment_id = finance_integration.record_revenue_to_finance(
                 student_id='S001',
                 amount=500.00,
@@ -444,7 +446,7 @@ class TestGetStudentFinancialSummary:
         """Test getting summary for student with no transactions"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             summary = finance_integration.get_student_financial_summary('S999')
 
             assert summary['student_id'] == 'S999'
@@ -458,7 +460,7 @@ class TestGetStudentFinancialSummary:
         """Test getting summary with payments"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Add payments
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -484,7 +486,7 @@ class TestGetStudentFinancialSummary:
         """Test getting summary with refunds"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Add payments and refunds
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -493,8 +495,8 @@ class TestGetStudentFinancialSummary:
             VALUES ('S002', 500.00, 'completed', '[Test] Ref: PAY-1', '2025-01-01', 'GBP', 'Cash', 'TEST-1', 'admin', '2025-01-01')
             ''')
             cursor.execute('''
-            INSERT INTO refunds (student_id, refund_amount, status, notes, request_date, currency, refund_reason, refund_type, refund_method, requested_by, approved_by, processed_by, approval_date, processed_date, created_at)
-            VALUES ('S002', 100.00, 'processed', 'Test refund', '2025-01-02', 'GBP', 'Overpayment', 'partial', 'cash', 'admin', 'admin', 'admin', '2025-01-02', '2025-01-02', '2025-01-02')
+            INSERT INTO unified_refunds (student_id, refund_reference, source_type, department, amount, refund_type, refund_method, reason, status, refund_date, request_date, processed_by, notes, created_at)
+            VALUES ('S002', 'TEST-REF-1', 'general', 'Test', 100.00, 'partial', 'cash', 'Overpayment', 'processed', '2025-01-02', '2025-01-02', 'admin', 'Test refund', '2025-01-02')
             ''')
             conn.commit()
             conn.close()
@@ -509,7 +511,7 @@ class TestGetStudentFinancialSummary:
         """Test getting summary broken down by source"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Add payments from different sources
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -541,7 +543,7 @@ class TestGetStudentFinancialSummary:
         """Test that summary handles database errors"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', '/nonexistent/db.db'):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', '/nonexistent/db.db'):
             summary = finance_integration.get_student_financial_summary('S001')
 
             assert summary == {}
@@ -559,7 +561,7 @@ class TestGetFinanceReportBySource:
         """Test getting basic report for a source"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Add payments
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -587,7 +589,7 @@ class TestGetFinanceReportBySource:
         """Test getting report with date filters"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Add payments
             conn = sqlite3.connect(temp_db)
             cursor = conn.cursor()
@@ -622,7 +624,7 @@ class TestGetFinanceReportBySource:
         """Test getting report for source with no transactions"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             report = finance_integration.get_finance_report_by_source('NonexistentSource')
 
             assert report['source'] == 'NonexistentSource'
@@ -633,7 +635,7 @@ class TestGetFinanceReportBySource:
         """Test that report handles database errors"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', '/nonexistent/db.db'):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', '/nonexistent/db.db'):
             report = finance_integration.get_finance_report_by_source('Library')
 
             assert report == {}
@@ -660,7 +662,7 @@ class TestIntegration:
         """Test complete payment lifecycle: payment -> refund"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Record payment
             payment_id = finance_integration.record_payment_to_finance(
                 student_id='S100',
@@ -696,7 +698,7 @@ class TestIntegration:
         """Test tracking payments from multiple sources"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Library payment
             finance_integration.record_payment_to_finance(
                 student_id='S200',
@@ -737,7 +739,7 @@ class TestIntegration:
         """Test revenue tracking integration"""
         from education_system.university_system.modules.shared.utils import finance_integration
 
-        with patch('education_system.university_system.modules.shared.utils.finance_integration.paths.DEFAULT_DB_PATH', temp_db):
+        with patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db):
             # Record revenue
             finance_integration.record_revenue_to_finance(
                 student_id='EXTERNAL',

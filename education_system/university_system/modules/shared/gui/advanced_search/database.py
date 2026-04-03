@@ -1,5 +1,5 @@
 from education_system.university_system.infrastructure.database.db import DEFAULT_DB_PATH, get_connection  # injected
-from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name
+from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name, validate_field_for_query, validate_column_name  # nosec B608
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import threading
@@ -121,7 +121,7 @@ except ImportError as e:
             users = [{'id': row[0], 'username': row[1], 'email': row[2]} for row in cursor.fetchall()]
             return {'users': users, 'total_count': len(users)}
         return execute_db_operation(_list_users)
-    
+
     # Minimal database functions for standalone operation
     # Compute the central database path relative to this file so that
     # standalone mode writes to the shared student_records.db rather than
@@ -132,7 +132,7 @@ except ImportError as e:
         # Use centralized path system
         from education_system.university_system.modules.shared.constants import paths
         return sqlite3.connect(str(paths.DEFAULT_DB_PATH))
-    
+
     def init_enhanced_database():
         """
         Stand‑alone fallback database initializer. When the CLI version of
@@ -260,7 +260,7 @@ except ImportError as e:
 
                 pass
             return False
-    
+
     def search_analytics_dashboard():
         return "Analytics dashboard data would be displayed here..."
 
@@ -881,7 +881,7 @@ def check_database_status_gui(self):
     """Check database status with GUI display"""
     self.update_status("Checking database status...")
     self.start_progress()
-    
+
     def run_status_check():
         try:
             result = self.get_database_status_report()
@@ -891,7 +891,7 @@ def check_database_status_gui(self):
             self.output_queue.put(("error", f"Database status check failed: {str(e)}"))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_status_check, daemon=True).start()
 AdvancedSearchGUI.check_database_status_gui = check_database_status_gui
 
@@ -900,11 +900,11 @@ def get_database_status_report(self):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Get list of tables
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         tables = cursor.fetchall()
-        
+
         report = f"{_t('advanced_search.database.status_report')}\n"
         report += "=" * 50 + "\n"
         report += f"{_t('advanced_search.database.report_generated')}: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
@@ -964,9 +964,9 @@ def get_database_status_report(self):
 
         report += f"\n{_t('advanced_search.database.connection_ok')}\n"
         report += f"{_t('advanced_search.database.status_check_completed')}\n"
-        
+
         return report
-        
+
     except Exception as e:
         return f"Database status check failed: {str(e)}"
 AdvancedSearchGUI.get_database_status_report = get_database_status_report
@@ -978,10 +978,10 @@ def show_system_optimization_tools(self):
     dialog.geometry("1000x750")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.database.system_optimization'), style='Title.TLabel').pack(pady=(0, 20))
 
     # Database optimization
@@ -994,10 +994,10 @@ def show_system_optimization_tools(self):
         (_t('advanced_search.database.analyze_statistics'), self.analyze_statistics),
         (f"🏠 {_t('advanced_search.database.return_to_menu')}", self.return_to_main_menu)
     ]
-    
+
     for text, command in db_tools:
         ttk.Button(db_frame, text=text, command=command, width=20).pack(pady=2)
-    
+
     # Cache management
     cache_frame = ttk.LabelFrame(frame, text=_t('advanced_search.database.cache_management'), padding="10")
     cache_frame.pack(fill=tk.X, pady=(0, 10))
@@ -1007,17 +1007,17 @@ def show_system_optimization_tools(self):
         (_t('advanced_search.database.clear_cache'), self.clear_search_cache),
         (f"🏠 {_t('advanced_search.database.return_to_menu')}", self.return_to_main_menu)
     ]
-    
+
     for text, command in cache_tools:
         ttk.Button(cache_frame, text=text, command=command, width=20).pack(pady=2)
-    
+
     ttk.Button(frame, text=_t('advanced_search.close_button'), command=dialog.destroy).pack(pady=(20, 0))
 AdvancedSearchGUI.show_system_optimization_tools = show_system_optimization_tools
 
 def vacuum_database(self):
     """Vacuum the database to optimize storage"""
     self.update_status("Vacuuming database...")
-    
+
     def run_vacuum():
         try:
             conn = get_connection()
@@ -1033,23 +1033,23 @@ def vacuum_database(self):
                                _t('advanced_search.database.vacuum_failed_msg', error=str(e)))
         finally:
             self.update_status("Ready")
-    
+
     threading.Thread(target=run_vacuum, daemon=True).start()
 AdvancedSearchGUI.vacuum_database = vacuum_database
 
 def rebuild_indexes(self):
     """Rebuild database indexes for better performance"""
     self.update_status("Rebuilding database indexes...")
-    
+
     def run_rebuild():
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Drop and recreate indexes
             indexes = [
                 "DROP INDEX IF EXISTS idx_students_name",
-                "DROP INDEX IF EXISTS idx_students_course", 
+                "DROP INDEX IF EXISTS idx_students_course",
                 "DROP INDEX IF EXISTS idx_students_age",
                 "DROP INDEX IF EXISTS idx_modules_student",
                 "CREATE INDEX idx_students_name ON students(first_name, last_name)",
@@ -1057,13 +1057,13 @@ def rebuild_indexes(self):
                 "CREATE INDEX idx_students_age ON students(age)",
                 "CREATE INDEX idx_modules_student ON student_modules(student_id)"
             ]
-            
+
             for index_sql in indexes:
                 cursor.execute(index_sql)
-            
+
             conn.commit()
             conn.close()
-            
+
             self.log_output(_t('advanced_search.database.rebuild_completed_log'))
             messagebox.showinfo(_t('advanced_search.database.rebuild_complete'),
                               _t('advanced_search.database.rebuild_success_msg'))
@@ -1073,21 +1073,21 @@ def rebuild_indexes(self):
                                _t('advanced_search.database.rebuild_failed_msg', error=str(e)))
         finally:
             self.update_status("Ready")
-    
+
     threading.Thread(target=run_rebuild, daemon=True).start()
 AdvancedSearchGUI.rebuild_indexes = rebuild_indexes
 
 def analyze_statistics(self):
     """Analyze database statistics for query optimization"""
     self.update_status("Analyzing database statistics...")
-    
+
     def run_analyze():
         try:
             conn = get_connection()
             cursor = conn.cursor()
             cursor.execute("ANALYZE")
             conn.close()
-            
+
             self.log_output(_t('advanced_search.database.analysis_completed_log'))
             messagebox.showinfo(_t('advanced_search.database.analysis_complete'),
                               _t('advanced_search.database.analysis_success_msg'))
@@ -1097,7 +1097,7 @@ def analyze_statistics(self):
                                _t('advanced_search.database.analysis_failed_msg', error=str(e)))
         finally:
             self.update_status("Ready")
-    
+
     threading.Thread(target=run_analyze, daemon=True).start()
 AdvancedSearchGUI.analyze_statistics = analyze_statistics
 
@@ -1105,7 +1105,7 @@ def check_integrity(self):
     """Check database integrity"""
     self.update_status("Checking database integrity...")
     self.start_progress()
-    
+
     def run_integrity_check():
         try:
             result = self.perform_integrity_check()
@@ -1115,7 +1115,7 @@ def check_integrity(self):
             self.output_queue.put(("error", f"Integrity check failed: {str(e)}"))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_integrity_check, daemon=True).start()
 AdvancedSearchGUI.check_integrity = check_integrity
 
@@ -1124,7 +1124,7 @@ def perform_integrity_check(self):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         result = f"{_t('advanced_search.database.integrity_check')}\n"
         result += "=" * 50 + "\n"
         result += f"{_t('advanced_search.database.check_performed')}: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
@@ -1144,14 +1144,14 @@ def perform_integrity_check(self):
 
         result += f"{_t('advanced_search.database.referential_integrity')}:\n"
         result += f"{_t('advanced_search.database.orphaned_records')}: {orphaned_modules}\n"
-        
+
         # Check for data consistency
         cursor.execute("SELECT COUNT(*) FROM students WHERE student_id IS NULL OR student_id = ''")
         null_ids = cursor.fetchone()[0]
-        
+
         cursor.execute("SELECT COUNT(*) FROM students WHERE email_address IS NULL OR email_address = ''")
         null_emails = cursor.fetchone()[0]
-        
+
         result += f"\n{_t('advanced_search.database.data_consistency')}:\n"
         result += f"{_t('advanced_search.database.null_ids')}: {null_ids}\n"
         result += f"{_t('advanced_search.database.null_emails')}: {null_emails}\n"
@@ -1181,9 +1181,9 @@ def perform_integrity_check(self):
             result += f"{_t('advanced_search.database.integrity_needs_attention')}\n"
         else:
             result += f"{_t('advanced_search.database.integrity_good')}\n"
-        
+
         return result
-        
+
     except Exception as e:
         return f"Integrity check failed: {str(e)}"
 AdvancedSearchGUI.perform_integrity_check = perform_integrity_check
@@ -1197,15 +1197,15 @@ def optimize_memory_usage(self):
             self.search_cache.clear()
         else:
             cache_size = 0
-        
+
         # Clear search history if it gets too large
         if hasattr(self, 'search_history') and self.search_history and len(self.search_history) > 100:
             self.search_history = self.search_history[-50:]  # Keep last 50
-        
+
         # Force garbage collection
         import gc
         collected = gc.collect()
-        
+
         self.log_output(_t('advanced_search.database.memory_opt_completed'))
         self.log_output(f"  {_t('advanced_search.database.cleared_cache_entries', count=cache_size)}")
         self.log_output(f"  {_t('advanced_search.database.collected_objects', count=collected)}")
@@ -1225,7 +1225,7 @@ def ensure_database_tables_exist(self):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         # Check and create students table if needed
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS students (
@@ -1242,7 +1242,7 @@ def ensure_database_tables_exist(self):
             registration_datetime DATETIME DEFAULT CURRENT_TIMESTAMP
         )
         """)
-        
+
         # Check and create student_modules table if needed
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS student_modules (
@@ -1256,7 +1256,7 @@ def ensure_database_tables_exist(self):
             FOREIGN KEY (student_id) REFERENCES students(student_id)
         )
         """)
-        
+
         # Check and create search_profiles table if needed
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS search_profiles (
@@ -1269,7 +1269,7 @@ def ensure_database_tables_exist(self):
             is_shared BOOLEAN DEFAULT FALSE
         )
         """)
-        
+
         # Check and create user_permissions table if needed
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS user_permissions (
@@ -1280,7 +1280,7 @@ def ensure_database_tables_exist(self):
             created_date DATETIME DEFAULT CURRENT_TIMESTAMP
         )
         """)
-        
+
         # Check and create scheduled_reports table if needed
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS scheduled_reports (
@@ -1294,12 +1294,12 @@ def ensure_database_tables_exist(self):
             created_date DATETIME DEFAULT CURRENT_TIMESTAMP
         )
         """)
-        
+
         conn.commit()
         conn.close()
-        
+
         return "All required database tables verified/created successfully."
-        
+
     except Exception as e:
         return f"Error ensuring database tables: {str(e)}"
 AdvancedSearchGUI.ensure_database_tables_exist = ensure_database_tables_exist
@@ -1309,7 +1309,7 @@ def check_database_status(self):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        
+
         status_report = f"{_t('advanced_search.database.status_report')}\n"
         status_report += "=" * 30 + "\n"
         status_report += f"{_t('advanced_search.database.check_performed')}: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
@@ -1371,9 +1371,9 @@ def check_database_status(self):
 
         status_report += f"\n{_t('advanced_search.database.connection_ok')}\n"
         status_report += f"{_t('advanced_search.database.status_check_completed')}\n"
-        
+
         return status_report
-        
+
     except Exception as e:
         return f"Database status check failed: {str(e)}"
 AdvancedSearchGUI.check_database_status = check_database_status
@@ -1385,10 +1385,10 @@ def show_system_maintenance(self):
     dialog.geometry("1100x800")
     dialog.transient(self.master)
     dialog.grab_set()
-    
+
     frame = ttk.Frame(dialog, padding="20")
     frame.pack(fill=tk.BOTH, expand=True)
-    
+
     ttk.Label(frame, text=_t('advanced_search.database.system_maintenance'), style='Title.TLabel').pack(pady=(0, 20))
 
     # Maintenance operations
@@ -1402,10 +1402,10 @@ def show_system_maintenance(self):
         (_t('advanced_search.database.clean_logs'), self.run_clean_audit_logs),
         (f"🏠 {_t('advanced_search.database.return_to_menu')}", self.return_to_main_menu)
     ]
-    
+
     for text, command in maintenance_ops:
         ttk.Button(maintenance_frame, text=text, command=command, width=25).pack(pady=2)
-    
+
     # Data management
     data_frame = ttk.LabelFrame(frame, text=_t('advanced_search.database.data_management'), padding="10")
     data_frame.pack(fill=tk.X, pady=(0, 20))
@@ -1416,27 +1416,27 @@ def show_system_maintenance(self):
         (_t('advanced_search.database.clear_history'), self.clear_search_history),
         (f"🏠 {_t('advanced_search.database.return_to_menu')}", self.return_to_main_menu)
     ]
-    
+
     for text, command in data_ops:
         ttk.Button(data_frame, text=text, command=command, width=25).pack(pady=2)
-    
+
     # System information
     info_frame = ttk.LabelFrame(frame, text=_t('advanced_search.database.system_info'), padding="10")
     info_frame.pack(fill=tk.BOTH, expand=True)
-    
+
     self.system_info_text = scrolledtext.ScrolledText(info_frame, height=8, wrap=tk.WORD)
     self.system_info_text.pack(fill=tk.BOTH, expand=True)
-    
+
     # Load initial system info
     self.load_system_information()
-    
+
     ttk.Button(frame, text=_t('advanced_search.close_button'), command=dialog.destroy).pack()
 AdvancedSearchGUI.show_system_maintenance = show_system_maintenance
 
 def run_database_status_check(self):
     """Run database status check"""
     self.update_status("Checking database status...")
-    
+
     def check_status():
         try:
             status_report = self.check_database_status()
@@ -1447,14 +1447,14 @@ def run_database_status_check(self):
             self.log_output(f"Database status check failed: {str(e)}")
         finally:
             self.update_status("Ready")
-    
+
     threading.Thread(target=check_status, daemon=True).start()
 AdvancedSearchGUI.run_database_status_check = run_database_status_check
 
 def run_ensure_tables(self):
     """Run ensure tables exist operation"""
     self.update_status("Ensuring database tables exist...")
-    
+
     def ensure_tables():
         try:
             result = self.ensure_database_tables_exist()
@@ -1467,27 +1467,27 @@ def run_ensure_tables(self):
                                _t('advanced_search.database.table_check_failed_msg', error=str(e)))
         finally:
             self.update_status("Ready")
-    
+
     threading.Thread(target=ensure_tables, daemon=True).start()
 AdvancedSearchGUI.run_ensure_tables = run_ensure_tables
 
 def run_database_optimization(self):
     """Run database optimization"""
     self.update_status("Optimizing database...")
-    
+
     def optimize_db():
         try:
             conn = get_connection()
             cursor = conn.cursor()
-            
+
             # Run VACUUM to optimize database
             cursor.execute("VACUUM")
-            
+
             # Update statistics
             cursor.execute("ANALYZE")
-            
+
             conn.close()
-            
+
             self.log_output(_t('advanced_search.database.optimization_completed_log'))
             messagebox.showinfo(_t('advanced_search.database.optimization'),
                               _t('advanced_search.database.optimization_success'))
@@ -1498,7 +1498,7 @@ def run_database_optimization(self):
                                _t('advanced_search.database.optimization_failed_msg', error=str(e)))
         finally:
             self.update_status("Ready")
-    
+
     threading.Thread(target=optimize_db, daemon=True).start()
 AdvancedSearchGUI.run_database_optimization = run_database_optimization
 
@@ -1510,24 +1510,24 @@ def run_clean_audit_logs(self):
             # Clean old log entries from file
             log_filename = "search_audit_log.json"
             cutoff_date = datetime.now() - timedelta(days=90)
-            
+
             try:
                 with open(log_filename, 'r', encoding='utf-8') as f:
                     log_data = json.load(f)
-                
+
                 original_count = len(log_data.get("searches", []))
-                
+
                 # Filter out old entries
                 log_data["searches"] = [
                     entry for entry in log_data.get("searches", [])
                     if datetime.fromisoformat(entry["timestamp"]) > cutoff_date
                 ]
-                
+
                 cleaned_count = original_count - len(log_data["searches"])
-                
+
                 with open(log_filename, 'w', encoding='utf-8') as f:
                     json.dump(log_data, f, indent=2)
-                
+
                 self.log_output(_t('advanced_search.database.cleaned_logs', count=cleaned_count))
                 messagebox.showinfo(_t('advanced_search.database.logs_cleaned'),
                                   _t('advanced_search.database.logs_cleaned_msg', count=cleaned_count))
@@ -1545,7 +1545,7 @@ def run_export_system_stats(self):
     """Export comprehensive system statistics"""
     self.update_status("Exporting system statistics...")
     self.start_progress()
-    
+
     def export_stats():
         try:
             result = self.capture_function_output(export_system_statistics)
@@ -1555,7 +1555,7 @@ def run_export_system_stats(self):
             self.output_queue.put(("error", f"System statistics export failed: {str(e)}"))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=export_stats, daemon=True).start()
 AdvancedSearchGUI.run_export_system_stats = run_export_system_stats
 
@@ -1566,7 +1566,7 @@ def run_database_backup(self):
         filetypes=[(_t('common.sqlite_files'), "*.db"), (_t('common.all_files'), "*.*")],
         title=_t('advanced_search.database.save_backup_as')
     )
-    
+
     if backup_file:
         try:
             source_path = Path(DEFAULT_DB_PATH)
@@ -1591,7 +1591,7 @@ def run_database_restore(self):
         filetypes=[(_t('common.sqlite_files'), "*.db"), (_t('common.all_files'), "*.*")],
         title=_t('advanced_search.database.select_backup')
     )
-    
+
     if backup_file:
         if messagebox.askyesno(_t('advanced_search.database.confirm_restore'),
                                _t('advanced_search.database.confirm_restore_msg')):
@@ -1619,10 +1619,10 @@ def reset_user_preferences(self):
             # Reset GUI preferences
             self.results_per_page = 10
             self.per_page_var.set("10")
-            
+
             # Clear any preference files
             pref_files = ["user_preferences.json", "gui_settings.json"]
-            
+
             for pref_file in pref_files:
                 try:
                     import os
@@ -1631,7 +1631,7 @@ def reset_user_preferences(self):
                 except Exception:
 
                     pass
-            
+
             messagebox.showinfo(_t('advanced_search.database.prefs_reset'),
                               _t('advanced_search.database.prefs_reset_msg'))
             self.log_output(_t('advanced_search.database.prefs_reset_log'))
@@ -1646,7 +1646,7 @@ def load_system_information(self):
     try:
         import platform
         import sys
-        
+
         info = f"{_t('advanced_search.database.system_information')}\n"
         info += f"=" * 30 + "\n"
         info += f"{_t('advanced_search.database.application')}: {_t('advanced_search.database.app_name')}\n"
@@ -1658,7 +1658,7 @@ def load_system_information(self):
 
         info += f"{_t('advanced_search.database.db_status')}:\n"
         info += f"{_t('advanced_search.database.connection')}: {_t('advanced_search.database.available')}\n"
-        
+
         try:
             conn = get_connection()
             if conn:
@@ -1668,7 +1668,7 @@ def load_system_information(self):
                 cursor.execute("SELECT COUNT(*) FROM student_modules")
                 module_count = cursor.fetchone()[0]
                 conn.close()
-                
+
                 info += f"{_t('advanced_search.database.student_records')}: {student_count}\n"
                 info += f"{_t('advanced_search.database.module_enrollments')}: {module_count}\n"
             else:
@@ -1686,9 +1686,9 @@ def load_system_information(self):
         info += f"✓ {_t('advanced_search.database.feature_permissions')}\n"
         info += f"✓ {_t('advanced_search.database.feature_scheduled')}\n"
         info += f"✓ {_t('advanced_search.database.feature_export')}\n"
-        
+
         self.system_info_text.insert(1.0, info)
-        
+
     except Exception as e:
         self.system_info_text.insert(1.0, f"Error loading system information: {str(e)}")
 AdvancedSearchGUI.load_system_information = load_system_information
@@ -1697,7 +1697,7 @@ def init_database(self):
     """Initialize the database"""
     self.update_status("Initializing database...")
     self.start_progress()
-    
+
     def run_init_db():
         try:
             result = self.capture_function_output(init_enhanced_database)
@@ -1707,7 +1707,7 @@ def init_database(self):
             self.output_queue.put(("error", f"Database initialization error: {str(e)}"))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_init_db, daemon=True).start()
 AdvancedSearchGUI.init_database = init_database
 
@@ -1715,7 +1715,7 @@ def optimize_performance(self):
     """Optimize system performance"""
     self.update_status("Optimizing performance...")
     self.start_progress()
-    
+
     def run_optimization():
         try:
             result = self.capture_function_output(performance_optimization)
@@ -1724,7 +1724,7 @@ def optimize_performance(self):
             self.output_queue.put(("error", f"Performance optimization error: {str(e)}"))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_optimization, daemon=True).start()
 AdvancedSearchGUI.optimize_performance = optimize_performance
 
@@ -1732,7 +1732,7 @@ def show_system_stats(self):
     """Show system statistics"""
     self.update_status("Gathering system statistics...")
     self.start_progress()
-    
+
     def run_system_stats():
         try:
             result = self.capture_function_output(export_system_statistics)
@@ -1741,7 +1741,7 @@ def show_system_stats(self):
             self.output_queue.put(("error", f"Error gathering system statistics: {str(e)}"))
         finally:
             self.output_queue.put(("stop_progress", None))
-    
+
     threading.Thread(target=run_system_stats, daemon=True).start()
 AdvancedSearchGUI.show_system_stats = show_system_stats
 

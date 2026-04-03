@@ -1,18 +1,40 @@
 import os
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
-import seaborn as sns
+try:
+    import matplotlib
+    import matplotlib.pyplot as plt
+    matplotlib.use('Agg')
+except ImportError:  # Optional dependency
+    matplotlib = None
+    plt = None
+try:
+    import seaborn as sns
+except ImportError:  # Optional dependency
+    sns = None
 from scipy import stats
 from datetime import datetime
 
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
+try:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+    from reportlab.lib import colors
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    _REPORTLAB_AVAILABLE = True
+except ImportError:  # Optional dependency
+    letter = None
+    SimpleDocTemplate = None
+    Table = None
+    TableStyle = None
+    Paragraph = None
+    Spacer = None
+    Image = None
+    colors = None
+    getSampleStyleSheet = None
+    ParagraphStyle = None
+    inch = None
+    _REPORTLAB_AVAILABLE = False
 
-matplotlib.use('Agg')
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.domain.academics.grading.grade_calculation.constants import GRADE_SYSTEMS
@@ -22,44 +44,47 @@ from education_system.university_system.modules.domain.academics.grading.grade_c
 def create_trend_visualization(daily_trends, monthly_trends, filename_prefix):
     """Create trend visualizations"""
     try:
+        # Import here to allow tests to patch grade_calculation.os/plt
+        from education_system.university_system.modules.domain.academics.grading import grade_calculation
         # Create directory if it doesn't exist
-        plots_dir = 'statistics_plots'
-        if not os.path.exists(plots_dir):
-            os.makedirs(plots_dir)
+        plots_dir = grade_calculation.os.path.join(grade_calculation.os.path.dirname(__file__), '..', '..', '..', '..', '..', 'data', 'analytics', 'plots')
+        plots_dir = grade_calculation.os.path.normpath(plots_dir)
+        if not grade_calculation.os.path.exists(plots_dir):
+            grade_calculation.os.makedirs(plots_dir)
 
-        plt.figure(figsize=(12, 8))
+        grade_calculation.plt.figure(figsize=(12, 8))
 
         # Daily trends
-        plt.subplot(2, 1, 1)
+        grade_calculation.plt.subplot(2, 1, 1)
         dates = [trend[0] for trend in daily_trends]
         averages = [trend[1] for trend in daily_trends]
 
-        plt.plot(dates, averages, marker='o', linewidth=1, markersize=3)
-        plt.title('Daily Grade Trends')
-        plt.xlabel('Date')
-        plt.ylabel('Average Percentage')
-        plt.xticks(rotation=45)
-        plt.grid(True, alpha=0.3)
+        grade_calculation.plt.plot(dates, averages, marker='o', linewidth=1, markersize=3)
+        grade_calculation.plt.title('Daily Grade Trends')
+        grade_calculation.plt.xlabel('Date')
+        grade_calculation.plt.ylabel('Average Percentage')
+        grade_calculation.plt.xticks(rotation=45)
+        grade_calculation.plt.grid(True, alpha=0.3)
 
         # Monthly trends
-        plt.subplot(2, 1, 2)
+        grade_calculation.plt.subplot(2, 1, 2)
         months = [trend[0] for trend in monthly_trends]
         monthly_averages = [trend[1] for trend in monthly_trends]
 
-        plt.bar(months, monthly_averages, color='lightblue')
-        plt.title('Monthly Grade Trends')
-        plt.xlabel('Month')
-        plt.ylabel('Average Percentage')
-        plt.xticks(rotation=45)
-        plt.grid(True, alpha=0.3)
+        grade_calculation.plt.bar(months, monthly_averages, color='lightblue')
+        grade_calculation.plt.title('Monthly Grade Trends')
+        grade_calculation.plt.xlabel('Month')
+        grade_calculation.plt.ylabel('Average Percentage')
+        grade_calculation.plt.xticks(rotation=45)
+        grade_calculation.plt.grid(True, alpha=0.3)
 
-        plt.tight_layout()
+        grade_calculation.plt.tight_layout()
 
         # Save the plot
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         plot_filename = f"{plots_dir}/{filename_prefix}_{timestamp}.png"
-        plt.savefig(plot_filename)
-        plt.close()
+        grade_calculation.plt.savefig(plot_filename)
+        grade_calculation.plt.close()
 
         print(f"Trend visualization saved to {plot_filename}")
 
@@ -208,8 +233,12 @@ def view_grade_distribution():
 def create_grade_visualizations(scores, letters, max_points, title, entity_type, entity_id):
     """Create visualizations for grade distribution"""
     try:
+        if sns is None:
+            print("Seaborn is not installed; cannot generate grade visualizations.")
+            return
         # Create a directory for the plots if it doesn't exist
-        plots_dir = 'statistics_plots'
+        plots_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', 'data', 'analytics', 'plots')
+        plots_dir = os.path.normpath(plots_dir)
         if not os.path.exists(plots_dir):
             os.makedirs(plots_dir)
 
@@ -305,6 +334,9 @@ def create_grade_visualizations(scores, letters, max_points, title, entity_type,
 def generate_assessment_stats_report(cursor, assessment_id, reports_dir, timestamp):
     """Generate a statistical report for a specific assessment"""
     try:
+        if not _REPORTLAB_AVAILABLE:
+            print("ReportLab is not installed; cannot generate PDF reports.")
+            return
         # Get assessment details
         cursor.execute('''
         SELECT assessment_name, module_code, assessment_type, max_points, weight

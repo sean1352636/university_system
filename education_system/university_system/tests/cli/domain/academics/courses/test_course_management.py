@@ -27,7 +27,7 @@ def _insert_course(cursor, course_code, course_name, timestamp, **extra):
         cols += f", {k}"
         vals += ", ?"
         params.append(v)
-    cursor.execute(f"INSERT INTO courses ({cols}) VALUES ({vals})", params)
+    cursor.execute(f"INSERT INTO courses ({cols}) VALUES ({vals})", params)  # nosec B608
     return cursor.lastrowid
 
 

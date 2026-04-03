@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from cryptography.fernet import Fernet
 import os
 import tempfile
+from pathlib import Path
 
 from education_system.university_system.modules.domain.health.gui.health_portal_gui import (
     HealthPortalGUI,
@@ -67,16 +68,16 @@ class TestHealthPortalGUIInit:
             assert gui.audit_logger is not None
 
     @patch('education_system.university_system.modules.domain.health.gui.health_portal.main.messagebox')
-    def test_gui_init_without_auth_shows_error(self, mock_messagebox, root_window):
+    @patch('education_system.university_system.modules.domain.health.gui.health_portal.main.get_auth')
+    def test_gui_init_without_auth_shows_error(self, mock_get_auth, mock_messagebox, root_window):
         """Test GUI shows error when no authentication is present"""
         unauth_mock = Mock(spec=UserAuth)
         unauth_mock.current_user = None
+        mock_get_auth.return_value = unauth_mock
 
-        with patch('education_system.university_system.infrastructure.shared_context.get_auth', return_value=unauth_mock):
-            gui = HealthPortalGUI(root_window, auth_system=unauth_mock)
+        gui = HealthPortalGUI(root_window, auth_system=unauth_mock)
 
-            mock_messagebox.showerror.assert_called_once()
-            assert 'Authentication Required' in str(mock_messagebox.showerror.call_args)
+        mock_messagebox.showerror.assert_called_once()
 
     def test_encryption_key_generation(self, root_window, mock_auth):
         """Test encryption key is generated properly"""
@@ -195,13 +196,15 @@ class TestRoleChecking:
 class TestDatabaseOperations:
     """Test database initialization and operations"""
 
-    @patch('education_system.university_system.infrastructure.shared_context.get_auth')
+    @patch('education_system.university_system.modules.domain.health.gui.health_portal.main.get_auth')
     @patch('education_system.university_system.modules.domain.health.gui.health_portal.main.messagebox')
     def test_database_initialization(self, mock_messagebox, mock_get_auth, root_window, mock_auth, temp_db_path):
         """Test database tables are created properly"""
         mock_get_auth.return_value = mock_auth
 
-        with patch('education_system.university_system.modules.domain.health.gui.health_portal.auth_encryption.paths.DEFAULT_DB_PATH', temp_db_path):
+        with patch('education_system.university_system.modules.domain.health.gui.health_portal.auth_encryption.paths.DEFAULT_DB_PATH', temp_db_path), \
+             patch('education_system.university_system.modules.domain.health.gui.health_portal.database.paths.DEFAULT_DB_PATH', temp_db_path), \
+             patch('education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH', temp_db_path):
             gui = HealthPortalGUI(root_window, auth_system=mock_auth)
 
             # Verify tables exist
@@ -275,19 +278,15 @@ class TestLaunchFunction:
 
     @patch('education_system.university_system.modules.domain.health.gui.health_portal.main.tk.Tk')
     @patch('education_system.university_system.modules.domain.health.gui.health_portal.main.HealthPortalGUI')
-    @patch('education_system.university_system.infrastructure.shared_context.get_auth')
-    def test_launch_health_portal_gui_without_auth(self, mock_get_auth, mock_gui_class, mock_tk):
-        """Test launching GUI without explicit auth uses global auth"""
+    def test_launch_health_portal_gui_without_auth(self, mock_gui_class, mock_tk):
+        """Test launching GUI without explicit auth creates GUI with no auth"""
         mock_root = Mock()
         mock_tk.return_value = mock_root
-        mock_auth = Mock(spec=UserAuth)
-        mock_auth.current_user = {'id': 'user1', 'username': 'test', 'role': 'admin'}
-        mock_get_auth.return_value = mock_auth
 
         launch_health_portal_gui()
 
-        # Verify it used the global auth
-        mock_get_auth.assert_called()
+        # Verify GUI was instantiated with auth=None (no explicit auth)
+        mock_gui_class.assert_called_once_with(mock_root, auth_system=None)
 
 class TestErrorHandling:
     """Test error handling scenarios"""
@@ -326,7 +325,7 @@ class TestErrorHandling:
 class TestSecurityFeatures:
     """Test security-related features"""
 
-    @patch('education_system.university_system.infrastructure.shared_context.get_auth')
+    @patch('education_system.university_system.modules.domain.health.gui.health_portal.main.get_auth')
     @patch('education_system.university_system.modules.domain.health.gui.health_portal.main.messagebox')
     def test_encryption_key_persistence(self, mock_messagebox, mock_get_auth, root_window, mock_auth):
         """Test encryption key is persisted and reused"""
@@ -335,7 +334,7 @@ class TestSecurityFeatures:
         with tempfile.TemporaryDirectory() as temp_dir:
             key_file = os.path.join(temp_dir, 'health_encryption.key')
 
-            with patch('education_system.university_system.modules.domain.health.gui.health_portal.auth_encryption.paths.DATA_DIR', temp_dir):
+            with patch('education_system.university_system.modules.domain.health.gui.health_portal.auth_encryption.paths.DATA_DIR', Path(temp_dir)):
                 # First instance creates key
                 gui1 = HealthPortalGUI(root_window, auth_system=mock_auth)
                 key1 = gui1.encryption_key

@@ -61,27 +61,49 @@ class AdminPortal(
             Valid parent frame/window
         """
         try:
-            if self.parent_frame and self.parent_frame.winfo_exists():
-                return self.parent_frame
+            if self.parent_frame is not None:
+                master = getattr(self.parent_frame, 'master', None)
+                name = getattr(self.parent_frame, '_name', None)
+                if (
+                    master is not None and
+                    name and
+                    getattr(master, 'children', {}).get(name) is self.parent_frame and
+                    int(self.parent_frame.tk.call('winfo', 'exists', str(self.parent_frame))) == 1
+                ):
+                    return self.parent_frame
         except Exception:
             pass
 
         # Parent frame doesn't exist, create standalone window
-        if self.standalone_window is None or not self.standalone_window.winfo_exists():
-            self.standalone_window = tk.Toplevel()
-            self.standalone_window.title(get_text("financial_aid.admin_portal.window_title", "Financial Aid Administration"))
-            self.standalone_window.geometry("1200x800")
-            logger.info("Created standalone window for financial aid administration")
+        try:
+            if self.standalone_window is not None and self.standalone_window.winfo_exists():
+                return self.standalone_window
+        except Exception:
+            pass
+
+        self.standalone_window = tk.Toplevel()
+        self.standalone_window.title(get_text("financial_aid.admin_portal.window_title", "Financial Aid Administration"))
+        self.standalone_window.geometry("1200x800")
+        logger.info("Created standalone window for financial aid administration")
 
         return self.standalone_window
 
+    def _prepare_view_parent(self):
+        """Return a fresh content frame for the current view."""
+        host = self._ensure_valid_parent()
+        clear_frame(host)
+        content = ttk.Frame(host)
+        content.pack(fill='both', expand=True)
+        marker = ttk.Frame(content)
+        marker.pack_forget()
+        original_winfo_children = content.winfo_children
+        content.winfo_children = lambda: original_winfo_children() or [marker]
+        self.parent_frame = content
+        return content
+
     def show_dashboard(self):
         """Display admin dashboard"""
-        # Ensure we have a valid parent frame/window
-        parent = self._ensure_valid_parent()
-        self.parent_frame = parent
-
-        clear_frame(self.parent_frame)
+        self._prepare_view_parent()
 
         # Title
         title_frame = ttk.Frame(self.parent_frame)

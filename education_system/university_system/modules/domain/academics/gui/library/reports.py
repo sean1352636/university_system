@@ -138,7 +138,7 @@ def show_reports(self):
         ("Popular Books", self.generate_popular_books_report),
         ("Statistics Dashboard", self.show_statistics_dashboard),
         ("Fine Collection Report", self.generate_fine_report),
-        ("Library Card Usage Report", self.generate_card_usage_report), 
+        ("Library Card Usage Report", self.generate_card_usage_report),
         ("System Health Report", self.generate_health_report),
         ("Maintenance Activity Report", self.generate_maintenance_report)
     ]
@@ -210,7 +210,7 @@ def get_collection_report_data(self):
 
         # Collection statistics
         cursor.execute('''
-        SELECT 
+        SELECT
             COUNT(*) as total,
             SUM(CASE WHEN status = 'available' THEN 1 ELSE 0 END) as available,
             SUM(CASE WHEN status = 'checked_out' THEN 1 ELSE 0 END) as checked_out,
@@ -298,7 +298,7 @@ def get_circulation_report_data(self):
 
         # Monthly stats
         cursor.execute('''
-        SELECT COUNT(*) FROM book_loans 
+        SELECT COUNT(*) FROM book_loans
         WHERE checkout_date >= date('now', '-30 days')
         ''', )
         monthly_checkouts = cursor.fetchone()[0]

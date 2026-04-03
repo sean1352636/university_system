@@ -59,35 +59,35 @@ class SystemHealthDialog:
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
-        
+
         self.create_widgets()
         self.load_health_info()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(main_frame, text="System Health Status", font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         self.health_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD, state=tk.DISABLED)
         self.health_text.pack(fill=tk.BOTH, expand=True)
-        
+
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Refresh", command=self.load_health_info).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def load_health_info(self):
         """Load system health information"""
         try:
             self.health_text.config(state=tk.NORMAL)
             self.health_text.delete(1.0, tk.END)
-            
+
             health_info = "SYSTEM HEALTH REPORT\n"
             health_info += "=" * 30 + "\n\n"
             health_info += f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"
-            
+
             if get_system_health_info is not None:
                 health = get_system_health_info()
                 health_info += f"Email System: {health.get('email_system', 'Unknown')}\n"
@@ -104,10 +104,10 @@ class SystemHealthDialog:
                 health_info += f"Mode: {'Database Only' if config.get('database_only_mode', True) else 'SMTP'}\n"
                 health_info += f"Sender Email: {config.get('sender_email', 'Not set')}\n"
                 health_info += f"SMTP Server: {config.get('smtp_server', 'Not set')}\n"
-            
+
             self.health_text.insert(1.0, health_info)
             self.health_text.config(state=tk.DISABLED)
-            
+
         except Exception as e:
             self.health_text.config(state=tk.NORMAL)
             self.health_text.delete(1.0, tk.END)
@@ -123,34 +123,34 @@ class DatabaseCleanupDialog:
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
-        
+
         self.create_widgets()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(main_frame, text="Database Cleanup Options", font=('Arial', 12, 'bold')).pack(pady=10)
-        
+
         # Cleanup options
         options_frame = ttk.Frame(main_frame)
         options_frame.pack(fill=tk.X, pady=10)
-        
-        ttk.Button(options_frame, text="Clean Old Emails (30+ days)", 
+
+        ttk.Button(options_frame, text="Clean Old Emails (30+ days)",
                   command=lambda: self.cleanup_emails(30)).pack(fill=tk.X, pady=2)
-        
-        ttk.Button(options_frame, text="Clean Old Emails (90+ days)", 
+
+        ttk.Button(options_frame, text="Clean Old Emails (90+ days)",
                   command=lambda: self.cleanup_emails(90)).pack(fill=tk.X, pady=2)
-        
-        ttk.Button(options_frame, text="Cleanup Deleted Messages", 
+
+        ttk.Button(options_frame, text="Cleanup Deleted Messages",
                   command=self.cleanup_messages).pack(fill=tk.X, pady=2)
-        
+
         ttk.Button(options_frame, text="Optimize Database",
                   command=self.optimize_db).pack(fill=tk.X, pady=2)
-        
+
         # Close button
         ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=20)
-    
+
     def cleanup_emails(self, days):
         """Clean up old emails"""
         if messagebox.askyesno("Confirm", f"Delete emails older than {days} days?"):
@@ -162,7 +162,7 @@ class DatabaseCleanupDialog:
                     messagebox.showerror("Error", "Cleanup function not available")
             except Exception as e:
                 messagebox.showerror("Error", f"Error during cleanup: {e}")
-    
+
     def cleanup_messages(self):
         """Clean up deleted messages"""
         if messagebox.askyesno("Confirm", "Clean up messages deleted by both parties?"):
@@ -186,7 +186,7 @@ class DatabaseCleanupDialog:
                 messagebox.showinfo("Success", f"Cleaned up {deleted} messages")
             except Exception as e:
                 messagebox.showerror("Error", f"Error during cleanup: {e}")
-    
+
     def optimize_db(self):
         """Optimize database"""
         try:
@@ -208,64 +208,64 @@ class AdvancedSearchDialog:
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
-        
+
         self.create_widgets()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Search criteria
         criteria_frame = ttk.LabelFrame(main_frame, text="Search Criteria", padding=10)
         criteria_frame.pack(fill=tk.X, pady=(0, 10))
-        
+
         # Search in
         ttk.Label(criteria_frame, text="Search in:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.search_in = ttk.Combobox(criteria_frame, values=["Messages", "Stored Emails", "Both"])
         self.search_in.grid(row=0, column=1, sticky=tk.W, pady=5)
         self.search_in.set("Messages")
-        
+
         # Keywords
         ttk.Label(criteria_frame, text="Keywords:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.keywords = ttk.Entry(criteria_frame, width=40)
         self.keywords.grid(row=1, column=1, sticky=tk.W, pady=5)
-        
+
         # From/To
         ttk.Label(criteria_frame, text="From/To:").grid(row=2, column=0, sticky=tk.W, pady=5)
         self.sender_recipient = ttk.Entry(criteria_frame, width=40)
         self.sender_recipient.grid(row=2, column=1, sticky=tk.W, pady=5)
-        
+
         # Date range
         ttk.Label(criteria_frame, text="Date from:").grid(row=3, column=0, sticky=tk.W, pady=5)
         self.date_from = ttk.Entry(criteria_frame, width=15)
         self.date_from.grid(row=3, column=1, sticky=tk.W, pady=5)
-        
+
         ttk.Label(criteria_frame, text="Date to:").grid(row=4, column=0, sticky=tk.W, pady=5)
         self.date_to = ttk.Entry(criteria_frame, width=15)
         self.date_to.grid(row=4, column=1, sticky=tk.W, pady=5)
-        
+
         # Search button
         ttk.Button(criteria_frame, text="Search", command=self.perform_search).grid(row=5, column=0, columnspan=2, pady=10)
-        
+
         # Results
         results_frame = ttk.LabelFrame(main_frame, text="Search Results", padding=10)
         results_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         columns = ("Type", "From/To", "Subject", "Date")
         self.results_tree = ttk.Treeview(results_frame, columns=columns, show="headings")
-        
+
         for col in columns:
             self.results_tree.heading(col, text=col)
-        
+
         scrollbar = ttk.Scrollbar(results_frame, orient=tk.VERTICAL, command=self.results_tree.yview)
         self.results_tree.configure(yscrollcommand=scrollbar.set)
-        
+
         self.results_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        
+
         # Close button
         ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
-    
+
     def perform_search(self):
         keywords = self.keywords.get().strip()
         search_in = self.search_in.get()
@@ -379,26 +379,26 @@ class EmailReportsDialog:
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
-        
+
         self.create_widgets()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         # Filter options
         filter_frame = ttk.LabelFrame(main_frame, text="Report Filters", padding=10)
         filter_frame.pack(fill=tk.X, pady=(0, 10))
-        
+
         # Date range
         ttk.Label(filter_frame, text="From Date:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.start_date = ttk.Entry(filter_frame, width=15)
         self.start_date.grid(row=0, column=1, sticky=tk.W, pady=5, padx=5)
-        
+
         ttk.Label(filter_frame, text="To Date:").grid(row=0, column=2, sticky=tk.W, pady=5)
         self.end_date = ttk.Entry(filter_frame, width=15)
         self.end_date.grid(row=0, column=3, sticky=tk.W, pady=5, padx=5)
-        
+
         # Report type
         ttk.Label(filter_frame, text="Report Type:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.report_type = ttk.Combobox(filter_frame, values=[
@@ -407,24 +407,24 @@ class EmailReportsDialog:
         ])
         self.report_type.grid(row=1, column=1, sticky=tk.W, pady=5, padx=5)
         self.report_type.set("Email Statistics")
-        
+
         # Generate button
         ttk.Button(filter_frame, text="Generate Report", command=self.generate_report).grid(row=2, column=0, columnspan=4, pady=10)
-        
+
         # Report display
         report_frame = ttk.LabelFrame(main_frame, text="Report Results", padding=10)
         report_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         self.report_text = scrolledtext.ScrolledText(report_frame, wrap=tk.WORD)
         self.report_text.pack(fill=tk.BOTH, expand=True)
-        
+
         # Export buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Export CSV", command=self.export_csv).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def generate_report(self):
         try:
             start_date = self.start_date.get() or None
@@ -642,7 +642,7 @@ class EmailReportsDialog:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to generate report: {e}")
-    
+
     def export_csv(self):
         try:
             filename = filedialog.asksaveasfilename(
@@ -667,40 +667,40 @@ class NotificationPreferencesDialog:
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
-        
+
         self.preferences = {}
         self.create_widgets()
         self.load_preferences()
-    
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(main_frame, text="Notification Preferences", font=('Arial', 12, 'bold')).pack(pady=(0, 10))
-        
+
         # Preference checkboxes
         self.email_var = tk.BooleanVar()
         ttk.Checkbutton(main_frame, text="Email Notifications", variable=self.email_var).pack(anchor=tk.W, pady=5)
-        
+
         self.message_var = tk.BooleanVar()
         ttk.Checkbutton(main_frame, text="Message Notifications", variable=self.message_var).pack(anchor=tk.W, pady=5)
-        
+
         self.announcement_var = tk.BooleanVar()
         ttk.Checkbutton(main_frame, text="Announcement Notifications", variable=self.announcement_var).pack(anchor=tk.W, pady=5)
-        
+
         self.chat_var = tk.BooleanVar()
         ttk.Checkbutton(main_frame, text="Chat Notifications", variable=self.chat_var).pack(anchor=tk.W, pady=5)
-        
+
         self.digest_var = tk.BooleanVar()
         ttk.Checkbutton(main_frame, text="Daily Digest", variable=self.digest_var).pack(anchor=tk.W, pady=5)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=20)
-        
+
         ttk.Button(button_frame, text="Save", command=self.save_preferences).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def load_preferences(self):
         try:
             if self.dashboard:
@@ -713,7 +713,7 @@ class NotificationPreferencesDialog:
                     self.digest_var.set(prefs.get('daily_digest', False))
         except Exception as e:
             print(f"Error loading preferences: {e}")
-    
+
     def save_preferences(self):
         try:
             preferences = {
@@ -1165,15 +1165,15 @@ class HelpDialog:
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
-        
+
         main_frame = ttk.Frame(self.dialog, padding=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(main_frame, text="University Communication System - Help", font=('Arial', 14, 'bold')).pack(pady=10)
-        
+
         help_text = scrolledtext.ScrolledText(main_frame, wrap=tk.WORD)
         help_text.pack(fill=tk.BOTH, expand=True)
-        
+
         help_content = """
 UNIVERSITY COMMUNICATION SYSTEM - USER GUIDE
 
@@ -1212,10 +1212,10 @@ Reports:
 
 For additional help, contact your system administrator.
         """
-        
+
         help_text.insert(1.0, help_content)
         help_text.config(state=tk.DISABLED)
-        
+
         ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=10)
 
 
@@ -1227,14 +1227,14 @@ class AboutDialog:
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
-        
+
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         ttk.Label(main_frame, text="University Communication System", font=('Arial', 16, 'bold')).pack(pady=10)
         ttk.Label(main_frame, text="Email Manager GUI", font=('Arial', 12)).pack()
         ttk.Label(main_frame, text="Version 1.0", font=('Arial', 10)).pack(pady=5)
-        
+
         desc_text = """
 A comprehensive communication platform for universities
 featuring email management, messaging, announcements,
@@ -1249,7 +1249,7 @@ Features:
 - Reporting and analytics
 - Database and SMTP support
         """
-        
+
         ttk.Label(main_frame, text=desc_text, justify=tk.CENTER).pack(pady=10)
         ttk.Label(main_frame, text="© 2024 University Communication System", font=('Arial', 9)).pack(pady=5)
         ttk.Button(main_frame, text="Close", command=self.dialog.destroy).pack(pady=20)
@@ -1264,24 +1264,24 @@ class ProgressDialog:
         self.dialog.transient(parent)
         # Defer grab_set to avoid "window not viewable" error
         self.dialog.after(100, lambda: self.dialog.grab_set() if self.dialog.winfo_exists() else None)
-        
+
         main_frame = ttk.Frame(self.dialog, padding=20)
         main_frame.pack(fill=tk.BOTH, expand=True)
-        
+
         self.label = ttk.Label(main_frame, text="Please wait...")
         self.label.pack(pady=5)
-        
+
         self.progress = ttk.Progressbar(main_frame, mode='indeterminate')
         self.progress.pack(fill=tk.X, pady=5)
         self.progress.start()
-        
+
         self.dialog.update()
-    
+
     def update_text(self, text):
         """Update progress text"""
         self.label.config(text=text)
         self.dialog.update()
-    
+
     def close(self):
         """Close progress dialog"""
         self.progress.stop()
@@ -1294,22 +1294,22 @@ class StatusNotification:
         self.notification = tk.Toplevel(parent)
         self.notification.title("")
         self.notification.geometry("300x80")
-        
+
         # Position at bottom right of parent
         parent.update_idletasks()
         x = parent.winfo_x() + parent.winfo_width() - 320
         y = parent.winfo_y() + parent.winfo_height() - 100
         self.notification.geometry(f"+{x}+{y}")
-        
+
         self.notification.overrideredirect(True)
         self.notification.configure(bg='#333333')
-        
+
         # Message label
-        label = tk.Label(self.notification, text=message, 
-                        bg='#333333', fg='white', 
+        label = tk.Label(self.notification, text=message,
+                        bg='#333333', fg='white',
                         font=('Arial', 10), wraplength=280)
         label.pack(expand=True)
-        
+
         # Auto-close after duration
         self.notification.after(duration, self.notification.destroy)
 

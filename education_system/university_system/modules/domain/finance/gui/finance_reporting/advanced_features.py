@@ -998,7 +998,7 @@ def run_advanced_forecasting_updated(self):
             self.root.after(0, lambda: [
                 self.log_activity("Advanced forecasting completed"),
                 self.update_status("Ready"),
-                messagebox.showinfo("Forecasting Complete", 
+                messagebox.showinfo("Forecasting Complete",
                     "Advanced financial forecasting completed successfully!\n\n" +
                     "Generated outputs:\n" +
                     "• Advanced cash flow forecast charts\n" +

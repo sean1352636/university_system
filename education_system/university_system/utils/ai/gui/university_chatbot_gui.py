@@ -1,4 +1,4 @@
-"""Backward-compatible shim.
+"""Backward-compatible shim (tkinter GUI).
 
 This module re-exports all public symbols from the refactored package so
 that existing ``from education_system.university_system.utils.ai.gui.university_chatbot_gui import ...``

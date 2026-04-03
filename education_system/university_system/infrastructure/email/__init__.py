@@ -88,13 +88,36 @@ def _patched_send_email_db_only(recipient_email, subject, body, cc, bcc, attachm
                     else:
                         sender_name = username
 
-        cursor.execute('''
-            INSERT INTO stored_emails 
-                (recipient_email, subject, body, sender_email, sender_name, 
-                 cc_recipients, bcc_recipients, attachment_paths, created_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (recipient_email, subject, body, sender_email, sender_name,
-              cc, bcc, attachments, current_time))
+        cursor.execute('PRAGMA table_info(stored_emails)')
+        stored_email_columns = {row[1] for row in cursor.fetchall()}
+        stored_email_values = {
+            'recipient_email': recipient_email,
+            'subject': subject,
+            'body': body,
+            'sender_email': sender_email,
+            'sender_name': sender_name,
+            'cc_recipients': cc,
+            'bcc_recipients': bcc,
+            'attachment_paths': attachments,
+            'created_date': current_time,
+            'sent_date': current_time,
+            'status': 'sent',
+            'cc': cc,
+            'bcc': bcc,
+        }
+        insertable_columns = [name for name in stored_email_values if name in stored_email_columns]
+        if insertable_columns:
+            placeholders = ', '.join('?' for _ in insertable_columns)
+            column_list = ', '.join(insertable_columns)
+            cursor.execute(
+                f'INSERT INTO stored_emails ({column_list}) VALUES ({placeholders})',
+                [stored_email_values[name] for name in insertable_columns],
+            )
+        else:
+            cursor.execute(
+                'INSERT INTO stored_emails (recipient_email, subject, body) VALUES (?, ?, ?)',
+                (recipient_email, subject, body),
+            )
 
         cursor.execute("SELECT id FROM users WHERE email = ?", (recipient_email,))
         user_row = cursor.fetchone()
@@ -130,32 +153,27 @@ def _patched_send_email_db_only(recipient_email, subject, body, cc, bcc, attachm
             if not sender_id:
                 sender_id = recipient_id
 
-            _insert_inbox_message_with_legacy_support(
-                cursor,
-                sender_id,
-                recipient_id,
-                subject,
-                body,
-                attachments,
-                current_time,
-            )
+            _insert_inbox_message_with_legacy_support(cursor, sender_id, recipient_id, subject, body, attachments, current_time)
         else:
             _email_service_module.log_event('info', f"Email stored for {recipient_email}, but no matching user account found.")
 
         try:
             cursor.execute('''
-                INSERT INTO email_log 
-                    (recipient, subject, sent_date, status, sender_email, sender_name, 
+                INSERT INTO email_log
+                    (recipient, subject, sent_date, status, sender_email, sender_name,
                      cc_recipients, bcc_recipients, attachment_info)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (recipient_email, subject, current_time, 'stored', sender_email, sender_name,
                   cc, bcc, attachments))
         except Exception as exc:
             _email_service_module.log_event('warning', f"Extended email_log insert failed, falling back: {exc}")
-            cursor.execute('''
-                INSERT INTO email_log (recipient, subject, sent_date, status, sender_email)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (recipient_email, subject, current_time, 'stored', sender_email))
+            try:
+                cursor.execute('''
+                    INSERT INTO email_log (recipient, subject, sent_date, status, sender_email)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (recipient_email, subject, current_time, 'stored', sender_email))
+            except Exception:
+                pass
 
         try:
             cursor.connection.commit()

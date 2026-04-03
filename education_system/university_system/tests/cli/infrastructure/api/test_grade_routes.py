@@ -114,8 +114,8 @@ class TestGradeAuth:
 
 class TestListGrades:
 
-    @patch("shared.api.university.routes.grade_routes.log_activity")
-    @patch("shared.api.university.routes.grade_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.grade_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.grade_routes.get_connection")
     def test_list_all(self, mock_conn, mock_log, client):
         row = _FakeRow({"grade_id": 1, "student_id": "S1", "score": 90})
         conn = MagicMock()
@@ -129,8 +129,8 @@ class TestListGrades:
         assert data["total"] == 1
         assert data["items"][0]["score"] == 90
 
-    @patch("shared.api.university.routes.grade_routes.log_activity")
-    @patch("shared.api.university.routes.grade_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.grade_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.grade_routes.get_connection")
     def test_list_filter_by_student(self, mock_conn, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = []
@@ -143,8 +143,8 @@ class TestListGrades:
         call_args = conn.execute.call_args
         assert "student_id = ?" in call_args[0][0]
 
-    @patch("shared.api.university.routes.grade_routes.log_activity")
-    @patch("shared.api.university.routes.grade_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.grade_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.grade_routes.get_connection")
     def test_list_filter_by_assessment(self, mock_conn, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = []
@@ -156,8 +156,8 @@ class TestListGrades:
         call_args = conn.execute.call_args
         assert "assessment_id = ?" in call_args[0][0]
 
-    @patch("shared.api.university.routes.grade_routes.log_activity")
-    @patch("shared.api.university.routes.grade_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.grade_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.grade_routes.get_connection")
     def test_list_filter_both(self, mock_conn, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = []
@@ -171,8 +171,8 @@ class TestListGrades:
         assert "student_id = ?" in sql
         assert "assessment_id = ?" in sql
 
-    @patch("shared.api.university.routes.grade_routes.log_activity")
-    @patch("shared.api.university.routes.grade_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.grade_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.grade_routes.get_connection")
     def test_list_empty(self, mock_conn, mock_log, client):
         conn = MagicMock()
         conn.execute.return_value.fetchall.return_value = []
@@ -191,9 +191,9 @@ class TestListGrades:
 
 class TestRecordGrade:
 
-    @patch("shared.api.university.routes.grade_routes.log_activity")
-    @patch("shared.api.university.routes.grade_routes.get_connection")
-    @patch("shared.api.university.routes.grade_routes.transaction")
+    @patch("education_system.shared.api.university.routes.grade_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.grade_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.grade_routes.transaction")
     def test_create_with_score(self, mock_tx, mock_conn, mock_log, client):
         tx_conn = MagicMock()
         mock_tx.return_value.__enter__ = MagicMock(return_value=tx_conn)
@@ -213,9 +213,9 @@ class TestRecordGrade:
         assert resp.status_code == 201
         assert resp.get_json()["grade_id"] == 10
 
-    @patch("shared.api.university.routes.grade_routes.log_activity")
-    @patch("shared.api.university.routes.grade_routes.get_connection")
-    @patch("shared.api.university.routes.grade_routes.transaction")
+    @patch("education_system.shared.api.university.routes.grade_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.grade_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.grade_routes.transaction")
     def test_create_with_letter_grade(self, mock_tx, mock_conn, mock_log, client):
         tx_conn = MagicMock()
         mock_tx.return_value.__enter__ = MagicMock(return_value=tx_conn)
@@ -261,9 +261,9 @@ class TestRecordGrade:
 
 class TestUpdateGrade:
 
-    @patch("shared.api.university.routes.grade_routes.log_activity")
-    @patch("shared.api.university.routes.grade_routes.get_connection")
-    @patch("shared.api.university.routes.grade_routes.transaction")
+    @patch("education_system.shared.api.university.routes.grade_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.grade_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.grade_routes.transaction")
     def test_update_score(self, mock_tx, mock_conn, mock_log, client):
         existing = _FakeRow({"grade_id": 1, "student_id": "S1", "score": 80})
         updated = _FakeRow({"grade_id": 1, "student_id": "S1", "score": 95})
@@ -284,7 +284,7 @@ class TestUpdateGrade:
         assert resp.status_code == 200
         assert resp.get_json()["score"] == 95
 
-    @patch("shared.api.university.routes.grade_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.grade_routes.get_connection")
     def test_update_nonexistent(self, mock_conn, client):
         conn = MagicMock()
         conn.execute.return_value.fetchone.return_value = None
@@ -302,7 +302,7 @@ class TestUpdateGrade:
         resp = client.put("/api/grades/1", json={}, headers=_headers())
         assert resp.status_code == 400
 
-    @patch("shared.api.university.routes.grade_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.grade_routes.get_connection")
     def test_update_no_valid_fields(self, mock_conn, client):
         existing = _FakeRow({"grade_id": 1, "student_id": "S1", "score": 80})
         conn = MagicMock()
@@ -317,9 +317,9 @@ class TestUpdateGrade:
         )
         assert resp.status_code == 400
 
-    @patch("shared.api.university.routes.grade_routes.log_activity")
-    @patch("shared.api.university.routes.grade_routes.get_connection")
-    @patch("shared.api.university.routes.grade_routes.transaction")
+    @patch("education_system.shared.api.university.routes.grade_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.grade_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.grade_routes.transaction")
     def test_update_comments(self, mock_tx, mock_conn, mock_log, client):
         existing = _FakeRow({"grade_id": 1, "student_id": "S1", "score": 80, "comments": ""})
         updated = _FakeRow({"grade_id": 1, "student_id": "S1", "score": 80, "comments": "Well done"})
@@ -340,9 +340,9 @@ class TestUpdateGrade:
         assert resp.status_code == 200
         assert resp.get_json()["comments"] == "Well done"
 
-    @patch("shared.api.university.routes.grade_routes.log_activity")
-    @patch("shared.api.university.routes.grade_routes.get_connection")
-    @patch("shared.api.university.routes.grade_routes.transaction")
+    @patch("education_system.shared.api.university.routes.grade_routes.log_activity")
+    @patch("education_system.shared.api.university.routes.grade_routes.get_connection")
+    @patch("education_system.shared.api.university.routes.grade_routes.transaction")
     def test_update_letter_grade(self, mock_tx, mock_conn, mock_log, client):
         existing = _FakeRow({"grade_id": 1, "letter_grade": "B"})
         updated = _FakeRow({"grade_id": 1, "letter_grade": "A+"})

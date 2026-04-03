@@ -74,6 +74,8 @@ USERNAME_PATTERN = re.compile(
 # Date formats to try when parsing
 DATE_FORMATS = [
     '%Y-%m-%d',      # ISO format: 2024-01-15
+    '%d/%m/%Y',      # UK format: 15/01/2024
+    '%m/%d/%Y',      # US format: 01/15/2024
 ]
 
 

@@ -73,11 +73,11 @@ def create_data_export_import_view(self, parent):
     export_buttons = ttk.Frame(export_frame_inner)
     export_buttons.pack(fill='x')
 
-    ttk.Button(export_buttons, text="📊 Export Detailed Report", 
+    ttk.Button(export_buttons, text="📊 Export Detailed Report",
               command=self.export_detailed_report).pack(side='left', padx=(0, 10))
-    ttk.Button(export_buttons, text="📈 Export Analytics Data", 
+    ttk.Button(export_buttons, text="📈 Export Analytics Data",
               command=self.export_analytics_data).pack(side='left', padx=(0, 10))
-    ttk.Button(export_buttons, text="🔐 Export Audit Log", 
+    ttk.Button(export_buttons, text="🔐 Export Audit Log",
               command=self.export_audit_log).pack(side='left')
 
     # Import options
@@ -87,11 +87,11 @@ def create_data_export_import_view(self, parent):
     import_buttons = ttk.Frame(import_frame_inner)
     import_buttons.pack(fill='x')
 
-    ttk.Button(import_buttons, text="📥 Import Submissions", 
+    ttk.Button(import_buttons, text="📥 Import Submissions",
               command=self.import_submissions).pack(side='left', padx=(0, 10))
-    ttk.Button(import_buttons, text="👥 Import Student Data", 
+    ttk.Button(import_buttons, text="👥 Import Student Data",
               command=self.import_student_data).pack(side='left', padx=(0, 10))
-    ttk.Button(import_buttons, text="⚙️ Import Settings", 
+    ttk.Button(import_buttons, text="⚙️ Import Settings",
               command=self.import_settings).pack(side='left')
 
     # Data cleanup
@@ -101,11 +101,11 @@ def create_data_export_import_view(self, parent):
     cleanup_buttons = ttk.Frame(cleanup_frame)
     cleanup_buttons.pack(fill='x')
 
-    ttk.Button(cleanup_buttons, text="🗑️ Archive Old Data", 
+    ttk.Button(cleanup_buttons, text="🗑️ Archive Old Data",
               command=self.archive_old_data).pack(side='left', padx=(0, 10))
-    ttk.Button(cleanup_buttons, text="🔄 Optimize Database", 
+    ttk.Button(cleanup_buttons, text="🔄 Optimize Database",
               command=self.optimize_database).pack(side='left', padx=(0, 10))
-    ttk.Button(cleanup_buttons, text="🧹 Clean Duplicates", 
+    ttk.Button(cleanup_buttons, text="🧹 Clean Duplicates",
               command=self.clean_duplicates).pack(side='left')
 
 
@@ -133,7 +133,7 @@ def export_results(self):
                         writer.writeheader()
                         for submission in submissions:
                             # Remove text content for CSV (too large)
-                            clean_submission = {k: v for k, v in submission.items() 
+                            clean_submission = {k: v for k, v in submission.items()
                                               if k != 'submission_text'}
                             writer.writerow(clean_submission)
             else:

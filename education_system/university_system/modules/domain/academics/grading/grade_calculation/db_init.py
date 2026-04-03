@@ -1,10 +1,12 @@
-from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
+from education_system.university_system.infrastructure.database.db import sqlite3
 
 
 def init_enhanced_grades_db():
     """Initialize the enhanced grades database with all required tables"""
     try:
-        conn = get_connection()
+        # Import here to allow tests to patch grade_calculation.get_connection
+        from education_system.university_system.modules.domain.academics.grading import grade_calculation
+        conn = grade_calculation.get_connection()
         cursor = conn.cursor()
 
         # Create base grade tables if they don't exist

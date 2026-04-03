@@ -11,11 +11,25 @@ from unittest.mock import Mock, MagicMock, patch, mock_open, call
 from pathlib import Path
 
 
+class _PathProxy:
+    def __init__(self, path):
+        self._path = Path(path)
+        self.exists = MagicMock(return_value=self._path.exists())
+        self.parent = MagicMock()
+        self.parent.mkdir = MagicMock()
+
+    def __fspath__(self):
+        return str(self._path)
+
+    def __str__(self):
+        return str(self._path)
+
+
 @pytest.fixture
 def mock_paths():
     """Mock paths module"""
     with patch('education_system.university_system.modules.shared.utils.config.paths') as mock:
-        mock.EMAIL_CONFIG_PATH = Path('/tmp/email_config.json')
+        mock.EMAIL_CONFIG_PATH = _PathProxy('/tmp/email_config.json')
         mock.EMAIL_TEMPLATES_DIR = Path('/tmp/templates')
         yield mock
 

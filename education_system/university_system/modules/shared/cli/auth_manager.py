@@ -84,14 +84,14 @@ def ensure_default_users_exist_once():
     # Check if we've already created users in this session
     if hasattr(ensure_default_users_exist_once, '_users_created'):
         return True
-    
+
     try:
         conn = get_db_connection(timeout=10.0)
         if not conn:
             return False
-            
+
         cursor = conn.cursor()
-        
+
         # Check and create admin user if needed
         admin_data = defaults.get_default_admin_data()
         cursor.execute('SELECT id, role FROM users WHERE username = ?', (admin_data['username'],))
@@ -148,14 +148,14 @@ def ensure_default_users_exist_once():
             logger.info("Fixed student user role")
         else:
             logger.info("Default student user already exists")
-        
+
         conn.commit()
         conn.close()
-        
+
         # Mark as completed for this session
         ensure_default_users_exist_once._users_created = True
         return True
-        
+
     except sqlite3.Error as e:
         logging.error(f"Error ensuring default users: {e}")
         return False
@@ -173,27 +173,27 @@ def create_default_user_if_needed(username, first_name, last_name, email, role, 
         conn = get_db_connection(timeout=10.0)
         if not conn:
             return False
-            
+
         cursor = conn.cursor()
-        
+
         # Check if user already exists
         cursor.execute('SELECT id FROM users WHERE username = ?', (username,))
         if cursor.fetchone():
             conn.close()
             return True  # User already exists
-        
+
         # Create the user
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         cursor.execute('''
         INSERT INTO users (username, first_name, last_name, email, role, student_id, created_at, updated_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', (username, first_name, last_name, email, role, student_id, current_time, current_time))
-        
+
         conn.commit()
         conn.close()
         logger.info(f"User '{username}' created successfully")
         return True
-        
+
     except sqlite3.IntegrityError as e:
         logging.error(f"Could not create user '{username}': {e}")
         return False
@@ -211,13 +211,13 @@ def ensure_user_in_communication_system(username, first_name, last_name, email, 
         conn = get_db_connection()
         if not conn:
             return False
-            
+
         cursor = conn.cursor()
-        
+
         # Check if user already exists by username
         cursor.execute('SELECT id, email FROM users WHERE username = ?', (username,))
         existing_user = cursor.fetchone()
-        
+
         if existing_user:
             user_id, existing_email = existing_user
             # User exists, check if we need to update email
@@ -225,14 +225,14 @@ def ensure_user_in_communication_system(username, first_name, last_name, email, 
                 # Check if the new email is already used by another user
                 cursor.execute('SELECT id FROM users WHERE email = ? AND username != ?', (email, username))
                 email_conflict = cursor.fetchone()
-                
+
                 if email_conflict:
                     logger.warning(f"Email {email} is already in use by another user. Keeping existing email {existing_email} for user {username}.")
                 else:
                     # Update the email
                     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     cursor.execute('''
-                    UPDATE users 
+                    UPDATE users
                     SET first_name = ?, last_name = ?, email = ?, role = ?, student_id = ?, updated_at = ?
                     WHERE username = ?
                     ''', (
@@ -250,7 +250,7 @@ def ensure_user_in_communication_system(username, first_name, last_name, email, 
                 # Email is the same, just update other information
                 current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 cursor.execute('''
-                UPDATE users 
+                UPDATE users
                 SET first_name = ?, last_name = ?, role = ?, student_id = ?, updated_at = ?
                 WHERE username = ?
                 ''', (
@@ -267,10 +267,10 @@ def ensure_user_in_communication_system(username, first_name, last_name, email, 
             # User doesn't exist, use the centralized creation function
             conn.close()
             return create_default_user_if_needed(username, first_name, last_name, email, role, student_id)
-        
+
         conn.close()
         return True
-        
+
     except sqlite3.IntegrityError as e:
         if "UNIQUE constraint failed: users.email" in str(e):
             logger.error(f"Email {email} is already in use. Could not integrate user {username}.")

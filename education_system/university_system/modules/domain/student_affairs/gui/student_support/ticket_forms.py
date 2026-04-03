@@ -325,15 +325,15 @@ class TicketFormsMixin:
         """Handle template selection"""
         template_name = self.selected_template.get()
         template = self.template_data.get(template_name)
-        
+
         if template:
             # Fill form with template data
             self.title_entry.delete(0, tk.END)
             self.title_entry.insert(0, template['title_template'])
-            
+
             self.category_var.set(template['category'])
             self.priority_var.set(template['priority'])
-            
+
             self.description_text.delete(1.0, tk.END)
             self.description_text.insert(1.0, template['description_template'])
 
@@ -343,28 +343,28 @@ class TicketFormsMixin:
             title="Select File to Attach",
             filetypes=[("All Files", "*.*")]
         )
-        
+
         if file_path:
             # Check file size (10MB limit)
             file_size = os.path.getsize(file_path)
             if file_size > 10 * 1024 * 1024:
                 messagebox.showerror("File Too Large", "File size must be less than 10MB")
                 return
-            
+
             # Read file data
             try:
                 with open(file_path, 'rb') as f:
                     file_data = f.read()
-                
+
                 attachment = {
                     'filename': os.path.basename(file_path),
                     'data': file_data,
                     'mime_type': 'application/octet-stream'  # Default MIME type
                 }
-                
+
                 self.attachments.append(attachment)
                 self.attachments_listbox.insert(tk.END, attachment['filename'])
-                
+
             except Exception as e:
                 messagebox.showerror("File Error", f"Could not read file: {e}")
 
@@ -383,19 +383,19 @@ class TicketFormsMixin:
         if not title:
             messagebox.showerror("Validation Error", "Title is required")
             return
-        
+
         description = self.description_text.get(1.0, tk.END).strip()
         if not description:
             messagebox.showerror("Validation Error", "Description is required")
             return
-        
+
         category = self.category_var.get()
         priority = self.priority_var.get()
-        
+
         # Parse tags
         tags_text = self.tags_entry.get().strip()
         tags = [tag.strip() for tag in tags_text.split(',') if tag.strip()] if tags_text else []
-        
+
         # Get student ID
         try:
             from education_system.university_system.infrastructure.database.db import get_connection
@@ -404,28 +404,28 @@ class TicketFormsMixin:
             cursor.execute('SELECT student_id FROM users WHERE id = ?', (self.auth.current_user['id'],))
             result = cursor.fetchone()
             conn.close()
-            
+
             if not result:
                 messagebox.showerror("Error", "No student ID associated with your account")
                 return
-            
+
             student_id = result[0]
-            
+
         except Exception as e:
             messagebox.showerror("Database Error", f"Could not get student ID: {e}")
             return
-        
+
         # Create ticket
         try:
             self.update_status("Creating ticket...")
-            
+
             # Get template ID if template was used
             template_id = None
             template_name = self.selected_template.get()
             if template_name != "Create from scratch":
                 template = self.template_data.get(template_name)
                 template_id = template['template_id'] if template else None
-            
+
             ticket_id = self.support.create_support_ticket(
                 student_id=student_id,
                 title=title,
@@ -472,7 +472,7 @@ class TicketFormsMixin:
     def show_my_tickets(self):
         """Show student's tickets"""
         self.clear_content()
-        
+
         tickets_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(tickets_frame, text="📋 My Tickets")
 
@@ -486,27 +486,27 @@ class TicketFormsMixin:
 
         # Check authentication
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] != 'student':
-            ttk.Label(tickets_frame, text="❌ Access denied", 
+            ttk.Label(tickets_frame, text="❌ Access denied",
                      style='Title.TLabel').pack(pady=20)
             return
-        
+
         # Title and filters
         header_frame = ttk.Frame(tickets_frame)
         header_frame.pack(fill="x", pady=(0, 10))
-        
-        ttk.Label(header_frame, text="📋 My Support Tickets", 
+
+        ttk.Label(header_frame, text="📋 My Support Tickets",
                  style='Title.TLabel').pack(side="left")
-        
-        ttk.Button(header_frame, text="🔄 Refresh", 
+
+        ttk.Button(header_frame, text="🔄 Refresh",
                   command=self.refresh_my_tickets).pack(side="right")
-        
+
         # Filters
         filter_frame = ttk.LabelFrame(tickets_frame, text="🔍 Filters", padding="10")
         filter_frame.pack(fill="x", pady=(0, 10))
-        
+
         filter_grid = ttk.Frame(filter_frame)
         filter_grid.pack(fill="x")
-        
+
         # Status filter
         ttk.Label(filter_grid, text="Status:").grid(row=0, column=0, sticky="w", padx=(0, 5))
         self.my_tickets_status_filter = ttk.Combobox(filter_grid, values=[
@@ -514,20 +514,20 @@ class TicketFormsMixin:
         ], state="readonly", width=15)
         self.my_tickets_status_filter.set("All")
         self.my_tickets_status_filter.grid(row=0, column=1, padx=(0, 10))
-        
+
         # Search filter
         ttk.Label(filter_grid, text="Search:").grid(row=0, column=2, sticky="w", padx=(0, 5))
         self.my_tickets_search = ttk.Entry(filter_grid, width=30)
         self.my_tickets_search.grid(row=0, column=3, padx=(0, 10))
         self.my_tickets_search.bind('<Return>', lambda e: self.refresh_my_tickets())
-        
-        ttk.Button(filter_grid, text="Apply", 
+
+        ttk.Button(filter_grid, text="Apply",
                   command=self.refresh_my_tickets).grid(row=0, column=4)
-        
+
         # Tickets list
         self.my_tickets_frame = ttk.Frame(tickets_frame)
         self.my_tickets_frame.pack(fill="both", expand=True)
-        
+
         # Load tickets
         self.refresh_my_tickets()
 
@@ -536,7 +536,7 @@ class TicketFormsMixin:
         # Clear existing content
         for widget in self.my_tickets_frame.winfo_children():
             widget.destroy()
-        
+
         # Get student ID
         try:
             from education_system.university_system.infrastructure.database.db import get_connection
@@ -545,27 +545,27 @@ class TicketFormsMixin:
             cursor.execute('SELECT student_id FROM users WHERE id = ?', (self.auth.current_user['id'],))
             result = cursor.fetchone()
             conn.close()
-            
+
             if not result:
                 ttk.Label(self.my_tickets_frame, text="❌ No student ID found").pack(pady=20)
                 return
-            
+
             student_id = result[0]
-            
+
         except Exception as e:
             ttk.Label(self.my_tickets_frame, text=f"❌ Database error: {e}").pack(pady=20)
             return
-        
+
         # Build filters
         filters = {}
         status_filter = self.my_tickets_status_filter.get()
         if status_filter != "All":
             filters['status'] = status_filter
-        
+
         search_text = self.my_tickets_search.get().strip()
         if search_text:
             filters['search'] = search_text
-        
+
         # Get tickets
         try:
             result = self.support.get_student_tickets(student_id, filters, page=1, per_page=50)
@@ -580,15 +580,15 @@ class TicketFormsMixin:
             if not tickets:
                 ttk.Label(self.my_tickets_frame, text="📭 No tickets found").pack(pady=20)
                 return
-            
+
             # Create tickets table
             columns = ('ID', 'Title', 'Status', 'Priority', 'Category', 'Created', 'Updated')
             tree = ttk.Treeview(self.my_tickets_frame, columns=columns, show='headings', height=20)
-            
+
             # Configure columns
             for col in columns:
                 tree.heading(col, text=col)
-            
+
             tree.column('ID', width=80)
             tree.column('Title', width=300)
             tree.column('Status', width=100)
@@ -596,7 +596,7 @@ class TicketFormsMixin:
             tree.column('Category', width=120)
             tree.column('Created', width=150)
             tree.column('Updated', width=150)
-            
+
             # Add tickets
             for ticket in tickets:
                 # Skip None or invalid ticket entries
@@ -621,117 +621,117 @@ class TicketFormsMixin:
                     ticket_created,
                     ticket_updated
                 ))
-            
+
             # Scrollbar
             scrollbar = ttk.Scrollbar(self.my_tickets_frame, orient='vertical', command=tree.yview)
             tree.configure(yscrollcommand=scrollbar.set)
-            
+
             tree.pack(side='left', fill='both', expand=True)
             scrollbar.pack(side='right', fill='y')
-            
+
             # Double-click to view
             tree.bind('<Double-1>', lambda e: self.on_ticket_double_click(tree))
-            
+
             # Context menu
             tree.bind('<Button-3>', lambda e: self.show_ticket_context_menu(e, tree))
-            
+
             self.update_status(f"Loaded {len(tickets)} tickets")
-            
+
         except Exception as e:
             ttk.Label(self.my_tickets_frame, text=f"❌ Error loading tickets: {e}").pack(pady=20)
 
     def show_all_tickets(self):
         """Show all tickets (staff only)"""
         self.clear_content()
-        
+
         tickets_frame = ttk.Frame(self.notebook, padding="3")
         self.notebook.add(tickets_frame, text="🎫 All Tickets")
 
         # Configure frame to expand
         tickets_frame.rowconfigure(0, weight=1)
         tickets_frame.columnconfigure(0, weight=1)
-        
+
         # Check permissions
         if not self.auth or not self.auth.current_user or self.auth.current_user['role'] not in ('staff', 'admin'):
-            ttk.Label(tickets_frame, text="❌ Staff access required", 
+            ttk.Label(tickets_frame, text="❌ Staff access required",
                      style='Title.TLabel').pack(pady=20)
             return
-        
+
         # Title and controls
         header_frame = ttk.Frame(tickets_frame)
         header_frame.pack(fill="x", pady=(0, 10))
-        
-        ttk.Label(header_frame, text="🎫 All Support Tickets", 
+
+        ttk.Label(header_frame, text="🎫 All Support Tickets",
                  style='Title.TLabel').pack(side="left")
-        
+
         control_frame = ttk.Frame(header_frame)
         control_frame.pack(side="right")
-        
-        ttk.Button(control_frame, text="🔄 Refresh", 
+
+        ttk.Button(control_frame, text="🔄 Refresh",
                   command=self.refresh_all_tickets).pack(side="left", padx=(0, 5))
-        ttk.Button(control_frame, text="📊 Reports", 
+        ttk.Button(control_frame, text="📊 Reports",
                   command=self.show_reports).pack(side="left", padx=(0, 5))
-        ttk.Button(control_frame, text="📦 Bulk Ops", 
+        ttk.Button(control_frame, text="📦 Bulk Ops",
                   command=self.show_bulk_operations).pack(side="left")
-        
+
         # Advanced filters
         filter_frame = ttk.LabelFrame(tickets_frame, text="🔍 Advanced Filters", padding="10")
         filter_frame.pack(fill="x", pady=(0, 10))
-        
+
         filter_grid = ttk.Frame(filter_frame)
         filter_grid.pack(fill="x")
-        
+
         # Row 1
         ttk.Label(filter_grid, text="Status:").grid(row=0, column=0, sticky="w", padx=(0, 5))
         self.all_tickets_status = ttk.Combobox(filter_grid, values=[
             "All"] + TICKET_STATUSES, state="readonly", width=12)
         self.all_tickets_status.set("All")
         self.all_tickets_status.grid(row=0, column=1, padx=(0, 10))
-        
+
         ttk.Label(filter_grid, text="Priority:").grid(row=0, column=2, sticky="w", padx=(0, 5))
         self.all_tickets_priority = ttk.Combobox(filter_grid, values=[
             "All"] + TICKET_PRIORITIES, state="readonly", width=12)
         self.all_tickets_priority.set("All")
         self.all_tickets_priority.grid(row=0, column=3, padx=(0, 10))
-        
+
         ttk.Label(filter_grid, text="Category:").grid(row=0, column=4, sticky="w", padx=(0, 5))
         self.all_tickets_category = ttk.Combobox(filter_grid, values=[
             "All"] + SUPPORT_CATEGORIES, state="readonly", width=15)
         self.all_tickets_category.set("All")
         self.all_tickets_category.grid(row=0, column=5, padx=(0, 10))
-        
+
         # Row 2
         ttk.Label(filter_grid, text="Assigned to:").grid(row=1, column=0, sticky="w", padx=(0, 5), pady=(5, 0))
         self.all_tickets_assigned = ttk.Entry(filter_grid, width=15)
         self.all_tickets_assigned.grid(row=1, column=1, padx=(0, 10), pady=(5, 0))
-        
+
         ttk.Label(filter_grid, text="Search:").grid(row=1, column=2, sticky="w", padx=(0, 5), pady=(5, 0))
         self.all_tickets_search = ttk.Entry(filter_grid, width=20)
         self.all_tickets_search.grid(row=1, column=3, columnspan=2, sticky="ew", padx=(0, 10), pady=(5, 0))
         self.all_tickets_search.bind('<Return>', lambda e: self.refresh_all_tickets())
-        
-        ttk.Button(filter_grid, text="Apply Filters", 
+
+        ttk.Button(filter_grid, text="Apply Filters",
                   command=self.refresh_all_tickets).grid(row=1, column=5, pady=(5, 0))
-        
+
         filter_grid.columnconfigure(4, weight=1)
-        
+
         # Quick filter buttons
         quick_frame = ttk.Frame(filter_frame)
         quick_frame.pack(fill="x", pady=(10, 0))
-        
-        ttk.Button(quick_frame, text="🔥 High Priority", 
+
+        ttk.Button(quick_frame, text="🔥 High Priority",
                   command=lambda: self.apply_quick_filter('priority', 'High')).pack(side="left", padx=(0, 5))
-        ttk.Button(quick_frame, text="❌ Unassigned", 
+        ttk.Button(quick_frame, text="❌ Unassigned",
                   command=lambda: self.apply_quick_filter('assigned', 'none')).pack(side="left", padx=(0, 5))
-        ttk.Button(quick_frame, text="🚨 Escalated", 
+        ttk.Button(quick_frame, text="🚨 Escalated",
                   command=lambda: self.apply_quick_filter('status', 'Escalated')).pack(side="left", padx=(0, 5))
-        ttk.Button(quick_frame, text="🔄 Clear Filters", 
+        ttk.Button(quick_frame, text="🔄 Clear Filters",
                   command=self.clear_all_filters).pack(side="left", padx=(0, 5))
-        
+
         # Tickets list
         self.all_tickets_frame = ttk.Frame(tickets_frame)
         self.all_tickets_frame.pack(fill="both", expand=True)
-        
+
         # Load tickets
         self.refresh_all_tickets()
 
@@ -745,7 +745,7 @@ class TicketFormsMixin:
             if value == 'none':
                 self.all_tickets_assigned.delete(0, tk.END)
                 self.all_tickets_assigned.insert(0, 'UNASSIGNED')
-        
+
         self.refresh_all_tickets()
 
     def clear_all_filters(self):
@@ -762,33 +762,33 @@ class TicketFormsMixin:
         # Clear existing content
         for widget in self.all_tickets_frame.winfo_children():
             widget.destroy()
-        
+
         # Build filters
         filters = {}
-        
+
         status = self.all_tickets_status.get()
         if status != "All":
             filters['status'] = status
-        
+
         priority = self.all_tickets_priority.get()
         if priority != "All":
             filters['priority'] = priority
-        
+
         category = self.all_tickets_category.get()
         if category != "All":
             filters['category'] = category
-        
+
         assigned = self.all_tickets_assigned.get().strip()
         if assigned:
             if assigned.upper() == 'UNASSIGNED':
                 filters['assigned_to'] = None
             else:
                 filters['assigned_to'] = assigned
-        
+
         search = self.all_tickets_search.get().strip()
         if search:
             filters['search'] = search
-        
+
         # Get tickets
         try:
             result = self.support.get_student_tickets(None, filters, page=1, per_page=100)
@@ -803,15 +803,15 @@ class TicketFormsMixin:
             if not tickets:
                 ttk.Label(self.all_tickets_frame, text="📭 No tickets found with current filters").pack(pady=20)
                 return
-            
+
             # Create tickets table with enhanced columns
             columns = ('ID', 'Title', 'Student', 'Status', 'Priority', 'Category', 'Assigned', 'Created', 'Updated')
             tree = ttk.Treeview(self.all_tickets_frame, columns=columns, show='headings', height=25)
-            
+
             # Configure columns
             for col in columns:
                 tree.heading(col, text=col)
-            
+
             tree.column('ID', width=60)
             tree.column('Title', width=250)
             tree.column('Student', width=100)
@@ -821,7 +821,7 @@ class TicketFormsMixin:
             tree.column('Assigned', width=100)
             tree.column('Created', width=120)
             tree.column('Updated', width=120)
-            
+
             # Add tickets with color coding
             for ticket in tickets:
                 # Skip None or invalid ticket entries
@@ -866,31 +866,31 @@ class TicketFormsMixin:
                     ticket_created_display,
                     ticket_updated_display
                 ), tags=tags)
-            
+
             # Configure tag colors
             tree.tag_configure('critical', background='#fee2e2', foreground='#dc2626')
             tree.tag_configure('urgent', background='#fed7aa', foreground='#ea580c')
             tree.tag_configure('high', background='#fef3c7', foreground='#d97706')
             tree.tag_configure('frustrated', background='#fce7f3', foreground='#be185d')
-            
+
             # Scrollbars
             v_scrollbar = ttk.Scrollbar(self.all_tickets_frame, orient='vertical', command=tree.yview)
             h_scrollbar = ttk.Scrollbar(self.all_tickets_frame, orient='horizontal', command=tree.xview)
             tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
-            
+
             tree.grid(row=0, column=0, sticky='nsew')
             v_scrollbar.grid(row=0, column=1, sticky='ns')
             h_scrollbar.grid(row=1, column=0, sticky='ew')
-            
+
             self.all_tickets_frame.columnconfigure(0, weight=1)
             self.all_tickets_frame.rowconfigure(0, weight=1)
-            
+
             # Bind events
             tree.bind('<Double-1>', lambda e: self.on_ticket_double_click(tree))
             tree.bind('<Button-3>', lambda e: self.show_staff_ticket_context_menu(e, tree))
-            
+
             self.update_status(f"Loaded {len(tickets)} tickets")
-            
+
         except Exception as e:
             ttk.Label(self.all_tickets_frame, text=f"❌ Error loading tickets: {e}").pack(pady=20)
 
@@ -906,26 +906,26 @@ class TicketFormsMixin:
         """Show context menu for ticket"""
         # Create context menu
         context_menu = tk.Menu(self.root, tearoff=0)
-        
+
         # Get selected item
         item = tree.identify_row(event.y)
         if item:
             tree.selection_set(item)
             ticket_data = tree.item(item)
             ticket_id = ticket_data['values'][0]
-            
-            context_menu.add_command(label="👁️ View Details", 
+
+            context_menu.add_command(label="👁️ View Details",
                                    command=lambda: self.view_ticket_details(ticket_id))
-            context_menu.add_command(label="💬 Add Response", 
+            context_menu.add_command(label="💬 Add Response",
                                    command=lambda: self.show_add_response_dialog_by_id(ticket_id))
-            
+
             if self.auth.current_user['role'] in ('staff', 'admin'):
                 context_menu.add_separator()
-                context_menu.add_command(label="📊 Update Status", 
+                context_menu.add_command(label="📊 Update Status",
                                        command=lambda: self.show_status_update_dialog(ticket_id))
-                context_menu.add_command(label="👨‍💼 Assign to Me", 
+                context_menu.add_command(label="👨‍💼 Assign to Me",
                                        command=lambda: self.assign_ticket_to_me(ticket_id))
-            
+
             # Show menu
             try:
                 context_menu.tk_popup(event.x_root, event.y_root)

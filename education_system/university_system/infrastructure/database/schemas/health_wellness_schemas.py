@@ -18,11 +18,14 @@ def init_health_system_db():
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS health_records (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            student_id TEXT NOT NULL,
-            email TEXT,
-            last_checkup TEXT,
-            screening_type TEXT,
-            next_screening_due TEXT,
+            student_id TEXT,
+            record_type TEXT,
+            record_date TEXT,
+            description TEXT,
+            provider TEXT,
+            confidential INTEGER DEFAULT 0,
+            created_at TEXT,
+            encrypted_data TEXT,
             FOREIGN KEY (student_id) REFERENCES students (student_id)
         )
         ''')

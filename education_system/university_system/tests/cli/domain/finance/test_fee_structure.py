@@ -462,10 +462,12 @@ class TestAPIEndpoints:
             conn = _unclosable_connect(sample_data)
             mock_conn.return_value = conn
 
-            response = fee_structure.api_get_exchange_rates()
+            # Flask jsonify requires an app context
+            with fee_structure.app.app_context():
+                response = fee_structure.api_get_exchange_rates()
 
-            # Verify response contains exchange rates
-            assert isinstance(response.json, dict) or callable(response.json)
+                # Verify response contains exchange rates
+                assert isinstance(response.json, dict) or callable(response.json)
 class TestPermissions:
     """Test permission requirements"""
 

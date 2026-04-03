@@ -60,7 +60,7 @@ def show_academic_menu(self):
         (_t("parent_portal.academic.view_timetable"), self.show_timetable_interface),
         (_t("parent_portal.academic.grade_analytics"), self.show_analytics_interface),
     ]
-    
+
     for i, (text, command) in enumerate(options):
         btn = ttk.Button(
             menu_frame,
@@ -87,7 +87,7 @@ def show_attendance_menu(self):
         (_t("parent_portal.attendance.conduct_reports"), self.show_behavior_interface),
         (_t("parent_portal.attendance.report_absence"), self.show_absence_interface),
     ]
-    
+
     for text, command in options:
         btn = ttk.Button(
             menu_frame,
@@ -115,7 +115,7 @@ def show_health_menu(self):
         (_t("parent_portal.health.authorized_reps"), self.show_pickup_interface),
         (_t("parent_portal.health.photo_permissions"), self.show_photo_interface),
     ]
-    
+
     for text, command in options:
         btn = ttk.Button(
             menu_frame,
@@ -174,7 +174,7 @@ def show_financial_menu(self):
         (_t("parent_portal.financial.make_donation"), self.donate_to_campaign),
         (_t("parent_portal.financial.my_donations"), self.show_donations_history),
     ]
-    
+
     for text, command in options:
         btn = ttk.Button(
             menu_frame,
@@ -203,7 +203,7 @@ def show_academic_support_menu(self):
         (_t("parent_portal.support.library"), self.show_library_interface),
         (_t("parent_portal.support.activities"), self.show_activities_interface),
     ]
-    
+
     for text, command in options:
         btn = ttk.Button(
             menu_frame,

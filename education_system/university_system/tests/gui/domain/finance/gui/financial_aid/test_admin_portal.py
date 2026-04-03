@@ -13,6 +13,14 @@ import json
 
 from education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal import AdminPortal
 
+# Base patch paths for each submodule
+_PORTAL = 'education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.portal'
+_APPS = 'education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.applications'
+_PKGS = 'education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.packages'
+_DISB = 'education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.disbursements'
+_REPORTS = 'education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.reports'
+_FAFSA = 'education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.fafsa_import'
+
 
 class TestAdminPortalInit:
     """Test AdminPortal initialization"""
@@ -21,6 +29,7 @@ class TestAdminPortalInit:
         """Test initialization with parent frame"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
         auth_mock = Mock()
 
         portal = AdminPortal(parent_frame, auth_mock)
@@ -36,8 +45,9 @@ class TestAdminPortalInit:
         """Test initialization without explicit auth instance"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
-        with patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_auth') as mock_get_auth:
+        with patch(f'{_PORTAL}.get_auth') as mock_get_auth:
             mock_get_auth.return_value = Mock()
             portal = AdminPortal(parent_frame)
 
@@ -50,6 +60,7 @@ class TestAdminPortalInit:
         """Test _ensure_valid_parent with valid parent frame"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
         portal = AdminPortal(parent_frame, Mock())
 
         result = portal._ensure_valid_parent()
@@ -62,6 +73,7 @@ class TestAdminPortalInit:
         """Test _ensure_valid_parent creates standalone window when needed"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
         portal = AdminPortal(parent_frame, Mock())
 
         # Destroy parent frame to simulate invalid parent
@@ -80,11 +92,13 @@ class TestAdminPortalInit:
 class TestAdminDashboard:
     """Test admin dashboard functionality"""
 
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch(f'{_PORTAL}.get_connection')
     def test_show_dashboard(self, mock_get_conn):
         """Test show_dashboard method"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
+        parent_frame.pack()
         auth_mock = Mock()
 
         # Mock database connection
@@ -96,17 +110,20 @@ class TestAdminDashboard:
         portal = AdminPortal(parent_frame, auth_mock)
         portal.show_dashboard()
 
-        # Verify dashboard elements are created
-        children = parent_frame.winfo_children()
+        # Verify dashboard elements are created (portal may use standalone window)
+        children = portal.parent_frame.winfo_children()
         assert len(children) > 0
 
+        if portal.standalone_window:
+            portal.standalone_window.destroy()
         root.destroy()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch(f'{_PORTAL}.get_connection')
     def test_get_admin_stats(self, mock_get_conn):
         """Test _get_admin_stats method"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         # Mock database responses
         mock_conn = Mock()
@@ -132,11 +149,12 @@ class TestAdminDashboard:
 class TestAidApplications:
     """Test financial aid applications management"""
 
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch(f'{_APPS}.get_connection')
     def test_show_aid_applications(self, mock_get_conn):
         """Test show_aid_applications method"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         mock_conn = Mock()
         mock_conn.execute.return_value.fetchall.return_value = []
@@ -145,17 +163,20 @@ class TestAidApplications:
         portal = AdminPortal(parent_frame, Mock())
         portal.show_aid_applications()
 
-        # Verify UI elements are created
-        children = parent_frame.winfo_children()
+        # Verify UI elements are created (portal may use standalone window)
+        children = portal.parent_frame.winfo_children()
         assert len(children) > 0
 
+        if portal.standalone_window:
+            portal.standalone_window.destroy()
         root.destroy()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch(f'{_APPS}.get_connection')
     def test_load_aid_applications(self, mock_get_conn):
         """Test _load_aid_applications method"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         # Mock application data
         mock_app = {
@@ -180,12 +201,13 @@ class TestAidApplications:
 
         root.destroy()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.log_activity')
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_success')
+    @patch(f'{_APPS}.log_activity')
+    @patch(f'{_APPS}.show_success')
     def test_review_aid_application_approve(self, mock_success, mock_log):
         """Test reviewing aid application - approve"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         portal = AdminPortal(parent_frame, Mock())
         portal.aid_manager = Mock()
@@ -207,12 +229,13 @@ class TestAidApplications:
 class TestAidPackages:
     """Test aid package creation and management"""
 
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_current_academic_year')
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_academic_year_list')
+    @patch(f'{_PKGS}.get_current_academic_year')
+    @patch(f'{_PKGS}.get_academic_year_list')
     def test_show_create_package(self, mock_year_list, mock_current_year):
         """Test show_create_package method"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         mock_current_year.return_value = '2023-2024'
         mock_year_list.return_value = ['2022-2023', '2023-2024', '2024-2025']
@@ -220,19 +243,22 @@ class TestAidPackages:
         portal = AdminPortal(parent_frame, Mock())
         portal.show_create_package()
 
-        # Verify form elements are created
-        children = parent_frame.winfo_children()
+        # Verify form elements are created (portal may use standalone window)
+        children = portal.parent_frame.winfo_children()
         assert len(children) > 0
 
+        if portal.standalone_window:
+            portal.standalone_window.destroy()
         root.destroy()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.log_activity')
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_success')
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_error')
+    @patch(f'{_PKGS}.log_activity')
+    @patch(f'{_PKGS}.show_success')
+    @patch(f'{_PKGS}.show_error')
     def test_create_aid_package_success(self, mock_error, mock_success, mock_log):
         """Test successful aid package creation"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         portal = AdminPortal(parent_frame, Mock())
         portal.aid_manager = Mock()
@@ -255,11 +281,12 @@ class TestAidPackages:
 
         root.destroy()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_error')
+    @patch(f'{_PKGS}.show_error')
     def test_create_aid_package_missing_student_id(self, mock_error):
         """Test aid package creation with missing student ID"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         portal = AdminPortal(parent_frame, Mock())
 
@@ -282,11 +309,12 @@ class TestAidPackages:
 class TestDisbursements:
     """Test disbursement management"""
 
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch(f'{_DISB}.get_connection')
     def test_show_disbursements(self, mock_get_conn):
         """Test show_disbursements method"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         mock_conn = Mock()
         mock_conn.execute.return_value.fetchone.return_value = {
@@ -298,17 +326,20 @@ class TestDisbursements:
         portal = AdminPortal(parent_frame, Mock())
         portal.show_disbursements()
 
-        # Verify UI elements are created
-        children = parent_frame.winfo_children()
+        # Verify UI elements are created (portal may use standalone window)
+        children = portal.parent_frame.winfo_children()
         assert len(children) > 0
 
+        if portal.standalone_window:
+            portal.standalone_window.destroy()
         root.destroy()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch(f'{_DISB}.get_connection')
     def test_load_pending_disbursements(self, mock_get_conn):
         """Test _load_pending_disbursements method"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         mock_disb = {
             'disbursement_id': 'D123',
@@ -345,13 +376,14 @@ class TestDisbursements:
 
         root.destroy()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_current_user')
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.log_activity')
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_success')
+    @patch(f'{_DISB}.get_current_user')
+    @patch(f'{_DISB}.log_activity')
+    @patch(f'{_DISB}.show_success')
     def test_process_selected_disbursements(self, mock_success, mock_log, mock_user):
         """Test processing selected disbursements"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         mock_user.return_value = {'id': 1, 'username': 'admin'}
 
@@ -375,21 +407,25 @@ class TestReports:
         """Test show_reports method"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         portal = AdminPortal(parent_frame, Mock())
         portal.show_reports()
 
-        # Verify report options are displayed
-        children = parent_frame.winfo_children()
+        # Verify report options are displayed (portal may use standalone window)
+        children = portal.parent_frame.winfo_children()
         assert len(children) > 0
 
+        if portal.standalone_window:
+            portal.standalone_window.destroy()
         root.destroy()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.get_connection')
+    @patch(f'{_REPORTS}.get_connection')
     def test_generate_aid_distribution_report(self, mock_get_conn):
         """Test _generate_aid_distribution_report method"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         mock_conn = Mock()
         mock_conn.execute.return_value.fetchall.return_value = []
@@ -405,11 +441,7 @@ class TestReports:
         portal = AdminPortal(parent_frame, Mock())
 
         # This will create a window, so we need to handle that
-        with patch('tkinter.Toplevel') as mock_toplevel:
-            mock_window = Mock()
-            mock_toplevel.return_value = mock_window
-
-            portal._generate_aid_distribution_report()
+        portal._generate_aid_distribution_report()
 
         root.destroy()
 
@@ -421,21 +453,25 @@ class TestFAFSAImport:
         """Test show_fafsa_import method"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         portal = AdminPortal(parent_frame, Mock())
         portal.show_fafsa_import()
 
-        # Verify import UI is displayed
-        children = parent_frame.winfo_children()
+        # Verify import UI is displayed (portal may use standalone window)
+        children = portal.parent_frame.winfo_children()
         assert len(children) > 0
 
+        if portal.standalone_window:
+            portal.standalone_window.destroy()
         root.destroy()
 
-    @patch('education_system.university_system.modules.domain.finance.gui.financial_aid.admin_portal.show_warning')
+    @patch(f'{_FAFSA}.show_warning')
     def test_import_fafsa_file_no_file(self, mock_warning):
         """Test FAFSA import with no file selected"""
         root = tk.Tk()
         parent_frame = ttk.Frame(root)
+        parent_frame.pack()
 
         portal = AdminPortal(parent_frame, Mock())
         portal._import_fafsa_file('')

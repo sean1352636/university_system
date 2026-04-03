@@ -111,6 +111,9 @@ class TestAccessibilityToolsGUI:
         ]
 
         gui = AccessibilityToolsGUI(mock_root, mock_auth)
+
+        # Reset cursor after init (which triggers loads during tab creation)
+        mock_cursor.execute.reset_mock()
         gui.load_profiles()
 
         # Should query all profiles for admin
@@ -224,6 +227,9 @@ class TestAccessibilityToolsGUI:
         ]
 
         gui = AccessibilityToolsGUI(mock_root, mock_auth)
+
+        # Reset cursor after init (which triggers loads during tab creation)
+        mock_cursor.execute.reset_mock()
         gui.load_assistive_tech_requests()
 
         # Should query tech requests
@@ -294,26 +300,31 @@ class TestAccessibilityToolsGUI:
         assert any('UPDATE accessibility_settings' in str(call) for call in calls)
 
     @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
-    @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.messagebox')
-    def test_action_methods_show_dialogs(self, mock_messagebox, mock_toplevel, mock_root, mock_auth):
-        """Test that action methods show appropriate dialogs"""
+    def test_action_methods_show_dialogs(self, mock_toplevel, mock_root, mock_auth):
+        """Test that action methods open dialog windows"""
         gui = AccessibilityToolsGUI(mock_root, mock_auth)
 
-        # Test create profile
+        # Reset Toplevel call count after init (which creates the main window)
+        initial_call_count = mock_toplevel.call_count
+
+        # Test create profile - opens a Toplevel dialog
         gui.create_profile()
-        assert mock_messagebox.showinfo.called
+        assert mock_toplevel.call_count > initial_call_count
 
-        # Test submit request
+        # Test submit request - opens a Toplevel dialog
+        count_before = mock_toplevel.call_count
         gui.submit_request()
-        assert mock_messagebox.showinfo.called
+        assert mock_toplevel.call_count > count_before
 
-        # Test add exam accommodation
+        # Test add exam accommodation - opens a Toplevel dialog
+        count_before = mock_toplevel.call_count
         gui.add_exam_accommodation()
-        assert mock_messagebox.showinfo.called
+        assert mock_toplevel.call_count > count_before
 
-        # Test request assistive tech
+        # Test request assistive tech - opens a Toplevel dialog
+        count_before = mock_toplevel.call_count
         gui.request_assistive_tech()
-        assert mock_messagebox.showinfo.called
+        assert mock_toplevel.call_count > count_before
 
     @patch('education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui.tk.Toplevel')
     def test_update_status(self, mock_toplevel, mock_root, mock_auth):

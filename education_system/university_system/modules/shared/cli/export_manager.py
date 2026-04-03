@@ -27,7 +27,7 @@ def get_file_path(file_format, default_filename):
     """Helper function to get file path from user with error handling"""
     while True:
         location_choice = input(f"Where would you like to save the {file_format} file?\n1. Current directory\n2. Custom path\nEnter your choice (1-2): ")
-        
+
         if location_choice == '1':
             # Use default exports directory
             default_dir = str(paths.EXPORTS_DIR)
@@ -38,11 +38,11 @@ def get_file_path(file_format, default_filename):
             while True:
                 custom_path = input("Enter the full path (including filename): ")
                 directory = os.path.dirname(custom_path)
-                
+
                 # Check if directory exists or can be created
                 if not directory:  # If no directory specified, use current directory
                     return custom_path
-                
+
                 if not os.path.exists(directory):
                     try_create = input(f"Directory {directory} does not exist. Create it? (y/n): ")
                     if try_create.lower() == 'y':
@@ -61,75 +61,75 @@ def get_file_path(file_format, default_filename):
 
 def export_to_csv():
     global auth
-    
+
     # Check permissions
     if not auth or not auth.current_user:
         print("You must be logged in to export student records.")
         return
-    
+
     if not (auth.check_permission('export_data') or auth.check_permission('export_module_data')):
         print("You don't have permission to export student records.")
         return
-    
+
     try:
         # Fetch student data
         students = fetch_student_data(include_modules=False)
-        
+
         if not students:
             print("No student records found to export.")
             return
-        
+
         # Define the default filename
         default_filename = f"student_records_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        
+
         # Get file path from user
         file_path = get_file_path('CSV', default_filename)
-        
+
         # Define CSV headers based on the student table structure
         headers = [
             'Student ID', 'Email Address', 'Title', 'First Name', 'Middle Name', 'Last Name',
             'Gender', 'Date of Birth', 'Age', 'Course', 'Registration Datetime'
         ]
-        
+
         # Write to CSV file
         with open(file_path, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(headers)
             for student in students:
                 writer.writerow(student)
-        
+
         print(f"Student records successfully exported to {file_path}")
-        
+
     except (OSError, IOError) as e:
         logging.error(f"Error exporting to CSV: {e}")
 
 
 def export_to_excel():
     global auth
-    
+
     # Check permissions
     if not auth or not auth.current_user:
         print("You must be logged in to export student records.")
         return
-    
+
     if not (auth.check_permission('export_data') or auth.check_permission('export_module_data')):
         print("You don't have permission to export student records.")
         return
-    
+
     try:
         # Fetch student data
         students = fetch_student_data(include_modules=True)
-        
+
         if not students:
             print("No student records found to export.")
             return
-        
+
         # Define the default filename
         default_filename = f"student_records_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
-        
+
         # Get file path from user
         file_path = get_file_path('Excel', default_filename)
-        
+
         # Create a pandas Excel writer
         with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
             # Create student dataframe
@@ -149,17 +149,17 @@ def export_to_excel():
                     'Course': student[9],
                     'Registration Datetime': student[10]
                 })
-            
+
             # Create student dataframe and write to Excel
             student_df = pd.DataFrame(student_rows)
             student_df.to_excel(writer, sheet_name='Students', index=False)
-            
+
             # Create modules dataframe
             module_rows = []
             for student_data in students:
                 student = student_data['student']
                 modules = student_data['modules']
-                
+
                 for module in modules:
                     module_rows.append({
                         'Student ID': student[0],
@@ -168,60 +168,60 @@ def export_to_excel():
                         'Module Code': module[1],
                         'Module Name': module[2]
                     })
-            
+
             # Create modules dataframe and write to Excel
             module_df = pd.DataFrame(module_rows)
             module_df.to_excel(writer, sheet_name='Modules', index=False)
-        
+
         print(f"Student records successfully exported to {file_path}")
-        
+
     except (ValueError, TypeError, ValidationError) as e:
         logging.error(f"Error exporting to Excel: {e}")
 
 
 def export_to_pdf():
     global auth
-    
+
     # Check permissions
     if not auth or not auth.current_user:
         print("You must be logged in to export student records.")
         return
-    
+
     if not (auth.check_permission('export_data') or auth.check_permission('export_module_data')):
         print("You don't have permission to export student records.")
         return
-    
+
     try:
         # Fetch student data
         students = fetch_student_data(include_modules=True)
-        
+
         if not students:
             print("No student records found to export.")
             return
-        
+
         # Define the default filename
         default_filename = f"student_records_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-        
+
         # Get file path from user
         file_path = get_file_path('PDF', default_filename)
-        
+
         # Create a PDF document
         doc = SimpleDocTemplate(file_path, pagesize=letter)
         styles = getSampleStyleSheet()
         elements = []
-        
+
         # Add title
         title = Paragraph("Student Records", styles['Title'])
         elements.append(title)
-        
+
         # Process each student
         for student_data in students:
             student = student_data['student']
             modules = student_data['modules']
-            
+
             # Add student information
             elements.append(Paragraph(f"Student ID: {student[0]}", styles['Heading2']))
-            
+
             # Student data table
             student_info = [
                 ['Field', 'Value'],
@@ -233,7 +233,7 @@ def export_to_pdf():
                 ['Course', student[9]],
                 ['Registration Date', student[10]]
             ]
-            
+
             student_table = Table(student_info, colWidths=[150, 350])
             student_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (1, 0), colors.grey),
@@ -244,15 +244,15 @@ def export_to_pdf():
                 ('BACKGROUND', (0, 1), (1, -1), colors.beige),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black)
             ]))
-            
+
             elements.append(student_table)
             elements.append(Paragraph("Modules:", styles['Heading3']))
-            
+
             # Module data table
             module_data = [['Type', 'Code', 'Name']]
             for module in modules:
                 module_data.append([module[0], module[1], module[2]])
-            
+
             module_table = Table(module_data, colWidths=[100, 100, 300])
             module_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (2, 0), colors.grey),
@@ -262,54 +262,54 @@ def export_to_pdf():
                 ('BOTTOMPADDING', (0, 0), (2, 0), 12),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black)
             ]))
-            
+
             elements.append(module_table)
             elements.append(Paragraph(" ", styles['Normal']))  # Add some space
-        
+
         # Build the PDF
         doc.build(elements)
-        
+
         print(f"Student records successfully exported to {file_path}")
-        
+
     except (ValueError, TypeError, ValidationError) as e:
         logging.error(f"Error exporting to PDF: {e}")
 
 
 def export_to_txt():
     global auth
-    
+
     # Check permissions
     if not auth or not auth.current_user:
         print("You must be logged in to export student records.")
         return
-    
+
     if not (auth.check_permission('export_data') or auth.check_permission('export_module_data')):
         print("You don't have permission to export student records.")
         return
-    
+
     try:
         # Fetch student data
         students = fetch_student_data(include_modules=True)
-        
+
         if not students:
             print("No student records found to export.")
             return
-        
+
         # Define the default filename
         default_filename = f"student_records_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-        
+
         # Get file path from user
         file_path = get_file_path('TXT', default_filename)
-        
+
         # Write to text file
         with open(file_path, 'w') as txtfile:
             txtfile.write("STUDENT RECORDS\n")
             txtfile.write("=" * 60 + "\n\n")
-            
+
             for student_data in students:
                 student = student_data['student']
                 modules = student_data['modules']
-                
+
                 txtfile.write(f"Student ID: {student[0]}\n")
                 txtfile.write(f"Email Address: {student[1]}\n")
                 txtfile.write(f"Title: {student[2]}\n")
@@ -321,19 +321,19 @@ def export_to_txt():
                 txtfile.write(f"Age: {student[8]}\n")
                 txtfile.write(f"Course: {student[9]}\n")
                 txtfile.write(f"Registration Datetime: {student[10]}\n\n")
-                
+
                 txtfile.write("Modules:\n")
                 txtfile.write("-" * 60 + "\n")
                 txtfile.write(f"{'Type':<15} {'Code':<10} {'Name':<35}\n")
                 txtfile.write("-" * 60 + "\n")
-                
+
                 for module in modules:
                     txtfile.write(f"{module[0]:<15} {module[1]:<10} {module[2]:<35}\n")
-                
+
                 txtfile.write("\n" + "=" * 60 + "\n\n")
-        
+
         print(f"Student records successfully exported to {file_path}")
-        
+
     except (OSError, IOError) as e:
         logging.error(f"Error exporting to TXT: {e}")
 
@@ -341,16 +341,16 @@ def export_to_txt():
 def display_export_menu():
     """Display the export menu and handle user choices"""
     global auth
-    
+
     # Check permissions
     if not auth or not auth.current_user:
         print("You must be logged in to access export functions.")
         return
-    
+
     if not (auth.check_permission('export_data') or auth.check_permission('export_module_data')):
         print("You don't have permission to export data.")
         return
-    
+
     while True:
         print("\nExport Menu:")
         print("1. Export to CSV")
@@ -358,9 +358,9 @@ def display_export_menu():
         print("3. Export to PDF")
         print("4. Export to TXT")
         print("5. Return to Main Menu")
-        
+
         choice = input("Enter your choice (1-5): ")
-        
+
         if choice == '1':
             export_to_csv()
         elif choice == '2':

@@ -74,29 +74,29 @@ def view_staff_gui(self):
         if not conn:
             messagebox.showerror("Error", "Database connection failed")
             return
-            
+
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT staff_id, name, role, hourly_rate, status, performance_score 
-            FROM restaurant_staff 
+            SELECT staff_id, name, role, hourly_rate, status, performance_score
+            FROM restaurant_staff
             ORDER BY name
         ''')
         staff = cursor.fetchall()
-        
+
         for item in self.staff_tree.get_children():
             self.staff_tree.delete(item)
-            
+
         for member in staff:
             hourly_rate = f"£{member[3]:.2f}" if member[3] else "N/A"
             performance = f"{member[5]:.1f}/10" if member[5] else "N/A"
-            
+
             self.staff_tree.insert('', 'end', values=(
                 member[0], member[1], member[2], hourly_rate, member[4], performance
             ))
-            
+
         conn.close()
         messagebox.showinfo("Success", f"Loaded {len(staff)} staff members")
-        
+
     except sqlite3.Error as e:
         messagebox.showerror("Error", f"Failed to load staff: {str(e)}")
 
@@ -334,14 +334,14 @@ def show_staff_analytics(self):
         analytics_window = tk.Toplevel(self.root)
         analytics_window.title("Staff Analytics")
         analytics_window.geometry("800x600")
-        
+
         text_area = ScrolledText(analytics_window, height=30, width=80)
         text_area.pack(fill='both', expand=True, padx=10, pady=10)
-        
+
         analytics_text = self.generate_staff_analytics()
         text_area.insert('1.0', analytics_text)
         text_area.config(state='disabled')
-        
+
     except (sqlite3.Error, tk.TclError) as e:
         messagebox.showerror("Error", f"Failed to generate analytics: {str(e)}")
 
@@ -351,31 +351,31 @@ def generate_staff_analytics(self):
         conn = get_db_connection()
         if not conn:
             return "Database connection failed"
-            
+
         cursor = conn.cursor()
-        
+
         text = "STAFF ANALYTICS\n"
         text += "=" * 50 + "\n\n"
-        
+
         cursor.execute('''
             SELECT role, COUNT(*) as count, AVG(hourly_rate) as avg_rate, AVG(performance_score) as avg_performance
             FROM restaurant_staff
             WHERE status = 'Active'
             GROUP BY role
         ''')
-        
+
         role_data = cursor.fetchall()
-        
+
         text += "Staff by Role:\n"
         text += "-" * 50 + "\n"
         for role in role_data:
             avg_rate = f"£{role[2]:.2f}" if role[2] else "N/A"
             avg_perf = f"{role[3]:.1f}/10" if role[3] else "N/A"
             text += f"{role[0]}: {role[1]} staff, Avg Rate: {avg_rate}, Avg Performance: {avg_perf}\n"
-            
+
         conn.close()
         return text
-        
+
     except sqlite3.Error as e:
         return f"Error generating analytics: {str(e)}"
 

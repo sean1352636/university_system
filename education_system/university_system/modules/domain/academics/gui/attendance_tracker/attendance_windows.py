@@ -72,66 +72,66 @@ class ManualAttendanceWindow:
         self.module_code = module_code
         self.date = date
         self.callback = callback
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(f"{_('attendance.windows.manual_attendance')} - {module_code}")
         self.window.geometry("600x400")
         self.window.transient(parent)
         self.window.grab_set()
-        
+
         self.create_widgets()
         self.load_students()
-    
+
     def create_widgets(self):
         # Title
         title_label = ttk.Label(self.window, text=f"Manual Attendance Entry", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         info_label = ttk.Label(self.window, text=f"Module: {self.module_code} | Date: {self.date}")
         info_label.pack(pady=(0, 10))
-        
+
         # Students frame
         students_frame = ttk.Frame(self.window)
         students_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
-        
+
         # Headers
         headers_frame = ttk.Frame(students_frame)
         headers_frame.pack(fill=tk.X, pady=(0, 5))
-        
+
         ttk.Label(headers_frame, text="Student ID", width=15).pack(side=tk.LEFT)
         ttk.Label(headers_frame, text="Name", width=25).pack(side=tk.LEFT)
         ttk.Label(headers_frame, text="Status", width=15).pack(side=tk.LEFT)
         ttk.Label(headers_frame, text="Notes", width=20).pack(side=tk.LEFT)
-        
+
         # Scrollable frame for students
         canvas = tk.Canvas(students_frame)
         scrollbar = ttk.Scrollbar(students_frame, orient="vertical", command=canvas.yview)
         self.scrollable_frame = ttk.Frame(canvas)
-        
+
         self.scrollable_frame.bind(
             "<Configure>",
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
-        
+
         canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
-        
+
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
-        
+
         self.student_widgets = []
-        
+
         # Buttons
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
-        
-        ttk.Button(buttons_frame, text="Save Attendance", 
+
+        ttk.Button(buttons_frame, text="Save Attendance",
                   command=self.save_attendance, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(buttons_frame, text="Mark All Present", 
+        ttk.Button(buttons_frame, text="Mark All Present",
                   command=self.mark_all_present, style='Primary.TButton').pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(buttons_frame, text=_("common.cancel"), 
+        ttk.Button(buttons_frame, text=_("common.cancel"),
                   command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
-    
+
     def load_students(self):
         """Load students for the module"""
         try:
@@ -150,47 +150,47 @@ class ManualAttendanceWindow:
                 ''', (self.module_code,))
                 students = cursor.fetchall()
                 conn.close()
-            
+
             for student_id, first_name, last_name in students:
                 self.create_student_row(student_id, f"{first_name} {last_name}")
-                
+
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to load students: {e}")
-    
+
     def create_student_row(self, student_id, name):
         """Create a row for student attendance entry"""
         row_frame = ttk.Frame(self.scrollable_frame)
         row_frame.pack(fill=tk.X, pady=2)
-        
+
         # Student ID
         ttk.Label(row_frame, text=student_id, width=15).pack(side=tk.LEFT)
-        
+
         # Name
         ttk.Label(row_frame, text=name, width=25).pack(side=tk.LEFT)
-        
+
         # Status
         status_var = tk.StringVar(value="Present")
-        status_combo = ttk.Combobox(row_frame, textvariable=status_var, 
-                                   values=["Present", "Late", "Absent", "Excused"], 
+        status_combo = ttk.Combobox(row_frame, textvariable=status_var,
+                                   values=["Present", "Late", "Absent", "Excused"],
                                    state="readonly", width=12)
         status_combo.pack(side=tk.LEFT, padx=(0, 5))
-        
+
         # Notes
         notes_var = tk.StringVar()
         notes_entry = ttk.Entry(row_frame, textvariable=notes_var, width=18)
         notes_entry.pack(side=tk.LEFT)
-        
+
         self.student_widgets.append({
             'student_id': student_id,
             'status_var': status_var,
             'notes_var': notes_var
         })
-    
+
     def mark_all_present(self):
         """Mark all students as present"""
         for widget in self.student_widgets:
             widget['status_var'].set("Present")
-    
+
     def save_attendance(self):
         """Save attendance records"""
         try:
@@ -201,7 +201,7 @@ class ManualAttendanceWindow:
                     widget['status_var'].get(),
                     widget['notes_var'].get()
                 ))
-            
+
             if ORIGINAL_FUNCTIONS_AVAILABLE:
                 success = record_attendance(self.module_code, self.date, attendance_data, "Manual GUI Entry")
                 if success:
@@ -214,7 +214,7 @@ class ManualAttendanceWindow:
                 messagebox.showinfo("Demo", "Attendance would be recorded here")
                 self.callback()
                 self.window.destroy()
-                
+
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to save attendance: {e}")
 
@@ -451,7 +451,7 @@ class EditAttendanceWindow:
         self.module_code = module_code
         self.date = date
         self.callback = callback
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(f"{_('attendance.windows.edit_attendance')} - {student_id}")
         self.window.geometry("400x300")
@@ -461,68 +461,68 @@ class EditAttendanceWindow:
 
         # Set grab after window is fully created and visible
         self.window.after(100, self._safe_grab_set)
-    
+
     def create_widgets(self, name, current_status, notes):
         # Title
         title_label = ttk.Label(self.window, text="Edit Attendance Record", font=('Arial', 14, 'bold'))
         title_label.pack(pady=10)
-        
+
         # Student info
         info_frame = ttk.LabelFrame(self.window, text="Student Information", padding=10)
         info_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         ttk.Label(info_frame, text=f"Student ID: {self.student_id}").pack(anchor=tk.W)
         ttk.Label(info_frame, text=f"Name: {name}").pack(anchor=tk.W)
         ttk.Label(info_frame, text=f"Module: {self.module_code}").pack(anchor=tk.W)
         ttk.Label(info_frame, text=f"Date: {self.date}").pack(anchor=tk.W)
-        
+
         # Attendance details
         details_frame = ttk.LabelFrame(self.window, text="Attendance Details", padding=10)
         details_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
-        
+
         ttk.Label(details_frame, text="Status:").pack(anchor=tk.W)
         self.status_var = tk.StringVar(value=current_status)
         status_combo = ttk.Combobox(details_frame, textvariable=self.status_var,
                                    values=["Present", "Late", "Absent", "Excused"],
                                    state="readonly")
         status_combo.pack(fill=tk.X, pady=(5, 10))
-        
+
         ttk.Label(details_frame, text="Notes:").pack(anchor=tk.W)
         self.notes_var = tk.StringVar(value=notes or "")
         notes_entry = ttk.Entry(details_frame, textvariable=self.notes_var)
         notes_entry.pack(fill=tk.X, pady=(5, 0))
-        
+
         # Buttons
         buttons_frame = ttk.Frame(self.window)
         buttons_frame.pack(fill=tk.X, padx=10, pady=10)
-        
+
         ttk.Button(buttons_frame, text="Save Changes",
                   command=self.save_changes, style='Success.TButton').pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(buttons_frame, text=_("common.cancel"),
                   command=self.window.destroy, style='Danger.TButton').pack(side=tk.RIGHT)
-    
+
     def save_changes(self):
         """Save attendance changes"""
         try:
             if ORIGINAL_FUNCTIONS_AVAILABLE:
                 conn = get_db_connection()
                 cursor = conn.cursor()
-                
+
                 cursor.execute('''
-                INSERT OR REPLACE INTO attendance_records 
+                INSERT OR REPLACE INTO attendance_records
                 (student_id, module_code, date, status, notes, recorded_by, recorded_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (self.student_id, self.module_code, self.date, 
+                ''', (self.student_id, self.module_code, self.date,
                       self.status_var.get(), self.notes_var.get(),
                       "GUI Edit", datetime.datetime.now().isoformat()))
-                
+
                 conn.commit()
                 conn.close()
-                
+
                 messagebox.showinfo(_("common.success"), "Attendance record updated successfully!")
             else:
                 messagebox.showinfo("Demo", "Attendance record would be updated here")
-            
+
             self.callback()  # Refresh parent data
             self.window.destroy()
         except Exception as e:
@@ -542,7 +542,7 @@ class AddEditStudentWindow:
         self.student_data = student_data
         self.callback = callback
         self.is_edit = student_data is not None
-        
+
         self.window = tk.Toplevel(parent)
         self.window.title(_("attendance.windows.edit_student") if self.is_edit else _("attendance.windows.add_student"))
         self.window.geometry("500x400")
@@ -552,7 +552,7 @@ class AddEditStudentWindow:
 
         # Set grab after window is fully created and visible
         self.window.after(100, self._safe_grab_set)
-    
+
     def create_widgets(self):
         # Title
         title = "Edit Student" if self.is_edit else "Add New Student"

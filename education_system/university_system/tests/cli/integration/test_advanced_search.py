@@ -30,6 +30,16 @@ def setup_search_db():
     except Exception as e:
         print(f"Warning: DB init issue: {e}")
 
+    # Ensure schema and indexes exist even if init_enhanced_database partially failed
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            ensure_search_analytics_schema(cursor)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_search_analytics_user ON search_analytics(user_id)")
+            conn.commit()
+    except Exception as e:
+        print(f"Warning: Post-init schema fix issue: {e}")
+
     yield
 
     # Cleanup

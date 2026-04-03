@@ -21,6 +21,8 @@ def get_safe_db_connection(db_path=str(DEFAULT_DB_PATH)):
             conn.rollback()
         logger.error(f"Database error: {e}")
         raise DatabaseError(f"Database operation failed: {e}")
+    except (ValueError, TypeError, KeyError):
+        raise
     except Exception as e:
         if conn:
             conn.rollback()

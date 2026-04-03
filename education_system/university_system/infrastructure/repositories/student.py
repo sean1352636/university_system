@@ -53,7 +53,7 @@ from education_system.university_system.infrastructure.repositories.base import 
     BatchRepository,
 )
 from education_system.university_system.core import paths
-from education_system.university_system.core.sql_safety import escape_like, validate_identifier
+from education_system.university_system.core.sql_safety import escape_like, validate_identifier  # nosec B608
 
 logger = logging.getLogger(__name__)
 

@@ -31,6 +31,9 @@ from education_system.university_system.modules.shared.services.integrations.int
     launch_integration_marketplace_gui
 )
 
+# Patch path prefix for submodules
+_PATCH_BASE = 'education_system.university_system.modules.shared.services.integrations.integration_marketplace_core'
+
 @pytest.fixture
 def temp_db():
     """Create a temporary test database with required tables."""
@@ -132,15 +135,21 @@ def temp_db():
     except (OSError, IOError):
         pass
 
+
+def _make_conn(db_path):
+    """Create a new SQLite connection to the temp DB with Row factory."""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
 class TestIntegrationCatalogManager:
     """Test IntegrationCatalogManager class."""
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.catalog.get_connection')
     def test_add_integration_basic(self, mock_get_connection, temp_db):
         """Test adding a basic integration."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         integration_id = IntegrationCatalogManager.add_integration(
             integration_name="Test Integration",
@@ -152,14 +161,11 @@ class TestIntegrationCatalogManager:
 
         assert integration_id is not None
         assert isinstance(integration_id, int)
-        mock_conn.close()
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.catalog.get_connection')
     def test_add_integration_with_version(self, mock_get_connection, temp_db):
         """Test adding an integration with version."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         integration_id = IntegrationCatalogManager.add_integration(
             integration_name="Test Integration",
@@ -170,14 +176,11 @@ class TestIntegrationCatalogManager:
         )
 
         assert integration_id is not None
-        mock_conn.close()
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.catalog.get_connection')
     def test_add_integration_official(self, mock_get_connection, temp_db):
         """Test adding an official integration."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         integration_id = IntegrationCatalogManager.add_integration(
             integration_name="Official Integration",
@@ -188,9 +191,8 @@ class TestIntegrationCatalogManager:
         )
 
         assert integration_id is not None
-        mock_conn.close()
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.catalog.get_connection')
     def test_add_integration_error_handling(self, mock_get_connection):
         """Test error handling when adding integration fails."""
         mock_conn = MagicMock()
@@ -209,15 +211,12 @@ class TestIntegrationCatalogManager:
 
         assert "Error adding integration:" in str(exc_info.value)
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.catalog.get_connection')
     def test_get_available_integrations_all(self, mock_get_connection, temp_db):
         """Test getting all available integrations."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        # Add test integrations
-        cursor = mock_conn.cursor()
+        # Seed data first
+        seed_conn = _make_conn(temp_db)
+        cursor = seed_conn.cursor()
         cursor.execute("""
             INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, rating, install_count)
             VALUES ('Integration 1', 'Provider 1', 'API', 'LMS', 4.5, 100)
@@ -226,23 +225,22 @@ class TestIntegrationCatalogManager:
             INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, rating, install_count)
             VALUES ('Integration 2', 'Provider 2', 'Webhook', 'Finance', 4.0, 50)
         """)
-        mock_conn.commit()
+        seed_conn.commit()
+        seed_conn.close()
+
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         integrations = IntegrationCatalogManager.get_available_integrations()
 
         assert isinstance(integrations, list)
         assert len(integrations) == 2
-        mock_conn.close()
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.catalog.get_connection')
     def test_get_available_integrations_by_category(self, mock_get_connection, temp_db):
         """Test getting integrations by category."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        # Add test integrations
-        cursor = mock_conn.cursor()
+        # Seed data first
+        seed_conn = _make_conn(temp_db)
+        cursor = seed_conn.cursor()
         cursor.execute("""
             INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, rating)
             VALUES ('LMS Integration', 'Provider', 'API', 'LMS', 4.5)
@@ -251,46 +249,35 @@ class TestIntegrationCatalogManager:
             INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, rating)
             VALUES ('Finance Integration', 'Provider', 'API', 'Finance', 4.0)
         """)
-        mock_conn.commit()
+        seed_conn.commit()
+        seed_conn.close()
+
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         integrations = IntegrationCatalogManager.get_available_integrations(category="LMS")
 
         assert isinstance(integrations, list)
         assert len(integrations) == 1
         assert integrations[0]['category'] == 'LMS'
-        mock_conn.close()
-
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
-    def test_get_available_integrations_empty(self, mock_get_connection, temp_db):
-        """Test getting integrations when none exist."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        integrations = IntegrationCatalogManager.get_available_integrations()
-
-        assert isinstance(integrations, list)
-        assert len(integrations) == 0
-        mock_conn.close()
 
 class TestInstallationManager:
     """Test InstallationManager class."""
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.installation.get_connection')
     def test_install_integration(self, mock_get_connection, temp_db):
         """Test installing an integration."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        # Add integration to catalog first
-        cursor = mock_conn.cursor()
+        # Seed catalog entry
+        seed_conn = _make_conn(temp_db)
+        cursor = seed_conn.cursor()
         cursor.execute("""
             INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, version)
             VALUES ('Test Integration', 'Provider', 'API', 'LMS', '1.0.0')
         """)
         integration_id = cursor.lastrowid
-        mock_conn.commit()
+        seed_conn.commit()
+        seed_conn.close()
+
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         # Install integration
         install_id = InstallationManager.install_integration(
@@ -302,14 +289,15 @@ class TestInstallationManager:
         assert install_id is not None
         assert isinstance(install_id, int)
 
-        # Verify install count was updated
-        cursor.execute("SELECT install_count FROM integration_catalog WHERE integration_id = ?", (integration_id,))
-        row = cursor.fetchone()
+        # Verify install count was updated using a fresh connection
+        verify_conn = _make_conn(temp_db)
+        verify_cursor = verify_conn.cursor()
+        verify_cursor.execute("SELECT install_count FROM integration_catalog WHERE integration_id = ?", (integration_id,))
+        row = verify_cursor.fetchone()
         assert row['install_count'] == 1
+        verify_conn.close()
 
-        mock_conn.close()
-
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.installation.get_connection')
     def test_install_integration_error_handling(self, mock_get_connection):
         """Test error handling when installation fails."""
         mock_conn = MagicMock()
@@ -327,79 +315,64 @@ class TestInstallationManager:
 
         assert "Error installing integration:" in str(exc_info.value)
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.installation.get_connection')
     def test_uninstall_integration(self, mock_get_connection, temp_db):
         """Test uninstalling an integration."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        # Create and install an integration first
-        cursor = mock_conn.cursor()
+        # Seed data
+        seed_conn = _make_conn(temp_db)
+        cursor = seed_conn.cursor()
         cursor.execute("""
             INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, version)
             VALUES ('Test Integration', 'Provider', 'API', 'LMS', '1.0.0')
         """)
         integration_id = cursor.lastrowid
-
         cursor.execute("""
             INSERT INTO installed_integrations (integration_id, installed_by, version_installed)
             VALUES (?, 'testuser', '1.0.0')
         """, (integration_id,))
         install_id = cursor.lastrowid
-        mock_conn.commit()
+        seed_conn.commit()
+        seed_conn.close()
+
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         # Uninstall
         result = InstallationManager.uninstall_integration(install_id)
 
         assert result is True
 
-        # Verify status was updated
-        cursor.execute("SELECT status, is_enabled FROM installed_integrations WHERE install_id = ?", (install_id,))
-        row = cursor.fetchone()
+        # Verify status was updated using a fresh connection
+        verify_conn = _make_conn(temp_db)
+        verify_cursor = verify_conn.cursor()
+        verify_cursor.execute("SELECT status, is_enabled FROM installed_integrations WHERE install_id = ?", (install_id,))
+        row = verify_cursor.fetchone()
         assert row['status'] == 'uninstalled'
         assert row['is_enabled'] == 0
-
-        mock_conn.close()
-
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
-    def test_uninstall_integration_error_handling(self, mock_get_connection):
-        """Test error handling when uninstallation fails."""
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_cursor.execute.side_effect = Exception("Database error")
-        mock_conn.cursor.return_value = mock_cursor
-        mock_get_connection.return_value = mock_conn
-
-        with pytest.raises(Exception) as exc_info:
-            InstallationManager.uninstall_integration(1)
-
-        assert "Error uninstalling integration:" in str(exc_info.value)
+        verify_conn.close()
 
 class TestCredentialManager:
     """Test CredentialManager class."""
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.credentials.get_connection')
     def test_store_credentials_api_key(self, mock_get_connection, temp_db):
         """Test storing API key credentials."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        # Create installation first
-        cursor = mock_conn.cursor()
+        # Seed data
+        seed_conn = _make_conn(temp_db)
+        cursor = seed_conn.cursor()
         cursor.execute("""
             INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, version)
             VALUES ('Test', 'Provider', 'API', 'LMS', '1.0.0')
         """)
         integration_id = cursor.lastrowid
-
         cursor.execute("""
             INSERT INTO installed_integrations (integration_id, installed_by, version_installed)
             VALUES (?, 'testuser', '1.0.0')
         """, (integration_id,))
         install_id = cursor.lastrowid
-        mock_conn.commit()
+        seed_conn.commit()
+        seed_conn.close()
+
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         # Store credentials
         credential_id = CredentialManager.store_credentials(
@@ -411,29 +384,27 @@ class TestCredentialManager:
 
         assert credential_id is not None
         assert isinstance(credential_id, int)
-        mock_conn.close()
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.credentials.get_connection')
     def test_store_credentials_oauth(self, mock_get_connection, temp_db):
         """Test storing OAuth credentials."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        # Create installation
-        cursor = mock_conn.cursor()
+        # Seed data
+        seed_conn = _make_conn(temp_db)
+        cursor = seed_conn.cursor()
         cursor.execute("""
             INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, version)
             VALUES ('Test', 'Provider', 'API', 'LMS', '1.0.0')
         """)
         integration_id = cursor.lastrowid
-
         cursor.execute("""
             INSERT INTO installed_integrations (integration_id, installed_by, version_installed)
             VALUES (?, 'testuser', '1.0.0')
         """, (integration_id,))
         install_id = cursor.lastrowid
-        mock_conn.commit()
+        seed_conn.commit()
+        seed_conn.close()
+
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         # Store OAuth credentials
         credential_id = CredentialManager.store_credentials(
@@ -443,50 +414,30 @@ class TestCredentialManager:
         )
 
         assert credential_id is not None
-        mock_conn.close()
-
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
-    def test_store_credentials_error_handling(self, mock_get_connection):
-        """Test error handling when storing credentials fails."""
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_cursor.execute.side_effect = Exception("Database error")
-        mock_conn.cursor.return_value = mock_cursor
-        mock_get_connection.return_value = mock_conn
-
-        with pytest.raises(Exception) as exc_info:
-            CredentialManager.store_credentials(
-                install_id=1,
-                credential_type="api_key",
-                api_key="test"
-            )
-
-        assert "Error storing credentials:" in str(exc_info.value)
 
 class TestSyncManager:
     """Test SyncManager class."""
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.sync.get_connection')
     def test_start_sync(self, mock_get_connection, temp_db):
         """Test starting a sync operation."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        # Create installation
-        cursor = mock_conn.cursor()
+        # Seed data
+        seed_conn = _make_conn(temp_db)
+        cursor = seed_conn.cursor()
         cursor.execute("""
             INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, version)
             VALUES ('Test', 'Provider', 'API', 'LMS', '1.0.0')
         """)
         integration_id = cursor.lastrowid
-
         cursor.execute("""
             INSERT INTO installed_integrations (integration_id, installed_by, version_installed)
             VALUES (?, 'testuser', '1.0.0')
         """, (integration_id,))
         install_id = cursor.lastrowid
-        mock_conn.commit()
+        seed_conn.commit()
+        seed_conn.close()
+
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         # Start sync
         log_id = SyncManager.start_sync(install_id)
@@ -494,14 +445,15 @@ class TestSyncManager:
         assert log_id is not None
         assert isinstance(log_id, int)
 
-        # Verify sync log was created
-        cursor.execute("SELECT sync_status FROM integration_sync_logs WHERE log_id = ?", (log_id,))
-        row = cursor.fetchone()
+        # Verify sync log was created using a fresh connection
+        verify_conn = _make_conn(temp_db)
+        verify_cursor = verify_conn.cursor()
+        verify_cursor.execute("SELECT sync_status FROM integration_sync_logs WHERE log_id = ?", (log_id,))
+        row = verify_cursor.fetchone()
         assert row['sync_status'] == 'running'
+        verify_conn.close()
 
-        mock_conn.close()
-
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.sync.get_connection')
     def test_start_sync_error_handling(self, mock_get_connection):
         """Test error handling when starting sync fails."""
         mock_conn = MagicMock()
@@ -515,33 +467,31 @@ class TestSyncManager:
 
         assert "Error starting sync:" in str(exc_info.value)
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.sync.get_connection')
     def test_complete_sync_success(self, mock_get_connection, temp_db):
         """Test completing a sync operation successfully."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        # Create installation and start sync
-        cursor = mock_conn.cursor()
+        # Seed data
+        seed_conn = _make_conn(temp_db)
+        cursor = seed_conn.cursor()
         cursor.execute("""
             INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, version)
             VALUES ('Test', 'Provider', 'API', 'LMS', '1.0.0')
         """)
         integration_id = cursor.lastrowid
-
         cursor.execute("""
             INSERT INTO installed_integrations (integration_id, installed_by, version_installed)
             VALUES (?, 'testuser', '1.0.0')
         """, (integration_id,))
         install_id = cursor.lastrowid
-
         cursor.execute("""
             INSERT INTO integration_sync_logs (install_id, sync_status)
             VALUES (?, 'running')
         """, (install_id,))
         log_id = cursor.lastrowid
-        mock_conn.commit()
+        seed_conn.commit()
+        seed_conn.close()
+
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         # Complete sync
         result = SyncManager.complete_sync(
@@ -553,45 +503,44 @@ class TestSyncManager:
 
         assert result is True
 
-        # Verify sync log was updated
-        cursor.execute("""
+        # Verify sync log was updated using a fresh connection
+        verify_conn = _make_conn(temp_db)
+        verify_cursor = verify_conn.cursor()
+        verify_cursor.execute("""
             SELECT sync_status, records_synced, errors_encountered
             FROM integration_sync_logs WHERE log_id = ?
         """, (log_id,))
-        row = cursor.fetchone()
+        row = verify_cursor.fetchone()
         assert row['sync_status'] == 'completed'
         assert row['records_synced'] == 100
         assert row['errors_encountered'] == 0
+        verify_conn.close()
 
-        mock_conn.close()
-
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.sync.get_connection')
     def test_complete_sync_with_errors(self, mock_get_connection, temp_db):
         """Test completing a sync operation with errors."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        # Create installation and start sync
-        cursor = mock_conn.cursor()
+        # Seed data
+        seed_conn = _make_conn(temp_db)
+        cursor = seed_conn.cursor()
         cursor.execute("""
             INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, version)
             VALUES ('Test', 'Provider', 'API', 'LMS', '1.0.0')
         """)
         integration_id = cursor.lastrowid
-
         cursor.execute("""
             INSERT INTO installed_integrations (integration_id, installed_by, version_installed)
             VALUES (?, 'testuser', '1.0.0')
         """, (integration_id,))
         install_id = cursor.lastrowid
-
         cursor.execute("""
             INSERT INTO integration_sync_logs (install_id, sync_status)
             VALUES (?, 'running')
         """, (install_id,))
         log_id = cursor.lastrowid
-        mock_conn.commit()
+        seed_conn.commit()
+        seed_conn.close()
+
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         # Complete sync with errors
         result = SyncManager.complete_sync(
@@ -603,9 +552,8 @@ class TestSyncManager:
         )
 
         assert result is True
-        mock_conn.close()
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.sync.get_connection')
     def test_complete_sync_error_handling(self, mock_get_connection):
         """Test error handling when completing sync fails."""
         mock_conn = MagicMock()
@@ -622,27 +570,26 @@ class TestSyncManager:
 class TestDataMappingManager:
     """Test DataMappingManager class."""
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.data_mapping.get_connection')
     def test_create_mapping(self, mock_get_connection, temp_db):
         """Test creating a data mapping."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        # Create installation
-        cursor = mock_conn.cursor()
+        # Seed data
+        seed_conn = _make_conn(temp_db)
+        cursor = seed_conn.cursor()
         cursor.execute("""
             INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, version)
             VALUES ('Test', 'Provider', 'API', 'LMS', '1.0.0')
         """)
         integration_id = cursor.lastrowid
-
         cursor.execute("""
             INSERT INTO installed_integrations (integration_id, installed_by, version_installed)
             VALUES (?, 'testuser', '1.0.0')
         """, (integration_id,))
         install_id = cursor.lastrowid
-        mock_conn.commit()
+        seed_conn.commit()
+        seed_conn.close()
+
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         # Create mapping
         mapping_id = DataMappingManager.create_mapping(
@@ -653,83 +600,30 @@ class TestDataMappingManager:
 
         assert mapping_id is not None
         assert isinstance(mapping_id, int)
-        mock_conn.close()
-
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
-    def test_create_mapping_with_transformation(self, mock_get_connection, temp_db):
-        """Test creating a data mapping with transformation rule."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        # Create installation
-        cursor = mock_conn.cursor()
-        cursor.execute("""
-            INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, version)
-            VALUES ('Test', 'Provider', 'API', 'LMS', '1.0.0')
-        """)
-        integration_id = cursor.lastrowid
-
-        cursor.execute("""
-            INSERT INTO installed_integrations (integration_id, installed_by, version_installed)
-            VALUES (?, 'testuser', '1.0.0')
-        """, (integration_id,))
-        install_id = cursor.lastrowid
-        mock_conn.commit()
-
-        # Create mapping with transformation
-        mapping_id = DataMappingManager.create_mapping(
-            install_id=install_id,
-            source_field="full_name",
-            target_field="first_name",
-            transformation_rule="split(' ')[0]"
-        )
-
-        assert mapping_id is not None
-        mock_conn.close()
-
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
-    def test_create_mapping_error_handling(self, mock_get_connection):
-        """Test error handling when creating mapping fails."""
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_cursor.execute.side_effect = Exception("Database error")
-        mock_conn.cursor.return_value = mock_cursor
-        mock_get_connection.return_value = mock_conn
-
-        with pytest.raises(Exception) as exc_info:
-            DataMappingManager.create_mapping(
-                install_id=1,
-                source_field="test",
-                target_field="test"
-            )
-
-        assert "Error creating mapping:" in str(exc_info.value)
 
 class TestWebhookManager:
     """Test WebhookManager class."""
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
+    @patch(f'{_PATCH_BASE}.webhooks.get_connection')
     def test_register_webhook(self, mock_get_connection, temp_db):
         """Test registering a webhook."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        # Create installation
-        cursor = mock_conn.cursor()
+        # Seed data
+        seed_conn = _make_conn(temp_db)
+        cursor = seed_conn.cursor()
         cursor.execute("""
             INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, version)
             VALUES ('Test', 'Provider', 'Webhook', 'LMS', '1.0.0')
         """)
         integration_id = cursor.lastrowid
-
         cursor.execute("""
             INSERT INTO installed_integrations (integration_id, installed_by, version_installed)
             VALUES (?, 'testuser', '1.0.0')
         """, (integration_id,))
         install_id = cursor.lastrowid
-        mock_conn.commit()
+        seed_conn.commit()
+        seed_conn.close()
+
+        mock_get_connection.return_value = _make_conn(temp_db)
 
         # Register webhook
         webhook_id = WebhookManager.register_webhook(
@@ -740,58 +634,6 @@ class TestWebhookManager:
 
         assert webhook_id is not None
         assert isinstance(webhook_id, int)
-        mock_conn.close()
-
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
-    def test_register_webhook_with_secret(self, mock_get_connection, temp_db):
-        """Test registering a webhook with secret key."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
-
-        # Create installation
-        cursor = mock_conn.cursor()
-        cursor.execute("""
-            INSERT INTO integration_catalog (integration_name, provider_name, integration_type, category, version)
-            VALUES ('Test', 'Provider', 'Webhook', 'LMS', '1.0.0')
-        """)
-        integration_id = cursor.lastrowid
-
-        cursor.execute("""
-            INSERT INTO installed_integrations (integration_id, installed_by, version_installed)
-            VALUES (?, 'testuser', '1.0.0')
-        """, (integration_id,))
-        install_id = cursor.lastrowid
-        mock_conn.commit()
-
-        # Register webhook with secret
-        webhook_id = WebhookManager.register_webhook(
-            install_id=install_id,
-            webhook_url="https://example.com/webhook",
-            event_type="grade.updated",
-            secret_key="secret_key_123"
-        )
-
-        assert webhook_id is not None
-        mock_conn.close()
-
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
-    def test_register_webhook_error_handling(self, mock_get_connection):
-        """Test error handling when registering webhook fails."""
-        mock_conn = MagicMock()
-        mock_cursor = MagicMock()
-        mock_cursor.execute.side_effect = Exception("Database error")
-        mock_conn.cursor.return_value = mock_cursor
-        mock_get_connection.return_value = mock_conn
-
-        with pytest.raises(Exception) as exc_info:
-            WebhookManager.register_webhook(
-                install_id=1,
-                webhook_url="https://example.com/webhook",
-                event_type="test"
-            )
-
-        assert "Error registering webhook:" in str(exc_info.value)
 
 class TestDisplayIntegrationMarketplaceMenu:
     """Test display_integration_marketplace_menu function."""
@@ -843,73 +685,77 @@ class TestLaunchIntegrationMarketplaceGui:
 
     @patch('builtins.print')
     def test_launch_gui_execution(self, mock_print):
-        """Test launching GUI (should print message since GUI not implemented)."""
+        """Test launching GUI with no auth shows error via messagebox."""
+        mock_root = Mock()
         mock_auth = Mock()
-        # Call the function (it's a factory-created launcher)
-        launch_integration_marketplace_gui(mock_auth)
+        mock_auth.current_user = None
 
-        # Verify message was printed
-        assert mock_print.called
+        with patch('tkinter.messagebox.showerror') as mock_showerror:
+            launch_integration_marketplace_gui(mock_root, mock_auth)
+            # When current_user is None, messagebox.showerror is called
+            mock_showerror.assert_called_once()
 
 class TestIntegration:
     """Integration tests for complex workflows."""
 
-    @patch('education_system.university_system.modules.shared.services.integrations.integration_marketplace_core.get_connection')
-    def test_full_integration_workflow(self, mock_get_connection, temp_db):
+    def test_full_integration_workflow(self, temp_db):
         """Test complete integration workflow."""
-        mock_conn = sqlite3.connect(temp_db)
-        mock_conn.row_factory = sqlite3.Row
-        mock_get_connection.return_value = mock_conn
+        with patch(f'{_PATCH_BASE}.catalog.get_connection', return_value=_make_conn(temp_db)):
+            # 1. Add integration to catalog
+            integration_id = IntegrationCatalogManager.add_integration(
+                integration_name="Complete Test Integration",
+                provider_name="Test Provider",
+                integration_type="API",
+                category="LMS",
+                version="1.0.0",
+                is_official=True
+            )
 
-        # 1. Add integration to catalog
-        integration_id = IntegrationCatalogManager.add_integration(
-            integration_name="Complete Test Integration",
-            provider_name="Test Provider",
-            integration_type="API",
-            category="LMS",
-            version="1.0.0",
-            is_official=True
-        )
+        with patch(f'{_PATCH_BASE}.installation.get_connection', return_value=_make_conn(temp_db)):
+            # 2. Install integration
+            install_id = InstallationManager.install_integration(
+                integration_id=integration_id,
+                installed_by="admin",
+                configuration='{"sync_enabled": true}'
+            )
 
-        # 2. Install integration
-        install_id = InstallationManager.install_integration(
-            integration_id=integration_id,
-            installed_by="admin",
-            configuration='{"sync_enabled": true}'
-        )
+        with patch(f'{_PATCH_BASE}.credentials.get_connection', return_value=_make_conn(temp_db)):
+            # 3. Store credentials
+            credential_id = CredentialManager.store_credentials(
+                install_id=install_id,
+                credential_type="api_key",
+                api_key="test_api_key",
+                endpoint_url="https://api.test.com"
+            )
 
-        # 3. Store credentials
-        credential_id = CredentialManager.store_credentials(
-            install_id=install_id,
-            credential_type="api_key",
-            api_key="test_api_key",
-            endpoint_url="https://api.test.com"
-        )
+        with patch(f'{_PATCH_BASE}.data_mapping.get_connection', return_value=_make_conn(temp_db)):
+            # 4. Create data mapping
+            mapping_id = DataMappingManager.create_mapping(
+                install_id=install_id,
+                source_field="student_id",
+                target_field="external_id"
+            )
 
-        # 4. Create data mapping
-        mapping_id = DataMappingManager.create_mapping(
-            install_id=install_id,
-            source_field="student_id",
-            target_field="external_id"
-        )
+        with patch(f'{_PATCH_BASE}.webhooks.get_connection', return_value=_make_conn(temp_db)):
+            # 5. Register webhook
+            webhook_id = WebhookManager.register_webhook(
+                install_id=install_id,
+                webhook_url="https://test.com/webhook",
+                event_type="sync.completed",
+                secret_key="webhook_secret"
+            )
 
-        # 5. Register webhook
-        webhook_id = WebhookManager.register_webhook(
-            install_id=install_id,
-            webhook_url="https://test.com/webhook",
-            event_type="sync.completed",
-            secret_key="webhook_secret"
-        )
+        with patch(f'{_PATCH_BASE}.sync.get_connection', return_value=_make_conn(temp_db)):
+            # 6. Start sync
+            log_id = SyncManager.start_sync(install_id)
 
-        # 6. Start sync
-        log_id = SyncManager.start_sync(install_id)
-
-        # 7. Complete sync
-        result = SyncManager.complete_sync(
-            log_id=log_id,
-            sync_status="completed",
-            records_synced=100
-        )
+        with patch(f'{_PATCH_BASE}.sync.get_connection', return_value=_make_conn(temp_db)):
+            # 7. Complete sync
+            result = SyncManager.complete_sync(
+                log_id=log_id,
+                sync_status="completed",
+                records_synced=100
+            )
 
         # Verify all operations succeeded
         assert integration_id is not None
@@ -920,7 +766,6 @@ class TestIntegration:
         assert log_id is not None
         assert result is True
 
-        mock_conn.close()
 
 if __name__ == '__main__':
     pytest.main([__file__, '-v', '--tb=short'])

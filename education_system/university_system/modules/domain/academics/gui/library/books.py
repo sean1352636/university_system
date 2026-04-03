@@ -377,7 +377,7 @@ def get_book_details(self, book_id):
             conn.close()
 
             if result:
-                columns = ['book_id', 'title', 'author', 'isbn', 'publisher', 'category', 
+                columns = ['book_id', 'title', 'author', 'isbn', 'publisher', 'category',
                           'year_published', 'description', 'location', 'status', 'reading_level', 'tags']
                 return dict(zip(columns, result))
         else:

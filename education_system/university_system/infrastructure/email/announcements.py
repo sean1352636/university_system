@@ -19,50 +19,50 @@ def send_batch_announcement(title, body, filter_criteria=None):
         # Build the query based on filter criteria
         query = "SELECT student_id, email_address, title, first_name, middle_name, last_name FROM students"
         params = []
-        
+
         if filter_criteria:
             conditions = []
-            
+
             if 'course' in filter_criteria:
                 conditions.append("course = ?")
                 params.append(filter_criteria['course'])
-            
+
             if 'registration_year' in filter_criteria:
                 conditions.append("substr(registration_datetime, 1, 4) = ?")
                 params.append(str(filter_criteria['registration_year']))
-            
+
             if 'module_code' in filter_criteria:
                 # Join with student_modules to filter by module
                 query = """
-                SELECT s.student_id, s.email_address, s.title, s.first_name, s.middle_name, s.last_name 
+                SELECT s.student_id, s.email_address, s.title, s.first_name, s.middle_name, s.last_name
                 FROM students s
                 JOIN student_modules sm ON s.student_id = sm.student_id
                 """
                 conditions.append("sm.module_code = ?")
                 params.append(filter_criteria['module_code'])
-            
+
             if conditions:
                 query += " WHERE " + " AND ".join(conditions)
-        
+
         # Execute the query
         cursor.execute(query, params)
         students = cursor.fetchall()
-        
+
         return students
-    
+
     try:
         students = execute_db_operation(_send_batch)
-        
+
         # Prepare for bulk send
         recipients = []
         template_vars_list = []
-        
+
         for student in students:
             student_id, email_address, title, first_name, middle_name, last_name = student
-            
+
             # Add to recipients list
             recipients.append(email_address)
-            
+
             # Prepare template variables
             template_vars = {
                 'student_id': student_id,
@@ -73,15 +73,15 @@ def send_batch_announcement(title, body, filter_criteria=None):
                 'announcement_title': title,
                 'announcement_body': body
             }
-            
+
             template_vars_list.append(template_vars)
-        
+
         # Send emails in bulk
         result = send_bulk(recipients, 'general_announcement', template_vars_list)
-        
+
         log_event('info', f"Batch announcement processed: {result['success']} successful, {result['failure']} failed")
         return (result['success'], result['failure'], result['total'])
-        
+
     except Exception as e:
         log_event('error', f"Error sending batch announcement: {e}")
         return (0, 0, 0)
@@ -218,7 +218,7 @@ def display_announcements_menu(dashboard):
                 log_event('error', f"Exception creating announcement: {e}")
 
             input(_t("common.press_enter"))
-        
+
         elif choice == '3':
             # Update announcement functionality - FIXED VERSION
             try:
@@ -265,22 +265,22 @@ def display_announcements_menu(dashboard):
                 ann_choice = input("\n" + _t("announcements.enter_id_update") + ": ").strip()
                 if not ann_choice or not ann_choice.isdigit() or int(ann_choice) == 0:
                     continue
-                
+
                 ann_id = int(ann_choice)
-                
+
                 # Get the selected announcement
                 def _get_announcement(cursor):
                     cursor.execute('''
-                    SELECT a.id, a.title, a.content, a.target_audience, a.is_urgent, 
+                    SELECT a.id, a.title, a.content, a.target_audience, a.is_urgent,
                            a.start_date, a.end_date, a.is_active
                     FROM announcements a
                     WHERE a.id = ? AND a.creator_id = ?
                     ''', (ann_id, dashboard.auth.current_user['id']))
-                    
+
                     return cursor.fetchone()
-                
+
                 announcement = execute_db_operation(_get_announcement)
-                
+
                 if not announcement:
                     print(_t("announcements.not_found_or_no_permission"))
                     input(_t("common.press_enter"))
@@ -315,10 +315,10 @@ def display_announcements_menu(dashboard):
                 print("7. " + _t("announcements.cancel_option"))
 
                 update_choice = input("\n" + _t("announcements.enter_option") + " (1-7): ").strip()
-                
+
                 # Initialize dictionary to track changes
                 updates = {}
-                
+
                 if update_choice == '1':
                     # Update title
                     new_title = input(_t("announcements.enter_new_title", current=title) + ": ").strip()
@@ -449,12 +449,12 @@ def display_announcements_menu(dashboard):
                     print(_t("announcements.update_cancelled"))
                     input(_t("common.press_enter"))
                     continue
-                
+
                 # Update in database
                 try:
                     # Build the SQL query dynamically
                     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                    
+
                     _ANNOUNCEMENT_ALLOWED_COLUMNS = frozenset({
                         'title', 'message', 'priority', 'target_role',
                         'start_date', 'end_date', 'is_active',
@@ -470,21 +470,21 @@ def display_announcements_menu(dashboard):
                                 raise ValueError(f"Invalid column name: {field}")
                             query_parts.append(f"{field} = ?")
                             params.append(value)
-                        
+
                         # Always update the 'updated_at' field
                         query_parts.append("updated_at = ?")
                         params.append(current_time)
-                        
+
                         # Add the WHERE clause parameters
                         params.extend([ann_id, dashboard.auth.current_user['id']])
-                        
+
                         # Execute the query
                         cursor.execute(f'''
                         UPDATE announcements
                         SET {", ".join(query_parts)}
                         WHERE id = ? AND creator_id = ?
                         ''', params)
-                        
+
                         # Log the action
                         dashboard._log_communication_action(
                             dashboard.auth.current_user['id'],
@@ -492,7 +492,7 @@ def display_announcements_menu(dashboard):
                             f"Updated announcement #{ann_id}: {title}"
                         )
                         return True
-                    
+
                     execute_db_operation(_update_announcement)
                     print(_t("announcements.updated_success"))
 
@@ -515,33 +515,33 @@ def display_announcements_menu(dashboard):
 
 
 
-@handle_exception  
+@handle_exception
 def create_announcement_safe(dashboard, title, content, target_audience, is_urgent=0, start_date=None, end_date=None):
     """Safe version of create_announcement with better error handling"""
-    
+
     # Check authentication and permissions
     if not dashboard.auth or not dashboard.auth.current_user:
         log_event('error', "Must be logged in to create announcements")
         return False
-    
+
     # Only staff, admin, and instructors can create announcements
     allowed_roles = ['admin', 'staff', 'instructor']
     if dashboard.auth.current_user['role'] not in allowed_roles:
         log_event('error', "Permission denied to create announcements")
         return False
-    
+
     # Validate inputs
     if not title or not content or not target_audience:
         log_event('error', "Title, content, and target audience are required")
         return False
-    
+
     # Set dates with proper error handling
     now = datetime.now()
     current_date = now.strftime('%Y-%m-%d %H:%M:%S')
-    
+
     if not start_date:
         start_date = current_date
-    
+
     # Validate date formats if provided
     try:
         if start_date:
@@ -551,34 +551,34 @@ def create_announcement_safe(dashboard, title, content, target_audience, is_urge
     except ValueError as e:
         log_event('error', f"Invalid date format: {e}")
         return False
-    
+
     def _create_announcement_op(cursor):
         try:
             creator_id = dashboard.auth.current_user['id']
-            
+
             cursor.execute('''
             INSERT INTO announcements (creator_id, title, content, target_audience, is_urgent, start_date, end_date, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', (creator_id, title, content, target_audience, is_urgent, start_date, end_date, current_date, current_date))
-            
+
             announcement_id = cursor.lastrowid
-            
+
             # Log the action for auditing
             dashboard._log_communication_action(creator_id, "create_announcement", f"Announcement created: {title}")
-            
+
             # Send email notifications to target audience (with error handling)
             try:
                 _send_announcement_notifications(cursor, target_audience, title, content)
             except Exception as e:
                 log_event('warning', f"Error sending announcement notifications: {e}")
                 # Don't fail the entire operation for notification errors
-            
+
             return announcement_id
-            
+
         except Exception as e:
             log_event('error', f"Database error creating announcement: {e}")
             return False
-    
+
     try:
         result = execute_db_operation(_create_announcement_op)
         if result:
@@ -592,31 +592,31 @@ def create_announcement_safe(dashboard, title, content, target_audience, is_urge
 
 def _send_announcement_notifications(cursor, target_audience, title, content):
     """Helper function to send announcement notifications"""
-    
+
     # Build recipient query based on target audience
     if target_audience == 'all':
         cursor.execute('''
-        SELECT u.id, u.email, np.email_notifications, np.announcement_notifications 
+        SELECT u.id, u.email, np.email_notifications, np.announcement_notifications
         FROM users u
         LEFT JOIN notification_preferences np ON u.id = np.user_id
         ''')
     elif target_audience == 'students':
         cursor.execute('''
-        SELECT u.id, u.email, np.email_notifications, np.announcement_notifications 
+        SELECT u.id, u.email, np.email_notifications, np.announcement_notifications
         FROM users u
         LEFT JOIN notification_preferences np ON u.id = np.user_id
         WHERE u.role = 'student'
         ''')
     elif target_audience == 'staff':
         cursor.execute('''
-        SELECT u.id, u.email, np.email_notifications, np.announcement_notifications 
+        SELECT u.id, u.email, np.email_notifications, np.announcement_notifications
         FROM users u
         LEFT JOIN notification_preferences np ON u.id = np.user_id
         WHERE u.role IN ('staff', 'admin')
         ''')
     elif target_audience == 'instructors':
         cursor.execute('''
-        SELECT u.id, u.email, np.email_notifications, np.announcement_notifications 
+        SELECT u.id, u.email, np.email_notifications, np.announcement_notifications
         FROM users u
         LEFT JOIN notification_preferences np ON u.id = np.user_id
         WHERE u.role = 'instructor'
@@ -626,17 +626,17 @@ def _send_announcement_notifications(cursor, target_audience, title, content):
         return
 
     recipients = cursor.fetchall()
-    
+
     # Use bulk sending for announcements
     recipient_emails = []
     template_vars_list = []
-    
+
     for recipient in recipients:
         recipient_id = recipient[0]
         recipient_email = recipient[1]
         email_notifications = recipient[2] if recipient[2] is not None else 1
         announcement_notifications = recipient[3] if recipient[3] is not None else 1
-        
+
         if email_notifications and announcement_notifications:
             recipient_emails.append(recipient_email)
             template_vars = {
@@ -647,7 +647,7 @@ def _send_announcement_notifications(cursor, target_audience, title, content):
                 'last_name': ''
             }
             template_vars_list.append(template_vars)
-    
+
     if recipient_emails:
         try:
             send_bulk(recipient_emails, 'general_announcement', template_vars_list)
@@ -664,28 +664,28 @@ def mark_announcement_viewed(dashboard, announcement_id):
     if not dashboard.auth or not dashboard.auth.current_user:
         log_event('error', "Must be logged in to mark announcements as viewed")
         return False
-    
+
     def _mark_viewed(cursor):
         user_id = dashboard.auth.current_user['id']
         viewed_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+
         # Check if already viewed
         cursor.execute('''
-        SELECT id FROM announcement_viewers 
+        SELECT id FROM announcement_viewers
         WHERE announcement_id = ? AND viewer_id = ?
         ''', (announcement_id, user_id))
-        
+
         if cursor.fetchone():
             return True  # Already viewed
-        
+
         # Mark as viewed
         cursor.execute('''
         INSERT INTO announcement_viewers (announcement_id, viewer_id, viewed_at)
         VALUES (?, ?, ?)
         ''', (announcement_id, user_id, viewed_at))
-        
+
         return True
-    
+
     try:
         return execute_db_operation(_mark_viewed)
     except Exception as e:
@@ -699,7 +699,7 @@ def get_announcement_by_id(dashboard, announcement_id):
     """Get a specific announcement by ID"""
     if not dashboard.auth or not dashboard.auth.current_user:
         return None
-    
+
     def _get_announcement(cursor):
         cursor.execute('''
         SELECT a.id, a.creator_id, u.username as creator_username, a.title, a.content,
@@ -709,7 +709,7 @@ def get_announcement_by_id(dashboard, announcement_id):
         JOIN users u ON a.creator_id = u.id
         WHERE a.id = ?
         ''', (announcement_id,))
-        
+
         row = cursor.fetchone()
         if row:
             return {
@@ -727,7 +727,7 @@ def get_announcement_by_id(dashboard, announcement_id):
                 'is_active': bool(row[11])
             }
         return None
-    
+
     try:
         return execute_db_operation(_get_announcement)
     except Exception as e:
@@ -741,43 +741,43 @@ def deactivate_announcement(dashboard, announcement_id):
     """Deactivate (hide) an announcement"""
     if not dashboard.auth or not dashboard.auth.current_user:
         return False
-    
+
     def _deactivate_announcement(cursor):
         user_id = dashboard.auth.current_user['id']
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        
+
         # Check if user can deactivate this announcement
         cursor.execute('''
         SELECT creator_id FROM announcements WHERE id = ?
         ''', (announcement_id,))
-        
+
         result = cursor.fetchone()
         if not result:
             return False
-        
+
         creator_id = result[0]
-        
+
         # Only creator or admin can deactivate
         if user_id != creator_id and dashboard.auth.current_user['role'] != 'admin':
             log_event('error', f"User {user_id} cannot deactivate announcement {announcement_id}")
             return False
-        
+
         # Deactivate the announcement
         cursor.execute('''
-        UPDATE announcements 
+        UPDATE announcements
         SET is_active = 0, updated_at = ?
         WHERE id = ?
         ''', (current_time, announcement_id))
-        
+
         # Log the action
         dashboard._log_communication_action(
             user_id,
             "deactivate_announcement",
             f"Deactivated announcement #{announcement_id}"
         )
-        
+
         return True
-    
+
     try:
         return execute_db_operation(_deactivate_announcement)
     except Exception as e:

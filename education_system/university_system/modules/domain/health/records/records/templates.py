@@ -13,7 +13,7 @@ def health_record_templates(auth):
     if not auth.check_permission('manage_health_records'):
         print("You don't have permission to use record templates.")
         return
-    
+
     templates = {
         "Annual Physical": {
             "record_type": "Annual Physical Exam",
@@ -36,28 +36,28 @@ def health_record_templates(auth):
             "description": "Injury assessment and treatment provided. First aid administered, healing progress monitored."
         }
     }
-    
+
     print("\n===== Health Record Templates =====")
-    
+
     template_names = list(templates.keys())
     for i, name in enumerate(template_names):
         print(f"{i+1}. {name}")
-    
+
     while True:
         choice = input("\nSelect template (1-5) or 'q' to quit: ")
         if choice.lower() == 'q':
             return
-        
+
         if choice.isdigit() and 1 <= int(choice) <= len(template_names):
             selected_template = templates[template_names[int(choice) - 1]]
             break
         print("Invalid choice. Please try again.")
-    
+
     # Use template to create record
     print(f"\nUsing template: {template_names[int(choice) - 1]}")
     print(f"Record Type: {selected_template['record_type']}")
     print(f"Description Template: {selected_template['description']}")
-    
+
     # Allow user to modify the template
     use_template = input("\nUse this template to create a record? (y/n): ").lower()
     if use_template == 'y':
@@ -122,7 +122,7 @@ def enhanced_health_record_templates(auth):
     if not auth.check_permission('manage_health_records'):
         print("You don't have permission to manage record templates.")
         return
-    
+
     while True:
         print("\n===== Health Record Templates =====")
         print("1. Use Existing Template")
@@ -134,9 +134,9 @@ def enhanced_health_record_templates(auth):
         print("7. Shared Templates")
         print("8. Template Validation")
         print("9. Return to Main Menu")
-        
+
         choice = input("\nEnter your choice (1-9): ")
-        
+
         if choice == '1':
             use_existing_template(auth)
         elif choice == '2':

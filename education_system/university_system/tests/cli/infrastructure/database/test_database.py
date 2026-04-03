@@ -53,7 +53,8 @@ class TestDatabaseConstants:
         from education_system.university_system.modules.shared.utils.database import _db_manager_lock
 
         assert _db_manager_lock is not None
-        assert isinstance(_db_manager_lock, threading.Lock)
+        # threading.Lock() returns a _thread.lock instance; check it matches
+        assert type(_db_manager_lock) is type(threading.Lock())
 
 
 class TestEnsureDbReady:

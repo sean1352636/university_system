@@ -12,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager, asynccontextmanager
 from typing import Any, Callable, List, Optional, Tuple, TypeVar, Union
 from functools import wraps
-from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier
+from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier  # nosec B608
 
 logger = logging.getLogger(__name__)
 

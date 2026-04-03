@@ -47,7 +47,7 @@ init_i18n()
 
 class CashFlowForecaster:
     """Advanced cash flow forecasting with seasonal patterns"""
-    
+
     def __init__(self):
         self.seasonal_factors = {
             'january': 0.9, 'february': 0.85, 'march': 1.1,
@@ -55,7 +55,7 @@ class CashFlowForecaster:
             'july': 0.7, 'august': 1.3, 'september': 1.4,
             'october': 1.1, 'november': 1.0, 'december': 0.9
         }
-    
+
     def generate_cash_flow_forecast(self, months_ahead=12):
         """Generate detailed cash flow forecast"""
         print(f"📈 Generating {months_ahead}-month cash flow forecast...")
@@ -130,7 +130,7 @@ class AnomalyDetector:
         except Exception as e:
             print(f"Error detecting anomalies: {e}")
             return []
-    
+
     def get_anomaly_reason(self, payment, all_payments):
         """Determine why a payment is considered anomalous"""
         return "Pattern deviation detected"
@@ -202,11 +202,11 @@ class StudentLifecycleAnalyzer:
 
 class PaymentPredictionML:
     """Machine Learning for payment prediction and risk assessment"""
-    
+
     def __init__(self):
         self.model = None
         self.is_trained = False
-    
+
     def prepare_training_data(self):
         """Prepare training data from historical records"""
         print("📊 Preparing ML training data from payment history...")
@@ -232,7 +232,7 @@ class PaymentPredictionML:
         print("   Using simplified prediction model")
         self.is_trained = True
         print("✓ Model training completed")
-    
+
     def predict_payment_risk(self, student_ids=None):
         """Predict payment risk for students"""
         print(f"🔮 Predicting payment risk for students...")
@@ -369,14 +369,14 @@ class ComparativeAnalyzer:
 
 class FinancialAlertSystem:
     """Advanced alert system for financial monitoring"""
-    
+
     def __init__(self):
         self.alert_thresholds = {
             'low_payment_volume': 0.2,  # 20% below average
             'collection_rate': 0.85,    # 85% collection rate
             'large_payment': 5000.0     # £5000 threshold
         }
-    
+
     def check_collection_rate_alert(self):
         """Check if collection rate falls below threshold"""
         try:
@@ -446,11 +446,11 @@ class FinancialAlertSystem:
         """Send alert notification"""
         print(f"📧 Alert sent: {alert_type}")
         print(f"   Details: {data}")
-    
+
     def log_alert(self, alert_type, message, data):
         """Log alert to database"""
         print(f"Alert logged: {alert_type} - {message}")
-    
+
     def get_current_academic_year(self):
         """Get current academic year"""
         return "2024-2025"

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 def _table_exists(cur: sqlite3.Cursor, name: str) -> bool:
     try:

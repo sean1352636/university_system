@@ -96,7 +96,7 @@ def compare_by_gender(cursor):
 
     # Get performance data by gender
     cursor.execute('''
-    SELECT s.gender, 
+    SELECT s.gender,
            COUNT(DISTINCT s.student_id) as student_count,
            AVG(mg.final_score) as avg_score,
            COUNT(mg.final_grade) as total_grades

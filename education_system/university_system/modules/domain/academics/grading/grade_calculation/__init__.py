@@ -7,11 +7,24 @@ existing imports like:
 continue to work.
 """
 
+import os
+try:
+    import matplotlib.pyplot as plt
+except Exception:  # Optional dependency or backend issues
+    plt = None
 from education_system.university_system.modules.domain.academics.grading.grade_calculation.constants import (
     GRADE_SYSTEMS,
 )
 
 from education_system.university_system.infrastructure.database.db import get_connection
+
+
+def init_basic_database():
+    """Initialize the basic database tables (lazy import for test patching)."""
+    from education_system.university_system.modules.domain.academics.grading.grade_tracking import (
+        init_basic_database as _init_basic_database,
+    )
+    return _init_basic_database()
 
 from education_system.university_system.modules.domain.academics.grading.grade_calculation.conversions import (
     percentage_to_letter,

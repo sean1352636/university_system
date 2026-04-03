@@ -125,10 +125,10 @@ def edit_selected_course(self):
     if not selection:
         messagebox.showwarning(_("course_management.messages.no_selection"), _("course_management.messages.select_course_to_edit"))
         return
-    
+
     item = self.course_tree.item(selection[0])
     course_id = item['values'][0]
-    
+
     dialog = CourseEditDialog(self.root, self.auth, course_id)
     if dialog.result:
         self.refresh_course_list()
@@ -141,12 +141,12 @@ def delete_selected_course(self):
     if not selection:
         messagebox.showwarning(_("course_management.messages.no_selection"), _("course_management.messages.select_course_to_delete"))
         return
-    
+
     item = self.course_tree.item(selection[0])
     course_id = item['values'][0]
     course_code = item['values'][1]
     course_name = item['values'][2]
-    
+
     # Enhanced delete confirmation with impact analysis
     if self.confirm_course_deletion(course_id, course_code, course_name):
         try:
@@ -350,14 +350,14 @@ def confirm_course_deletion(self, course_id, course_code, course_name):
 
             cursor.execute("SELECT COUNT(*) FROM course_schedule WHERE course_id = ?", (course_id,))
             schedule_count = cursor.fetchone()[0]
-        
+
         # Create confirmation dialog
         message = f"Delete Course: {course_code} - {course_name}\n\n"
         message += "IMPACT ANALYSIS:\n"
         message += f"• Students enrolled: {enrolled_count}\n"
         message += f"• Courses using as prerequisite: {prereq_count}\n"
         message += f"• Schedule entries: {schedule_count}\n\n"
-        
+
         if enrolled_count > 0 or prereq_count > 0:
             message += _("course_management.messages.deletion_warning") + "\n"
             message += _("course_management.messages.consider_inactive") + "\n\n"
@@ -375,25 +375,25 @@ class CourseCreateDialog:
         self.parent = parent
         self.auth = auth
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Create New Course")
         self.dialog.geometry("600x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.create_widgets()
         self.dialog.focus_set()
-    
+
     def create_widgets(self):
         # Main frame with scrollbar
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         # Basic Information
         basic_frame = ttk.LabelFrame(main_frame, text="Basic Information", padding=10)
         basic_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(basic_frame, text="Course Code:").grid(row=0, column=0, sticky=tk.W)
         self.code_var = tk.StringVar()
         ttk.Entry(basic_frame, textvariable=self.code_var, width=15).grid(row=0, column=1, sticky=tk.W, padx=5)
@@ -419,46 +419,46 @@ class CourseCreateDialog:
         level_combo = ttk.Combobox(basic_frame, textvariable=self.level_var, state='readonly',
                                   values=["Undergraduate", "Postgraduate", "PhD", "Certificate", "Diploma"])
         level_combo.grid(row=4, column=1, sticky=tk.W, padx=5)
-        
+
         # Academic Details
         academic_frame = ttk.LabelFrame(main_frame, text="Academic Details", padding=10)
         academic_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(academic_frame, text="Credit Hours:").grid(row=0, column=0, sticky=tk.W)
         self.credits_var = tk.StringVar(value="3.0")
         ttk.Entry(academic_frame, textvariable=self.credits_var, width=10).grid(row=0, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(academic_frame, text="Max Enrollment:").grid(row=1, column=0, sticky=tk.W)
         self.max_enroll_var = tk.StringVar(value="30")
         ttk.Entry(academic_frame, textvariable=self.max_enroll_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(academic_frame, text="Course Type:").grid(row=2, column=0, sticky=tk.W)
         self.type_var = tk.StringVar(value="Degree Program")
         type_combo = ttk.Combobox(academic_frame, textvariable=self.type_var, state='readonly',
                                  values=["Degree Program", "Certificate", "Diploma", "Short Course"])
         type_combo.grid(row=2, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(academic_frame, text="Course Fee:").grid(row=3, column=0, sticky=tk.W)
         self.fee_var = tk.StringVar(value="0.0")
         ttk.Entry(academic_frame, textvariable=self.fee_var, width=10).grid(row=3, column=1, sticky=tk.W, padx=5)
-        
+
         # Additional Options
         options_frame = ttk.LabelFrame(main_frame, text="Additional Options", padding=10)
         options_frame.pack(fill=tk.X, pady=5)
-        
+
         self.lab_required = tk.BooleanVar()
         ttk.Checkbutton(options_frame, text="Lab Required", variable=self.lab_required).grid(row=0, column=0, sticky=tk.W)
-        
+
         self.online_available = tk.BooleanVar()
         ttk.Checkbutton(options_frame, text="Online Available", variable=self.online_available).grid(row=0, column=1, sticky=tk.W)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Create Course", command=self.create_course).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def create_course(self):
         try:
             # Validate inputs
@@ -541,17 +541,17 @@ class CourseEditDialog:
         self.auth = auth
         self.course_id = course_id
         self.result = None
-        
+
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Edit Course")
         self.dialog.geometry("600x700")
         self.dialog.transient(parent)
         self.dialog.grab_set()
-        
+
         self.load_course_data()
         self.create_widgets()
         self.dialog.focus_set()
-    
+
     def load_course_data(self):
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
@@ -559,58 +559,58 @@ class CourseEditDialog:
             cursor.execute("SELECT * FROM courses WHERE id = ?", (self.course_id,))
             self.course_data = cursor.fetchone()
             conn.close()
-            
+
             if not self.course_data:
                 messagebox.showerror(_("common.error"), "Course not found.")
                 self.dialog.destroy()
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load course: {e}")
             self.dialog.destroy()
-    
+
     def create_widgets(self):
         # Similar to create dialog but pre-populate with existing data
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         # Basic Information
         basic_frame = ttk.LabelFrame(main_frame, text="Basic Information", padding=10)
         basic_frame.pack(fill=tk.X, pady=5)
-        
+
         ttk.Label(basic_frame, text="Course Code:").grid(row=0, column=0, sticky=tk.W)
         self.code_var = tk.StringVar(value=self.course_data[1])
         ttk.Entry(basic_frame, textvariable=self.code_var, width=15).grid(row=0, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(basic_frame, text="Course Name:").grid(row=1, column=0, sticky=tk.W)
         self.name_var = tk.StringVar(value=self.course_data[2])
         ttk.Entry(basic_frame, textvariable=self.name_var, width=40).grid(row=1, column=1, sticky=tk.W, padx=5)
-        
+
         ttk.Label(basic_frame, text="Description:").grid(row=2, column=0, sticky=tk.NW)
         self.desc_text = tk.Text(basic_frame, width=40, height=3)
         self.desc_text.grid(row=2, column=1, sticky=tk.W, padx=5)
         if len(self.course_data) > 3 and self.course_data[3]:
             self.desc_text.insert(1.0, self.course_data[3])
-        
+
         # Add other fields similar to create dialog...
         # (For brevity, showing key fields)
-        
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
-        
+
         ttk.Button(button_frame, text="Update Course", command=self.update_course).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
-    
+
     def update_course(self):
         try:
             # Get updated values
             course_code = self.code_var.get().strip().upper()
             course_name = self.name_var.get().strip()
             description = self.desc_text.get(1.0, tk.END).strip()
-            
+
             if not course_code or not course_name:
                 messagebox.showerror(_("common.validation_error"), "Course code and name are required.")
                 return
-            
+
             # Update database
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             try:
@@ -627,9 +627,9 @@ class CourseEditDialog:
                 conn.commit()
             finally:
                 conn.close()
-            
+
             self.result = True
             self.dialog.destroy()
-            
+
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to update course: {e}")
