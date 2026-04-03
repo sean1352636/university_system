@@ -149,9 +149,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Older Versions**
 
-- [Versions 5.x — 0.x](education_system/docs/CHANGELOG-v5.md) (298 releases)
-- [Module-specific changelogs](education_system/docs/CHANGELOG-modules.md) (29 entries)
-- [Legacy notes & feature documentation](education_system/docs/CHANGELOG-legacy-notes.md)
+- [Versions 5.x — 0.x](education_system/docs/changelogs/CHANGELOG-v5.md) (298 releases)
+- [Module-specific changelogs](education_system/docs/changelogs/CHANGELOG-modules.md) (29 entries)
+- [Legacy notes & feature documentation](education_system/docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
 

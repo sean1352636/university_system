@@ -198,9 +198,14 @@ def run_university_tests():
 def _run_pytest(test_dir):
     result = subprocess.run(
         [sys.executable, "-m", "pytest", test_dir, "-v", "--tb=short"],
-        cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        cwd=_repo_root(),
     )
     return result.returncode == 0
+
+
+def _repo_root():
+    """Return the repository root (three levels up from this file)."""
+    return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def run_college_tests():
@@ -232,7 +237,7 @@ def run_all_system_tests():
         [sys.executable, "-m", "pytest"] + test_dirs + [
             "-v", "--tb=short", "-ra", "--color=yes",
         ],
-        cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        cwd=_repo_root(),
     )
     return result.returncode == 0
 

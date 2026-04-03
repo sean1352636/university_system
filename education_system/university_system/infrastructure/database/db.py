@@ -23,7 +23,7 @@ from education_system.university_system.core.exceptions import (
     QueryError,
     TransactionError
 )
-from education_system.university_system.core.sql_safety import validate_identifier
+from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
 # Import database constants normally (within same package)
 from education_system.university_system.infrastructure.database.constants import (
@@ -49,6 +49,34 @@ os.makedirs(EXPORTS_DIR, exist_ok=True)
 DEFAULT_DB_NAME = os.path.basename(DEFAULT_DB_PATH)
 
 logger = logging.getLogger(__name__)
+_wal_keeper_connections: dict[str, _sqlite3.Connection] = {}
+_ORIGINAL_DEFAULT_DB_PATH: str = os.path.abspath(DEFAULT_DB_PATH)
+
+
+class _ManagedCursor(_sqlite3.Cursor):
+    """Cursor that tolerates explicit BEGIN inside managed transactions."""
+
+    def execute(self, sql: str, parameters: Iterable[Any] = ()) -> _sqlite3.Cursor:
+        normalized = sql.strip().upper()
+        if normalized.startswith("BEGIN") and self.connection.in_transaction:
+            return self
+        return super().execute(sql, parameters)
+
+
+class _ManagedConnection(_sqlite3.Connection):
+    """Connection using the managed cursor subclass."""
+
+    def cursor(self, *args: Any, **kwargs: Any) -> _sqlite3.Cursor:
+        kwargs.setdefault("factory", _ManagedCursor)
+        return super().cursor(*args, **kwargs)
+
+    def close(self) -> None:
+        try:
+            if not self.in_transaction:
+                super().execute("PRAGMA wal_checkpoint(TRUNCATE)")
+        except _sqlite3.Error:
+            pass
+        super().close()
 
 
 def _apply_pragmas(conn: _sqlite3.Connection) -> None:
@@ -83,6 +111,43 @@ def ensure_parent_dir(path: str) -> None:
     parent = os.path.dirname(os.path.abspath(path))
     if parent and not os.path.exists(parent):
         os.makedirs(parent, exist_ok=True)
+
+
+def _should_keep_wal_connection(db_path: str) -> bool:
+    """Only retain a background WAL keeper for the primary application DB.
+
+    Tests and one-off utilities often create many temporary/custom database
+    files. Keeping a permanent WAL connection open for each unique path leaks
+    file descriptors across the process and can eventually break pytest's
+    tmp_path fixture with "Too many open files".
+
+    Compares against the original default path captured at import time, so
+    monkeypatching DEFAULT_DB_PATH in tests does not cause WAL keepers to
+    accumulate for every temporary database.
+    """
+    try:
+        return os.path.abspath(db_path) == _ORIGINAL_DEFAULT_DB_PATH
+    except OSError:
+        return False
+
+
+def _ensure_wal_keeper(db_path: str) -> None:
+    """Keep one background WAL connection open so sidecar files persist."""
+    if not _should_keep_wal_connection(db_path):
+        return
+    if db_path in _wal_keeper_connections:
+        return
+    try:
+        keeper = _sqlite3.connect(
+            db_path,
+            timeout=DEFAULT_DB_TIMEOUT,
+            check_same_thread=False,
+            factory=_ManagedConnection,
+        )
+        _apply_pragmas(keeper)
+        _wal_keeper_connections[db_path] = keeper
+    except Exception:
+        logger.debug("Failed to create WAL keeper for %s", db_path, exc_info=True)
 
 
 # ---------------------------------------------------------------------------
@@ -132,8 +197,10 @@ def connect(database: Optional[str | os.PathLike[str]] = None, *args: Any, **kwa
     if db is None or os.fspath(db) == DEFAULT_DB_NAME:
         db = DEFAULT_DB_PATH
     kwargs.setdefault("timeout", DEFAULT_DB_TIMEOUT)
+    kwargs.setdefault("factory", _ManagedConnection)
     conn = _sqlite3.connect(db, *args, **kwargs)
     _apply_pragmas(conn)
+    _ensure_wal_keeper(os.fspath(db))
     return conn
 
 def get_connection(
@@ -196,8 +263,9 @@ def get_connection(
     """
     target = DEFAULT_DB_PATH if (db_path is None or os.fspath(db_path) == DEFAULT_DB_NAME) else db_path
     db = os.fspath(target)
-    conn = _sqlite3.connect(db, timeout=timeout)
+    conn = _sqlite3.connect(db, timeout=timeout, factory=_ManagedConnection)
     _apply_pragmas(conn)
+    _ensure_wal_keeper(db)
     if row_factory:
         conn.row_factory = _sqlite3.Row
     return conn
@@ -283,11 +351,7 @@ class ConnectionPool:
         self.timeout = timeout
         self.row_factory = row_factory
 
-        # Thread-local storage for per-thread connections
-        # This ensures each thread has its own connection (thread safety)
-        self._local = threading.local()
-
-        # Track all thread connections for cleanup
+        # Track thread-associated connections for diagnostics and compatibility.
         self._thread_connections: dict[int, PooledConnection] = {}
         self._thread_connections_lock = threading.Lock()
 
@@ -312,17 +376,22 @@ class ConnectionPool:
         logging.info(f"ConnectionPool initialized: {min_connections}-{max_connections} connections (thread-safe)")
 
     def _initialize_pool(self) -> None:
-        """Initialize pool - creates connection for current thread only.
-
-        With thread-local storage, we don't pre-create connections for other threads.
-        Each thread will get its own connection on first request.
-        This initialization creates a connection for the main/startup thread.
-        """
+        """Initialize pool with a minimum number of reusable connections."""
         try:
-            # Create a connection for the current (main) thread
-            # This validates the database path and warms up the pool
-            conn = self._create_connection()
-            logging.debug(f"Pool initialized with connection for main thread {threading.get_ident()}")
+            with self._pool_lock:
+                for _ in range(self.min_connections):
+                    conn = self._create_raw_connection()
+                    self._pool.append(
+                        PooledConnection(
+                            connection=conn,
+                            created_at=datetime.now(),
+                            last_used=datetime.now(),
+                            in_use=False,
+                        )
+                    )
+                if self._pool:
+                    self._thread_connections[threading.get_ident()] = self._pool[0]
+            logging.debug("Pool initialized with %s warm connections", len(self._pool))
         except Exception as e:
             logging.error(f"Failed to create initial connection: {e}")
             raise DatabaseConnectionError(
@@ -331,67 +400,17 @@ class ConnectionPool:
                 details={'db_path': self.db_path}
             )
 
-    def _create_connection(self) -> _sqlite3.Connection:
-        """Create a new database connection with proper thread safety.
-
-        Uses thread-local storage to ensure each thread has its own connection.
-        This maintains SQLite's thread safety guarantees by keeping
-        check_same_thread=True (the default).
-
-        Returns:
-            sqlite3.Connection: A thread-safe database connection for the current thread.
-        """
-        thread_id = threading.get_ident()
-
-        # Check if this thread already has a connection in thread-local storage
-        if hasattr(self._local, 'connection') and self._local.connection is not None:
-            # Verify the existing connection is still valid
-            try:
-                self._local.connection.execute("SELECT 1")
-                return self._local.connection
-            except Exception:
-                # Connection is stale, close it and create a new one
-                try:
-                    self._local.connection.close()
-                except Exception:
-                    logging.exception("Failed to close stale thread-local connection")
-                self._local.connection = None
-
-        # Create connection FOR THIS THREAD ONLY with check_same_thread=True (default)
-        # This ensures SQLite's thread safety is maintained
+    def _create_raw_connection(self) -> _sqlite3.Connection:
+        """Create a new reusable database connection."""
         conn = _sqlite3.connect(
             self.db_path,
             timeout=DEFAULT_DB_TIMEOUT,
-            check_same_thread=True  # SECURITY: Keep thread safety enabled
+            check_same_thread=False,
+            factory=_ManagedConnection,
         )
-
-        # Configure connection with standard PRAGMA settings
         _apply_pragmas(conn)
-
         if self.row_factory:
             conn.row_factory = _sqlite3.Row
-
-        # Store in thread-local storage
-        self._local.connection = conn
-
-        # Track for cleanup across all threads
-        with self._thread_connections_lock:
-            # Clean up any previous connection for this thread
-            if thread_id in self._thread_connections:
-                old_pooled = self._thread_connections[thread_id]
-                try:
-                    old_pooled.connection.close()
-                except Exception:
-                    logging.exception("Failed to close previous pooled connection for thread %s", thread_id)
-
-            self._thread_connections[thread_id] = PooledConnection(
-                connection=conn,
-                created_at=datetime.now(),
-                last_used=datetime.now(),
-                in_use=True,
-            )
-
-        logging.debug(f"Created thread-local connection for thread {thread_id}")
         return conn
 
     def get_connection(self, timeout: Optional[float] = None) -> _sqlite3.Connection:
@@ -413,27 +432,6 @@ class ConnectionPool:
         timeout = timeout or self.timeout
         thread_id = threading.get_ident()
 
-        # Check for existing thread-local connection first
-        if hasattr(self._local, 'connection') and self._local.connection is not None:
-            # Update last_used timestamp
-            with self._thread_connections_lock:
-                if thread_id in self._thread_connections:
-                    pooled = self._thread_connections[thread_id]
-                    # Check if connection is still valid
-                    if self._is_connection_valid(pooled):
-                        pooled.last_used = datetime.now()
-                        pooled.in_use = True
-                        logging.debug(f"Reusing thread-local connection for thread {thread_id}")
-                        return pooled.connection
-
-            # Connection is stale, clear it
-            try:
-                self._local.connection.close()
-            except Exception:
-                logging.exception("Failed to close stale connection before pool reacquisition")
-            self._local.connection = None
-
-        # Wait for available slot in semaphore (limits total connections)
         if not self._connection_semaphore.acquire(timeout=timeout):
             raise DatabaseConnectionError(
                 f"Could not acquire connection within {timeout}s",
@@ -442,13 +440,30 @@ class ConnectionPool:
             )
 
         try:
-            # Create new thread-local connection
-            conn = self._create_connection()
-            logging.debug(f"Created new thread-local connection for thread {thread_id}")
-            return conn
+            with self._pool_lock:
+                for pooled in self._pool:
+                    if pooled.in_use:
+                        continue
+                    if not self._is_connection_valid(pooled):
+                        self._remove_connection(pooled)
+                        break
+                    pooled.in_use = True
+                    pooled.last_used = datetime.now()
+                    with self._thread_connections_lock:
+                        self._thread_connections[thread_id] = pooled
+                    return pooled.connection
 
+                pooled = PooledConnection(
+                    connection=self._create_raw_connection(),
+                    created_at=datetime.now(),
+                    last_used=datetime.now(),
+                    in_use=True,
+                )
+                self._pool.append(pooled)
+                with self._thread_connections_lock:
+                    self._thread_connections[thread_id] = pooled
+                return pooled.connection
         except Exception:
-            # Release semaphore if we failed to get connection
             self._connection_semaphore.release()
             raise
 
@@ -464,25 +479,16 @@ class ConnectionPool:
         """
         thread_id = threading.get_ident()
 
-        # Check thread-local connections first
-        with self._thread_connections_lock:
-            if thread_id in self._thread_connections:
-                pooled = self._thread_connections[thread_id]
-                if pooled.connection is conn:
-                    pooled.in_use = False
-                    pooled.last_used = datetime.now()
-                    self._connection_semaphore.release()
-                    logging.debug(f"Released thread-local connection for thread {thread_id}")
-                    return
-
-        # Fallback: Check legacy pool (for backwards compatibility)
         with self._pool_lock:
             for pooled in self._pool:
                 if pooled.connection is conn:
                     pooled.in_use = False
                     pooled.last_used = datetime.now()
+                    with self._thread_connections_lock:
+                        if self._thread_connections.get(thread_id) is pooled:
+                            self._thread_connections.pop(thread_id, None)
                     self._connection_semaphore.release()
-                    logging.debug(f"Released connection back to pool")
+                    logging.debug("Released connection back to pool")
                     return
 
             # Connection not found - release semaphore anyway to prevent deadlock
@@ -779,8 +785,6 @@ def transaction(
     """
     conn = get_connection(db_path=db_path, row_factory=row_factory)
     try:
-        # Begin transaction explicitly with IMMEDIATE to acquire write lock upfront
-        # This prevents database locked errors with concurrent access
         conn.execute("BEGIN IMMEDIATE")
         yield conn
         # If we reach here, commit the transaction
