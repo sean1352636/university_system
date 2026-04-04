@@ -324,6 +324,8 @@ addopts = [
     "--strict-markers",
     "--strict-config",
     "--tb=short",
+    "-n", "auto",
+    "--dist", "worksteal",
     "--ignore=education_system/university_system/tests/cli/domain/commerce/restaurant",
     "--ignore=education_system/university_system/tests/cli/domain/health",
     "--ignore=education_system/university_system/tests/cli/shared/utils/logging",
