@@ -6,41 +6,41 @@ import pytest
 class TestTimetableService:
     """Tests for TimetableService."""
 
-    def test_create_timetable_entry(self, timetable_service):
-        """Test creating a timetable entry."""
-        result = timetable_service.create_entry(
-            class_id="CLS001",
-            subject="Mathematics",
-            day="Monday",
+    def test_create_timetable_slot(self, timetable_service, sample_class, sample_subject):
+        """Test creating a timetable slot."""
+        result = timetable_service.create_slot(
+            class_name=sample_class["class_name"],
+            subject_code=sample_subject["subject_code"],
+            day_of_week="Monday",
+            period=1,
             start_time="09:00",
             end_time="10:00",
-            teacher_id="STF0001",
             room="Room 1",
         )
         assert result is not None
 
-    def test_get_class_timetable(self, timetable_service):
+    def test_get_class_timetable(self, timetable_service, sample_class, sample_subject):
         """Test getting timetable for a class."""
-        timetable_service.create_entry(
-            class_id="CLS001",
-            subject="English",
-            day="Tuesday",
+        timetable_service.create_slot(
+            class_name=sample_class["class_name"],
+            subject_code=sample_subject["subject_code"],
+            day_of_week="Tuesday",
+            period=1,
             start_time="09:00",
             end_time="10:00",
-            teacher_id="STF0001",
         )
-        results = timetable_service.get_class_timetable("CLS001")
+        results = timetable_service.get_timetable(class_name=sample_class["class_name"])
         assert isinstance(results, list)
 
-    def test_get_teacher_timetable(self, timetable_service):
-        """Test getting timetable for a teacher."""
-        timetable_service.create_entry(
-            class_id="CLS002",
-            subject="Science",
-            day="Wednesday",
+    def test_get_timetable_by_day(self, timetable_service, sample_class, sample_subject):
+        """Test getting timetable filtered by day."""
+        timetable_service.create_slot(
+            class_name=sample_class["class_name"],
+            subject_code=sample_subject["subject_code"],
+            day_of_week="Wednesday",
+            period=3,
             start_time="11:00",
             end_time="12:00",
-            teacher_id="STF0002",
         )
-        results = timetable_service.get_teacher_timetable("STF0002")
+        results = timetable_service.get_timetable(day_of_week="Wednesday")
         assert isinstance(results, list)

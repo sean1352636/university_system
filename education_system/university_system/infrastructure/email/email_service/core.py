@@ -182,10 +182,10 @@ def send_email(recipient_email, subject, body, cc=None, bcc=None, attachments=No
     return result
 
 def send_email_db_only(recipient_email, subject, body, cc, bcc, attachments, current_time):
-    _ensure_db_ready()
     """Store email in DB and ALWAYS create an inbox message for a valid user.
        Robust against sender resolution failures and ensures commit.
     """
+    _ensure_db_ready()
     def _store_email(cursor):
         # Use logged-in user's email/name if available, otherwise use config defaults
         current_auth = _get_current_auth()

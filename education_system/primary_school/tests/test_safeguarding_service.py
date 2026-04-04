@@ -6,42 +6,41 @@ import pytest
 class TestSafeguardingService:
     """Tests for SafeguardingService."""
 
-    def test_create_concern(self, safeguarding_service):
+    def test_record_concern(self, safeguarding_service, sample_pupil):
         """Test raising a safeguarding concern."""
-        result = safeguarding_service.create_concern(
-            pupil_id="PRI0001",
+        result = safeguarding_service.record_concern(
+            pupil_id=sample_pupil["pupil_id"],
             reported_by="STF0001",
             concern_type="welfare",
             description="Pupil appeared distressed during morning registration",
-            severity="medium",
+            severity="Medium",
         )
         assert result is not None
 
-    def test_get_concerns_for_pupil(self, safeguarding_service):
+    def test_get_concerns(self, safeguarding_service, sample_pupil):
         """Test retrieving concerns for a pupil."""
-        safeguarding_service.create_concern(
-            pupil_id="PRI0002",
+        safeguarding_service.record_concern(
+            pupil_id=sample_pupil["pupil_id"],
             reported_by="STF0001",
             concern_type="attendance",
             description="Persistent lateness",
-            severity="low",
+            severity="Low",
         )
-        results = safeguarding_service.get_concerns("PRI0002")
+        results = safeguarding_service.get_concerns(pupil_id=sample_pupil["pupil_id"])
         assert isinstance(results, list)
 
-    def test_update_concern_status(self, safeguarding_service):
-        """Test updating concern status."""
-        concern_id = safeguarding_service.create_concern(
-            pupil_id="PRI0003",
+    def test_update_concern(self, safeguarding_service, sample_pupil):
+        """Test updating a concern."""
+        concern_id = safeguarding_service.record_concern(
+            pupil_id=sample_pupil["pupil_id"],
             reported_by="STF0002",
             concern_type="welfare",
             description="Visible bruising noted",
-            severity="high",
+            severity="High",
         )
         if concern_id:
-            result = safeguarding_service.update_status(
+            result = safeguarding_service.update_concern(
                 concern_id=concern_id,
-                status="under_review",
-                updated_by="STF0001",
+                action_taken="Referred to DSL",
             )
             assert result is not None or result is None

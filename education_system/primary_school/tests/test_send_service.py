@@ -6,34 +6,38 @@ import pytest
 class TestSENDService:
     """Tests for SENDService (Special Educational Needs and Disabilities)."""
 
-    def test_create_send_record(self, send_service):
+    def test_create_send_record(self, send_service, sample_pupil):
         """Test creating a SEND record."""
         result = send_service.create_record(
-            pupil_id="PRI0001",
-            need_type="cognition_learning",
-            description="Requires additional support with reading comprehension",
-            support_level="SEN Support",
+            pupil_id=sample_pupil["pupil_id"],
+            sen_status="SEN Support",
+            primary_need="Cognition and Learning",
+            notes="Requires additional support with reading comprehension",
         )
         assert result is not None
 
-    def test_get_send_records(self, send_service):
-        """Test retrieving SEND records for a pupil."""
+    def test_list_send_records(self, send_service, sample_pupil):
+        """Test listing SEND records."""
         send_service.create_record(
-            pupil_id="PRI0002",
-            need_type="communication_interaction",
-            description="Speech and language therapy referral",
-            support_level="SEN Support",
+            pupil_id=sample_pupil["pupil_id"],
+            sen_status="SEN Support",
+            primary_need="Communication and Interaction",
+            notes="Speech and language therapy referral",
         )
-        results = send_service.get_records("PRI0002")
+        results = send_service.list_records(sen_status="SEN Support")
         assert isinstance(results, list)
 
-    def test_create_iep(self, send_service):
-        """Test creating an Individual Education Plan."""
-        result = send_service.create_iep(
-            pupil_id="PRI0001",
-            targets=["Improve reading fluency to age-appropriate level",
-                     "Use phonics strategies independently"],
-            strategies=["Daily guided reading", "Phonics intervention group"],
-            review_date="2026-07-01",
+    def test_add_provision(self, send_service, sample_pupil):
+        """Test adding a provision for a pupil."""
+        send_service.create_record(
+            pupil_id=sample_pupil["pupil_id"],
+            sen_status="SEN Support",
+            primary_need="Cognition and Learning",
+        )
+        result = send_service.add_provision(
+            pupil_id=sample_pupil["pupil_id"],
+            provision_type="Intervention",
+            description="Daily guided reading",
+            frequency="Daily",
         )
         assert result is not None or result is None

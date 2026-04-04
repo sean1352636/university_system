@@ -88,24 +88,17 @@ class TestCensusILRService:
             "census", "2024/25", "autumn", "R01", "2024-11-30",
         )
         census_ilr_service.generate_census_data(return_id)
-        try:
-            xml = census_ilr_service.export_census_xml(return_id)
-            assert isinstance(xml, str)
-            assert "<" in xml
-        except CensusILRError:
-            # defusedxml may lack Element support in some environments
-            pytest.skip("defusedxml.ElementTree lacks Element support")
+        xml = census_ilr_service.export_census_xml(return_id)
+        assert isinstance(xml, str)
+        assert "<" in xml
 
     def test_export_ilr_xml(self, census_ilr_service):
         return_id = census_ilr_service.create_return(
             "ilr", "2024/25", "R04", "R04", "2024-02-15",
         )
         census_ilr_service.generate_ilr_data(return_id)
-        try:
-            xml = census_ilr_service.export_ilr_xml(return_id)
-            assert isinstance(xml, str)
-        except CensusILRError:
-            pytest.skip("defusedxml.ElementTree lacks Element support")
+        xml = census_ilr_service.export_ilr_xml(return_id)
+        assert isinstance(xml, str)
 
     # --- Submission ---
 
