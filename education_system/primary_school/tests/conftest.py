@@ -110,6 +110,90 @@ from education_system.primary_school.modules.domain.staff.hr.services.hr_service
 from education_system.primary_school.modules.domain.staff.cpd.services.cpd_service import (
     CPDService,
 )
+from education_system.primary_school.modules.domain.staff.cover.services.cover_service import (
+    CoverService,
+)
+from education_system.primary_school.modules.domain.staff.staff_directory.services.staff_directory_service import (
+    StaffDirectoryService,
+)
+from education_system.primary_school.modules.domain.staff.appraisals.services.appraisals_service import (
+    AppraisalsService,
+)
+from education_system.primary_school.modules.domain.staff.observations.services.observations_service import (
+    ObservationsService,
+)
+from education_system.primary_school.modules.domain.staff.staff_wellbeing.services.staff_wellbeing_service import (
+    StaffWellbeingService,
+)
+from education_system.primary_school.modules.domain.staff.lesson_plans.services.lesson_plans_service import (
+    LessonPlansService,
+)
+from education_system.primary_school.modules.domain.admin.users.services.user_service import (
+    UserService,
+)
+from education_system.primary_school.modules.domain.admin.settings.services.settings_service import (
+    SettingsService,
+)
+from education_system.primary_school.modules.domain.admin.data_export.services.data_export_service import (
+    DataExportService,
+)
+from education_system.primary_school.modules.domain.admin.audit_log.services.audit_service import (
+    AuditService,
+)
+from education_system.primary_school.modules.domain.admin.policies.services.policy_service import (
+    PolicyService,
+)
+from education_system.primary_school.modules.domain.admin.documents.services.document_service import (
+    DocumentService,
+)
+from education_system.primary_school.modules.domain.admin.data_dashboard.services.data_dashboard_service import (
+    DataDashboardService,
+)
+from education_system.primary_school.modules.domain.admin.gdpr.services.gdpr_service import (
+    GDPRService,
+)
+from education_system.primary_school.modules.domain.admin.payroll.services.payroll_service import (
+    PayrollService,
+)
+from education_system.primary_school.modules.domain.admin.complaints.services.complaints_service import (
+    ComplaintsService,
+)
+from education_system.primary_school.modules.domain.pupil_life.class_groups.services.class_group_service import (
+    ClassGroupService,
+)
+from education_system.primary_school.modules.domain.pupil_life.consent.services.consent_service import (
+    ConsentService,
+)
+from education_system.primary_school.modules.domain.pupil_life.trips.services.trip_service import (
+    TripService,
+)
+from education_system.primary_school.modules.domain.communication.email.services.email_service import (
+    EmailService,
+)
+from education_system.primary_school.modules.domain.communication.notifications.services.notification_service import (
+    NotificationService,
+)
+from education_system.primary_school.modules.domain.communication.communication_log.services.communication_log_service import (
+    CommunicationLogService,
+)
+from education_system.primary_school.modules.domain.communication.feedback.services.feedback_service import (
+    FeedbackService,
+)
+from education_system.primary_school.modules.domain.facilities.visitors.services.visitor_service import (
+    VisitorService,
+)
+from education_system.primary_school.modules.domain.facilities.incidents.services.incident_service import (
+    IncidentService,
+)
+from education_system.primary_school.modules.domain.pastoral_care.pupil_wellbeing.services.pupil_wellbeing_service import (
+    PupilWellbeingService,
+)
+from education_system.primary_school.modules.domain.academics.portfolio.services.portfolio_service import (
+    PortfolioService,
+)
+from education_system.primary_school.modules.domain.academics.skills_tracker.services.skills_tracker_service import (
+    SkillsTrackerService,
+)
 
 
 # ── Template and per-test DB fixtures (shared boilerplate) ───────────────
@@ -395,3 +479,183 @@ def hr_service(db_path):
 def cpd_service(db_path):
     """Create a CPDService instance with the test database."""
     return CPDService(db_path)
+
+
+@pytest.fixture
+def cover_service(db_path):
+    """Create a CoverService instance with the test database."""
+    return CoverService(db_path)
+
+
+@pytest.fixture
+def staff_directory_service(db_path):
+    """Create a StaffDirectoryService instance with the test database."""
+    return StaffDirectoryService(db_path)
+
+
+@pytest.fixture
+def appraisals_service(db_path):
+    """Create an AppraisalsService instance with the test database."""
+    return AppraisalsService(db_path)
+
+
+@pytest.fixture
+def observations_service(db_path):
+    """Create an ObservationsService instance with the test database."""
+    return ObservationsService(db_path)
+
+
+@pytest.fixture
+def staff_wellbeing_service(db_path):
+    """Create a StaffWellbeingService instance with the test database."""
+    return StaffWellbeingService(db_path)
+
+
+@pytest.fixture
+def lesson_plans_service(db_path):
+    """Create a LessonPlansService instance with the test database."""
+    return LessonPlansService(db_path)
+
+
+@pytest.fixture
+def user_service(db_path):
+    """Create a UserService instance with the test database."""
+    return UserService(db_path)
+
+
+@pytest.fixture
+def settings_service(db_path):
+    """Create a SettingsService instance with the test database."""
+    return SettingsService(db_path)
+
+
+@pytest.fixture
+def data_export_service(db_path):
+    """Create a DataExportService instance with the test database."""
+    return DataExportService(db_path)
+
+
+@pytest.fixture
+def audit_service(db_path):
+    """Create an AuditService instance with the test database."""
+    return AuditService(db_path)
+
+
+@pytest.fixture
+def policy_service(db_path):
+    """Create a PolicyService instance with the test database."""
+    return PolicyService(db_path)
+
+
+@pytest.fixture
+def document_service(db_path):
+    """Create a DocumentService instance with the test database."""
+    return DocumentService(db_path)
+
+
+@pytest.fixture
+def data_dashboard_service(db_path):
+    """Create a DataDashboardService instance with the test database."""
+    return DataDashboardService(db_path)
+
+
+@pytest.fixture
+def gdpr_service(db_path):
+    """Create a GDPRService instance with the test database."""
+    return GDPRService(db_path)
+
+
+@pytest.fixture
+def payroll_service(db_path):
+    """Create a PayrollService instance with the test database."""
+    return PayrollService(db_path)
+
+
+@pytest.fixture
+def complaints_service(db_path):
+    """Create a ComplaintsService instance with the test database."""
+    return ComplaintsService(db_path)
+
+
+@pytest.fixture
+def class_group_service(db_path):
+    """Create a ClassGroupService instance with the test database."""
+    return ClassGroupService(db_path)
+
+
+@pytest.fixture
+def consent_service(db_path):
+    """Create a ConsentService instance with the test database."""
+    return ConsentService(db_path)
+
+
+@pytest.fixture
+def trip_service(db_path):
+    """Create a TripService instance with the test database."""
+    return TripService(db_path)
+
+
+@pytest.fixture
+def email_service(db_path):
+    """Create an EmailService instance with the test database."""
+    return EmailService(db_path)
+
+
+@pytest.fixture
+def notification_service(db_path):
+    """Create a NotificationService instance with the test database."""
+    return NotificationService(db_path)
+
+
+@pytest.fixture
+def communication_log_service(db_path):
+    """Create a CommunicationLogService instance with the test database."""
+    return CommunicationLogService(db_path)
+
+
+@pytest.fixture
+def feedback_service(db_path):
+    """Create a FeedbackService instance with the test database."""
+    return FeedbackService(db_path)
+
+
+@pytest.fixture
+def visitor_service(db_path):
+    """Create a VisitorService instance with the test database."""
+    return VisitorService(db_path)
+
+
+@pytest.fixture
+def incident_service(db_path):
+    """Create an IncidentService instance with the test database."""
+    return IncidentService(db_path)
+
+
+@pytest.fixture
+def pupil_wellbeing_service(db_path):
+    """Create a PupilWellbeingService instance with the test database."""
+    return PupilWellbeingService(db_path)
+
+
+@pytest.fixture
+def portfolio_service(db_path):
+    """Create a PortfolioService instance with the test database."""
+    return PortfolioService(db_path)
+
+
+@pytest.fixture
+def skills_tracker_service(db_path):
+    """Create a SkillsTrackerService instance with the test database."""
+    return SkillsTrackerService(db_path)
+
+
+@pytest.fixture
+def sample_staff(hr_service):
+    """Create a sample staff member for testing."""
+    return hr_service.create_staff(
+        first_name="Alice",
+        last_name="Teacher",
+        email="alice.teacher@school.local",
+        role="Teacher",
+        department="Year 1",
+    )

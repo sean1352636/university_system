@@ -713,7 +713,8 @@ TABLES = {
             end_time TEXT NOT NULL,
             recurring INTEGER DEFAULT 0,
             status TEXT DEFAULT 'Confirmed',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT
         )
     """,
     "assets": """
@@ -729,7 +730,8 @@ TABLES = {
             condition TEXT DEFAULT 'Good',
             notes TEXT,
             status TEXT DEFAULT 'In Use',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT
         )
     """,
     "visitors": """
@@ -745,7 +747,8 @@ TABLES = {
             badge_number TEXT,
             dbs_checked INTEGER DEFAULT 0,
             safeguarding_briefing INTEGER DEFAULT 0,
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT
         )
     """,
     "incidents": """
@@ -764,7 +767,9 @@ TABLES = {
             parent_notified INTEGER DEFAULT 0,
             first_aid_given INTEGER DEFAULT 0,
             status TEXT DEFAULT 'Open',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT,
+            closed_at TEXT
         )
     """,
     "audit_log": """
