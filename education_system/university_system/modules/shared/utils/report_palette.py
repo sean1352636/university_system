@@ -12,19 +12,19 @@ def get_report_palette(n: Optional[int] = None) -> List[str]:
     Returns a color list. Uses matplotlib cycle if available, otherwise defaults.
     If n is given, repeats/truncates to length n.
     """
-    palette = DEFAULT_PALETTE
+    palette = list(DEFAULT_PALETTE)
     try:
         import matplotlib.pyplot as plt  # type: ignore
         cyc = plt.rcParams.get("axes.prop_cycle")
         if cyc:
-            pal = cyc.by_key().get("color", [])
+            pal = list(cyc.by_key().get("color", []))
             if pal:
                 palette = pal
     except Exception:
         pass
 
     if not palette:
-        palette = DEFAULT_PALETTE
+        palette = list(DEFAULT_PALETTE)
 
     if n and n > 0:
         k = len(palette)

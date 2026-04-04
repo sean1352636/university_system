@@ -110,7 +110,7 @@ class TestGetUnifiedConnection:
         result = email_db_utilities.get_unified_connection()
 
         assert result == mock_conn
-        mock_get_conn.assert_called_once_with(db_path=email_db_utilities.DB_PATH, row_factory=True)
+        mock_get_conn.assert_called_once_with(db_path=email_db_utilities._get_db_path(), row_factory=True)
 
     @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_connection')
     def test_get_unified_connection_returns_connection(self, mock_get_conn):
@@ -142,7 +142,7 @@ class TestGetUnifiedConnection:
         email_db_utilities.get_unified_connection()
 
         _, kwargs = mock_get_conn.call_args
-        assert kwargs.get('db_path') == email_db_utilities.DB_PATH
+        assert kwargs.get('db_path') == email_db_utilities._get_db_path()
 
     @patch('education_system.university_system.infrastructure.email.email_db_utilities.get_connection')
     def test_get_unified_connection_propagates_errors(self, mock_get_conn):
@@ -152,6 +152,7 @@ class TestGetUnifiedConnection:
         with pytest.raises(Exception, match="Connection failed"):
             email_db_utilities.get_unified_connection()
 
+@pytest.mark.filterwarnings("ignore:SimpleDBManager is deprecated:DeprecationWarning")
 class TestSimpleDBManager:
     """Test suite for SimpleDBManager class"""
 
@@ -160,7 +161,7 @@ class TestSimpleDBManager:
         with patch('education_system.university_system.infrastructure.email.email_db_utilities.ensure_parent_dir'):
             manager = email_db_utilities.SimpleDBManager()
 
-            assert manager.db_path == email_db_utilities.DB_PATH
+            assert manager.db_path == email_db_utilities._get_db_path()
             assert hasattr(manager, '_lock')
             # RLock is not directly comparable, check it's a lock object
             assert hasattr(manager._lock, 'acquire')

@@ -13,7 +13,7 @@ Part of the Education System monorepo (university, college, secondary, primary).
 """
 
 # Version is authoritative in pyproject.toml; this must stay in sync.
-__version__ = '8.62.1'
+__version__ = '8.62.4'
 __author__ = 'University IT Team'
 __license__ = 'MIT'
 

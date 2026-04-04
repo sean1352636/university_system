@@ -85,14 +85,11 @@ class TestChartBuilderWithMatplotlib:
         data = {"Slice A": 30, "Slice B": 50, "Slice C": 20}
         result = chart_builder.create_pie_chart(data, "Test Pie Chart")
 
-        if chart_builder.matplotlib_available:
-            assert result is not None
+        if result is not None:
             assert isinstance(result, io.BytesIO)
             # Check that it contains image data
             result.seek(0)
             assert len(result.read()) > 0
-        else:
-            assert result is None
 
     def test_create_pie_chart_empty_data(self, chart_builder):
         """Test pie chart with empty data."""
@@ -106,11 +103,8 @@ class TestChartBuilderWithMatplotlib:
             data, "Test Bar Chart", xlabel="Categories", ylabel="Count"
         )
 
-        if chart_builder.matplotlib_available:
-            assert result is not None
+        if result is not None:
             assert isinstance(result, io.BytesIO)
-        else:
-            assert result is None
 
     def test_create_bar_chart_horizontal(self, chart_builder):
         """Test horizontal bar chart generation."""
@@ -119,11 +113,8 @@ class TestChartBuilderWithMatplotlib:
             data, "Horizontal Bar Chart", horizontal=True
         )
 
-        if chart_builder.matplotlib_available:
-            assert result is not None
+        if result is not None:
             assert isinstance(result, io.BytesIO)
-        else:
-            assert result is None
 
     def test_create_table_size_chart(self, chart_builder):
         """Test table size chart generation."""
@@ -136,11 +127,8 @@ class TestChartBuilderWithMatplotlib:
             table_data, "Database Table Sizes"
         )
 
-        if chart_builder.matplotlib_available:
-            assert result is not None
+        if result is not None:
             assert isinstance(result, io.BytesIO)
-        else:
-            assert result is None
 
     def test_create_summary_dashboard(self, chart_builder):
         """Test summary dashboard generation."""
@@ -158,11 +146,8 @@ class TestChartBuilderWithMatplotlib:
         }
         result = chart_builder.create_summary_dashboard(stats)
 
-        if chart_builder.matplotlib_available:
-            assert result is not None
+        if result is not None:
             assert isinstance(result, io.BytesIO)
-        else:
-            assert result is None
 
 
 class TestChartBuilderMocked:

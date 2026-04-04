@@ -242,10 +242,13 @@ class TestCourseEnrollments:
 
     def test_analyze_course_enrollments(self, analytics, sample_students_df):
         """Test course enrollment analysis"""
-        with patch.object(analytics, 'get_all_students', return_value=sample_students_df):
+        enriched_students = analytics.simulate_additional_data(sample_students_df.copy())
+        with patch.object(analytics, 'get_all_students', return_value=enriched_students):
             with patch('matplotlib.pyplot.figure'):
-                with patch.object(analytics, 'save_or_display_plot'):
-                    analytics.analyze_course_enrollments()
+                with patch('matplotlib.pyplot.colorbar'):
+                    with patch('pandas.core.frame.DataFrame.plot'):
+                        with patch.object(analytics, 'save_or_display_plot'):
+                            analytics.analyze_course_enrollments()
 
 
 class TestRegistrationTimeline:
@@ -302,14 +305,16 @@ class TestCorrelationAnalysis:
 class TestEngagementAnalysis:
     """Test engagement analysis"""
 
-    def test_analyze_engagement(self, analytics, sample_students_df):
+    def test_analyze_engagement(self, analytics, sample_students_df, sample_modules_df):
         """Test engagement analysis"""
         enriched_students = analytics.simulate_additional_data(sample_students_df.copy())
+        enriched_modules = analytics.simulate_module_data(sample_modules_df.copy())
 
         with patch.object(analytics, 'get_all_students', return_value=enriched_students):
-            with patch('matplotlib.pyplot.figure'):
-                with patch.object(analytics, 'save_or_display_plot'):
-                    analytics.analyze_engagement()
+            with patch.object(analytics, 'get_all_modules', return_value=enriched_modules):
+                with patch('matplotlib.pyplot.figure'):
+                    with patch.object(analytics, 'save_or_display_plot'):
+                        analytics.analyze_engagement()
 
 
 class TestPredictiveAnalytics:
@@ -358,57 +363,65 @@ class TestModulePopularity:
 
     def test_analyze_module_popularity(self, analytics, sample_modules_df):
         """Test module popularity analysis"""
-        with patch.object(analytics, 'get_all_modules', return_value=sample_modules_df):
+        enriched_modules = analytics.simulate_module_data(sample_modules_df.copy())
+        with patch.object(analytics, 'get_all_modules', return_value=enriched_modules):
             with patch('matplotlib.pyplot.figure'):
-                with patch.object(analytics, 'save_or_display_plot'):
-                    analytics.analyze_module_popularity()
+                with patch('matplotlib.pyplot.colorbar'):
+                    with patch('pandas.core.frame.DataFrame.plot'):
+                        with patch.object(analytics, 'save_or_display_plot'):
+                            analytics.analyze_module_popularity()
 
 
 class TestDataExport:
     """Test data export functionality"""
 
-    def test_export_data(self, analytics):
+    def test_export_data(self, analytics, sample_students_df):
         """Test exporting data"""
-        with patch('builtins.input', side_effect=['1', '1', 'test_export', '4']):
-            with patch.object(analytics, 'get_all_students', return_value=pd.DataFrame({'col': [1, 2, 3]})):
-                with patch('pandas.DataFrame.to_csv'):
-                    with patch('pandas.DataFrame.to_excel'):
-                        with patch('pandas.DataFrame.to_json'):
-                            with patch('builtins.print'):
-                                analytics.export_data()
+        enriched_students = analytics.simulate_additional_data(sample_students_df.copy())
+        with patch('builtins.input', side_effect=['2']):
+            with patch.object(analytics, 'get_all_students', return_value=enriched_students):
+                with patch.object(analytics, 'get_all_modules', return_value=pd.DataFrame()):
+                    with patch('pandas.DataFrame.to_csv'):
+                        with patch('builtins.print'):
+                            analytics.export_data()
 
 
 class TestDataQualityCheck:
     """Test data quality checking"""
 
-    def test_data_quality_check(self, analytics, sample_students_df):
+    def test_data_quality_check(self, analytics, sample_students_df, sample_modules_df):
         """Test data quality check"""
-        with patch.object(analytics, 'get_all_students', return_value=sample_students_df):
-            with patch('builtins.print'):
-                analytics.data_quality_check()
+        enriched_students = analytics.simulate_additional_data(sample_students_df.copy())
+        enriched_modules = analytics.simulate_module_data(sample_modules_df.copy())
+        with patch.object(analytics, 'get_all_students', return_value=enriched_students):
+            with patch.object(analytics, 'get_all_modules', return_value=enriched_modules):
+                with patch('builtins.print'):
+                    analytics.data_quality_check()
 
 
 class TestAdvancedFiltering:
     """Test advanced filtering"""
 
-    def test_advanced_filtering_add_filter(self, analytics):
+    def test_advanced_filtering_add_filter(self, analytics, sample_students_df):
         """Test adding filters"""
-        with patch('builtins.input', side_effect=['1', 'course', 'CS', '4']):
-            with patch('builtins.print'):
-                analytics.advanced_filtering()
+        with patch.object(analytics, 'get_all_students', return_value=sample_students_df):
+            with patch('builtins.input', side_effect=['4', 'CS', '9']):
+                with patch('builtins.print'):
+                    analytics.advanced_filtering()
 
-                assert 'course' in analytics.custom_filters
-                assert analytics.custom_filters['course'] == 'CS'
+                    assert 'course' in analytics.custom_filters
+                    assert analytics.custom_filters['course'] == ['CS']
 
-    def test_advanced_filtering_clear_filters(self, analytics):
+    def test_advanced_filtering_clear_filters(self, analytics, sample_students_df):
         """Test clearing filters"""
         analytics.custom_filters = {'course': 'CS'}
 
-        with patch('builtins.input', side_effect=['3', '4']):
-            with patch('builtins.print'):
-                analytics.advanced_filtering()
+        with patch.object(analytics, 'get_all_students', return_value=sample_students_df):
+            with patch('builtins.input', side_effect=['8', '9']):
+                with patch('builtins.print'):
+                    analytics.advanced_filtering()
 
-                assert len(analytics.custom_filters) == 0
+                    assert len(analytics.custom_filters) == 0
 
 
 class TestConfigurationSettings:
@@ -433,10 +446,17 @@ class TestReportGeneration:
 
         with patch.object(analytics, 'get_all_students', return_value=enriched_students):
             with patch.object(analytics, 'get_all_modules', return_value=enriched_modules):
-                with patch('matplotlib.backends.backend_pdf.PdfPages'):
+                with patch('education_system.university_system.modules.shared.services.analytics.student_analytics.reporting.PdfPages') as mock_pdf:
+                    mock_pdf_instance = MagicMock()
+                    mock_pdf.return_value.__enter__ = Mock(return_value=mock_pdf_instance)
+                    mock_pdf.return_value.__exit__ = Mock(return_value=False)
                     with patch('matplotlib.pyplot.figure'):
-                        with patch('builtins.print'):
-                            analytics.generate_complete_report()
+                        with patch('matplotlib.pyplot.close'):
+                            with patch('matplotlib.pyplot.axis'):
+                                with patch('matplotlib.pyplot.text'):
+                                    with patch('os.path.getsize', return_value=1024):
+                                        with patch('builtins.print'):
+                                            analytics.generate_complete_report()
 
 
 class TestEmailReports:

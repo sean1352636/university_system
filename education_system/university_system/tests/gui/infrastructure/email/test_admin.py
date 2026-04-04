@@ -18,7 +18,7 @@ from education_system.university_system.infrastructure.email import admin
 from education_system.university_system.infrastructure.auth import UserAuth
 
 # The DB_PATH used by execute_db_operation (the actual path that matters for search/list)
-_EMAIL_DB_PATH = 'education_system.university_system.infrastructure.email.email_db_utilities.DB_PATH'
+_EMAIL_DB_PATH = 'education_system.university_system.infrastructure.database.db.DEFAULT_DB_PATH'
 
 @pytest.fixture
 def temp_db():

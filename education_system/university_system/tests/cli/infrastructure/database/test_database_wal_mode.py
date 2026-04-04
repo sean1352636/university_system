@@ -112,14 +112,16 @@ class TestWALModeConfiguration:
         # Perform a write to create WAL files
         cursor.execute("INSERT INTO wal_test (data) VALUES ('test')")
         conn.commit()
-        conn.close()
 
-        # Check for WAL files
+        # Check for WAL files while connection is still open
+        # (closing the last connection triggers a checkpoint that may remove them)
         wal_file = Path(f"{temp_db}-wal")
         shm_file = Path(f"{temp_db}-shm")
 
         # At least one should exist (depends on timing)
         assert wal_file.exists() or shm_file.exists(), "No WAL files created"
+
+        conn.close()
 
     def test_synchronous_pragma_setting(self, temp_db):
         """Test that synchronous mode is properly set."""

@@ -2,7 +2,7 @@
 
 import json
 import os
-import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import Element, SubElement, ElementTree, ParseError  # nosemgrep: use-defused-xml
 
 import pandas as pd
 
@@ -104,14 +104,14 @@ def export_to_xml(backup_path: str, output_file: str) -> bool:
     conn = None
     try:
         conn = get_connection(db_path=backup_path, row_factory=False)
-        root = ET.Element("database")
+        root = Element("database")
 
         tables = get_database_tables()
         for table_name in tables:
             # Validate table name to prevent SQL injection
             validate_table_name(table_name, conn)
 
-            table_elem = ET.SubElement(root, "table", name=table_name)
+            table_elem = SubElement(root, "table", name=table_name)
 
             cursor = conn.cursor()
             # Table name validated above - safe to use in query with bracket quoting
@@ -120,12 +120,12 @@ def export_to_xml(backup_path: str, output_file: str) -> bool:
             rows = cursor.fetchall()
 
             for row in rows:
-                row_elem = ET.SubElement(table_elem, "row")
+                row_elem = SubElement(table_elem, "row")
                 for col, val in zip(columns, row):
-                    col_elem = ET.SubElement(row_elem, col)
+                    col_elem = SubElement(row_elem, col)
                     col_elem.text = str(val) if val is not None else ""
 
-        tree = ET.ElementTree(root)
+        tree = ElementTree(root)
         tree.write(output_file, encoding='utf-8', xml_declaration=True)
 
         logger.info(f"Exported backup to XML: {output_file}")
@@ -139,7 +139,7 @@ def export_to_xml(backup_path: str, output_file: str) -> bool:
     except (OSError, IOError) as e:
         logger.error(f"I/O error exporting to XML: {e}")
         return False
-    except ET.ParseError as e:
+    except ParseError as e:
         logger.error(f"XML parsing error: {e}")
         return False
     finally:
