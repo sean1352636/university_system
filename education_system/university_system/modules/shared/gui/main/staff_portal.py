@@ -149,11 +149,9 @@ class StaffPortalGUI:
         self._add_button("Assignments", self._launch('show_assignments'))
         self._add_button("Grade Tracking", self._launch('show_grade_tracking_gui'))
         self._add_button("AI Auto-Grading", self._launch('show_auto_grading'))
-        self._add_button("Academic Progress", self._launch('show_academic_progress_gui'))
-        self._add_button("Learning Outcomes", self._launch('show_student_outcomes_gui'))
         self._add_button("Virtual Classroom", self._launch('show_virtual_classroom_gui'))
         self._add_button("Attendance", self._launch('open_attendance_gui'))
-        self._add_button("External Examiners", self._launch('show_external_examiner_gui'))
+
 
         # Schedule
         self._add_heading("Schedule")
@@ -167,18 +165,15 @@ class StaffPortalGUI:
         self._add_button("View Staff", self._launch('show_view_staff'))
         self._add_button("Create Staff", self._launch('show_create_staff'))
         self._add_button("Office Hours", self._launch('show_office_hours_gui'))
-        # TA Management moved to Assignment System > Admin > TA Management
+
 
         # Finance
         self._add_heading("Finance")
         self._add_button("Finance Management", self._launch('show_finance_management'))
-        self._add_button("Financial Aid", self._launch('show_financial_aid_gui'))
-        self._add_button("Bank App", self._launch('show_bank_app_gui'))
 
         # Health & Facilities
         self._add_heading("Health & Facilities")
         self._add_button("Health Portal", self._launch('open_health_portal_gui'))
-        self._add_button("Medical Accommodations", self._launch('show_medical_accommodations'))
         self._add_button("Housing", self._launch('show_housing_accommodations'))
         self._add_button("Facilities", self._launch('show_facilities_management_gui'))
         self._add_button("Parking", self._launch('show_parking_management_gui'))
@@ -192,8 +187,6 @@ class StaffPortalGUI:
         # Analytics & Reports
         self._add_heading("Analytics & Reports")
         self._add_button("Analytics Dashboard", self._launch('show_analytics_dashboard_gui'))
-        self._add_button("Predictive Analytics", self._launch('show_predictive_analytics_gui'))
-        self._add_button("Business Intelligence", self._launch('show_business_intelligence_gui'))
         self._add_button("Early Warning System", self._launch('show_early_warning_gui'))
         self._add_button("Export Data", self._launch('show_export_gui'))
 

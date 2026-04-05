@@ -521,3 +521,22 @@ def _create_payment_history_tab_finance(self, parent):
 
     except Exception as e:
         ttk.Label(parent, text=_t("finance_gui.errors.loading_history", error=str(e))).pack()
+
+def show_bank_app_gui(self):
+    """Launch the Bank Application GUI with Student Finance integration"""
+    try:
+        from education_system.university_system.modules.domain.finance.gui.bank_app import BankApp
+        window = tk.Toplevel(self.root)
+        window.title(_t("extras_gui.titles.university_bank"))
+        window.geometry("900x700")
+        window.minsize(800, 600)
+        try:
+            window.transient(self.root)
+        except Exception:
+            pass
+        # Pass auth for student finance integration
+        BankApp(window, auth=self.auth)
+        print(_t("extras_gui.messages.bank_app_opened"))
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.bank_app_failed").format(error=str(e)))
+        print(_t("extras_gui.messages.bank_app_error").format(error=e))

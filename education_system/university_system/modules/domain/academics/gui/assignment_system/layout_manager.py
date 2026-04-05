@@ -294,6 +294,7 @@ class LayoutManager:
                 ("⏱️ Late Policies", self.gui.show_late_policies),
                 ("📋 Late Submission Report", self.gui.show_late_submission_report),
                 ("👥 Manage Groups", self.gui.show_manage_groups),
+                ("🎓 External Examiners", self.gui.show_external_examiners),
                 ("👥 Manage Peer Reviews", self.gui.manage_peer_reviews),
                 ("🔧 Send Messages", self.gui.show_send_messages)
             ]
@@ -331,6 +332,7 @@ class LayoutManager:
                 ("📄 Assignment Templates", self.gui.show_templates),
                 ("📝 Review Extensions", self.gui.show_review_extensions),
                 ("🔄 SIS Roster Sync", self.gui.show_sis_sync),
+                ("⚠️ Academic Misconduct", self.gui.show_academic_misconduct),
                 ("🚨 Integrity Cases", self.gui.show_integrity_cases),
                 ("📝 Grade Audit Log", self.gui.show_grade_audit_log),
                 ("♿ Accommodations", self.gui.show_accommodations),

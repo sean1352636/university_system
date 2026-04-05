@@ -37,6 +37,7 @@ from education_system.university_system.modules.shared.gui.main.imports.gui_impo
     MailPostGUI,
     STAFF_HR_GUI_AVAILABLE,
     StaffHRGUI,
+    launch_admissions_crm_gui,
 )
 
 logger = logging.getLogger(__name__)
@@ -396,3 +397,112 @@ def show_staff_hr_gui(self):
 
     except Exception as e:
         messagebox.showerror(_t("student_affairs.staff_hr.title"), _t("student_affairs.staff_hr.open_failed", error=str(e)))
+
+def show_communication_dashboard_gui(self):
+    """Launch the full Communication Dashboard GUI"""
+    if not self.auth.current_user:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.login_required_communication"))
+        return
+
+    if not (self.auth.check_permission('send_emails') or
+            self.auth.check_permission('access_communication_dashboard')):
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.no_permission_communication"))
+        return
+
+    try:
+        # Create communication window
+        comm_window = tk.Toplevel(self.root)
+        comm_window.title(_t("extras_gui.titles.communication_dashboard"))
+        comm_window.geometry("1400x900")
+        comm_window.minsize(1200, 700)
+
+        try:
+            comm_window.transient(self.root)
+        except Exception as e:
+            logger.debug(f"Could not set comm_window as transient: {e}")
+
+        # Initialize communication dashboard
+        from education_system.university_system.modules.shared.gui.email.email_gui import EmailManagerGUI
+        comm_gui = EmailManagerGUI(comm_window, auth=self.auth)
+
+        print(_t("extras_gui.messages.communication_dashboard_opened"))
+
+    except ImportError:
+        # Fallback to existing email manager
+        try:
+            self.show_email_manager()
+        except Exception:
+            messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.communication_not_available"))
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.communication_dashboard_failed").format(error=str(e)))
+def show_email_sms_gui(self):
+    """Launch the Email & SMS Communication Hub"""
+    if not self.auth.current_user:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.login_required_communication_hub"))
+        return
+
+    try:
+        # Open the email manager GUI which now includes SMS
+        from education_system.university_system.modules.shared.gui.email.email_manager_management_gui import EmailManagerManagementGUI
+
+        email_gui = EmailManagerManagementGUI(self.root, self.auth)
+        email_gui.show_email_manager()
+
+        print(_t("extras_gui.messages.communication_hub_opened"))
+
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.communication_hub_failed").format(error=str(e)))
+        print(_t("extras_gui.messages.communication_hub_error").format(error=e))
+def show_admissions_crm_gui(self):
+    """Launch the Admissions Crm GUI"""
+    launch_admissions_crm_gui(self.root, self.auth)
+def show_police_station_gui(self):
+    """Launch the Police Station Management GUI"""
+    try:
+        from education_system.university_system.modules.domain.campus.gui.security.police_station_gui import PoliceStationApp
+        window = tk.Toplevel(self.root)
+        window.title(_t("extras_gui.titles.police_station"))
+        window.geometry("1100x700")
+        try:
+            window.transient(self.root)
+        except Exception:
+            pass
+        PoliceStationApp(window)
+        print(_t("extras_gui.messages.police_station_opened"))
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.police_station_failed").format(error=str(e)))
+        print(_t("extras_gui.messages.police_station_error").format(error=e))
+
+def show_security_desk_gui(self):
+    """Launch the Security Desk GUI"""
+    try:
+        from education_system.university_system.modules.domain.campus.gui.security.security_desk_gui import SecurityDesk
+        window = tk.Toplevel(self.root)
+        window.title(_t("extras_gui.titles.security_desk"))
+        window.geometry("1000x700")
+        try:
+            window.transient(self.root)
+        except Exception:
+            pass
+        SecurityDesk(window)
+        print(_t("extras_gui.messages.security_desk_opened"))
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.security_desk_failed").format(error=str(e)))
+        print(_t("extras_gui.messages.security_desk_error").format(error=e))
+
+def show_church_management_gui(self):
+    """Launch the Church Management System GUI"""
+    try:
+        from education_system.university_system.modules.domain.campus.gui.community.church_management_gui import ChurchManagementSystem
+        window = tk.Toplevel(self.root)
+        window.title(_t("extras_gui.titles.church_management"))
+        window.geometry("1200x800")
+        try:
+            window.transient(self.root)
+        except Exception:
+            pass
+        ChurchManagementSystem(window)
+        print(_t("extras_gui.messages.church_management_opened"))
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.church_management_failed").format(error=str(e)))
+        print(_t("extras_gui.messages.church_management_error").format(error=e))

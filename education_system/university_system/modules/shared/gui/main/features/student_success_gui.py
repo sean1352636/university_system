@@ -9,6 +9,11 @@ from education_system.university_system.modules.shared.gui.main.imports.gui_impo
     launch_mental_health_gui,
     launch_early_warning_gui,
     launch_career_services_gui,
+    launch_ai_features_gui,
+    launch_blockchain_credentials_gui,
+    launch_mobile_app_pwa_gui,
+    EXTRAS_LAUNCHER_AVAILABLE,
+    launch_extras_gui,
 )
 
 # Alias for translation function
@@ -324,3 +329,118 @@ def show_textbook_store_gui(self):
     except Exception as e:
         logger.error(f"Error launching Textbook Store GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Textbook Store", error=str(e)))
+
+def show_ai_features_gui(self):
+    """Launch the Ai Features GUI"""
+    launch_ai_features_gui(self.root, self.auth)
+def show_blockchain_credentials_gui(self):
+    """Launch the Blockchain Credentials & Digital Badges GUI"""
+    launch_blockchain_credentials_gui(auth=self.auth)
+def show_mobile_app_pwa_gui(self):
+    """Launch the Mobile App (PWA) Infrastructure GUI"""
+    launch_mobile_app_pwa_gui(auth=self.auth)
+def show_extras_launcher(self):
+    """Launch the Extras & Tools Launcher (games, utilities, mini-projects)"""
+    if not EXTRAS_LAUNCHER_AVAILABLE:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.extras_launcher_not_available"))
+        return
+
+    try:
+        launch_extras_gui(self.root)
+        print(_t("extras_gui.messages.extras_launcher_opened"))
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.extras_launcher_failed").format(error=str(e)))
+        print(_t("extras_gui.messages.extras_launcher_error").format(error=e))
+def show_todo_app_gui(self):
+    """Launch the To-Do List GUI"""
+    try:
+        from education_system.university_system.modules.shared.gui.tools.todo_app_gui import TodoApp
+        window = tk.Toplevel(self.root)
+        window.title(_t("extras_gui.titles.todo_list"))
+        window.geometry("500x600")
+        try:
+            window.transient(self.root)
+        except Exception:
+            pass
+        TodoApp(window)
+        print(_t("extras_gui.messages.todo_list_opened"))
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.todo_list_failed").format(error=str(e)))
+        print(_t("extras_gui.messages.todo_list_error").format(error=e))
+def show_accessibility_tools_gui(self):
+    """Launch the Accessibility & Accommodation Tools GUI"""
+    try:
+        from education_system.university_system.modules.domain.student_affairs.gui.accessibility_tools_gui import (
+            launch_accessibility_tools_gui
+        )
+        launch_accessibility_tools_gui(self.root, self.auth)
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.accessibility_tools_failed").format(error=str(e)))
+        print(_t("extras_gui.messages.accessibility_tools_error").format(error=e))
+def _show_feature_gui(self, title, description, cli_instruction):
+    """Generic method to show feature GUI window"""
+    if not self.auth.current_user:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.login_required_feature").format(title=title))
+        return
+
+    try:
+        window = tk.Toplevel(self.root)
+        window.title(title)
+        window.geometry("900x600")
+        window.minsize(800, 500)
+
+        main_frame = ttk.Frame(window, padding="20")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(main_frame, text=title, font=('Arial', 16, 'bold')).pack(pady=10)
+        ttk.Label(main_frame, text=description, justify=tk.LEFT, wraplength=800).pack(pady=10)
+
+        info_frame = ttk.LabelFrame(main_frame, text=_t("extras_gui.labels.how_to_access"), padding="15")
+        info_frame.pack(fill=tk.X, pady=20)
+        ttk.Label(info_frame, text=cli_instruction, font=('Arial', 11)).pack()
+
+        ttk.Button(main_frame, text=_t("extras_gui.buttons.close"), command=window.destroy).pack(pady=10)
+
+        print(_t("extras_gui.messages.feature_opened").format(title=title))
+
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.feature_failed").format(title=title, error=str(e)))
+        print(_t("extras_gui.messages.feature_error").format(title=title, error=e))
+
+def show_student_app_gui(self):
+    """Launch Student App / Portal GUI"""
+    try:
+        from education_system.university_system.modules.domain.student_app.gui.student_app_gui import StudentAppGUI
+        gui = StudentAppGUI(parent=self.root, auth=self.auth)
+    except ImportError as e:
+        logger.error(f"Failed to import Student App GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Student App GUI not available: {e}")
+    except Exception as e:
+        logger.error(f"Error launching Student App GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Failed to launch Student App: {e}")
+
+
+def show_achievement_badge_gui(self):
+    """Launch Achievement Badge GUI"""
+    try:
+        from education_system.university_system.modules.domain.achievement_badges.gui.achievement_badge_gui import AchievementBadgeGUI
+        gui = AchievementBadgeGUI(parent=self.root, auth=self.auth)
+    except ImportError as e:
+        logger.error(f"Failed to import Achievement Badge GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Achievement Badge GUI not available: {e}")
+    except Exception as e:
+        logger.error(f"Error launching Achievement Badge GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Failed to launch Achievement Badges: {e}")
+
+
+def show_study_recommendations_gui(self):
+    """Launch Study Recommendations GUI"""
+    try:
+        from education_system.university_system.modules.domain.study_recommendations.gui.study_recommendation_gui import StudyRecommendationGUI
+        gui = StudyRecommendationGUI(parent=self.root, auth=self.auth)
+    except ImportError as e:
+        logger.error(f"Failed to import Study Recommendations GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Study Recommendations GUI not available: {e}")
+    except Exception as e:
+        logger.error(f"Error launching Study Recommendations GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Failed to launch Study Recommendations: {e}")

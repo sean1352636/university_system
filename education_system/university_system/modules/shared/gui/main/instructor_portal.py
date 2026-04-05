@@ -144,16 +144,13 @@ class InstructorPortalGUI:
         self._add_button("AI Auto-Grading", self._launch('show_auto_grading'))
         self._add_button("Virtual Classroom", self._launch('show_virtual_classroom_gui'))
         self._add_button("Office Hours", self._launch('show_office_hours_gui'))
-        # TA Management moved to Assignment System > Admin > TA Management
+
 
         # Students
         self._add_heading("Students")
         self._add_button("Student Records", self._launch('show_student_records'))
-        self._add_button("Student Analytics", self._launch('show_student_analytics_gui'))
-        self._add_button("Learning Outcomes", self._launch('show_student_outcomes_gui'))
         self._add_button("Student Registration", self._launch('show_student_registration_gui'))
         self._add_button("Early Warning System", self._launch('show_early_warning_gui'))
-        self._add_button("Academic Progress", self._launch('show_academic_progress_gui'))
 
         # Schedule & Attendance
         self._add_heading("Schedule & Attendance")
@@ -166,8 +163,6 @@ class InstructorPortalGUI:
         # Analytics
         self._add_heading("Analytics")
         self._add_button("Analytics", self._launch('show_analytics_dashboard_gui'))
-        self._add_button("Predictive Analytics", self._launch('show_predictive_analytics_gui'))
-        self._add_button("Enhanced Reports", self._launch('show_enhanced_reporting_gui'))
         self._add_button("Export Data", self._launch('show_export_gui'))
 
         # Communication

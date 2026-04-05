@@ -1162,6 +1162,8 @@
       "budget": "💼 Budget",
       "forecasting": "🔮 Forecasting",
       "research_grants": "🔬 Research & Grants",
+      "bank_app": "🏦 Bank App",
+      "club_payments": "💳 Club Payments",
       "admin": "⚙️ Admin",
       "settings": "⚙️ Settings"
     },
@@ -1684,6 +1686,36 @@
       "open_management": "📂 Open Research & Grants Management",
       "module_not_available": "⚠️  Research & Grants Management module not available",
       "info_content": "Research & Grants Management Features:\n\n• Research Projects\n  - Create and manage research projects\n  - Add team members and collaborators\n  - Track project milestones and progress\n\n• Grant Applications\n  - Submit grant applications\n  - Track application status\n  - Manage awarded grants\n\n• Publications\n  - Record research publications\n  - Track citations and impact\n  - Link publications to projects\n\n• Milestones\n  - Set project milestones\n  - Track completion status\n  - Monitor deadlines\n\n• Equipment\n  - Register research equipment\n  - Track equipment usage\n  - Manage maintenance schedules\n\n• Ethics Reviews (IRB)\n  - Submit ethics review applications\n  - Track review status\n  - Manage compliance requirements"
+    },
+    "bank_app_tab": {
+      "title": "🏦 University Bank Application",
+      "description": "Access the University Bank application for account management, deposits, top-ups, and transaction history.",
+      "open_bank_app": "🏦 Open Bank Application",
+      "module_not_available": "⚠️  Bank Application module not available",
+      "window_title": "University Bank Application",
+      "failed_to_open": "Failed to open Bank Application: {error}"
+    },
+    "club_payments_tab": {
+      "title": "💳 Club Payment Management",
+      "description": "Manage club membership payments, track payment status, and view payment history.",
+      "open_club_payments": "💳 Open Club Payment Management",
+      "window_title": "Club Payment Management",
+      "header": "Club Payment Management",
+      "failed_to_open": "Failed to open Club Payment Management: {error}",
+      "db_unavailable": "Database connection not available",
+      "stats_section": "Last 30 Days Summary",
+      "total_payments": "Total Payments: {count}",
+      "total_amount": "Total Amount: £{amount}",
+      "clubs_with_payments": "Clubs with Payments: {count}",
+      "error_loading_stats": "Error loading statistics: {error}",
+      "record_description": "Record new club payment transactions.",
+      "integration_note": "Integration with Student Finance system for automatic balance updates.",
+      "error_loading_history": "Error loading payment history: {error}",
+      "tabs": {
+        "overview": "Payment Overview",
+        "record": "Record Payment",
+        "history": "Payment History"
+      }
     },
     "reports_tab": {
       "title": "📈 Financial Reports & Analytics",

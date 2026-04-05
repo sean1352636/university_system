@@ -79,6 +79,42 @@ def _launch_documents(parent, auth):
     DocumentCenterGUI(parent, auth=auth)
 
 
+def _launch_feature(root, auth, feature_name):
+    """Launch a student feature GUI in a Toplevel window."""
+    import tkinter as tk
+    from tkinter import messagebox
+
+    feature_map = {
+        'roommate_finder': ('Roommate Finder', 'education_system.university_system.modules.domain.student_services.gui.roommate_finder_gui', 'RoomateFinderGUI'),
+        'marketplace': ('Marketplace', 'education_system.university_system.modules.domain.student_services.gui.marketplace_gui', 'MarketplaceGUI'),
+        'lost_found': ('Lost & Found', 'education_system.university_system.modules.domain.student_services.gui.lost_found_gui', 'LostFoundGUI'),
+        'campus_navigation': ('Campus Navigation', 'education_system.university_system.modules.domain.student_services.gui.campus_navigation_gui', 'CampusNavigationGUI'),
+        'social_matching': ('Social Matching', 'education_system.university_system.modules.domain.student_services.gui.social_matching_gui', 'SocialMatchingGUI'),
+        'mail_post': ('Mail & Post', 'education_system.university_system.modules.domain.student_services.gui.mail_post_gui', 'MailPostGUI'),
+        'printing_services': ('Printing Services', 'education_system.university_system.modules.domain.student_services.gui.printing_services_gui', 'PrintingServicesGUI'),
+        'study_room_booking': ('Study Room Booking', 'education_system.university_system.modules.domain.student_services.gui.study_room_booking_gui', 'StudyRoomBookingGUI'),
+        'student_id': ('Student ID Card', 'education_system.university_system.modules.domain.student_services.gui.student_id_gui', 'StudentIDGUI'),
+        'achievement_badges': ('Achievement Badges', 'education_system.university_system.modules.domain.student_services.gui.achievement_badge_gui', 'AchievementBadgeGUI'),
+        'wellness_hub': ('Wellness Hub', 'education_system.university_system.modules.domain.health.gui.wellness_hub_gui', 'WellnessHubGUI'),
+        'todo_app': ('Todo App', 'education_system.university_system.modules.shared.gui.tools.todo_app_gui', 'TodoApp'),
+    }
+
+    if feature_name not in feature_map:
+        messagebox.showerror("Error", f"Unknown feature: {feature_name}")
+        return
+
+    title, module_path, class_name = feature_map[feature_name]
+    try:
+        module = __import__(module_path, fromlist=[class_name])
+        gui_class = getattr(module, class_name)
+        window = tk.Toplevel(root)
+        window.title(title)
+        window.geometry("1000x700")
+        gui_class(window, auth=auth)
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to open {title}: {e}")
+
+
 def create_student_dashboard(parent_frame, auth, service):
     """Create the student-specific dashboard content.
 
@@ -132,6 +168,18 @@ def create_student_dashboard(parent_frame, auth, service):
         ("Finances", lambda: _launch_finance(root, auth)),
         ("Help Center", lambda: _launch_help_center(root, auth)),
         ("Documents", lambda: _launch_documents(root, auth)),
+        ("Roommate Finder", lambda: _launch_feature(root, auth, 'roommate_finder')),
+        ("Marketplace", lambda: _launch_feature(root, auth, 'marketplace')),
+        ("Lost & Found", lambda: _launch_feature(root, auth, 'lost_found')),
+        ("Campus Navigation", lambda: _launch_feature(root, auth, 'campus_navigation')),
+        ("Social Matching", lambda: _launch_feature(root, auth, 'social_matching')),
+        ("Mail & Post", lambda: _launch_feature(root, auth, 'mail_post')),
+        ("Printing Services", lambda: _launch_feature(root, auth, 'printing_services')),
+        ("Study Room Booking", lambda: _launch_feature(root, auth, 'study_room_booking')),
+        ("Student ID Card", lambda: _launch_feature(root, auth, 'student_id')),
+        ("Achievement Badges", lambda: _launch_feature(root, auth, 'achievement_badges')),
+        ("Wellness Hub", lambda: _launch_feature(root, auth, 'wellness_hub')),
+        ("Todo App", lambda: _launch_feature(root, auth, 'todo_app')),
     ]
     for i, (label, cmd) in enumerate(buttons):
         ttk.Button(actions_grid, text=label, command=cmd).grid(

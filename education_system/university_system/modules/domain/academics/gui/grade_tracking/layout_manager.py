@@ -435,6 +435,7 @@ class LayoutManager:
                 ("Performance Analysis", self.show_performance_analysis_view),
                 ("Analytics", self.show_analytics_view),
                 ("Reports", self.show_reports_view),
+                ("Academic Progress", self.show_academic_progress),
                 ("🏠 Return to Main Menu", self.return_to_main_menu)
             ]
         # Staff/Instructor gets grading and analytics features
@@ -450,6 +451,8 @@ class LayoutManager:
                 ("Transcripts", self.show_transcript_view),
                 ("Analytics", self.show_analytics_view),
                 ("Reports", self.show_reports_view),
+                ("Learning Outcomes", self.show_learning_outcomes_view),
+                ("Academic Progress", self.show_academic_progress),
                 ("🏠 Return to Main Menu", self.return_to_main_menu)
             ]
         # Students get limited read-only features
@@ -625,6 +628,19 @@ class LayoutManager:
     def show_performance_analysis_view(self):
         """Show performance analysis view"""
         self.show_analytics_view()
+
+    def show_academic_progress(self):
+        """Launch Academic Progress GUI"""
+        try:
+            from education_system.university_system.modules.shared.gui.academic_progress.academic_progress_gui import AcademicProgressGUI
+            import tkinter as tk
+            window = tk.Toplevel(self.root)
+            window.title("Academic Progress")
+            window.geometry("1200x800")
+            AcademicProgressGUI(window, self.auth)
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Error", f"Failed to open Academic Progress: {e}")
 
     def show_analytics_view(self):
         """Show analytics view"""

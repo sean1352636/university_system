@@ -5,6 +5,14 @@ import logging
 import sys
 import subprocess
 
+# Import PDF export functionality
+try:
+    from education_system.university_system.modules.shared.gui.pdf_export_gui import show_pdf_export_gui as _pdf_export_gui_func
+    PDF_EXPORT_GUI_AVAILABLE = True
+except ImportError:
+    _pdf_export_gui_func = None
+    PDF_EXPORT_GUI_AVAILABLE = False
+
 # Import GUI availability flags and classes
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import (
     LIBRARY_GUI_AVAILABLE,
@@ -28,8 +36,19 @@ from education_system.university_system.modules.shared.gui.main.imports.gui_impo
     AIDetectorGUI,
     OFFICE_HOURS_GUI_AVAILABLE,
     OfficeHoursGUI,
-    TA_MANAGEMENT_GUI_AVAILABLE,
-    TAManagementGUI,
+    ADVANCED_SEARCH_GUI_AVAILABLE,
+    AdvancedSearchGUI,
+    DOCUMENT_MANAGER_GUI_AVAILABLE,
+    DocumentManagerGUI,
+    start_document_manager_gui,
+    display_document_management_menu,
+    ENHANCED_REPORTING_GUI_AVAILABLE,
+    ReportingSystemGUI,
+    start_enhanced_reporting_gui,
+    launch_admissions_crm_gui,
+    launch_predictive_analytics_gui,
+    launch_business_intelligence_gui,
+    launch_integration_marketplace_gui,
 )
 
 # Import paths
@@ -490,16 +509,6 @@ def show_office_hours_gui(self):
     except Exception as e:
         messagebox.showerror("Error", f"Unexpected error opening Office Hours: {e}")
 
-def show_ta_management_gui(self):
-    """TA Management has been merged into the Assignment System's Admin section.
-    This stub remains for backward compatibility with any existing references."""
-    messagebox.showinfo(
-        "TA Management",
-        "TA Management has moved to:\n\n"
-        "Assignment System > Admin > TA Management\n\n"
-        "Please use the Assignment Management System to access TA features."
-    )
-
 def show_student_grades_gui(self):
     """Launch the Student Grades & GPA GUI"""
     if not self.auth.current_user:
@@ -683,3 +692,263 @@ def show_lms_gui(self):
     except Exception as e:
         messagebox.showerror("Error", f"Failed to open LMS: {e}")
         print(f"LMS GUI error: {e}")
+
+def show_document_manager(self):
+    """Open the Document Management GUI (with fallbacks)."""
+    if not self.auth.current_user:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.login_required_document_manager"))
+        return
+
+    user = self.auth.current_user
+    perms = user.get('permissions', [])
+    role = user.get('role', '')
+
+    # Be generous but safe: admin/staff or explicit perms
+    allowed = (
+        role in ('admin', 'staff') or
+        any(p in perms for p in ['manage_documents', 'system_config', 'view_documents'])
+    )
+    if not allowed:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.no_permission_document_manager"))
+        return
+
+    try:
+        if DOCUMENT_MANAGER_GUI_AVAILABLE and DocumentManagerGUI:
+            win = tk.Toplevel(self.root)
+            win.title(_t("extras_gui.titles.document_manager"))
+            win.geometry("1400x900")
+            try:
+                win.transient(self.root)
+                win.grab_set()
+            except Exception as e:
+                logger.debug(f"Could not set window as transient or grab focus: {e}")
+
+            # Embed the full GUI with auth
+            DocumentManagerGUI(win, auth=self.auth)
+            print(_t("extras_gui.messages.document_manager_opened"))
+            return
+
+        # If import flag says unavailable, try the standalone launcher first
+        if start_document_manager_gui:
+            start_document_manager_gui()
+            return
+
+        raise RuntimeError(_t("extras_gui.errors.document_manager_not_available"))
+
+    except Exception as e:
+        # Final fallback: original CLI menu you already ship
+        try:
+            display_document_management_menu()
+        except Exception as cli_err:
+            messagebox.showerror(
+                _t("extras_gui.titles.document_manager_short"),
+                _t("extras_gui.errors.document_manager_failed").format(error=e, cli_error=cli_err)
+            )
+def show_pdf_export_gui(self):
+    """Launch the PDF Database Export GUI"""
+    if not self.auth.current_user:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.login_required_export"))
+        return
+
+    if not (self.auth.check_permission('export_data') or
+            self.auth.check_permission('backup_restore') or
+            self.auth.current_user.get('role') == 'admin'):
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.no_permission_export"))
+        return
+
+    try:
+        if PDF_EXPORT_GUI_AVAILABLE and _pdf_export_gui_func is not None:
+            _pdf_export_gui_func(self.root, self.auth)
+            print(_t("extras_gui.messages.pdf_export_opened"))
+        else:
+            messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.pdf_export_not_available"))
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.pdf_export_failed").format(error=str(e)))
+        logger.error(f"PDF Export GUI error: {e}")
+def show_enhanced_reporting_dashboard(self):
+    """Open the Enhanced Reporting GUI as a child window, with safe fallbacks."""
+    try:
+        if not ENHANCED_REPORTING_GUI_AVAILABLE or ReportingSystemGUI is None:
+            messagebox.showerror(
+                _t("extras_gui.titles.enhanced_reporting"),
+                _t("extras_gui.errors.enhanced_reporting_not_available")
+            )
+            return
+
+        # Prefer embedding into a Toplevel to avoid creating a second Tk root
+        try:
+            top = tk.Toplevel(self.root)
+            top.title(_t("extras_gui.titles.enhanced_reporting_dashboard"))
+            top.geometry("1200x800")
+            try:
+                top.transient(self.root)
+                top.grab_set()
+            except Exception as e:
+                logger.debug(f"Could not set window as transient or grab focus: {e}")
+
+            # Instantiate the GUI into the Toplevel container
+            app = ReportingSystemGUI(top)
+
+            # If the reporting GUI supports auth injection, pass it
+            try:
+                if hasattr(app, "set_auth"):
+                    app.set_auth(self.auth)
+            except Exception as e:
+                logger.debug(f"Could not set auth on app: {e}")
+
+            print(_t("extras_gui.messages.enhanced_reporting_opened"))
+
+        except Exception as embed_err:
+            # Fallback to its own launcher (may create its own Tk root)
+            try:
+                if start_enhanced_reporting_gui:
+                    start_enhanced_reporting_gui()
+                else:
+                    raise RuntimeError(_t("extras_gui.errors.enhanced_reporting_launcher_not_available"))
+            except Exception as launch_err:
+                messagebox.showerror(
+                    _t("extras_gui.titles.enhanced_reporting"),
+                    _t("extras_gui.errors.enhanced_reporting_launch_failed").format(error=launch_err)
+                )
+                print(_t("extras_gui.messages.enhanced_reporting_error").format(launch_err=launch_err, embed_err=embed_err))
+
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.titles.enhanced_reporting"), _t("extras_gui.errors.unexpected_error").format(error=e))
+        print(_t("extras_gui.messages.unexpected_enhanced_reporting_error").format(error=e))
+def show_student_analytics_gui(self):
+    """Launch the Student Analytics GUI"""
+    if not self.auth.current_user:
+        messagebox.showerror(_t("extras_gui.errors.error"), "Please log in to access Student Analytics.")
+        return
+
+    try:
+        from education_system.university_system.modules.shared.gui.main.imports.gui_imports import (
+            STUDENT_ANALYTICS_GUI_AVAILABLE, GUIStudentAnalytics
+        )
+        if not STUDENT_ANALYTICS_GUI_AVAILABLE or GUIStudentAnalytics is None:
+            messagebox.showerror("Student Analytics", "Student Analytics GUI is not available.")
+            return
+
+        window = tk.Toplevel(self.root)
+        window.title("Student Analytics")
+        window.geometry("1400x900")
+        try:
+            window.transient(self.root)
+        except Exception:
+            pass
+        GUIStudentAnalytics(root=window, auth_manager=self.auth)
+        print("Student Analytics GUI opened")
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to open Student Analytics: {e}")
+        logger.error(f"Student Analytics GUI error: {e}")
+def show_predictive_analytics_gui(self):
+    """Launch the Predictive Analytics GUI"""
+    launch_predictive_analytics_gui(self.root, self.auth)
+def show_business_intelligence_gui(self):
+    """Launch the Business Intelligence GUI"""
+    launch_business_intelligence_gui(self.root, self.auth)
+def show_advanced_search_gui(self):
+    """Open Advanced Search GUI in a new window"""
+    if not ADVANCED_SEARCH_GUI_AVAILABLE:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.advanced_search_not_available"))
+        return
+
+    try:
+        # Create a new window for the Advanced Search GUI
+        search_window = tk.Toplevel(self.root)
+        search_window.title(_t("extras_gui.titles.advanced_search"))
+        search_window.geometry("1200x800")
+        search_window.transient(self.root)
+
+        # Center the window
+        search_window.update_idletasks()
+        x = (search_window.winfo_screenwidth() - search_window.winfo_width()) // 2
+        y = (search_window.winfo_screenheight() - search_window.winfo_height()) // 2
+        search_window.geometry(f"+{x}+{y}")
+
+        # Initialize the Advanced Search GUI in the new window
+        self.advanced_search_gui = AdvancedSearchGUI(search_window, auth=self.auth)
+
+        # Store reference for data refresh
+        self.advanced_search_refresh_callback = self.advanced_search_gui.refresh_data
+
+        print(_t("extras_gui.messages.advanced_search_opened"))
+
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.advanced_search_failed").format(error=str(e)))
+        print(_t("extras_gui.messages.advanced_search_error").format(error=e))
+def refresh_advanced_search(self):
+    """Refresh the Advanced Search GUI if it's open"""
+    if hasattr(self, 'advanced_search_refresh_callback') and self.advanced_search_refresh_callback:
+        try:
+            # Check if the Advanced Search window still exists before refreshing
+            if (hasattr(self, 'advanced_search_gui') and
+                    hasattr(self.advanced_search_gui, 'master') and
+                    self.advanced_search_gui.master.winfo_exists()):
+                self.advanced_search_refresh_callback()
+                print(_t("extras_gui.messages.advanced_search_refreshed"))
+            else:
+                # Window was closed, clear the stale callback
+                self.advanced_search_refresh_callback = None
+        except tk.TclError:
+            # Window was destroyed, clear the callback
+            self.advanced_search_refresh_callback = None
+        except Exception as e:
+            print(_t("extras_gui.messages.advanced_search_refresh_warning").format(error=e))
+def show_integration_marketplace_gui(self):
+    """Launch the Integration Marketplace GUI"""
+    launch_integration_marketplace_gui(auth=self.auth, parent=self.root)
+def show_exam_scheduler_gui(self):
+    """Launch the Exam Scheduler GUI - student gets read-only viewer, staff/admin gets full app"""
+    try:
+        # Determine user role
+        role = None
+        if self.auth and self.auth.current_user:
+            role = self.auth.current_user.get('role')
+
+        window = tk.Toplevel(self.root)
+        window.title(_t("extras_gui.titles.exam_scheduler"))
+        window.geometry("1100x700")
+        try:
+            window.transient(self.root)
+        except Exception:
+            pass
+
+        if role == 'student':
+            # Students get read-only exam viewer
+            from education_system.university_system.modules.domain.academics.gui.exam_scheduler import StudentExamViewer
+            StudentExamViewer(window, auth=self.auth)
+        else:
+            # Staff/admin get full exam scheduler
+            from education_system.university_system.modules.domain.academics.gui.exam_scheduler import ExamSchedulerApp
+            ExamSchedulerApp(window)
+
+        print(_t("extras_gui.messages.exam_scheduler_opened"))
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.exam_scheduler_failed").format(error=str(e)))
+        print(_t("extras_gui.messages.exam_scheduler_error").format(error=e))
+
+def show_hesa_export_gui(self):
+    """Launch HESA Data Export GUI"""
+    try:
+        from education_system.university_system.modules.domain.hesa_export.gui.hesa_export_gui import HESAExportGUI
+        gui = HESAExportGUI(parent=self.root)
+    except ImportError as e:
+        logger.error(f"Failed to import HESA Export GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"HESA Export GUI not available: {e}")
+    except Exception as e:
+        logger.error(f"Error launching HESA Export GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Failed to launch HESA Export: {e}")
+
+
+def show_clearing_adjustment_gui(self):
+    """Launch Clearing & Adjustment GUI"""
+    try:
+        from education_system.university_system.modules.domain.clearing_adjustment.gui.clearing_adjustment_gui import ClearingAdjustmentGUI
+        gui = ClearingAdjustmentGUI(parent=self.root)
+    except ImportError as e:
+        logger.error(f"Failed to import Clearing & Adjustment GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Clearing & Adjustment GUI not available: {e}")
+    except Exception as e:
+        logger.error(f"Error launching Clearing & Adjustment GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Failed to launch Clearing & Adjustment: {e}")

@@ -64,6 +64,11 @@ def show_system_administration_gui(self):
         notebook.add(config_frame, text=_t("system_admin_gui.tabs.configuration"))
         self.create_config_tab(config_frame)
 
+        # Operations Tab (moved from main navigation)
+        ops_frame = ttk.Frame(notebook)
+        notebook.add(ops_frame, text="Operations")
+        self.create_operations_tab(ops_frame)
+
         # Add close button at the bottom
         button_frame = ttk.Frame(admin_window, padding="10")
         button_frame.pack(side=tk.BOTTOM, fill=tk.X)
@@ -290,6 +295,87 @@ def create_config_tab(self, parent):
         config_text.insert("1.0", f"{_t('system_admin_gui.config.overview_title')}\n{'='*50}\n\n{_t('system_admin_gui.errors.error_loading_configuration').format(error=e)}\n\n{_t('system_admin_gui.config.use_tools_message')}")
 
     config_text.config(state=tk.DISABLED)
+
+def create_operations_tab(self, parent):
+    """Create operations tools tab with moved admin features"""
+    import tkinter as tk
+    from tkinter import ttk, messagebox
+
+    main_frame = ttk.Frame(parent, padding="20")
+    main_frame.pack(fill=tk.BOTH, expand=True)
+
+    # Monitoring & Logs
+    logs_frame = ttk.LabelFrame(main_frame, text="Monitoring & Logs", padding="15")
+    logs_frame.pack(fill=tk.X, pady=(0, 15))
+
+    def launch_feature(title, method_name):
+        try:
+            method = getattr(self, method_name, None)
+            if method:
+                method()
+            else:
+                messagebox.showinfo("Info", f"{title} is accessible via the main menu.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open {title}: {e}")
+
+    row, col = 0, 0
+    monitoring_buttons = [
+        ("Audit Log Viewer", 'show_audit_log_viewer'),
+        ("Activity Logger", 'show_activity_logger'),
+        ("Activity Log", 'show_activity_log'),
+        ("System Monitoring", 'show_system_monitoring_dashboard'),
+    ]
+    for label, method in monitoring_buttons:
+        ttk.Button(logs_frame, text=label,
+                  command=lambda m=method, l=label: launch_feature(l, m)).grid(
+            row=row, column=col, padx=5, pady=5, sticky='ew')
+        col += 1
+        if col >= 3:
+            col = 0
+            row += 1
+
+    # System Configuration
+    config_frame = ttk.LabelFrame(main_frame, text="System Configuration", padding="15")
+    config_frame.pack(fill=tk.X, pady=(0, 15))
+
+    row, col = 0, 0
+    config_buttons = [
+        ("Configuration Editor", 'show_configuration_editor'),
+        ("Query Analyser", 'show_query_analyser'),
+        ("Capacity Planning", 'show_capacity_planning'),
+        ("API Documentation", 'show_api_documentation'),
+        ("Notification Templates", 'show_notification_template_manager'),
+    ]
+    for label, method in config_buttons:
+        ttk.Button(config_frame, text=label,
+                  command=lambda m=method, l=label: launch_feature(l, m)).grid(
+            row=row, column=col, padx=5, pady=5, sticky='ew')
+        col += 1
+        if col >= 3:
+            col = 0
+            row += 1
+
+    # Data & Compliance
+    data_frame = ttk.LabelFrame(main_frame, text="Data & Compliance", padding="15")
+    data_frame.pack(fill=tk.X, pady=(0, 15))
+
+    row, col = 0, 0
+    data_buttons = [
+        ("Data Retention Manager", 'show_data_retention_manager'),
+        ("System Changelog", 'show_system_changelog'),
+        ("Department Isolation", 'show_department_isolation'),
+        ("Integration Status", 'show_integration_status_dashboard'),
+        ("License Management", 'show_license_management'),
+        ("Disaster Recovery", 'show_disaster_recovery_plan'),
+    ]
+    for label, method in data_buttons:
+        ttk.Button(data_frame, text=label,
+                  command=lambda m=method, l=label: launch_feature(l, m)).grid(
+            row=row, column=col, padx=5, pady=5, sticky='ew')
+        col += 1
+        if col >= 3:
+            col = 0
+            row += 1
 
 def view_active_sessions(self):
     """View active user sessions"""

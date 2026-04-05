@@ -247,6 +247,8 @@ from education_system.university_system.modules.domain.finance.gui.finance.layou
 from education_system.university_system.modules.domain.finance.gui.finance.layout._forecasting import ForecastingMixin
 from education_system.university_system.modules.domain.finance.gui.finance.layout._admin import AdminMixin
 from education_system.university_system.modules.domain.finance.gui.finance.layout._research_grants import ResearchGrantsMixin
+from education_system.university_system.modules.domain.finance.gui.finance.layout._bank_app import BankAppMixin
+from education_system.university_system.modules.domain.finance.gui.finance.layout._club_payments import ClubPaymentsMixin
 from education_system.university_system.modules.domain.finance.gui.finance.layout._settings import SettingsMixin
 from education_system.university_system.modules.domain.finance.gui.finance.layout._status_bar import StatusBarMixin
 
@@ -273,6 +275,8 @@ class LayoutManager(
     ForecastingMixin,
     AdminMixin,
     ResearchGrantsMixin,
+    BankAppMixin,
+    ClubPaymentsMixin,
     SettingsMixin,
     StatusBarMixin,
 ):

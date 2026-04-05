@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.65.0 — 2026-04-05](#8650---2026-04-05)
 - [8.64.0 — 2026-04-05](#8640---2026-04-05)
 - [8.63.0 — 2026-04-05](#8630---2026-04-05)
 - [8.62.4 — 2026-04-04](#8624---2026-04-04)
@@ -155,6 +156,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](education_system/docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](education_system/docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](education_system/docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.65.0] — 2026-04-05
+
+### University — Consolidate Main GUI Navigation and Merge Feature Launcher Files
+
+#### Changed
+
+**Main GUI Navigation Consolidation — ~50 buttons moved into parent GUIs**
+
+Reduced the main navigation from ~200 buttons to ~150 by moving feature buttons into the GUIs they logically belong to. Buttons are no longer duplicated at the top level — they're accessible from within their parent system.
+
+- **Grade Tracking GUI** — Added Learning Outcomes (staff sidebar) and Academic Progress launcher
+  - File: `modules/domain/academics/gui/grade_tracking/layout_manager.py`
+- **Health Portal** — Added Dentist, Gym, Medical Accommodations as navigation buttons within the Health Services section
+  - File: `modules/domain/health/gui/health_portal/ui_framework.py`
+- **Student Dashboard** — Added 12 utility buttons to Quick Actions grid: Roommate Finder, Marketplace, Lost & Found, Campus Navigation, Social Matching, Mail & Post, Printing Services, Study Room Booking, Student ID Card, Achievement Badges, Wellness Hub, Todo App
+  - File: `modules/shared/gui/main/dashboard/student_dashboard.py`
+- **System Admin GUI** — Added new "Operations" tab with 15 admin tools in 3 sections (Monitoring & Logs, System Configuration, Data & Compliance)
+  - File: `modules/shared/gui/main/admin/system_admin_gui.py`
+- **Finance Management GUI** — Added Bank App and Club Payments tabs to the Finance GUI sidebar
+  - Files: `modules/domain/finance/gui/finance/layout/_bank_app.py` (new), `_club_payments.py` (new), `_navigation.py`, `_base.py`
+- **Assignment System** — Academic Misconduct (Admin section) and External Examiners (Instructor section) added
+  - Files: `modules/domain/academics/gui/assignment_system/assignment_gui.py`, `layout_manager.py`
+
+**Portals cleaned up:**
+- `instructor_portal.py` — Removed Student Analytics, Learning Outcomes, Academic Progress, Predictive Analytics, Enhanced Reports
+- `staff_portal.py` — Removed Academic Progress, Learning Outcomes, Financial Aid, Bank App, Medical Accommodations, Predictive Analytics, Business Intelligence, External Examiners
+- `student_portal.py` — Removed Academic Progress, Learning Outcomes, Bank App, Wellness Hub, Gym, Dentist, Roommate Finder, Marketplace, Lost & Found, Social Matching, Events Discovery, Campus Navigation, Grocery Shop, Printing Services, Mail & Post, Achievement Badges, Student ID Card, Todo App, Student App
+- `gui_setup.py` — Corresponding buttons and visibility entries removed from all role sets
+
+**Feature launcher file consolidation:**
+- **Deleted `extras_gui.py`** (24 functions) — merged into domain-appropriate files:
+  - `academic_launchers_gui.py` ← document manager, reporting, analytics, search, PDF export, exam scheduler, integration marketplace
+  - `student_affairs_gui.py` ← communication hub, email/SMS, admissions CRM, police station, security desk, church management
+  - `student_success_gui.py` ← AI features, blockchain, mobile app, extras launcher, todo app, accessibility tools
+  - `finance_gui.py` ← bank app
+- **Deleted `new_features_gui.py`** (5 functions) — merged into:
+  - `academic_launchers_gui.py` ← HESA export, clearing & adjustment
+  - `student_success_gui.py` ← student app, achievement badges, study recommendations
+- **Updated `main_gui.py`** — All imports redirected from deleted files to their new locations
+
+#### Removed
+
+- `modules/shared/gui/main/features/extras_gui.py` — all functions merged into domain files
+- `modules/shared/gui/main/features/new_features_gui.py` — all functions merged into domain files
+- TA Management, Academic Misconduct, External Examiners redirect stubs and their imports from `main_gui.py`
+- `TA_MANAGEMENT_GUI_AVAILABLE` / `TAManagementGUI` from `gui_imports.py`
 
 ---
 

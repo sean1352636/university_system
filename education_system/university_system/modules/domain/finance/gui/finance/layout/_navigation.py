@@ -115,6 +115,8 @@ class NavigationMixin:
         self.create_budget_tab()
         self.create_forecasting_tab()
         self.create_research_grants_tab()
+        self.create_bank_app_tab()
+        self.create_club_payments_tab()
         self.create_admin_tab()
         self.create_settings_tab()
 
@@ -146,6 +148,8 @@ class NavigationMixin:
             (_("finance_gui.nav.budget"), "budget", "admin"),  # Admin only
             (_("finance_gui.nav.forecasting"), "forecasting", "admin"),  # Admin only
             (_("finance_gui.nav.research_grants"), "research_grants", "admin_staff"),  # Admin and Staff only
+            (_("finance_gui.nav.bank_app"), "bank_app", "all"),  # All can access bank app
+            (_("finance_gui.nav.club_payments"), "club_payments", "admin_staff"),  # Admin and Staff only
             (_("finance_gui.nav.admin"), "admin", "admin"),  # Admin only
             (_("finance_gui.nav.settings"), "settings", "admin_staff")  # Admin and Staff only
         ]

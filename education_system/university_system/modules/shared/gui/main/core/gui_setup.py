@@ -295,17 +295,12 @@ def create_navigation_panel(self, parent):
         ('module_management', _t("nav.buttons.module_management"), self.show_module_management),
         ('assignments', _t("nav.buttons.assignments"), self.show_assignments),
         ('grade_tracking_gui', _t("nav.buttons.grade_tracking"), self.show_grade_tracking_gui),
-        ('learning_outcomes', _t("nav.buttons.learning_outcomes"), self.show_student_outcomes_gui),
         ('student_registration', _t("nav.buttons.student_registration"), self.show_student_registration_gui),
         ('library', _t("nav.buttons.library"), self.show_library_management),
-        ('academic_misconduct', _t("nav.buttons.academic_misconduct"), self.show_academic_misconduct_gui),
         ('course_planning', _t("nav.buttons.course_planning"), self.show_course_planning_gui),
-        ('academic_progress', _t("nav.buttons.academic_progress"), self.show_academic_progress_gui),
         ('ai_study', _t("nav.buttons.ai_study"), self.show_ai_study_gui),
         ('study_matching_gui', _t("nav.buttons.study_matching"), self.show_study_matching_gui),
         ('office_hours', _t("nav.buttons.office_hours"), self.show_office_hours_gui),
-        # TA Management moved to Assignment System > Admin > TA Management
-        ('external_examiners', 'External Examiners', self.show_external_examiner_gui),
         ('study_recommendations', 'Study Recommendations', self.show_study_recommendations_gui),
     ]
     if VIRTUAL_CLASSROOM_AVAILABLE:
@@ -336,8 +331,6 @@ def create_navigation_panel(self, parent):
     finance_buttons_data = [
         ('finance_management', _t("nav.buttons.finance_management"), self.show_finance_management),
         ('my_finance', _t("nav.buttons.my_finance"), self.show_student_finance_account),
-        ('club_payment_management', _t("nav.buttons.club_payments"), self.show_club_payment_management),
-        ('bank_app', _t("nav.buttons.bank_app"), self.show_bank_app_gui),
     ]
 
     if any(name in visible_buttons for name, _, _ in finance_buttons_data):
@@ -349,9 +342,6 @@ def create_navigation_panel(self, parent):
     # ---------- Health & Wellness ----------
     health_buttons_data = [
         ('health_portal', _t("nav.buttons.health_portal"), self.open_health_portal_gui),
-        ('dentist', _t("nav.buttons.dentist"), self.show_dentist_gui),
-        ('gym', _t("nav.buttons.gym"), self.show_gym_gui),
-        ('medical_accommodations', _t("nav.buttons.medical_accommodation"), self.show_medical_accommodations),
     ]
 
     if any(name in visible_buttons for name, _, _ in health_buttons_data):
@@ -393,7 +383,6 @@ def create_navigation_panel(self, parent):
         ('takeaway_system', _t("nav.buttons.takeaway"), self.show_takeaway_system),
         ('bar', _t("nav.buttons.bar"), self.show_bar),
         ('butcher', _t("nav.buttons.butcher"), self.show_butcher_gui),
-        ('grocery_shop', _t("nav.buttons.grocery_shop"), self.show_grocery_shop),
     ]
 
     if any(name in visible_buttons for name, _, _ in dining_buttons_data):
@@ -408,6 +397,7 @@ def create_navigation_panel(self, parent):
         ('charity_shop', _t("nav.buttons.charity_shop"), self.show_charity_shop),
         ('phoneshop', _t("nav.buttons.phoneshop"), self.show_phoneshop_gui),
         ('musicshop', _t("nav.buttons.musicshop"), self.show_musicshop_gui),
+        ('grocery_shop', _t("nav.buttons.grocery_shop"), self.show_grocery_shop),
     ]
 
     if any(name in visible_buttons for name, _, _ in shops_buttons_data):
@@ -449,21 +439,9 @@ def create_navigation_panel(self, parent):
         ('student_support', _t('nav.buttons.student_support'), self.open_student_support_portal_gui),
         ('helpdesk', _t('nav.buttons.helpdesk'), self.open_helpdesk_gui),
         ('early_warning_system', _t('nav.buttons.early_warning'), self.show_early_warning_gui),
-        ('mail_post', _t('nav.buttons.mail_post'), self.show_mail_post_gui),
-        ('roommate_finder', _t('nav.buttons.roommate_finder'), self.show_roommate_finder_gui),
-        ('campus_navigation', _t('nav.buttons.campus_navigation'), self.show_campus_navigation_gui),
-        ('lost_found', _t('nav.buttons.lost_found'), self.show_lost_found_gui),
-        ('marketplace', _t('nav.buttons.marketplace'), self.show_marketplace_gui),
-        ('wellness_hub', _t('nav.buttons.wellness_hub'), self.show_wellness_hub_gui),
         ('accessibility', _t('nav.buttons.accessibility'), self.show_accessibility_portal_gui),
-        ('social_matching', _t('nav.buttons.social_matching'), self.show_social_matching_gui),
         ('portfolio', _t('nav.buttons.portfolio'), self.show_portfolio_system_gui),
         ('advising_portal', _t('nav.buttons.advising_portal'), self.show_advising_portal_gui),
-        ('student_id_card', _t('nav.buttons.student_id_card'), self.show_student_id_gui),
-        ('study_room_booking', _t('nav.buttons.study_room_booking'), self.show_study_room_booking_gui),
-        ('printing_services', _t('nav.buttons.printing_services'), self.show_printing_services_gui),
-        ('student_app', 'Student App', self.show_student_app_gui),
-        ('achievement_badges', 'Achievement Badges', self.show_achievement_badge_gui),
     ]
 
     if any(name in visible_buttons for name, _, _ in student_services_buttons_data):
@@ -525,11 +503,7 @@ def create_navigation_panel(self, parent):
     # ---------- Analytics & Reporting ----------
     analytics_and_reporting_buttons_data = [
         ('integrated_dashboard', _t('nav.buttons.dashboard'), self.show_integrated_dashboard),
-        ('student_analytics', _t('nav.buttons.student_analytics'), self.show_student_analytics_gui),
         ('analytics', _t('nav.buttons.analytics'), self.show_analytics),
-        ('enhanced_reporting_dashboard', _t('nav.buttons.enhanced_reporting'), self.show_enhanced_reporting_dashboard),
-        ('predictive_analytics', _t('nav.buttons.predictive_analytics'), self.show_predictive_analytics_gui),
-        ('business_intelligence', _t('nav.buttons.business_intelligence'), self.show_business_intelligence_gui),
     ]
 
     if any(name in visible_buttons for name, _, _ in analytics_and_reporting_buttons_data):
@@ -610,25 +584,10 @@ def create_navigation_panel(self, parent):
         ('user_management', _t('nav.buttons.user_management'), self.show_user_management),
         ('system_admin_gui', _t('nav.buttons.system_admin'), self.show_system_administration_gui),
         ('security_dashboard', _t('nav.buttons.security'), self.show_security_dashboard),
-        ('audit_log_viewer', _t('nav.buttons.audit_log'), self.show_audit_log_viewer),
-        ('activity_logger', _t('nav.buttons.activity_logger'), self.show_activity_logger),
-        ('activity_log', _t('nav.buttons.log_management'), self.show_activity_log),
         ('integration_marketplace', _t('nav.buttons.integration_marketplace'), self.show_integration_marketplace_gui),
         ('admissions_crm', _t('nav.buttons.admissions_crm'), self.show_admissions_crm_gui),
-        ('system_monitoring_dashboard', _t('nav.buttons.system_monitoring'), self.show_system_monitoring_dashboard),
-        ('configuration_editor', _t('nav.buttons.configuration_editor'), self.show_configuration_editor),
-        ('query_analyser', _t('nav.buttons.query_analyser'), self.show_query_analyser),
-        ('capacity_planning', _t('nav.buttons.capacity_planning'), self.show_capacity_planning),
         ('usage_adoption_reports', _t('nav.buttons.usage_reports'), self.show_usage_adoption_reports),
         ('custom_report_builder', _t('nav.buttons.custom_report_builder'), self.show_custom_report_builder),
-        ('api_documentation', _t('nav.buttons.api_documentation'), self.show_api_documentation),
-        ('notification_templates', _t('nav.buttons.notification_templates'), self.show_notification_template_manager),
-        ('data_retention_manager', _t('nav.buttons.data_retention'), self.show_data_retention_manager),
-        ('system_changelog', _t('nav.buttons.system_changelog'), self.show_system_changelog),
-        ('department_isolation', _t('nav.buttons.department_isolation'), self.show_department_isolation),
-        ('integration_status', _t('nav.buttons.integration_status'), self.show_integration_status_dashboard),
-        ('license_management', _t('nav.buttons.license_management'), self.show_license_management),
-        ('disaster_recovery', _t('nav.buttons.disaster_recovery'), self.show_disaster_recovery_plan),
         ('hesa_export', 'HESA Data Export', self.show_hesa_export_gui),
         ('clearing_adjustment', 'Clearing & Adjustment', self.show_clearing_adjustment_gui),
     ]
@@ -806,11 +765,8 @@ def get_visible_buttons_for_role(self, role=None):
             'student_records', 'course_management', 'module_management',
             'grade_tracking_gui', 'library', 'virtual_classroom',
             'scheduling', 'attendance', 'analytics',
-            'enhanced_reporting_dashboard', 'predictive_analytics',
             'export', 'early_warning_system', 'communication_hub',
             'office_hours',
-            # Student-facing features also visible to instructors
-            'student_analytics', 'learning_outcomes',
             'my_timetable', 'student_registration', 'student_dashboard',
         })
 
@@ -818,13 +774,13 @@ def get_visible_buttons_for_role(self, role=None):
     if is_staff:
         visible.update({
             'create_student', 'search_students', 'advanced_search_gui',
-            'batch_operations', 'medical_accommodations', 'housing_accommodations',
+            'batch_operations', 'housing_accommodations',
             'restaurant_management', 'cafe_system', 'takeaway_system', 'grocery_shop', 'parking_management', 'facilities_management',
-            'alumni_management', 'communication_hub', 'business_intelligence',
-            'activity_logger', 'admissions_crm', 'blockchain_credentials',
+            'alumni_management', 'communication_hub',
+            'admissions_crm', 'blockchain_credentials',
             'document_manager', 'pdf_export', 'charity_shop',
-            # Staff-only security and academic integrity tools
-            'police_station', 'academic_misconduct',
+            # Staff-only security tools
+            'police_station',
             # Staff HR management
             'staff_hr',
             # Staff CRUD management
@@ -832,7 +788,6 @@ def get_visible_buttons_for_role(self, role=None):
             # Office hours
             'office_hours',
             # New features - staff level
-            'external_examiners',
             # Cross-system modules
             'cross_system_communications', 'student_journey',
             'analytics_dashboard', 'outcome_tracking', 'predictive_alerts',
@@ -847,16 +802,12 @@ def get_visible_buttons_for_role(self, role=None):
         visible.update({
             'delete_student', 'finance_management', 'finance_reporting',
             'user_management', 'system_admin_gui', 'security_dashboard',
-            'activity_log', 'integration_marketplace', 'backup_gui',
+            'integration_marketplace', 'backup_gui',
             # Admin-only staff management
             'delete_staff',
-            # Admin tools (v5.41+)
-            'system_monitoring_dashboard', 'configuration_editor',
-            'query_analyser', 'capacity_planning', 'usage_adoption_reports',
-            # Admin tools v2 (v5.46+)
-            'custom_report_builder', 'api_documentation', 'notification_templates',
-            'data_retention_manager', 'system_changelog', 'department_isolation',
-            'integration_status', 'license_management', 'disaster_recovery',
+            # Admin tools
+            'usage_adoption_reports',
+            'custom_report_builder',
             # Admin-only shared modules
             'central_admin_portal', 'gdpr_compliance',
             # New features - admin level

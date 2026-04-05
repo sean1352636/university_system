@@ -168,6 +168,13 @@ class UIFrameworkMixin:
         create_nav_button(_t("health_portal.nav.accessibility_tools"), 'open_accessibility_tools')
         create_nav_button(_t("health_portal.nav.medical_accommodations"), 'medical_accommodations')
 
+        # Health Services (accessible to all)
+        create_section_header("Health Services")
+        create_nav_button("Dentist", 'show_dentist')
+        create_nav_button("Gym", 'show_gym')
+        if is_admin or is_staff:
+            create_nav_button("Medical Accommodations", 'show_medical_accommodations')
+
         if is_admin:
             create_section_header(_t("health_portal.nav.administration"))
             create_nav_button(_t("health_portal.nav.security_audit"), 'security_audit')
@@ -262,6 +269,27 @@ class UIFrameworkMixin:
     def create_view_appointments(self):
         """Alias for appointment management (for navigation compatibility)"""
         self.create_schedule_appointment()
+
+    def create_show_dentist(self):
+        """Launch the Dentist GUI in a Toplevel window"""
+        from education_system.university_system.modules.domain.dentist.gui.dentist_gui import DentistGUI
+        top = tk.Toplevel(self.root)
+        top.title("Dentist")
+        DentistGUI(top, self.auth)
+
+    def create_show_gym(self):
+        """Launch the Gym GUI in a Toplevel window"""
+        from education_system.university_system.modules.domain.gym.gui.gym_gui import GymGUI
+        top = tk.Toplevel(self.root)
+        top.title("Gym")
+        GymGUI(top, self.auth)
+
+    def create_show_medical_accommodations(self):
+        """Launch the Medical Accommodations GUI in a Toplevel window"""
+        from education_system.university_system.modules.domain.health.gui.medical_accommodations_gui import MedicalAccommodationsGUI
+        top = tk.Toplevel(self.root)
+        top.title("Medical Accommodations")
+        MedicalAccommodationsGUI(top, self.auth)
 
     def return_to_main_menu(self):
         """Return to the main menu"""

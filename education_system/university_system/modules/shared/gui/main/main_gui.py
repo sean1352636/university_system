@@ -316,7 +316,6 @@ from education_system.university_system.modules.shared.gui.main.features.academi
     open_attendance_gui,
     show_virtual_classroom_gui,
     show_office_hours_gui,
-    show_ta_management_gui,
     show_student_outcomes_gui,
     show_student_timetable_gui,
     show_student_registration_gui,
@@ -378,41 +377,43 @@ from education_system.university_system.modules.shared.gui.main.features.commerc
     show_train_station_gui,
     show_cinema_gui
 )
-from education_system.university_system.modules.shared.gui.main.features.extras_gui import (
+# Functions merged from extras_gui.py into their domain files
+from education_system.university_system.modules.shared.gui.main.features.academic_launchers_gui import (
     show_document_manager,
     show_enhanced_reporting_dashboard,
     show_pdf_export_gui,
     show_advanced_search_gui,
     refresh_advanced_search,
+    show_integration_marketplace_gui,
+    show_exam_scheduler_gui,
+    show_student_analytics_gui,
+    show_predictive_analytics_gui,
+    show_business_intelligence_gui,
+    show_hesa_export_gui,
+    show_clearing_adjustment_gui,
+)
+from education_system.university_system.modules.shared.gui.main.features.student_affairs_gui import (
     show_communication_dashboard_gui,
     show_email_sms_gui,
     show_admissions_crm_gui,
-    show_predictive_analytics_gui,
-    show_business_intelligence_gui,
+    show_police_station_gui,
+    show_security_desk_gui,
+    show_church_management_gui,
+)
+from education_system.university_system.modules.shared.gui.main.features.student_success_gui import (
     show_ai_features_gui,
-    show_integration_marketplace_gui,
     show_mobile_app_pwa_gui,
     show_accessibility_tools_gui,
     show_blockchain_credentials_gui,
     show_extras_launcher,
     _show_feature_gui,
-    show_police_station_gui,
-    show_security_desk_gui,
-    show_academic_misconduct_gui,
     show_todo_app_gui,
-    show_church_management_gui,
-    show_bank_app_gui,
-    show_exam_scheduler_gui,
-    show_student_analytics_gui
-)
-from education_system.university_system.modules.shared.gui.main.features.new_features_gui import (
-    show_hesa_export_gui,
-    show_external_examiner_gui,
     show_student_app_gui,
     show_achievement_badge_gui,
     show_study_recommendations_gui,
-    show_clearing_adjustment_gui,
-
+)
+from education_system.university_system.modules.shared.gui.main.features.finance_gui import (
+    show_bank_app_gui,
 )
 from education_system.university_system.modules.shared.gui.main.features.student_success_gui import (
     show_academic_progress_gui,
@@ -614,7 +615,6 @@ UnifiedManagementGUI.open_ai_detector_window = open_ai_detector_window
 UnifiedManagementGUI.open_attendance_gui = open_attendance_gui
 UnifiedManagementGUI.show_virtual_classroom_gui = show_virtual_classroom_gui
 UnifiedManagementGUI.show_office_hours_gui = show_office_hours_gui
-UnifiedManagementGUI.show_ta_management_gui = show_ta_management_gui
 UnifiedManagementGUI.show_student_union_portal = show_student_union_portal
 UnifiedManagementGUI.open_student_union_portal_gui = open_student_union_portal_gui
 UnifiedManagementGUI.open_parent_portal_gui = open_parent_portal_gui
@@ -684,7 +684,6 @@ UnifiedManagementGUI.show_extras_launcher = show_extras_launcher
 UnifiedManagementGUI._show_feature_gui = _show_feature_gui
 UnifiedManagementGUI.show_police_station_gui = show_police_station_gui
 UnifiedManagementGUI.show_security_desk_gui = show_security_desk_gui
-UnifiedManagementGUI.show_academic_misconduct_gui = show_academic_misconduct_gui
 UnifiedManagementGUI.show_todo_app_gui = show_todo_app_gui
 UnifiedManagementGUI.show_church_management_gui = show_church_management_gui
 UnifiedManagementGUI.show_bank_app_gui = show_bank_app_gui
@@ -886,7 +885,6 @@ UnifiedManagementGUI.show_certificates_gui = show_certificates_gui
 
 # New features (modules 21-30)
 UnifiedManagementGUI.show_hesa_export_gui = show_hesa_export_gui
-UnifiedManagementGUI.show_external_examiner_gui = show_external_examiner_gui
 UnifiedManagementGUI.show_student_app_gui = show_student_app_gui
 UnifiedManagementGUI.show_achievement_badge_gui = show_achievement_badge_gui
 UnifiedManagementGUI.show_study_recommendations_gui = show_study_recommendations_gui

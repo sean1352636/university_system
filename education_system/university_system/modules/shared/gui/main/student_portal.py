@@ -137,10 +137,8 @@ class StudentPortalGUI:
 
         # Academic
         self._add_heading("Academic")
-        self._add_button("Academic Progress", self._launch('show_academic_progress_gui'))
         self._add_button("Assignments", self._launch('show_assignments'))
         self._add_button("Grade Tracking", self._launch('show_grade_tracking_gui'))
-        self._add_button("Learning Outcomes", self._launch('show_student_outcomes_gui'))
         self._add_button("Course Planning", self._launch('show_course_planning_gui'))
         self._add_button("AI Study Tools", self._launch('show_ai_study_gui'))
         self._add_button("Study Matching", self._launch('show_study_matching_gui'))
@@ -159,14 +157,10 @@ class StudentPortalGUI:
         # Finance
         self._add_heading("Finance")
         self._add_button("Financial Aid", self._launch('show_financial_aid_gui'))
-        self._add_button("Bank App", self._launch('show_bank_app_gui'))
 
         # Health & Wellness
         self._add_heading("Health & Wellness")
         self._add_button("Health Portal", self._launch('open_health_portal_gui'))
-        self._add_button("Wellness Hub", self._launch('show_wellness_hub_gui'))
-        self._add_button("Gym", self._launch('show_gym_gui'))
-        self._add_button("Dentist", self._launch('show_dentist_gui'))
 
         # Student Life
         self._add_heading("Student Life")
@@ -174,24 +168,15 @@ class StudentPortalGUI:
         self._add_button("Campus Events", self._launch('show_campus_events_gui'))
         self._add_button("Clubs & Societies", self._launch('show_clubs_gui'))
         self._add_button("Student Jobs", self._launch('show_student_jobs_gui'))
-        self._add_button("Roommate Finder", self._launch('show_roommate_finder_gui'))
-        self._add_button("Marketplace", self._launch('show_marketplace_gui'))
-        self._add_button("Lost & Found", self._launch('show_lost_found_gui'))
-        self._add_button("Social Matching", self._launch('show_social_matching_gui'))
-        self._add_button("Events Discovery", self._launch('show_events_discovery_gui'))
-        self._add_button("Campus Navigation", self._launch('show_campus_navigation_gui'))
 
         # Services & Shops
         self._add_heading("Services")
         self._add_button("University Shop", self._launch('show_university_shop'))
         self._add_button("Cafe", self._launch('show_cafe_system'))
         self._add_button("Takeaway", self._launch('show_takeaway_system'))
-        self._add_button("Grocery Shop", self._launch('show_grocery_shop'))
         self._add_button("Bar", self._launch('show_bar'))
         self._add_button("Cinema", self._launch('show_cinema_gui'))
         self._add_button("Barber", self._launch('show_barber_gui'))
-        self._add_button("Printing Services", self._launch('show_printing_services_gui'))
-        self._add_button("Mail & Post", self._launch('show_mail_post_gui'))
 
         # Support
         self._add_heading("Support")
@@ -206,17 +191,13 @@ class StudentPortalGUI:
         # Portfolio & Achievements
         self._add_heading("Portfolio")
         self._add_button("My Portfolio", self._launch('show_portfolio_system_gui'))
-        self._add_button("Achievement Badges", self._launch('show_achievement_badge_gui'))
         self._add_button("Digital Transcript", self._launch('show_digital_transcript_gui'))
         self._add_button("Certificates", self._launch('show_certificates_gui'))
-        self._add_button("Student ID Card", self._launch('show_student_id_gui'))
 
         # Communication
         self._add_heading("Communication")
         self._add_button("Cross-System Calendar", self._launch('show_cross_system_calendar_gui'))
         self._add_button("Cross-System Comms", self._launch('show_cross_system_communications_gui'))
-        self._add_button("Todo App", self._launch('show_todo_app_gui'))
-        self._add_button("Student App", self._launch('show_student_app_gui'))
 
         # Account
         self._add_heading("Account")

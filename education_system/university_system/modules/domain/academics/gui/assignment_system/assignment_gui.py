@@ -186,6 +186,26 @@ class AssignmentGUI:
         except Exception as e:
             messagebox.showerror(_("common.error"), _("ai_features.messages.ai_detector_launch_error").format(error=str(e)))
 
+    def show_academic_misconduct(self):
+        """Launch the Academic Misconduct Panel GUI"""
+        try:
+            from education_system.shared.academic_misconduct.academic_misconduct_gui import AcademicMisconductPanel
+            import tkinter as _tk
+            window = _tk.Toplevel(self.root)
+            window.title("Academic Misconduct")
+            window.geometry("1200x800")
+            AcademicMisconductPanel(window, system_key='university')
+        except Exception as e:
+            messagebox.showerror(_("common.error"), f"Failed to open Academic Misconduct: {e}")
+
+    def show_external_examiners(self):
+        """Launch the External Examiner GUI"""
+        try:
+            from education_system.university_system.modules.domain.external_examiners.gui.external_examiner_gui import ExternalExaminerGUI
+            ExternalExaminerGUI(parent=self.root)
+        except Exception as e:
+            messagebox.showerror(_("common.error"), f"Failed to open External Examiners: {e}")
+
     def _launch_gui_feature(self, callback, feature_name):
         """Launch a GUI feature with error handling"""
         try:
