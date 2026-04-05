@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 ta_bp = Blueprint("teaching_assistants", __name__, url_prefix="/api/teaching-assistants")
 
 # Initialize the service at module level
-from education_system.university_system.modules.domain.academics.services.ta_management.ta_service import (
+from education_system.university_system.modules.domain.academics.services.assignments.admin_tools.ta_service import (
     TAService,
 )
 
@@ -238,7 +238,7 @@ def check_ta_permission(id: int, module_code: str):
             })
 
         # If no specific permission_type is given, check all valid permissions
-        from education_system.university_system.modules.domain.academics.services.ta_management.ta_service import (
+        from education_system.university_system.modules.domain.academics.services.assignments.admin_tools.ta_service import (
             VALID_PERMISSION_TYPES,
         )
 

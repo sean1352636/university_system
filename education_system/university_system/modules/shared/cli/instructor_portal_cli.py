@@ -184,7 +184,7 @@ class InstructorPortalCLI:
 
     def _handle_ta_management(self):
         try:
-            from education_system.university_system.modules.shared.cli.menu_router import display_ta_management_menu
+            from education_system.university_system.modules.domain.academics.services.assignments.admin_tools.ta_management_cli import display_ta_management_menu
             display_ta_management_menu(self.auth)
         except ImportError as e:
             print(f"\n  TA Management module is not available: {e}")

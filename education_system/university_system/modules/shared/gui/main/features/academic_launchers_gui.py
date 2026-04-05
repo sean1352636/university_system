@@ -491,25 +491,14 @@ def show_office_hours_gui(self):
         messagebox.showerror("Error", f"Unexpected error opening Office Hours: {e}")
 
 def show_ta_management_gui(self):
-    """Launch the TA Management GUI in a child window"""
-    if not self.auth.current_user:
-        messagebox.showerror("Error", "Please log in to access TA Management.")
-        return
-
-    try:
-        if not TA_MANAGEMENT_GUI_AVAILABLE:
-            messagebox.showerror("TA Management", "TA Management GUI is not available.")
-            return
-
-        win = tk.Toplevel(self.root)
-        win.transient(self.root)
-        try:
-            TAManagementGUI(win, auth=self.auth)
-        except Exception as e:
-            win.destroy()
-            messagebox.showerror("TA Management", f"Failed to open TA Management: {e}")
-    except Exception as e:
-        messagebox.showerror("Error", f"Unexpected error opening TA Management: {e}")
+    """TA Management has been merged into the Assignment System's Admin section.
+    This stub remains for backward compatibility with any existing references."""
+    messagebox.showinfo(
+        "TA Management",
+        "TA Management has moved to:\n\n"
+        "Assignment System > Admin > TA Management\n\n"
+        "Please use the Assignment Management System to access TA features."
+    )
 
 def show_student_grades_gui(self):
     """Launch the Student Grades & GPA GUI"""

@@ -1,1 +1,0 @@
-"""TA Management GUI package."""

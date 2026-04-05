@@ -304,7 +304,7 @@ def create_navigation_panel(self, parent):
         ('ai_study', _t("nav.buttons.ai_study"), self.show_ai_study_gui),
         ('study_matching_gui', _t("nav.buttons.study_matching"), self.show_study_matching_gui),
         ('office_hours', _t("nav.buttons.office_hours"), self.show_office_hours_gui),
-        ('ta_management', _t("nav.buttons.ta_management"), self.show_ta_management_gui),
+        # TA Management moved to Assignment System > Admin > TA Management
         ('external_examiners', 'External Examiners', self.show_external_examiner_gui),
         ('study_recommendations', 'Study Recommendations', self.show_study_recommendations_gui),
     ]
@@ -808,7 +808,7 @@ def get_visible_buttons_for_role(self, role=None):
             'scheduling', 'attendance', 'analytics',
             'enhanced_reporting_dashboard', 'predictive_analytics',
             'export', 'early_warning_system', 'communication_hub',
-            'office_hours', 'ta_management',
+            'office_hours',
             # Student-facing features also visible to instructors
             'student_analytics', 'learning_outcomes',
             'my_timetable', 'student_registration', 'student_dashboard',
@@ -829,8 +829,8 @@ def get_visible_buttons_for_role(self, role=None):
             'staff_hr',
             # Staff CRUD management
             'view_staff', 'create_staff', 'search_staff',
-            # Office hours and TA management
-            'office_hours', 'ta_management',
+            # Office hours
+            'office_hours',
             # New features - staff level
             'external_examiners',
             # Cross-system modules

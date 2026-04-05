@@ -24,6 +24,15 @@ from education_system.university_system.modules.domain.academics.gui.assignment_
 from education_system.university_system.modules.domain.academics.gui.assignment_system.rubric_manager import RubricManager
 from education_system.university_system.modules.domain.academics.gui.assignment_system.peer_review import PeerReviewManager
 from education_system.university_system.modules.domain.academics.gui.assignment_system.maintenance import MaintenanceManager
+from education_system.university_system.modules.domain.academics.gui.assignment_system.auto_grading_manager import AutoGradingManager
+from education_system.university_system.modules.domain.academics.gui.assignment_system.exam_integrity_manager import ExamIntegrityManager
+from education_system.university_system.modules.domain.academics.gui.assignment_system.student_experience_manager import StudentExperienceManager
+from education_system.university_system.modules.domain.academics.gui.assignment_system.grade_dispute_manager import GradeDisputeManager
+from education_system.university_system.modules.domain.academics.gui.assignment_system.late_policy_manager import LatePolicyManager
+from education_system.university_system.modules.domain.academics.gui.assignment_system.annotation_manager import AnnotationManager
+from education_system.university_system.modules.domain.academics.gui.assignment_system.multi_stage_manager import MultiStageManager
+from education_system.university_system.modules.domain.academics.gui.assignment_system.admin_tools_manager import AdminToolsManager
+from education_system.university_system.modules.domain.academics.gui.assignment_system.ai_assistant_manager import AIAssistantManager
 
 class AssignmentGUI:
     """Main GUI class that coordinates all managers"""
@@ -69,6 +78,15 @@ class AssignmentGUI:
         self.rubrics = RubricManager(self)
         self.peer_review = PeerReviewManager(self)
         self.maintenance = MaintenanceManager(self)
+        self.auto_grading = AutoGradingManager(self)
+        self.exam_integrity = ExamIntegrityManager(self)
+        self.student_experience = StudentExperienceManager(self)
+        self.grade_disputes = GradeDisputeManager(self)
+        self.late_policies = LatePolicyManager(self)
+        self.annotations = AnnotationManager(self)
+        self.multi_stage = MultiStageManager(self)
+        self.admin_tools = AdminToolsManager(self)
+        self.ai_assistant = AIAssistantManager(self)
 
         # Initialize database and interface
         self.db.ensure_database_exists()
@@ -89,7 +107,10 @@ class AssignmentGUI:
             'db', 'layout', 'dashboard', 'assignments', 'submissions',
             'templates', 'extensions', 'grading', 'groups', 'messaging',
             'notifications_mgr', 'analytics', 'file_preview', 'assessments',
-            'rubrics', 'peer_review', 'maintenance'
+            'rubrics', 'peer_review', 'maintenance', 'auto_grading',
+            'exam_integrity', 'student_experience', 'grade_disputes',
+            'late_policies', 'annotations', 'multi_stage', 'admin_tools',
+            'ai_assistant'
         ]
 
         for manager_name in required_managers:
@@ -355,6 +376,120 @@ class AssignmentGUI:
 
         except Exception as e:
             messagebox.showerror(_("common.error"), _("assignment.errors.add_permissions").format(error=str(e)))
+
+    # ── Auto-Grading delegates ──
+
+    def show_auto_grading(self):
+        return self.auto_grading.show_auto_grading()
+
+    def manage_question_banks(self):
+        return self.auto_grading.manage_question_banks()
+
+    def show_question_bank_stats(self):
+        return self.auto_grading.show_question_bank_stats()
+
+    # ── Exam Integrity delegates ──
+
+    def show_exam_integrity_settings(self):
+        return self.exam_integrity.show_exam_integrity_settings()
+
+    def show_proctoring_dashboard(self):
+        return self.exam_integrity.show_proctoring_dashboard()
+
+    def view_integrity_logs(self):
+        return self.exam_integrity.view_integrity_logs()
+
+    # ── Student Experience delegates ��─
+
+    def show_draft_manager(self):
+        return self.student_experience.show_draft_manager()
+
+    def show_progress_tracker(self):
+        return self.student_experience.show_progress_tracker()
+
+    def show_accessibility_settings(self):
+        return self.student_experience.show_accessibility_settings()
+
+    def show_countdown_timer(self):
+        return self.student_experience.show_countdown_timer(None)
+
+    # ── Grade Dispute delegates ──
+
+    def show_dispute_form(self):
+        return self.grade_disputes.show_dispute_form()
+
+    def show_my_disputes(self):
+        return self.grade_disputes.show_my_disputes()
+
+    def show_regrade_queue(self):
+        return self.grade_disputes.show_regrade_queue()
+
+    def show_dispute_history(self):
+        return self.grade_disputes.show_dispute_history()
+
+    # ── Late Policy delegates ──
+
+    def show_late_policies(self):
+        return self.late_policies.show_late_policies()
+
+    def show_late_submission_report(self):
+        return self.late_policies.show_late_submission_report()
+
+    # ── Annotation delegates ──
+
+    def show_annotation_interface(self):
+        return self.annotations.show_annotation_interface(None)
+
+    def show_annotation_templates(self):
+        return self.annotations.show_annotation_templates()
+
+    def show_annotation_summary(self):
+        return self.annotations.show_annotation_summary()
+
+    # ── Multi-Stage delegates ──
+
+    def show_multi_stage_assignments(self):
+        return self.multi_stage.show_multi_stage_assignments()
+
+    def create_multi_stage_assignment(self):
+        return self.multi_stage.create_multi_stage_assignment()
+
+    def show_external_submissions(self):
+        return self.multi_stage.show_external_submissions()
+
+    # ── Admin Tools delegates ──
+
+    def show_sis_sync(self):
+        return self.admin_tools.show_sis_sync()
+
+    def show_integrity_cases(self):
+        return self.admin_tools.show_integrity_cases()
+
+    def show_grade_audit_log(self):
+        return self.admin_tools.show_grade_audit_log()
+
+    def show_accommodations(self):
+        return self.admin_tools.show_accommodations()
+
+    def show_ta_management(self):
+        return self.admin_tools.show_ta_management()
+
+    # ── AI Assistant delegates ──
+
+    def show_ai_dashboard(self):
+        return self.ai_assistant.show_ai_dashboard()
+
+    def show_draft_feedback(self):
+        return self.ai_assistant.show_draft_feedback()
+
+    def show_practice_generator(self):
+        return self.ai_assistant.show_practice_generator()
+
+    def show_collusion_detector(self):
+        return self.ai_assistant.show_collusion_detector()
+
+    def show_late_pass_advisor(self):
+        return self.ai_assistant.show_late_pass_advisor()
 
     # Internal/Helper Functions
 

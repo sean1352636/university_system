@@ -247,6 +247,9 @@ class LayoutManager:
         ai_tools_buttons = [
             ("🔍 Plagiarism Checker", self.gui.show_plagiarism_checker),
             ("🤖 AI Content Detector", self.gui.show_ai_detector),
+            ("🧠 AI Dashboard", self.gui.show_ai_dashboard),
+            ("📝 AI Draft Feedback", self.gui.show_draft_feedback),
+            ("❓ Practice Question Generator", self.gui.show_practice_generator),
         ]
         sections.append(("AI TOOLS", ai_tools_buttons))
 
@@ -256,9 +259,15 @@ class LayoutManager:
                 ("📄 My Assignments", self.gui.show_my_assignments),
                 ("📤 Submit Assignment", self.gui.show_submit_assignment),
                 ("📋 My Submissions", self.gui.show_my_submissions),
+                ("💾 My Drafts", self.gui.show_draft_manager),
+                ("📊 Progress Tracker", self.gui.show_progress_tracker),
                 ("⏰ Request Extension", self.gui.show_extension_request),
+                ("⚖️ Submit Grade Dispute", self.gui.show_dispute_form),
+                ("📜 My Disputes", self.gui.show_my_disputes),
                 ("👥 Peer Review Dashboard", self.gui.show_peer_review_dashboard),
                 ("✅ Complete Peer Reviews", self.gui.complete_peer_reviews),
+                ("🔗 External Submissions", self.gui.show_external_submissions),
+                ("♿ Accessibility Settings", self.gui.show_accessibility_settings),
                 ("💬 View Messages", self.gui.view_messages),
                 ("🔔 Manage Notifications", self.gui.manage_notifications)
             ]
@@ -270,16 +279,36 @@ class LayoutManager:
                 ("➕ Create Assignment", self.gui.show_create_assignment),
                 ("📝 Create Assessment", self.gui.show_create_assessment),
                 ("👥 Create Group Assignment", self.gui.show_create_group_assignment),
+                ("📶 Create Multi-Stage Assignment", self.gui.create_multi_stage_assignment),
                 ("📊 Manage Assignments", self.gui.show_manage_assignments),
                 ("🎯 Manage Assessments", self.gui.show_manage_assessments),
+                ("📶 Multi-Stage Assignments", self.gui.show_multi_stage_assignments),
                 ("✅ Grade Submissions", self.gui.show_grade_submissions),
                 ("⭐ Grade with Rubrics", self.gui.grade_with_rubrics),
+                ("🤖 Auto-Grading", self.gui.show_auto_grading),
                 ("📋 View All Submissions", self.gui.view_all_submissions),
+                ("✏️ Annotate Submissions", self.gui.show_annotation_summary),
+                ("📑 Annotation Templates", self.gui.show_annotation_templates),
+                ("⚖️ Regrade Queue", self.gui.show_regrade_queue),
+                ("⚖️ Dispute History", self.gui.show_dispute_history),
+                ("⏱️ Late Policies", self.gui.show_late_policies),
+                ("📋 Late Submission Report", self.gui.show_late_submission_report),
                 ("👥 Manage Groups", self.gui.show_manage_groups),
                 ("👥 Manage Peer Reviews", self.gui.manage_peer_reviews),
                 ("🔧 Send Messages", self.gui.show_send_messages)
             ]
             sections.append(("INSTRUCTOR", instructor_buttons))
+
+        # Exam Integrity - Staff and Admin only
+        if is_staff or is_admin:
+            integrity_buttons = [
+                ("🔒 Exam Integrity Settings", self.gui.show_exam_integrity_settings),
+                ("📡 Proctoring Dashboard", self.gui.show_proctoring_dashboard),
+                ("📋 Integrity Logs", self.gui.view_integrity_logs),
+                ("🔎 Collusion Detector", self.gui.show_collusion_detector),
+                ("🎫 Late Pass Advisor", self.gui.show_late_pass_advisor),
+            ]
+            sections.append(("EXAM INTEGRITY", integrity_buttons))
 
         # Analytics - Staff and Admin only
         if is_staff or is_admin:
@@ -287,6 +316,7 @@ class LayoutManager:
                 ("📈 Analytics Dashboard", self.gui.show_analytics),
                 ("🔍 Advanced Analytics", self.gui.generate_advanced_analytics),
                 ("📊 Custom Reports", self.gui.generate_custom_reports),
+                ("📊 Question Bank Stats", self.gui.show_question_bank_stats),
                 ("👁️ Preview Files", self.gui.show_file_preview)
             ]
             sections.append(("ANALYTICS", analytics_buttons))
@@ -297,8 +327,14 @@ class LayoutManager:
                 ("📋 View All Assignments (Admin)", self.gui.show_admin_all_assignments),
                 ("📝 Create Rubric", self.gui.show_create_rubric),
                 ("📋 Manage Rubrics", self.gui.manage_rubrics),
+                ("📋 Question Banks", self.gui.manage_question_banks),
                 ("📄 Assignment Templates", self.gui.show_templates),
                 ("📝 Review Extensions", self.gui.show_review_extensions),
+                ("🔄 SIS Roster Sync", self.gui.show_sis_sync),
+                ("🚨 Integrity Cases", self.gui.show_integrity_cases),
+                ("📝 Grade Audit Log", self.gui.show_grade_audit_log),
+                ("♿ Accommodations", self.gui.show_accommodations),
+                ("👥 TA Management", self.gui.show_ta_management),
                 ("🔧 System Maintenance", self.gui.system_maintenance),
                 ("💾 System Backup", self.gui.show_system_backup),
                 ("🧹 Data Cleanup", self.gui.cleanup_old_data)

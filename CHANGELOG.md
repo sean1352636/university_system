@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.64.0 — 2026-04-05](#8640---2026-04-05)
 - [8.63.0 — 2026-04-05](#8630---2026-04-05)
 - [8.62.4 — 2026-04-04](#8624---2026-04-04)
 - [8.62.3 — 2026-03-31](#8623---2026-03-31)
@@ -154,6 +155,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](education_system/docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](education_system/docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](education_system/docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.64.0] — 2026-04-05
+
+### University — Major Assignment/Grading Feature Expansion and TA Management Consolidation
+
+#### Added
+
+**Assignment & Grading GUI — 9 New Feature Managers (Tkinter)**
+
+- **Auto-Grading** (`auto_grading_manager.py`) — Auto-grade MCQs, fill-in-the-blank (fuzzy matching), and coding questions (subprocess sandbox with test cases); question bank CRUD; per-question difficulty stats
+- **Exam Integrity** (`exam_integrity_manager.py`) — Randomized question/answer order per student; time limits with auto-submit; browser lockdown and proctoring integration (Respondus/Honorlock); IP restriction for on-campus exams; copy-paste detection and tab-switch logging; proctoring dashboard with flagged students
+- **Student Experience** (`student_experience_manager.py`) — Draft saving with version history; timestamped submission receipts with confirmation emails; multi-part progress indicators; accessibility mode (screen reader labels, extended time, high contrast, font size); countdown timer with warnings at 10/5/1 minutes
+- **Grade Disputes** (`grade_dispute_manager.py`) — Student dispute/appeal submission with evidence; instructor regrade queue with status tracking (pending/under_review/approved/denied); dispute history with filters; dispute analytics
+- **Late Policy Automation** (`late_policy_manager.py`) — Configurable policies (percentage/fixed/none penalty per day, grace periods, min grade floor); policy templates (Strict/Standard/Lenient); batch penalty application; late pass grant/revoke system
+- **Inline Annotations** (`annotation_manager.py`) — Instructor inline comments on submissions with categories (praise/suggestion/correction/question); reusable annotation templates; student response capability; export to text/JSON
+- **Multi-Stage Assignments** (`multi_stage_manager.py`) — Assignments with stages (outline → draft → final) each with deadline and weight; stage progression enforcement; external tool submissions (GitHub repos, Google Docs, Figma links) with URL validation
+- **Admin Tools** (`admin_tools_manager.py`) — SIS roster sync via CSV import; academic integrity case management; grade change audit logs; student accessibility accommodations (auto-applied extended time); unified TA management with 3 tabs (assignments, granular permissions, performance evaluation)
+- **AI-Assisted Features** (`ai_assistant_manager.py`) — Rule-based draft feedback (readability, structure, style analysis); practice question generation from course materials via keyword extraction; collusion detection using n-gram Jaccard similarity and timing analysis; smart late-pass recommendations based on student history
+
+**Assignment & Grading CLI — 9 New Mixin Modules**
+
+- `auto_grading/auto_grading.py` (`AutoGradingMixin`) — 10 CLI methods for auto-grading, question banks, batch grading, random quiz generation
+- `exam_integrity/exam_integrity.py` (`ExamIntegrityMixin`) — 8 CLI methods for exam settings, IP restrictions, integrity logs, flagged students
+- `student_experience/student_experience.py` (`StudentExperienceMixin`) — 8 CLI methods for drafts, receipts, ASCII progress bars, accessibility, countdown
+- `grade_disputes/grade_disputes.py` (`GradeDisputeMixin`) — 6 CLI methods for dispute submission, review, history, analytics
+- `late_policy/late_policy.py` (`LatePolicyMixin`) — 10 CLI methods for policy CRUD, batch penalties, late passes, templates
+- `annotations/annotations.py` (`AnnotationMixin`) — 7 CLI methods for inline annotation, templates, student replies, export
+- `multi_stage/multi_stage.py` (`MultiStageMixin`) — 9 CLI methods for multi-stage assignments, external link submissions
+- `admin_tools/admin_tools.py` (`AdminToolsMixin`) — 12 CLI methods for SIS sync, integrity cases, audit log, accommodations, TA management
+- `ai_assistant/ai_assistant.py` (`AIAssistantMixin`) — 8 CLI methods for draft feedback, practice questions, collusion analysis, late-pass advisor
+
+**Database Schema — 20+ New Tables**
+
+- Question banks: `question_banks`, `questions`, `student_answers`
+- Exam integrity: `exam_integrity_settings`, `exam_integrity_logs`
+- Student experience: `submission_drafts`, `submission_receipts`, `accessibility_settings`
+- Grade disputes: `grade_disputes`
+- Late policies: `late_policies`, `assignment_late_policies`, `late_passes`
+- Annotations: `submission_annotations`, `annotation_templates`
+- Multi-stage: `assignment_stages`, `stage_submissions`, `external_submissions`
+- Admin tools: `sis_sync_log`, `integrity_cases`, `grade_audit_log`, `student_accommodations`, `ta_assignments` (extended with `hours_per_week`), `ta_evaluations`, `ta_permissions`
+- AI features: `ai_feedback_requests`, `practice_questions`, `collusion_reports`, `late_pass_recommendations`
+
+**Navigation Updates**
+
+- Added ~40 new CLI menu options across Student, Instructor, Exam Integrity & AI, Analytics, and Admin sections in `assignment_submission.py`
+- Added new sidebar entries in GUI layout for all feature groups across Student, Instructor, Exam Integrity, Analytics, and Admin sections
+
+#### Changed
+
+- **Unified TA Management** — Merged the standalone TA Management GUI (3 tabs: assignments, permissions, evaluation) and the assignment system's TA section into a single consolidated interface inside the Assignment System's Admin tab. Features student/module dropdowns, roles (ta/lead_ta/grader/co_instructor), hours/week tracking with workload warnings, 5 granular module-level permissions, performance evaluation with auto-calculated metrics, and email notifications on assign/remove
+  - Files: `admin_tools_manager.py`, `layout_manager.py`, `assignment_gui.py`
+- **Relocated TA service and CLI files** — Moved `ta_service.py`, `ta_permissions_setup.py`, and `ta_management_cli.py` from `academics/services/ta_management/` and `academics/cli/` into `assignments/admin_tools/` to consolidate all assignment-related code
+  - Updated imports in: `ta_routes.py`, `staff_portal_cli.py`, `instructor_portal_cli.py`, `menu_router.py`
+
+#### Removed
+
+- **Old TA Management GUI** — Removed standalone `gui/ta_management/` directory (`ta_gui.py`, `assignment_manager.py`, `permissions_manager.py`, `evaluation_manager.py`) and its navigation buttons from instructor portal, staff portal, and gui_setup
+- **Old TA service location** — Removed `services/ta_management/` directory and `cli/ta_management_cli.py` (relocated to `assignments/admin_tools/`)
+
+#### Fixed
+
+- **Permission fallback for admin tools** — Fixed `_check_permission()` in `admin_tools_manager.py` to fall back to role-based access (admin/faculty/instructor/staff) when specific permissions don't exist in the database, preventing false "Access Denied" errors
+- **Database migration for hours_per_week** — Added `migrate_ta_assignments_table()` to handle existing `ta_assignments` tables missing the new `hours_per_week` column
 
 ---
 

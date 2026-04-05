@@ -167,7 +167,7 @@ class StaffPortalGUI:
         self._add_button("View Staff", self._launch('show_view_staff'))
         self._add_button("Create Staff", self._launch('show_create_staff'))
         self._add_button("Office Hours", self._launch('show_office_hours_gui'))
-        self._add_button("TA Management", self._launch('show_ta_management_gui'))
+        # TA Management moved to Assignment System > Admin > TA Management
 
         # Finance
         self._add_heading("Finance")

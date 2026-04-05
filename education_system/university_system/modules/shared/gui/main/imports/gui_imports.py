@@ -848,13 +848,9 @@ except ImportError as e:
     OfficeHoursGUI = None
     OFFICE_HOURS_GUI_AVAILABLE = False
 
-# TA Management GUI
-try:
-    from education_system.university_system.modules.domain.academics.gui.ta_management.ta_gui import TAManagementGUI
-    TA_MANAGEMENT_GUI_AVAILABLE = True
-except ImportError as e:
-    TAManagementGUI = None
-    TA_MANAGEMENT_GUI_AVAILABLE = False
+# TA Management GUI (moved to Assignment System > Admin > TA Management)
+TAManagementGUI = None
+TA_MANAGEMENT_GUI_AVAILABLE = False
 
 # Taxi Booking GUI
 try:

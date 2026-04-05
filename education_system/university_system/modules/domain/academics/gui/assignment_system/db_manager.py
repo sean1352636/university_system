@@ -55,6 +55,8 @@ class DatabaseManager:
             self.migrate_messages_table(cursor)
             self.ensure_assessment_schema(cursor)
             self.migrate_assignments_table(cursor)
+            self.create_new_feature_tables(cursor)
+            self.migrate_ta_assignments_table(cursor)
             conn.commit()
 
             conn.close()
@@ -227,6 +229,21 @@ class DatabaseManager:
                 print(f"Warning: Could not add template_id column: {e}")
         except Exception as e:
             print(f"Error migrating assignments table: {e}")
+
+    def migrate_ta_assignments_table(self, cursor):
+        """Ensure ta_assignments table has hours_per_week column"""
+        try:
+            cursor.execute("PRAGMA table_info(ta_assignments)")
+            columns = {col[1] for col in cursor.fetchall()}
+            if not columns:
+                return
+            if 'hours_per_week' not in columns:
+                cursor.execute('ALTER TABLE ta_assignments ADD COLUMN hours_per_week REAL DEFAULT 0')
+        except sqlite3.OperationalError as e:
+            if "duplicate column name" not in str(e):
+                print(f"Warning: Could not add hours_per_week column: {e}")
+        except Exception:
+            pass
 
     def create_database_tables(self, cursor):
         """Create all required database tables"""
@@ -516,6 +533,435 @@ class DatabaseManager:
         # Database tables created - ready to use existing data
         # Note: Sample data insertion removed - using actual database data only
 
+    def create_new_feature_tables(self, cursor):
+        """Create tables for new assignment/grading features"""
+
+        # ── Auto-Grading & Question Banks ──
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS question_banks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            module_code TEXT,
+            description TEXT,
+            created_by INTEGER,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (module_code) REFERENCES modules (module_code),
+            FOREIGN KEY (created_by) REFERENCES users (id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS questions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bank_id INTEGER NOT NULL,
+            question_type TEXT NOT NULL CHECK (question_type IN ('mcq', 'fill_blank', 'coding')),
+            question_text TEXT NOT NULL,
+            options_json TEXT,
+            correct_answer TEXT,
+            points REAL DEFAULT 1.0,
+            difficulty TEXT DEFAULT 'medium' CHECK (difficulty IN ('easy', 'medium', 'hard')),
+            topic TEXT,
+            time_limit_seconds INTEGER,
+            test_cases_json TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (bank_id) REFERENCES question_banks (id) ON DELETE CASCADE
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS student_answers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
+            submission_id INTEGER,
+            answer_text TEXT,
+            is_correct INTEGER DEFAULT 0,
+            points_earned REAL DEFAULT 0,
+            time_spent_seconds INTEGER,
+            answered_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (question_id) REFERENCES questions (id),
+            FOREIGN KEY (student_id) REFERENCES students (student_id),
+            FOREIGN KEY (submission_id) REFERENCES assignment_submissions (id)
+        )
+        ''')
+
+        # ── Exam Integrity ──
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS exam_integrity_settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assessment_id INTEGER NOT NULL,
+            randomize_questions INTEGER DEFAULT 0,
+            randomize_answers INTEGER DEFAULT 0,
+            question_count INTEGER,
+            time_limit_minutes INTEGER,
+            auto_submit INTEGER DEFAULT 1,
+            browser_lockdown INTEGER DEFAULT 0,
+            proctoring_provider TEXT,
+            ip_restriction_enabled INTEGER DEFAULT 0,
+            allowed_ips_json TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS exam_integrity_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assessment_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
+            event_type TEXT NOT NULL,
+            event_data_json TEXT,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (assessment_id) REFERENCES assessments (assessment_id),
+            FOREIGN KEY (student_id) REFERENCES students (student_id)
+        )
+        ''')
+
+        # ── Student Experience ──
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS submission_drafts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
+            content TEXT,
+            version INTEGER DEFAULT 1,
+            file_path TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (assignment_id) REFERENCES assignments (id),
+            FOREIGN KEY (student_id) REFERENCES students (student_id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS submission_receipts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            submission_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
+            assignment_title TEXT,
+            submitted_at TEXT NOT NULL,
+            receipt_hash TEXT,
+            email_sent INTEGER DEFAULT 0,
+            confirmation_code TEXT,
+            FOREIGN KEY (submission_id) REFERENCES assignment_submissions (id),
+            FOREIGN KEY (student_id) REFERENCES students (student_id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS accessibility_settings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL UNIQUE,
+            extended_time REAL DEFAULT 1.0,
+            high_contrast INTEGER DEFAULT 0,
+            screen_reader INTEGER DEFAULT 0,
+            font_size INTEGER DEFAULT 12,
+            extra_settings_json TEXT,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (student_id) REFERENCES students (student_id)
+        )
+        ''')
+
+        # ── Grade Disputes ──
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS grade_disputes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            submission_id INTEGER,
+            student_id TEXT NOT NULL,
+            assignment_id INTEGER NOT NULL,
+            original_grade REAL,
+            requested_action TEXT,
+            reason TEXT NOT NULL,
+            evidence_path TEXT,
+            status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'under_review', 'approved', 'denied')),
+            reviewer_id INTEGER,
+            reviewer_comments TEXT,
+            new_grade REAL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            resolved_at TEXT,
+            FOREIGN KEY (submission_id) REFERENCES assignment_submissions (id),
+            FOREIGN KEY (student_id) REFERENCES students (student_id),
+            FOREIGN KEY (assignment_id) REFERENCES assignments (id),
+            FOREIGN KEY (reviewer_id) REFERENCES users (id)
+        )
+        ''')
+
+        # ── Late Policies ──
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS late_policies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT,
+            penalty_type TEXT DEFAULT 'percentage' CHECK (penalty_type IN ('percentage', 'fixed', 'none')),
+            penalty_per_day REAL DEFAULT 10.0,
+            max_late_days INTEGER DEFAULT 7,
+            grace_period_hours INTEGER DEFAULT 0,
+            min_grade_floor REAL DEFAULT 0,
+            is_default INTEGER DEFAULT 0,
+            created_by INTEGER,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES users (id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS assignment_late_policies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER NOT NULL,
+            policy_id INTEGER NOT NULL,
+            applied_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (assignment_id) REFERENCES assignments (id),
+            FOREIGN KEY (policy_id) REFERENCES late_policies (id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS late_passes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            assignment_id INTEGER,
+            used INTEGER DEFAULT 0,
+            granted_by INTEGER,
+            granted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            reason TEXT,
+            FOREIGN KEY (student_id) REFERENCES students (student_id),
+            FOREIGN KEY (assignment_id) REFERENCES assignments (id),
+            FOREIGN KEY (granted_by) REFERENCES users (id)
+        )
+        ''')
+
+        # ── Annotations ──
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS submission_annotations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            submission_id INTEGER NOT NULL,
+            reviewer_id INTEGER NOT NULL,
+            line_number INTEGER,
+            position_start INTEGER,
+            position_end INTEGER,
+            comment TEXT NOT NULL,
+            category TEXT DEFAULT 'suggestion' CHECK (category IN ('praise', 'suggestion', 'correction', 'question')),
+            student_response TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (submission_id) REFERENCES assignment_submissions (id),
+            FOREIGN KEY (reviewer_id) REFERENCES users (id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS annotation_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            text TEXT NOT NULL,
+            category TEXT DEFAULT 'suggestion',
+            created_by INTEGER,
+            usage_count INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (created_by) REFERENCES users (id)
+        )
+        ''')
+
+        # ── Multi-Stage Assignments ──
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS assignment_stages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER NOT NULL,
+            stage_number INTEGER NOT NULL,
+            stage_name TEXT NOT NULL,
+            description TEXT,
+            weight_percent REAL DEFAULT 0,
+            deadline TEXT,
+            feedback_required INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (assignment_id) REFERENCES assignments (id) ON DELETE CASCADE
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS stage_submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            stage_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
+            content TEXT,
+            file_path TEXT,
+            status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved')),
+            feedback TEXT,
+            submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            reviewed_at TEXT,
+            FOREIGN KEY (stage_id) REFERENCES assignment_stages (id) ON DELETE CASCADE,
+            FOREIGN KEY (student_id) REFERENCES students (student_id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS external_submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
+            url TEXT NOT NULL,
+            link_type TEXT DEFAULT 'other' CHECK (link_type IN ('github', 'google_docs', 'figma', 'other')),
+            is_validated INTEGER DEFAULT 0,
+            submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (assignment_id) REFERENCES assignments (id),
+            FOREIGN KEY (student_id) REFERENCES students (student_id)
+        )
+        ''')
+
+        # ── Admin Tools ──
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS sis_sync_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sync_type TEXT,
+            records_synced INTEGER DEFAULT 0,
+            records_failed INTEGER DEFAULT 0,
+            synced_by INTEGER,
+            synced_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            details_json TEXT,
+            FOREIGN KEY (synced_by) REFERENCES users (id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS integrity_cases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            assignment_id INTEGER,
+            case_type TEXT DEFAULT 'other' CHECK (case_type IN ('plagiarism', 'cheating', 'collusion', 'other')),
+            description TEXT,
+            evidence_path TEXT,
+            status TEXT DEFAULT 'open' CHECK (status IN ('open', 'investigating', 'resolved', 'dismissed')),
+            outcome TEXT,
+            penalty TEXT,
+            created_by INTEGER,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            resolved_at TEXT,
+            FOREIGN KEY (student_id) REFERENCES students (student_id),
+            FOREIGN KEY (assignment_id) REFERENCES assignments (id),
+            FOREIGN KEY (created_by) REFERENCES users (id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS grade_audit_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            submission_id INTEGER,
+            student_id TEXT,
+            assignment_id INTEGER,
+            old_grade REAL,
+            new_grade REAL,
+            changed_by INTEGER,
+            reason TEXT,
+            changed_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (submission_id) REFERENCES assignment_submissions (id),
+            FOREIGN KEY (student_id) REFERENCES students (student_id),
+            FOREIGN KEY (assignment_id) REFERENCES assignments (id),
+            FOREIGN KEY (changed_by) REFERENCES users (id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS student_accommodations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            accommodation_type TEXT DEFAULT 'other' CHECK (accommodation_type IN ('extended_time', 'alt_format', 'screen_reader', 'large_text', 'other')),
+            details TEXT,
+            time_multiplier REAL DEFAULT 1.0,
+            is_active INTEGER DEFAULT 1,
+            approved_by INTEGER,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            expires_at TEXT,
+            FOREIGN KEY (student_id) REFERENCES students (student_id),
+            FOREIGN KEY (approved_by) REFERENCES users (id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ta_assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            section_id TEXT,
+            module_code TEXT,
+            role TEXT DEFAULT 'ta' CHECK (role IN ('ta', 'lead_ta', 'grader', 'co_instructor')),
+            hours_per_week REAL DEFAULT 0,
+            can_grade INTEGER DEFAULT 1,
+            can_create_assignments INTEGER DEFAULT 0,
+            can_view_analytics INTEGER DEFAULT 1,
+            assigned_by INTEGER,
+            assigned_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id),
+            FOREIGN KEY (module_code) REFERENCES modules (module_code),
+            FOREIGN KEY (assigned_by) REFERENCES users (id)
+        )
+        ''')
+
+        # ── AI-Assisted Features ──
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ai_feedback_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            assignment_id INTEGER,
+            draft_text TEXT,
+            feedback_json TEXT,
+            requested_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            completed_at TEXT,
+            FOREIGN KEY (student_id) REFERENCES students (student_id),
+            FOREIGN KEY (assignment_id) REFERENCES assignments (id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS practice_questions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            module_code TEXT,
+            source_material TEXT,
+            question_text TEXT NOT NULL,
+            answer TEXT,
+            question_type TEXT DEFAULT 'mcq',
+            generated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (module_code) REFERENCES modules (module_code)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS collusion_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER NOT NULL,
+            student_id_1 TEXT NOT NULL,
+            student_id_2 TEXT NOT NULL,
+            similarity_score REAL,
+            analysis_json TEXT,
+            flagged INTEGER DEFAULT 0,
+            reviewed INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (assignment_id) REFERENCES assignments (id),
+            FOREIGN KEY (student_id_1) REFERENCES students (student_id),
+            FOREIGN KEY (student_id_2) REFERENCES students (student_id)
+        )
+        ''')
+
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS late_pass_recommendations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL,
+            assignment_id INTEGER,
+            recommendation TEXT DEFAULT 'deny' CHECK (recommendation IN ('grant', 'deny')),
+            confidence_score REAL,
+            reasoning_json TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (student_id) REFERENCES students (student_id),
+            FOREIGN KEY (assignment_id) REFERENCES assignments (id)
+        )
+        ''')
 
     def insert_sample_data(self, cursor):
         """Insert sample data for testing"""

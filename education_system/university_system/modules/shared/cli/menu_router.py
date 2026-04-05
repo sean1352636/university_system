@@ -106,7 +106,7 @@ from education_system.university_system.modules.domain.commerce.services.takeawa
 from education_system.university_system.modules.domain.commerce.services.grocery.grocery_service import setup_grocery_permissions
 from education_system.university_system.modules.domain.staff_hr.cli.staff_hr_cli import setup_staff_hr_permissions
 from education_system.university_system.modules.domain.academics.services.office_hours.office_hours_permissions import setup_office_hours_permissions
-from education_system.university_system.modules.domain.academics.services.ta_management.ta_permissions_setup import setup_ta_permissions
+from education_system.university_system.modules.domain.academics.services.assignments.admin_tools.ta_permissions_setup import setup_ta_permissions
 
 # Import Office Hours and TA Management CLI menus
 try:
@@ -117,7 +117,7 @@ except ImportError:
     OFFICE_HOURS_CLI_AVAILABLE = False
 
 try:
-    from education_system.university_system.modules.domain.academics.cli.ta_management_cli import display_ta_management_menu
+    from education_system.university_system.modules.domain.academics.services.assignments.admin_tools.ta_management_cli import display_ta_management_menu
     TA_MANAGEMENT_CLI_AVAILABLE = True
 except ImportError:
     display_ta_management_menu = None

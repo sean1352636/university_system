@@ -1,7 +1,7 @@
 """TA Management CLI menu."""
 
 import logging
-from education_system.university_system.modules.domain.academics.services.ta_management.ta_service import TAService
+from education_system.university_system.modules.domain.academics.services.assignments.admin_tools.ta_service import TAService
 
 logger = logging.getLogger(__name__)
 
