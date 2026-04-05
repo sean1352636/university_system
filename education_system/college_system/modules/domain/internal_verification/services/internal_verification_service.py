@@ -25,7 +25,7 @@ class InternalVerificationService:
                    course_id: int | None = None) -> list[dict]:
         conn = self._conn()
         try:
-            sql = """SELECT p.*, c.name AS course_name
+            sql = """SELECT p.*, c.title AS course_name
                      FROM iv_plans p
                      LEFT JOIN courses c ON c.id = p.course_id
                      WHERE 1=1"""
@@ -45,7 +45,7 @@ class InternalVerificationService:
         conn = self._conn()
         try:
             row = conn.execute(
-                """SELECT p.*, c.name AS course_name
+                """SELECT p.*, c.title AS course_name
                    FROM iv_plans p
                    LEFT JOIN courses c ON c.id = p.course_id
                    WHERE p.id = ?""", (plan_id,)

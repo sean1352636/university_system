@@ -243,6 +243,13 @@ class LayoutManager:
             ("📅 Calendar", self.gui.show_calendar)
         ]))
 
+        # AI Tools - Available to all users
+        ai_tools_buttons = [
+            ("🔍 Plagiarism Checker", self.gui.show_plagiarism_checker),
+            ("🤖 AI Content Detector", self.gui.show_ai_detector),
+        ]
+        sections.append(("AI TOOLS", ai_tools_buttons))
+
         # Student features - Available to all users (students, staff, admin)
         if is_student or is_staff or is_admin:
             student_buttons = [

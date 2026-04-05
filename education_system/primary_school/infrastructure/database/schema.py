@@ -20,7 +20,8 @@ TABLES = {
             failed_attempts INTEGER DEFAULT 0,
             locked_until TEXT,
             created_at TEXT DEFAULT (datetime('now')),
-            last_login TEXT
+            last_login TEXT,
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "pupils": """
@@ -406,7 +407,8 @@ TABLES = {
             transaction_date TEXT DEFAULT (date('now')),
             recorded_by TEXT,
             status TEXT DEFAULT 'Completed',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "finance_budgets": """
@@ -418,7 +420,8 @@ TABLES = {
             spent_amount REAL NOT NULL DEFAULT 0,
             academic_year TEXT,
             status TEXT DEFAULT 'Active',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "admissions": """
@@ -456,7 +459,8 @@ TABLES = {
             year_groups TEXT,
             term TEXT,
             status TEXT DEFAULT 'Active',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "club_members": """
@@ -495,7 +499,8 @@ TABLES = {
             contact_phone TEXT,
             notes TEXT,
             status TEXT DEFAULT 'Active',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "trips": """
@@ -512,7 +517,8 @@ TABLES = {
             max_places INTEGER,
             risk_assessment INTEGER DEFAULT 0,
             status TEXT DEFAULT 'Planned',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "trip_attendees": """
@@ -572,7 +578,8 @@ TABLES = {
             doctor_phone TEXT,
             notes TEXT,
             last_updated TEXT DEFAULT (datetime('now')),
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "consent_records": """
@@ -586,7 +593,8 @@ TABLES = {
             granted_date TEXT,
             expiry_date TEXT,
             notes TEXT,
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "pastoral_notes": """
@@ -646,7 +654,8 @@ TABLES = {
             year_groups TEXT,
             created_by TEXT,
             status TEXT DEFAULT 'Active',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "announcements": """
@@ -660,7 +669,8 @@ TABLES = {
             expiry_date TEXT,
             created_by TEXT,
             status TEXT DEFAULT 'Active',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "notifications": """
@@ -688,7 +698,9 @@ TABLES = {
             follow_up_date TEXT,
             recorded_by TEXT,
             contact_date TEXT DEFAULT (date('now')),
-            created_at TEXT DEFAULT (datetime('now'))
+            status TEXT DEFAULT 'open',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "email_log": """
@@ -796,7 +808,8 @@ TABLES = {
             approval_date TEXT,
             review_date TEXT,
             status TEXT DEFAULT 'Active',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "documents": """
@@ -810,7 +823,8 @@ TABLES = {
             uploaded_by TEXT,
             access_level TEXT DEFAULT 'Staff',
             status TEXT DEFAULT 'Active',
-            created_at TEXT DEFAULT (datetime('now'))
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
         )
     """,
     "settings": """

@@ -1426,7 +1426,23 @@ class UserAuth:
         return self.user_manager.deactivate_user(user_id)
 
     def change_password(self, username, old_password, new_password):
-        """Change user password"""
+        """Change user password.
+
+        Tries the shared auth system first (where most users now live),
+        then falls back to the legacy university-only ``user_accounts``
+        table for accounts that have not yet been migrated.
+        """
+        # ── Try shared auth first ────────────────────────────────────
+        if self._shared_auth is not None and self.current_user:
+            shared_id = self.current_user.get('shared_auth_id') or self.current_user.get('id')
+            if shared_id is not None:
+                try:
+                    self._shared_auth.change_password(int(shared_id), old_password, new_password)
+                    return True
+                except Exception:
+                    pass  # Fall through to legacy
+
+        # ── Fallback to legacy user_accounts table ───────────────────
         from education_system.university_system.infrastructure.auth.managers.password_manager import change_user_password
         return change_user_password(self.db_manager, username, old_password, new_password,
                                     current_user=self.current_user)

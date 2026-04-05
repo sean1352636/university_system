@@ -476,7 +476,7 @@ class ValidationSchema:
         class StudentSchema(ValidationSchema):
             def __init__(self):
                 super().__init__()
-                self.add_field('student_id', [Required(), Pattern(r'^STU\d+$')])
+                self.add_field('student_id', [Required(), Pattern(r'^STU\\d+$')])
                 self.add_field('email', [Required(), Email()])
                 self.add_field('gpa', [InRange(0, 4.0)])
 

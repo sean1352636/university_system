@@ -599,7 +599,7 @@ def validate_column_name(
             validate_table_name(table_name, conn=conn)
 
             # Get actual columns from table
-            cursor = conn.execute(f"PRAGMA table_info([{table_name}])")  # nosec B608 - table_name validated above
+            cursor = conn.execute(f"PRAGMA table_info([{table_name}])")  # nosec B608  # table_name validated above
             actual_columns = {row[1].lower() for row in cursor.fetchall()}
 
             if column_lower not in actual_columns:
@@ -699,7 +699,7 @@ def get_valid_columns(
     validate_table_name(table_name, conn=conn)
 
     try:
-        cursor = conn.execute(f"PRAGMA table_info([{table_name}])")  # nosec B608 - table_name validated by validate_table_name above
+        cursor = conn.execute(f"PRAGMA table_info([{table_name}])")  # nosec B608  # table_name validated by validate_table_name above
         return {row[1] for row in cursor.fetchall()}
     except sqlite3.Error as e:
         logger.error(f"Error getting columns for table {table_name}: {e}")
@@ -840,7 +840,7 @@ def validate_column_definition(
             validate_table_name(table_name, conn=conn)
 
             # Check existing columns
-            cursor = conn.execute(f"PRAGMA table_info([{table_name}])")  # nosec B608 - table_name validated above
+            cursor = conn.execute(f"PRAGMA table_info([{table_name}])")  # nosec B608  # table_name validated above
             existing_columns = {row[1].lower() for row in cursor.fetchall()}
 
             if column_name.lower() in existing_columns:
@@ -881,7 +881,7 @@ def safe_alter_table_add_column(
     validated_table = validate_table_name(table_name, conn=conn)
 
     # Check if column already exists
-    cursor = conn.execute(f"PRAGMA table_info([{validated_table}])")  # nosec B608 - validated by validate_table_name
+    cursor = conn.execute(f"PRAGMA table_info([{validated_table}])")  # nosec B608  # validated by validate_table_name
     existing_columns = {row[1].lower() for row in cursor.fetchall()}
 
     if column_name.lower() in existing_columns:
@@ -896,7 +896,7 @@ def safe_alter_table_add_column(
     col_def = validate_column_definition(column_name, column_type)
 
     # Execute the ALTER TABLE statement
-    sql = f"ALTER TABLE [{validated_table}] ADD COLUMN [{col_def.name}] {col_def.type_def}"  # nosec B608 - all identifiers validated
+    sql = f"ALTER TABLE [{validated_table}] ADD COLUMN [{col_def.name}] {col_def.type_def}"  # nosec B608  # all identifiers validated
     logger.info(f"Adding column: {sql}")
     conn.execute(sql)
 
@@ -923,7 +923,7 @@ def get_table_schema(
     validated_table = validate_table_name(table_name, conn=conn)
 
     try:
-        cursor = conn.execute(f"PRAGMA table_info([{validated_table}])")  # nosec B608 - validated by validate_table_name
+        cursor = conn.execute(f"PRAGMA table_info([{validated_table}])")  # nosec B608  # validated by validate_table_name
         columns = []
         column_names = set()
 

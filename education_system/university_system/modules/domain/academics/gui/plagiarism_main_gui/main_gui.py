@@ -74,6 +74,7 @@ class PlagiarismCheckerGUI:
         self.checker = None
         self.auth = auth  # Use provided auth or None
         self.task_queue = queue.Queue()
+        self._task_after_id = None
 
         # Set up styles
         self.setup_styles()
@@ -87,6 +88,7 @@ class PlagiarismCheckerGUI:
         self.initialize_system()
 
         # Start periodic task processor
+        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.process_tasks()
 
         # Download NLTK data if needed
@@ -426,6 +428,15 @@ class PlagiarismCheckerGUI:
         thread = threading.Thread(target=init_task, daemon=True)
         thread.start()
 
+    def _on_close(self):
+        """Cancel pending after callbacks and destroy the window."""
+        if self._task_after_id is not None:
+            try:
+                self.root.after_cancel(self._task_after_id)
+            except tk.TclError:
+                pass
+        self.root.destroy()
+
     def process_tasks(self):
         """Process background tasks"""
         try:
@@ -478,7 +489,7 @@ class PlagiarismCheckerGUI:
 
         # Schedule next check
         try:
-            self.root.after(100, self.process_tasks)
+            self._task_after_id = self.root.after(100, self.process_tasks)
         except tk.TclError:
             pass
 
@@ -1291,7 +1302,9 @@ Check Results by Status:"""
             result_card = ResultCard(
                 self.results_frame.scrollable_frame,
                 result,
-                on_view_details=self.show_result_details
+                on_view_details=self.show_result_details,
+                on_email_result=self.send_plagiarism_report_via_email,
+                auth=self.auth
             )
             result_card.pack(fill=tk.X, pady=GuiConfig.PADDING_SMALL)
 
@@ -1831,12 +1844,16 @@ For command-line interface, run the original plagiarism_main.py file.
 
     def show_check_result(self, result):
         """Show plagiarism check result"""
-        dialog = CheckResultDialog(self.root, self.checker, result)
+        dialog = CheckResultDialog(self.root, self.checker, result,
+                                   auth=self.auth,
+                                   on_email_result=self.send_plagiarism_report_via_email)
         dialog.show()
 
     def show_result_details(self, result_data):
         """Show detailed result information"""
-        dialog = ResultDetailsDialog(self.root, self.checker, result_data['result_id'])
+        dialog = ResultDetailsDialog(self.root, self.checker, result_data['result_id'],
+                                     auth=self.auth,
+                                     on_email_result=self.send_plagiarism_report_via_email)
         dialog.show()
 
     def send_plagiarism_report_via_email(self, result_data, user_email=None):
@@ -1876,20 +1893,16 @@ For command-line interface, run the original plagiarism_main.py file.
             messagebox.showerror("Error", f"Failed to send plagiarism report: {e}")
 
     def _send_email_via_gui(self, to_email, subject, message):
-        """Send email via email GUI"""
+        """Send email using the core email service"""
         try:
-            from education_system.university_system.modules.shared.gui.email.email_gui import EmailManagerGUI
-            email_gui = EmailManagerGUI(self.root, auth=self.auth)
-
-            # If email GUI has send_email method, use it
-            if hasattr(email_gui, 'send_email'):
-                email_gui.send_email(to_email=to_email, subject=subject, message=message)
-                return True
-            return False
-        except ImportError:
-            return False
+            from education_system.university_system.infrastructure.email.email_service.core import send_email
+            return send_email(
+                recipient_email=to_email,
+                subject=subject,
+                body=message
+            )
         except Exception as e:
-            print(f"Error sending email via GUI: {e}")
+            print(f"Error sending email: {e}")
             return False
 
     def _show_plagiarism_email_fallback(self, email, subject, message, result_data):

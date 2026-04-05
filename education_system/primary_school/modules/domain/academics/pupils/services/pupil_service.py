@@ -171,7 +171,7 @@ class PupilService:
             set_parts.append("updated_at = datetime('now')")
             set_clause = ", ".join(set_parts)
             values.append(pupil_id)
-            cursor.execute(f"UPDATE pupils SET {set_clause} WHERE pupil_id = ?", values)  # nosec B608 - keys validated against allowlist
+            cursor.execute(f"UPDATE pupils SET {set_clause} WHERE pupil_id = ?", values)  # nosec B608  # keys validated against allowlist
             conn.commit()
             logger.info("Updated pupil: %s", pupil_id)
             return self.get_pupil(pupil_id)

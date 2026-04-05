@@ -116,6 +116,7 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
 
         # Threading for long operations
         self.task_queue = queue.Queue()
+        self._task_after_id = None
 
         # Initialize GUI
         self._setup_gui()
@@ -334,6 +335,7 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
         self._setup_shortcuts()
 
         # Start task processor
+        self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self._start_task_processor()
 
     def _configure_styles(self):
@@ -694,6 +696,15 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
 
         return self.auth_manager.check_permission(required_permission)
 
+    def _on_close(self):
+        """Cancel pending after callbacks and destroy the window."""
+        if self._task_after_id is not None:
+            try:
+                self.root.after_cancel(self._task_after_id)
+            except tk.TclError:
+                pass
+        self.root.destroy()
+
     def _start_task_processor(self):
         """Start background task processor"""
         def process_tasks():
@@ -722,11 +733,11 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
 
             # Schedule next check
             try:
-                self.root.after(100, process_tasks)
+                self._task_after_id = self.root.after(100, process_tasks)
             except tk.TclError:
                 pass
 
-        self.root.after(100, process_tasks)
+        self._task_after_id = self.root.after(100, process_tasks)
 
     def _clear_content_area(self):
         """Clear the content area"""

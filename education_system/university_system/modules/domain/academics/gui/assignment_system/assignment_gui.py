@@ -141,6 +141,30 @@ class AssignmentGUI:
         role = self.get_user_role()
         return role == 'student'
 
+    def show_plagiarism_checker(self):
+        """Launch the Plagiarism Checker GUI"""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui import PlagiarismCheckerGUI
+            import tkinter as _tk
+            plagiarism_window = _tk.Toplevel(self.root)
+            plagiarism_window.title(_("ai_features.window_titles.plagiarism_detection"))
+            plagiarism_window.geometry("1200x800")
+            PlagiarismCheckerGUI(plagiarism_window, self.auth)
+        except Exception as e:
+            messagebox.showerror(_("common.error"), _("ai_features.messages.plagiarism_launch_error").format(error=str(e)))
+
+    def show_ai_detector(self):
+        """Launch the AI Content Detector GUI"""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.ai_detector import AIDetectorGUI
+            import tkinter as _tk
+            ai_window = _tk.Toplevel(self.root)
+            ai_window.title(_("ai_features.window_titles.ai_content_detector"))
+            ai_window.geometry("1000x700")
+            AIDetectorGUI(ai_window, self.auth)
+        except Exception as e:
+            messagebox.showerror(_("common.error"), _("ai_features.messages.ai_detector_launch_error").format(error=str(e)))
+
     def _launch_gui_feature(self, callback, feature_name):
         """Launch a GUI feature with error handling"""
         try:

@@ -7,22 +7,116 @@ from education_system.college_system.core.exceptions import ReportsError
 class ReportsService:
     def __init__(self, db_path: str | None = None):
         self._db_path = db_path
+        self._migrated = False
 
     def _conn(self):
-        return connect(self._db_path)
+        conn = connect(self._db_path)
+        if not self._migrated:
+            self._ensure_columns(conn)
+            self._migrated = True
+        return conn
+
+    def _ensure_columns(self, conn):
+        """Ensure progress_reports and report_entries have the columns the service needs."""
+        pr_cols = {row["name"] for row in conn.execute(
+            "PRAGMA table_info(progress_reports)").fetchall()}
+        re_cols = {row["name"] for row in conn.execute(
+            "PRAGMA table_info(report_entries)").fetchall()}
+        needs_pr = "title" not in pr_cols
+        needs_re = "student_id" not in re_cols
+
+        if not needs_pr and not needs_re:
+            return
+
+        conn.execute("PRAGMA foreign_keys = OFF")
+
+        if needs_pr:
+            # Recreate progress_reports with title, due_date and nullable student_id
+            conn.execute("DROP TABLE IF EXISTS _pr_old")
+            conn.execute("ALTER TABLE progress_reports RENAME TO _pr_old")
+            conn.execute("""
+                CREATE TABLE progress_reports (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title TEXT,
+                    student_id INTEGER,
+                    report_type TEXT NOT NULL DEFAULT 'interim'
+                        CHECK(report_type IN ('interim','full','final')),
+                    academic_year TEXT,
+                    term TEXT,
+                    due_date TEXT,
+                    overall_comment TEXT,
+                    tutor_comment TEXT,
+                    status TEXT NOT NULL DEFAULT 'draft'
+                        CHECK(status IN ('draft','published','sent')),
+                    published_at TEXT,
+                    created_by INTEGER,
+                    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                    FOREIGN KEY (student_id) REFERENCES students(id),
+                    FOREIGN KEY (created_by) REFERENCES users(id)
+                )
+            """)
+            conn.execute("""
+                INSERT INTO progress_reports
+                    (id, student_id, report_type, academic_year, term,
+                     overall_comment, tutor_comment, status, published_at,
+                     created_by, created_at)
+                SELECT id, student_id, report_type, academic_year, term,
+                       overall_comment, tutor_comment, status, published_at,
+                       created_by, created_at
+                FROM _pr_old
+            """)
+            conn.execute("DROP TABLE _pr_old")
+
+        if needs_re:
+            # Recreate report_entries with the columns the service needs
+            conn.execute("DROP TABLE IF EXISTS _re_old")
+            conn.execute("ALTER TABLE report_entries RENAME TO _re_old")
+            conn.execute("""
+                CREATE TABLE report_entries (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    report_id INTEGER NOT NULL,
+                    student_id INTEGER,
+                    course_id INTEGER NOT NULL,
+                    teacher_id INTEGER,
+                    current_grade TEXT,
+                    target_grade TEXT,
+                    effort_grade TEXT,
+                    attainment_grade TEXT,
+                    attendance_pct REAL,
+                    attendance_rate REAL,
+                    comment TEXT,
+                    teacher_comment TEXT,
+                    updated_at TEXT,
+                    FOREIGN KEY (report_id) REFERENCES progress_reports(id),
+                    FOREIGN KEY (course_id) REFERENCES courses(id)
+                )
+            """)
+            conn.execute("""
+                INSERT INTO report_entries
+                    (id, report_id, course_id, effort_grade,
+                     attainment_grade, target_grade, teacher_comment, attendance_rate)
+                SELECT id, report_id, course_id, effort_grade,
+                       attainment_grade, target_grade, teacher_comment, attendance_rate
+                FROM _re_old
+            """)
+            conn.execute("DROP TABLE _re_old")
+
+        conn.execute("PRAGMA foreign_keys = ON")
+        conn.commit()
 
     # --- Progress Reports ---
 
     def create_report(self, title: str, report_type: str = "interim",
                        academic_year: str = None, term: str = None,
-                       due_date: str = None, created_by: int = None) -> dict:
+                       due_date: str = None, created_by: int = None,
+                       student_id: int = None) -> dict:
         conn = self._conn()
         try:
             conn.execute(
                 """INSERT INTO progress_reports
-                   (title, report_type, academic_year, term, due_date, created_by)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
-                (title, report_type, academic_year, term, due_date, created_by),
+                   (title, report_type, academic_year, term, due_date, created_by, student_id)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (title, report_type, academic_year, term, due_date, created_by, student_id),
             )
             conn.commit()
             row = conn.execute(
@@ -107,7 +201,7 @@ class ReportsService:
     def list_entries(self, report_id: int, student_id: int = None) -> list[dict]:
         conn = self._conn()
         try:
-            query = """SELECT re.*, s.first_name, s.last_name, c.course_name
+            query = """SELECT re.*, s.first_name, s.last_name, c.title AS course_name
                        FROM report_entries re
                        LEFT JOIN students s ON re.student_id = s.id
                        LEFT JOIN courses c ON re.course_id = c.id
@@ -116,7 +210,7 @@ class ReportsService:
             if student_id:
                 query += " AND re.student_id = ?"
                 params.append(student_id)
-            query += " ORDER BY s.last_name, c.course_name"
+            query += " ORDER BY s.last_name, c.title"
             rows = conn.execute(query, params).fetchall()
             return [dict(r) for r in rows]
         finally:
@@ -150,10 +244,10 @@ class ReportsService:
         conn = self._conn()
         try:
             rows = conn.execute(
-                """SELECT re.*, c.course_name FROM report_entries re
+                """SELECT re.*, c.title AS course_name FROM report_entries re
                    LEFT JOIN courses c ON re.course_id = c.id
                    WHERE re.report_id = ? AND re.student_id = ?
-                   ORDER BY c.course_name""",
+                   ORDER BY c.title""",
                 (report_id, student_id),
             ).fetchall()
             return [dict(r) for r in rows]

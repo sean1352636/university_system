@@ -12,7 +12,8 @@ import csv
 import io
 import json
 import logging
-import defusedxml.ElementTree as ET
+import defusedxml.ElementTree as SafeET
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
 from defusedxml.minidom import parseString
@@ -156,7 +157,7 @@ class StudentDataImporter:
     def from_ctf_xml(self, data: str | Path) -> list[dict]:
         if isinstance(data, Path) or (isinstance(data, str) and len(data) < 500 and Path(data).is_file()):
             data = Path(data).read_text(encoding="utf-8")
-        root = ET.fromstring(data)
+        root = SafeET.fromstring(data)
         students = []
         for pupil in root.iter("Pupil"):
             s = {

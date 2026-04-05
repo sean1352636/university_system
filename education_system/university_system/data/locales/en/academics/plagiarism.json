@@ -132,6 +132,11 @@
       "completed": "Completed",
       "flagged": "Flagged",
       "cleared": "Cleared"
-    }
+    },
+
+    "email_results": "Email Results",
+    "email_no_user_email": "No email address found for the current user. Please ensure your account has an email address configured.",
+    "email_sent_success": "Plagiarism report has been emailed to {email}",
+    "email_sent_error": "Failed to send plagiarism report: {error}"
   }
 }

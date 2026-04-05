@@ -84,7 +84,7 @@ class DataExportService:
             if academic_year:
                 sql += " AND academic_year = ?"
                 params.append(academic_year)
-            sql += " ORDER BY pupil_id, subject, assessment_date"
+            sql += " ORDER BY pupil_id, subject_code, assessment_date"
             cursor.execute(sql, params)
             rows = cursor.fetchall()
             if not rows:

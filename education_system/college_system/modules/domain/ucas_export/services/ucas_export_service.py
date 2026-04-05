@@ -3,7 +3,8 @@
 from education_system.college_system.core.exceptions import UCASExportError
 from education_system.college_system.infrastructure.database.db import connect
 import logging
-import defusedxml.ElementTree as ET
+from xml.etree.ElementTree import Element, SubElement, tostring
+import defusedxml.ElementTree as SafeET
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -203,13 +204,13 @@ class UCASExportService:
         try:
             self._ensure_tables(conn)
             batch = self._get_batch_row(conn, batch_id)
-            root = ET.Element("UCASExport")
-            header = ET.SubElement(root, "Header")
-            ET.SubElement(header, "AcademicYear").text = batch["academic_year"]
-            ET.SubElement(header, "ExportType").text = batch["export_type"]
-            ET.SubElement(header, "ExportDate").text = datetime.now().isoformat()
+            root = Element("UCASExport")
+            header = SubElement(root, "Header")
+            SubElement(header, "AcademicYear").text = batch["academic_year"]
+            SubElement(header, "ExportType").text = batch["export_type"]
+            SubElement(header, "ExportDate").text = datetime.now().isoformat()
 
-            records_el = ET.SubElement(root, "Records")
+            records_el = SubElement(root, "Records")
             cur = conn.execute(
                 "SELECT * FROM ucas_export_records WHERE batch_id = ? AND export_status = 'included'",
                 (batch_id,),
@@ -217,18 +218,18 @@ class UCASExportService:
             cols = [d[0] for d in cur.description]
             for row in cur.fetchall():
                 rec = dict(zip(cols, row))
-                rec_el = ET.SubElement(records_el, "Record")
-                ET.SubElement(rec_el, "StudentID").text = str(rec["student_id"])
-                ET.SubElement(rec_el, "UCASID").text = rec.get("ucas_id") or ""
-                ET.SubElement(rec_el, "PersonalID").text = rec.get("personal_id") or ""
-                ET.SubElement(rec_el, "CourseChoices").text = rec.get("course_choices") or ""
-                ET.SubElement(rec_el, "PredictedGrades").text = rec.get("predicted_grades") or ""
+                rec_el = SubElement(records_el, "Record")
+                SubElement(rec_el, "StudentID").text = str(rec["student_id"])
+                SubElement(rec_el, "UCASID").text = rec.get("ucas_id") or ""
+                SubElement(rec_el, "PersonalID").text = rec.get("personal_id") or ""
+                SubElement(rec_el, "CourseChoices").text = rec.get("course_choices") or ""
+                SubElement(rec_el, "PredictedGrades").text = rec.get("predicted_grades") or ""
                 if batch["export_type"] == "references":
-                    ET.SubElement(rec_el, "ReferenceText").text = rec.get("reference_text") or ""
+                    SubElement(rec_el, "ReferenceText").text = rec.get("reference_text") or ""
                 if batch["export_type"] == "applications":
-                    ET.SubElement(rec_el, "PersonalStatementHash").text = rec.get("personal_statement_hash") or ""
+                    SubElement(rec_el, "PersonalStatementHash").text = rec.get("personal_statement_hash") or ""
 
-            xml_str = ET.tostring(root, encoding="unicode", xml_declaration=True)
+            xml_str = tostring(root, encoding="unicode", xml_declaration=True)
             conn.execute(
                 "UPDATE ucas_export_batches SET xml_data = ?, updated_at = datetime('now') WHERE id = ?",
                 (xml_str, batch_id),

@@ -362,4 +362,4 @@ __all__ = [
     'get_search_indexer',
 ]
 
-__version__ = '8.62.4'
+__version__ = '8.63.0'

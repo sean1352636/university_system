@@ -280,6 +280,7 @@ class LettingsPortalService:
             if not hirer:
                 raise LettingsPortalError(f"Hirer {hirer_id} not found")
 
+            hirer = dict(hirer)
             account_type = hirer["account_type"] if hirer else "occasional"
             fee = self.calculate_fee(facility_id, start_time, end_time, account_type)
 

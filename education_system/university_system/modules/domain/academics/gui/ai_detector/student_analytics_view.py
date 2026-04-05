@@ -1174,7 +1174,7 @@ def view_student_profile(self):
 
             # Get recent submissions
             cursor.execute('''
-                SELECT submission_id, document_name, ai_probability, analysis_date
+                SELECT submission_id, course_name, ai_probability, analysis_date
                 FROM ai_analysis_history
                 WHERE student_id = ?
                 ORDER BY analysis_date DESC
@@ -1351,10 +1351,17 @@ def generate_student_report_card(self):
         stats = cursor.fetchone()
 
         cursor.execute('''
-            SELECT COUNT(*) FROM ai_dean_escalations
-            WHERE student_name LIKE ?
-        ''', (f'%{student_id}%',))
-        escalations = cursor.fetchone()[0]
+            SELECT COUNT(*) FROM sqlite_master
+            WHERE type='table' AND name='ai_dean_escalations'
+        ''')
+        if cursor.fetchone()[0]:
+            cursor.execute('''
+                SELECT COUNT(*) FROM ai_dean_escalations
+                WHERE student_name LIKE ?
+            ''', (f'%{student_id}%',))
+            escalations = cursor.fetchone()[0]
+        else:
+            escalations = 0
 
         conn.close()
 

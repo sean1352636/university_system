@@ -43,9 +43,9 @@ def build_where_clause(conditions: dict, operator: str = "AND") -> tuple[str, li
     for col, val in conditions.items():
         validate_identifier(col)
         if val is None:
-            parts.append(f"{col} IS NULL")  # nosec B608 - col validated by validate_identifier
+            parts.append(f"{col} IS NULL")  # nosec B608  # col validated by validate_identifier
         else:
-            parts.append(f"{col} = ?")  # nosec B608 - col validated by validate_identifier
+            parts.append(f"{col} = ?")  # nosec B608  # col validated by validate_identifier
             params.append(val)
 
     op = f" {operator} "
@@ -73,7 +73,7 @@ def build_insert_clause(fields: dict) -> tuple[str, str, list]:
         validated_cols.append(col)
         params.append(val)
 
-    cols_sql = ", ".join(validated_cols)  # nosec B608 - cols validated above
+    cols_sql = ", ".join(validated_cols)  # nosec B608  # cols validated above
     placeholders_sql = ", ".join("?" for _ in validated_cols)
     return cols_sql, placeholders_sql, params
 
@@ -90,7 +90,7 @@ def build_set_clause(updates: dict) -> tuple[str, list]:
     params = []
     for col, val in updates.items():
         validate_identifier(col)
-        parts.append(f"{col} = ?")  # nosec B608 - col validated by validate_identifier
+        parts.append(f"{col} = ?")  # nosec B608  # col validated by validate_identifier
         params.append(val)
 
     return f"SET {', '.join(parts)}", params

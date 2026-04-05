@@ -622,9 +622,11 @@ class ScrollableFrame(ttk.Frame):
 class ResultCard(ttk.LabelFrame):
     """Card widget for displaying plagiarism results"""
 
-    def __init__(self, parent, result_data, on_view_details=None):
+    def __init__(self, parent, result_data, on_view_details=None, on_email_result=None, auth=None):
         self.result_data = result_data
         self.on_view_details = on_view_details
+        self.on_email_result = on_email_result
+        self.auth = auth
 
         # Determine status color
         status = result_data.get('status', 'UNKNOWN')
@@ -677,6 +679,15 @@ class ResultCard(ttk.LabelFrame):
         )
         date_label.pack(side=tk.LEFT)
 
+        # Email results button
+        if on_email_result:
+            email_btn = ttk.Button(
+                details_frame,
+                text=_t("plagiarism.email_results"),
+                command=self._email_result
+            )
+            email_btn.pack(side=tk.RIGHT, padx=(0, GuiConfig.PADDING_SMALL))
+
         # View details button
         if on_view_details:
             details_btn = ttk.Button(
@@ -685,3 +696,19 @@ class ResultCard(ttk.LabelFrame):
                 command=lambda: on_view_details(result_data)
             )
             details_btn.pack(side=tk.RIGHT)
+
+    def _email_result(self):
+        """Email this result to the current user"""
+        from tkinter import messagebox
+        user_email = None
+        if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+            user_email = self.auth.current_user.get('email')
+
+        if not user_email:
+            messagebox.showwarning(
+                _t("common.warning"),
+                _t("plagiarism.email_no_user_email")
+            )
+            return
+
+        self.on_email_result(self.result_data, user_email)

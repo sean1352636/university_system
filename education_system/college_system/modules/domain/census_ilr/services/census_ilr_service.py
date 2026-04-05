@@ -3,7 +3,7 @@
 from education_system.college_system.core.exceptions import CensusILRError
 from education_system.college_system.infrastructure.database.db import connect
 import logging
-import xml.etree.ElementTree as ET
+from xml.etree.ElementTree import Element, SubElement, tostring  # nosec  # write-only XML generation, no parsing of untrusted input
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -304,13 +304,13 @@ class CensusILRService:
         try:
             self._ensure_tables(conn)
             ret = self._get_return_row(conn, return_id)
-            root = ET.Element("CensusReturn")
-            header = ET.SubElement(root, "Header")
-            ET.SubElement(header, "ReturnType").text = ret["return_type"]
-            ET.SubElement(header, "AcademicYear").text = ret["academic_year"]
-            ET.SubElement(header, "Term").text = ret.get("term") or ""
-            ET.SubElement(header, "CollectionPeriod").text = ret.get("collection_period") or ""
-            students_el = ET.SubElement(root, "Students")
+            root = Element("CensusReturn")
+            header = SubElement(root, "Header")
+            SubElement(header, "ReturnType").text = ret["return_type"]
+            SubElement(header, "AcademicYear").text = ret["academic_year"]
+            SubElement(header, "Term").text = ret.get("term") or ""
+            SubElement(header, "CollectionPeriod").text = ret.get("collection_period") or ""
+            students_el = SubElement(root, "Students")
             cur = conn.execute(
                 "SELECT * FROM census_student_records WHERE census_id = ? AND valid = 1",
                 (return_id,),
@@ -318,15 +318,15 @@ class CensusILRService:
             cols = [d[0] for d in cur.description]
             for row in cur.fetchall():
                 rec = dict(zip(cols, row))
-                student_el = ET.SubElement(students_el, "Student")
-                ET.SubElement(student_el, "StudentID").text = str(rec["student_id"])
-                ET.SubElement(student_el, "ULN").text = rec.get("uln") or ""
-                ET.SubElement(student_el, "UPN").text = rec.get("upn") or ""
-                ET.SubElement(student_el, "Ethnicity").text = rec.get("ethnicity") or ""
-                ET.SubElement(student_el, "FSMEligible").text = str(rec.get("fsm_eligible", 0))
-                ET.SubElement(student_el, "SENDProvision").text = rec.get("send_provision") or ""
-                ET.SubElement(student_el, "EHCP").text = str(rec.get("ehcp", 0))
-            xml_str = ET.tostring(root, encoding="unicode", xml_declaration=True)
+                student_el = SubElement(students_el, "Student")
+                SubElement(student_el, "StudentID").text = str(rec["student_id"])
+                SubElement(student_el, "ULN").text = rec.get("uln") or ""
+                SubElement(student_el, "UPN").text = rec.get("upn") or ""
+                SubElement(student_el, "Ethnicity").text = rec.get("ethnicity") or ""
+                SubElement(student_el, "FSMEligible").text = str(rec.get("fsm_eligible", 0))
+                SubElement(student_el, "SENDProvision").text = rec.get("send_provision") or ""
+                SubElement(student_el, "EHCP").text = str(rec.get("ehcp", 0))
+            xml_str = tostring(root, encoding="unicode", xml_declaration=True)
             logger.info("Exported census XML for return %d", return_id)
             return xml_str
         except CensusILRError:
@@ -343,11 +343,11 @@ class CensusILRService:
         try:
             self._ensure_tables(conn)
             ret = self._get_return_row(conn, return_id)
-            root = ET.Element("ILRReturn")
-            header = ET.SubElement(root, "Header")
-            ET.SubElement(header, "AcademicYear").text = ret["academic_year"]
-            ET.SubElement(header, "CollectionPeriod").text = ret.get("collection_period") or ""
-            aims_el = ET.SubElement(root, "LearningAims")
+            root = Element("ILRReturn")
+            header = SubElement(root, "Header")
+            SubElement(header, "AcademicYear").text = ret["academic_year"]
+            SubElement(header, "CollectionPeriod").text = ret.get("collection_period") or ""
+            aims_el = SubElement(root, "LearningAims")
             cur = conn.execute(
                 "SELECT * FROM ilr_learning_aims WHERE census_id = ? AND valid = 1",
                 (return_id,),
@@ -355,17 +355,17 @@ class CensusILRService:
             cols = [d[0] for d in cur.description]
             for row in cur.fetchall():
                 rec = dict(zip(cols, row))
-                aim_el = ET.SubElement(aims_el, "LearningAim")
-                ET.SubElement(aim_el, "StudentID").text = str(rec["student_id"])
-                ET.SubElement(aim_el, "LearningAimRef").text = rec.get("learning_aim_ref") or ""
-                ET.SubElement(aim_el, "AimType").text = rec.get("aim_type") or ""
-                ET.SubElement(aim_el, "StartDate").text = rec.get("start_date") or ""
-                ET.SubElement(aim_el, "PlannedEndDate").text = rec.get("planned_end_date") or ""
-                ET.SubElement(aim_el, "ActualEndDate").text = rec.get("actual_end_date") or ""
-                ET.SubElement(aim_el, "CompletionStatus").text = rec.get("completion_status") or ""
-                ET.SubElement(aim_el, "Outcome").text = rec.get("outcome") or ""
-                ET.SubElement(aim_el, "FundingModel").text = rec.get("funding_model") or ""
-            xml_str = ET.tostring(root, encoding="unicode", xml_declaration=True)
+                aim_el = SubElement(aims_el, "LearningAim")
+                SubElement(aim_el, "StudentID").text = str(rec["student_id"])
+                SubElement(aim_el, "LearningAimRef").text = rec.get("learning_aim_ref") or ""
+                SubElement(aim_el, "AimType").text = rec.get("aim_type") or ""
+                SubElement(aim_el, "StartDate").text = rec.get("start_date") or ""
+                SubElement(aim_el, "PlannedEndDate").text = rec.get("planned_end_date") or ""
+                SubElement(aim_el, "ActualEndDate").text = rec.get("actual_end_date") or ""
+                SubElement(aim_el, "CompletionStatus").text = rec.get("completion_status") or ""
+                SubElement(aim_el, "Outcome").text = rec.get("outcome") or ""
+                SubElement(aim_el, "FundingModel").text = rec.get("funding_model") or ""
+            xml_str = tostring(root, encoding="unicode", xml_declaration=True)
             logger.info("Exported ILR XML for return %d", return_id)
             return xml_str
         except CensusILRError:

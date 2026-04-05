@@ -159,7 +159,7 @@ def init_ai_tables():
 
         # Create ai_detector_metadata table
         cursor.execute('''
-        CREATE TABLE ai_detector_metadata (
+        CREATE TABLE IF NOT EXISTS ai_detector_metadata (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         submission_id INTEGER NOT NULL,
                         time_taken INTEGER,
@@ -174,7 +174,7 @@ def init_ai_tables():
 
         # Create ai_detector_results table
         cursor.execute('''
-        CREATE TABLE ai_detector_results (
+        CREATE TABLE IF NOT EXISTS ai_detector_results (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         submission_id INTEGER NOT NULL,
                         ai_score REAL NOT NULL,
@@ -188,7 +188,7 @@ def init_ai_tables():
 
         # Create ai_detector_submissions table
         cursor.execute('''
-        CREATE TABLE ai_detector_submissions (
+        CREATE TABLE IF NOT EXISTS ai_detector_submissions (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT NOT NULL,
                         submission_text TEXT NOT NULL,
@@ -199,6 +199,36 @@ def init_ai_tables():
                         word_count INTEGER,
                         character_count INTEGER,
                         institution_id TEXT
+                    )
+        ''')
+
+        # Create ai_analysis_history table (used by AI detector GUI analytics views)
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ai_analysis_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        submission_id INTEGER,
+                        student_id TEXT,
+                        student_name TEXT,
+                        ai_probability REAL,
+                        analysis_date TEXT,
+                        course_name TEXT,
+                        text_content TEXT,
+                        fingerprint_data TEXT,
+                        FOREIGN KEY (submission_id) REFERENCES ai_detector_submissions (id)
+                    )
+        ''')
+
+        # Create ai_student_flags table (used by AI detector student analytics)
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS ai_student_flags (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        student_id TEXT,
+                        flag_reason TEXT,
+                        flagged_by TEXT,
+                        flagged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        status TEXT DEFAULT 'active',
+                        resolved_at TIMESTAMP,
+                        resolution_notes TEXT
                     )
         ''')
 

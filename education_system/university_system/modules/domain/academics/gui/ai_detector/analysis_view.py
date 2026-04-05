@@ -42,8 +42,6 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 def create_analysis_view(self, parent):
     """Create the main text analysis view"""
     analysis_frame = ttk.Frame(parent)
-
-    analysis_frame.pack(fill="both", expand=True)
     analysis_frame.pack(fill='both', expand=True)
 
     # Create two-column layout
@@ -108,9 +106,30 @@ def create_input_section(self, parent):
     # Text input area
     ttk.Label(input_card, text="Text to Analyze:", style='Subtitle.TLabel').pack(anchor='w', padx=15, pady=(10, 5))
 
-    # Text widget with scrollbar
+    # Buttons and word count packed BEFORE text area so they stay visible
+    button_frame = ttk.Frame(input_card)
+    button_frame.pack(side='bottom', fill='x', padx=15, pady=(0, 15))
+
+    self.upload_btn = ttk.Button(button_frame, text="📁 Load File", command=self.load_file)
+    self.upload_btn.pack(side='left', padx=(0, 10))
+
+    self.clear_btn = ttk.Button(button_frame, text="🗑️ Clear", command=self.clear_input)
+    self.clear_btn.pack(side='left', padx=(0, 10))
+
+    self.analyze_btn = ttk.Button(
+        button_frame,
+        text="🔍 Analyze Text",
+        command=self.analyze_text,
+        style='Accent.TButton'
+    )
+    self.analyze_btn.pack(side='right')
+
+    self.word_count_label = ttk.Label(input_card, text="Words: 0", style='Subtitle.TLabel')
+    self.word_count_label.pack(side='bottom', anchor='e', padx=15, pady=(0, 5))
+
+    # Text widget fills remaining space
     text_frame = ttk.Frame(input_card)
-    text_frame.pack(fill='both', expand=True, padx=15, pady=(0, 15))
+    text_frame.pack(fill='both', expand=True, padx=15, pady=(0, 10))
 
     self.text_input = scrolledtext.ScrolledText(
         text_frame,
@@ -124,32 +143,6 @@ def create_input_section(self, parent):
     )
     self.text_input.pack(fill='both', expand=True)
 
-    # Buttons
-    button_frame = ttk.Frame(input_card)
-    button_frame.pack(fill='x', padx=15, pady=(0, 15))
-
-    # File upload
-    self.upload_btn = ttk.Button(button_frame, text="📁 Load File", command=self.load_file)
-    self.upload_btn.pack(side='left', padx=(0, 10))
-
-    # Clear
-    self.clear_btn = ttk.Button(button_frame, text="🗑️ Clear", command=self.clear_input)
-    self.clear_btn.pack(side='left', padx=(0, 10))
-
-    # Analyze
-    self.analyze_btn = ttk.Button(
-        button_frame,
-        text="🔍 Analyze Text",
-        command=self.analyze_text,
-        style='Accent.TButton'
-    )
-    self.analyze_btn.pack(side='right')
-
-    # Word count label
-    self.word_count_label = ttk.Label(input_card, text="Words: 0", style='Subtitle.TLabel')
-    self.word_count_label.pack(anchor='e', padx=15, pady=(0, 10))
-
-    # Bind text change event for word count
     self.text_input.bind('<KeyRelease>', self.update_word_count)
 
 
@@ -209,8 +202,8 @@ def load_file(self):
                 self.update_word_count()
 
                 # Auto-fill title from filename if empty
+                filename = os.path.basename(file_path)
                 if not self.title_var.get():
-                    filename = os.path.basename(file_path)
                     filename_without_ext = os.path.splitext(filename)[0]
                     self.title_var.set(filename_without_ext)
 

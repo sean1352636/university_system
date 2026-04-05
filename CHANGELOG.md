@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.63.0 — 2026-04-05](#8630---2026-04-05)
 - [8.62.4 — 2026-04-04](#8624---2026-04-04)
 - [8.62.3 — 2026-03-31](#8623---2026-03-31)
 - [8.62.2 — 2026-03-31](#8622---2026-03-31)
@@ -153,6 +154,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](education_system/docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](education_system/docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](education_system/docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.63.0] — 2026-04-05
+
+### University — Relocate AI Tools to Contextual GUIs and Add Plagiarism Email Integration
+
+#### Changed
+
+- **Move Plagiarism Detector and AI Content Detector into Assignment GUI** — Both tools are now accessible from a new "AI TOOLS" sidebar section in the Assignment Management System, available to all users (students, staff, admin). Previously these were only available as tabs within the AI Features hub
+  - Files: `modules/domain/academics/gui/assignment_system/layout_manager.py`, `modules/domain/academics/gui/assignment_system/assignment_gui.py`
+- **Move AI Auto-Grading into Grade Management GUI** — Auto-grading is now accessible from the Grade Tracking area via an "AI Auto-Grading" sidebar button in both Instructor and Staff portals, restricted to staff/admin roles. Includes full grading results list, grade submission dialog, and detail view
+  - Files: `modules/domain/academics/gui/grade_tracking_management_gui/core.py`, `modules/shared/gui/main/features/academic_launchers_gui.py`, `modules/shared/gui/main/instructor_portal.py`, `modules/shared/gui/main/staff_portal.py`
+- **Remove relocated tabs from AI Features GUI** — Removed the Plagiarism Detection, AI Content Detector, and Auto-Grading tabs (and their associated data-loading/action methods) from the AI Features hub. Remaining tabs: Chatbot, Recommendations, Content Suggestions, Sentiment Analysis, Analytics
+  - File: `modules/shared/services/ai_features/gui/ai_features_gui.py`
+
+#### Added
+
+- **Add "Email Results" button to Plagiarism Detector** — Users can now email plagiarism check results to themselves directly from three locations: the result card list, the check result dialog (shown after each scan), and the detailed report dialog. Uses the core email service (`send_email`) linked to the current user's email from the auth system
+  - Files: `modules/domain/academics/gui/plagiarism_main_gui/main_gui.py`, `modules/domain/academics/gui/plagiarism_main_gui/common.py` (`ResultCard`), `modules/domain/academics/gui/plagiarism_main_gui/dialogs/results.py` (`CheckResultDialog`, `ResultDetailsDialog`)
+  - Translations: `data/locales/en/academics/plagiarism.json` — added `email_results`, `email_no_user_email`, `email_sent_success`, `email_sent_error`
+
+#### Fixed
+
+- **Fix plagiarism email sending** — Replaced brittle `EmailManagerGUI` instantiation in `_send_email_via_gui` with a direct call to `infrastructure/email/email_service/core.send_email()`, which handles both DB storage and SMTP delivery reliably
+  - File: `modules/domain/academics/gui/plagiarism_main_gui/main_gui.py`
+- **Fix AI Features GUI missing translations** — Wrapped the content of `data/locales/en/system/ai_features.json` under an `"ai_features"` top-level key so the i18n system can resolve keys like `ai_features.tabs.recommendations` instead of showing raw key strings
+  - File: `data/locales/en/system/ai_features.json`
 
 ---
 

@@ -83,7 +83,7 @@ class TestSearchAndDelete:
     def test_delete_resource(self, lms_db, course_id):
         from education_system.shared.lms.resource_library_service import ResourceLibraryService
         svc = ResourceLibraryService(lms_db)
-        rid = svc.upload_resource("Temp", "Temporary", "/tmp.pdf", course_id=course_id)
+        rid = svc.upload_resource("Temp", "Temporary", "temp.pdf", course_id=course_id)
         svc.delete_resource(rid)
         resources = svc.list_resources(course_id=course_id)
         assert len(resources) == 0

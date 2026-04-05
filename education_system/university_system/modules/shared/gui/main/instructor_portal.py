@@ -141,6 +141,7 @@ class InstructorPortalGUI:
         self._add_button("Module Management", self._launch('show_module_management'))
         self._add_button("Assignments", self._launch('show_assignments'))
         self._add_button("Grade Tracking", self._launch('show_grade_tracking_gui'))
+        self._add_button("AI Auto-Grading", self._launch('show_auto_grading'))
         self._add_button("Virtual Classroom", self._launch('show_virtual_classroom_gui'))
         self._add_button("Office Hours", self._launch('show_office_hours_gui'))
         self._add_button("TA Management", self._launch('show_ta_management_gui'))

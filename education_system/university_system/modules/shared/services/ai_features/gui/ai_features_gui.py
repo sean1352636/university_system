@@ -93,10 +93,7 @@ class AIFeaturesGUI:
 
             # Create tabs
             self.create_chatbot_tab()
-            self.create_ai_detector_tab()
-            self.create_plagiarism_tab()
             self.create_recommendations_tab()
-            self.create_autograding_tab()
             self.create_content_suggestions_tab()
             self.create_sentiment_tab()
             self.create_analytics_tab()
@@ -179,32 +176,6 @@ Click the 'Launch Full Chatbot Interface' button above to access the complete ch
         except Exception:
             ttk.Label(stats_frame, text=_t("ai_features.chatbot.stats_unavailable")).pack()
 
-    def create_ai_detector_tab(self):
-        """Create the AI detector tab with launcher for full GUI"""
-        tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text=_t("ai_detector.tab_title"))
-
-        # Header
-        header_frame = ttk.Frame(tab)
-        header_frame.pack(fill=tk.X, padx=10, pady=10)
-
-        ttk.Label(header_frame, text=_t("ai_detector.header_title"),
-                 style='Header.TLabel').pack(side=tk.LEFT, padx=10)
-
-        # Launch full AI detector GUI button
-        ttk.Button(header_frame, text=_t("ai_detector.launch_full_detector"),
-                  command=self.launch_full_ai_detector_gui,
-                  style='Accent.TButton').pack(side=tk.RIGHT, padx=5)
-
-        # Info frame
-        info_frame = ttk.LabelFrame(tab, text=_t("ai_detector.about_title"), padding="20")
-        info_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-
-        info_text = _t("ai_detector.info_text")
-
-        info_label = ttk.Label(info_frame, text=info_text, justify=tk.LEFT, wraplength=1000)
-        info_label.pack(pady=10)
-
     def create_recommendations_tab(self):
         """Create the recommendations tab"""
         tab = ttk.Frame(self.notebook)
@@ -255,57 +226,6 @@ Click the 'Launch Full Chatbot Interface' button above to access the complete ch
         self.recommendations_tree.bind('<Double-1>', self.view_recommendation_details)
 
         self.load_recommendations()
-
-    def create_autograding_tab(self):
-        """Create the auto-grading tab"""
-        tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text=_t("ai_features.tabs.autograding"))
-
-        # Header
-        header_frame = ttk.Frame(tab)
-        header_frame.pack(fill=tk.X, padx=10, pady=10)
-
-        ttk.Label(header_frame, text=_t("ai_features.autograding.title"),
-                 style='Header.TLabel').pack(side=tk.LEFT, padx=10)
-
-        ttk.Button(header_frame, text=_t("ai_features.autograding.grade_submission"),
-                  command=self.grade_submission).pack(side=tk.RIGHT, padx=5)
-        ttk.Button(header_frame, text=_t("common.refresh"),
-                  command=self.load_grading_results).pack(side=tk.RIGHT, padx=5)
-
-        # Grading results list
-        tree_frame = ttk.Frame(tab)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        v_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
-
-        self.grading_tree = ttk.Treeview(tree_frame,
-                                        columns=('ID', 'Submission', 'Type', 'Score',
-                                                'Max', 'Confidence', 'Review', 'Graded'),
-                                        show='tree headings',
-                                        yscrollcommand=v_scroll.set)
-
-        v_scroll.config(command=self.grading_tree.yview)
-
-        self.grading_tree.heading('#0', text='')
-        self.grading_tree.column('#0', width=30)
-
-        column_names = ['id', 'submission', 'type', 'score', 'max', 'confidence', 'review', 'graded']
-        columns_config = [
-            ('ID', 60), ('Submission', 100), ('Type', 150), ('Score', 80),
-            ('Max', 80), ('Confidence', 90), ('Review', 120), ('Graded', 150)
-        ]
-
-        for (col, width), name in zip(columns_config, column_names):
-            self.grading_tree.heading(col, text=_t(f"ai_features.columns.{name}"))
-            self.grading_tree.column(col, width=width)
-
-        self.grading_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-
-        self.grading_tree.bind('<Double-1>', self.view_grading_details)
-
-        self.load_grading_results()
 
     def create_content_suggestions_tab(self):
         """Create the content suggestions tab"""
@@ -409,62 +329,6 @@ Click the 'Launch Full Chatbot Interface' button above to access the complete ch
         v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
 
         self.load_sentiment_analysis()
-
-    def create_plagiarism_tab(self):
-        """Create the plagiarism detection tab with launcher for full GUI"""
-        tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text=_t("ai_features.tabs.plagiarism"))
-
-        # Header
-        header_frame = ttk.Frame(tab)
-        header_frame.pack(fill=tk.X, padx=10, pady=10)
-
-        ttk.Label(header_frame, text=_t("ai_features.plagiarism.title"),
-                 style='Header.TLabel').pack(side=tk.LEFT, padx=10)
-
-        # Launch full plagiarism GUI button
-        ttk.Button(header_frame, text=_t("ai_features.plagiarism.launch_full"),
-                  command=self.launch_full_plagiarism_gui,
-                  style='Accent.TButton').pack(side=tk.RIGHT, padx=5)
-        ttk.Button(header_frame, text=_t("ai_features.plagiarism.refresh_results"),
-                  command=self.load_plagiarism_checks).pack(side=tk.RIGHT, padx=5)
-
-        # Plagiarism checks list
-        tree_frame = ttk.Frame(tab)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        v_scroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL)
-
-        self.plagiarism_tree = ttk.Treeview(tree_frame,
-                                           columns=('ID', 'Submission', 'Student', 'Similarity',
-                                                   'Flagged', 'Sources', 'Checked'),
-                                           show='tree headings',
-                                           yscrollcommand=v_scroll.set)
-
-        v_scroll.config(command=self.plagiarism_tree.yview)
-
-        self.plagiarism_tree.heading('#0', text='')
-        self.plagiarism_tree.column('#0', width=30)
-
-        column_names = ['id', 'submission', 'student', 'similarity', 'flagged', 'sources', 'checked']
-        columns_config = [
-            ('ID', 60), ('Submission', 100), ('Student', 120), ('Similarity', 90),
-            ('Flagged', 80), ('Sources', 200), ('Checked', 150)
-        ]
-
-        for (col, width), name in zip(columns_config, column_names):
-            self.plagiarism_tree.heading(col, text=_t(f"ai_features.columns.{name}"))
-            self.plagiarism_tree.column(col, width=width)
-
-        # Color code by similarity
-        self.plagiarism_tree.tag_configure('high', background='#ffcccc')
-        self.plagiarism_tree.tag_configure('medium', background='#ffffcc')
-        self.plagiarism_tree.tag_configure('low', background='#ccffcc')
-
-        self.plagiarism_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        v_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-
-        self.load_plagiarism_checks()
 
     def create_analytics_tab(self):
         """Create the analytics and model performance tab"""
@@ -687,38 +551,6 @@ Click the 'Launch Full Chatbot Interface' button above to access the complete ch
         except Exception as e:
             messagebox.showerror(_t("common.error"), _t("ai_features.recommendations.load_error", error=str(e)))
 
-    def load_grading_results(self):
-        """Load auto-grading results"""
-        try:
-            for item in self.grading_tree.get_children():
-                self.grading_tree.delete(item)
-
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT * FROM ai_grading_results
-                    ORDER BY graded_at DESC
-                    LIMIT 500
-                ''')
-
-                for row in cursor.fetchall():
-                    values = (
-                        row['grading_id'],
-                        row['submission_id'],
-                        row['assignment_type'],
-                        f"{row['auto_score']:.1f}" if row['auto_score'] is not None else '0.0',
-                        f"{row['max_score']:.1f}" if row['max_score'] is not None else '0.0',
-                        f"{row['confidence_score']:.2f}" if row['confidence_score'] else '0.00',
-                        'Yes' if row['requires_manual_review'] else 'No',
-                        row['graded_at'][:16] if row['graded_at'] else ''
-                    )
-                    self.grading_tree.insert('', 'end', values=values)
-
-            self.update_status(_t("ai_features.autograding.loaded", count=len(self.grading_tree.get_children())))
-
-        except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("ai_features.autograding.load_error", error=str(e)))
-
     def load_content_suggestions(self):
         """Load content suggestions"""
         try:
@@ -790,41 +622,6 @@ Click the 'Launch Full Chatbot Interface' button above to access the complete ch
 
         except Exception as e:
             messagebox.showerror(_t("common.error"), _t("ai_features.sentiment.load_error", error=str(e)))
-
-    def load_plagiarism_checks(self):
-        """Load plagiarism detection results"""
-        try:
-            for item in self.plagiarism_tree.get_children():
-                self.plagiarism_tree.delete(item)
-
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT * FROM ai_plagiarism_checks
-                    ORDER BY checked_at DESC
-                    LIMIT 500
-                ''')
-
-                for row in cursor.fetchall():
-                    similarity = row['similarity_score'] or 0
-                    tag = 'high' if similarity > 0.5 else ('medium' if similarity > 0.3 else 'low')
-
-                    values = (
-                        row['check_id'],
-                        row['submission_id'],
-                        row['student_id'],
-                        f"{similarity * 100:.1f}%",
-                        'Yes' if row['flagged'] else 'No',
-                        (row['matched_sources'][:30] + '...') if len(row['matched_sources'] or '') > 30 else (row['matched_sources'] or 'None'),
-                        row['checked_at'][:16] if row['checked_at'] else ''
-                    )
-
-                    self.plagiarism_tree.insert('', 'end', values=values, tags=(tag,))
-
-            self.update_status(_t("ai_features.plagiarism.loaded", count=len(self.plagiarism_tree.get_children())))
-
-        except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("ai_features.plagiarism.load_error", error=str(e)))
 
     def load_ai_analytics(self):
         """Load AI system analytics"""
@@ -1028,147 +825,6 @@ Context Data:
         except Exception as e:
             messagebox.showerror(_t("common.error"), _t("ai_features.recommendations.details_error", error=str(e)))
 
-    def grade_submission(self):
-        """Grade a submission"""
-        dialog = tk.Toplevel(self.root)
-        dialog.title(_t("ai_features.autograding.grade_title"))
-        dialog.geometry("600x550")
-        dialog.transient(self.root)
-        dialog.grab_set()
-
-        main_frame = ttk.Frame(dialog, padding=20)
-        main_frame.pack(fill='both', expand=True)
-
-        # Submission ID
-        ttk.Label(main_frame, text=_t("ai_features.labels.submission_id")).grid(row=0, column=0, sticky='w', pady=5)
-        sub_id_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=sub_id_var, width=40).grid(row=0, column=1, pady=5)
-
-        # Assignment Type
-        ttk.Label(main_frame, text=_t("ai_features.labels.assignment_type")).grid(row=1, column=0, sticky='w', pady=5)
-        type_var = tk.StringVar()
-        ttk.Combobox(main_frame, textvariable=type_var, width=38,
-                    values=['essay', 'quiz', 'project', 'homework', 'exam']).grid(row=1, column=1, pady=5)
-
-        # Auto Score
-        ttk.Label(main_frame, text=_t("ai_features.labels.auto_score")).grid(row=2, column=0, sticky='w', pady=5)
-        score_var = tk.StringVar()
-        ttk.Entry(main_frame, textvariable=score_var, width=40).grid(row=2, column=1, pady=5)
-
-        # Max Score
-        ttk.Label(main_frame, text=_t("ai_features.labels.max_score")).grid(row=3, column=0, sticky='w', pady=5)
-        max_var = tk.StringVar(value='100')
-        ttk.Entry(main_frame, textvariable=max_var, width=40).grid(row=3, column=1, pady=5)
-
-        # Grading Criteria
-        ttk.Label(main_frame, text=_t("ai_features.labels.criteria")).grid(row=4, column=0, sticky='nw', pady=5)
-        criteria_text = tk.Text(main_frame, width=40, height=4)
-        criteria_text.grid(row=4, column=1, pady=5)
-
-        # Feedback
-        ttk.Label(main_frame, text=_t("ai_features.labels.feedback")).grid(row=5, column=0, sticky='nw', pady=5)
-        feedback_text = tk.Text(main_frame, width=40, height=6)
-        feedback_text.grid(row=5, column=1, pady=5)
-
-        # Confidence
-        ttk.Label(main_frame, text=_t("ai_features.labels.confidence_score")).grid(row=6, column=0, sticky='w', pady=5)
-        conf_var = tk.StringVar(value='0.8')
-        ttk.Entry(main_frame, textvariable=conf_var, width=40).grid(row=6, column=1, pady=5)
-
-        # Requires Review
-        review_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(main_frame, text=_t("ai_features.labels.requires_review"),
-                       variable=review_var).grid(row=7, column=1, sticky='w', pady=5)
-
-        def save_grading():
-            try:
-                sub_id = int(sub_id_var.get())
-                asgn_type = type_var.get().strip()
-                auto_score = float(score_var.get())
-                max_score = float(max_var.get())
-                criteria = criteria_text.get('1.0', 'end').strip()
-                feedback = feedback_text.get('1.0', 'end').strip()
-                confidence = float(conf_var.get())
-                requires_review = 1 if review_var.get() else 0
-
-                with transaction() as conn:
-                    conn.execute('''
-                        INSERT INTO ai_grading_results
-                        (submission_id, assignment_type, auto_score, max_score,
-                         grading_criteria, feedback_generated, confidence_score, requires_manual_review)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                    ''', (sub_id, asgn_type, auto_score, max_score, criteria, feedback, confidence, requires_review))
-
-                messagebox.showinfo(_t("common.success"), _t("ai_features.autograding.save_success"))
-                log_activity('Created AI grading result', user=self.current_user.get('username', 'Unknown'))
-                dialog.destroy()
-                self.load_grading_results()
-            except Exception as e:
-                messagebox.showerror(_t("common.error"), _t("ai_features.autograding.save_error", error=str(e)))
-
-        # Buttons
-        btn_frame = ttk.Frame(main_frame)
-        btn_frame.grid(row=8, column=0, columnspan=2, pady=20)
-        ttk.Button(btn_frame, text=_t("ai_features.buttons.save"), command=save_grading).pack(side='left', padx=5)
-        ttk.Button(btn_frame, text=_t("ai_features.buttons.cancel"), command=dialog.destroy).pack(side='left', padx=5)
-
-    def view_grading_details(self, event=None):
-        """View grading details"""
-        selection = self.grading_tree.selection()
-        if not selection:
-            messagebox.showinfo(_t("common.info"), _t("ai_features.autograding.no_selection"))
-            return
-
-        item = self.grading_tree.item(selection[0])
-        grading_id = item['values'][0]
-
-        try:
-            with get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute('SELECT * FROM ai_grading_results WHERE grading_id = ?', (grading_id,))
-                grading = cursor.fetchone()
-
-                if not grading:
-                    messagebox.showerror(_t("common.error"), _t("ai_features.autograding.not_found"))
-                    return
-
-                dialog = tk.Toplevel(self.root)
-                dialog.title(_t("ai_features.autograding.details_title", id=grading_id))
-                dialog.geometry("700x600")
-                dialog.transient(self.root)
-
-                main_frame = ttk.Frame(dialog, padding=20)
-                main_frame.pack(fill='both', expand=True)
-
-                percentage = (grading['auto_score'] / grading['max_score'] * 100) if grading['max_score'] > 0 else 0
-
-                details = f"""
-Grading ID: {grading['grading_id']}
-Submission ID: {grading['submission_id']}
-Assignment Type: {grading['assignment_type']}
-Auto Score: {grading['auto_score']}/{grading['max_score']} ({percentage:.1f}%)
-Confidence Score: {grading['confidence_score']:.2f if grading['confidence_score'] else 'N/A'}
-Requires Manual Review: {'Yes' if grading['requires_manual_review'] else 'No'}
-Manual Override Score: {grading['manual_override_score'] if grading['manual_override_score'] else 'None'}
-Graded At: {grading['graded_at']}
-
-Grading Criteria:
-{grading['grading_criteria'] or 'Not specified'}
-
-Feedback Generated:
-{grading['feedback_generated'] or 'No feedback'}
-                """
-
-                text_widget = tk.Text(main_frame, wrap='word', width=80, height=30)
-                text_widget.pack(fill='both', expand=True)
-                text_widget.insert('1.0', details.strip())
-                text_widget.config(state='disabled')
-
-                ttk.Button(main_frame, text=_t("ai_features.buttons.close"), command=dialog.destroy).pack(pady=10)
-
-        except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("ai_features.autograding.details_error", error=str(e)))
-
     def create_content_suggestion(self):
         """Create content suggestion"""
         dialog = tk.Toplevel(self.root)
@@ -1328,10 +984,6 @@ Feedback Generated:
         btn_frame.pack(pady=10)
         ttk.Button(btn_frame, text=_t("ai_features.buttons.analyze"), command=perform_analysis).pack(side='left', padx=5)
         ttk.Button(btn_frame, text=_t("ai_features.buttons.close"), command=dialog.destroy).pack(side='left', padx=5)
-
-    def check_plagiarism(self):
-        """Check document for plagiarism - launches full plagiarism GUI"""
-        self.launch_full_plagiarism_gui()
 
     def update_status(self, message):
         """Update status bar"""

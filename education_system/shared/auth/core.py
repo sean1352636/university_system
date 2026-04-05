@@ -92,7 +92,7 @@ class UserAuth:
                         raise ValueError(f"Unexpected update key: {k!r}")
                 set_parts = ", ".join(f"{k} = ?" for k in updates)
                 conn.execute(
-                    f"UPDATE users SET {set_parts} WHERE id = ?",  # nosec B608 - keys validated against allowlist
+                    f"UPDATE users SET {set_parts} WHERE id = ?",  # nosec B608  # keys validated against allowlist
                     (*updates.values(), user["id"]),
                 )
                 conn.commit()

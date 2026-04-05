@@ -314,6 +314,12 @@ def show_grade_tracking_gui(self):
         self.grade_tracking_gui.show_grade_tracking_gui()
     else:
         messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.grade_tracking_unavailable"))
+def show_auto_grading(self):
+    """Launch the AI Auto-Grading window (staff/admin only)"""
+    if self.grade_tracking_gui:
+        self.grade_tracking_gui.show_auto_grading()
+    else:
+        messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.grade_tracking_unavailable"))
 def show_assignments(self):
     """Show assignments interface - Launch full AssignmentGUI"""
     try:

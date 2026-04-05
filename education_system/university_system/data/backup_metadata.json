@@ -1,14 +1,14 @@
 {
     "backups": [
         {
-            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_schedule_appointment_20260403_215043.db.gz",
-            "filename": "student_records_before_schedule_appointment_20260403_215043.db.gz",
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_update_20260405_083624.db.gz",
+            "filename": "student_records_before_update_20260405_083624.db.gz",
             "type": "full",
             "manual": false,
-            "operation": "schedule_appointment",
-            "timestamp": "20260403_215043",
-            "size": 7905,
-            "file_hash": "1b83bab1e40d5e94f1f569a16014f16adaef50202da5dae26b20aa69c17a1e1f",
+            "operation": "update",
+            "timestamp": "20260405_083624",
+            "size": 1317698,
+            "file_hash": "5843330f5ed4251803f664a50e081e8761725e9a93c81616a2d8224d2e121f2e",
             "compressed": true,
             "encrypted": false,
             "cloud_uploaded": false,
@@ -16,29 +16,14 @@
             "backup_type": "full"
         },
         {
-            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_update_appointment_status_20260403_215043.db.gz",
-            "filename": "student_records_before_update_appointment_status_20260403_215043.db.gz",
-            "type": "full",
-            "manual": false,
-            "operation": "update_appointment_status",
-            "timestamp": "20260403_215043",
-            "size": 8014,
-            "file_hash": "d81af782ead74e120310d40d0034f4c99e73dc2e87812f466d70eadcb55a7f62",
-            "compressed": true,
-            "encrypted": false,
-            "cloud_uploaded": false,
-            "remote_uploaded": false,
-            "backup_type": "full"
-        },
-        {
-            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_create_screening_schedule_20260403_215043.db.gz",
-            "filename": "student_records_before_create_screening_schedule_20260403_215043.db.gz",
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_create_screening_schedule_20260404_085233.db.gz",
+            "filename": "student_records_before_create_screening_schedule_20260404_085233.db.gz",
             "type": "full",
             "manual": false,
             "operation": "create_screening_schedule",
-            "timestamp": "20260403_215043",
-            "size": 6756,
-            "file_hash": "aa76906fdfe5437a6b78bfe7a4bcfe8bec254cb2aa0f1e50da64265ddcd52b4e",
+            "timestamp": "20260404_085233",
+            "size": 6755,
+            "file_hash": "66fdf41102a9c51d04277c16bd0e1c90f9a264af7175c835685942c879cd6dd2",
             "compressed": true,
             "encrypted": false,
             "cloud_uploaded": false,
@@ -46,14 +31,14 @@
             "backup_type": "full"
         },
         {
-            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_schedule_screening_appointment_20260403_215043.db.gz",
-            "filename": "student_records_before_schedule_screening_appointment_20260403_215043.db.gz",
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_schedule_screening_appointment_20260404_085233.db.gz",
+            "filename": "student_records_before_schedule_screening_appointment_20260404_085233.db.gz",
             "type": "full",
             "manual": false,
             "operation": "schedule_screening_appointment",
-            "timestamp": "20260403_215043",
-            "size": 7919,
-            "file_hash": "b9d0208d69630779c84d6c5192e94a3d58b0fb39c50bcf9099d074cc31855e86",
+            "timestamp": "20260404_085233",
+            "size": 7913,
+            "file_hash": "71451ad9413f39a3402472d8a800e901ad2d0bf46d5d99713f85b0a4156eba35",
             "compressed": true,
             "encrypted": false,
             "cloud_uploaded": false,
@@ -61,14 +46,14 @@
             "backup_type": "full"
         },
         {
-            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_add_provider_schedule_20260403_215042.db.gz",
-            "filename": "student_records_before_add_provider_schedule_20260403_215042.db.gz",
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_add_provider_schedule_20260404_085232.db.gz",
+            "filename": "student_records_before_add_provider_schedule_20260404_085232.db.gz",
             "type": "full",
             "manual": false,
             "operation": "add_provider_schedule",
-            "timestamp": "20260403_215042",
-            "size": 6752,
-            "file_hash": "aa76906fdfe5437a6b78bfe7a4bcfe8bec254cb2aa0f1e50da64265ddcd52b4e",
+            "timestamp": "20260404_085232",
+            "size": 6751,
+            "file_hash": "66fdf41102a9c51d04277c16bd0e1c90f9a264af7175c835685942c879cd6dd2",
             "compressed": true,
             "encrypted": false,
             "cloud_uploaded": false,
@@ -76,14 +61,14 @@
             "backup_type": "full"
         },
         {
-            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_schedule_appointment_20260403_215042.db.gz",
-            "filename": "student_records_before_schedule_appointment_20260403_215042.db.gz",
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_schedule_appointment_20260404_085232.db.gz",
+            "filename": "student_records_before_schedule_appointment_20260404_085232.db.gz",
             "type": "full",
             "manual": false,
             "operation": "schedule_appointment",
-            "timestamp": "20260403_215042",
-            "size": 6751,
-            "file_hash": "aa76906fdfe5437a6b78bfe7a4bcfe8bec254cb2aa0f1e50da64265ddcd52b4e",
+            "timestamp": "20260404_085232",
+            "size": 6750,
+            "file_hash": "66fdf41102a9c51d04277c16bd0e1c90f9a264af7175c835685942c879cd6dd2",
             "compressed": true,
             "encrypted": false,
             "cloud_uploaded": false,
@@ -91,14 +76,29 @@
             "backup_type": "full"
         },
         {
-            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_create_screening_schedule_20260403_215042.db.gz",
-            "filename": "student_records_before_create_screening_schedule_20260403_215042.db.gz",
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_create_screening_schedule_20260404_085232.db.gz",
+            "filename": "student_records_before_create_screening_schedule_20260404_085232.db.gz",
             "type": "full",
             "manual": false,
             "operation": "create_screening_schedule",
-            "timestamp": "20260403_215042",
-            "size": 6756,
-            "file_hash": "aa76906fdfe5437a6b78bfe7a4bcfe8bec254cb2aa0f1e50da64265ddcd52b4e",
+            "timestamp": "20260404_085232",
+            "size": 6755,
+            "file_hash": "66fdf41102a9c51d04277c16bd0e1c90f9a264af7175c835685942c879cd6dd2",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "full"
+        },
+        {
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_update_provider_schedule_20260404_085232.db.gz",
+            "filename": "student_records_before_update_provider_schedule_20260404_085232.db.gz",
+            "type": "full",
+            "manual": false,
+            "operation": "update_provider_schedule",
+            "timestamp": "20260404_085232",
+            "size": 6754,
+            "file_hash": "66fdf41102a9c51d04277c16bd0e1c90f9a264af7175c835685942c879cd6dd2",
             "compressed": true,
             "encrypted": false,
             "cloud_uploaded": false,
@@ -106,17 +106,17 @@
             "backup_type": "full"
         }
     ],
-    "last_full": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_schedule_screening_appointment_20260403_215043.db.gz",
+    "last_full": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_update_20260405_083624.db.gz",
     "statistics": {
         "total_backups": 7,
-        "total_size": 50856,
+        "total_size": 48429,
         "backup_types": {
             "full": 7
         },
         "success_rate": 0,
-        "average_size": 7265.142857142857,
+        "average_size": 6918.428571428572,
         "storage_usage": {
-            "2026-04": 50856
+            "2026-04": 48429
         },
         "recent_activity": 7
     }

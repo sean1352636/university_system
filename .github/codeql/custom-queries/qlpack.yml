@@ -1,8 +1,0 @@
-name: education-system/sql-sanitizers
-version: 0.0.1
-groups:
-  - python
-extensionTargets:
-  codeql/python-all: "*"
-dataExtensions:
-  - models/**/*.yml

@@ -6,8 +6,7 @@ logout behaviour, and the init_gui routing logic.
 """
 
 import pytest
-import os
-from unittest.mock import Mock, patch, MagicMock, PropertyMock
+from unittest.mock import Mock, patch, MagicMock
 
 
 # ---------------------------------------------------------------------------
@@ -32,6 +31,16 @@ def mock_auth():
     return auth
 
 
+@pytest.fixture
+def mock_tk():
+    """Provide mock tkinter objects so tests run without a display."""
+    root = MagicMock()
+    root.winfo_children.return_value = []
+    frame = MagicMock()
+    style = MagicMock()
+    return root, frame, style
+
+
 # ---------------------------------------------------------------------------
 # Tests — Import
 # ---------------------------------------------------------------------------
@@ -52,28 +61,23 @@ class TestStudentPortalGUIImport:
 class TestStudentPortalGUILaunch:
     """Tests for the _launch callback factory."""
 
-    @pytest.mark.skipif(not os.environ.get('DISPLAY'), reason='No display')
-    def test_launch_returns_callable(self, mock_auth):
+    def test_launch_returns_callable(self, mock_auth, mock_tk):
         """_launch should return a callable (callback function)."""
-        import tkinter as tk
         from education_system.university_system.modules.shared.gui.main.student_portal import StudentPortalGUI
 
-        root = tk.Tk()
-        root.withdraw()
-        try:
-            with patch.object(StudentPortalGUI, '_build_ui'), \
-                 patch.object(StudentPortalGUI, '_show_dashboard'), \
-                 patch.object(StudentPortalGUI, '_configure_styles'):
-                portal = StudentPortalGUI.__new__(StudentPortalGUI)
-                portal.auth = mock_auth
-                portal.root = root
-                portal.content_frame = tk.Frame(root)
-                portal.style = None
+        root, frame, style = mock_tk
 
-                result = portal._launch('show_academic_progress_gui')
-                assert callable(result)
-        finally:
-            root.destroy()
+        with patch.object(StudentPortalGUI, '_build_ui'), \
+             patch.object(StudentPortalGUI, '_show_dashboard'), \
+             patch.object(StudentPortalGUI, '_configure_styles'):
+            portal = StudentPortalGUI.__new__(StudentPortalGUI)
+            portal.auth = mock_auth
+            portal.root = root
+            portal.content_frame = frame
+            portal.style = style
+
+            result = portal._launch('show_academic_progress_gui')
+            assert callable(result)
 
 
 # ---------------------------------------------------------------------------
@@ -83,41 +87,33 @@ class TestStudentPortalGUILaunch:
 class TestStudentPortalGUIBackend:
     """Tests for _get_backend_gui lazy creation."""
 
-    @pytest.mark.skipif(not os.environ.get('DISPLAY'), reason='No display')
-    def test_get_backend_gui_creates_backend_with_correct_attributes(self, mock_auth):
+    def test_get_backend_gui_creates_backend_with_correct_attributes(self, mock_auth, mock_tk):
         """_get_backend_gui should create a backend GUI sharing auth, root, and content_frame."""
-        import tkinter as tk
-        from tkinter import ttk
         from education_system.university_system.modules.shared.gui.main.student_portal import StudentPortalGUI
 
-        root = tk.Tk()
-        root.withdraw()
-        try:
-            portal = StudentPortalGUI.__new__(StudentPortalGUI)
-            portal.auth = mock_auth
-            portal.root = root
-            portal.content_frame = ttk.Frame(root)
-            portal.style = ttk.Style()
+        root, frame, style = mock_tk
 
-            with patch(
-                'education_system.university_system.modules.shared.gui.main.student_portal.'
-                'StudentPortalGUI._get_backend_gui'
-            ) as mock_backend_fn:
-                # Simulate what _get_backend_gui does: creates an object with
-                # auth, root, and content_frame attributes.
-                backend = Mock()
-                backend.auth = mock_auth
-                backend.root = root
-                backend.content_frame = portal.content_frame
-                mock_backend_fn.return_value = backend
+        portal = StudentPortalGUI.__new__(StudentPortalGUI)
+        portal.auth = mock_auth
+        portal.root = root
+        portal.content_frame = frame
+        portal.style = style
 
-                result = portal._get_backend_gui()
+        with patch(
+            'education_system.university_system.modules.shared.gui.main.student_portal.'
+            'StudentPortalGUI._get_backend_gui'
+        ) as mock_backend_fn:
+            backend = Mock()
+            backend.auth = mock_auth
+            backend.root = root
+            backend.content_frame = portal.content_frame
+            mock_backend_fn.return_value = backend
 
-                assert result.auth is mock_auth
-                assert result.root is root
-                assert result.content_frame is portal.content_frame
-        finally:
-            root.destroy()
+            result = portal._get_backend_gui()
+
+            assert result.auth is mock_auth
+            assert result.root is root
+            assert result.content_frame is portal.content_frame
 
 
 # ---------------------------------------------------------------------------
@@ -127,35 +123,29 @@ class TestStudentPortalGUIBackend:
 class TestStudentPortalGUIDashboard:
     """Tests for _show_dashboard."""
 
-    @pytest.mark.skipif(not os.environ.get('DISPLAY'), reason='No display')
-    def test_show_dashboard_calls_create_student_dashboard(self, mock_auth):
+    def test_show_dashboard_calls_create_student_dashboard(self, mock_auth, mock_tk):
         """_show_dashboard should invoke create_student_dashboard with the right args."""
-        import tkinter as tk
-        from tkinter import ttk
         from education_system.university_system.modules.shared.gui.main.student_portal import StudentPortalGUI
 
-        root = tk.Tk()
-        root.withdraw()
-        try:
-            portal = StudentPortalGUI.__new__(StudentPortalGUI)
-            portal.auth = mock_auth
-            portal.root = root
-            portal.content_frame = ttk.Frame(root)
+        root, frame, style = mock_tk
 
-            with patch(
-                'education_system.university_system.modules.shared.gui.main.dashboard.'
-                'student_dashboard.create_student_dashboard'
-            ) as mock_create_dash, patch(
-                'education_system.university_system.modules.shared.services.dashboard.'
-                'dashboard_service.DashboardService'
-            ) as mock_dash_svc:
-                portal._show_dashboard()
-                mock_create_dash.assert_called_once()
-                args = mock_create_dash.call_args[0]
-                assert args[0] is portal.content_frame
-                assert args[1] is mock_auth
-        finally:
-            root.destroy()
+        portal = StudentPortalGUI.__new__(StudentPortalGUI)
+        portal.auth = mock_auth
+        portal.root = root
+        portal.content_frame = frame
+
+        with patch(
+            'education_system.university_system.modules.shared.gui.main.dashboard.'
+            'student_dashboard.create_student_dashboard'
+        ) as mock_create_dash, patch(
+            'education_system.university_system.modules.shared.services.dashboard.'
+            'dashboard_service.DashboardService'
+        ) as mock_dash_svc:
+            portal._show_dashboard()
+            mock_create_dash.assert_called_once()
+            args = mock_create_dash.call_args[0]
+            assert args[0] is portal.content_frame
+            assert args[1] is mock_auth
 
 
 # ---------------------------------------------------------------------------
@@ -165,30 +155,19 @@ class TestStudentPortalGUIDashboard:
 class TestStudentPortalGUILogout:
     """Tests for _logout."""
 
-    @pytest.mark.skipif(not os.environ.get('DISPLAY'), reason='No display')
-    def test_logout_calls_auth_logout(self, mock_auth):
+    def test_logout_calls_auth_logout(self, mock_auth, mock_tk):
         """_logout should call auth.logout() and destroy the root window."""
-        import tkinter as tk
         from education_system.university_system.modules.shared.gui.main.student_portal import StudentPortalGUI
 
-        root = tk.Tk()
-        root.withdraw()
-        try:
-            portal = StudentPortalGUI.__new__(StudentPortalGUI)
-            portal.auth = mock_auth
-            portal.root = root
+        root, frame, style = mock_tk
 
-            portal._logout()
+        portal = StudentPortalGUI.__new__(StudentPortalGUI)
+        portal.auth = mock_auth
+        portal.root = root
 
-            mock_auth.logout.assert_called_once()
-        except Exception:
-            # root.destroy() in _logout may raise if already destroyed
-            pass
-        finally:
-            try:
-                root.destroy()
-            except Exception:
-                pass
+        portal._logout()
+
+        mock_auth.logout.assert_called_once()
 
 
 # ---------------------------------------------------------------------------
@@ -198,7 +177,6 @@ class TestStudentPortalGUILogout:
 class TestInitGUIRouting:
     """Tests for the init_gui function that routes student vs admin."""
 
-    @pytest.mark.skipif(not os.environ.get('DISPLAY'), reason='No display')
     @patch('education_system.university_system.modules.shared.gui.main.main_gui.safe_auth_check')
     @patch('education_system.university_system.modules.shared.gui.main.main_gui.get_auth')
     @patch('education_system.university_system.modules.shared.gui.main.main_gui.UserAuth')
@@ -225,7 +203,6 @@ class TestInitGUIRouting:
             mock_portal_cls.return_value = Mock()
 
             try:
-                # Reset module-level auth so init_gui re-initializes it from get_auth()
                 main_gui_mod.auth = None
 
                 from education_system.university_system.modules.shared.gui.main.main_gui import init_gui
@@ -236,7 +213,6 @@ class TestInitGUIRouting:
             finally:
                 main_gui_mod.auth = original_auth
 
-    @pytest.mark.skipif(not os.environ.get('DISPLAY'), reason='No display')
     @patch('education_system.university_system.modules.shared.gui.main.main_gui.get_auth')
     @patch('education_system.university_system.modules.shared.gui.main.main_gui.UserAuth')
     @patch('education_system.university_system.modules.shared.gui.main.main_gui.UnifiedManagementGUI')

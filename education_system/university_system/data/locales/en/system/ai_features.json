@@ -1,4 +1,5 @@
 {
+  "ai_features": {
   "window_title": "AI-Powered Features",
   "title": "AI-Powered Features Hub",
   "logged_in_as": "Logged in as: {username}",
@@ -272,5 +273,6 @@
     "feedback_label": "Feedback Generated:",
     "not_specified": "Not specified",
     "no_feedback": "No feedback"
+  }
   }
 }

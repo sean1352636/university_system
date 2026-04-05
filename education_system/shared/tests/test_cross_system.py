@@ -12,16 +12,18 @@ class TestSharedAuthentication:
     def test_superadmin_has_access_to_all_systems(self, shared_auth_db):
         from education_system.shared.auth.core import UserAuth
         auth = UserAuth(shared_auth_db)
-        result = auth.login("superadmin", "Super@Admin123")
+        result = auth.login("superadmin", "SuperAdmin@123")
         assert result is not None
         system_keys = {s["system_key"] for s in result.get("systems", [])}
         assert system_keys >= {"university", "college", "school", "primary"}
 
     def test_password_hashing_consistent(self, shared_auth_db):
         from education_system.shared.auth.core import UserAuth
+        from education_system.shared.auth.exceptions import AuthError
         auth = UserAuth(shared_auth_db)
-        assert auth.login("superadmin", "Super@Admin123") is not None
-        assert auth.login("superadmin", "wrong") is None
+        assert auth.login("superadmin", "SuperAdmin@123") is not None
+        with pytest.raises(AuthError):
+            auth.login("superadmin", "wrong")
 
 
 class TestAuditLogging:

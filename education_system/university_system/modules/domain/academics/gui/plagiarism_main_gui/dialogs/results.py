@@ -14,10 +14,12 @@ from education_system.university_system.modules.domain.academics.gui.plagiarism_
 class CheckResultDialog:
     """Dialog for showing plagiarism check results"""
 
-    def __init__(self, parent, checker, result):
+    def __init__(self, parent, checker, result, auth=None, on_email_result=None):
         self.parent = parent
         self.checker = checker
         self.result = result
+        self.auth = auth
+        self.on_email_result = on_email_result
 
         self.dialog = None
 
@@ -136,6 +138,14 @@ class CheckResultDialog:
         close_btn = ttk.Button(button_frame, text="Close", command=self.dialog.destroy)
         close_btn.pack(side=tk.RIGHT)
 
+        if self.on_email_result:
+            email_btn = ttk.Button(
+                button_frame,
+                text=_t("plagiarism.email_results"),
+                command=self._email_result
+            )
+            email_btn.pack(side=tk.RIGHT, padx=(0, GuiConfig.PADDING_SMALL))
+
         if self.result.get('result_id'):
             details_btn = ttk.Button(
                 button_frame,
@@ -144,20 +154,45 @@ class CheckResultDialog:
             )
             details_btn.pack(side=tk.RIGHT, padx=(0, GuiConfig.PADDING_SMALL))
 
+    def _email_result(self):
+        """Email this result to the current user"""
+        user_email = None
+        if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+            user_email = self.auth.current_user.get('email')
+
+        if not user_email:
+            messagebox.showwarning(
+                _t("common.warning"),
+                _t("plagiarism.email_no_user_email")
+            )
+            return
+
+        result_data = {
+            'result_id': self.result.get('result_id', 'Unknown'),
+            'similarity_score': (self.result.get('highest_similarity', 0) * 100),
+            'document_name': self.result.get('document_title', 'Unknown Document'),
+        }
+        self.on_email_result(result_data, user_email)
+
     def view_full_report(self):
         """View full detailed report"""
         if self.result.get('result_id'):
-            details_dialog = ResultDetailsDialog(self.dialog, self.checker, self.result['result_id'])
+            details_dialog = ResultDetailsDialog(self.dialog, self.checker, self.result['result_id'],
+                                                 auth=self.auth,
+                                                 on_email_result=self.on_email_result)
             details_dialog.show()
 
 
 class ResultDetailsDialog:
     """Dialog for showing detailed plagiarism result information"""
 
-    def __init__(self, parent, checker, result_id):
+    def __init__(self, parent, checker, result_id, auth=None, on_email_result=None):
         self.parent = parent
         self.checker = checker
         self.result_id = result_id
+        self.auth = auth
+        self.on_email_result = on_email_result
+        self._result_cache = None
 
         self.dialog = None
 
@@ -199,6 +234,8 @@ class ResultDetailsDialog:
 
     def create_details_interface(self, result):
         """Create the details interface"""
+        self._result_cache = result
+
         # Clear loading message
         for widget in self.dialog.winfo_children():
             widget.destroy()
@@ -286,6 +323,14 @@ class ResultDetailsDialog:
         close_btn = ttk.Button(button_frame, text="Close", command=self.dialog.destroy)
         close_btn.pack(side=tk.RIGHT)
 
+        if self.on_email_result:
+            email_btn = ttk.Button(
+                button_frame,
+                text=_t("plagiarism.email_results"),
+                command=self._email_result
+            )
+            email_btn.pack(side=tk.RIGHT, padx=(0, GuiConfig.PADDING_SMALL))
+
         if result.get('matched_document_id'):
             view_match_btn = ttk.Button(
                 button_frame,
@@ -293,6 +338,27 @@ class ResultDetailsDialog:
                 command=lambda: self.view_matched_document(result['matched_document_id'])
             )
             view_match_btn.pack(side=tk.RIGHT, padx=(0, GuiConfig.PADDING_SMALL))
+
+    def _email_result(self):
+        """Email this result to the current user"""
+        user_email = None
+        if self.auth and hasattr(self.auth, 'current_user') and self.auth.current_user:
+            user_email = self.auth.current_user.get('email')
+
+        if not user_email:
+            messagebox.showwarning(
+                _t("common.warning"),
+                _t("plagiarism.email_no_user_email")
+            )
+            return
+
+        result = self._result_cache or {}
+        result_data = {
+            'result_id': result.get('result_id', self.result_id),
+            'similarity_score': (result.get('similarity_score', 0) * 100),
+            'document_name': result.get('document_title', 'Unknown Document'),
+        }
+        self.on_email_result(result_data, user_email)
 
     def view_matched_document(self, doc_id):
         """View the matched document"""

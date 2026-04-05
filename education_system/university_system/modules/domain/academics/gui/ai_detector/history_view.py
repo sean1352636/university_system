@@ -123,9 +123,13 @@ def create_history_view(self, parent):
 
 def refresh_history(self):
     """Refresh submission history"""
+    if not hasattr(self, 'history_tree'):
+        return  # History view not created yet
     try:
-        # Get filter
-        student_filter = self.filter_student_var.get() if self.filter_student_var.get().strip() else None
+        # Get filter (filter_student_var only exists after history view is created)
+        student_filter = None
+        if hasattr(self, 'filter_student_var') and self.filter_student_var.get().strip():
+            student_filter = self.filter_student_var.get()
 
         # Get submissions
         history_data = self.detector.get_submission_history(student_id=student_filter, limit=100)

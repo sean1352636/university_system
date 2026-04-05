@@ -102,6 +102,14 @@ class AIDetectorGUI:
         self.status_text = None
         self.progress_var = None
         self.progress_bar = None
+
+        # Ensure AI features database tables exist
+        try:
+            from education_system.university_system.infrastructure.database.schemas.ai_features_schemas import init_ai_features_system_db
+            init_ai_features_system_db()
+        except Exception:
+            pass
+
         self.setup_window()
         self.setup_styles()
         self.create_main_interface()
@@ -335,6 +343,18 @@ class AIDetectorGUI:
         view_frame = ttk.Frame(self.content_area)
         view_frame.pack(fill='both', expand=True)
 
+        try:
+            self._create_view_content(view_id, view_frame)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            for widget in view_frame.winfo_children():
+                widget.destroy()
+            ttk.Label(view_frame, text=f"Error loading view '{view_id}': {e}",
+                      foreground='red', wraplength=600).pack(expand=True, pady=20)
+
+    def _create_view_content(self, view_id, view_frame):
+        """Create the content for a specific view"""
         if view_id == 'analysis':
             self.create_analysis_view(view_frame)
         elif view_id == 'history':
