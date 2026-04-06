@@ -38,7 +38,7 @@ class DashboardManager:
         self.gui.layout.clear_content_area()
 
         # Dashboard title
-        title = ttk.Label(self.gui.layout.content_area, text=_t("academics.assignments.dashboard"), style='Title.TLabel')
+        title = ttk.Label(self.gui.layout.content_area, text=_t("assignments.dashboard"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
         # Create dashboard content with statistics
@@ -56,10 +56,10 @@ class DashboardManager:
 
         # Create stat cards
         stat_cards = [
-            (_t("academics.assignments.active_assignments"), stats.get('active_assignments', 0), '#3498db'),
-            (_t("academics.assignments.my_submissions"), stats.get('my_submissions', 0), '#2ecc71'),
-            (_t("academics.assignments.pending_grades"), stats.get('pending_grades', 0), '#f39c12'),
-            (_t("academics.assignments.upcoming_due"), stats.get('upcoming_due', 0), '#e74c3c')
+            (_t("assignments.active_assignments"), stats.get('active_assignments', 0), '#3498db'),
+            (_t("assignments.my_submissions"), stats.get('my_submissions', 0), '#2ecc71'),
+            (_t("assignments.pending_grades"), stats.get('pending_grades', 0), '#f39c12'),
+            (_t("assignments.upcoming_due"), stats.get('upcoming_due', 0), '#e74c3c')
         ]
 
         for i, (title, value, color) in enumerate(stat_cards):
@@ -68,7 +68,7 @@ class DashboardManager:
             stats_frame.grid_columnconfigure(i, weight=1)
 
         # Recent activity section
-        activity_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t("academics.assignments.recent_activity"), padding=10)
+        activity_frame = ttk.LabelFrame(self.gui.layout.content_area, text=_t("assignments.recent_activity"), padding=10)
         activity_frame.pack(fill='both', expand=True, pady=(0, 10))
 
         # Activity list
@@ -214,7 +214,7 @@ class DashboardManager:
             return stats
 
         except Exception as e:
-            print(_t("academics.assignments.error_getting_stats", error=str(e)))
+            print(_t("assignments.error_getting_stats", error=str(e)))
             return {'active_assignments': 0, 'my_submissions': 0, 'pending_grades': 0, 'upcoming_due': 0}
 
 
@@ -247,5 +247,5 @@ class DashboardManager:
             conn.close()
 
         except Exception as e:
-            print(_t("academics.assignments.error_loading_activity", error=str(e)))
+            print(_t("assignments.error_loading_activity", error=str(e)))
 

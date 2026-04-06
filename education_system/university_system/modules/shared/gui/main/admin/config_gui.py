@@ -181,18 +181,73 @@ def configure_backup(self):
         messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.errors.failed_to_configure_backup", error=str(e)))
 
 def configure_security(self):
-    """Configure security settings"""
+    """Configure security settings with toggleable password reset policy"""
     try:
         security_window = tk.Toplevel(self.root)
         security_window.title(_t("config_gui.security.title"))
-        security_window.geometry("600x500")
+        security_window.geometry("650x600")
 
         ttk.Label(security_window, text=_t("config_gui.security.header"),
                  font=('Arial', 14, 'bold')).pack(pady=10)
 
-        security_text = scrolledtext.ScrolledText(security_window, wrap=tk.WORD, height=20,
+        # ── Forced Password Reset toggle ──────────────────────────────
+        toggle_frame = ttk.LabelFrame(security_window,
+                                       text="Password Reset Policy", padding=15)
+        toggle_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+
+        # Read current setting from shared auth
+        from education_system.shared.auth.core import UserAuth as _SharedAuth
+        _shared_auth = _SharedAuth()
+        force_reset_on = _shared_auth.get_setting("force_password_reset", True)
+
+        force_reset_var = tk.BooleanVar(value=bool(force_reset_on))
+
+        desc_label = ttk.Label(
+            toggle_frame,
+            text="When enabled, users whose password has expired (>90 days)\n"
+                 "or was never set will be required to change it on login.",
+            wraplength=550, justify=tk.LEFT,
+        )
+        desc_label.pack(anchor=tk.W, pady=(0, 8))
+
+        status_var = tk.StringVar()
+        def _update_status():
+            if force_reset_var.get():
+                status_var.set("Status: ON — users with expired passwords must reset on login")
+            else:
+                status_var.set("Status: OFF — password expiry checks are skipped")
+        _update_status()
+
+        def _toggle_force_reset():
+            new_val = force_reset_var.get()
+            try:
+                _shared_auth.set_setting("force_password_reset", new_val)
+                _update_status()
+                state_text = "enabled" if new_val else "disabled"
+                messagebox.showinfo("Setting Updated",
+                                    f"Forced password reset has been {state_text}.",
+                                    parent=security_window)
+            except Exception as exc:
+                messagebox.showerror("Error",
+                                     f"Failed to update setting: {exc}",
+                                     parent=security_window)
+
+        toggle_btn = ttk.Checkbutton(
+            toggle_frame,
+            text="Force password reset for expired passwords",
+            variable=force_reset_var,
+            command=_toggle_force_reset,
+        )
+        toggle_btn.pack(anchor=tk.W)
+
+        status_label = ttk.Label(toggle_frame, textvariable=status_var,
+                                  font=('Arial', 9, 'italic'))
+        status_label.pack(anchor=tk.W, pady=(4, 0))
+
+        # ── Security info (read-only) ─────────────────────────────────
+        security_text = scrolledtext.ScrolledText(security_window, wrap=tk.WORD, height=16,
                                                   fg="#000000", bg="#FFFFFF")
-        security_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        security_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         security_info = _t("config_gui.security.info_header") + """
 ================================

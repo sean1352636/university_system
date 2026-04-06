@@ -89,12 +89,14 @@ def show_textbooks_browse(self):
     """Browse all textbooks panel."""
     self.clear_content()
 
+    row = 0
     ttk.Label(self.content_frame, text="Browse Textbooks",
-              style='Title.TLabel').pack(anchor=tk.W, pady=(0, 10))
+              style='Title.TLabel').grid(row=row, column=0, sticky=tk.W, pady=(0, 10))
 
     # Search bar
+    row += 1
     search_frame = ttk.Frame(self.content_frame)
-    search_frame.pack(fill=tk.X, pady=(0, 5))
+    search_frame.grid(row=row, column=0, sticky=(tk.W, tk.E), pady=(0, 5))
     ttk.Label(search_frame, text="Search:").pack(side=tk.LEFT, padx=2)
     self._tb_search_entry = ttk.Entry(search_frame, width=30)
     self._tb_search_entry.pack(side=tk.LEFT, padx=2)
@@ -106,15 +108,18 @@ def show_textbooks_browse(self):
     self._tb_module_filter.pack(side=tk.LEFT, padx=2)
     self._tb_module_filter.bind("<<ComboboxSelected>>", lambda e: self._tb_do_search())
 
+    row += 1
     cols = ("id", "isbn", "title", "author", "edition", "module", "required", "price")
     self._tb_browse_tree = ttk.Treeview(self.content_frame, columns=cols, show="headings", height=18)
     for c, w in zip(cols, (40, 120, 200, 150, 60, 70, 70, 70)):
         self._tb_browse_tree.heading(c, text=c.replace("_", " ").title())
         self._tb_browse_tree.column(c, width=w, minwidth=30)
-    self._tb_browse_tree.pack(fill=tk.BOTH, expand=True, pady=5)
+    self._tb_browse_tree.grid(row=row, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
+    self.content_frame.rowconfigure(row, weight=1)
 
+    row += 1
     btn = ttk.Frame(self.content_frame)
-    btn.pack(fill=tk.X, pady=5)
+    btn.grid(row=row, column=0, sticky=(tk.W, tk.E), pady=5)
     ttk.Button(btn, text="View Details", command=self._tb_view_details).pack(side=tk.LEFT, padx=5)
     ttk.Button(btn, text="Find Used Copies", command=self._tb_find_used).pack(side=tk.LEFT, padx=5)
 
@@ -125,19 +130,24 @@ def show_textbooks_exchange(self):
     """Used book exchange panel."""
     self.clear_content()
 
+    row = 0
     ttk.Label(self.content_frame, text="Used Book Exchange",
-              style='Title.TLabel').pack(anchor=tk.W, pady=(0, 5))
-    ttk.Label(self.content_frame, text="Available used textbooks from other students").pack(anchor=tk.W, pady=(0, 5))
+              style='Title.TLabel').grid(row=row, column=0, sticky=tk.W, pady=(0, 5))
+    row += 1
+    ttk.Label(self.content_frame, text="Available used textbooks from other students").grid(row=row, column=0, sticky=tk.W, pady=(0, 5))
 
+    row += 1
     cols = ("listing_id", "title", "condition", "price", "seller", "listed_date", "status")
     self._tb_exchange_tree = ttk.Treeview(self.content_frame, columns=cols, show="headings", height=18)
     for c, w in zip(cols, (60, 250, 80, 70, 100, 100, 80)):
         self._tb_exchange_tree.heading(c, text=c.replace("_", " ").title())
         self._tb_exchange_tree.column(c, width=w, minwidth=30)
-    self._tb_exchange_tree.pack(fill=tk.BOTH, expand=True, pady=5)
+    self._tb_exchange_tree.grid(row=row, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
+    self.content_frame.rowconfigure(row, weight=1)
 
+    row += 1
     btn = ttk.Frame(self.content_frame)
-    btn.pack(fill=tk.X, pady=5)
+    btn.grid(row=row, column=0, sticky=(tk.W, tk.E), pady=5)
     ttk.Button(btn, text="Buy Selected", command=self._tb_buy_used).pack(side=tk.LEFT, padx=5)
     ttk.Button(btn, text="Refresh", command=self._tb_load_exchange).pack(side=tk.LEFT, padx=5)
 
@@ -149,10 +159,10 @@ def show_textbooks_sell(self):
     self.clear_content()
 
     ttk.Label(self.content_frame, text="Sell a Textbook",
-              style='Title.TLabel').pack(anchor=tk.W, pady=(0, 10))
+              style='Title.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 10))
 
     form = ttk.LabelFrame(self.content_frame, text="List a Textbook for Sale", padding=15)
-    form.pack(fill=tk.X, pady=5)
+    form.grid(row=1, column=0, sticky=(tk.W, tk.E), pady=5)
 
     row = 0
     ttk.Label(form, text="Select Textbook:").grid(row=row, column=0, sticky=tk.W, pady=3)
@@ -200,15 +210,16 @@ def show_textbooks_orders(self):
     self.clear_content()
 
     ttk.Label(self.content_frame, text="My Textbook Orders",
-              style='Title.TLabel').pack(anchor=tk.W, pady=(0, 10))
+              style='Title.TLabel').grid(row=0, column=0, sticky=tk.W, pady=(0, 10))
 
     cols = ("order_id", "title", "price", "status", "date", "role")
     self._tb_orders_tree = ttk.Treeview(self.content_frame, columns=cols, show="headings", height=18)
     for c, w in zip(cols, (60, 250, 70, 80, 130, 60)):
         self._tb_orders_tree.heading(c, text=c.title())
         self._tb_orders_tree.column(c, width=w, minwidth=30)
-    self._tb_orders_tree.pack(fill=tk.BOTH, expand=True, pady=5)
-    ttk.Button(self.content_frame, text="Refresh", command=self._tb_load_orders).pack(pady=5)
+    self._tb_orders_tree.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), pady=5)
+    self.content_frame.rowconfigure(1, weight=1)
+    ttk.Button(self.content_frame, text="Refresh", command=self._tb_load_orders).grid(row=2, column=0, pady=5)
 
     self._tb_load_orders()
 

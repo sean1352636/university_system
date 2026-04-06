@@ -21,6 +21,41 @@ def _print_header(title: str):
     print(f"{'=' * 54}")
 
 
+def _cli_force_password_change(user_info: dict, auth) -> bool:
+    """Prompt the user to change their expired password in the CLI.
+
+    Returns True if the password was changed successfully, False otherwise.
+    """
+    print("  Min 12 chars, uppercase, lowercase, digit, special char.\n")
+
+    for _ in range(3):
+        current_pw = getpass.getpass("  Current password: ")
+        new_pw = getpass.getpass("  New password:     ")
+        confirm_pw = getpass.getpass("  Confirm password: ")
+
+        if new_pw != confirm_pw:
+            print("\n  Passwords do not match. Try again.\n")
+            continue
+
+        try:
+            auth.change_password(user_info["id"], current_pw, new_pw)
+            print("\n  Password changed successfully!")
+            # Re-login with new password to refresh session
+            try:
+                new_info = auth.login(user_info["username"], new_pw)
+                # Update user_info in place
+                user_info.update(new_info)
+            except AuthError:
+                print("  Please log in again with your new password.")
+                return False
+            return True
+        except AuthError as exc:
+            print(f"\n  Error: {exc}\n")
+
+    print("\n  Too many failed attempts.")
+    return False
+
+
 def cli_login_prompt(auth: UserAuth | None = None) -> tuple[dict, UserAuth] | None:
     """Authenticate a user against the shared auth database.
 
@@ -63,6 +98,13 @@ def cli_login_prompt(auth: UserAuth | None = None) -> tuple[dict, UserAuth] | No
             if mfa_result is None:
                 continue
             user_info = mfa_result
+
+        # Handle forced password change
+        if user_info.get("password_expired"):
+            print("\n  Your password has expired. You must set a new password.")
+            if not _cli_force_password_change(user_info, auth):
+                continue
+            # Re-login with new credentials handled inside helper
 
         break  # login succeeded
     else:

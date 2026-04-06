@@ -333,7 +333,6 @@ class LayoutManager:
                 ("📝 Review Extensions", self.gui.show_review_extensions),
                 ("🔄 SIS Roster Sync", self.gui.show_sis_sync),
                 ("⚠️ Academic Misconduct", self.gui.show_academic_misconduct),
-                ("🚨 Integrity Cases", self.gui.show_integrity_cases),
                 ("📝 Grade Audit Log", self.gui.show_grade_audit_log),
                 ("♿ Accommodations", self.gui.show_accommodations),
                 ("👥 TA Management", self.gui.show_ta_management),

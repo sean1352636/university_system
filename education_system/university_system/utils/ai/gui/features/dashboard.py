@@ -510,23 +510,42 @@ class DashboardMixin:
         """Show a formatted list of what the chatbot can do."""
         help_text = (
             "Quick Help\n\n"
-            "Quick Action Buttons:\n"
-            "  My Courses      - View your enrolled courses\n"
-            "  My Grades       - View recent grades and averages\n"
-            "  View Schedule   - See your weekly class schedule\n"
-            "  Assignments     - Check assignment due dates and submissions\n"
-            "  Library Books   - View checked-out books and due dates\n"
-            "  Financial Aid   - Check aid applications and programs\n"
-            "  Attendance      - Per-module attendance summary\n"
-            "  Support Tickets - View open support requests\n"
-            "  Notifications   - Recent notifications\n"
-            "  Events          - Upcoming campus events\n"
-            "  Announcements   - Latest announcements\n\n"
+            "Student Services:\n"
+            "  My Courses      - View enrolled courses\n"
+            "  My Grades       - Grades and GPA\n"
+            "  Timetable       - Class schedule / timetable\n"
+            "  Financial Aid   - Aid applications and programs\n"
+            "  Fee Balance     - Fees, payments, and deadlines\n"
+            "  Transcripts     - Request transcripts and certificates\n\n"
+            "Academic Support:\n"
+            "  Assignments     - Due dates and submissions\n"
+            "  Deadlines       - Upcoming deadlines\n"
+            "  Exam Schedule   - Exam dates, times, and rooms\n"
+            "  Library Search  - Search library catalogue\n"
+            "  Academic Calendar - Term dates, holidays\n"
+            "  Attendance      - Attendance summary\n\n"
+            "Admin & Admissions:\n"
+            "  Application Status - Track your application\n"
+            "  Staff Directory    - Find staff and contacts\n"
+            "  Room Booking       - Book rooms and facilities\n"
+            "  ID Card Help       - Replacement guidance\n"
+            "  Leave/Deferral     - Request guidance\n"
+            "  Support Tickets    - Open support requests\n\n"
+            "Campus Life:\n"
+            "  Events           - Upcoming campus events\n"
+            "  Clubs & Societies - Student clubs info\n"
+            "  Wellbeing        - Mental health resources\n"
+            "  Lost & Found     - Report or find lost items\n"
+            "  Transport        - Shuttle schedules\n"
+            "  Notifications    - Recent notifications\n\n"
             "Example Questions:\n"
             "  'What courses am I enrolled in?'\n"
-            "  'When is my next assignment due?'\n"
-            "  'How do I apply for financial aid?'\n"
-            "  'What are the library hours?'\n\n"
+            "  'When is my next exam?'\n"
+            "  'What is my fee balance?'\n"
+            "  'Search library for machine learning'\n"
+            "  'Find Dr Smith in staff directory'\n"
+            "  'What mental health support is available?'\n"
+            "  'I lost my laptop on campus'\n\n"
             "Keyboard Shortcuts:\n"
             "  Enter          - Send message\n"
             "  Ctrl+Enter     - New line\n"
@@ -534,3 +553,233 @@ class DashboardMixin:
             "  F1             - User guide\n"
         )
         self.add_chat_message("Chatbot", help_text, "bot")
+
+    # ------------------------------------------------------------------
+    # Student Services
+    # ------------------------------------------------------------------
+
+    def show_fee_balance(self):
+        """Show student fee balance and payment deadlines."""
+        self.quick_message("What is my fee balance?")
+
+    def show_transcript_request(self):
+        """Show transcript and certificate request info."""
+        self.quick_message("How do I request a transcript or enrollment certificate?")
+
+    # ------------------------------------------------------------------
+    # Academic Support
+    # ------------------------------------------------------------------
+
+    def show_deadlines(self):
+        """Show upcoming assignment and exam deadlines."""
+        try:
+            username = self.current_user.get('username', '')
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT a.title, a.due_date, a.module_code, a.assignment_type
+                    FROM assignments a
+                    LEFT JOIN assignment_submissions sub
+                        ON a.id = sub.assignment_id AND sub.student_id = ?
+                    WHERE a.module_code IN (
+                        SELECT module_code FROM student_modules
+                        WHERE student_id = ? AND LOWER(status) = 'enrolled'
+                    )
+                    AND a.due_date >= date('now')
+                    AND sub.id IS NULL
+                    ORDER BY a.due_date ASC LIMIT 15
+                ''', (username, username))
+                rows = cursor.fetchall()
+
+            if not rows:
+                self.add_chat_message("Chatbot",
+                    "No upcoming deadlines. You're all caught up!", "bot")
+                return
+
+            response = f"Upcoming Deadlines ({len(rows)}):\n\n"
+            for title, due, module, atype in rows:
+                response += f"  {title} ({module})\n"
+                response += f"    Type: {atype or 'N/A'}  |  Due: {due}\n\n"
+
+            self.add_chat_message("Chatbot", response, "bot")
+            log_activity('view', 'deadlines', None, details={'user': username})
+
+        except Exception as e:
+            self.add_chat_message("Chatbot", f"Error fetching deadlines: {e}", "bot")
+
+    def show_exam_schedule(self):
+        """Show exam schedule with room locations."""
+        try:
+            username = self.current_user.get('username', '')
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                rows = []
+                # Try exams table with rooms join
+                try:
+                    cursor.execute('''
+                        SELECT e.module_code, e.exam_date, e.start_time, e.end_time,
+                               r.room_number, r.building
+                        FROM exams e
+                        LEFT JOIN rooms r ON e.room_id = r.id
+                        WHERE e.module_code IN (
+                            SELECT module_code FROM student_modules
+                            WHERE student_id = ? AND LOWER(status) = 'enrolled'
+                        ) AND e.exam_date >= date('now')
+                        ORDER BY e.exam_date ASC
+                    ''', (username,))
+                    rows = cursor.fetchall()
+                except Exception:
+                    pass
+
+                if not rows:
+                    # Fallback: exam_schedule table
+                    try:
+                        cursor.execute('''
+                            SELECT module_code, exam_date, start_time, end_time, location, ''
+                            FROM exam_schedule
+                            WHERE module_code IN (
+                                SELECT module_code FROM student_modules
+                                WHERE student_id = ? AND LOWER(status) = 'enrolled'
+                            ) AND exam_date >= date('now')
+                            ORDER BY exam_date ASC
+                        ''', (username,))
+                        rows = cursor.fetchall()
+                    except Exception:
+                        pass
+
+            if not rows:
+                self.add_chat_message("Chatbot",
+                    "No upcoming exams found for your modules.", "bot")
+                return
+
+            response = f"Exam Schedule ({len(rows)} exams):\n\n"
+            for module, date_val, start, end, room, building in rows:
+                room_str = room or 'TBD'
+                if building:
+                    room_str += f" ({building})"
+                response += f"  {module}\n"
+                response += f"    Date: {date_val}  |  Time: {start or '?'} - {end or '?'}  |  Room: {room_str}\n\n"
+
+            self.add_chat_message("Chatbot", response, "bot")
+            log_activity('view', 'exam_schedule', None, details={'user': username})
+
+        except Exception as e:
+            self.add_chat_message("Chatbot", f"Error fetching exam schedule: {e}", "bot")
+
+    def show_library_search(self):
+        """Prompt user for library search query."""
+        self.add_chat_message("Chatbot",
+            "Library Search:\n\n"
+            "Type a book title, author, or ISBN to search the library catalogue.\n"
+            "Example: 'Search library for Python programming'", "bot")
+
+    def show_academic_calendar(self):
+        """Show academic calendar events."""
+        try:
+            with get_connection() as conn:
+                cursor = conn.cursor()
+                rows = []
+                for table in ('academic_calendar', 'calendar_events'):
+                    try:
+                        cursor.execute(f'''
+                            SELECT event_name, start_date, end_date, event_type
+                            FROM {table}
+                            WHERE start_date >= date('now', '-30 days')
+                            ORDER BY start_date ASC LIMIT 20
+                        ''')
+                        rows = cursor.fetchall()
+                        if rows:
+                            break
+                    except Exception:
+                        continue
+
+            if not rows:
+                self.add_chat_message("Chatbot",
+                    "Academic calendar information is not currently available.\n"
+                    "Check the university website for term dates and holidays.", "bot")
+                return
+
+            response = f"Academic Calendar ({len(rows)} events):\n\n"
+            for name, start, end, etype in rows:
+                end_str = f" to {end}" if end else ""
+                response += f"  {name}\n"
+                response += f"    Date: {start}{end_str}  |  Type: {etype or 'N/A'}\n\n"
+
+            self.add_chat_message("Chatbot", response, "bot")
+            log_activity('view', 'academic_calendar', None,
+                        details={'user': self.current_user.get('username')})
+
+        except Exception as e:
+            self.add_chat_message("Chatbot", f"Error fetching academic calendar: {e}", "bot")
+
+    # ------------------------------------------------------------------
+    # Admissions & Admin
+    # ------------------------------------------------------------------
+
+    def show_application_status(self):
+        """Show application status."""
+        self.quick_message("What is my application status?")
+
+    def show_staff_directory(self):
+        """Prompt for staff directory search."""
+        self.add_chat_message("Chatbot",
+            "Staff Directory:\n\n"
+            "Type a name, department, or role to search.\n"
+            "Example: 'Find Dr Smith' or 'Contact Computer Science department'", "bot")
+
+    def show_room_bookings(self):
+        """Show room bookings or booking instructions."""
+        self.quick_message("Show my room bookings")
+
+    def show_id_card_help(self):
+        """Show ID card replacement guidance."""
+        self.quick_message("How do I replace my ID card?")
+
+    def show_leave_guidance(self):
+        """Show leave of absence / deferral guidance."""
+        self.quick_message("How do I apply for a leave of absence?")
+
+    # ------------------------------------------------------------------
+    # Wellbeing & Campus Life
+    # ------------------------------------------------------------------
+
+    def show_clubs_societies(self):
+        """Show student clubs and societies."""
+        self.quick_message("What clubs and societies are available?")
+
+    def show_mental_health_resources(self):
+        """Show mental health and wellbeing resources."""
+        resources = [
+            ("University Counselling Service",
+             "Free, confidential counselling for all students. Book via the student portal.",
+             "counselling@university.ac.uk"),
+            ("Student Wellbeing Centre",
+             "Drop-in support, workshops, and group sessions.",
+             "wellbeing@university.ac.uk"),
+            ("24/7 Crisis Helpline",
+             "Immediate support available around the clock.",
+             "0800-XXX-XXXX"),
+            ("Disability & Inclusion Service",
+             "Support for students with disabilities, learning differences, or mental health conditions.",
+             "disability@university.ac.uk"),
+            ("Peer Support Network",
+             "Trained student volunteers offering peer-to-peer support.",
+             "peersupport@university.ac.uk"),
+        ]
+        response = "Mental Health & Wellbeing Resources:\n\n"
+        for name, desc, contact in resources:
+            response += f"  {name}\n"
+            response += f"    {desc}\n"
+            response += f"    Contact: {contact}\n\n"
+        response += "Remember: it's okay to ask for help. You are not alone."
+        self.add_chat_message("Chatbot", response, "bot")
+        log_activity('view', 'mental_health_resources', None,
+                    details={'user': self.current_user.get('username')})
+
+    def show_lost_found(self):
+        """Show lost and found info."""
+        self.quick_message("Show lost and found items")
+
+    def show_transport_schedule(self):
+        """Show campus transport schedule."""
+        self.quick_message("What is the shuttle schedule?")

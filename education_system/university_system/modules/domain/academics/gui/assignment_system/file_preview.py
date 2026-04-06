@@ -646,11 +646,14 @@ class FilePreviewManager:
 
 
     def launch_academic_calendar(self):
-        """Launch the full academic calendar GUI"""
+        """Launch the full academic calendar GUI in a Toplevel window"""
         try:
-            from education_system.university_system.modules.domain.academics.gui.academic_calendar.main_gui import launch_calendar_gui
-            # Launch in a new top-level window
-            launch_calendar_gui(auth_manager=self.auth)
+            from education_system.university_system.modules.domain.academics.gui.academic_calendar.main_gui import CalendarGUI
+            # Launch in a Toplevel so "Return to Main Menu" just closes it
+            calendar_window = tk.Toplevel(self.root)
+            calendar_window.title("Academic Calendar")
+            calendar_window.geometry("1400x900")
+            CalendarGUI(auth_manager=self.auth, parent_window=calendar_window)
         except Exception as e:
             messagebox.showerror("Error", f"Failed to launch Academic Calendar: {e}")
 

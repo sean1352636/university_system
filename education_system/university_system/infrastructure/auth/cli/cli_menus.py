@@ -474,6 +474,36 @@ def display_auth_menu(existing_auth=None):
     return auth
 
 # ============================================================================
+# Force Password Reset Toggle (CLI)
+# ============================================================================
+
+def _toggle_force_password_reset_cli():
+    """Toggle the forced password reset setting from the CLI."""
+    try:
+        from education_system.shared.auth.core import UserAuth as _SharedAuth
+        shared_auth = _SharedAuth()
+        current = shared_auth.get_setting("force_password_reset", True)
+
+        status = "ON" if current else "OFF"
+        print(f"\nForced Password Reset is currently: {status}")
+        print("When ON, users with expired or unset passwords must reset on login.")
+        print("When OFF, password expiry checks are skipped.\n")
+
+        toggle = input(f"Turn it {'OFF' if current else 'ON'}? (y/n): ").strip().lower()
+        if toggle == 'y':
+            new_val = not current
+            shared_auth.set_setting("force_password_reset", new_val)
+            new_status = "ON" if new_val else "OFF"
+            print(f"\nForced password reset is now {new_status}.")
+        else:
+            print("No changes made.")
+    except Exception as e:
+        print(f"Error toggling setting: {e}")
+
+    input("\nPress Enter to continue...")
+
+
+# ============================================================================
 # User Management Menu
 # ============================================================================
 
@@ -496,9 +526,10 @@ def display_user_management_menu(auth):
         print("8. Manage User Permissions")
         print("9. Fix Database Consistency Issues")  # New option
         print("10. Debug User Database")  # New option
-        print("11. Back")
+        print("11. Toggle Forced Password Reset")
+        print("12. Back")
 
-        choice = input("\nEnter your choice (1-11): ")
+        choice = input("\nEnter your choice (1-12): ")
 
         if choice == '1':
             # List all users with enhanced information
@@ -961,6 +992,9 @@ def display_user_management_menu(auth):
             print("=" * 60)
 
         elif choice == '11':
+            _toggle_force_password_reset_cli()
+
+        elif choice == '12':
             return
 
         else:

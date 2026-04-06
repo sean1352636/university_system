@@ -164,6 +164,14 @@ class UniversityChatbot:
             return self.handle_technical_query(nlp_result, context)
         elif intent == "voice_command":
             return self.handle_voice_command(context.messages[-1]["user_message"], context.user_id, context)
+        elif intent == "academic_support":
+            return self.handle_academic_support_query(nlp_result, context)
+        elif intent == "admissions":
+            return self.handle_admissions_query(nlp_result, context)
+        elif intent == "administrative":
+            return self.handle_administrative_query(nlp_result, context)
+        elif intent == "wellbeing":
+            return self.handle_wellbeing_query(nlp_result, context)
         else:
             return self.handle_general_query(nlp_result, context)
 
@@ -185,6 +193,18 @@ class UniversityChatbot:
 
     def handle_general_query(self, nlp_result, context):
         return intent_handlers.handle_general_query(self, nlp_result, context)
+
+    def handle_academic_support_query(self, nlp_result, context):
+        return intent_handlers.handle_academic_support_query(self, nlp_result, context)
+
+    def handle_admissions_query(self, nlp_result, context):
+        return intent_handlers.handle_admissions_query(self, nlp_result, context)
+
+    def handle_administrative_query(self, nlp_result, context):
+        return intent_handlers.handle_administrative_query(self, nlp_result, context)
+
+    def handle_wellbeing_query(self, nlp_result, context):
+        return intent_handlers.handle_wellbeing_query(self, nlp_result, context)
 
     def find_best_faq_match(self, query):
         return intent_handlers.find_best_faq_match(self, query)
@@ -212,6 +232,45 @@ class UniversityChatbot:
 
     def get_student_profile(self, student_id):
         return database_utils.get_student_profile(self, student_id)
+
+    def get_fee_balance(self, student_id):
+        return database_utils.get_fee_balance(self, student_id)
+
+    def get_transcript_requests(self, student_id):
+        return database_utils.get_transcript_requests(self, student_id)
+
+    def get_upcoming_deadlines(self, student_id):
+        return database_utils.get_upcoming_deadlines(self, student_id)
+
+    def get_exam_schedule(self, student_id):
+        return database_utils.get_exam_schedule(self, student_id)
+
+    def search_library(self, query):
+        return database_utils.search_library(self, query)
+
+    def get_academic_calendar(self):
+        return database_utils.get_academic_calendar(self)
+
+    def get_application_status(self, identifier):
+        return database_utils.get_application_status(self, identifier)
+
+    def search_staff_directory(self, query):
+        return database_utils.search_staff_directory(self, query)
+
+    def get_room_bookings(self, student_id):
+        return database_utils.get_room_bookings(self, student_id)
+
+    def get_clubs_and_societies(self):
+        return database_utils.get_clubs_and_societies(self)
+
+    def get_transport_schedule(self):
+        return database_utils.get_transport_schedule(self)
+
+    def get_lost_found_items(self, query=""):
+        return database_utils.get_lost_found_items(self, query)
+
+    def get_mental_health_resources(self):
+        return database_utils.get_mental_health_resources(self)
 
     # Logging / tracking
     def get_user_context(self, username):
@@ -484,25 +543,29 @@ class UniversityChatbot:
                 "department": "academic"
             },
             "registration": {
-                "patterns": ["register", "enroll", "sign up", "add course", "drop course"],
+                "patterns": ["register", "enroll", "sign up", "add course", "drop course",
+                             "prerequisite", "waitlist", "availability", "course registration"],
                 "responses": ["I'll help you with registration.", "Let me guide you through the registration process."],
                 "requires_auth": True,
                 "department": "academic"
             },
             "financial": {
-                "patterns": ["fee", "tuition", "payment", "scholarship", "financial aid"],
+                "patterns": ["fee", "tuition", "payment", "scholarship", "financial aid",
+                             "balance", "deadline", "invoice", "payment plan", "bursary"],
                 "responses": ["I can assist with financial information.", "Let me help with your financial queries."],
                 "requires_auth": True,
                 "department": "finance"
             },
             "grades": {
-                "patterns": ["grade", "gpa", "transcript", "academic record"],
+                "patterns": ["grade", "gpa", "transcript", "academic record", "marks",
+                             "result", "certificate", "enrollment verification"],
                 "responses": ["I can help you check your academic performance.", "Let me retrieve your grade information."],
                 "requires_auth": True,
                 "department": "academic"
             },
             "technical_support": {
-                "patterns": ["password", "login", "system", "technical", "computer", "wifi"],
+                "patterns": ["password", "login", "system", "technical", "computer", "wifi",
+                             "sso", "single sign", "portal", "lms", "moodle", "canvas"],
                 "responses": ["I can help with technical issues.", "Let me connect you with IT support."],
                 "requires_auth": False,
                 "department": "it"
@@ -512,6 +575,38 @@ class UniversityChatbot:
                 "responses": ["I can interact with you using voice commands.", "Voice mode is available for hands-free interaction."],
                 "requires_auth": False,
                 "department": "general"
+            },
+            "academic_support": {
+                "patterns": ["deadline", "assignment due", "exam schedule", "exam room",
+                             "library", "book available", "academic calendar", "holiday",
+                             "term dates", "semester", "timetable", "schedule"],
+                "responses": ["I can help with academic support.", "Let me look that up for you."],
+                "requires_auth": False,
+                "department": "academic"
+            },
+            "admissions": {
+                "patterns": ["application", "apply", "admission", "document submission",
+                             "scholarship eligibility", "campus tour", "onboarding",
+                             "application status", "offer", "acceptance"],
+                "responses": ["I can help with admissions queries.", "Let me check that for you."],
+                "requires_auth": False,
+                "department": "admissions"
+            },
+            "administrative": {
+                "patterns": ["leave of absence", "deferral", "id card", "replacement",
+                             "room booking", "facility", "staff directory", "contact",
+                             "department", "office hours"],
+                "responses": ["I can help with administrative tasks.", "Let me assist with that."],
+                "requires_auth": False,
+                "department": "administrative"
+            },
+            "wellbeing": {
+                "patterns": ["mental health", "counselling", "counseling", "wellbeing",
+                             "welfare", "event", "club", "society", "lost and found",
+                             "lost property", "shuttle", "transport", "bus", "campus life"],
+                "responses": ["I can help with wellbeing and campus life.", "Let me find that information."],
+                "requires_auth": False,
+                "department": "wellbeing"
             }
         }
 
@@ -523,17 +618,40 @@ class UniversityChatbot:
                 "courses": "Information about university courses and programs",
                 "registration": "Course registration and enrollment procedures",
                 "grades": "Academic performance and grading information",
-                "requirements": "Degree and graduation requirements"
+                "requirements": "Degree and graduation requirements",
+                "deadlines": "Assignment and exam deadline reminders",
+                "exams": "Exam schedules and room locations",
+                "calendar": "Academic calendar, holidays, and term dates",
+                "library": "Library resource search and book availability",
+                "timetable": "Class timetable and schedule lookup"
             },
             "financial": {
                 "tuition": "Tuition fees and payment information",
                 "scholarships": "Scholarship and financial aid opportunities",
-                "billing": "Billing and payment procedures"
+                "billing": "Billing and payment procedures",
+                "balance": "Fee balance and payment deadline information",
+                "aid_status": "Financial aid application status"
             },
             "administrative": {
                 "policies": "University policies and procedures",
                 "calendar": "Academic calendar and important dates",
-                "contacts": "Department and office contact information"
+                "contacts": "Department and office contact information",
+                "leave": "Leave of absence and deferral guidance",
+                "id_card": "ID card replacement requests",
+                "room_booking": "Room and facility booking",
+                "staff_directory": "Staff directory and department contacts"
+            },
+            "admissions": {
+                "application": "Application status tracking",
+                "documents": "Document submission guidance",
+                "scholarships": "Scholarship and eligibility information",
+                "tours": "Campus tour scheduling"
+            },
+            "wellbeing": {
+                "mental_health": "Mental health resource signposting",
+                "events": "Campus event listings and club information",
+                "lost_found": "Lost and found reporting",
+                "transport": "Shuttle and transport schedule queries"
             }
         }
 
@@ -542,19 +660,50 @@ class UniversityChatbot:
         faq_path = os.fspath(paths.CHATBOT_DATA_DIR / "faq_database.json")
         default_faq = {
             "academic": {
-                "How do I register for courses?": "You can register through the student portal during registration periods.",
-                "What are the prerequisites for advanced courses?": "Prerequisites vary by course. Check the course catalog for specific requirements.",
-                "How do I calculate my GPA?": "GPA is calculated by dividing total grade points by total credit hours."
+                "How do I register for courses?": "You can register through the student portal during registration periods. Check course availability, prerequisites, and waitlist status from the registration page.",
+                "What are the prerequisites for advanced courses?": "Prerequisites vary by course. Check the course catalog for specific requirements, or ask me about a specific course.",
+                "How do I calculate my GPA?": "GPA is calculated by dividing total grade points by total credit hours. I can calculate yours if you ask 'What is my GPA?'",
+                "How do I request a transcript?": "You can request an official transcript through the registrar's office or by asking me to submit a transcript request on your behalf.",
+                "How do I get an enrollment certificate?": "Enrollment verification certificates can be requested through the registrar. Ask me to start a request.",
+                "When are my assignments due?": "I can show your upcoming deadlines. Ask me 'What are my deadlines?' or click the Deadlines quick action.",
+                "Where is my exam?": "I can look up your exam schedule and room locations. Ask 'What is my exam schedule?'",
+                "What are the term dates?": "The academic calendar with term dates, holidays, and key deadlines is available. Ask me 'Show academic calendar'.",
+                "How do I search the library?": "I can search library resources for you. Ask 'Search library for [topic]' or 'Is [book title] available?'",
+                "What is my timetable?": "I can show your class schedule. Ask 'Show my timetable' or click the Schedule quick action."
             },
             "financial": {
-                "When are tuition payments due?": "Tuition is typically due before the start of each semester.",
-                "How do I apply for financial aid?": "Submit the FAFSA form and university scholarship applications.",
-                "What payment methods are accepted?": "We accept credit cards, bank transfers, and payment plans."
+                "When are tuition payments due?": "Tuition is typically due before the start of each semester. I can show your specific payment deadlines.",
+                "How do I apply for financial aid?": "Submit the FAFSA form and university scholarship applications. Ask me about your financial aid status.",
+                "What payment methods are accepted?": "We accept credit cards, bank transfers, and payment plans. Contact the finance office for payment plan setup.",
+                "What is my fee balance?": "I can check your current fee balance and upcoming payment deadlines. Ask 'What is my balance?'",
+                "What is my financial aid status?": "I can check the status of your financial aid applications. Ask 'Check my financial aid'."
             },
             "technical": {
                 "How do I reset my password?": "Use the 'Forgot Password' link on the login page or contact IT support.",
                 "How do I connect to campus WiFi?": "Connect to 'UniversityWiFi' and use your student credentials.",
-                "Where can I download campus software?": "Visit the IT services website for software downloads."
+                "Where can I download campus software?": "Visit the IT services website for software downloads.",
+                "How do I access the LMS?": "Access Moodle/Canvas through the student portal using your SSO credentials. Contact IT if you have access issues.",
+                "How does SSO work?": "Single Sign-On lets you access all university systems with one login. Use your university email and password."
+            },
+            "admissions": {
+                "How do I check my application status?": "I can look up your application status. Ask 'What is my application status?' or provide your application reference.",
+                "What documents do I need to submit?": "Required documents vary by programme. Generally: transcripts, personal statement, references, and ID. Ask me about a specific programme.",
+                "What scholarships are available?": "We offer merit-based, need-based, and subject-specific scholarships. Ask me about eligibility criteria.",
+                "How do I book a campus tour?": "Campus tours can be scheduled through admissions. I can help you book one — just ask."
+            },
+            "administrative": {
+                "How do I apply for a leave of absence?": "Submit a leave of absence request through the student office. I can guide you through the process.",
+                "How do I request a deferral?": "Deferral requests are handled by the registrar. I can explain the process and requirements.",
+                "How do I replace my ID card?": "Report your lost ID and request a replacement through the student services desk. I can start the process.",
+                "How do I book a room?": "Rooms and facilities can be booked through the booking system. Ask me 'Book a room' for guidance.",
+                "How do I find a staff member?": "I can search the staff directory. Ask 'Find [name]' or 'Contact [department]'."
+            },
+            "wellbeing": {
+                "Where can I get mental health support?": "The university counselling service offers free, confidential support. Call the wellbeing helpline or visit the Student Wellbeing Centre.",
+                "What events are happening on campus?": "I can show upcoming campus events. Ask 'Show events' or click the Events quick action.",
+                "What clubs and societies are available?": "There are many student clubs and societies. Ask me about a specific interest or say 'Show clubs'.",
+                "I lost something on campus": "Report lost items to the lost and found service. I can help you file a report — just describe the item.",
+                "What is the shuttle schedule?": "Campus shuttle and transport schedules are available. Ask 'Show transport schedule' for routes and times."
             },
             "voice": {
                 "How do I use voice commands?": "Say 'start voice mode' to begin voice interaction. You can ask questions naturally and I'll respond with voice and text.",
@@ -599,19 +748,22 @@ class UniversityChatbot:
 
         print(f"\nChatbot Features Available:")
         if user['role'] == 'student':
-            print("• Ask about courses and enrollment")
-            print("• Check academic information")
-            print("• Get help with registration")
-            print("• Financial aid information")
+            print("• Student Services: courses, grades, GPA, timetable, fee balance, transcripts")
+            print("• Academic Support: deadlines, exam schedule, library search, academic calendar")
+            print("• Admissions: application status, scholarships, campus tours")
+            print("• Admin: leave requests, ID card replacement, room booking, staff directory")
+            print("• Wellbeing: mental health resources, clubs, lost & found, transport")
         elif user['role'] in ['staff', 'admin']:
-            print("• Student information lookup")
-            print("• Course management assistance")
-            print("• Administrative support")
-            print("• System information")
+            print("• Student information lookup and management")
+            print("• Course and registration management")
+            print("• Financial and administrative support")
+            print("• Staff directory and room booking")
+            print("• Analytics and system information")
         elif user['role'] == 'instructor':
-            print("• Course management")
-            print("• Student academic support")
-            print("• Grade information")
+            print("• Course management and student support")
+            print("• Grade information and academic records")
+            print("• Exam scheduling and room locations")
+            print("• Library resources and staff directory")
 
         print("\nType 'exit' to return to main menu, 'help' for commands.")
 
@@ -634,13 +786,21 @@ class UniversityChatbot:
 
                 if user_input.lower() == 'help':
                     print("\nAvailable commands:")
-                    print("- Ask about courses, registration, grades, fees")
-                    print("- Request information based on your role permissions")
-                    print(f"- Your role: {current_user['role']}")
-                    print(f"- Available permissions: {len(current_user.get('permissions', []))}")
+                    print("\n  Student Services:")
+                    print("    - Courses, grades, GPA, timetable, fee balance, transcripts")
+                    print("  Academic Support:")
+                    print("    - Deadlines, exam schedule, library search, academic calendar")
+                    print("  Admissions:")
+                    print("    - Application status, scholarships, document guidance, campus tours")
+                    print("  Administrative:")
+                    print("    - Leave of absence, ID card, room booking, staff directory")
+                    print("  Wellbeing & Campus Life:")
+                    print("    - Mental health, clubs & societies, lost & found, transport")
+                    print(f"\n  Your role: {current_user['role']}")
+                    print(f"  Available permissions: {len(current_user.get('permissions', []))}")
                     if hasattr(self, 'voice_interface') and getattr(self.voice_interface, 'enabled', False):
-                        print("- Voice commands: 'start voice mode', 'test voice'")
-                    print("- 'exit' to return to main menu")
+                        print("  Voice commands: 'start voice mode', 'test voice'")
+                    print("  'exit' to return to main menu")
                     continue
 
                 if not user_input.strip():

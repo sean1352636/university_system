@@ -95,6 +95,37 @@ def fallback_processing(chatbot, text: str) -> Dict[str, Any]:
         result["confidence"] = 0.8
         return result
 
+    # Multi-word pattern matching first (higher specificity)
+    multi_word_patterns = {
+        "academic_support": [
+            "assignment due", "exam schedule", "exam room", "academic calendar",
+            "term date", "book available", "library search",
+        ],
+        "admissions": [
+            "application status", "campus tour", "document submission",
+            "scholarship eligibility",
+        ],
+        "administrative": [
+            "leave of absence", "id card", "room booking", "staff directory",
+            "office hours",
+        ],
+        "wellbeing": [
+            "mental health", "lost and found", "lost property",
+            "campus event", "student club",
+        ],
+        "financial": [
+            "fee balance", "payment deadline", "financial aid",
+            "payment plan",
+        ],
+    }
+    for intent, phrases in multi_word_patterns.items():
+        for phrase in phrases:
+            if phrase in text_lower:
+                result["intent"] = intent
+                result["confidence"] = 0.7
+                return result
+
+    # Single-word pattern matching from intents dict
     for intent, data in chatbot.intents.items():
         for pattern in data["patterns"]:
             if pattern in text_lower:

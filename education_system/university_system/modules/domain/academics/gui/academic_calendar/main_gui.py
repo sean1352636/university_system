@@ -843,6 +843,14 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
     def return_to_main_menu(self):
         """Return to main menu"""
         try:
+            # Cancel pending after callbacks before destroying
+            if self._task_after_id is not None:
+                try:
+                    self.root.after_cancel(self._task_after_id)
+                    self._task_after_id = None
+                except tk.TclError:
+                    pass
+
             # Determine which window to close
             window_to_close = self.parent_window if self.parent_window else self.root
 

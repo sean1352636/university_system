@@ -37,6 +37,16 @@ def generate_authenticated_response(chatbot, nlp_result: Dict, context: Conversa
         return handle_technical_query(chatbot, nlp_result, context)
     elif intent == "voice_command":
         return chatbot.handle_voice_command(context.messages[-1]["user_message"], context.user_id, context)
+    elif intent == "academic_support":
+        return handle_authenticated_academic_support(chatbot, nlp_result, context, session)
+    elif intent == "admissions":
+        return handle_authenticated_admissions(chatbot, nlp_result, context, session)
+    elif intent == "administrative":
+        return handle_authenticated_administrative(chatbot, nlp_result, context, session)
+    elif intent == "wellbeing":
+        # Wellbeing queries don't need special auth — delegate to base handler
+        from education_system.university_system.utils.ai.university_chatbot.intent_handlers import handle_wellbeing_query
+        return handle_wellbeing_query(chatbot, nlp_result, context)
     else:
         return handle_authenticated_general_query(chatbot, nlp_result, context, session)
 
@@ -132,3 +142,120 @@ def handle_authenticated_general_query(chatbot, nlp_result: Dict, context: Conve
     features_text = ", ".join(available_features) if available_features else "general university information"
 
     return f"{role_greetings.get(session.role, f'Hello {session.username}!')} I can help you with {features_text}. You can also use voice commands by saying 'start voice mode'. What would you like to know?"
+
+
+def handle_authenticated_academic_support(chatbot, nlp_result: Dict, context: ConversationContext, session: AuthenticatedSession) -> str:
+    """Handle academic support with user-specific data."""
+    user_message = context.messages[-1]["user_message"].lower()
+    student_id = chatbot.get_student_id_for_user(session.username) if session.role == "student" else None
+
+    # Inject student_id into context for downstream handlers
+    if student_id:
+        context.entities["student_id"] = student_id
+
+    # Deadline reminders — personalised
+    if any(kw in user_message for kw in ["deadline", "due", "assignment"]):
+        if student_id:
+            deadlines = chatbot.get_upcoming_deadlines(student_id)
+            if deadlines:
+                response = f"Upcoming Deadlines for {session.username}:\n\n"
+                for d in deadlines:
+                    response += f"  {d['title']} ({d['module']})\n"
+                    response += f"    Type: {d['type'] or 'N/A'}  |  Due: {d['due']}\n\n"
+                return response
+            return f"No upcoming deadlines, {session.username}. You're all caught up!"
+
+    # Exam schedule — personalised
+    if any(kw in user_message for kw in ["exam", "examination"]):
+        if student_id:
+            exams = chatbot.get_exam_schedule(student_id)
+            if exams:
+                response = f"Exam Schedule for {session.username}:\n\n"
+                for e in exams:
+                    room_str = f"{e['room'] or 'TBD'}"
+                    if e.get('building'):
+                        room_str += f" ({e['building']})"
+                    response += f"  {e['module']}\n"
+                    response += f"    Date: {e['date']}  |  Time: {e['start']} - {e['end']}  |  Room: {room_str}\n\n"
+                return response
+            return f"No upcoming exams found for your modules, {session.username}."
+
+    # Delegate to the base handler for library, calendar, etc.
+    from education_system.university_system.utils.ai.university_chatbot.intent_handlers import handle_academic_support_query
+    return handle_academic_support_query(chatbot, nlp_result, context)
+
+
+def handle_authenticated_admissions(chatbot, nlp_result: Dict, context: ConversationContext, session: AuthenticatedSession) -> str:
+    """Handle admissions with auth context."""
+    user_message = context.messages[-1]["user_message"].lower()
+
+    # Application status with auto-lookup
+    if any(kw in user_message for kw in ["application status", "track", "my application"]):
+        apps = chatbot.get_application_status(session.username)
+        if apps:
+            response = f"Application Status for {session.username}:\n\n"
+            for a in apps:
+                response += f"  Application #{a['id']} — {a['programme']}\n"
+                response += f"    Status: {a['status']}  |  Submitted: {a['submitted']}"
+                if a.get('decision'):
+                    response += f"  |  Decision: {a['decision']}"
+                response += "\n\n"
+            return response
+
+    # Admin/staff can view all applications
+    if session.role in ["staff", "admin"] and "manage_students" in session.permissions:
+        return f"As a {session.role}, you can access the full admissions dashboard. What would you like to look up?"
+
+    from education_system.university_system.utils.ai.university_chatbot.intent_handlers import handle_admissions_query
+    return handle_admissions_query(chatbot, nlp_result, context)
+
+
+def handle_authenticated_administrative(chatbot, nlp_result: Dict, context: ConversationContext, session: AuthenticatedSession) -> str:
+    """Handle admin tasks with auth context."""
+    user_message = context.messages[-1]["user_message"].lower()
+
+    # Fee balance — personalised
+    if any(kw in user_message for kw in ["fee", "balance", "payment", "invoice", "owe"]):
+        if session.role == "student":
+            student_id = chatbot.get_student_id_for_user(session.username) or session.username
+            fee_info = chatbot.get_fee_balance(student_id)
+            fees = fee_info.get("fees", [])
+            if fees:
+                response = f"Fee Balance for {session.username}:\n\n"
+                for f in fees:
+                    outstanding = (f['amount'] or 0) - (f['paid'] or 0)
+                    response += f"  {f['description'] or 'Fee'}\n"
+                    response += f"    Amount: £{f['amount'] or 0:.2f}  |  Paid: £{f['paid'] or 0:.2f}  |  Outstanding: £{outstanding:.2f}\n"
+                    response += f"    Due: {f['due_date'] or 'N/A'}  |  Status: {f['status'] or 'N/A'}\n\n"
+                return response
+            return f"No outstanding fees found for {session.username}."
+
+    # Transcript / certificate requests
+    if any(kw in user_message for kw in ["transcript", "certificate", "enrollment verification"]):
+        if session.role == "student":
+            student_id = chatbot.get_student_id_for_user(session.username) or session.username
+            requests = chatbot.get_transcript_requests(student_id)
+            if requests:
+                response = f"Your Document Requests:\n\n"
+                for r in requests:
+                    response += f"  #{r['id']} — {r['type']}\n"
+                    response += f"    Status: {r['status']}  |  Requested: {r['date']}\n\n"
+                response += "To submit a new request, visit the registrar's office or student portal."
+                return response
+            return ("You have no pending document requests.\n\n"
+                    "To request a transcript or enrollment certificate:\n"
+                    "  1. Visit the student portal > Documents section\n"
+                    "  2. Or contact the registrar at registrar@university.ac.uk")
+
+    # Room bookings with auto-lookup
+    if any(kw in user_message for kw in ["room booking", "book a room", "my booking"]):
+        bookings = chatbot.get_room_bookings(session.username)
+        if bookings:
+            response = f"Your Room Bookings, {session.username}:\n\n"
+            for b in bookings:
+                response += f"  {b['room']} — {b['date']}\n"
+                response += f"    Time: {b['start']} - {b['end']}  |  Status: {b['status']}\n\n"
+            return response
+
+    from education_system.university_system.utils.ai.university_chatbot.intent_handlers import handle_administrative_query
+    return handle_administrative_query(chatbot, nlp_result, context)

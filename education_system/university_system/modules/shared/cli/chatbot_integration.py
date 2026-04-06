@@ -71,27 +71,125 @@ def display_chatbot_menu() -> None:
         print(_t("cli.logged_in_as").format(user=auth.current_user['username'], role=auth.current_user['role']))
         print("=" * 50)
         print("1. " + _t("cli.chatbot.start_session"))
-        print("2. " + _t("cli.chatbot.view_history"))
+        print("2. Quick Actions Menu")
+        print("3. " + _t("cli.chatbot.view_history"))
         if auth.check_permission('view_all_conversations'):
-            print("3. " + _t("cli.chatbot.view_all_admin"))
+            print("4. " + _t("cli.chatbot.view_all_admin"))
         if auth.check_permission('chatbot_admin'):
-            print("4. " + _t("cli.chatbot.administration"))
-        print("5. " + _t("common.back"))
+            print("5. " + _t("cli.chatbot.administration"))
+        print("6. " + _t("common.back"))
 
         choice = input("\n" + _t("common.enter_choice") + ": ")
 
         if choice == '1':
             start_chat_session()
         elif choice == '2':
+            quick_actions_menu()
+        elif choice == '3':
             view_conversation_history()
-        elif choice == '3' and auth.check_permission('view_all_conversations'):
+        elif choice == '4' and auth.check_permission('view_all_conversations'):
             view_all_conversations()
-        elif choice == '4' and auth.check_permission('chatbot_admin'):
+        elif choice == '5' and auth.check_permission('chatbot_admin'):
             chatbot_administration()
-        elif choice == '5':
+        elif choice == '6':
             break
         else:
             print(_t("common.invalid_choice"))
+
+def quick_actions_menu():
+    """Quick actions menu for common chatbot queries."""
+    global auth, chatbot_instance
+
+    if not chatbot_instance:
+        print("Chatbot not available.")
+        return
+
+    user = auth.current_user
+    session_id = f"{user['username']}_{int(time.time())}"
+
+    actions = {
+        # Student Services
+        '1': ("My Courses", "What courses am I enrolled in?"),
+        '2': ("My Grades / GPA", "What is my GPA and recent grades?"),
+        '3': ("Timetable / Schedule", "Show my timetable"),
+        '4': ("Fee Balance", "What is my fee balance?"),
+        '5': ("Financial Aid Status", "What is my financial aid status?"),
+        '6': ("Request Transcript", "How do I request a transcript or enrollment certificate?"),
+        # Academic Support
+        '7': ("Upcoming Deadlines", "What are my upcoming deadlines?"),
+        '8': ("Exam Schedule", "What is my exam schedule?"),
+        '9': ("Library Search", None),  # special — prompts for query
+        '10': ("Academic Calendar", "Show the academic calendar"),
+        # Admissions & Admin
+        '11': ("Application Status", "What is my application status?"),
+        '12': ("Staff Directory Search", None),  # special — prompts for query
+        '13': ("Room Booking Info", "How do I book a room?"),
+        '14': ("ID Card Replacement", "How do I replace my ID card?"),
+        '15': ("Leave of Absence", "How do I apply for a leave of absence?"),
+        # Wellbeing & Campus Life
+        '16': ("Mental Health Resources", "What mental health support is available?"),
+        '17': ("Clubs & Societies", "What clubs and societies are available?"),
+        '18': ("Lost & Found", "Show lost and found items"),
+        '19': ("Transport Schedule", "What is the shuttle schedule?"),
+        '20': ("Campus Events", "What events are happening on campus?"),
+    }
+
+    while True:
+        print("\nQuick Actions")
+        print("=" * 50)
+        print("\n  Student Services:")
+        for k in ['1', '2', '3', '4', '5', '6']:
+            print(f"    {k:>2}. {actions[k][0]}")
+        print("\n  Academic Support:")
+        for k in ['7', '8', '9', '10']:
+            print(f"    {k:>2}. {actions[k][0]}")
+        print("\n  Admissions & Admin:")
+        for k in ['11', '12', '13', '14', '15']:
+            print(f"    {k:>2}. {actions[k][0]}")
+        print("\n  Wellbeing & Campus Life:")
+        for k in ['16', '17', '18', '19', '20']:
+            print(f"    {k:>2}. {actions[k][0]}")
+        print(f"\n    0. Back")
+
+        choice = input("\nEnter choice: ").strip()
+
+        if choice == '0':
+            break
+
+        if choice not in actions:
+            print("Invalid choice.")
+            continue
+
+        label, query = actions[choice]
+
+        # Special cases that need user input
+        if choice == '9':
+            search_term = input("Enter library search term: ").strip()
+            if not search_term:
+                print("No search term provided.")
+                continue
+            query = f"Search library for {search_term}"
+        elif choice == '12':
+            search_term = input("Enter name or department to search: ").strip()
+            if not search_term:
+                print("No search term provided.")
+                continue
+            query = f"Find {search_term} in staff directory"
+
+        print(f"\n--- {label} ---")
+        try:
+            response = chatbot_instance.process_message(
+                query, user['username'], session_id=session_id
+            )
+            print(f"Chatbot: {response}")
+            log_chatbot_conversation(
+                user['id'], user['username'], query, response, session_id
+            )
+        except Exception as e:
+            print(f"Error: {e}")
+
+        input("\nPress Enter to continue...")
+
 
 def start_chat_session():
     """Start interactive chat session"""

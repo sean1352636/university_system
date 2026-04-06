@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.66.0 — 2026-04-06](#8660---2026-04-06)
 - [8.65.0 — 2026-04-05](#8650---2026-04-05)
 - [8.64.0 — 2026-04-05](#8640---2026-04-05)
 - [8.63.0 — 2026-04-05](#8630---2026-04-05)
@@ -156,6 +157,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](education_system/docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](education_system/docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](education_system/docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.66.0] — 2026-04-06
+
+### Assignment System, Chatbot Admin, Auth & Bug Fixes
+
+#### Added
+
+**Chatbot Admin Panel — User Interaction History & Export**
+- User Management tab now queries `chatbot_conversations` DB table to list all users who have interacted with the bot (username, role, message count, last activity)
+- Double-click a username to open a full scrollable chat history window with timestamped, color-coded messages
+- "Export Chats as TXT" button saves selected user's complete conversation history to a text file
+- "Email Chats to Me" button sends chat history to the admin's email address via the email service
+- File: `utils/ai/gui/screens/admin.py`
+
+**Forced Password Reset Admin Toggle (GUI & CLI)**
+- New `auth_settings` table in `auth.db` for persistent admin settings (key-value store)
+- `get_setting()` / `set_setting()` methods added to `UserAuth` in shared auth module
+- `check_password_expiry()` now checks the `force_password_reset` setting — when disabled, password expiry checks are skipped entirely
+- GUI: Toggle added to Security Settings window (Admin > System Administration > Configuration > Security Settings) with live status indicator
+- CLI: "Toggle Forced Password Reset" option added to User Management menu (option 11)
+- Files: `shared/auth/core.py`, `modules/shared/gui/main/admin/config_gui.py`, `infrastructure/auth/cli/cli_menus.py`
+
+**CLI Password Expiry Handling**
+- CLI login flow now handles `password_expired` flag (previously only GUI handled this)
+- Prompts user to change expired password before proceeding, with 3 attempts and strength validation
+- File: `shared/cli/login_cli.py`
+
+#### Fixed
+
+**Assignment System GUI — Missing translations**
+- Dashboard showed raw i18n keys (e.g. `academics.assignments.dashboard`) instead of translated text
+- Fixed key prefix from `academics.assignments.*` to `assignments.*` to match the actual JSON translation file structure
+- File: `modules/domain/academics/gui/assignment_system/dashboard.py`
+
+**Assignment System GUI — Duplicate admin nav entry**
+- Removed "Integrity Cases" from ADMIN sidebar — Academic Misconduct already covers the same functionality
+- File: `modules/domain/academics/gui/assignment_system/layout_manager.py`
+
+**Assignment System GUI — Calendar opening second homescreen**
+- "Open Full Academic Calendar" button created a standalone `tk.Tk()` window; clicking "Return to Main Menu" in the calendar destroyed it and launched a new `UnifiedManagementGUI`, creating a duplicate homescreen
+- Fixed by opening the calendar as a `tk.Toplevel` child window so "Return to Main Menu" simply closes it
+- File: `modules/domain/academics/gui/assignment_system/file_preview.py`
+
+**Academic Calendar GUI — Tkinter `after` callback error**
+- `invalid command name "…process_tasks"` error occurred when closing the calendar because `return_to_main_menu()` destroyed the window without cancelling the pending `after` task processor callback
+- Added `after_cancel(_task_after_id)` before window destruction, matching the existing `_on_close()` handler
+- File: `modules/domain/academics/gui/academic_calendar/main_gui.py`
+
+**Chatbot Admin — `log_config.json` slice error**
+- System Logs tab loaded all `.json` files in the log directory including `log_config.json` (a dict, not a list)
+- Slicing a dict with `[-10:]` caused `TypeError: unhashable type: 'slice'`
+- Fixed by excluding `log_config.json` from the file list and adding an `isinstance(logs, list)` guard
+- File: `utils/ai/gui/screens/admin.py`
 
 ---
 

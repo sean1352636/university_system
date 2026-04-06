@@ -378,7 +378,14 @@ class UserAuth:
             conn.close()
 
     def check_password_expiry(self, user_id: int, max_age_days: int = 90) -> bool:
-        """Check if a user's password has expired. Returns True if expired."""
+        """Check if a user's password has expired. Returns True if expired.
+
+        Returns False immediately when forced password reset is disabled
+        via the ``force_password_reset`` admin setting.
+        """
+        if not self.get_setting("force_password_reset", True):
+            return False
+
         conn = self._conn()
         try:
             row = conn.execute(
@@ -390,6 +397,53 @@ class UserAuth:
             return (datetime.now() - changed).days > max_age_days
         except Exception:
             return False
+        finally:
+            conn.close()
+
+    # ── Admin settings helpers ──────────────────────────────────────────
+
+    def _ensure_settings_table(self, conn):
+        """Create the auth_settings table if it doesn't exist."""
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS auth_settings (
+                key   TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """)
+
+    def get_setting(self, key: str, default=None):
+        """Read an admin setting from auth_settings. Returns *default* if unset."""
+        conn = self._conn()
+        try:
+            self._ensure_settings_table(conn)
+            row = conn.execute(
+                "SELECT value FROM auth_settings WHERE key = ?", (key,)
+            ).fetchone()
+            if row is None:
+                return default
+            raw = row["value"]
+            # Coerce booleans stored as "true"/"false"
+            if raw.lower() in ("true", "1"):
+                return True
+            if raw.lower() in ("false", "0"):
+                return False
+            return raw
+        except Exception:
+            return default
+        finally:
+            conn.close()
+
+    def set_setting(self, key: str, value) -> None:
+        """Write an admin setting to auth_settings."""
+        conn = self._conn()
+        try:
+            self._ensure_settings_table(conn)
+            str_val = str(value).lower() if isinstance(value, bool) else str(value)
+            conn.execute(
+                "INSERT OR REPLACE INTO auth_settings (key, value) VALUES (?, ?)",
+                (key, str_val),
+            )
+            conn.commit()
         finally:
             conn.close()
 

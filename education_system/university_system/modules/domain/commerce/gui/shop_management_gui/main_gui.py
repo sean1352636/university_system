@@ -726,6 +726,8 @@ try:
         UniversityShopGUI.get_daily_stats = dashboard_manager.get_daily_stats
     if hasattr(dashboard_manager, 'update_status'):
         UniversityShopGUI.update_status = dashboard_manager.update_status
+    if hasattr(dashboard_manager, 'show_low_stock_report'):
+        UniversityShopGUI.show_low_stock_report = dashboard_manager.show_low_stock_report
 
     # Bind product browser methods
     if hasattr(product_browser, 'show_browse_products'):
@@ -800,6 +802,12 @@ try:
         UniversityShopGUI.get_order_details = order_manager.get_order_details
     if hasattr(order_manager, 'show_all_transactions'):
         UniversityShopGUI.show_all_transactions = order_manager.show_all_transactions
+    if hasattr(order_manager, 'load_transactions'):
+        UniversityShopGUI.load_transactions = order_manager.load_transactions
+    if hasattr(order_manager, 'export_transactions'):
+        UniversityShopGUI.export_transactions = order_manager.export_transactions
+    if hasattr(order_manager, 'view_refund_transaction_details'):
+        UniversityShopGUI.view_refund_transaction_details = order_manager.view_refund_transaction_details
 
     # Bind inventory methods
     if hasattr(inventory_manager, 'show_manage_inventory'):
@@ -836,6 +844,8 @@ try:
         UniversityShopGUI.show_shop_refund_method_dialog = refund_manager.show_shop_refund_method_dialog
     if hasattr(refund_manager, 'send_shop_refund_receipt'):
         UniversityShopGUI.send_shop_refund_receipt = refund_manager.send_shop_refund_receipt
+    if hasattr(refund_manager, 'export_refunds_to_csv'):
+        UniversityShopGUI.export_refunds_to_csv = refund_manager.export_refunds_to_csv
 
     # Bind report methods
     if hasattr(report_manager, 'show_reports'):

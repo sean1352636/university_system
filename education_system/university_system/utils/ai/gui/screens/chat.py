@@ -107,38 +107,91 @@ class ChatScreenMixin:
                                 command=self.send_message)
         send_button.pack(side=tk.RIGHT)
 
-        # Quick actions frame
-        quick_actions_frame = ttk.LabelFrame(self.chat_frame, text=_t("chatbot.quick_actions", default="Quick Actions"), padding=10)
-        quick_actions_frame.pack(fill=tk.X, pady=(10, 0))
+        # Quick actions frame with scrollable notebook tabs
+        quick_actions_notebook = ttk.Notebook(self.chat_frame)
+        quick_actions_notebook.pack(fill=tk.X, pady=(10, 0))
 
-        # Context-aware quick action buttons (4x3 grid)
-        quick_buttons = [
+        # --- Student Services tab ---
+        services_frame = ttk.Frame(quick_actions_notebook, padding=5)
+        quick_actions_notebook.add(services_frame, text=_t("chatbot.tab_services", default="Student Services"))
+        services_buttons = [
             (_t("chatbot.my_courses", default="My Courses"), self.show_my_courses),
             (_t("chatbot.my_grades", default="My Grades"), self.show_my_grades),
-            (_t("chatbot.view_schedule", default="View Schedule"), self.show_my_schedule),
-            (_t("chatbot.assignments", default="Assignments"), self.show_my_assignments),
-            (_t("chatbot.library_books", default="Library Books"), self.show_my_library_books),
+            (_t("chatbot.view_schedule", default="Timetable"), self.show_my_schedule),
             (_t("chatbot.check_financial_aid", default="Financial Aid"), self.show_financial_aid),
+            (_t("chatbot.fee_balance", default="Fee Balance"), self.show_fee_balance),
+            (_t("chatbot.transcript_request", default="Transcripts"), self.show_transcript_request),
+        ]
+        for i, (text, cmd) in enumerate(services_buttons):
+            ttk.Button(services_frame, text=text, style='CB.Secondary.TButton',
+                       command=cmd).grid(row=i // 3, column=i % 3, padx=5, pady=4, sticky='ew')
+        for c in range(3):
+            services_frame.columnconfigure(c, weight=1)
+
+        # --- Academic Support tab ---
+        academic_frame = ttk.Frame(quick_actions_notebook, padding=5)
+        quick_actions_notebook.add(academic_frame, text=_t("chatbot.tab_academic", default="Academic Support"))
+        academic_buttons = [
+            (_t("chatbot.assignments", default="Assignments"), self.show_my_assignments),
+            (_t("chatbot.deadlines", default="Deadlines"), self.show_deadlines),
+            (_t("chatbot.exam_schedule", default="Exam Schedule"), self.show_exam_schedule),
+            (_t("chatbot.library_search", default="Library Search"), self.show_library_search),
+            (_t("chatbot.academic_calendar", default="Academic Calendar"), self.show_academic_calendar),
             (_t("chatbot.attendance", default="Attendance"), self.show_my_attendance),
+        ]
+        for i, (text, cmd) in enumerate(academic_buttons):
+            ttk.Button(academic_frame, text=text, style='CB.Secondary.TButton',
+                       command=cmd).grid(row=i // 3, column=i % 3, padx=5, pady=4, sticky='ew')
+        for c in range(3):
+            academic_frame.columnconfigure(c, weight=1)
+
+        # --- Admissions & Admin tab ---
+        admin_frame = ttk.Frame(quick_actions_notebook, padding=5)
+        quick_actions_notebook.add(admin_frame, text=_t("chatbot.tab_admin", default="Admin & Admissions"))
+        admin_buttons = [
+            (_t("chatbot.application_status", default="Application Status"), self.show_application_status),
+            (_t("chatbot.staff_directory", default="Staff Directory"), self.show_staff_directory),
+            (_t("chatbot.room_booking", default="Room Booking"), self.show_room_bookings),
+            (_t("chatbot.id_card", default="ID Card Help"), self.show_id_card_help),
+            (_t("chatbot.leave_absence", default="Leave/Deferral"), self.show_leave_guidance),
             (_t("chatbot.support_tickets", default="Support Tickets"), self.show_my_tickets),
-            (_t("chatbot.notifications_btn", default="Notifications"), self.show_my_notifications),
+        ]
+        for i, (text, cmd) in enumerate(admin_buttons):
+            ttk.Button(admin_frame, text=text, style='CB.Secondary.TButton',
+                       command=cmd).grid(row=i // 3, column=i % 3, padx=5, pady=4, sticky='ew')
+        for c in range(3):
+            admin_frame.columnconfigure(c, weight=1)
+
+        # --- Campus Life tab ---
+        campus_frame = ttk.Frame(quick_actions_notebook, padding=5)
+        quick_actions_notebook.add(campus_frame, text=_t("chatbot.tab_campus", default="Campus Life"))
+        campus_buttons = [
             (_t("chatbot.events", default="Events"), self.show_upcoming_events),
+            (_t("chatbot.clubs", default="Clubs & Societies"), self.show_clubs_societies),
+            (_t("chatbot.mental_health", default="Wellbeing"), self.show_mental_health_resources),
+            (_t("chatbot.lost_found", default="Lost & Found"), self.show_lost_found),
+            (_t("chatbot.transport", default="Transport"), self.show_transport_schedule),
+            (_t("chatbot.notifications_btn", default="Notifications"), self.show_my_notifications),
+        ]
+        for i, (text, cmd) in enumerate(campus_buttons):
+            ttk.Button(campus_frame, text=text, style='CB.Secondary.TButton',
+                       command=cmd).grid(row=i // 3, column=i % 3, padx=5, pady=4, sticky='ew')
+        for c in range(3):
+            campus_frame.columnconfigure(c, weight=1)
+
+        # --- Info tab ---
+        info_frame = ttk.Frame(quick_actions_notebook, padding=5)
+        quick_actions_notebook.add(info_frame, text=_t("chatbot.tab_info", default="Help & Info"))
+        info_buttons = [
             (_t("chatbot.announcements", default="Announcements"), self.show_announcements),
+            (_t("chatbot.library_books", default="My Library Books"), self.show_my_library_books),
             (_t("chatbot.quick_help", default="Quick Help"), self.show_quick_help),
         ]
-
-        for i, (text, command) in enumerate(quick_buttons):
-            row = i // 3
-            col = i % 3
-            btn = ttk.Button(quick_actions_frame,
-                            text=text,
-                            style='CB.Secondary.TButton',
-                            command=command)
-            btn.grid(row=row, column=col, padx=5, pady=5, sticky='ew')
-
-        # Configure grid weights for quick actions
-        for i in range(3):
-            quick_actions_frame.columnconfigure(i, weight=1)
+        for i, (text, cmd) in enumerate(info_buttons):
+            ttk.Button(info_frame, text=text, style='CB.Secondary.TButton',
+                       command=cmd).grid(row=0, column=i, padx=5, pady=4, sticky='ew')
+        for c in range(3):
+            info_frame.columnconfigure(c, weight=1)
 
     def update_font_size(self, event=None):
         """Update chat font size - FIXED: Handle both Font objects and tuples properly"""

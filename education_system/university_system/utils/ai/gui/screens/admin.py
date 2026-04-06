@@ -126,107 +126,302 @@ Last Updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             self.status_text.insert(1.0, error_msg)
 
     def create_user_management_tab(self, parent):
-        """Create user management interface"""
+        """Create user management interface with bot interaction history"""
         # User list frame
-        users_frame = ttk.LabelFrame(parent, text="Active Users", padding=10)
+        users_frame = ttk.LabelFrame(parent, text="Users Who Interacted With Bot", padding=10)
         users_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # User list
-        columns = ('Username', 'Role', 'Last Activity', 'Status')
+        columns = ('Username', 'Role', 'Messages', 'Last Activity')
         self.user_tree = ttk.Treeview(users_frame, columns=columns, show='headings', height=10)
 
-        for col in columns:
-            self.user_tree.heading(col, text=col)
-            self.user_tree.column(col, width=120)
+        self.user_tree.heading('Username', text='Username')
+        self.user_tree.heading('Role', text='Role')
+        self.user_tree.heading('Messages', text='Messages')
+        self.user_tree.heading('Last Activity', text='Last Activity')
 
-        self.user_tree.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        self.user_tree.column('Username', width=150)
+        self.user_tree.column('Role', width=100)
+        self.user_tree.column('Messages', width=80)
+        self.user_tree.column('Last Activity', width=160)
+
+        scrollbar = ttk.Scrollbar(users_frame, orient='vertical', command=self.user_tree.yview)
+        self.user_tree.configure(yscrollcommand=scrollbar.set)
+        self.user_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, pady=(0, 10))
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=(0, 10))
+
+        # Double-click to view chats
+        self.user_tree.bind('<Double-1>', lambda e: self.view_user_chats())
+
+        # Hint label
+        hint_label = ttk.Label(parent, text="Double-click a username to view their chat history",
+                               font=('Arial', 9, 'italic'))
+        hint_label.pack(anchor=tk.W, padx=15)
 
         # User management buttons
-        user_buttons_frame = ttk.Frame(users_frame)
-        user_buttons_frame.pack(fill=tk.X)
+        user_buttons_frame = ttk.Frame(parent)
+        user_buttons_frame.pack(fill=tk.X, padx=10, pady=(5, 10))
 
         ttk.Button(user_buttons_frame, text="Refresh Users",
                    command=self.refresh_user_list).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(user_buttons_frame, text="View Details",
-                   command=self.view_user_details).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(user_buttons_frame, text="View Chats",
+                   command=self.view_user_chats).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(user_buttons_frame, text="Export Chats as TXT",
+                   command=self.export_user_chats_txt).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(user_buttons_frame, text="Email Chats to Me",
+                   command=self.email_user_chats).pack(side=tk.LEFT, padx=(0, 5))
         ttk.Button(user_buttons_frame, text="Send Message",
                    command=self.send_admin_message).pack(side=tk.LEFT)
 
         # Initialize user list
         self.refresh_user_list()
 
+    def _get_db_path(self):
+        """Get database path from chatbot"""
+        return getattr(self.chatbot, 'db_path', None)
+
     def refresh_user_list(self):
-        """Refresh the user list display"""
-        # Clear existing items
+        """Refresh the user list from the database"""
         for item in self.user_tree.get_children():
             self.user_tree.delete(item)
 
         try:
-            # Get active sessions from chatbot
-            if hasattr(self.chatbot, 'authenticated_sessions'):
-                for token, session in self.chatbot.authenticated_sessions.items():
-                    status = "Active" if (datetime.now() - session.last_activity).seconds < 300 else "Idle"
-                    self.user_tree.insert('', 'end', values=(
-                        session.username,
-                        session.role,
-                        session.last_activity.strftime('%H:%M:%S'),
-                        status
-                    ))
+            from education_system.university_system.infrastructure.database.db import sqlite3
+            db_path = self._get_db_path()
+            if not db_path:
+                return
 
-            # Add conversation history users
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+
+            # Get all users who have interacted with the chatbot
+            cursor.execute('''
+                SELECT cc.username,
+                       COALESCE(u.role, 'guest') as role,
+                       COUNT(*) as message_count,
+                       MAX(cc.timestamp) as last_activity
+                FROM chatbot_conversations cc
+                LEFT JOIN users u ON cc.user_id = u.id
+                GROUP BY cc.username
+                ORDER BY last_activity DESC
+            ''')
+            users = cursor.fetchall()
+            conn.close()
+
+            for username, role, msg_count, last_activity in users:
+                self.user_tree.insert('', 'end', values=(
+                    username, role, msg_count, last_activity
+                ))
+
+        except Exception as e:
+            # Fallback to in-memory conversation history
             if hasattr(self.chatbot, 'conversation_history'):
                 for username, history in self.chatbot.conversation_history.items():
-                    if history:  # Has recent activity
+                    if history:
                         last_msg = history[-1]
                         self.user_tree.insert('', 'end', values=(
-                            username,
-                            "Guest",
-                            last_msg['timestamp'],
-                            "Recent"
+                            username, "Guest", len(history), last_msg['timestamp']
                         ))
-        except Exception as e:
-            print(f"Error refreshing user list: {e}")
+            logger.debug(f"Error refreshing user list from DB: {e}")
 
-    def view_user_details(self):
-        """View detailed information about selected user"""
+    def _get_selected_username(self):
+        """Get username from the selected tree item, or None"""
         selection = self.user_tree.selection()
         if not selection:
             messagebox.showwarning(
                 _t("chatbot.no_selection_title", default="No Selection"),
                 _t("chatbot.select_user_to_view", default="Please select a user to view details.")
             )
+            return None
+        return self.user_tree.item(selection[0])['values'][0]
+
+    def _load_user_conversations(self, username):
+        """Load all conversations for a user from the database.
+
+        Returns a list of dicts with keys: timestamp, message, response.
+        """
+        conversations = []
+        try:
+            from education_system.university_system.infrastructure.database.db import sqlite3
+            db_path = self._get_db_path()
+            if not db_path:
+                return conversations
+
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT timestamp, message, response
+                FROM chatbot_conversations
+                WHERE username = ?
+                ORDER BY timestamp ASC
+            ''', (username,))
+            for ts, msg, resp in cursor.fetchall():
+                conversations.append({'timestamp': ts, 'message': msg, 'response': resp})
+            conn.close()
+        except Exception as e:
+            logger.debug(f"Error loading conversations from DB: {e}")
+            # Fallback to in-memory
+            if hasattr(self.chatbot, 'conversation_history') and username in self.chatbot.conversation_history:
+                for entry in self.chatbot.conversation_history[username]:
+                    conversations.append({
+                        'timestamp': entry.get('timestamp', ''),
+                        'message': entry.get('message', ''),
+                        'response': entry.get('response', ''),
+                    })
+        return conversations
+
+    def _format_conversations_text(self, username, conversations):
+        """Format conversations into a readable text string."""
+        lines = [f"Chat History for: {username}",
+                 f"Total Messages: {len(conversations)}",
+                 f"Exported: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+                 "=" * 60, ""]
+        for conv in conversations:
+            lines.append(f"[{conv['timestamp']}]")
+            lines.append(f"  User:    {conv['message']}")
+            lines.append(f"  Chatbot: {conv['response']}")
+            lines.append("")
+        return "\n".join(lines)
+
+    def view_user_chats(self):
+        """View all chat messages for the selected user"""
+        username = self._get_selected_username()
+        if not username:
             return
 
-        item = self.user_tree.item(selection[0])
-        username = item['values'][0]
+        conversations = self._load_user_conversations(username)
 
-        # Create user details window
+        # Create details window
         details_window = tk.Toplevel(self.root)
-        details_window.title(f"User Details - {username}")
-        details_window.geometry("500x400")
+        details_window.title(f"Chat History - {username}")
+        details_window.geometry("700x500")
+        details_window.transient(self.root)
 
-        # User info
-        info_frame = ttk.LabelFrame(details_window, text="User Information", padding=10)
-        info_frame.pack(fill=tk.X, padx=10, pady=10)
+        # Header
+        header = ttk.Label(details_window,
+                           text=f"Chat History for {username} ({len(conversations)} messages)",
+                           font=('Arial', 12, 'bold'))
+        header.pack(anchor=tk.W, padx=10, pady=(10, 5))
 
-        user_info = f"""Username: {username}
-Role: {item['values'][1]}
-Last Activity: {item['values'][2]}
-Status: {item['values'][3]}
+        # Chat display
+        chat_text = scrolledtext.ScrolledText(details_window, height=20, width=80, wrap=tk.WORD)
+        chat_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-Conversation History:
-"""
+        if not conversations:
+            chat_text.insert(tk.END, "No conversation history found for this user.")
+        else:
+            for conv in conversations:
+                chat_text.insert(tk.END, f"[{conv['timestamp']}]\n", "timestamp")
+                chat_text.insert(tk.END, f"  {username}: ", "user")
+                chat_text.insert(tk.END, f"{conv['message']}\n")
+                chat_text.insert(tk.END, f"  Chatbot: ", "bot")
+                chat_text.insert(tk.END, f"{conv['response']}\n\n")
 
-        # Get conversation history
-        if username in self.chatbot.conversation_history:
-            history = self.chatbot.conversation_history[username][-5:]  # Last 5 messages
-            for msg in history:
-                user_info += f"\n[{msg['timestamp']}] {msg['message'][:50]}..."
+        chat_text.tag_configure("timestamp", foreground="gray")
+        chat_text.tag_configure("user", foreground="#1565c0", font=('Arial', 10, 'bold'))
+        chat_text.tag_configure("bot", foreground="#2e7d32", font=('Arial', 10, 'bold'))
+        chat_text.config(state=tk.DISABLED)
 
-        info_text = scrolledtext.ScrolledText(info_frame, height=15, width=50)
-        info_text.insert(1.0, user_info)
-        info_text.config(state=tk.DISABLED)
-        info_text.pack(fill=tk.BOTH, expand=True)
+        # Action buttons
+        btn_frame = ttk.Frame(details_window)
+        btn_frame.pack(fill=tk.X, padx=10, pady=(0, 10))
+
+        def export_this():
+            self._export_conversations_txt(username, conversations)
+
+        def email_this():
+            self._email_conversations(username, conversations)
+
+        ttk.Button(btn_frame, text="Export as TXT", command=export_this).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(btn_frame, text="Email to Me", command=email_this).pack(side=tk.LEFT, padx=(0, 5))
+        ttk.Button(btn_frame, text="Close", command=details_window.destroy).pack(side=tk.RIGHT)
+
+    def export_user_chats_txt(self):
+        """Export selected user's chats as a TXT file"""
+        username = self._get_selected_username()
+        if not username:
+            return
+        conversations = self._load_user_conversations(username)
+        self._export_conversations_txt(username, conversations)
+
+    def _export_conversations_txt(self, username, conversations):
+        """Save conversations to a TXT file via save dialog"""
+        if not conversations:
+            messagebox.showinfo("No Data", f"No conversations found for {username}.")
+            return
+
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".txt",
+            filetypes=[("Text files", "*.txt")],
+            initialfile=f"chatbot_history_{username}.txt",
+            title="Export Chat History"
+        )
+        if not filename:
+            return
+
+        try:
+            text = self._format_conversations_text(username, conversations)
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(text)
+            messagebox.showinfo("Export Complete", f"Chat history exported to:\n{filename}")
+        except Exception as e:
+            messagebox.showerror("Export Error", f"Failed to export: {e}")
+
+    def email_user_chats(self):
+        """Email selected user's chats to the current admin"""
+        username = self._get_selected_username()
+        if not username:
+            return
+        conversations = self._load_user_conversations(username)
+        self._email_conversations(username, conversations)
+
+    def _email_conversations(self, username, conversations):
+        """Email conversations to the current admin user"""
+        if not conversations:
+            messagebox.showinfo("No Data", f"No conversations found for {username}.")
+            return
+
+        admin_email = None
+        if self.current_user:
+            admin_email = self.current_user.get('email')
+
+        if not admin_email:
+            # Try to look it up from the database
+            try:
+                from education_system.university_system.infrastructure.database.db import sqlite3
+                db_path = self._get_db_path()
+                if db_path and self.current_user:
+                    conn = sqlite3.connect(db_path)
+                    cursor = conn.cursor()
+                    cursor.execute('SELECT email FROM users WHERE id = ?',
+                                   (self.current_user.get('id'),))
+                    row = cursor.fetchone()
+                    conn.close()
+                    if row:
+                        admin_email = row[0]
+            except Exception:
+                pass
+
+        if not admin_email:
+            messagebox.showwarning("No Email",
+                                   "Could not find your email address.\nPlease export the chats as TXT instead.")
+            return
+
+        try:
+            from education_system.university_system.infrastructure.email.email_service.core import send_email
+
+            body = self._format_conversations_text(username, conversations)
+            subject = f"Chatbot History - {username} ({len(conversations)} messages)"
+
+            send_email(
+                recipient_email=admin_email,
+                subject=subject,
+                body=body,
+            )
+            messagebox.showinfo("Email Sent",
+                                f"Chat history for {username} sent to {admin_email}")
+        except Exception as e:
+            messagebox.showerror("Email Error", f"Failed to send email: {e}")
 
     def send_admin_message(self):
         """Send administrative message to user"""
@@ -443,7 +638,8 @@ RECOMMENDATIONS:
             # Check for log files
             log_dir = getattr(self.chatbot, 'log_dir', 'logs')
             if os.path.exists(log_dir):
-                log_files = [f for f in os.listdir(log_dir) if f.endswith('.json')]
+                log_files = [f for f in os.listdir(log_dir)
+                             if f.endswith('.json') and f != 'log_config.json']
                 log_files.sort(reverse=True)  # Most recent first
 
                 for log_file in log_files[:3]:  # Show last 3 log files
@@ -453,6 +649,10 @@ RECOMMENDATIONS:
                     try:
                         with open(log_path, 'r') as f:
                             logs = json.load(f)
+
+                            # Skip non-list JSON files (e.g. config files)
+                            if not isinstance(logs, list):
+                                continue
 
                             # Filter by log level
                             level_filter = self.log_level_var.get()
