@@ -35,7 +35,7 @@ The unified launcher (`run.py`) provides system and mode selection for both CLI 
 ## Documentation Structure
 
 ```
-education_system/docs/
+docs/
 ├── README.md                        # This file
 ├── appendices.md                    # Appendices A-K
 ├── shared/                          # Shared infrastructure docs

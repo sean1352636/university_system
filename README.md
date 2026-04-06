@@ -328,8 +328,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 | [Deployment Guide](docs/DEPLOYMENT.md) | Docker, nginx, production deployment |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues and solutions |
 | [Module Guides](docs/MODULE_GUIDES.md) | Per-module user guides (20+) |
-| [Docs Index](education_system/docs/README.md) | Central documentation index |
-| [Appendices](education_system/docs/appendices.md) | Supplementary reference material |
+| [Docs Index](docs/README.md) | Central documentation index |
+| [Appendices](docs/appendices.md) | Supplementary reference material |
 
 ### Architecture Decision Records
 
@@ -354,19 +354,19 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 | Document | Description |
 |----------|-------------|
-| [Authentication](education_system/docs/shared/AUTHENTICATION.md) | Unified auth system (bcrypt, sessions, RBAC) |
-| [MFA Guide](education_system/docs/shared/MFA_GUIDE.md) | Multi-factor authentication setup |
-| [Universal Login](education_system/docs/shared/UNIVERSAL_LOGIN.md) | Cross-system login flow |
-| [Infrastructure](education_system/docs/shared/INFRASTRUCTURE.md) | Shared infrastructure overview |
+| [Authentication](docs/shared/AUTHENTICATION.md) | Unified auth system (bcrypt, sessions, RBAC) |
+| [MFA Guide](docs/shared/MFA_GUIDE.md) | Multi-factor authentication setup |
+| [Universal Login](docs/shared/UNIVERSAL_LOGIN.md) | Cross-system login flow |
+| [Infrastructure](docs/shared/INFRASTRUCTURE.md) | Shared infrastructure overview |
 
 ### Changelogs
 
 | Document | Description |
 |----------|-------------|
 | [CHANGELOG.md](CHANGELOG.md) | Current changelog (v8.x) |
-| [Legacy Notes](education_system/docs/changelogs/CHANGELOG-legacy-notes.md) | Historical development notes |
-| [Module Changelog](education_system/docs/changelogs/CHANGELOG-modules.md) | Per-module change history |
-| [v5 Changelog](education_system/docs/changelogs/CHANGELOG-v5.md) | Version 5.x changelog |
+| [Legacy Notes](docs/changelogs/CHANGELOG-legacy-notes.md) | Historical development notes |
+| [Module Changelog](docs/changelogs/CHANGELOG-modules.md) | Per-module change history |
+| [v5 Changelog](docs/changelogs/CHANGELOG-v5.md) | Version 5.x changelog |
 
 ### Performance & Testing
 
@@ -385,140 +385,140 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 | Document | Description |
 |----------|-------------|
-| [University README](education_system/docs/university_system/README.md) | University system overview |
-| [Quick Start](education_system/docs/university_system/QUICK_START.md) | Getting started guide |
-| [Troubleshooting](education_system/docs/university_system/TROUBLESHOOTING.md) | Common issues |
-| [Technical Reference](education_system/docs/university_system/technical_reference.md) | Technical specifications |
-| [Modules Index](education_system/docs/university_system/modules/README.md) | All domain modules |
-| [Guides Index](education_system/docs/university_system/guides/README.md) | All user guides |
+| [University README](docs/university_system/README.md) | University system overview |
+| [Quick Start](docs/university_system/QUICK_START.md) | Getting started guide |
+| [Troubleshooting](docs/university_system/TROUBLESHOOTING.md) | Common issues |
+| [Technical Reference](docs/university_system/technical_reference.md) | Technical specifications |
+| [Modules Index](docs/university_system/modules/README.md) | All domain modules |
+| [Guides Index](docs/university_system/guides/README.md) | All user guides |
 
 **Security**
 
 | Document | Description |
 |----------|-------------|
-| [Security Overview](education_system/docs/university_system/security/SECURITY.md) | Security architecture |
-| [Authentication](education_system/docs/university_system/security/AUTHENTICATION.md) | Auth system details |
-| [Auth Quick Reference](education_system/docs/university_system/security/AUTH_QUICK_REFERENCE.md) | Auth cheat sheet |
-| [MFA Quick Start](education_system/docs/university_system/security/MFA_QUICK_START.md) | MFA setup guide |
-| [MFA Documentation](education_system/docs/university_system/security/MFA_SYSTEM_DOCUMENTATION.md) | Full MFA docs |
-| [Security Integration](education_system/docs/university_system/security/SECURITY_INTEGRATION_GUIDE.md) | Security integration guide |
+| [Security Overview](docs/university_system/security/SECURITY.md) | Security architecture |
+| [Authentication](docs/university_system/security/AUTHENTICATION.md) | Auth system details |
+| [Auth Quick Reference](docs/university_system/security/AUTH_QUICK_REFERENCE.md) | Auth cheat sheet |
+| [MFA Quick Start](docs/university_system/security/MFA_QUICK_START.md) | MFA setup guide |
+| [MFA Documentation](docs/university_system/security/MFA_SYSTEM_DOCUMENTATION.md) | Full MFA docs |
+| [Security Integration](docs/university_system/security/SECURITY_INTEGRATION_GUIDE.md) | Security integration guide |
 
 **Infrastructure**
 
 | Document | Description |
 |----------|-------------|
-| [Database](education_system/docs/university_system/infrastructure/DATABASE.md) | Database architecture |
-| [Transactions](education_system/docs/university_system/infrastructure/TRANSACTIONS.md) | Transaction handling |
-| [Email Scheduler](education_system/docs/university_system/infrastructure/EMAIL_SCHEDULER.md) | Email scheduling |
-| [Admin Monitoring](education_system/docs/university_system/infrastructure/ADMIN_MONITORING_GUIDE.md) | Admin dashboard monitoring |
-| [CLI Integration](education_system/docs/university_system/infrastructure/CLI_INTEGRATION_SUMMARY.md) | CLI module integration |
-| [Enhancements](education_system/docs/university_system/infrastructure/ENHANCEMENTS_GUIDE.md) | Infrastructure improvements |
-| [Implementation Summary](education_system/docs/university_system/infrastructure/IMPLEMENTATION_SUMMARY.md) | Implementation details |
+| [Database](docs/university_system/infrastructure/DATABASE.md) | Database architecture |
+| [Transactions](docs/university_system/infrastructure/TRANSACTIONS.md) | Transaction handling |
+| [Email Scheduler](docs/university_system/infrastructure/EMAIL_SCHEDULER.md) | Email scheduling |
+| [Admin Monitoring](docs/university_system/infrastructure/ADMIN_MONITORING_GUIDE.md) | Admin dashboard monitoring |
+| [CLI Integration](docs/university_system/infrastructure/CLI_INTEGRATION_SUMMARY.md) | CLI module integration |
+| [Enhancements](docs/university_system/infrastructure/ENHANCEMENTS_GUIDE.md) | Infrastructure improvements |
+| [Implementation Summary](docs/university_system/infrastructure/IMPLEMENTATION_SUMMARY.md) | Implementation details |
 
 **Development**
 
 | Document | Description |
 |----------|-------------|
-| [Development Guide](education_system/docs/university_system/development/README.md) | Developer setup |
-| [Adding Modules](education_system/docs/university_system/development/ADDING_MODULES.md) | How to add new modules |
-| [API Guide](education_system/docs/university_system/development/API.md) | REST API development |
-| [Testing Guide](education_system/docs/university_system/development/TESTING_GUIDE.md) | Testing practices |
-| [Exception Handling](education_system/docs/university_system/development/EXCEPTION_HANDLING.md) | Error handling patterns |
-| [Migration Guide](education_system/docs/university_system/development/MIGRATION_GUIDE.md) | Database migrations |
+| [Development Guide](docs/university_system/development/README.md) | Developer setup |
+| [Adding Modules](docs/university_system/development/ADDING_MODULES.md) | How to add new modules |
+| [API Guide](docs/university_system/development/API.md) | REST API development |
+| [Testing Guide](docs/university_system/development/TESTING_GUIDE.md) | Testing practices |
+| [Exception Handling](docs/university_system/development/EXCEPTION_HANDLING.md) | Error handling patterns |
+| [Migration Guide](docs/university_system/development/MIGRATION_GUIDE.md) | Database migrations |
 
 **AI & ML**
 
 | Document | Description |
 |----------|-------------|
-| [AI Dependencies](education_system/docs/university_system/ai/AI_DEPENDENCIES.md) | AI/ML library setup |
-| [Voice Features](education_system/docs/university_system/ai/VOICE_FEATURES.md) | Speech-to-text, TTS |
+| [AI Dependencies](docs/university_system/ai/AI_DEPENDENCIES.md) | AI/ML library setup |
+| [Voice Features](docs/university_system/ai/VOICE_FEATURES.md) | Speech-to-text, TTS |
 
 **Academic Guides**
 
 | Document | Description |
 |----------|-------------|
-| [Academic Calendar](education_system/docs/university_system/guides/academics/academic-calendar.md) | Calendar management |
-| [AI Detector](education_system/docs/university_system/guides/academics/AI_DETECTOR_GUIDE.md) | AI content detection |
-| [Assignments](education_system/docs/university_system/guides/academics/ASSIGNMENT_SYSTEM_GUIDE.md) | Assignment system |
-| [Attendance Tracking](education_system/docs/university_system/guides/academics/attendance-tracking.md) | Attendance system |
-| [Blockchain Credentials](education_system/docs/university_system/guides/academics/BLOCKCHAIN_CREDENTIALS_GUIDE.md) | Credential verification |
-| [Course Management](education_system/docs/university_system/guides/academics/COURSE_MANAGEMENT_GUIDE.md) | Course CRUD |
-| [Degree Audit](education_system/docs/university_system/guides/academics/DEGREE_AUDIT_GUIDE.md) | Degree progress tracking |
-| [Exam Scheduler](education_system/docs/university_system/guides/academics/EXAM_SCHEDULER_GUIDE.md) | Exam scheduling |
-| [Grade Tracking](education_system/docs/university_system/guides/academics/GRADE_TRACKING_GUIDE.md) | Grading system |
-| [Library Management](education_system/docs/university_system/guides/academics/library-management.md) | Library system |
-| [Module Scheduling](education_system/docs/university_system/guides/academics/module-scheduling.md) | Timetable scheduling |
-| [Plagiarism Detection](education_system/docs/university_system/guides/academics/PLAGIARISM_DETECTION_GUIDE.md) | Plagiarism checker |
-| [Research Grants](education_system/docs/university_system/guides/academics/RESEARCH_GRANTS_GUIDE.md) | Grant management |
-| [Virtual Classroom](education_system/docs/university_system/guides/academics/VIRTUAL_CLASSROOM_GUIDE.md) | Online classroom |
+| [Academic Calendar](docs/university_system/guides/academics/academic-calendar.md) | Calendar management |
+| [AI Detector](docs/university_system/guides/academics/AI_DETECTOR_GUIDE.md) | AI content detection |
+| [Assignments](docs/university_system/guides/academics/ASSIGNMENT_SYSTEM_GUIDE.md) | Assignment system |
+| [Attendance Tracking](docs/university_system/guides/academics/attendance-tracking.md) | Attendance system |
+| [Blockchain Credentials](docs/university_system/guides/academics/BLOCKCHAIN_CREDENTIALS_GUIDE.md) | Credential verification |
+| [Course Management](docs/university_system/guides/academics/COURSE_MANAGEMENT_GUIDE.md) | Course CRUD |
+| [Degree Audit](docs/university_system/guides/academics/DEGREE_AUDIT_GUIDE.md) | Degree progress tracking |
+| [Exam Scheduler](docs/university_system/guides/academics/EXAM_SCHEDULER_GUIDE.md) | Exam scheduling |
+| [Grade Tracking](docs/university_system/guides/academics/GRADE_TRACKING_GUIDE.md) | Grading system |
+| [Library Management](docs/university_system/guides/academics/library-management.md) | Library system |
+| [Module Scheduling](docs/university_system/guides/academics/module-scheduling.md) | Timetable scheduling |
+| [Plagiarism Detection](docs/university_system/guides/academics/PLAGIARISM_DETECTION_GUIDE.md) | Plagiarism checker |
+| [Research Grants](docs/university_system/guides/academics/RESEARCH_GRANTS_GUIDE.md) | Grant management |
+| [Virtual Classroom](docs/university_system/guides/academics/VIRTUAL_CLASSROOM_GUIDE.md) | Online classroom |
 
 **Administration Guides**
 
 | Document | Description |
 |----------|-------------|
-| [Accessibility Services](education_system/docs/university_system/guides/administration/ACCESSIBILITY_SERVICES_GUIDE.md) | Accessibility features |
-| [Activity Logger](education_system/docs/university_system/guides/administration/ACTIVITY_LOGGER_AUDIT_TRAIL_GUIDE.md) | Audit trail |
-| [Admissions CRM](education_system/docs/university_system/guides/administration/ADMISSIONS_CRM_GUIDE.md) | Admissions management |
-| [Advanced Search](education_system/docs/university_system/guides/administration/ADVANCED_SEARCH_ANALYTICS_GUIDE.md) | Search & analytics |
-| [Auth & MFA](education_system/docs/university_system/guides/administration/authentication-mfa.md) | Authentication guide |
-| [Dark Mode](education_system/docs/university_system/guides/administration/DARK_MODE_GUIDE.md) | Theme customisation |
-| [Database Management](education_system/docs/university_system/guides/administration/database-management.md) | DB admin |
-| [Data Encryption](education_system/docs/university_system/guides/administration/DATA_ENCRYPTION_GUIDE.md) | Encryption guide |
-| [Email Receipts](education_system/docs/university_system/guides/administration/EMAIL_RECEIPTS_GUIDE.md) | Email receipts |
-| [Email System Admin](education_system/docs/university_system/guides/administration/EMAIL_SYSTEM_ADMIN_GUIDE.md) | Email administration |
-| [Mobile App/PWA](education_system/docs/university_system/guides/administration/MOBILE_APP_PWA_GUIDE.md) | PWA features |
-| [Security Dashboard](education_system/docs/university_system/guides/administration/SECURITY_DASHBOARD_GUIDE.md) | Security monitoring |
-| [Staff CRUD](education_system/docs/university_system/guides/administration/STAFF_CRUD_GUIDE.md) | Staff management |
+| [Accessibility Services](docs/university_system/guides/administration/ACCESSIBILITY_SERVICES_GUIDE.md) | Accessibility features |
+| [Activity Logger](docs/university_system/guides/administration/ACTIVITY_LOGGER_AUDIT_TRAIL_GUIDE.md) | Audit trail |
+| [Admissions CRM](docs/university_system/guides/administration/ADMISSIONS_CRM_GUIDE.md) | Admissions management |
+| [Advanced Search](docs/university_system/guides/administration/ADVANCED_SEARCH_ANALYTICS_GUIDE.md) | Search & analytics |
+| [Auth & MFA](docs/university_system/guides/administration/authentication-mfa.md) | Authentication guide |
+| [Dark Mode](docs/university_system/guides/administration/DARK_MODE_GUIDE.md) | Theme customisation |
+| [Database Management](docs/university_system/guides/administration/database-management.md) | DB admin |
+| [Data Encryption](docs/university_system/guides/administration/DATA_ENCRYPTION_GUIDE.md) | Encryption guide |
+| [Email Receipts](docs/university_system/guides/administration/EMAIL_RECEIPTS_GUIDE.md) | Email receipts |
+| [Email System Admin](docs/university_system/guides/administration/EMAIL_SYSTEM_ADMIN_GUIDE.md) | Email administration |
+| [Mobile App/PWA](docs/university_system/guides/administration/MOBILE_APP_PWA_GUIDE.md) | PWA features |
+| [Security Dashboard](docs/university_system/guides/administration/SECURITY_DASHBOARD_GUIDE.md) | Security monitoring |
+| [Staff CRUD](docs/university_system/guides/administration/STAFF_CRUD_GUIDE.md) | Staff management |
 
 **Campus Guides**
 
 | Document | Description |
 |----------|-------------|
-| [Campus Events](education_system/docs/university_system/guides/campus/CAMPUS_EVENTS_GUIDE.md) | Events management |
-| [Campus Navigation](education_system/docs/university_system/guides/campus/CAMPUS_NAVIGATION_GUIDE.md) | Campus map/navigation |
-| [Dentist](education_system/docs/university_system/guides/campus/DENTIST_GUIDE.md) | Dental services |
-| [Equipment Management](education_system/docs/university_system/guides/campus/EQUIPMENT_MANAGEMENT_GUIDE.md) | Equipment tracking |
-| [Facilities](education_system/docs/university_system/guides/campus/FACILITIES_MANAGEMENT_GUIDE.md) | Facilities management |
-| [Gym & Fitness](education_system/docs/university_system/guides/campus/GYM_FITNESS_GUIDE.md) | Gym booking |
-| [Health Portal](education_system/docs/university_system/guides/campus/HEALTH_PORTAL_GUIDE.md) | Health services |
-| [Housing](education_system/docs/university_system/guides/campus/housing-accommodation.md) | Student housing |
-| [Mail & Post](education_system/docs/university_system/guides/campus/MAIL_POST_GUIDE.md) | Mail services |
-| [Parking](education_system/docs/university_system/guides/campus/PARKING_MANAGEMENT_GUIDE.md) | Parking management |
+| [Campus Events](docs/university_system/guides/campus/CAMPUS_EVENTS_GUIDE.md) | Events management |
+| [Campus Navigation](docs/university_system/guides/campus/CAMPUS_NAVIGATION_GUIDE.md) | Campus map/navigation |
+| [Dentist](docs/university_system/guides/campus/DENTIST_GUIDE.md) | Dental services |
+| [Equipment Management](docs/university_system/guides/campus/EQUIPMENT_MANAGEMENT_GUIDE.md) | Equipment tracking |
+| [Facilities](docs/university_system/guides/campus/FACILITIES_MANAGEMENT_GUIDE.md) | Facilities management |
+| [Gym & Fitness](docs/university_system/guides/campus/GYM_FITNESS_GUIDE.md) | Gym booking |
+| [Health Portal](docs/university_system/guides/campus/HEALTH_PORTAL_GUIDE.md) | Health services |
+| [Housing](docs/university_system/guides/campus/housing-accommodation.md) | Student housing |
+| [Mail & Post](docs/university_system/guides/campus/MAIL_POST_GUIDE.md) | Mail services |
+| [Parking](docs/university_system/guides/campus/PARKING_MANAGEMENT_GUIDE.md) | Parking management |
 
 **Commerce Guides**
 
 | Document | Description |
 |----------|-------------|
-| [Barber Shop](education_system/docs/university_system/guides/commerce/BARBER_SHOP_GUIDE.md) | Barber booking |
-| [Bar/Cafe/Grocery/Takeaway](education_system/docs/university_system/guides/commerce/BAR_CAFE_GROCERY_TAKEAWAY_GUIDE.md) | Food & drink |
-| [Betting Shop](education_system/docs/university_system/guides/commerce/BETTING_SHOP_GUIDE.md) | Betting services |
-| [Butcher Shop](education_system/docs/university_system/guides/commerce/BUTCHER_SHOP_GUIDE.md) | Butcher shop |
-| [Car Rental](education_system/docs/university_system/guides/commerce/CAR_RENTAL_GUIDE.md) | Car rental |
-| [Cinema Booking](education_system/docs/university_system/guides/commerce/CINEMA_BOOKING_GUIDE.md) | Cinema reservations |
-| [Legal Services](education_system/docs/university_system/guides/commerce/LEGAL_SERVICES_GUIDE.md) | Legal support |
-| [Music Shop](education_system/docs/university_system/guides/commerce/MUSIC_SHOP_GUIDE.md) | Music shop |
-| [Nail Bar/Phone Shop](education_system/docs/university_system/guides/commerce/NAIL_BAR_PHONE_SHOP_GUIDE.md) | Services |
-| [Restaurant Management](education_system/docs/university_system/guides/commerce/RESTAURANT_MANAGEMENT_GUIDE.md) | Restaurant system |
-| [Restaurant Reports](education_system/docs/university_system/guides/commerce/RESTAURANT_REPORTS_GUIDE.md) | Restaurant analytics |
-| [Taxi/Train/Trip](education_system/docs/university_system/guides/commerce/TAXI_TRAIN_TRIP_GUIDE.md) | Transport booking |
+| [Barber Shop](docs/university_system/guides/commerce/BARBER_SHOP_GUIDE.md) | Barber booking |
+| [Bar/Cafe/Grocery/Takeaway](docs/university_system/guides/commerce/BAR_CAFE_GROCERY_TAKEAWAY_GUIDE.md) | Food & drink |
+| [Betting Shop](docs/university_system/guides/commerce/BETTING_SHOP_GUIDE.md) | Betting services |
+| [Butcher Shop](docs/university_system/guides/commerce/BUTCHER_SHOP_GUIDE.md) | Butcher shop |
+| [Car Rental](docs/university_system/guides/commerce/CAR_RENTAL_GUIDE.md) | Car rental |
+| [Cinema Booking](docs/university_system/guides/commerce/CINEMA_BOOKING_GUIDE.md) | Cinema reservations |
+| [Legal Services](docs/university_system/guides/commerce/LEGAL_SERVICES_GUIDE.md) | Legal support |
+| [Music Shop](docs/university_system/guides/commerce/MUSIC_SHOP_GUIDE.md) | Music shop |
+| [Nail Bar/Phone Shop](docs/university_system/guides/commerce/NAIL_BAR_PHONE_SHOP_GUIDE.md) | Services |
+| [Restaurant Management](docs/university_system/guides/commerce/RESTAURANT_MANAGEMENT_GUIDE.md) | Restaurant system |
+| [Restaurant Reports](docs/university_system/guides/commerce/RESTAURANT_REPORTS_GUIDE.md) | Restaurant analytics |
+| [Taxi/Train/Trip](docs/university_system/guides/commerce/TAXI_TRAIN_TRIP_GUIDE.md) | Transport booking |
 
 **Student Life Guides**
 
 | Document | Description |
 |----------|-------------|
-| [Alumni Management](education_system/docs/university_system/guides/student-life/ALUMNI_MANAGEMENT_GUIDE.md) | Alumni tracking |
-| [Budgeting & Portfolio](education_system/docs/university_system/guides/student-life/BUDGETING_PORTFOLIO_GUIDE.md) | Financial tools |
-| [Career Services](education_system/docs/university_system/guides/student-life/CAREER_SERVICES_GUIDE.md) | Career support |
-| [Early Warning](education_system/docs/university_system/guides/student-life/EARLY_WARNING_GUIDE.md) | At-risk student alerts |
-| [Finance Management](education_system/docs/university_system/guides/student-life/finance-management.md) | Student finance |
-| [Financial Aid](education_system/docs/university_system/guides/student-life/FINANCIAL_AID_GUIDE.md) | Financial aid |
-| [Helpdesk](education_system/docs/university_system/guides/student-life/HELPDESK_SUPPORT_GUIDE.md) | Support tickets |
-| [Lost & Found](education_system/docs/university_system/guides/student-life/LOST_FOUND_FEEDBACK_NOTIFICATIONS_GUIDE.md) | Lost items & feedback |
-| [Roommate Matching](education_system/docs/university_system/guides/student-life/ROOMMATE_SOCIAL_STUDY_MATCHING_GUIDE.md) | Social matching |
-| [Scholarship Finder](education_system/docs/university_system/guides/student-life/SCHOLARSHIP_FINDER_GUIDE.md) | Scholarship search |
-| [Student Jobs](education_system/docs/university_system/guides/student-life/STUDENT_JOBS_GUIDE.md) | Job board |
-| [Student Marketplace](education_system/docs/university_system/guides/student-life/STUDENT_MARKETPLACE_GUIDE.md) | Buy/sell marketplace |
-| [Student Union](education_system/docs/university_system/guides/student-life/STUDENT_UNION_GUIDE.md) | Union management |
+| [Alumni Management](docs/university_system/guides/student-life/ALUMNI_MANAGEMENT_GUIDE.md) | Alumni tracking |
+| [Budgeting & Portfolio](docs/university_system/guides/student-life/BUDGETING_PORTFOLIO_GUIDE.md) | Financial tools |
+| [Career Services](docs/university_system/guides/student-life/CAREER_SERVICES_GUIDE.md) | Career support |
+| [Early Warning](docs/university_system/guides/student-life/EARLY_WARNING_GUIDE.md) | At-risk student alerts |
+| [Finance Management](docs/university_system/guides/student-life/finance-management.md) | Student finance |
+| [Financial Aid](docs/university_system/guides/student-life/FINANCIAL_AID_GUIDE.md) | Financial aid |
+| [Helpdesk](docs/university_system/guides/student-life/HELPDESK_SUPPORT_GUIDE.md) | Support tickets |
+| [Lost & Found](docs/university_system/guides/student-life/LOST_FOUND_FEEDBACK_NOTIFICATIONS_GUIDE.md) | Lost items & feedback |
+| [Roommate Matching](docs/university_system/guides/student-life/ROOMMATE_SOCIAL_STUDY_MATCHING_GUIDE.md) | Social matching |
+| [Scholarship Finder](docs/university_system/guides/student-life/SCHOLARSHIP_FINDER_GUIDE.md) | Scholarship search |
+| [Student Jobs](docs/university_system/guides/student-life/STUDENT_JOBS_GUIDE.md) | Job board |
+| [Student Marketplace](docs/university_system/guides/student-life/STUDENT_MARKETPLACE_GUIDE.md) | Buy/sell marketplace |
+| [Student Union](docs/university_system/guides/student-life/STUDENT_UNION_GUIDE.md) | Union management |
 
 </details>
 
@@ -531,32 +531,32 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 | Document | Description |
 |----------|-------------|
-| [College README](education_system/docs/college_system/README.md) | College system overview |
-| [Quick Start](education_system/docs/college_system/QUICK_START.md) | Getting started |
-| [Troubleshooting](education_system/docs/college_system/TROUBLESHOOTING.md) | Common issues |
+| [College README](docs/college_system/README.md) | College system overview |
+| [Quick Start](docs/college_system/QUICK_START.md) | Getting started |
+| [Troubleshooting](docs/college_system/TROUBLESHOOTING.md) | Common issues |
 | **Development** | |
-| [Development Guide](education_system/docs/college_system/development/README.md) | Developer setup |
-| [Adding Modules](education_system/docs/college_system/development/ADDING_MODULES.md) | New module guide |
-| [API Guide](education_system/docs/college_system/development/API.md) | REST API development |
-| [Testing Guide](education_system/docs/college_system/development/TESTING_GUIDE.md) | Testing practices |
+| [Development Guide](docs/college_system/development/README.md) | Developer setup |
+| [Adding Modules](docs/college_system/development/ADDING_MODULES.md) | New module guide |
+| [API Guide](docs/college_system/development/API.md) | REST API development |
+| [Testing Guide](docs/college_system/development/TESTING_GUIDE.md) | Testing practices |
 | **Infrastructure** | |
-| [Authentication](education_system/docs/college_system/infrastructure/AUTHENTICATION.md) | Auth config |
-| [Configuration](education_system/docs/college_system/infrastructure/CONFIGURATION.md) | System config |
-| [Database](education_system/docs/college_system/infrastructure/DATABASE.md) | Database setup |
+| [Authentication](docs/college_system/infrastructure/AUTHENTICATION.md) | Auth config |
+| [Configuration](docs/college_system/infrastructure/CONFIGURATION.md) | System config |
+| [Database](docs/college_system/infrastructure/DATABASE.md) | Database setup |
 | **Security** | |
-| [Security](education_system/docs/college_system/security/SECURITY.md) | Security overview |
-| [MFA Guide](education_system/docs/college_system/security/MFA_GUIDE.md) | MFA setup |
+| [Security](docs/college_system/security/SECURITY.md) | Security overview |
+| [MFA Guide](docs/college_system/security/MFA_GUIDE.md) | MFA setup |
 | **User Guides** | |
-| [Academics](education_system/docs/college_system/guides/academics.md) | Academic management |
-| [Admissions](education_system/docs/college_system/guides/admissions.md) | Admissions process |
-| [Careers & Destinations](education_system/docs/college_system/guides/careers_destinations.md) | Career tracking |
-| [Communication](education_system/docs/college_system/guides/communication.md) | Messaging & email |
-| [Facilities](education_system/docs/college_system/guides/facilities.md) | Facility management |
-| [Finance & Funding](education_system/docs/college_system/guides/finance_funding.md) | Financial management |
-| [Quality Assurance](education_system/docs/college_system/guides/quality_assurance.md) | QA processes |
-| [Reporting](education_system/docs/college_system/guides/reporting.md) | Reports & exports |
-| [Staff Management](education_system/docs/college_system/guides/staff_management.md) | Staff admin |
-| [Student Support](education_system/docs/college_system/guides/student_support.md) | Student services |
+| [Academics](docs/college_system/guides/academics.md) | Academic management |
+| [Admissions](docs/college_system/guides/admissions.md) | Admissions process |
+| [Careers & Destinations](docs/college_system/guides/careers_destinations.md) | Career tracking |
+| [Communication](docs/college_system/guides/communication.md) | Messaging & email |
+| [Facilities](docs/college_system/guides/facilities.md) | Facility management |
+| [Finance & Funding](docs/college_system/guides/finance_funding.md) | Financial management |
+| [Quality Assurance](docs/college_system/guides/quality_assurance.md) | QA processes |
+| [Reporting](docs/college_system/guides/reporting.md) | Reports & exports |
+| [Staff Management](docs/college_system/guides/staff_management.md) | Staff admin |
+| [Student Support](docs/college_system/guides/student_support.md) | Student services |
 
 </details>
 
@@ -569,29 +569,29 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 | Document | Description |
 |----------|-------------|
-| [Secondary README](education_system/docs/secondary_school/README.md) | Secondary system overview |
-| [Quick Start](education_system/docs/secondary_school/QUICK_START.md) | Getting started |
-| [Troubleshooting](education_system/docs/secondary_school/TROUBLESHOOTING.md) | Common issues |
+| [Secondary README](docs/secondary_school/README.md) | Secondary system overview |
+| [Quick Start](docs/secondary_school/QUICK_START.md) | Getting started |
+| [Troubleshooting](docs/secondary_school/TROUBLESHOOTING.md) | Common issues |
 | **Development** | |
-| [Development Guide](education_system/docs/secondary_school/development/README.md) | Developer setup |
-| [Adding Modules](education_system/docs/secondary_school/development/ADDING_MODULES.md) | New module guide |
-| [API Guide](education_system/docs/secondary_school/development/API.md) | REST API development |
-| [Testing Guide](education_system/docs/secondary_school/development/TESTING_GUIDE.md) | Testing practices |
+| [Development Guide](docs/secondary_school/development/README.md) | Developer setup |
+| [Adding Modules](docs/secondary_school/development/ADDING_MODULES.md) | New module guide |
+| [API Guide](docs/secondary_school/development/API.md) | REST API development |
+| [Testing Guide](docs/secondary_school/development/TESTING_GUIDE.md) | Testing practices |
 | **Infrastructure** | |
-| [Authentication](education_system/docs/secondary_school/infrastructure/AUTHENTICATION.md) | Auth config |
-| [Configuration](education_system/docs/secondary_school/infrastructure/CONFIGURATION.md) | System config |
-| [Database](education_system/docs/secondary_school/infrastructure/DATABASE.md) | Database setup |
+| [Authentication](docs/secondary_school/infrastructure/AUTHENTICATION.md) | Auth config |
+| [Configuration](docs/secondary_school/infrastructure/CONFIGURATION.md) | System config |
+| [Database](docs/secondary_school/infrastructure/DATABASE.md) | Database setup |
 | **Security** | |
-| [Security](education_system/docs/secondary_school/security/SECURITY.md) | Security overview |
-| [MFA Guide](education_system/docs/secondary_school/security/MFA_GUIDE.md) | MFA setup |
+| [Security](docs/secondary_school/security/SECURITY.md) | Security overview |
+| [MFA Guide](docs/secondary_school/security/MFA_GUIDE.md) | MFA setup |
 | **User Guides** | |
-| [Academics](education_system/docs/secondary_school/guides/academics.md) | Academic management |
-| [Admin](education_system/docs/secondary_school/guides/admin.md) | Administration |
-| [Communication](education_system/docs/secondary_school/guides/communication.md) | Messaging & email |
-| [Facilities](education_system/docs/secondary_school/guides/facilities.md) | Facility management |
-| [Pastoral Care](education_system/docs/secondary_school/guides/pastoral_care.md) | Pastoral support |
-| [Staff Management](education_system/docs/secondary_school/guides/staff_management.md) | Staff admin |
-| [Student Life](education_system/docs/secondary_school/guides/student_life.md) | Student activities |
+| [Academics](docs/secondary_school/guides/academics.md) | Academic management |
+| [Admin](docs/secondary_school/guides/admin.md) | Administration |
+| [Communication](docs/secondary_school/guides/communication.md) | Messaging & email |
+| [Facilities](docs/secondary_school/guides/facilities.md) | Facility management |
+| [Pastoral Care](docs/secondary_school/guides/pastoral_care.md) | Pastoral support |
+| [Staff Management](docs/secondary_school/guides/staff_management.md) | Staff admin |
+| [Student Life](docs/secondary_school/guides/student_life.md) | Student activities |
 
 </details>
 
@@ -604,29 +604,29 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 | Document | Description |
 |----------|-------------|
-| [Primary README](education_system/docs/primary_school/README.md) | Primary system overview |
-| [Quick Start](education_system/docs/primary_school/QUICK_START.md) | Getting started |
-| [Troubleshooting](education_system/docs/primary_school/TROUBLESHOOTING.md) | Common issues |
+| [Primary README](docs/primary_school/README.md) | Primary system overview |
+| [Quick Start](docs/primary_school/QUICK_START.md) | Getting started |
+| [Troubleshooting](docs/primary_school/TROUBLESHOOTING.md) | Common issues |
 | **Development** | |
-| [Development Guide](education_system/docs/primary_school/development/README.md) | Developer setup |
-| [Adding Modules](education_system/docs/primary_school/development/ADDING_MODULES.md) | New module guide |
-| [API Guide](education_system/docs/primary_school/development/API.md) | REST API development |
-| [Testing Guide](education_system/docs/primary_school/development/TESTING_GUIDE.md) | Testing practices |
+| [Development Guide](docs/primary_school/development/README.md) | Developer setup |
+| [Adding Modules](docs/primary_school/development/ADDING_MODULES.md) | New module guide |
+| [API Guide](docs/primary_school/development/API.md) | REST API development |
+| [Testing Guide](docs/primary_school/development/TESTING_GUIDE.md) | Testing practices |
 | **Infrastructure** | |
-| [Authentication](education_system/docs/primary_school/infrastructure/AUTHENTICATION.md) | Auth config |
-| [Configuration](education_system/docs/primary_school/infrastructure/CONFIGURATION.md) | System config |
-| [Database](education_system/docs/primary_school/infrastructure/DATABASE.md) | Database setup |
+| [Authentication](docs/primary_school/infrastructure/AUTHENTICATION.md) | Auth config |
+| [Configuration](docs/primary_school/infrastructure/CONFIGURATION.md) | System config |
+| [Database](docs/primary_school/infrastructure/DATABASE.md) | Database setup |
 | **Security** | |
-| [Security](education_system/docs/primary_school/security/SECURITY.md) | Security overview |
-| [MFA Guide](education_system/docs/primary_school/security/MFA_GUIDE.md) | MFA setup |
+| [Security](docs/primary_school/security/SECURITY.md) | Security overview |
+| [MFA Guide](docs/primary_school/security/MFA_GUIDE.md) | MFA setup |
 | **User Guides** | |
-| [Academics](education_system/docs/primary_school/guides/academics.md) | Academic management |
-| [Admin](education_system/docs/primary_school/guides/admin.md) | Administration |
-| [Communication](education_system/docs/primary_school/guides/communication.md) | Messaging & email |
-| [Facilities](education_system/docs/primary_school/guides/facilities.md) | Facility management |
-| [Pastoral Care](education_system/docs/primary_school/guides/pastoral_care.md) | Pastoral support |
-| [Pupil Life](education_system/docs/primary_school/guides/pupil_life.md) | Pupil activities |
-| [Staff Management](education_system/docs/primary_school/guides/staff_management.md) | Staff admin |
+| [Academics](docs/primary_school/guides/academics.md) | Academic management |
+| [Admin](docs/primary_school/guides/admin.md) | Administration |
+| [Communication](docs/primary_school/guides/communication.md) | Messaging & email |
+| [Facilities](docs/primary_school/guides/facilities.md) | Facility management |
+| [Pastoral Care](docs/primary_school/guides/pastoral_care.md) | Pastoral support |
+| [Pupil Life](docs/primary_school/guides/pupil_life.md) | Pupil activities |
+| [Staff Management](docs/primary_school/guides/staff_management.md) | Staff admin |
 
 </details>
 
@@ -666,7 +666,7 @@ This project is licensed under the MIT License — see [LICENSE](LICENSE) for de
 
 ## Support
 
-- **Documentation**: [Docs Index](education_system/docs/university_system/README.md)
+- **Documentation**: [Docs Index](docs/university_system/README.md)
 - **Issues**: [GitHub Issues](https://github.com/sean1352636/university_system/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/sean1352636/university_system/discussions)
 

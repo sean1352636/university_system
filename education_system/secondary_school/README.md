@@ -41,4 +41,4 @@ secondary_school/
 
 ## Documentation
 
-Full documentation is available at `education_system/docs/secondary_school/`.
+Full documentation is available at `docs/secondary_school/`.

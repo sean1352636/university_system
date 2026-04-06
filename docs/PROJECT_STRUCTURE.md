@@ -706,7 +706,7 @@ education_system/primary_school/
 ### Documentation Structure
 
 ```
-education_system/docs/
+docs/
 │
 ├── university_system/                    # University system documentation
 │   ├── README.md                        # Documentation index

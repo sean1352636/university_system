@@ -43,4 +43,4 @@ college_system/
 
 ## Documentation
 
-Full documentation is available at `education_system/docs/college_system/`.
+Full documentation is available at `docs/college_system/`.

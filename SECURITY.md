@@ -2,7 +2,7 @@
 
 > This document was extracted from the main [README.md](./README.md). See the README for the full project documentation.
 >
-> **Reporting Vulnerabilities**: If you discover a security vulnerability, please report it responsibly. Do not open a public issue. Instead, contact the project maintainers directly. See the [Security Documentation](education_system/docs/university_system/security/SECURITY.md) for detailed security guidelines.
+> **Reporting Vulnerabilities**: If you discover a security vulnerability, please report it responsibly. Do not open a public issue. Instead, contact the project maintainers directly. See the [Security Documentation](docs/university_system/security/SECURITY.md) for detailed security guidelines.
 
 ---
 
@@ -220,8 +220,8 @@ auth.list_locked_accounts()
 
 | Document | Description |
 |----------|-------------|
-| [Security Best Practices](education_system/docs/university_system/security/SECURITY.md) | Comprehensive security features and implementation guidelines |
-| [Security Guide](education_system/docs/university_system/security/SECURITY.md) | Security features and implementation guidelines |
-| [Authentication Guide](education_system/docs/university_system/security/AUTHENTICATION.md) | Authentication system documentation |
-| [MFA Documentation](education_system/docs/university_system/security/MFA_SYSTEM_DOCUMENTATION.md) | Multi-factor authentication setup and configuration |
-| [MFA Quick Start](education_system/docs/university_system/security/MFA_QUICK_START.md) | Get MFA running quickly |
+| [Security Best Practices](docs/university_system/security/SECURITY.md) | Comprehensive security features and implementation guidelines |
+| [Security Guide](docs/university_system/security/SECURITY.md) | Security features and implementation guidelines |
+| [Authentication Guide](docs/university_system/security/AUTHENTICATION.md) | Authentication system documentation |
+| [MFA Documentation](docs/university_system/security/MFA_SYSTEM_DOCUMENTATION.md) | Multi-factor authentication setup and configuration |
+| [MFA Quick Start](docs/university_system/security/MFA_QUICK_START.md) | Get MFA running quickly |

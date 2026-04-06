@@ -45,4 +45,4 @@ primary_school/
 
 ## Documentation
 
-Full documentation is available at `education_system/docs/primary_school/`.
+Full documentation is available at `docs/primary_school/`.

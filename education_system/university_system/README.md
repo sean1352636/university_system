@@ -49,4 +49,4 @@ university_system/
 
 ## Documentation
 
-Full documentation is available at `education_system/docs/university_system/`.
+Full documentation is available at `docs/university_system/`.

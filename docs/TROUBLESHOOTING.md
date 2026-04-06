@@ -78,9 +78,9 @@ brew install python-tk
 ```
 
 For more help, see:
-- [Troubleshooting Guide](../education_system/docs/university_system/TROUBLESHOOTING.md)
-- [Documentation Index](../education_system/docs/university_system/README.md)
-- [Security Documentation](../education_system/docs/university_system/security/SECURITY.md)
+- [Troubleshooting Guide](../docs/university_system/TROUBLESHOOTING.md)
+- [Documentation Index](../docs/university_system/README.md)
+- [Security Documentation](../docs/university_system/security/SECURITY.md)
 
 ---
 
