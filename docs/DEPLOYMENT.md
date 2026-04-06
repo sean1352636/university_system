@@ -10,15 +10,18 @@
 
 ```bash
 # Build image
-docker build -t university-system:latest .
+docker build -t education-system:latest -f docker/Dockerfile .
 
-# Run container
+# Run with docker-compose (recommended)
+docker compose -f docker/docker-compose.yml up -d
+
+# Or run standalone container
 docker run -d -p 8000:8000 \
   -v $(pwd)/data:/app/data \
   -v $(pwd)/logs:/app/logs \
   --env-file .env.production \
-  --name university-system \
-  university-system:latest
+  --name education-system \
+  education-system:latest
 ```
 
 #### Manual Deployment

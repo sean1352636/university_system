@@ -134,16 +134,16 @@ clean-logs: ## Remove log files
 # ==========================================
 
 docker-build: ## Build Docker image
-	docker build -t education-system .
+	docker build -t education-system -f docker/Dockerfile .
 
 docker-up: ## Start with docker-compose
-	docker compose up -d
+	docker compose -f docker/docker-compose.yml up -d
 
 docker-down: ## Stop docker-compose
-	docker compose down
+	docker compose -f docker/docker-compose.yml down
 
 docker-logs: ## View docker logs
-	docker compose logs -f app
+	docker compose -f docker/docker-compose.yml logs -f app
 
 # ==========================================
 # CI Simulation

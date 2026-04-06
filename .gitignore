@@ -41,6 +41,10 @@ env/
 .env.local
 .env.*.local
 
+# Sensitive auth files
+recovery_codes*.txt
+encryption.key
+
 # IDE
 .idea/
 .vscode/

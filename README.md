@@ -317,7 +317,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 | [CHANGELOG.md](CHANGELOG.md) | Complete version history (340+ releases) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, branch naming, commit format |
 | [SECURITY.md](SECURITY.md) | Security features, practices, and vulnerability reporting |
-| [ROADMAP.md](ROADMAP.md) | Future plans and known limitations |
+| [ROADMAP.md](docs/ROADMAP.md) | Future plans and known limitations |
 | [.env.example](.env.example) | Environment variable reference |
 
 ### Project-Wide Docs
