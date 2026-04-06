@@ -181,8 +181,8 @@ class _SecurityQuestionsDialog(tk.Toplevel):
         self.saved = False
 
         self.title("Set Security Questions")
-        self.geometry("500x520")
-        self.resizable(False, False)
+        self.geometry("550x700")
+        self.minsize(500, 600)
         self.transient(parent)
         self.grab_set()
 
@@ -190,8 +190,8 @@ class _SecurityQuestionsDialog(tk.Toplevel):
 
         # Centre on parent
         self.update_idletasks()
-        px = parent.winfo_rootx() + (parent.winfo_width() - 500) // 2
-        py = parent.winfo_rooty() + (parent.winfo_height() - 520) // 2
+        px = parent.winfo_rootx() + (parent.winfo_width() - 550) // 2
+        py = parent.winfo_rooty() + (parent.winfo_height() - 700) // 2
         self.geometry(f"+{max(px, 0)}+{max(py, 0)}")
 
     def _build_ui(self):
@@ -246,8 +246,8 @@ class _SecurityQuestionsDialog(tk.Toplevel):
 
         # Buttons
         btn_frame = tk.Frame(main, bg=_BG)
-        btn_frame.pack(fill="x", pady=(10, 0))
-        ttk.Button(btn_frame, text="Save", command=self._save).pack(side="right", padx=5)
+        btn_frame.pack(fill="x", pady=(15, 5))
+        ttk.Button(btn_frame, text="Save Questions", command=self._save).pack(side="right", padx=5)
         ttk.Button(btn_frame, text="Cancel", command=self.destroy).pack(side="right")
 
     def _save(self):
