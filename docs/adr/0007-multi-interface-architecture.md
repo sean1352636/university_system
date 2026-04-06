@@ -67,7 +67,7 @@ flag always starts the unified server regardless of which system flag was given.
 - The four interfaces share no UI framework — tkinter for desktop, vanilla JS for web, Click
   for CLI — so front-end skills are not transferable between them
 - Swagger UI is auto-generated from Flask-RESTX/OpenAPI metadata and reflects the REST API
-  only; GUI and CLI capabilities are documented separately in `docs/MODULE_GUIDES.md`
+  only; GUI and CLI capabilities are documented separately in `docs/reference/MODULE_GUIDES.md`
 
 ---
 

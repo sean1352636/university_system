@@ -276,7 +276,7 @@ Configure allowed origins via `API_CORS_ORIGINS` environment variable (comma-sep
 
 ### Webhooks
 
-See [WEBHOOKS.md](WEBHOOKS.md) for webhook configuration and management.
+See [WEBHOOKS.md](../reference/WEBHOOKS.md) for webhook configuration and management.
 
 ## Routine Maintenance
 
@@ -334,5 +334,5 @@ make test
 ### Getting Help
 
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) — Detailed troubleshooting guide
-- [CLI_REFERENCE.md](CLI_REFERENCE.md) — Complete CLI command reference
-- [API_REFERENCE.md](API_REFERENCE.md) — REST API documentation
+- [CLI_REFERENCE.md](../reference/CLI_REFERENCE.md) — Complete CLI command reference
+- [API_REFERENCE.md](../reference/API_REFERENCE.md) — REST API documentation

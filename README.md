@@ -142,7 +142,7 @@ run.py                       # Unified launcher
 Makefile                     # Development commands (30+ targets)
 ```
 
-See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for the full directory tree.
+See [docs/reference/PROJECT_STRUCTURE.md](docs/reference/PROJECT_STRUCTURE.md) for the full directory tree.
 
 ---
 
@@ -317,19 +317,19 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 | [CHANGELOG.md](CHANGELOG.md) | Complete version history (340+ releases) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, branch naming, commit format |
 | [SECURITY.md](SECURITY.md) | Security features, practices, and vulnerability reporting |
-| [ROADMAP.md](docs/ROADMAP.md) | Future plans and known limitations |
+| [ROADMAP.md](docs/operations/ROADMAP.md) | Future plans and known limitations |
 | [.env.example](.env.example) | Environment variable reference |
 
 ### Project-Wide Docs
 
 | Document | Description |
 |----------|-------------|
-| [Project Structure](docs/PROJECT_STRUCTURE.md) | Full directory tree (all 4 systems) |
-| [Deployment Guide](docs/DEPLOYMENT.md) | Docker, nginx, production deployment |
-| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues and solutions |
-| [Module Guides](docs/MODULE_GUIDES.md) | Per-module user guides (20+) |
+| [Project Structure](docs/reference/PROJECT_STRUCTURE.md) | Full directory tree (all 4 systems) |
+| [Deployment Guide](docs/operations/DEPLOYMENT.md) | Docker, nginx, production deployment |
+| [Troubleshooting](docs/operations/TROUBLESHOOTING.md) | Common issues and solutions |
+| [Module Guides](docs/reference/MODULE_GUIDES.md) | Per-module user guides (20+) |
 | [Docs Index](docs/README.md) | Central documentation index |
-| [Appendices](docs/appendices.md) | Supplementary reference material |
+| [Appendices](docs/reference/appendices.md) | Supplementary reference material |
 
 ### Architecture Decision Records
 

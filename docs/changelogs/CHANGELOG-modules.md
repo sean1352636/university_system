@@ -5507,7 +5507,7 @@ For issues or questions about the new GUI features:
 ## 🔗 Related Documentation
 
 - [AI Detector Main Documentation](../README.md)
-- [CLI Reference Guide](../docs/CLI_REFERENCE.md)
+- [CLI Reference Guide](../docs/reference/CLI_REFERENCE.md)
 - [API Integration Guide](../docs/API_INTEGRATION.md)
 - [Privacy & Compliance](../docs/PRIVACY_COMPLIANCE.md)
 

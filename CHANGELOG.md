@@ -1153,10 +1153,10 @@ All per-system login windows have been removed. The single `UniversalLoginWindow
 
 - **README.md reduced from 3,008 to ~360 lines** — restructured as a concise front door with Quick Start, Systems Overview, Architecture, Installation, Usage, Configuration, Development, and links to detailed docs.
 - **Content extracted into dedicated files:**
-  - `docs/PROJECT_STRUCTURE.md` — full directory tree (was ~870 lines in README)
-  - `docs/DEPLOYMENT.md` — Docker, nginx, production deployment
-  - `docs/TROUBLESHOOTING.md` — common issues and solutions
-  - `docs/MODULE_GUIDES.md` — per-module user guides
+  - `docs/reference/PROJECT_STRUCTURE.md` — full directory tree (was ~870 lines in README)
+  - `docs/operations/DEPLOYMENT.md` — Docker, nginx, production deployment
+  - `docs/operations/TROUBLESHOOTING.md` — common issues and solutions
+  - `docs/reference/MODULE_GUIDES.md` — per-module user guides
   - `SECURITY.md` — security features, practices, and vulnerability reporting (GitHub recognises this file in the Security tab)
   - `ROADMAP.md` — future plans and known limitations
   - `CONTRIBUTING.md` — full contributing guide with branch naming, commit format, how to add a new module/system, code style, PR process
