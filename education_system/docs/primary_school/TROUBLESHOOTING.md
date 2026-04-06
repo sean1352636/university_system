@@ -48,10 +48,10 @@ The default credentials seeded on first run are:
 | Role | Username | Password |
 |------|----------|----------|
 | Super Admin | `superadmin` | `SuperAdmin@123` |
-| Admin | `primary_admin` | `Admin@Primary123` |
-| Staff | `primary_staff` | `Staff@Primary123` |
-| Student | `primary_student` | `Student@Primary123` |
-| Parent | `primary_parent` | `Parent@Primary123` |
+| Admin | `admin3` | `admin1234` |
+| Staff | `staff3` | `staff1234` |
+| Student | `student3` | `student1234` |
+| Parent | `parent3` | `parent1234` |
 
 If these have been changed and forgotten, an administrator must reset the password through the Users module or directly in the shared auth database using the password hashing utility in `shared/auth/`.
 

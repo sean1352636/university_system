@@ -69,15 +69,17 @@ The Flask API server starts on `http://127.0.0.1:5000` by default. Configuration
 
 ## First Login
 
-On first launch the system seeds three default accounts. Use these to log in and explore:
+The system uses shared authentication with pre-seeded default accounts:
 
-| Role | Username | Password |
-|------|----------|----------|
-| Administrator | `admin` | `Admin@123` |
-| Teacher | `teacher` | `Teacher@123` |
-| Student | `student` | `Student@123` |
+| Role | Username | Password | Notes |
+|------|----------|----------|-------|
+| Super Admin | `superadmin` | `SuperAdmin@123` | Access to all 4 systems |
+| Administrator | `admin1` | `admin1234` | College admin |
+| Staff | `staff1` | `staff1234` | College teacher/staff |
+| Student | `student1` | `student1234` | Student-facing features |
+| Parent | `parent1` | `parent1234` | Parent portal access |
 
-**Important**: Change these default passwords immediately in a production or shared environment. Passwords must be at least 8 characters and contain uppercase, lowercase, digits, and special characters.
+**Important**: Change these default passwords immediately in a production or shared environment. Passwords must be at least 12 characters and contain uppercase, lowercase, digits, and special characters.
 
 ## Quick Tour of Features
 

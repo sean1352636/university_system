@@ -47,9 +47,10 @@ The default credentials seeded on first run are:
 
 | Role | Username | Password |
 |------|----------|----------|
-| Admin | `admin` | `Admin@123` |
-| Teacher | `teacher` | `Teacher@123` |
-| Student | `student` | `Student@123` |
+| Super Admin | `superadmin` | `SuperAdmin@123` |
+| Admin | `admin1` | `admin1234` |
+| Staff | `staff1` | `staff1234` |
+| Student | `student1` | `student1234` |
 
 If these have been changed and forgotten, an administrator must reset the password through User Management or directly in the database using the password hashing utility in `infrastructure/auth/password_manager.py`.
 

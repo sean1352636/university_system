@@ -44,9 +44,10 @@ python3 university_system/utils/reset_password.py --list-users
 ```
 
 **Default Credentials After Reset:**
+- **Super Admin:** `superadmin` / `SuperAdmin@123`
 - **Admin:** `admin` / `admin123`
 - **Staff:** `staff` / `staff123`
-- **Student:** `student` / `student123`
+- **Student:** `S12345` / `student123`
 
 **Manual Password Reset (SQL):**
 

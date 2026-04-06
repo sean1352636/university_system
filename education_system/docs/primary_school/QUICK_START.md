@@ -72,12 +72,12 @@ The system uses shared authentication with pre-seeded default accounts. Use thes
 | Role | Username | Password | Notes |
 |------|----------|----------|-------|
 | Super Admin | `superadmin` | `SuperAdmin@123` | Access to all 4 systems |
-| Administrator | `primary_admin` | `Admin@Primary123` | Primary school admin |
-| Staff | `primary_staff` | `Staff@Primary123` | Teacher / staff role |
-| Student | `primary_student` | `Student@Primary123` | Pupil-facing features |
-| Parent | `primary_parent` | `Parent@Primary123` | Parent portal access |
+| Administrator | `admin3` | `admin1234` | Primary school admin |
+| Staff | `staff3` | `staff1234` | Teacher / staff role |
+| Student | `student3` | `student1234` | Pupil-facing features |
+| Parent | `parent3` | `parent1234` | Parent portal access |
 
-**Important**: Change these default passwords immediately in a production or shared environment. Passwords must be at least 8 characters and contain uppercase, lowercase, digits, and special characters.
+**Important**: Change these default passwords immediately in a production or shared environment. Passwords must be at least 12 characters and contain uppercase, lowercase, digits, and special characters.
 
 ## Quick Tour of Features
 

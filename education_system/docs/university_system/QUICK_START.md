@@ -42,12 +42,17 @@ python run.py --gui
 
 ## First Login
 
-Use the default administrator credentials:
+The system uses shared authentication with pre-seeded default accounts:
 
-- **Username**: `admin`
-- **Password**: `admin123`
+| Role | Username | Password | Notes |
+|------|----------|----------|-------|
+| Super Admin | `superadmin` | `SuperAdmin@123` | Access to all 4 systems |
+| Administrator | `admin` | `admin123` | University admin |
+| Staff | `staff` | `staff123` | University staff |
+| Student | `S12345` | `student123` | Student-facing features |
+| Parent | `parent` | `parent123` | Parent portal access |
 
-⚠️ **IMPORTANT**: Change the default password immediately after first login!
+⚠️ **IMPORTANT**: Change the default passwords immediately in a production environment!
 
 ## Quick Tour
 

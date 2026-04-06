@@ -82,11 +82,12 @@ The system uses shared authentication (`shared/auth/`). Default accounts are see
 | Role | Username | Password | Access |
 |------|----------|----------|--------|
 | Super Admin | `superadmin` | `SuperAdmin@123` | All 4 systems |
-| Administrator | `school_admin` | `Admin@School123` | Secondary school |
-| Staff | `school_staff` | `Staff@School123` | Secondary school |
-| Student | `school_student` | `Student@School123` | Secondary school |
+| Administrator | `admin2` | `admin1234` | Secondary school |
+| Staff | `staff2` | `staff1234` | Secondary school |
+| Student | `student2` | `student1234` | Secondary school |
+| Parent | `parent2` | `parent1234` | Parent portal |
 
-**Important**: Change these default passwords immediately in a production or shared environment. Passwords must contain uppercase, lowercase, digits, and special characters.
+**Important**: Change these default passwords immediately in a production or shared environment. Passwords must be at least 12 characters and contain uppercase, lowercase, digits, and special characters.
 
 ## Quick Tour of Features
 

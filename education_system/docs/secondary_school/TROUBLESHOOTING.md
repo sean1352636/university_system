@@ -48,9 +48,9 @@ The default credentials seeded on first run via shared authentication are:
 | Role | Username | Password |
 |------|----------|----------|
 | Super Admin | `superadmin` | `SuperAdmin@123` |
-| Admin | `school_admin` | `Admin@School123` |
-| Staff | `school_staff` | `Staff@School123` |
-| Student | `school_student` | `Student@School123` |
+| Admin | `admin2` | `admin1234` |
+| Staff | `staff2` | `staff1234` |
+| Student | `student2` | `student1234` |
 
 If these have been changed and forgotten, an administrator must reset the password through the **Users** module or directly in the shared auth database using the password hashing utility in `shared/auth/`.
 
