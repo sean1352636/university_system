@@ -372,7 +372,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 | Document | Description |
 |----------|-------------|
-| [Performance Testing](tests/performance/README.md) | Load testing with Locust, SQLite benchmarks |
+| [Performance Testing](education_system/shared/tests/performance/README.md) | Load testing with Locust, SQLite benchmarks |
 
 ---
 

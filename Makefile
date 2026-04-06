@@ -157,10 +157,10 @@ ci: clean lint test-cov security-scan ## Simulate full CI pipeline
 # ==========================================
 
 load-test: ## Run headless Locust load test (50 users, 60 s) — server must be running
-	$(VENV)/locust -f tests/performance/locustfile.py --headless -u 50 -r 5 --run-time 60s --host http://localhost:5000
+	$(VENV)/locust -f education_system/shared/tests/performance/locustfile.py --headless -u 50 -r 5 --run-time 60s --host http://localhost:5000
 
 load-test-ui: ## Open Locust web UI for interactive load testing — server must be running
-	$(VENV)/locust -f tests/performance/locustfile.py --host http://localhost:5000
+	$(VENV)/locust -f education_system/shared/tests/performance/locustfile.py --host http://localhost:5000
 
 perf-test: ## Run standalone SQLite benchmark (no server required)
-	$(PYTHON) tests/performance/benchmark_db.py
+	$(PYTHON) education_system/shared/tests/performance/benchmark_db.py
