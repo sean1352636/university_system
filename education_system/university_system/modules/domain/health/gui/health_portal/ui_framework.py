@@ -286,10 +286,10 @@ class UIFrameworkMixin:
 
     def create_show_medical_accommodations(self):
         """Launch the Medical Accommodations GUI in a Toplevel window"""
-        from education_system.university_system.modules.domain.health.gui.medical_accommodations_gui import MedicalAccommodationsGUI
+        from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
         top = tk.Toplevel(self.root)
         top.title("Medical Accommodations")
-        MedicalAccommodationsGUI(top, self.auth)
+        AccommodationGUI(top, self.auth)
 
     def return_to_main_menu(self):
         """Return to the main menu"""

@@ -1505,7 +1505,7 @@ University Dental Clinic"""
                             dt.transaction_id,
                             dt.reference_number,
                             dt.created_at,
-                            dt.user_id,
+                            dt.student_id,
                             COALESCE(dp.patient_number, 'N/A') as patient_number,
                             dt.transaction_type,
                             dt.amount,
@@ -1514,7 +1514,7 @@ University Dental Clinic"""
                         FROM transactions dt
                         LEFT JOIN dentist_patients dp ON dt.customer_id = dp.patient_id
                         WHERE dt.source_type = 'dentist' AND dt.transaction_type = 'appointment'
-                          AND (dt.user_id LIKE ? OR dp.patient_number LIKE ? OR dp.user_name LIKE ?)
+                          AND (dt.student_id LIKE ? OR dp.patient_number LIKE ? OR dp.user_name LIKE ?)
                         ORDER BY dt.created_at DESC
                     ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'))
                 else:
@@ -1523,7 +1523,7 @@ University Dental Clinic"""
                             dt.transaction_id,
                             dt.reference_number,
                             dt.created_at,
-                            dt.user_id,
+                            dt.student_id,
                             COALESCE(dp.patient_number, 'N/A') as patient_number,
                             dt.transaction_type,
                             dt.amount,

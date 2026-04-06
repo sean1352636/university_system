@@ -1030,16 +1030,16 @@ University Gym & Fitness Center"""
                 # Only show bookings: membership, membership_renewal, pt_session
                 if search_term:
                     cursor = conn.execute('''
-                        SELECT transaction_id, reference_number, user_id, transaction_type,
+                        SELECT transaction_id, reference_number, student_id, transaction_type,
                                amount, payment_method, created_at, status
                         FROM transactions
                         WHERE source_type = 'gym' AND transaction_type IN ('membership', 'membership_renewal', 'pt_session')
-                          AND user_id LIKE ?
+                          AND student_id LIKE ?
                         ORDER BY created_at DESC
                     ''', (f'%{search_term}%',))
                 else:
                     cursor = conn.execute('''
-                        SELECT transaction_id, reference_number, user_id, transaction_type,
+                        SELECT transaction_id, reference_number, student_id, transaction_type,
                                amount, payment_method, created_at, status
                         FROM transactions
                         WHERE source_type = 'gym' AND transaction_type IN ('membership', 'membership_renewal', 'pt_session')
