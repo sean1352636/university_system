@@ -1,0 +1,1 @@
+from education_system.university_system.modules.domain.academics.gui.exam_portal.exam_portal_gui import ExamPortalGUI

@@ -928,6 +928,21 @@ def show_exam_scheduler_gui(self):
         messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.exam_scheduler_failed").format(error=str(e)))
         print(_t("extras_gui.messages.exam_scheduler_error").format(error=e))
 
+def show_exam_portal(self):
+    """Launch the Exam Portal GUI in a Toplevel window"""
+    try:
+        from education_system.university_system.modules.domain.academics.gui.exam_portal import ExamPortalGUI
+        window = tk.Toplevel(self.root)
+        window.title("Exam Portal")
+        window.geometry("1200x800")
+        try:
+            window.transient(self.root)
+        except Exception:
+            pass
+        ExamPortalGUI(parent=window, auth=self.auth)
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to open Exam Portal: {e}")
+
 def show_hesa_export_gui(self):
     """Launch HESA Data Export GUI"""
     try:

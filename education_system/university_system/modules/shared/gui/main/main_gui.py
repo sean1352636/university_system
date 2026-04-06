@@ -387,6 +387,7 @@ from education_system.university_system.modules.shared.gui.main.features.academi
     refresh_advanced_search,
     show_integration_marketplace_gui,
     show_exam_scheduler_gui,
+    show_exam_portal,
     show_student_analytics_gui,
     show_predictive_analytics_gui,
     show_business_intelligence_gui,
@@ -690,6 +691,7 @@ UnifiedManagementGUI.show_todo_app_gui = show_todo_app_gui
 UnifiedManagementGUI.show_church_management_gui = show_church_management_gui
 UnifiedManagementGUI.show_bank_app_gui = show_bank_app_gui
 UnifiedManagementGUI.show_exam_scheduler_gui = show_exam_scheduler_gui
+UnifiedManagementGUI.show_exam_portal = show_exam_portal
 UnifiedManagementGUI.show_student_analytics_gui = show_student_analytics_gui
 UnifiedManagementGUI.show_student_outcomes_gui = show_student_outcomes_gui
 UnifiedManagementGUI.show_student_timetable_gui = show_student_timetable_gui
