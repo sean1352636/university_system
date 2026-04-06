@@ -338,22 +338,22 @@ class ExamPortalService:
         if not exam or exam["status"] != "published":
             return None
 
-        # Check attempt limit
+        # Check for existing in-progress attempt first, then limit
         with get_connection() as conn:
-            count = conn.execute(
-                "SELECT COUNT(*) FROM exam_portal_attempts WHERE exam_id = ? AND student_id = ?",
-                (exam_id, student_id),
-            ).fetchone()[0]
-            if count >= exam["max_attempts"]:
-                return None
-
-            # Check for existing in-progress attempt
             existing = conn.execute(
                 "SELECT * FROM exam_portal_attempts WHERE exam_id = ? AND student_id = ? AND status = 'in_progress'",
                 (exam_id, student_id),
             ).fetchone()
             if existing:
                 return dict(existing)
+
+            # Count completed attempts against limit
+            count = conn.execute(
+                "SELECT COUNT(*) FROM exam_portal_attempts WHERE exam_id = ? AND student_id = ? AND status != 'in_progress'",
+                (exam_id, student_id),
+            ).fetchone()[0]
+            if count >= exam["max_attempts"]:
+                return None
 
             token = secrets.token_urlsafe(32)
             cursor = conn.execute(
