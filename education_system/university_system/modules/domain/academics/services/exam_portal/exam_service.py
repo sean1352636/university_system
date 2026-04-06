@@ -127,6 +127,93 @@ class ExamPortalService:
         except Exception as e:
             logger.error("Failed to init exam portal tables: %s", e)
 
+    # ── Import from Exam Scheduler ──────────────────────────────────
+
+    def sync_from_scheduler(self, created_by: str = "scheduler") -> Dict:
+        """Import exams from the exam scheduler's ``exams`` table.
+
+        Creates a portal exam for each scheduler exam that doesn't already
+        have one (matched by module_code + date + start_time).  Returns a
+        dict with ``imported`` and ``skipped`` counts.
+        """
+        imported = 0
+        skipped = 0
+        try:
+            with get_connection() as conn:
+                # Check if the scheduler's exams table exists
+                tbl = conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='exams'"
+                ).fetchone()
+                if not tbl:
+                    return {"imported": 0, "skipped": 0, "error": "Exam scheduler table not found"}
+
+                rows = conn.execute(
+                    "SELECT id, module_code, module_name, date, start_time, end_time, "
+                    "room, instructor_name, students_enrolled FROM exams ORDER BY date, start_time"
+                ).fetchall()
+
+                for row in rows:
+                    sched_id = row[0]
+                    module_code = row[1] or ""
+                    module_name = row[2] or module_code
+                    date = row[3] or ""
+                    start_time = row[4] or ""
+                    end_time = row[5] or ""
+                    room = row[6] or ""
+                    instructor = row[7] or ""
+                    students = row[8] or 0
+
+                    # Build a title from the scheduler data
+                    title = f"{module_name} Exam" if module_name else f"{module_code} Exam"
+
+                    # Calculate duration from start/end time
+                    duration = 60  # default
+                    try:
+                        from datetime import datetime as _dt
+                        fmt = "%H:%M"
+                        st = _dt.strptime(start_time, fmt)
+                        et = _dt.strptime(end_time, fmt)
+                        diff = (et - st).seconds // 60
+                        if diff > 0:
+                            duration = diff
+                    except Exception:
+                        pass
+
+                    # Build start/end datetime strings
+                    start_dt = f"{date} {start_time}" if date and start_time else None
+                    end_dt = f"{date} {end_time}" if date and end_time else None
+
+                    # Check if already imported (match on module_code + date + start_time)
+                    existing = conn.execute(
+                        "SELECT id FROM exam_portal_exams WHERE module_code = ? "
+                        "AND start_time = ?",
+                        (module_code, start_dt),
+                    ).fetchone()
+                    if existing:
+                        skipped += 1
+                        continue
+
+                    # Create the portal exam
+                    conn.execute(
+                        """INSERT INTO exam_portal_exams
+                           (title, description, module_code, created_by, duration_minutes,
+                            start_time, end_time, status, instructions)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, 'draft', ?)""",
+                        (title,
+                         f"Scheduled exam for {module_name}. Room: {room}. Instructor: {instructor}.",
+                         module_code, created_by, duration,
+                         start_dt, end_dt,
+                         f"Room: {room}\nInstructor: {instructor}\nStudents enrolled: {students}"),
+                    )
+                    imported += 1
+
+                conn.commit()
+        except Exception as e:
+            logger.error("Error syncing from scheduler: %s", e)
+            return {"imported": imported, "skipped": skipped, "error": str(e)}
+
+        return {"imported": imported, "skipped": skipped}
+
     # ── Exam CRUD ───────────────────────────────────────────────────
 
     def create_exam(self, title: str, created_by: str, **kwargs) -> int:

@@ -29,7 +29,7 @@ def display_exam_portal_menu(auth):
         print("2. Take an Exam")
         print("3. My Results")
         if role in ("admin", "staff", "instructor"):
-            print("4. Create Exam")
+            print("4. Import Exams from Scheduler")
             print("5. Manage Exams")
             print("6. Manage Questions")
             print("7. Grade Submissions")
@@ -46,7 +46,7 @@ def display_exam_portal_menu(auth):
         elif choice == "3":
             _view_results(svc, username)
         elif choice == "4" and role in ("admin", "staff", "instructor"):
-            _create_exam(svc, username)
+            _import_from_scheduler(svc, username)
         elif choice == "5" and role in ("admin", "staff", "instructor"):
             _manage_exams(svc, username, role)
         elif choice == "6" and role in ("admin", "staff", "instructor"):
@@ -268,36 +268,20 @@ def _view_results(svc, student_id):
     input("Press Enter...")
 
 
-# ── Create Exam ─────────────────────────────────────────────────────
+# ── Import from Scheduler ───────────────────────────────────────────
 
-def _create_exam(svc, username):
-    print("\nCreate New Exam")
-    print("=" * 40)
-    title = input("Title: ").strip()
-    if not title:
-        print("Title is required.")
-        return
+def _import_from_scheduler(svc, username):
+    print("\nImporting exams from Exam Scheduler...")
+    result = svc.sync_from_scheduler(created_by=username)
 
-    module_code = input("Module code (optional): ").strip()
-    description = input("Description (optional): ").strip()
-    duration = input("Duration in minutes [60]: ").strip()
-    total_marks = input("Total marks [100]: ").strip()
-    pass_mark = input("Pass mark % [50]: ").strip()
-    max_attempts = input("Max attempts [1]: ").strip()
-    instructions = input("Instructions (optional): ").strip()
-
-    exam_id = svc.create_exam(
-        title, username,
-        module_code=module_code or None,
-        description=description or None,
-        duration_minutes=int(duration) if duration else 60,
-        total_marks=float(total_marks) if total_marks else 100,
-        pass_mark=float(pass_mark) if pass_mark else 50,
-        max_attempts=int(max_attempts) if max_attempts else 1,
-        instructions=instructions or None,
-    )
-    print(f"\nExam created (ID: {exam_id}). Add questions with 'Manage Questions'.")
-    input("Press Enter...")
+    if result.get("error"):
+        print(f"Error: {result['error']}")
+    else:
+        print(f"\nImported: {result['imported']} exam(s)")
+        print(f"Skipped (already imported): {result['skipped']}")
+        if result['imported'] > 0:
+            print("\nAdd questions with 'Manage Questions' and publish when ready.")
+    input("\nPress Enter...")
 
 
 # ── Manage Exams ────────────────────────────────────────────────────

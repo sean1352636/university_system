@@ -471,7 +471,8 @@ class ExamPortalGUI:
         header = ttk.Frame(tab)
         header.pack(fill="x", padx=10, pady=10)
         ttk.Label(header, text="Exam Management", font=("Arial", 14, "bold")).pack(side="left")
-        ttk.Button(header, text="Create Exam", command=self._create_exam_dialog).pack(side="right", padx=5)
+        ttk.Button(header, text="Import from Scheduler",
+                   command=self._import_from_scheduler).pack(side="right", padx=5)
         ttk.Button(header, text="Refresh", command=self._refresh_manage).pack(side="right")
 
         cols = ("ID", "Title", "Module", "Status", "Questions", "Duration", "Created")
@@ -519,8 +520,21 @@ class ExamPortalGUI:
                 e.get("created_at", "")[:16],
             ))
 
-    def _create_exam_dialog(self):
-        self._exam_form_dialog(None)
+    def _import_from_scheduler(self):
+        """Import exams from the Exam Scheduler into the portal."""
+        result = self.svc.sync_from_scheduler(
+            created_by=self._user.get("username", "scheduler")
+        )
+        if result.get("error"):
+            messagebox.showerror("Import Error", f"Error: {result['error']}")
+        else:
+            messagebox.showinfo(
+                "Import Complete",
+                f"Imported: {result['imported']} exam(s)\n"
+                f"Skipped (already imported): {result['skipped']}\n\n"
+                "Add questions and publish when ready.",
+            )
+        self._refresh_manage()
 
     def _edit_exam(self):
         eid = self._get_selected_exam_id()
@@ -528,11 +542,13 @@ class ExamPortalGUI:
             self._exam_form_dialog(eid)
 
     def _exam_form_dialog(self, exam_id):
-        exam = self.svc.get_exam(exam_id) if exam_id else {}
-        is_edit = bool(exam_id)
+        exam = self.svc.get_exam(exam_id)
+        if not exam:
+            messagebox.showerror("Error", "Exam not found.")
+            return
 
         win = tk.Toplevel(self.root)
-        win.title("Edit Exam" if is_edit else "Create Exam")
+        win.title("Edit Exam")
         win.geometry("550x600")
         win.transient(self.root)
 
@@ -617,13 +633,9 @@ class ExamPortalGUI:
                 messagebox.showerror("Validation", "Title is required.", parent=win)
                 return
 
-            if is_edit:
-                data["title"] = title
-                self.svc.update_exam(exam_id, **data)
-                messagebox.showinfo("Saved", "Exam updated.", parent=win)
-            else:
-                self.svc.create_exam(title, self._user.get("username", ""), **data)
-                messagebox.showinfo("Created", "Exam created. Add questions next.", parent=win)
+            data["title"] = title
+            self.svc.update_exam(exam_id, **data)
+            messagebox.showinfo("Saved", "Exam updated.", parent=win)
             win.destroy()
             self._refresh_manage()
 
