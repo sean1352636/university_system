@@ -259,6 +259,7 @@ from education_system.university_system.modules.shared.gui.main.admin.system_adm
     create_user_admin_tab,
     create_monitoring_tab,
     create_config_tab,
+    create_operations_tab,
     view_active_sessions,
     view_system_logs,
     view_error_logs
@@ -566,6 +567,7 @@ UnifiedManagementGUI.create_database_admin_tab = create_database_admin_tab
 UnifiedManagementGUI.create_user_admin_tab = create_user_admin_tab
 UnifiedManagementGUI.create_monitoring_tab = create_monitoring_tab
 UnifiedManagementGUI.create_config_tab = create_config_tab
+UnifiedManagementGUI.create_operations_tab = create_operations_tab
 UnifiedManagementGUI.view_active_sessions = view_active_sessions
 UnifiedManagementGUI.view_system_logs = view_system_logs
 UnifiedManagementGUI.view_error_logs = view_error_logs
