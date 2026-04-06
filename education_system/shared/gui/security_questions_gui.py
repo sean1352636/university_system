@@ -159,6 +159,9 @@ class SecurityQuestionsFrame(tk.Frame):
             self._update_btn.pack_forget()
             self._setup_btn.pack(side="left")
 
+        # Force visual refresh
+        self.update_idletasks()
+
     # ------------------------------------------------------------------
     #  Setup dialog
     # ------------------------------------------------------------------
@@ -167,8 +170,13 @@ class SecurityQuestionsFrame(tk.Frame):
         """Open a dialog to set or update security questions."""
         dialog = _SecurityQuestionsDialog(self, self._svc, self._user_id)
         self.wait_window(dialog)
-        if dialog.saved:
+        # Always refresh after dialog closes — saved or not
+        try:
             self._refresh_status()
+            if dialog.saved:
+                self._status_var.set("Configured  (saved successfully)")
+        except Exception:
+            pass
 
 
 class _SecurityQuestionsDialog(tk.Toplevel):
