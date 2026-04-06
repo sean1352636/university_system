@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.67.0 — 2026-04-06](#8670---2026-04-06)
 - [8.66.0 — 2026-04-06](#8660---2026-04-06)
 - [8.65.0 — 2026-04-05](#8650---2026-04-05)
 - [8.64.0 — 2026-04-05](#8640---2026-04-05)
@@ -157,6 +158,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.67.0] — 2026-04-06
+
+### Repository Cleanup, Documentation & Security Questions Fix
+
+#### Added
+
+**5 new top-level documentation files:**
+- `docs/reference/CLI_REFERENCE.md` — complete CLI command reference covering all 4 systems, menu structures, make targets
+- `docs/reference/API_REFERENCE.md` — unified REST API reference (auth, 196 route modules, error formats)
+- `docs/reference/WEBHOOKS.md` — webhook system guide (subscribe, dispatch, HMAC verification, retry policy)
+- `docs/reference/OFFLINE_SYNC.md` — offline sync guide (cache, mutation queue, conflict resolution)
+- `docs/operations/ADMIN_OPERATIONS.md` — consolidated admin/ops manual (setup, users, security, backups, monitoring, maintenance)
+
+#### Changed
+
+**Repository structure reorganised:**
+- Moved `Dockerfile`, `docker-compose.yml`, `nginx/` into `docker/` directory
+- Moved `ROADMAP.md` into `docs/operations/`
+- Merged `education_system/docs/` into root `docs/` — single documentation directory (150+ files)
+- Organised `docs/` loose markdown files into `docs/reference/` and `docs/operations/` subdirectories
+- Moved `tests/performance/` into `education_system/shared/tests/performance/` alongside other test directories
+- Updated all cross-references in README.md (159+ links), Makefile, CHANGELOG, SECURITY.md, ADRs, and per-system READMEs
+- Added `recovery_codes*.txt` and `encryption.key` to `.gitignore`
+
+**Root directory reduced from 20+ visible items to 15:**
+```
+CHANGELOG.md  CLAUDE.md  CODE_OF_CONDUCT.md  conftest.py  CONTRIBUTING.md
+docker/  docs/  education_system/  LICENSE  Makefile
+pyproject.toml  README.md  requirements.txt  run.py  SECURITY.md
+```
+
+#### Fixed
+
+**Security questions dialog** — window was 500x520 which clipped the Save/Cancel buttons off-screen; enlarged to 550x700, made resizable, renamed button to "Save Questions"
+- File: `shared/gui/security_questions_gui.py`
+
+**Outdated credentials in documentation** — updated all QUICK_START.md and TROUBLESHOOTING.md files across all 4 systems to match the actual defaults in `shared/auth/schema.py`:
+- College: `admin/Admin@123` corrected to `admin1/admin1234`
+- Secondary: `school_admin/Admin@School123` corrected to `admin2/admin1234`
+- Primary: `primary_admin/Admin@Primary123` corrected to `admin3/admin1234`
+- University: added `superadmin` account, corrected student username to `S12345`
 
 ---
 
