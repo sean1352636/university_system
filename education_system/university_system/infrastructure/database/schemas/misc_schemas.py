@@ -205,7 +205,7 @@ def create_performance_indexes():
             ('idx_union_events_created_by', 'union_events', 'created_by', False),
 
             # General transactions indexes (finance)
-            ('idx_transactions_user_id', 'transactions', 'user_id', False),
+            ('idx_transactions_student_id', 'transactions', 'student_id', False),
             ('idx_transactions_transaction_date', 'transactions', 'transaction_date', False),
             ('idx_transactions_status', 'transactions', 'status', False),
             ('idx_transactions_type', 'transactions', 'transaction_type', False),

@@ -571,7 +571,7 @@ class TransactionManager:
             with transaction() as conn:
                 conn.execute('''
                     INSERT INTO transactions
-                    (source_type, reference_number, customer_id, user_id, transaction_type, amount,
+                    (source_type, reference_number, customer_id, student_id, transaction_type, amount,
                      payment_method, processed_by)
                     VALUES ('gym', ?, ?, ?, ?, ?, ?, ?)
                 ''', (reference, member_id, user_id, transaction_type, amount,
@@ -594,7 +594,7 @@ class TransactionManager:
         try:
             with get_connection() as conn:
                 cursor = conn.execute('''
-                    SELECT * FROM transactions WHERE source_type = 'gym' AND user_id = ?
+                    SELECT * FROM transactions WHERE source_type = 'gym' AND student_id = ?
                     ORDER BY created_at DESC LIMIT ?
                 ''', (user_id, limit))
                 columns = [desc[0] for desc in cursor.description]

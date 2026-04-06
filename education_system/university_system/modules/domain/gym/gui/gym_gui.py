@@ -1186,7 +1186,7 @@ Status: {values[7]}
                     refund_ref = f"REFUND-{generate_reference()}"
                     conn.execute('''
                         INSERT INTO transactions
-                        (source_type, reference_number, user_id, transaction_type, amount, payment_method, status, processed_by)
+                        (source_type, reference_number, student_id, transaction_type, amount, payment_method, status, processed_by)
                         VALUES ('gym', ?, ?, ?, ?, ?, 'completed', ?)
                     ''', (refund_ref, user_id, f'refund_{transaction_type}', amount,
                           refund_method.lower().replace(' ', '_'), self.user_id))
