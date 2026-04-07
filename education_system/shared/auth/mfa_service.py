@@ -6,6 +6,7 @@ import string
 import logging
 import time
 
+import bcrypt as _bcrypt
 import pyotp
 
 from education_system.shared.auth.exceptions import MFAError
@@ -32,8 +33,25 @@ class MFAService:
 
     @staticmethod
     def _hash_code(code: str) -> str:
-        """SHA-256 hash a recovery code."""
-        return hashlib.sha256(code.encode()).hexdigest()
+        """Bcrypt hash a recovery code for offline attack resistance."""
+        normalised = code.strip().upper().encode("utf-8")
+        return _bcrypt.hashpw(normalised, _bcrypt.gensalt()).decode("utf-8")
+
+    @staticmethod
+    def _verify_code_hash(code: str, code_hash: str) -> bool:
+        """Verify a recovery code against its hash.
+
+        Supports both new bcrypt hashes and legacy SHA-256 hashes (64 hex
+        chars, no ``$`` prefix) for codes created before the upgrade.
+        """
+        normalised = code.strip().upper()
+        # Legacy SHA-256 detection
+        if len(code_hash) == 64 and not code_hash.startswith("$"):
+            return hashlib.sha256(normalised.encode()).hexdigest() == code_hash
+        try:
+            return _bcrypt.checkpw(normalised.encode("utf-8"), code_hash.encode("utf-8"))
+        except (ValueError, AttributeError):
+            return False
 
     @staticmethod
     def _generate_recovery_code() -> str:
@@ -159,23 +177,27 @@ class MFAService:
                     "Please try again in 15 minutes."
                 )
 
-        code_hash = self._hash_code(code.strip().upper())
         conn = self._conn()
         try:
-            row = conn.execute(
-                """SELECT id FROM mfa_recovery_codes
-                   WHERE user_id = ? AND code_hash = ? AND is_used = 0""",
-                (user_id, code_hash),
-            ).fetchone()
+            rows = conn.execute(
+                "SELECT id, code_hash FROM mfa_recovery_codes WHERE user_id = ? AND is_used = 0",
+                (user_id,),
+            ).fetchall()
 
-            if not row:
+            matched_id = None
+            for row in rows:
+                if self._verify_code_hash(code, row["code_hash"]):
+                    matched_id = row["id"]
+                    break
+
+            if matched_id is None:
                 # Record failed attempt
                 _recovery_attempts.setdefault(user_id, []).append(now)
                 return False
 
             conn.execute(
                 "UPDATE mfa_recovery_codes SET is_used = 1 WHERE id = ?",
-                (row["id"],),
+                (matched_id,),
             )
             conn.commit()
             # Clear failed attempts on success

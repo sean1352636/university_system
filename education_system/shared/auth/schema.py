@@ -146,6 +146,63 @@ CREATE TABLE IF NOT EXISTS security_audit_log (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_event ON security_audit_log(event_type, created_at);
 CREATE INDEX IF NOT EXISTS idx_audit_user ON security_audit_log(username, created_at);
+
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL,
+    token_hash  TEXT    NOT NULL,
+    email       TEXT    NOT NULL,
+    expires_at  TEXT    NOT NULL,
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+CREATE INDEX IF NOT EXISTS idx_email_verify_user ON email_verification_tokens(user_id);
+
+CREATE TABLE IF NOT EXISTS rate_limits (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    key         TEXT    NOT NULL,
+    timestamp   REAL    NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_rate_limits_key ON rate_limits(key, timestamp);
+
+CREATE TABLE IF NOT EXISTS trusted_devices (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL,
+    device_hash TEXT    NOT NULL,
+    device_name TEXT,
+    last_used_at TEXT   NOT NULL DEFAULT (datetime('now')),
+    created_at  TEXT    NOT NULL DEFAULT (datetime('now')),
+    expires_at  TEXT    NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+CREATE INDEX IF NOT EXISTS idx_trusted_devices_user ON trusted_devices(user_id);
+
+CREATE TABLE IF NOT EXISTS webauthn_credentials (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER NOT NULL,
+    credential_id TEXT    NOT NULL UNIQUE,
+    public_key    BLOB    NOT NULL,
+    sign_count    INTEGER NOT NULL DEFAULT 0,
+    device_name   TEXT,
+    created_at    TEXT    NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+CREATE INDEX IF NOT EXISTS idx_webauthn_user ON webauthn_credentials(user_id);
+
+CREATE TABLE IF NOT EXISTS oauth_accounts (
+    id                INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id           INTEGER NOT NULL,
+    provider          TEXT    NOT NULL,
+    provider_user_id  TEXT    NOT NULL,
+    email             TEXT,
+    display_name      TEXT,
+    created_at        TEXT    NOT NULL DEFAULT (datetime('now')),
+    updated_at        TEXT    NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    UNIQUE(provider, provider_user_id)
+);
+CREATE INDEX IF NOT EXISTS idx_oauth_user ON oauth_accounts(user_id);
+CREATE INDEX IF NOT EXISTS idx_oauth_provider ON oauth_accounts(provider, provider_user_id);
 """
 
 # ── Default account definitions ──────────────────────────────────────────────
@@ -468,6 +525,8 @@ def initialise_auth_db(db_path: str | None = None):
             conn.execute("ALTER TABLE users ADD COLUMN legacy_salt TEXT")
         if "password_changed_at" not in cols:
             conn.execute("ALTER TABLE users ADD COLUMN password_changed_at TEXT")
+        if "email_verified" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0")
         conn.commit()
 
         logger.info("Auth database initialised")

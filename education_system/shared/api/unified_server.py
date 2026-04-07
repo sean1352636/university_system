@@ -160,6 +160,13 @@ def create_unified_app() -> Flask:
     init_auth(auth_db_path=str(AUTH_DB_FILE), jwt_secret=jwt_secret)
     app.register_blueprint(auth_bp, url_prefix=f"/api/{API_VERSION}/auth")
 
+    # ── Scheduled audit / rate-limit cleanup ─────────────────────────
+    try:
+        from education_system.shared.auth.audit_scheduler import start_cleanup_scheduler
+        start_cleanup_scheduler(str(AUTH_DB_FILE))
+    except Exception as e:
+        logger.warning("Audit cleanup scheduler failed to start (non-fatal): %s", e)
+
     # ── Health check ────────────────────────────────────────────────────
     from education_system.shared.api.health import health_bp, init_health
     init_health(system_name="Education System (Unified)")

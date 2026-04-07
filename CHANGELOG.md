@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.70.0 — 2026-04-07](#8700---2026-04-07)
 - [8.69.0 — 2026-04-07](#8690---2026-04-07)
 - [8.68.0 — 2026-04-07](#8680---2026-04-07)
 - [8.67.0 — 2026-04-06](#8670---2026-04-06)
@@ -160,6 +161,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.70.0] — 2026-04-07
+
+### Harden shared authentication: persistent rate limiting, bcrypt recovery codes, email verification, OAuth2, WebAuthn, device trust, session limits, scheduled cleanup
+
+#### Security
+
+- **Persistent API rate limiting**: Replaced in-memory rate-limit dicts with SQLite-backed `PersistentRateLimiter` — rate limits now survive server restarts
+- **Recovery codes upgraded to bcrypt**: MFA recovery codes now hashed with bcrypt instead of SHA-256, with transparent legacy verification support
+- **JWT secret persisted**: Auto-generated JWT secret stored in `auth_settings` table so tokens survive restarts (env var `JWT_SECRET_KEY` still takes precedence)
+- **Concurrent session limits**: `SessionManager.create_session()` now enforces a max of 5 active sessions per user (configurable via `EDU_MAX_SESSIONS`), evicting the oldest when exceeded
+
+#### Added
+
+- **Email verification flow**: New `EmailVerificationService` with token generation, email sending, and `POST /api/auth/send-verification` + `POST /api/auth/verify-email` endpoints; `email_verified` column added to `users` table
+- **Password reset email sending**: `POST /api/auth/forgot-password` now sends the reset token via email when SMTP is configured
+- **OAuth2 / social login**: New `OAuthService` supporting Google and Microsoft providers with auto-linking by email; endpoints for authorize, callback, list linked, and unlink
+- **WebAuthn / passkey support**: New `WebAuthnService` for passwordless authentication via hardware keys and platform authenticators (requires `fido2` package)
+- **Device management**: New `DeviceManager` for "remember this device" functionality with configurable trust duration (default 30 days, `EDU_DEVICE_TRUST_DAYS`); endpoints for listing and revoking trusted devices
+- **Scheduled audit log cleanup**: New `audit_scheduler` runs every 6 hours (configurable via `EDU_AUDIT_CLEANUP_HOURS`) to clean up expired rate-limit entries, verification tokens, reset tokens, and trusted devices — replaces opportunistic cleanup
+
+#### Database
+
+- New tables: `email_verification_tokens`, `rate_limits`, `trusted_devices`, `webauthn_credentials`, `oauth_accounts`
+- New column: `users.email_verified`
+
+#### New files
+
+- `shared/auth/rate_limit_store.py` — SQLite-backed persistent rate limiter
+- `shared/auth/email_verification.py` — Email verification service
+- `shared/auth/device_manager.py` — Trusted device management
+- `shared/auth/webauthn_service.py` — WebAuthn/passkey service
+- `shared/auth/oauth_service.py` — OAuth2 social login service
+- `shared/auth/audit_scheduler.py` — Background cleanup scheduler
 
 ---
 

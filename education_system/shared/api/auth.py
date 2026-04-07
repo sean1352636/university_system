@@ -16,9 +16,7 @@ Endpoints:
 import functools
 import os
 import secrets
-import time
 import logging
-from collections import defaultdict
 from datetime import datetime, timedelta
 
 import jwt
@@ -28,45 +26,57 @@ logger = logging.getLogger(__name__)
 
 # ── Configuration ───────────────────────────────────────────────────────
 
-_JWT_SECRET = os.getenv("JWT_SECRET_KEY") or secrets.token_urlsafe(64)
 _JWT_EXPIRY_HOURS = int(os.getenv("JWT_EXPIRY_HOURS", "24"))
 _JWT_REFRESH_DAYS = int(os.getenv("JWT_REFRESH_DAYS", "7"))
 _auth_db_path: str | None = None
+_JWT_SECRET: str | None = None
 
-# ── Rate limiting (per IP and per username) ────────────────────────────
+# ── Rate limiting (persistent, SQLite-backed) ─────────────────────────
 
-_rate_store: dict[str, list[float]] = defaultdict(list)
-_username_rate_store: dict[str, list[float]] = defaultdict(list)
+_rate_limiter = None  # Initialised in init_auth()
 _LOGIN_LIMIT, _LOGIN_WINDOW = 10, 60
 _USERNAME_LOGIN_LIMIT, _USERNAME_LOGIN_WINDOW = 5, 60
 _REGISTER_LIMIT, _REGISTER_WINDOW = 5, 3600
 
 
 def _rate_limited(key: str, limit: int, window: int) -> bool:
-    now = time.time()
-    _rate_store[key] = [t for t in _rate_store[key] if now - t < window]
-    if len(_rate_store[key]) >= limit:
-        return True
-    _rate_store[key].append(now)
-    return False
+    if _rate_limiter is None:
+        return False
+    return _rate_limiter.is_limited(key, limit, window)
 
 
 def _username_rate_limited(username: str) -> bool:
     """Check per-username rate limit for login attempts."""
-    now = time.time()
-    key = username.lower()
-    _username_rate_store[key] = [
-        t for t in _username_rate_store[key] if now - t < _USERNAME_LOGIN_WINDOW
-    ]
-    if len(_username_rate_store[key]) >= _USERNAME_LOGIN_LIMIT:
-        return True
-    _username_rate_store[key].append(now)
-    return False
+    key = f"user_login:{username.lower()}"
+    return _rate_limited(key, _USERNAME_LOGIN_LIMIT, _USERNAME_LOGIN_WINDOW)
 
 
 # ── Blueprint ───────────────────────────────────────────────────────────
 
 auth_bp = Blueprint("shared_auth", __name__, url_prefix="/api/auth")
+
+
+def _load_or_create_jwt_secret(db_path: str | None) -> str:
+    """Load the JWT secret from the auth database, or generate and persist one.
+
+    If ``JWT_SECRET_KEY`` is set in the environment it takes precedence.
+    Otherwise the secret is stored in the ``auth_settings`` table so that
+    tokens survive server restarts.
+    """
+    env_secret = os.getenv("JWT_SECRET_KEY")
+    if env_secret:
+        return env_secret
+
+    from education_system.shared.auth.core import UserAuth
+    auth = UserAuth(db_path)
+    stored = auth.get_setting("jwt_secret")
+    if stored:
+        return stored
+
+    new_secret = secrets.token_urlsafe(64)
+    auth.set_setting("jwt_secret", new_secret)
+    logger.info("Generated and persisted new JWT secret in auth database")
+    return new_secret
 
 
 def init_auth(auth_db_path: str | None = None, jwt_secret: str | None = None):
@@ -76,14 +86,28 @@ def init_auth(auth_db_path: str | None = None, jwt_secret: str | None = None):
         init_auth(auth_db_path="/path/to/auth.db")
         app.register_blueprint(auth_bp)
     """
-    global _auth_db_path, _JWT_SECRET
+    global _auth_db_path, _JWT_SECRET, _rate_limiter
     if auth_db_path:
         _auth_db_path = auth_db_path
     if jwt_secret:
         _JWT_SECRET = jwt_secret
+    else:
+        _JWT_SECRET = _load_or_create_jwt_secret(_auth_db_path)
+
+    # Initialise persistent rate limiter
+    from education_system.shared.auth.rate_limit_store import PersistentRateLimiter
+    _rate_limiter = PersistentRateLimiter(_auth_db_path)
 
 
 # ── Token helpers ───────────────────────────────────────────────────────
+
+def _get_jwt_secret() -> str:
+    """Return the JWT secret, falling back to a runtime-only key if init_auth
+    was never called (e.g. during tests)."""
+    if _JWT_SECRET:
+        return _JWT_SECRET
+    return os.getenv("JWT_SECRET_KEY") or "INSECURE-FALLBACK-FOR-TESTS-ONLY"
+
 
 def generate_token(user_id: int, username: str, systems: list[dict],
                    token_type: str = "access") -> str:
@@ -105,11 +129,11 @@ def generate_token(user_id: int, username: str, systems: list[dict],
         "exp": exp,
         "iat": datetime.utcnow(),
     }
-    return jwt.encode(payload, _JWT_SECRET, algorithm="HS256")
+    return jwt.encode(payload, _get_jwt_secret(), algorithm="HS256")
 
 
 def decode_token(token: str) -> dict:
-    return jwt.decode(token, _JWT_SECRET, algorithms=["HS256"])
+    return jwt.decode(token, _get_jwt_secret(), algorithms=["HS256"])
 
 
 def _create_mfa_token(user_id: int) -> str:
@@ -119,7 +143,7 @@ def _create_mfa_token(user_id: int) -> str:
         "exp": datetime.utcnow() + timedelta(minutes=5),
         "iat": datetime.utcnow(),
     }
-    return jwt.encode(payload, _JWT_SECRET, algorithm="HS256")
+    return jwt.encode(payload, _get_jwt_secret(), algorithm="HS256")
 
 
 # ── Decorators ──────────────────────────────────────────────────────────
@@ -279,7 +303,7 @@ def mfa_verify():
 
     token = auth_header.split(" ", 1)[1]
     try:
-        data = jwt.decode(token, _JWT_SECRET, algorithms=["HS256"])
+        data = jwt.decode(token, _get_jwt_secret(), algorithms=["HS256"])
         if data.get("purpose") != "mfa_verify":
             return jsonify({"error": "Invalid token type"}), 401
     except jwt.InvalidTokenError:
@@ -433,10 +457,18 @@ def forgot_password():
         from education_system.shared.auth.db import AUTH_DB_FILE
         svc = PasswordResetService(_auth_db_path or str(AUTH_DB_FILE))
         result = svc.request_reset(data["email"])
+
+        # Send the reset email if a token was generated
+        if result.get("token"):
+            _send_password_reset_email(
+                email=result["email"],
+                username=result["username"],
+                token=result["token"],
+                expires_at=result["expires_at"],
+            )
     except Exception as e:
         logger.error("Account reset request failed: %s", e)
         # Don't reveal errors to prevent email enumeration
-        pass
 
     return jsonify({"message": "If that email exists, a reset link has been sent."})
 
@@ -462,3 +494,228 @@ def reset_password():
         return jsonify({"error": "Password reset failed"}), 400
 
     return jsonify({"message": "Password reset successful. Please login with your new password."})
+
+
+# ── Password reset email helper ────────────────────────────────────────
+
+def _send_password_reset_email(email: str, username: str, token: str, expires_at: str):
+    """Send a password reset email containing the reset token.
+
+    Uses the shared email config. Falls back silently if email is not
+    configured (the token is still returned in the API response for
+    development/testing).
+    """
+    try:
+        from education_system.shared.email.config import load_email_config
+        from email.mime.text import MIMEText
+        import smtplib
+
+        cfg = load_email_config()
+        smtp_server = cfg.get("smtp_server", "")
+        smtp_port = cfg.get("smtp_port", 587)
+        smtp_user = cfg.get("smtp_username", "")
+        smtp_pass = cfg.get("smtp_password", "")
+        use_tls = cfg.get("use_tls", True)
+        sender = cfg.get("sender_email", smtp_user)
+
+        if not all([smtp_server, smtp_user, smtp_pass]):
+            logger.debug("Email not configured — skipping password reset email")
+            return
+
+        base_url = os.getenv("APP_BASE_URL", "http://localhost:5000")
+        reset_link = f"{base_url}/web/reset-password?token={token}"
+
+        body = (
+            f"Hello {username},\n\n"
+            f"A password reset was requested for your Education System account.\n\n"
+            f"Click the link below to reset your password:\n"
+            f"  {reset_link}\n\n"
+            f"This link expires at {expires_at}.\n\n"
+            f"If you did not request this, you can safely ignore this email.\n"
+        )
+
+        msg = MIMEText(body)
+        msg["Subject"] = "Education System — Password Reset"
+        msg["From"] = sender
+        msg["To"] = email
+
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+        if use_tls:
+            server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.sendmail(sender, [email], msg.as_string())
+        server.quit()
+        logger.info("Password reset email sent to %s", email)
+    except Exception as exc:
+        logger.debug("Could not send password reset email: %s", exc)
+
+
+# ── Email verification endpoints ───────────────────────────────────────
+
+@auth_bp.route("/send-verification", methods=["POST"])
+@token_required
+def send_verification_email():
+    """Send an email verification link to the current user's email.
+
+    Response:
+        {"message": "Verification email sent."}
+    """
+    try:
+        from education_system.shared.auth.email_verification import EmailVerificationService
+        from education_system.shared.auth.db import AUTH_DB_FILE
+        svc = EmailVerificationService(_auth_db_path or str(AUTH_DB_FILE))
+        svc.send_verification(g.current_user["user_id"])
+    except Exception as e:
+        logger.error("Email verification send failed: %s", e)
+        return jsonify({"error": "Failed to send verification email"}), 500
+
+    return jsonify({"message": "Verification email sent."})
+
+
+@auth_bp.route("/verify-email", methods=["POST"])
+def verify_email():
+    """Verify an email address using a token.
+
+    Request body:
+        {"token": "..."}
+    """
+    data = request.get_json(silent=True)
+    if not data or not data.get("token"):
+        return jsonify({"error": "token required"}), 400
+
+    try:
+        from education_system.shared.auth.email_verification import EmailVerificationService
+        from education_system.shared.auth.db import AUTH_DB_FILE
+        svc = EmailVerificationService(_auth_db_path or str(AUTH_DB_FILE))
+        svc.verify(data["token"])
+    except Exception as e:
+        logger.error("Email verification failed: %s", e)
+        return jsonify({"error": "Email verification failed"}), 400
+
+    return jsonify({"message": "Email verified successfully."})
+
+
+# ── OAuth2 / social login endpoints ───────────────────────────────────
+
+@auth_bp.route("/oauth/providers", methods=["GET"])
+def oauth_providers():
+    """List available OAuth providers and their configuration status."""
+    try:
+        from education_system.shared.auth.oauth_service import OAuthService
+        return jsonify({"providers": OAuthService.list_providers()})
+    except Exception as e:
+        logger.error("OAuth providers list failed: %s", e)
+        return jsonify({"providers": []}), 500
+
+
+@auth_bp.route("/oauth/<provider>/authorize", methods=["GET"])
+def oauth_authorize(provider: str):
+    """Redirect to OAuth provider's authorization page."""
+    try:
+        from education_system.shared.auth.oauth_service import OAuthService
+        from education_system.shared.auth.db import AUTH_DB_FILE
+        svc = OAuthService(_auth_db_path or str(AUTH_DB_FILE))
+        url = svc.get_authorization_url(provider)
+        return jsonify({"authorize_url": url})
+    except Exception as e:
+        logger.error("OAuth authorize failed: %s", e)
+        return jsonify({"error": str(e)}), 400
+
+
+@auth_bp.route("/oauth/<provider>/callback", methods=["GET", "POST"])
+def oauth_callback(provider: str):
+    """Handle OAuth provider callback after user authorization."""
+    code = request.args.get("code") or (request.get_json(silent=True) or {}).get("code")
+    state = request.args.get("state") or (request.get_json(silent=True) or {}).get("state")
+
+    if not code or not state:
+        return jsonify({"error": "code and state required"}), 400
+
+    try:
+        from education_system.shared.auth.oauth_service import OAuthService
+        from education_system.shared.auth.db import AUTH_DB_FILE
+        svc = OAuthService(_auth_db_path or str(AUTH_DB_FILE))
+        result = svc.handle_callback(provider, code, state)
+    except Exception as e:
+        logger.error("OAuth callback failed: %s", e)
+        return jsonify({"error": str(e)}), 400
+
+    systems = result.get("systems", [])
+    access_token = generate_token(result["user_id"], result["username"], systems, "access")
+    refresh_token = generate_token(result["user_id"], result["username"], systems, "refresh")
+
+    return jsonify({
+        "message": "OAuth login successful.",
+        "token": access_token,
+        "refresh_token": refresh_token,
+        "user": {
+            "user_id": result["user_id"],
+            "username": result["username"],
+            "display_name": result.get("display_name", result["username"]),
+            "systems": systems,
+            "oauth_provider": result.get("oauth_provider"),
+        },
+    })
+
+
+@auth_bp.route("/oauth/linked", methods=["GET"])
+@token_required
+def oauth_linked_providers():
+    """List OAuth providers linked to the current user's account."""
+    try:
+        from education_system.shared.auth.oauth_service import OAuthService
+        from education_system.shared.auth.db import AUTH_DB_FILE
+        svc = OAuthService(_auth_db_path or str(AUTH_DB_FILE))
+        providers = svc.get_linked_providers(g.current_user["user_id"])
+        return jsonify({"linked_providers": providers})
+    except Exception as e:
+        logger.error("OAuth linked providers list failed: %s", e)
+        return jsonify({"linked_providers": []}), 500
+
+
+@auth_bp.route("/oauth/<provider>/unlink", methods=["POST"])
+@token_required
+def oauth_unlink(provider: str):
+    """Unlink an OAuth provider from the current user's account."""
+    try:
+        from education_system.shared.auth.oauth_service import OAuthService
+        from education_system.shared.auth.db import AUTH_DB_FILE
+        svc = OAuthService(_auth_db_path or str(AUTH_DB_FILE))
+        if svc.unlink_account(g.current_user["user_id"], provider):
+            return jsonify({"message": f"{provider} account unlinked."})
+        return jsonify({"error": f"No {provider} account linked."}), 404
+    except Exception as e:
+        logger.error("OAuth unlink failed: %s", e)
+        return jsonify({"error": "Failed to unlink account"}), 500
+
+
+# ── Device management endpoints ───────────────────────────────────────
+
+@auth_bp.route("/devices", methods=["GET"])
+@token_required
+def list_devices():
+    """List trusted devices for the current user."""
+    try:
+        from education_system.shared.auth.device_manager import DeviceManager
+        from education_system.shared.auth.db import AUTH_DB_FILE
+        mgr = DeviceManager(_auth_db_path or str(AUTH_DB_FILE))
+        devices = mgr.list_devices(g.current_user["user_id"])
+        return jsonify({"devices": devices})
+    except Exception as e:
+        logger.error("Device list failed: %s", e)
+        return jsonify({"devices": []}), 500
+
+
+@auth_bp.route("/devices/revoke-all", methods=["POST"])
+@token_required
+def revoke_all_devices():
+    """Revoke all trusted devices for the current user."""
+    try:
+        from education_system.shared.auth.device_manager import DeviceManager
+        from education_system.shared.auth.db import AUTH_DB_FILE
+        mgr = DeviceManager(_auth_db_path or str(AUTH_DB_FILE))
+        count = mgr.revoke_all_devices(g.current_user["user_id"])
+        return jsonify({"message": f"Revoked {count} trusted device(s)."})
+    except Exception as e:
+        logger.error("Device revoke failed: %s", e)
+        return jsonify({"error": "Failed to revoke devices"}), 500

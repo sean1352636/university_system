@@ -4,7 +4,7 @@ import secrets
 from datetime import datetime, timedelta
 import logging
 
-from education_system.shared.auth.defaults import SESSION_TIMEOUT_MINUTES
+from education_system.shared.auth.defaults import SESSION_TIMEOUT_MINUTES, MAX_SESSIONS_PER_USER
 from education_system.shared.auth.db import connect
 
 logger = logging.getLogger(__name__)
@@ -20,12 +20,42 @@ class SessionManager:
         return connect(self._db_path)
 
     def create_session(self, user_id: int) -> str:
-        """Create a new session and return the token."""
+        """Create a new session and return the token.
+
+        Enforces a maximum number of concurrent sessions per user.  When
+        the limit is reached, the oldest active session is revoked to make
+        room for the new one.
+        """
         token = secrets.token_urlsafe(32)
         expires_at = datetime.utcnow() + timedelta(minutes=SESSION_TIMEOUT_MINUTES)
 
         conn = self._conn()
         try:
+            # Evict expired sessions first
+            conn.execute(
+                "DELETE FROM sessions WHERE user_id = ? AND (expires_at < ? OR is_active = 0)",
+                (user_id, datetime.utcnow().isoformat()),
+            )
+
+            # Enforce concurrent session limit
+            active = conn.execute(
+                "SELECT id FROM sessions WHERE user_id = ? AND is_active = 1 "
+                "ORDER BY created_at ASC",
+                (user_id,),
+            ).fetchall()
+            excess = len(active) - MAX_SESSIONS_PER_USER + 1  # +1 for the new session
+            if excess > 0:
+                ids_to_revoke = [r["id"] for r in active[:excess]]
+                placeholders = ",".join("?" * len(ids_to_revoke))
+                conn.execute(
+                    f"UPDATE sessions SET is_active = 0 WHERE id IN ({placeholders})",  # nosec B608  # IDs are ints from DB
+                    ids_to_revoke,
+                )
+                logger.info(
+                    "Evicted %d oldest session(s) for user_id=%d (limit %d)",
+                    excess, user_id, MAX_SESSIONS_PER_USER,
+                )
+
             conn.execute(
                 "INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)",
                 (user_id, token, expires_at.isoformat()),
