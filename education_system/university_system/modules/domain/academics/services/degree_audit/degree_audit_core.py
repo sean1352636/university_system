@@ -579,7 +579,7 @@ class GraduationAuditManager:
 
 # Import GUI launcher from the actual GUI module
 try:
-    from education_system.university_system.modules.domain.academics.gui.degree_audit_gui import launch_degree_audit_gui
+    from education_system.university_system.modules.domain.academics.gui.course_management_gui.degree_audit_gui import launch_degree_audit_gui
 except ImportError:
     # Fallback if GUI not available
     from education_system.university_system.modules.shared.feature_gui_factory import create_gui_launcher

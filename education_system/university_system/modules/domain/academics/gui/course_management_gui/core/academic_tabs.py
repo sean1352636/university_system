@@ -12,7 +12,7 @@ _course_eval_cls = None
 def _get_degree_audit_cls():
     global _degree_audit_cls
     if _degree_audit_cls is None:
-        from education_system.university_system.modules.domain.academics.gui.degree_audit_gui import DegreeAuditGUI
+        from education_system.university_system.modules.domain.academics.gui.course_management_gui.degree_audit_gui import DegreeAuditGUI
         _degree_audit_cls = DegreeAuditGUI
     return _degree_audit_cls
 
@@ -20,7 +20,7 @@ def _get_degree_audit_cls():
 def _get_course_eval_cls():
     global _course_eval_cls
     if _course_eval_cls is None:
-        from education_system.university_system.modules.domain.academics.gui.course_evaluation_gui import CourseEvaluationGUI
+        from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_gui import CourseEvaluationGUI
         _course_eval_cls = CourseEvaluationGUI
     return _course_eval_cls
 

@@ -26,6 +26,36 @@ def _launch_course_planning_cli():
         input("Press Enter to continue...")
 
 
+def _launch_lms_cli(auth):
+    """Launch the LMS CLI."""
+    try:
+        from education_system.university_system.modules.domain.academics.services.lms.lms_core import display_lms_menu
+        display_lms_menu(auth)
+    except ImportError as e:
+        print(f"\n❌ LMS CLI not available: {e}")
+        input("Press Enter to continue...")
+
+
+def _launch_course_evaluation_cli(auth):
+    """Launch the Course Evaluation CLI."""
+    try:
+        from education_system.university_system.modules.domain.academics.services.evaluation.course_evaluation_core import display_course_evaluation_menu
+        display_course_evaluation_menu(auth)
+    except ImportError as e:
+        print(f"\n❌ Course Evaluation CLI not available: {e}")
+        input("Press Enter to continue...")
+
+
+def _launch_degree_audit_cli(auth):
+    """Launch the Degree Audit CLI."""
+    try:
+        from education_system.university_system.modules.domain.academics.gui.course_management_gui.cli.degree_audit_cli import launch_degree_audit_cli
+        launch_degree_audit_cli(auth)
+    except ImportError as e:
+        print(f"\n❌ Degree Audit CLI not available: {e}")
+        input("Press Enter to continue...")
+
+
 @log_menu_navigation(description="Displaying enhanced course management menu")
 def display_enhanced_course_menu(auth):
     """Display the enhanced course management menu"""
@@ -70,15 +100,15 @@ def display_enhanced_course_menu(auth):
             print(f"\n🔧 {get_text('course_mgmt.sections.utilities', default='UTILITIES')}:")
             print(f"{'27. ' + get_text('course_mgmt.menu.course_history', default='Course history'):<25} {'28. ' + get_text('course_mgmt.menu.system_maintenance', default='System maintenance'):<25} {'29. ' + get_text('course_mgmt.menu.module_management', default='Module Management'):<25}")
 
-            print(f"\n📋 PLANNING:")
-            print(f"{'30. Course Planning Assistant':<25}")
+            print(f"\n📋 INTEGRATED TOOLS:")
+            print(f"{'30. Course Planning Assistant':<25} {'31. Learning Management (LMS)':<30} {'32. Course Evaluation':<25} {'33. Degree Audit':<25}")
 
             print(f"\n⚙️  {get_text('course_mgmt.sections.settings', default='SETTINGS')}:")
-            print(f"{'31. ' + get_text('course_mgmt.menu.language', default='Change Language'):<25}")
+            print(f"{'34. ' + get_text('course_mgmt.menu.language', default='Change Language'):<25}")
 
             print(f"\n0.  {get_text('course_mgmt.menu.return_main', default='Return to Main Menu')}")
 
-            max_option = 31
+            max_option = 34
 
         elif auth.check_permission('view_courses'):
             print(f"\n📚 {get_text('course_mgmt.sections.course_viewing', default='COURSE VIEWING')}:")
@@ -88,10 +118,13 @@ def display_enhanced_course_menu(auth):
             print(f"4. {get_text('course_mgmt.menu.recommendations', default='Course recommendations')}")
             print(f"5. {get_text('course_mgmt.menu.course_analytics', default='Course analytics')}")
             print(f"6. Course Planning Assistant")
-            print(f"7. {get_text('course_mgmt.menu.language', default='Change Language')}")
+            print(f"7. Learning Management (LMS)")
+            print(f"8. Course Evaluation")
+            print(f"9. Degree Audit")
+            print(f"10. {get_text('course_mgmt.menu.language', default='Change Language')}")
             print(f"0. {get_text('course_mgmt.menu.return_main', default='Return to Main Menu')}")
 
-            max_option = 7
+            max_option = 10
         else:
             print(get_text('course_mgmt.no_permission', default="You don't have permission to manage courses."))
             return
@@ -166,6 +199,12 @@ def display_enhanced_course_menu(auth):
             elif choice == '30':
                 _launch_course_planning_cli()
             elif choice == '31':
+                _launch_lms_cli(auth)
+            elif choice == '32':
+                _launch_course_evaluation_cli(auth)
+            elif choice == '33':
+                _launch_degree_audit_cli(auth)
+            elif choice == '34':
                 display_language_menu_option()
             else:
                 print(get_text('course_mgmt.invalid_choice', default='Invalid choice. Please enter a number between 0 and {max_option}.').format(max_option=max_option))
@@ -184,6 +223,12 @@ def display_enhanced_course_menu(auth):
             elif choice == '6':
                 _launch_course_planning_cli()
             elif choice == '7':
+                _launch_lms_cli(auth)
+            elif choice == '8':
+                _launch_course_evaluation_cli(auth)
+            elif choice == '9':
+                _launch_degree_audit_cli(auth)
+            elif choice == '10':
                 display_language_menu_option()
             else:
                 print(get_text('course_mgmt.invalid_choice', default='Invalid choice. Please enter a number between 0 and {max_option}.').format(max_option=max_option))

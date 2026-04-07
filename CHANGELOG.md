@@ -205,6 +205,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Student/instructor portal CLIs updated to import from new location
 - Made `CourseManagementGUI` embeddable in frames (guarded `title()`/`geometry()`/menu/status bar)
 - Backward-compatible shims at old `course_planning/gui/` and `course_planning/cli/` paths
+- Moved `course_evaluation_gui.py` into `course_management_gui/` package
+- Moved `degree_audit_gui.py` into `course_management_gui/` package
+- Moved `degree_audit_cli.py` from `services/cli/` into `course_management_gui/cli/`
+- Added "LMS", "Course Evaluation", and "Degree Audit" CLI options to the Course Management menu (options 31-33 admin, 7-9 view-only)
+- Course Planning tab deferred to lazy-load on first click (avoids student selection dialog on startup)
+- Old GUI and CLI files replaced with backward-compatible shims
 
 **Health Portal — dentist CLI integration:**
 - Moved `dentist_cli.py` from `services/cli/` into `domain/health/portal/`

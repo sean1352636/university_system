@@ -413,7 +413,7 @@ def display_course_evaluation_menu(auth):
 
 # Import the full GUI
 try:
-    from education_system.university_system.modules.domain.academics.gui.course_evaluation_gui import (
+    from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_gui import (
         launch_course_evaluation_gui
     )
 except ImportError:

@@ -296,7 +296,7 @@ except ImportError as e:
 
 # Degree Audit CLI
 try:
-    from education_system.university_system.modules.services.cli.degree_audit_cli import launch_degree_audit_cli
+    from education_system.university_system.modules.domain.academics.gui.course_management_gui.cli.degree_audit_cli import launch_degree_audit_cli
     DEGREE_AUDIT_CLI_AVAILABLE = True
 except ImportError as e:
     launch_degree_audit_cli = None
