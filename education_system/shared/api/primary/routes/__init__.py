@@ -49,6 +49,61 @@ from education_system.shared.api.primary.routes.assets_routes import assets_bp, 
 from education_system.shared.api.primary.routes.visitors_routes import visitors_bp, init_visitors_routes
 from education_system.shared.api.primary.routes.incidents_routes import incidents_bp, init_incidents_routes
 
+# ── New domain modules ──────────────────────────────────────────────────────
+# Academics
+from education_system.shared.api.primary.routes.academic_year_routes import academic_year_bp, init_academic_year_routes
+from education_system.shared.api.primary.routes.assignments_routes import assignments_bp, init_assignments_routes
+from education_system.shared.api.primary.routes.baseline_assessment_routes import baseline_assessment_bp, init_baseline_assessment_routes
+from education_system.shared.api.primary.routes.markbook_routes import markbook_bp, init_markbook_routes
+from education_system.shared.api.primary.routes.target_setting_routes import target_setting_bp, init_target_setting_routes
+from education_system.shared.api.primary.routes.question_analysis_routes import question_analysis_bp, init_question_analysis_routes
+# Admin
+from education_system.shared.api.primary.routes.health_safety_routes import health_safety_bp, init_health_safety_routes
+from education_system.shared.api.primary.routes.risk_management_routes import risk_management_bp, init_risk_management_routes
+from education_system.shared.api.primary.routes.compliance_routes import compliance_bp, init_compliance_routes
+from education_system.shared.api.primary.routes.prevent_duty_routes import prevent_duty_bp, init_prevent_duty_routes
+from education_system.shared.api.primary.routes.audit_reports_routes import audit_reports_bp, init_audit_reports_routes
+from education_system.shared.api.primary.routes.bulk_operations_routes import bulk_operations_bp, init_bulk_operations_routes
+from education_system.shared.api.primary.routes.census_routes import census_bp, init_census_routes
+from education_system.shared.api.primary.routes.quality_assurance_routes import quality_assurance_bp, init_quality_assurance_routes
+from education_system.shared.api.primary.routes.self_assessment_routes import self_assessment_bp, init_self_assessment_routes
+from education_system.shared.api.primary.routes.helpdesk_routes import helpdesk_bp, init_helpdesk_routes
+from education_system.shared.api.primary.routes.letter_templates_routes import letter_templates_bp, init_letter_templates_routes
+from education_system.shared.api.primary.routes.onboarding_routes import onboarding_bp, init_onboarding_routes
+from education_system.shared.api.primary.routes.todo_routes import todo_bp, init_todo_routes
+from education_system.shared.api.primary.routes.multi_language_routes import multi_language_bp, init_multi_language_routes
+# Staff
+from education_system.shared.api.primary.routes.dbs_checks_routes import dbs_checks_bp, init_dbs_checks_routes
+from education_system.shared.api.primary.routes.first_aid_routes import first_aid_bp, init_first_aid_routes
+from education_system.shared.api.primary.routes.recruitment_routes import recruitment_bp, init_recruitment_routes
+from education_system.shared.api.primary.routes.staff_absence_routes import staff_absence_bp, init_staff_absence_routes
+# Pastoral Care
+from education_system.shared.api.primary.routes.absence_requests_routes import absence_requests_bp, init_absence_requests_routes
+from education_system.shared.api.primary.routes.early_warning_routes import early_warning_bp, init_early_warning_routes
+from education_system.shared.api.primary.routes.accessibility_routes import accessibility_bp, init_accessibility_routes
+# Pupil Life
+from education_system.shared.api.primary.routes.equality_diversity_routes import equality_diversity_bp, init_equality_diversity_routes
+from education_system.shared.api.primary.routes.ilp_routes import ilp_bp, init_ilp_routes
+from education_system.shared.api.primary.routes.peer_mentoring_routes import peer_mentoring_bp, init_peer_mentoring_routes
+from education_system.shared.api.primary.routes.pupil_support_routes import pupil_support_bp, init_pupil_support_routes
+# Communication
+from education_system.shared.api.primary.routes.messaging_routes import messaging_bp, init_messaging_routes
+from education_system.shared.api.primary.routes.sms_email_routes import sms_email_bp, init_sms_email_routes
+from education_system.shared.api.primary.routes.surveys_routes import surveys_bp, init_surveys_routes
+from education_system.shared.api.primary.routes.activity_feed_routes import activity_feed_bp, init_activity_feed_routes
+# Facilities
+from education_system.shared.api.primary.routes.resource_booking_routes import resource_booking_bp, init_resource_booking_routes
+from education_system.shared.api.primary.routes.departments_routes import departments_bp, init_departments_routes
+from education_system.shared.api.primary.routes.emergency_routes import emergency_bp, init_emergency_routes
+from education_system.shared.api.primary.routes.lettings_routes import lettings_bp, init_lettings_routes
+# Portals
+from education_system.shared.api.primary.routes.parent_portal_routes import parent_portal_bp, init_parent_portal_routes
+from education_system.shared.api.primary.routes.pupil_portal_routes import pupil_portal_bp, init_pupil_portal_routes
+from education_system.shared.api.primary.routes.document_hub_routes import document_hub_bp, init_document_hub_routes
+from education_system.shared.api.primary.routes.kpi_dashboard_routes import kpi_dashboard_bp, init_kpi_dashboard_routes
+from education_system.shared.api.primary.routes.mobile_dashboard_routes import mobile_dashboard_bp, init_mobile_dashboard_routes
+from education_system.shared.api.primary.routes.progress_dashboard_routes import progress_dashboard_bp, init_progress_dashboard_routes
+
 ALL_BLUEPRINTS = [
     system_bp,
     pupils_bp, subjects_bp, classes_bp, assessments_bp, attendance_bp,
@@ -62,6 +117,28 @@ ALL_BLUEPRINTS = [
     emails_bp, notifications_bp, announcements_bp, calendar_bp,
     parents_evening_bp, communication_log_bp,
     room_bookings_bp, assets_bp, visitors_bp, incidents_bp,
+    # ── New domain modules ──────────────────────────────────────────────
+    # Academics
+    academic_year_bp, assignments_bp, baseline_assessment_bp, markbook_bp,
+    target_setting_bp, question_analysis_bp,
+    # Admin
+    health_safety_bp, risk_management_bp, compliance_bp, prevent_duty_bp,
+    audit_reports_bp, bulk_operations_bp, census_bp, quality_assurance_bp,
+    self_assessment_bp, helpdesk_bp, letter_templates_bp, onboarding_bp,
+    todo_bp, multi_language_bp,
+    # Staff
+    dbs_checks_bp, first_aid_bp, recruitment_bp, staff_absence_bp,
+    # Pastoral Care
+    absence_requests_bp, early_warning_bp, accessibility_bp,
+    # Pupil Life
+    equality_diversity_bp, ilp_bp, peer_mentoring_bp, pupil_support_bp,
+    # Communication
+    messaging_bp, sms_email_bp, surveys_bp, activity_feed_bp,
+    # Facilities
+    resource_booking_bp, departments_bp, emergency_bp, lettings_bp,
+    # Portals
+    parent_portal_bp, pupil_portal_bp, document_hub_bp, kpi_dashboard_bp,
+    mobile_dashboard_bp, progress_dashboard_bp,
 ]
 
 ALL_INIT_FUNCS = [
@@ -83,4 +160,31 @@ ALL_INIT_FUNCS = [
     init_calendar_routes, init_parents_evening_routes, init_communication_log_routes,
     init_room_bookings_routes, init_assets_routes, init_visitors_routes,
     init_incidents_routes,
+    # ── New domain modules ──────────────────────────────────────────────
+    # Academics
+    init_academic_year_routes, init_assignments_routes, init_baseline_assessment_routes,
+    init_markbook_routes, init_target_setting_routes, init_question_analysis_routes,
+    # Admin
+    init_health_safety_routes, init_risk_management_routes, init_compliance_routes,
+    init_prevent_duty_routes, init_audit_reports_routes, init_bulk_operations_routes,
+    init_census_routes, init_quality_assurance_routes, init_self_assessment_routes,
+    init_helpdesk_routes, init_letter_templates_routes, init_onboarding_routes,
+    init_todo_routes, init_multi_language_routes,
+    # Staff
+    init_dbs_checks_routes, init_first_aid_routes, init_recruitment_routes,
+    init_staff_absence_routes,
+    # Pastoral Care
+    init_absence_requests_routes, init_early_warning_routes, init_accessibility_routes,
+    # Pupil Life
+    init_equality_diversity_routes, init_ilp_routes, init_peer_mentoring_routes,
+    init_pupil_support_routes,
+    # Communication
+    init_messaging_routes, init_sms_email_routes, init_surveys_routes,
+    init_activity_feed_routes,
+    # Facilities
+    init_resource_booking_routes, init_departments_routes, init_emergency_routes,
+    init_lettings_routes,
+    # Portals
+    init_parent_portal_routes, init_pupil_portal_routes, init_document_hub_routes,
+    init_kpi_dashboard_routes, init_mobile_dashboard_routes, init_progress_dashboard_routes,
 ]

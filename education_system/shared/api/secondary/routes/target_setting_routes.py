@@ -1,0 +1,66 @@
+"""Target setting API routes."""
+
+from flask import Blueprint, jsonify, request
+
+from education_system.shared.api.secondary.auth import token_required, role_required
+from education_system.shared.api.secondary.validators import get_json_body, require_fields
+from education_system.shared.api.secondary.pagination import get_pagination_params, paginated_response
+from education_system.secondary_school.modules.domain.academics.target_setting.services.target_setting_service import TargetSettingService
+
+target_setting_bp = Blueprint("targets", __name__, url_prefix="/api/targets")
+
+_db_path = None
+
+
+def init_target_setting_routes(db_path=None):
+    global _db_path
+    _db_path = db_path
+
+
+@target_setting_bp.route("", methods=["GET"])
+@token_required
+def list_targets():
+    svc = TargetSettingService(_db_path)
+    limit, offset = get_pagination_params()
+    items = svc.list_all(limit=limit, offset=offset)
+    total = len(items)
+    return jsonify(paginated_response(items, total))
+
+
+@target_setting_bp.route("/<int:pk>", methods=["GET"])
+@token_required
+def get_targets_item(pk):
+    svc = TargetSettingService(_db_path)
+    item = svc.get(pk)
+    if not item:
+        return jsonify({"error": "Not found."}), 404
+    return jsonify({"data": item})
+
+
+@target_setting_bp.route("", methods=["POST"])
+@token_required
+@role_required("admin", "staff")
+def create_targets_item():
+    data = get_json_body()
+    svc = TargetSettingService(_db_path)
+    result = svc.create(**data)
+    return jsonify({"message": "Created.", "data": result}), 201
+
+
+@target_setting_bp.route("/<int:pk>", methods=["PUT"])
+@token_required
+@role_required("admin", "staff")
+def update_targets_item(pk):
+    data = get_json_body()
+    svc = TargetSettingService(_db_path)
+    result = svc.update(pk, **data)
+    return jsonify({"message": "Updated.", "data": result})
+
+
+@target_setting_bp.route("/<int:pk>", methods=["DELETE"])
+@token_required
+@role_required("admin")
+def delete_targets_item(pk):
+    svc = TargetSettingService(_db_path)
+    svc.delete(pk)
+    return jsonify({"message": "Deleted."})

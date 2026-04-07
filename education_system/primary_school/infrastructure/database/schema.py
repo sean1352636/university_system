@@ -1234,6 +1234,965 @@ TABLES = {
             created_at TEXT DEFAULT (datetime('now'))
         )
     """,
+    # ── Academics: academic_year ────────────────────────────────────────
+    "academic_years": """
+        CREATE TABLE IF NOT EXISTS academic_years (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            start_date TEXT NOT NULL,
+            end_date TEXT NOT NULL,
+            is_current INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'active',
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "academic_terms": """
+        CREATE TABLE IF NOT EXISTS academic_terms (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            academic_year_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            term_number INTEGER NOT NULL,
+            start_date TEXT NOT NULL,
+            end_date TEXT NOT NULL,
+            FOREIGN KEY (academic_year_id) REFERENCES academic_years(id)
+        )
+    """,
+    # ── Academics: assignments ──────────────────────────────────────────
+    "assignments": """
+        CREATE TABLE IF NOT EXISTS assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            subject_id INTEGER,
+            teacher_id INTEGER,
+            class_name TEXT,
+            year_group TEXT,
+            due_date TEXT,
+            max_marks INTEGER DEFAULT 100,
+            status TEXT DEFAULT 'active',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (subject_id) REFERENCES subjects(id)
+        )
+    """,
+    "assignment_submissions": """
+        CREATE TABLE IF NOT EXISTS assignment_submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER NOT NULL,
+            pupil_id INTEGER NOT NULL,
+            submitted_at TEXT DEFAULT (datetime('now')),
+            marks INTEGER,
+            feedback TEXT,
+            status TEXT DEFAULT 'submitted',
+            FOREIGN KEY (assignment_id) REFERENCES assignments(id),
+            FOREIGN KEY (pupil_id) REFERENCES pupils(id)
+        )
+    """,
+    # ── Academics: baseline_assessment ──────────────────────────────────
+    "baseline_assessments": """
+        CREATE TABLE IF NOT EXISTS baseline_assessments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id INTEGER NOT NULL,
+            subject_id INTEGER,
+            assessment_type TEXT NOT NULL,
+            score REAL,
+            band TEXT,
+            assessor_id INTEGER,
+            assessed_date TEXT NOT NULL,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (pupil_id) REFERENCES pupils(id),
+            FOREIGN KEY (subject_id) REFERENCES subjects(id)
+        )
+    """,
+    # ── Academics: markbook ─────────────────────────────────────────────
+    "markbook_entries": """
+        CREATE TABLE IF NOT EXISTS markbook_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id INTEGER NOT NULL,
+            subject_id INTEGER NOT NULL,
+            teacher_id INTEGER,
+            assessment_name TEXT NOT NULL,
+            score REAL,
+            max_score REAL DEFAULT 100,
+            grade TEXT,
+            term TEXT,
+            date_recorded TEXT DEFAULT (date('now')),
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (pupil_id) REFERENCES pupils(id),
+            FOREIGN KEY (subject_id) REFERENCES subjects(id)
+        )
+    """,
+    # ── Academics: target_setting ───────────────────────────────────────
+    "pupil_targets": """
+        CREATE TABLE IF NOT EXISTS pupil_targets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id INTEGER NOT NULL,
+            subject_id INTEGER,
+            target_level TEXT,
+            current_level TEXT,
+            expected_level TEXT,
+            set_by INTEGER,
+            review_date TEXT,
+            status TEXT DEFAULT 'active',
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (pupil_id) REFERENCES pupils(id),
+            FOREIGN KEY (subject_id) REFERENCES subjects(id)
+        )
+    """,
+    # ── Academics: question_analysis ────────────────────────────────────
+    "question_analyses": """
+        CREATE TABLE IF NOT EXISTS question_analyses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assessment_id INTEGER NOT NULL,
+            question_number INTEGER NOT NULL,
+            topic TEXT,
+            max_marks INTEGER NOT NULL,
+            mean_score REAL,
+            pass_rate REAL,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (assessment_id) REFERENCES assessments(id)
+        )
+    """,
+    # ── Admin: health_safety ────────────────────────────────────────────
+    "health_safety_incidents": """
+        CREATE TABLE IF NOT EXISTS health_safety_incidents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            location TEXT,
+            reported_by TEXT,
+            reported_date TEXT DEFAULT (date('now')),
+            severity TEXT DEFAULT 'low',
+            status TEXT DEFAULT 'open',
+            action_taken TEXT,
+            resolved_date TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "health_safety_inspections": """
+        CREATE TABLE IF NOT EXISTS health_safety_inspections (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            area TEXT NOT NULL,
+            inspector TEXT,
+            inspection_date TEXT DEFAULT (date('now')),
+            next_due TEXT,
+            status TEXT DEFAULT 'scheduled',
+            findings TEXT,
+            actions_required TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Admin: risk_management ──────────────────────────────────────────
+    "risk_assessments": """
+        CREATE TABLE IF NOT EXISTS risk_assessments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            category TEXT,
+            location TEXT,
+            risk_level TEXT DEFAULT 'medium',
+            likelihood INTEGER DEFAULT 3,
+            impact INTEGER DEFAULT 3,
+            control_measures TEXT,
+            assessor TEXT,
+            assessment_date TEXT DEFAULT (date('now')),
+            review_date TEXT,
+            status TEXT DEFAULT 'active',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Admin: compliance ───────────────────────────────────────────────
+    "compliance_checks": """
+        CREATE TABLE IF NOT EXISTS compliance_checks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            area TEXT NOT NULL,
+            requirement TEXT NOT NULL,
+            description TEXT,
+            responsible_person TEXT,
+            check_date TEXT DEFAULT (date('now')),
+            next_due TEXT,
+            status TEXT DEFAULT 'compliant',
+            evidence TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Admin: prevent_duty ─────────────────────────────────────────────
+    "prevent_referrals": """
+        CREATE TABLE IF NOT EXISTS prevent_referrals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id INTEGER,
+            staff_reporter_id INTEGER,
+            concern_type TEXT NOT NULL,
+            description TEXT NOT NULL,
+            risk_level TEXT DEFAULT 'low',
+            action_taken TEXT,
+            referral_date TEXT DEFAULT (date('now')),
+            status TEXT DEFAULT 'open',
+            outcome TEXT,
+            resolved_date TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (pupil_id) REFERENCES pupils(id)
+        )
+    """,
+    "prevent_training": """
+        CREATE TABLE IF NOT EXISTS prevent_training (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            staff_id INTEGER NOT NULL,
+            training_type TEXT NOT NULL,
+            completion_date TEXT NOT NULL,
+            expiry_date TEXT,
+            certificate_ref TEXT,
+            status TEXT DEFAULT 'valid',
+            FOREIGN KEY (staff_id) REFERENCES staff(id)
+        )
+    """,
+    # ── Admin: audit_reports ────────────────────────────────────────────
+    "audit_reports": """
+        CREATE TABLE IF NOT EXISTS audit_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            report_type TEXT NOT NULL,
+            scope TEXT,
+            auditor TEXT,
+            audit_date TEXT DEFAULT (date('now')),
+            findings TEXT,
+            recommendations TEXT,
+            status TEXT DEFAULT 'draft',
+            follow_up_date TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Admin: bulk_operations ──────────────────────────────────────────
+    "bulk_operations": """
+        CREATE TABLE IF NOT EXISTS bulk_operations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            operation_type TEXT NOT NULL,
+            description TEXT,
+            initiated_by TEXT,
+            total_records INTEGER DEFAULT 0,
+            processed_records INTEGER DEFAULT 0,
+            failed_records INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'pending',
+            error_log TEXT,
+            started_at TEXT,
+            completed_at TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Admin: census ───────────────────────────────────────────────────
+    "census_returns": """
+        CREATE TABLE IF NOT EXISTS census_returns (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            census_type TEXT NOT NULL,
+            academic_year TEXT NOT NULL,
+            return_date TEXT,
+            total_pupils INTEGER DEFAULT 0,
+            total_staff INTEGER DEFAULT 0,
+            fsm_count INTEGER DEFAULT 0,
+            sen_count INTEGER DEFAULT 0,
+            eal_count INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'draft',
+            submission_ref TEXT,
+            submitted_by TEXT,
+            submitted_at TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Admin: quality_assurance ────────────────────────────────────────
+    "qa_reviews": """
+        CREATE TABLE IF NOT EXISTS qa_reviews (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            review_type TEXT NOT NULL,
+            subject_area TEXT,
+            reviewer TEXT,
+            review_date TEXT DEFAULT (date('now')),
+            rating TEXT,
+            strengths TEXT,
+            areas_for_improvement TEXT,
+            action_plan TEXT,
+            follow_up_date TEXT,
+            status TEXT DEFAULT 'scheduled',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Admin: self_assessment ──────────────────────────────────────────
+    "self_assessments": """
+        CREATE TABLE IF NOT EXISTS self_assessments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            academic_year TEXT NOT NULL,
+            area TEXT NOT NULL,
+            ofsted_grade TEXT,
+            evidence TEXT,
+            strengths TEXT,
+            improvements TEXT,
+            action_plan TEXT,
+            assessor TEXT,
+            assessment_date TEXT DEFAULT (date('now')),
+            status TEXT DEFAULT 'draft',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Staff: dbs_checks ───────────────────────────────────────────────
+    "dbs_checks": """
+        CREATE TABLE IF NOT EXISTS dbs_checks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            staff_id INTEGER NOT NULL,
+            check_type TEXT DEFAULT 'Enhanced',
+            certificate_number TEXT,
+            issue_date TEXT,
+            expiry_date TEXT,
+            status TEXT DEFAULT 'pending',
+            verified_by TEXT,
+            verified_date TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (staff_id) REFERENCES staff(id)
+        )
+    """,
+    # ── Staff: first_aid ────────────────────────────────────────────────
+    "first_aid_incidents": """
+        CREATE TABLE IF NOT EXISTS first_aid_incidents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_name TEXT NOT NULL,
+            patient_type TEXT DEFAULT 'pupil',
+            patient_id INTEGER,
+            incident_date TEXT DEFAULT (date('now')),
+            incident_time TEXT,
+            location TEXT,
+            description TEXT NOT NULL,
+            treatment_given TEXT,
+            treated_by TEXT,
+            parent_notified INTEGER DEFAULT 0,
+            ambulance_called INTEGER DEFAULT 0,
+            follow_up_required INTEGER DEFAULT 0,
+            follow_up_notes TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Staff: recruitment ──────────────────────────────────────────────
+    "recruitment_vacancies": """
+        CREATE TABLE IF NOT EXISTS recruitment_vacancies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            role_type TEXT,
+            description TEXT,
+            requirements TEXT,
+            salary_range TEXT,
+            closing_date TEXT,
+            status TEXT DEFAULT 'open',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "recruitment_applications": """
+        CREATE TABLE IF NOT EXISTS recruitment_applications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            vacancy_id INTEGER NOT NULL,
+            applicant_name TEXT NOT NULL,
+            email TEXT,
+            phone TEXT,
+            cv_path TEXT,
+            cover_letter TEXT,
+            status TEXT DEFAULT 'received',
+            interview_date TEXT,
+            interview_notes TEXT,
+            offer_date TEXT,
+            safeguarding_check TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (vacancy_id) REFERENCES recruitment_vacancies(id)
+        )
+    """,
+    # ── Staff: staff_absence ────────────────────────────────────────────
+    "staff_absences": """
+        CREATE TABLE IF NOT EXISTS staff_absences (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            staff_id INTEGER NOT NULL,
+            absence_type TEXT NOT NULL,
+            start_date TEXT NOT NULL,
+            end_date TEXT,
+            reason TEXT,
+            cover_required INTEGER DEFAULT 0,
+            cover_arranged INTEGER DEFAULT 0,
+            approved_by TEXT,
+            status TEXT DEFAULT 'pending',
+            return_date TEXT,
+            return_notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (staff_id) REFERENCES staff(id)
+        )
+    """,
+    # ── Pastoral: absence_requests ──────────────────────────────────────
+    "absence_requests": """
+        CREATE TABLE IF NOT EXISTS absence_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id INTEGER NOT NULL,
+            requested_by TEXT,
+            request_type TEXT NOT NULL,
+            start_date TEXT NOT NULL,
+            end_date TEXT NOT NULL,
+            reason TEXT,
+            supporting_evidence TEXT,
+            status TEXT DEFAULT 'pending',
+            reviewed_by TEXT,
+            reviewed_date TEXT,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (pupil_id) REFERENCES pupils(id)
+        )
+    """,
+    # ── Pastoral: early_warning ─────────────────────────────────────────
+    "early_warning_alerts": """
+        CREATE TABLE IF NOT EXISTS early_warning_alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id INTEGER NOT NULL,
+            alert_type TEXT NOT NULL,
+            severity TEXT DEFAULT 'medium',
+            description TEXT NOT NULL,
+            raised_by TEXT,
+            raised_date TEXT DEFAULT (date('now')),
+            assigned_to TEXT,
+            status TEXT DEFAULT 'open',
+            resolution TEXT,
+            resolved_date TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (pupil_id) REFERENCES pupils(id)
+        )
+    """,
+    "early_warning_rules": """
+        CREATE TABLE IF NOT EXISTS early_warning_rules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            rule_name TEXT NOT NULL,
+            alert_type TEXT NOT NULL,
+            threshold REAL,
+            description TEXT,
+            is_active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Pastoral: accessibility ─────────────────────────────────────────
+    "accessibility_provisions": """
+        CREATE TABLE IF NOT EXISTS accessibility_provisions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id INTEGER NOT NULL,
+            provision_type TEXT NOT NULL,
+            description TEXT NOT NULL,
+            start_date TEXT DEFAULT (date('now')),
+            review_date TEXT,
+            provided_by TEXT,
+            status TEXT DEFAULT 'active',
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (pupil_id) REFERENCES pupils(id)
+        )
+    """,
+    # ── Pupil life: equality_diversity ──────────────────────────────────
+    "equality_records": """
+        CREATE TABLE IF NOT EXISTS equality_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            record_type TEXT NOT NULL,
+            category TEXT,
+            description TEXT NOT NULL,
+            reported_by TEXT,
+            reported_date TEXT DEFAULT (date('now')),
+            action_taken TEXT,
+            status TEXT DEFAULT 'open',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "diversity_monitoring": """
+        CREATE TABLE IF NOT EXISTS diversity_monitoring (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            academic_year TEXT NOT NULL,
+            category TEXT NOT NULL,
+            metric_name TEXT NOT NULL,
+            metric_value REAL,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Pupil life: ilp ────────────────────────────────────────────────
+    "individual_learning_plans": """
+        CREATE TABLE IF NOT EXISTS individual_learning_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id INTEGER NOT NULL,
+            created_by TEXT,
+            start_date TEXT DEFAULT (date('now')),
+            review_date TEXT,
+            targets TEXT,
+            strategies TEXT,
+            support_required TEXT,
+            progress_notes TEXT,
+            parent_views TEXT,
+            status TEXT DEFAULT 'active',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (pupil_id) REFERENCES pupils(id)
+        )
+    """,
+    # ── Pupil life: peer_mentoring ──────────────────────────────────────
+    "peer_mentoring_pairs": """
+        CREATE TABLE IF NOT EXISTS peer_mentoring_pairs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            mentor_id INTEGER NOT NULL,
+            mentee_id INTEGER NOT NULL,
+            subject_area TEXT,
+            start_date TEXT DEFAULT (date('now')),
+            end_date TEXT,
+            status TEXT DEFAULT 'active',
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (mentor_id) REFERENCES pupils(id),
+            FOREIGN KEY (mentee_id) REFERENCES pupils(id)
+        )
+    """,
+    "mentoring_sessions": """
+        CREATE TABLE IF NOT EXISTS mentoring_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pair_id INTEGER NOT NULL,
+            session_date TEXT DEFAULT (date('now')),
+            duration_minutes INTEGER,
+            topics_covered TEXT,
+            mentor_notes TEXT,
+            teacher_observations TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (pair_id) REFERENCES peer_mentoring_pairs(id)
+        )
+    """,
+    # ── Pupil life: pupil_support ───────────────────────────────────────
+    "support_referrals": """
+        CREATE TABLE IF NOT EXISTS support_referrals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id INTEGER NOT NULL,
+            referral_type TEXT NOT NULL,
+            referred_by TEXT,
+            referred_date TEXT DEFAULT (date('now')),
+            description TEXT NOT NULL,
+            urgency TEXT DEFAULT 'medium',
+            assigned_to TEXT,
+            status TEXT DEFAULT 'open',
+            outcome TEXT,
+            closed_date TEXT,
+            parent_informed INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (pupil_id) REFERENCES pupils(id)
+        )
+    """,
+    # ── Communication: messaging ────────────────────────────────────────
+    "messages": """
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sender_id INTEGER NOT NULL,
+            sender_type TEXT DEFAULT 'staff',
+            recipient_id INTEGER NOT NULL,
+            recipient_type TEXT DEFAULT 'staff',
+            subject TEXT,
+            body TEXT NOT NULL,
+            is_read INTEGER DEFAULT 0,
+            read_at TEXT,
+            parent_message_id INTEGER,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Communication: sms_email ────────────────────────────────────────
+    "sms_email_log": """
+        CREATE TABLE IF NOT EXISTS sms_email_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message_type TEXT NOT NULL,
+            recipient TEXT NOT NULL,
+            recipient_name TEXT,
+            subject TEXT,
+            body TEXT,
+            status TEXT DEFAULT 'pending',
+            sent_at TEXT,
+            error_message TEXT,
+            template_id INTEGER,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "communication_templates": """
+        CREATE TABLE IF NOT EXISTS communication_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            message_type TEXT NOT NULL,
+            subject_template TEXT,
+            body_template TEXT NOT NULL,
+            category TEXT,
+            is_active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Communication: surveys ──────────────────────────────────────────
+    "surveys": """
+        CREATE TABLE IF NOT EXISTS surveys (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            target_audience TEXT,
+            created_by TEXT,
+            start_date TEXT,
+            end_date TEXT,
+            is_anonymous INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'draft',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "survey_questions": """
+        CREATE TABLE IF NOT EXISTS survey_questions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            survey_id INTEGER NOT NULL,
+            question_text TEXT NOT NULL,
+            question_type TEXT DEFAULT 'text',
+            options TEXT,
+            sort_order INTEGER DEFAULT 0,
+            is_required INTEGER DEFAULT 1,
+            FOREIGN KEY (survey_id) REFERENCES surveys(id)
+        )
+    """,
+    "survey_responses": """
+        CREATE TABLE IF NOT EXISTS survey_responses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            survey_id INTEGER NOT NULL,
+            question_id INTEGER NOT NULL,
+            respondent_id TEXT,
+            response_text TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (survey_id) REFERENCES surveys(id),
+            FOREIGN KEY (question_id) REFERENCES survey_questions(id)
+        )
+    """,
+    # ── Communication: activity_feed ────────────────────────────────────
+    "activity_feed": """
+        CREATE TABLE IF NOT EXISTS activity_feed (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            actor_id INTEGER NOT NULL,
+            actor_type TEXT DEFAULT 'staff',
+            action TEXT NOT NULL,
+            entity_type TEXT,
+            entity_id INTEGER,
+            description TEXT,
+            metadata TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Facilities: resource_booking ────────────────────────────────────
+    "resources": """
+        CREATE TABLE IF NOT EXISTS resources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            resource_type TEXT NOT NULL,
+            description TEXT,
+            location TEXT,
+            is_available INTEGER DEFAULT 1,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "resource_bookings": """
+        CREATE TABLE IF NOT EXISTS resource_bookings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            resource_id INTEGER NOT NULL,
+            booked_by TEXT NOT NULL,
+            booking_date TEXT NOT NULL,
+            start_time TEXT NOT NULL,
+            end_time TEXT NOT NULL,
+            purpose TEXT,
+            status TEXT DEFAULT 'confirmed',
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (resource_id) REFERENCES resources(id)
+        )
+    """,
+    # ── Facilities: departments ─────────────────────────────────────────
+    "departments": """
+        CREATE TABLE IF NOT EXISTS departments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            head_of_department TEXT,
+            description TEXT,
+            budget REAL DEFAULT 0,
+            email TEXT,
+            room TEXT,
+            status TEXT DEFAULT 'active',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Facilities: emergency ───────────────────────────────────────────
+    "emergency_procedures": """
+        CREATE TABLE IF NOT EXISTS emergency_procedures (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            procedure_type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            steps TEXT,
+            responsible_person TEXT,
+            last_drill_date TEXT,
+            next_drill_date TEXT,
+            status TEXT DEFAULT 'active',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "emergency_contacts": """
+        CREATE TABLE IF NOT EXISTS emergency_contacts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            role TEXT,
+            phone TEXT NOT NULL,
+            email TEXT,
+            priority_order INTEGER DEFAULT 0,
+            is_active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "emergency_drills": """
+        CREATE TABLE IF NOT EXISTS emergency_drills (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            procedure_id INTEGER NOT NULL,
+            drill_date TEXT NOT NULL,
+            duration_minutes INTEGER,
+            participants INTEGER,
+            observations TEXT,
+            issues_found TEXT,
+            follow_up_actions TEXT,
+            conducted_by TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (procedure_id) REFERENCES emergency_procedures(id)
+        )
+    """,
+    # ── Facilities: lettings ────────────────────────────────────────────
+    "lettings": """
+        CREATE TABLE IF NOT EXISTS lettings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            facility TEXT NOT NULL,
+            hirer_name TEXT NOT NULL,
+            hirer_email TEXT,
+            hirer_phone TEXT,
+            organisation TEXT,
+            event_type TEXT,
+            booking_date TEXT NOT NULL,
+            start_time TEXT,
+            end_time TEXT,
+            recurring INTEGER DEFAULT 0,
+            fee REAL DEFAULT 0,
+            payment_status TEXT DEFAULT 'unpaid',
+            insurance_verified INTEGER DEFAULT 0,
+            risk_assessment INTEGER DEFAULT 0,
+            dbs_checked INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'pending',
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Portals: parent_portal ──────────────────────────────────────────
+    "parent_portal_accounts": """
+        CREATE TABLE IF NOT EXISTS parent_portal_accounts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            parent_name TEXT NOT NULL,
+            email TEXT,
+            phone TEXT,
+            pupil_ids TEXT,
+            access_level TEXT DEFAULT 'standard',
+            last_login TEXT,
+            is_active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Portals: pupil_portal ───────────────────────────────────────────
+    "pupil_portal_preferences": """
+        CREATE TABLE IF NOT EXISTS pupil_portal_preferences (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id INTEGER NOT NULL UNIQUE,
+            theme TEXT DEFAULT 'default',
+            notifications_enabled INTEGER DEFAULT 1,
+            dashboard_widgets TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (pupil_id) REFERENCES pupils(id)
+        )
+    """,
+    # ── Portals: document_hub ───────────────────────────────────────────
+    "document_hub_files": """
+        CREATE TABLE IF NOT EXISTS document_hub_files (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            file_path TEXT NOT NULL,
+            file_type TEXT,
+            file_size INTEGER,
+            category TEXT,
+            uploaded_by TEXT,
+            access_level TEXT DEFAULT 'staff',
+            tags TEXT,
+            download_count INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Portals: kpi_dashboard ──────────────────────────────────────────
+    "kpi_metrics": """
+        CREATE TABLE IF NOT EXISTS kpi_metrics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            metric_name TEXT NOT NULL,
+            category TEXT NOT NULL,
+            current_value REAL,
+            target_value REAL,
+            unit TEXT,
+            trend TEXT,
+            period TEXT,
+            last_updated TEXT DEFAULT (datetime('now')),
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Portals: mobile_dashboard ───────────────────────────────────────
+    "mobile_dashboard_widgets": """
+        CREATE TABLE IF NOT EXISTS mobile_dashboard_widgets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            widget_type TEXT NOT NULL,
+            position INTEGER DEFAULT 0,
+            config TEXT,
+            is_visible INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Portals: progress_dashboard ─────────────────────────────────────
+    "progress_snapshots": """
+        CREATE TABLE IF NOT EXISTS progress_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pupil_id INTEGER NOT NULL,
+            subject_id INTEGER,
+            snapshot_date TEXT DEFAULT (date('now')),
+            current_level TEXT,
+            target_level TEXT,
+            expected_level TEXT,
+            attendance_pct REAL,
+            behaviour_points INTEGER DEFAULT 0,
+            notes TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (pupil_id) REFERENCES pupils(id),
+            FOREIGN KEY (subject_id) REFERENCES subjects(id)
+        )
+    """,
+    # ── Admin: helpdesk ─────────────────────────────────────────────────
+    "helpdesk_tickets": """
+        CREATE TABLE IF NOT EXISTS helpdesk_tickets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            category TEXT,
+            priority TEXT DEFAULT 'medium',
+            submitted_by TEXT,
+            assigned_to TEXT,
+            status TEXT DEFAULT 'open',
+            resolution TEXT,
+            resolved_date TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Admin: letter_templates ─────────────────────────────────────────
+    "letter_templates": """
+        CREATE TABLE IF NOT EXISTS letter_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT,
+            subject TEXT,
+            body_template TEXT NOT NULL,
+            placeholders TEXT,
+            created_by TEXT,
+            is_active INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Admin: onboarding ───────────────────────────────────────────────
+    "onboarding_checklists": """
+        CREATE TABLE IF NOT EXISTS onboarding_checklists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            checklist_type TEXT NOT NULL,
+            person_id INTEGER NOT NULL,
+            person_type TEXT NOT NULL,
+            item_name TEXT NOT NULL,
+            description TEXT,
+            is_completed INTEGER DEFAULT 0,
+            completed_date TEXT,
+            completed_by TEXT,
+            due_date TEXT,
+            sort_order INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Admin: todo ─────────────────────────────────────────────────────
+    "todos": """
+        CREATE TABLE IF NOT EXISTS todos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT,
+            priority TEXT DEFAULT 'medium',
+            due_date TEXT,
+            category TEXT,
+            is_completed INTEGER DEFAULT 0,
+            completed_at TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    # ── Admin: multi_language ───────────────────────────────────────────
+    "translations": """
+        CREATE TABLE IF NOT EXISTS translations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            language_code TEXT NOT NULL,
+            translation_key TEXT NOT NULL,
+            translation_value TEXT NOT NULL,
+            context TEXT,
+            is_verified INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
+    "supported_languages": """
+        CREATE TABLE IF NOT EXISTS supported_languages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            language_code TEXT NOT NULL UNIQUE,
+            language_name TEXT NOT NULL,
+            is_active INTEGER DEFAULT 1,
+            is_default INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """,
 }
 
 

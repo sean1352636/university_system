@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.71.0 — 2026-04-07](#8710---2026-04-07)
 - [8.70.0 — 2026-04-07](#8700---2026-04-07)
 - [8.69.0 — 2026-04-07](#8690---2026-04-07)
 - [8.68.0 — 2026-04-07](#8680---2026-04-07)
@@ -161,6 +162,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.71.0] — 2026-04-07
+
+### Bring Secondary & Primary schools to domain parity: 45 new modules per system with full REST API integration
+
+#### Added
+
+- **45 new domain modules for Secondary School** (60 → 105 total), with service layers, database tables, and REST API routes
+- **45 new domain modules for Primary School** (57 → 102 total), with service layers, database tables, and REST API routes
+- **New `portals` domain category** in both systems for parent/student/pupil portal, document hub, KPI/mobile/progress dashboards
+
+##### Academics (6 per system)
+- `academic_year` — Academic year and term management
+- `assignments` — Assignment creation, submission, and grading
+- `baseline_assessment` — Entry/baseline assessment tracking
+- `markbook` — Teacher markbook/gradebook
+- `target_setting` — Student/pupil target grades and predictions
+- `question_analysis` — Exam question-level analysis
+
+##### Admin (14 per system)
+- `health_safety` — Incident reporting and safety inspections
+- `risk_management` — Risk assessments with likelihood/impact scoring
+- `compliance` — Regulatory compliance tracking
+- `prevent_duty` — Prevent duty referrals and staff training (UK statutory)
+- `audit_reports` — Internal audit report management
+- `bulk_operations` — Batch data operations with progress tracking
+- `census` — DfE school census returns
+- `quality_assurance` — Teaching quality reviews
+- `self_assessment` — School self-evaluation (Ofsted aligned for primary)
+- `helpdesk` — IT/facilities helpdesk ticketing
+- `letter_templates` — Letter template management with placeholder rendering
+- `onboarding` — Staff/student/pupil onboarding checklists
+- `todo` — Task management for staff
+- `multi_language` — Translation management and language support
+
+##### Staff (4 per system)
+- `dbs_checks` — DBS certificate tracking with expiry alerts
+- `first_aid` — First aid incident recording
+- `recruitment` — Vacancy and application management
+- `staff_absence` — Staff absence tracking with cover requirements
+
+##### Pastoral Care (3 per system)
+- `absence_requests` — Student/pupil absence request workflow
+- `early_warning` — At-risk early warning alerts and configurable rules
+- `accessibility` — Accessibility provision management
+
+##### Student/Pupil Life (4 per system)
+- `equality_diversity` — Equality records and diversity monitoring
+- `ilp` — Individual learning plans
+- `peer_mentoring` — Peer mentoring pairs and session logging
+- `student_support` / `pupil_support` — Support referral management
+
+##### Communication (4 per system)
+- `messaging` — Internal messaging with threads and read tracking
+- `sms_email` — SMS/email gateway with reusable templates
+- `surveys` — Survey builder with questions and response collection
+- `activity_feed` — System activity feed
+
+##### Facilities (4 per system)
+- `resource_booking` — Equipment/resource booking with availability checks
+- `departments` — Department management
+- `emergency` — Emergency procedures, contacts, and drill logging
+- `lettings` — Facility lettings with fee and insurance tracking
+
+##### Portals (6 per system)
+- `parent_portal` — Parent account management and linked students/pupils
+- `student_portal` / `pupil_portal` — Student/pupil dashboard preferences
+- `document_hub` — Central document management with access controls
+- `kpi_dashboard` — KPI metrics and targets
+- `mobile_dashboard` — Configurable mobile dashboard widgets
+- `progress_dashboard` — Student/pupil progress snapshots over time
+
+#### Database
+
+- **60 new tables** added to Secondary School schema (116 → 176 tables)
+- **60 new tables** added to Primary School schema (85 → 145 tables)
+- **70+ new indexes** for Secondary School
+- Primary school tables use `pupil_id` foreign keys instead of `student_id`
+
+#### API
+
+- **45 new REST API route blueprints** registered for Secondary School (51 → 96 blueprints)
+- **45 new REST API route blueprints** registered for Primary School (47 → 92 blueprints)
+- All new endpoints served via unified server at `/api/v1/school/*` and `/api/v1/primary/*`
+- Each module provides standard CRUD endpoints: GET list, GET by ID, POST create, PUT update, DELETE
 
 ---
 
