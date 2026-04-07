@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 
-from education_system.university_system.modules.domain.academics.gui.exam_scheduler.models import Exam, Room
+from education_system.university_system.modules.domain.academics.gui.exam_management.models import Exam, Room
 
 
 def check_conflict(exams: List[Exam], date: str, start_time: str, end_time: str,

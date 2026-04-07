@@ -158,7 +158,7 @@ class InstructorPortalGUI:
         self._add_button("My Timetable", self._launch('show_student_timetable_gui'))
         self._add_button("Scheduling", self._launch('show_module_scheduling'))
         self._add_button("Attendance", self._launch('open_attendance_gui'))
-        self._add_button("Exam Scheduler", self._launch('show_exam_scheduler_gui'))
+        self._add_button("Exam Management", self._launch('show_exam_portal'))
 
         # Analytics
         self._add_heading("Analytics")

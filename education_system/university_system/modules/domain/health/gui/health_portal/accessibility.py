@@ -46,54 +46,11 @@ Click the button above to open the Accessibility Tools interface."""
         except Exception as e:
             messagebox.showerror("Error", f"Error opening Accessibility Tools: {e}")
 
-    def open_medical_accommodation_gui(self):
-        """Open Medical Accommodation GUI"""
-        try:
-            from education_system.university_system.modules.domain.health.gui.medical_accommodation_gui import AccommodationGUI
-
-            accommodation_window = tk.Toplevel(self.root)
-            accommodation_window.title("Medical Accommodation Management System")
-            accommodation_window.geometry("1200x800")
-            accommodation_window.minsize(1000, 700)
-
-            app = AccommodationGUI(accommodation_window, self.auth)
-        except ImportError as e:
-            messagebox.showerror("Error", f"Medical Accommodation GUI not available: {e}")
-        except Exception as e:
-            messagebox.showerror("Error", f"Error opening Medical Accommodations: {e}")
-
     def create_medical_accommodations(self):
-        """Create interface for medical accommodations information"""
-        title = ttk.Label(self.content_frame, text="Medical Accommodations",
-                         style='Title.TLabel')
-        title.grid(row=0, column=0, pady=10)
-
-        info_frame = ttk.Frame(self.content_frame)
-        info_frame.grid(row=1, column=0, pady=20, padx=20, sticky=(tk.W, tk.E))
-
-        info_text = """Medical Accommodations Information:
-
-Medical accommodations are integrated with the Accessibility Tools system.
-You can access all accommodation features through the Accessibility Tools
-interface, which includes:
-
-\u2022 Medical accommodation requests
-\u2022 Disability documentation management
-\u2022 Exam accommodations
-\u2022 Assistive technology requests
-\u2022 Alternative materials
-\u2022 Accessibility profiles
-
-For health-specific accommodations, the Health Portal works in conjunction
-with the Accessibility Tools system to ensure proper coordination of care
-and support services.
-
-To manage medical accommodations, please use the "Open Accessibility Tools"
-button in this section."""
-
-        info_label = ttk.Label(info_frame, text=info_text, justify=tk.LEFT, wraplength=800)
-        info_label.pack(pady=10)
-
-        ttk.Button(info_frame, text="Open Medical Accommodation System",
-                  command=self.open_medical_accommodation_gui,
-                  style='Accent.TButton').pack(pady=20)
+        """Embed the Medical Accommodation GUI directly in the content frame."""
+        try:
+            from education_system.university_system.modules.domain.health.gui.health_portal.medical_accommodation import AccommodationGUI
+            AccommodationGUI(self.content_frame, self.auth)
+        except Exception as e:
+            ttk.Label(self.content_frame, text=f"Medical Accommodations could not be loaded: {e}",
+                      font=("Arial", 12)).grid(row=0, column=0, padx=20, pady=20)

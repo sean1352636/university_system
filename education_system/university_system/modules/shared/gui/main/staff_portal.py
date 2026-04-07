@@ -157,7 +157,7 @@ class StaffPortalGUI:
         self._add_heading("Schedule")
         self._add_button("Academic Calendar", self._launch('show_academic_calendar'))
         self._add_button("Scheduling", self._launch('show_module_scheduling'))
-        self._add_button("Exam Scheduler", self._launch('show_exam_scheduler_gui'))
+        self._add_button("Exam Management", self._launch('show_exam_portal'))
 
         # HR & Staff
         self._add_heading("HR & Staff")

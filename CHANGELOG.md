@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.68.0 — 2026-04-07](#8680---2026-04-07)
 - [8.67.0 — 2026-04-06](#8670---2026-04-06)
 - [8.66.0 — 2026-04-06](#8660---2026-04-06)
 - [8.65.0 — 2026-04-05](#8650---2026-04-05)
@@ -158,6 +159,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.68.0] — 2026-04-07
+
+### Merge Exam Scheduler + Portal, Health Portal GUI consolidation
+
+#### Changed
+
+**Exam Management — unified system (GUI + CLI):**
+- Merged Exam Scheduler and Exam Portal into a single `exam_management` package under `academics/gui/exam_management/`
+- Single GUI entry point: "Exam Management" button replaces separate "Exam Scheduler" and "Exam Portal" buttons
+- Scheduler tabs (Schedule Overview, Manage Exams, Rooms, Calendar) embedded directly in the portal GUI for staff/admin
+- Exams created in the scheduling tabs auto-sync into the portal — removed manual "Import from Scheduler" step
+- Single CLI entry point: "Exam Management" in main menu, auto-syncs scheduled exams on launch
+- `ExamSchedulerApp` now supports embedding in a Frame (skips `title()`/`geometry()`/menu when not a Toplevel)
+- Renamed service directory `services/exam_portal/` → `services/exam_management/`
+- Renamed CLI `exam_portal_cli.py` → `exam_management_cli.py`
+- Updated student portal, instructor portal, and staff portal buttons to point to unified "Exam Management"
+- Backward-compatible shims at old import paths (`exam_scheduler`, `exam_portal`) for existing code
+
+**Health Portal GUI — embedded sub-GUIs:**
+- Medical Accommodations now loads inline in the health portal content frame instead of opening a separate window
+- Moved `medical_accommodation/` package into `health_portal/medical_accommodation/` (co-located with health portal)
+- Removed duplicate "Medical Accommodations" admin button from Health Services section
+- `AccommodationGUI` now supports embedding in a Frame (skips `title()`/`geometry()`/menu/status bar)
+- Dentist GUI now loads inline in the health portal content frame instead of opening a separate window
+- Copied `dentist_gui.py` into `health_portal/` with embedding support
+- Moved Gym button out of health portal into main university GUI under "Health & Wellness" category
+
+#### Removed
+
+- Standalone "Exam Scheduler" button from main GUI, student/instructor/staff portals
+- "Import from Scheduler" CLI menu option (replaced by auto-sync)
+- Duplicate "Medical Accommodations" button in health portal Health Services section
+- Gym button from health portal navigation (moved to main GUI)
 
 ---
 

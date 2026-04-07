@@ -3,7 +3,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from education_system.university_system.modules.domain.academics.gui.exam_scheduler.models import Room
+from education_system.university_system.modules.domain.academics.gui.exam_management.models import Room
 
 # i18n import
 try:

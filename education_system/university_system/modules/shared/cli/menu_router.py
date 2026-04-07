@@ -363,7 +363,7 @@ def display_menu():
         items = [
             add_option(get_text('cli.menu.virtual_classroom', default='Virtual Classroom'), "virtual_classroom"),
             add_option(get_text('cli.menu.predictive_analytics', default='Predictive Analytics'), "predictive_analytics"),
-            add_option("Exam Portal", "exam_portal"),
+            add_option("Exam Management", "exam_portal"),
         ]
         if DEGREE_AUDIT_CLI_AVAILABLE:
             items.append(add_option(get_text('cli.menu.degree_audit', default='Degree Audit'), "degree_audit"))
@@ -624,10 +624,10 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "exam_portal":
                 try:
-                    from education_system.university_system.modules.domain.academics.cli.exam_portal_cli import display_exam_portal_menu
+                    from education_system.university_system.modules.domain.academics.cli.exam_management_cli import display_exam_portal_menu
                     display_exam_portal_menu(auth)
                 except ImportError as e:
-                    print(f"\n❌ Exam Portal CLI is not available: {e}")
+                    print(f"\n❌ Exam Management CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "degree_audit":
                 if DEGREE_AUDIT_CLI_AVAILABLE:

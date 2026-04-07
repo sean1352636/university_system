@@ -5,9 +5,9 @@ import json
 import logging
 from typing import List, Dict, Optional, Tuple
 
-from education_system.university_system.modules.domain.academics.gui.exam_scheduler.models import Exam, Room
-from education_system.university_system.modules.domain.academics.gui.exam_scheduler import conflicts as conflict_utils
-from education_system.university_system.modules.domain.academics.gui.exam_scheduler import notifications as notification_utils
+from education_system.university_system.modules.domain.academics.gui.exam_management.models import Exam, Room
+from education_system.university_system.modules.domain.academics.gui.exam_management import conflicts as conflict_utils
+from education_system.university_system.modules.domain.academics.gui.exam_management import notifications as notification_utils
 
 logger = logging.getLogger(__name__)
 

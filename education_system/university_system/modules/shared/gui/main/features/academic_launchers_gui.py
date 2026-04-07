@@ -916,11 +916,11 @@ def show_exam_scheduler_gui(self):
 
         if role == 'student':
             # Students get read-only exam viewer
-            from education_system.university_system.modules.domain.academics.gui.exam_scheduler import StudentExamViewer
+            from education_system.university_system.modules.domain.academics.gui.exam_management import StudentExamViewer
             StudentExamViewer(window, auth=self.auth)
         else:
             # Staff/admin get full exam scheduler
-            from education_system.university_system.modules.domain.academics.gui.exam_scheduler import ExamSchedulerApp
+            from education_system.university_system.modules.domain.academics.gui.exam_management import ExamSchedulerApp
             ExamSchedulerApp(window)
 
         print(_t("extras_gui.messages.exam_scheduler_opened"))
@@ -929,11 +929,11 @@ def show_exam_scheduler_gui(self):
         print(_t("extras_gui.messages.exam_scheduler_error").format(error=e))
 
 def show_exam_portal(self):
-    """Launch the Exam Portal GUI in a Toplevel window"""
+    """Launch the unified Exam Management GUI (portal + scheduler) in a Toplevel window"""
     try:
-        from education_system.university_system.modules.domain.academics.gui.exam_portal import ExamPortalGUI
+        from education_system.university_system.modules.domain.academics.gui.exam_management import ExamPortalGUI
         window = tk.Toplevel(self.root)
-        window.title("Exam Portal")
+        window.title("Exam Management")
         window.geometry("1200x800")
         try:
             window.transient(self.root)
@@ -941,7 +941,7 @@ def show_exam_portal(self):
             pass
         ExamPortalGUI(parent=window, auth=self.auth)
     except Exception as e:
-        messagebox.showerror("Error", f"Failed to open Exam Portal: {e}")
+        messagebox.showerror("Error", f"Failed to open Exam Management: {e}")
 
 def show_hesa_export_gui(self):
     """Launch HESA Data Export GUI"""

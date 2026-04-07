@@ -3,9 +3,9 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
-from education_system.university_system.modules.domain.academics.gui.exam_scheduler.data_manager import DataManager
-from education_system.university_system.modules.domain.academics.gui.exam_scheduler.tabs import ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarTabMixin
-from education_system.university_system.modules.domain.academics.gui.exam_scheduler.dialogs import DialogsMixin
+from education_system.university_system.modules.domain.academics.gui.exam_management.data_manager import DataManager
+from education_system.university_system.modules.domain.academics.gui.exam_management.tabs import ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarTabMixin
+from education_system.university_system.modules.domain.academics.gui.exam_management.dialogs import DialogsMixin
 
 # i18n import
 try:
@@ -18,11 +18,14 @@ except ImportError:
 class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarTabMixin, DialogsMixin):
     """Main application class for the Exam Scheduling System."""
 
-    def __init__(self, root: tk.Tk):
+    def __init__(self, root):
         self.root = root
-        self.root.title(_("exam_scheduler.title"))
-        self.root.geometry("1200x700")
-        self.root.minsize(1000, 600)
+        self._is_embedded = not isinstance(root, (tk.Tk, tk.Toplevel))
+
+        if not self._is_embedded:
+            self.root.title(_("exam_scheduler.title"))
+            self.root.geometry("1200x700")
+            self.root.minsize(1000, 600)
 
         # Initialize data manager
         self.data_manager = DataManager()
@@ -31,7 +34,8 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarT
         self.setup_styles()
 
         # Create main layout
-        self.create_menu()
+        if not self._is_embedded:
+            self.create_menu()
         self.create_main_layout()
 
         # Load initial data

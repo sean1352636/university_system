@@ -1,12 +1,6 @@
-"""
-Exam Scheduling System
-A comprehensive GUI application for managing exam schedules, rooms, and courses.
-Enhanced with database integration for modules, instructors, and email notifications.
-"""
+# Backward-compatible re-exports — all code moved to exam_management
+from education_system.university_system.modules.domain.academics.gui.exam_management import (
+    ExamSchedulerApp, main, Exam, Room, DataManager, StudentExamViewer, ExamPortalGUI,
+)
 
-from education_system.university_system.modules.domain.academics.gui.exam_scheduler.app import ExamSchedulerApp, main
-from education_system.university_system.modules.domain.academics.gui.exam_scheduler.models import Exam, Room
-from education_system.university_system.modules.domain.academics.gui.exam_scheduler.data_manager import DataManager
-from education_system.university_system.modules.domain.academics.gui.exam_scheduler.student_viewer import StudentExamViewer
-
-__all__ = ['ExamSchedulerApp', 'main', 'Exam', 'Room', 'DataManager', 'StudentExamViewer']
+__all__ = ['ExamSchedulerApp', 'main', 'Exam', 'Room', 'DataManager', 'StudentExamViewer', 'ExamPortalGUI']

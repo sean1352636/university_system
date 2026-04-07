@@ -318,8 +318,7 @@ def create_navigation_panel(self, parent):
         ('scheduling', _t("nav.buttons.scheduling"), self.show_module_scheduling),
         ('my_timetable', _t("nav.buttons.my_timetable"), self.show_student_timetable_gui),
         ('attendance', _t("nav.buttons.attendance"), self.open_attendance_gui),
-        ('exam_scheduler', _t("nav.buttons.exam_scheduler"), self.show_exam_scheduler_gui),
-        ('exam_portal', "Exam Portal", self.show_exam_portal),
+        ('exam_portal', "Exam Management", self.show_exam_portal),
     ]
 
     if any(name in visible_buttons for name, _, _ in sched_buttons_data):
@@ -343,6 +342,7 @@ def create_navigation_panel(self, parent):
     # ---------- Health & Wellness ----------
     health_buttons_data = [
         ('health_portal', _t("nav.buttons.health_portal"), self.open_health_portal_gui),
+        ('gym', "Gym", self.show_gym_gui),
     ]
 
     if any(name in visible_buttons for name, _, _ in health_buttons_data):
@@ -727,7 +727,7 @@ def get_visible_buttons_for_role(self, role=None):
         # New apps - available to all logged-in users
         'todo_app', 'security_desk', 'church_management',
         # Additional services
-        'bank_app', 'exam_scheduler', 'exam_portal',
+        'bank_app', 'exam_portal',
         # Student Success & Engagement (v5.5.0) - available to all
         'academic_progress', 'ai_study', 'study_matching_gui',
         'student_jobs', 'course_planning', 'roommate_finder',

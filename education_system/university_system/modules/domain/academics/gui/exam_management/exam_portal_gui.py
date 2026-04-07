@@ -13,7 +13,7 @@ import logging
 import threading
 from datetime import datetime
 
-from education_system.university_system.modules.domain.academics.services.exam_portal import ExamPortalService
+from education_system.university_system.modules.domain.academics.services.exam_management import ExamPortalService
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ QUESTION_TYPES = [
 
 
 class ExamPortalGUI:
-    """Main exam portal GUI window."""
+    """Unified exam management GUI — portal + scheduler in one interface."""
 
     def __init__(self, parent=None, auth=None):
         self.svc = ExamPortalService()
@@ -37,7 +37,7 @@ class ExamPortalGUI:
             self.root = parent
         else:
             self.root = tk.Tk()
-            self.root.title("Exam Portal")
+            self.root.title("Exam Management")
             self.root.geometry("1200x800")
 
         self.style = ttk.Style()
@@ -66,7 +66,7 @@ class ExamPortalGUI:
         toolbar.pack(fill="x")
         ttk.Button(toolbar, text="Return to Main Menu",
                    command=self._close).pack(side="left")
-        ttk.Label(toolbar, text=f"Exam Portal  |  {self._user.get('username', '')} ({self._role})",
+        ttk.Label(toolbar, text=f"Exam Management  |  {self._user.get('username', '')} ({self._role})",
                   font=("Arial", 11, "bold")).pack(side="left", padx=20)
 
         # Main notebook
@@ -80,6 +80,7 @@ class ExamPortalGUI:
         # Instructor/Admin tabs
         if self._role in ("admin", "staff", "instructor"):
             self._build_manage_tab()
+            self._build_scheduling_tab()
             self._build_grading_tab()
             self._build_analytics_tab()
 
@@ -88,6 +89,31 @@ class ExamPortalGUI:
             self.root.after_cancel(self._timer_id)
         try:
             self.root.destroy()
+        except Exception:
+            pass
+
+    # ── Scheduling Tab (Staff/Admin — embedded scheduler) ────────────
+
+    def _build_scheduling_tab(self):
+        """Embed the Exam Scheduler inside a tab for staff/admin users."""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text="Scheduling")
+
+        try:
+            from education_system.university_system.modules.domain.academics.gui.exam_management import ExamSchedulerApp
+            scheduler = ExamSchedulerApp(tab)
+            # Auto-sync scheduler exams into the portal on tab build
+            self._auto_sync_from_scheduler()
+        except Exception as e:
+            ttk.Label(tab, text=f"Exam Scheduler could not be loaded: {e}",
+                      font=("Arial", 12)).pack(padx=20, pady=20)
+
+    def _auto_sync_from_scheduler(self):
+        """Silently sync exams from the scheduler into the portal."""
+        try:
+            self.svc.sync_from_scheduler(
+                created_by=self._user.get("username", "scheduler")
+            )
         except Exception:
             pass
 
@@ -471,8 +497,7 @@ class ExamPortalGUI:
         header = ttk.Frame(tab)
         header.pack(fill="x", padx=10, pady=10)
         ttk.Label(header, text="Exam Management", font=("Arial", 14, "bold")).pack(side="left")
-        ttk.Button(header, text="Import from Scheduler",
-                   command=self._import_from_scheduler).pack(side="right", padx=5)
+        ttk.Button(header, text="Sync from Scheduler", command=self._sync_and_refresh).pack(side="right", padx=5)
         ttk.Button(header, text="Refresh", command=self._refresh_manage).pack(side="right")
 
         cols = ("ID", "Title", "Module", "Status", "Questions", "Duration", "Created")
@@ -520,18 +545,18 @@ class ExamPortalGUI:
                 e.get("created_at", "")[:16],
             ))
 
-    def _import_from_scheduler(self):
-        """Import exams from the Exam Scheduler into the portal."""
+    def _sync_and_refresh(self):
+        """Sync scheduled exams into the portal and refresh the list."""
         result = self.svc.sync_from_scheduler(
             created_by=self._user.get("username", "scheduler")
         )
         if result.get("error"):
-            messagebox.showerror("Import Error", f"Error: {result['error']}")
+            messagebox.showerror("Sync Error", f"Error: {result['error']}")
         else:
             messagebox.showinfo(
-                "Import Complete",
-                f"Imported: {result['imported']} exam(s)\n"
-                f"Skipped (already imported): {result['skipped']}\n\n"
+                "Sync Complete",
+                f"Synced: {result['imported']} new exam(s)\n"
+                f"Already up to date: {result['skipped']}\n\n"
                 "Add questions and publish when ready.",
             )
         self._refresh_manage()

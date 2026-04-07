@@ -5,7 +5,7 @@ from tkinter import ttk, messagebox
 from datetime import datetime, timedelta
 from typing import List, Dict, Optional
 
-from education_system.university_system.modules.domain.academics.gui.exam_scheduler.models import Exam
+from education_system.university_system.modules.domain.academics.gui.exam_management.models import Exam
 
 # i18n import
 try:
