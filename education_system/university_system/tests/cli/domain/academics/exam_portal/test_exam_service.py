@@ -47,11 +47,11 @@ def svc(tmp_path, monkeypatch):
             c.close()
 
     monkeypatch.setattr(
-        "education_system.university_system.modules.domain.academics.services.exam_portal.exam_service.get_connection",
+        "education_system.university_system.modules.domain.academics.services.exam_management.exam_service.get_connection",
         _fake_get_connection,
     )
 
-    from education_system.university_system.modules.domain.academics.services.exam_portal.exam_service import ExamPortalService
+    from education_system.university_system.modules.domain.academics.services.exam_management.exam_service import ExamPortalService
     return ExamPortalService()
 
 

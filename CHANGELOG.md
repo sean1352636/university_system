@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.69.0 — 2026-04-07](#8690---2026-04-07)
 - [8.68.0 — 2026-04-07](#8680---2026-04-07)
 - [8.67.0 — 2026-04-06](#8670---2026-04-06)
 - [8.66.0 — 2026-04-06](#8660---2026-04-06)
@@ -159,6 +160,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.69.0] — 2026-04-07
+
+### Remove backward-compatibility shim files and update imports to real locations
+
+#### Changed
+
+- Updated `accessibility_tools_gui.py` import from `exam_scheduler.ExamSchedulerGUI` to `exam_management.ExamSchedulerApp`
+- Updated `test_exam_portal_gui.py` imports from `gui.exam_portal` and `services.exam_portal` to `gui.exam_management` and `services.exam_management.exam_service`
+- Updated `test_exam_service.py` imports from `services.exam_portal.exam_service` to `services.exam_management.exam_service`
+- Updated `test_email_manager_management_gui.py` import from `infrastructure.email.gui` to `modules.shared.gui.email`
+- Updated `test_email_queue_scheduler_gui.py` import from `infrastructure.email.gui` to `modules.shared.gui.email`
+- Removed lazy GUI shim from `dentist/__init__.py` (kept real service imports)
+
+#### Removed
+
+- `modules/core/services/student_union_misc/` — shim redirecting to `student_affairs.student_union.services`
+- `modules/domain/finance/finance_misc/` (8 files) — shim redirecting to `finance.core`
+- `modules/domain/course_planning/cli/` — shim redirecting to `course_management_gui/cli/`
+- `modules/domain/course_planning/gui/` — shim redirecting to `course_management_gui/`
+- `modules/domain/dentist/gui/` — shim redirecting to `health.gui.health_portal.dentist_gui`
+- `modules/domain/academics/gui/exam_scheduler/` — shim redirecting to `exam_management`
+- `modules/domain/academics/gui/exam_portal/` — shim redirecting to `exam_management`
+- `modules/domain/academics/services/exam_portal/` — shim redirecting to `exam_management`
+- `modules/domain/notifications/gui/` — deprecated `NotificationsGUI` wrapper for `EmailManagerGUI`
+- `modules/domain/notifications/compat.py` — deprecated notification_type column mapper
+- `infrastructure/email/gui/` — deprecated redirect to `modules/shared/gui/email/`
+- `infrastructure/database/gui/` — deprecated redirect to `modules/shared/gui/database/`
 
 ---
 

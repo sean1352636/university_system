@@ -971,11 +971,11 @@ class AccessibilityToolsGUI:
         def open_exam_scheduler():
             """Open exam scheduler GUI"""
             try:
-                from education_system.university_system.modules.domain.academics.gui.exam_scheduler import ExamSchedulerGUI
+                from education_system.university_system.modules.domain.academics.gui.exam_management import ExamSchedulerApp
                 scheduler_window = tk.Toplevel(self.window)
                 scheduler_window.title("Exam Scheduler")
                 scheduler_window.geometry("1200x800")
-                ExamSchedulerGUI(scheduler_window, self.auth)
+                ExamSchedulerApp(scheduler_window, self.auth)
             except ImportError as e:
                 messagebox.showerror("Import Error",
                                    f"Exam Scheduler GUI not available: {e}")

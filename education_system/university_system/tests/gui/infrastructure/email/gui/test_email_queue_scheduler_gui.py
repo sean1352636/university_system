@@ -14,7 +14,7 @@ from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
 
 # Import the module under test
-from education_system.university_system.infrastructure.email.gui import email_queue_scheduler_gui
+from education_system.university_system.modules.shared.gui.email import email_queue_scheduler_gui
 
 @pytest.fixture
 def temp_db():

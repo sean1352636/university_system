@@ -90,14 +90,12 @@ education_system/university_system/
 │   ├── database/                      # Database connection & management
 │   │   ├── db.py                      # Connection pooling, transactions
 │   │   ├── data_backup/               # Backup system (13 modules + storage/)
-│   │   ├── gui/                       # Database management GUI
 │   │   ├── migrations/                # Schema version migrations
 │   │   └── schemas/                   # Database schema definitions
 │   ├── data_management/               # Automated backup scheduling
 │   ├── email/                         # Email service integration
 │   │   ├── admin/                     # Admin email tools (13 modules)
 │   │   ├── email_service/             # Async queue & SMTP (7 modules + notifications/)
-│   │   └── gui/                       # Email management GUI
 │   ├── ml/                            # Machine learning infrastructure
 │   ├── monitoring/                    # Observability (metrics, health checks, alerts)
 │   ├── performance/                   # Performance optimization (caching)
@@ -153,7 +151,6 @@ education_system/university_system/
 │   │   │   │   ├── grade_tracking/     # Grade tracking (24 files)
 │   │   │   │   │   └── analytics_manager/ # Analytics package (12 modules)
 │   │   │   │   ├── grades_breakdown/   # Grades breakdown by module
-│   │   │   │   ├── exam_scheduler/     # Exam scheduler (7 modules + tabs/)
 │   │   │   │   ├── grade_tracking_management_gui/ # Grade mgmt (13 mixin modules)
 │   │   │   │   ├── library/            # Library GUI (17 components)
 │   │   │   │   │   └── fines/          # Fines package (10 modules)

@@ -19,20 +19,7 @@ from education_system.university_system.modules.domain.dentist.services.dentist_
 )
 
 
-def __getattr__(name):
-    """Lazy import for GUI classes to avoid circular imports."""
-    if name in ('DentistGUI', 'launch_dentist_gui'):
-        from education_system.university_system.modules.domain.health.gui.health_portal.dentist_gui import (
-            DentistGUI,
-            launch_dentist_gui
-        )
-        return DentistGUI if name == 'DentistGUI' else launch_dentist_gui
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-
 __all__ = [
-    'DentistGUI',
-    'launch_dentist_gui',
     'PatientManager',
     'AppointmentManager',
     'TreatmentManager',

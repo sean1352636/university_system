@@ -13,7 +13,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock, PropertyMock
 
 # Import the module under test
-from education_system.university_system.infrastructure.email.gui import email_manager_management_gui
+from education_system.university_system.modules.shared.gui.email import email_manager_management_gui
 
 @pytest.fixture
 def temp_db():
