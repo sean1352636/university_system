@@ -761,7 +761,7 @@ except ImportError as e:
 
 # Dentist/Dental Clinic GUI
 try:
-    from education_system.university_system.modules.domain.dentist.gui.dentist_gui import DentistGUI, launch_dentist_gui
+    from education_system.university_system.modules.domain.health.gui.health_portal.dentist_gui import DentistGUI, launch_dentist_gui
     DENTIST_GUI_AVAILABLE = True
 except ImportError as e:
     DentistGUI = None
