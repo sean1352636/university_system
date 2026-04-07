@@ -101,7 +101,7 @@ def show_study_matching_gui(self):
 def show_course_planning_gui(self):
     """Launch Course Planning Assistant GUI"""
     try:
-        from education_system.university_system.modules.domain.course_planning.gui.course_planning_gui import CoursePlanningGUI
+        from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_planning_gui import CoursePlanningGUI
         from education_system.university_system.infrastructure.shared_context import get_auth
         auth = get_auth()
         # CoursePlanningGUI creates its own Toplevel window

@@ -172,7 +172,7 @@ class UISetupMixin:
     def _create_course_planning_tab(self):
         """Embed the Course Planning Assistant as a tab."""
         try:
-            from education_system.university_system.modules.domain.course_planning.gui.course_planning_gui import CoursePlanningGUI
+            from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_planning_gui import CoursePlanningGUI
             CoursePlanningGUI(root=self.root, auth=self.auth, parent_notebook=self.notebook)
         except Exception as e:
             tab = ttk.Frame(self.notebook)
