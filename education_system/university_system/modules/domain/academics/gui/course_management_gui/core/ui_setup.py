@@ -166,6 +166,20 @@ class UISetupMixin:
         # Course Evaluation Tab (embedded)
         self.create_course_eval_tab()
 
+        # Course Planning Tab (embedded)
+        self._create_course_planning_tab()
+
+    def _create_course_planning_tab(self):
+        """Embed the Course Planning Assistant as a tab."""
+        try:
+            from education_system.university_system.modules.domain.course_planning.gui.course_planning_gui import CoursePlanningGUI
+            CoursePlanningGUI(root=self.root, auth=self.auth, parent_notebook=self.notebook)
+        except Exception as e:
+            tab = ttk.Frame(self.notebook)
+            self.notebook.add(tab, text="Course Planning")
+            ttk.Label(tab, text=f"Course Planning could not be loaded: {e}",
+                      font=("Arial", 12)).pack(padx=20, pady=20)
+
     def open_course_management_cli(self):
         """Launch the course management CLI in a terminal."""
         if not ORIGINAL_MODULE_AVAILABLE:

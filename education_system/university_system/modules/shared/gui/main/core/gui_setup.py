@@ -297,7 +297,6 @@ def create_navigation_panel(self, parent):
         ('grade_tracking_gui', _t("nav.buttons.grade_tracking"), self.show_grade_tracking_gui),
         ('student_registration', _t("nav.buttons.student_registration"), self.show_student_registration_gui),
         ('library', _t("nav.buttons.library"), self.show_library_management),
-        ('course_planning', _t("nav.buttons.course_planning"), self.show_course_planning_gui),
         ('ai_study', _t("nav.buttons.ai_study"), self.show_ai_study_gui),
         ('study_matching_gui', _t("nav.buttons.study_matching"), self.show_study_matching_gui),
         ('office_hours', _t("nav.buttons.office_hours"), self.show_office_hours_gui),
@@ -730,7 +729,7 @@ def get_visible_buttons_for_role(self, role=None):
         'bank_app', 'exam_portal',
         # Student Success & Engagement (v5.5.0) - available to all
         'academic_progress', 'ai_study', 'study_matching_gui',
-        'student_jobs', 'course_planning', 'roommate_finder',
+        'student_jobs', 'roommate_finder',
         'campus_navigation', 'lost_found', 'marketplace', 'wellness_hub',
         'accessibility', 'social_matching', 'portfolio', 'events_discovery',
         'feedback_system',

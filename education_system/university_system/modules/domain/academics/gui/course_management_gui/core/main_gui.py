@@ -41,9 +41,12 @@ class CourseManagementGUI(
 ):
     def __init__(self, parent, auth_system=None):
         self.root = parent
-        self.root.title(_("course_management.title"))
-        self.root.geometry("1200x800")
-        self.root.configure(bg='#f0f0f0')
+        self._is_embedded = not isinstance(parent, (tk.Tk, tk.Toplevel))
+
+        if not self._is_embedded:
+            self.root.title(_("course_management.title"))
+            self.root.geometry("1200x800")
+            self.root.configure(bg='#f0f0f0')
 
         # Initialize authentication - accept passed auth or use centralized auth
         if auth_system:
@@ -56,26 +59,31 @@ class CourseManagementGUI(
 
         # Create status bar FIRST so update_status() is safe during init
         self.status_var = tk.StringVar(value=_("course_management.status.initializing"))
-        self.status_label = ttk.Label(self.root, textvariable=self.status_var, anchor="w", relief="sunken")
-        self.status_label.pack(side="bottom", fill="x")
+        if not self._is_embedded:
+            self.status_label = ttk.Label(self.root, textvariable=self.status_var, anchor="w", relief="sunken")
+            self.status_label.pack(side="bottom", fill="x")
 
         # Now it's safe to touch the DB and call update_status()
         self.init_database()
 
         # Build the rest of the UI
-        self.create_menu()
+        if not self._is_embedded:
+            self.create_menu()
         self.create_main_interface()
 
     def update_status(self, message, error=False):
         # Defensive: if someone calls this very early, ensure widgets exist
         if not hasattr(self, "status_var"):
             self.status_var = tk.StringVar(value="")
-            self.status_label = ttk.Label(self.root, textvariable=self.status_var, anchor="w", relief="sunken")
-            self.status_label.pack(side="bottom", fill="x")
+        if not hasattr(self, "status_label"):
+            if not getattr(self, '_is_embedded', False):
+                self.status_label = ttk.Label(self.root, textvariable=self.status_var, anchor="w", relief="sunken")
+                self.status_label.pack(side="bottom", fill="x")
 
         self.status_var.set(message)
         try:
-            self.status_label.configure(foreground=("red" if error else "black"))
+            if hasattr(self, 'status_label'):
+                self.status_label.configure(foreground=("red" if error else "black"))
         except Exception:
             pass
         self.root.update_idletasks()

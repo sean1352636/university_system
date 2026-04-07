@@ -139,7 +139,7 @@ class StudentPortalGUI:
         self._add_heading("Academic")
         self._add_button("Assignments", self._launch('show_assignments'))
         self._add_button("Grade Tracking", self._launch('show_grade_tracking_gui'))
-        self._add_button("Course Planning", self._launch('show_course_planning_gui'))
+        self._add_button("Course Management", self._launch('show_course_management'))
         self._add_button("AI Study Tools", self._launch('show_ai_study_gui'))
         self._add_button("Study Matching", self._launch('show_study_matching_gui'))
         self._add_button("Study Recommendations", self._launch('show_study_recommendations_gui'))
