@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.72.0 — 2026-04-07](#8720---2026-04-07)
 - [8.71.0 — 2026-04-07](#8710---2026-04-07)
 - [8.70.0 — 2026-04-07](#8700---2026-04-07)
 - [8.69.0 — 2026-04-07](#8690---2026-04-07)
@@ -164,6 +165,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.72.0] — 2026-04-07
+
+### College absence requests: auth-gated access, approval workflow, and validation
+
+#### Added
+
+- **Approval workflow** — `approve_request()`, `reject_request()`, `cancel_request()` service methods enforce status transitions (only pending requests can be approved/rejected/cancelled)
+- **Auth gating** — CLI and GUI both require logged-in user; access denied screen shown otherwise
+- **Role-based access control** — staff/admin see manager actions (approve, reject, edit, delete, view all); regular users can only submit, view, and cancel their own requests
+- **Absence type validation** — 12 defined types (sick, medical_appointment, annual_leave, bereavement, etc.) enforced at service layer
+- **Date validation** — YYYY-MM-DD format required; end date cannot precede start date
+- **Status filtering** — CLI "Filter by Status" menu option; GUI status filter dropdown and "My requests only" checkbox
+- **`get_my_requests()`** — service method to retrieve requests for a specific staff member with optional status filter
+- **Date range filtering** — `date_from`/`date_to` parameters on `list_requests()`
+- **GUI approve/reject buttons** — dedicated toolbar actions with confirmation dialogs (manager-only)
+- **GUI colour-coded status** — treeview rows coloured by status (yellow=pending, green=approved, red=rejected, grey=cancelled)
+- **GUI user info header** — displays logged-in user name and role
+- **GUI absence type dropdown** — combobox with predefined types instead of free-text entry
+- **GUI client-side validation** — date format, required fields, and date range checks in dialog before submission
+- **CLI coloured status output** — ANSI colours for status in terminal output
+- **CLI guided input** — shows valid types, date formats, and pending requests before approve/reject actions
+
+#### Changed
+
+- CLI menu restructured: all users get "My Requests", "Submit", "View", "Cancel"; manager section separated visually
+- GUI treeview now includes ID column and supports double-click to view details
+- Service `create_request()` defaults status to "pending" and validates all inputs
+- Service `update_request()` now validates absence type and date fields on update
+- Tests expanded from 7 to 23 covering validation, workflow transitions, ownership checks, and filtering
 
 ## [8.71.0] — 2026-04-07
 
