@@ -323,7 +323,7 @@ except ImportError as e:
 
 # Dentist CLI
 try:
-    from education_system.university_system.modules.services.cli.dentist_cli import dentist_menu
+    from education_system.university_system.modules.domain.health.portal.dentist_cli import dentist_menu
     DENTIST_AVAILABLE = True
 except ImportError as e:
     dentist_menu = None

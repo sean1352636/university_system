@@ -675,6 +675,16 @@ def _display_crisis_hotline_info():
     print("\n⚠️ If you or someone you know is in immediate danger, call 911")
     print("="*50)
 
+def _launch_dentist_cli():
+    """Launch the Dental Clinic CLI from within the health portal."""
+    try:
+        from education_system.university_system.modules.domain.health.portal.dentist_cli import dentist_menu
+        dentist_menu()
+    except ImportError as e:
+        print(f"\n❌ Dental Clinic CLI not available: {e}")
+        input("Press Enter to continue...")
+
+
 def display_health_portal_menu(auth=None):
     if not auth:
         from education_system.university_system.infrastructure.auth import UserAuth
@@ -893,6 +903,11 @@ def display_health_portal_menu(auth=None):
 
             print(f"{len(menu_options) + 1}. System Backup & Recovery")
             menu_options.append(("System Backup & Recovery", backup_recovery_menu))
+
+        # Health Services
+        print("\n🦷 Health Services:")
+        print(f"{len(menu_options) + 1}. Dental Clinic")
+        menu_options.append(("Dental Clinic", lambda auth: _launch_dentist_cli()))
 
         # Main menu options
         print(f"\n⚙️ {get_text('health.system_options', default='System Options')}:")
