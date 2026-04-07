@@ -135,7 +135,7 @@ class StudentPortalCLI:
 
     def _handle_course_planning(self):
         try:
-            from education_system.university_system.modules.domain.course_planning.cli.course_planning_cli import display_course_planning_menu
+            from education_system.university_system.modules.domain.academics.gui.course_management_gui.cli.course_planning_cli import display_course_planning_menu
             display_course_planning_menu()
         except ImportError as e:
             print(f"\n  Course Planning module is not available: {e}")

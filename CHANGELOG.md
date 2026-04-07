@@ -164,7 +164,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [8.68.0] — 2026-04-07
 
-### Merge Exam Scheduler + Portal, Health Portal GUI consolidation
+### Merge Exam Scheduler + Portal, Health Portal GUI consolidation, Course Management consolidation
 
 #### Changed
 
@@ -195,6 +195,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - "Import from Scheduler" CLI menu option (replaced by auto-sync)
 - Duplicate "Medical Accommodations" button in health portal Health Services section
 - Gym button from health portal navigation (moved to main GUI)
+
+**Course Management — consolidated course planning:**
+- Embedded Course Planning Assistant as a tab inside Course Management GUI (uses existing `parent_notebook` support)
+- Moved `course_planning_gui.py` into `course_management_gui/` package
+- Moved `course_planning_cli.py` into `course_management_gui/cli/`
+- Added "Course Planning Assistant" option to the Course Management CLI menu (option 30 for admin, option 6 for view-only)
+- Removed standalone "Course Planning" button from main GUI and student portal
+- Student/instructor portal CLIs updated to import from new location
+- Made `CourseManagementGUI` embeddable in frames (guarded `title()`/`geometry()`/menu/status bar)
+- Backward-compatible shims at old `course_planning/gui/` and `course_planning/cli/` paths
+
+**Health Portal — dentist CLI integration:**
+- Moved `dentist_cli.py` from `services/cli/` into `domain/health/portal/`
+- Added "Dental Clinic" option under Health Services in the health portal CLI
+- Removed old dentist GUI file; updated all imports to `health_portal/dentist_gui.py`
 
 ---
 
