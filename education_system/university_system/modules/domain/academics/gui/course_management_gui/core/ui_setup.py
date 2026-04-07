@@ -170,15 +170,32 @@ class UISetupMixin:
         self._create_course_planning_tab()
 
     def _create_course_planning_tab(self):
-        """Embed the Course Planning Assistant as a tab."""
-        try:
-            from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_planning_gui import CoursePlanningGUI
-            CoursePlanningGUI(root=self.root, auth=self.auth, parent_notebook=self.notebook)
-        except Exception as e:
-            tab = ttk.Frame(self.notebook)
-            self.notebook.add(tab, text="Course Planning")
-            ttk.Label(tab, text=f"Course Planning could not be loaded: {e}",
-                      font=("Arial", 12)).pack(padx=20, pady=20)
+        """Add a placeholder Course Planning tab that initializes on first click."""
+        self._course_planning_placeholder = ttk.Frame(self.notebook)
+        self.notebook.add(self._course_planning_placeholder, text="Course Planning")
+        self._course_planning_loaded = False
+
+        def _on_tab_changed(event):
+            if self._course_planning_loaded:
+                return
+            selected = self.notebook.select()
+            if selected == str(self._course_planning_placeholder):
+                self._course_planning_loaded = True
+                # Remove placeholder and load the real tab
+                self.notebook.forget(self._course_planning_placeholder)
+                try:
+                    from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_planning_gui import CoursePlanningGUI
+                    CoursePlanningGUI(root=self.root, auth=self.auth, parent_notebook=self.notebook)
+                    # Select the newly added tab
+                    self.notebook.select(self.notebook.index("end") - 1)
+                except Exception as e:
+                    tab = ttk.Frame(self.notebook)
+                    self.notebook.add(tab, text="Course Planning")
+                    ttk.Label(tab, text=f"Course Planning could not be loaded: {e}",
+                              font=("Arial", 12)).pack(padx=20, pady=20)
+                    self.notebook.select(self.notebook.index("end") - 1)
+
+        self.notebook.bind("<<NotebookTabChanged>>", _on_tab_changed, add="+")
 
     def open_course_management_cli(self):
         """Launch the course management CLI in a terminal."""
