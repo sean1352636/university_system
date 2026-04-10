@@ -394,6 +394,9 @@ class StudentFrame(tk.Frame):
         self._tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
+        # Admin/staff: double-click a row to view full student details
+        self._tree.bind("<Double-1>", self._on_double_click_student)
+
         # Status bar
         self._status_var_label = tk.StringVar(value="Ready")
         tk.Label(self, textvariable=self._status_var_label, bg="#ecf0f1", anchor="w",
@@ -615,6 +618,136 @@ class StudentFrame(tk.Frame):
                 self._load_students()
         except (StudentError, ValidationError) as exc:
             messagebox.showerror("Error", str(exc))
+
+    # ------------------------------------------------------------------
+    # Details viewer (admin/staff double-click)
+    # ------------------------------------------------------------------
+
+    def _user_role(self) -> str:
+        """Return the current user's role (or empty string if not logged in)."""
+        if self._auth and getattr(self._auth, "current_user", None):
+            return self._auth.current_user.get("role", "")
+        return ""
+
+    def _on_double_click_student(self, _event=None):
+        """Open the student details window — only for admin/staff users."""
+        if self._user_role() not in ("admin", "staff", "instructor", "teacher"):
+            return
+        sel = self._tree.selection()
+        if not sel:
+            return
+        try:
+            pk = int(sel[0])
+        except (TypeError, ValueError):
+            return
+        self._show_student_details(pk)
+
+    def _show_student_details(self, pk: int):
+        """Display a read-only details window for the given student PK."""
+        student = self._svc.get_student(pk)
+        if not student:
+            messagebox.showerror("Error", "Student not found.")
+            return
+
+        win = tk.Toplevel(self)
+        win.title(f"Student Details — {student.get('student_id', '')}")
+        win.geometry("720x620")
+        win.transient(self.winfo_toplevel())
+
+        notebook = ttk.Notebook(win)
+        notebook.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Personal tab
+        personal_tab = ttk.Frame(notebook)
+        notebook.add(personal_tab, text="Personal")
+        personal_text = tk.Text(personal_tab, wrap="word", font=("Courier", 10),
+                                padx=15, pady=15, bd=0)
+        personal_text.pack(fill="both", expand=True)
+
+        na = "—"
+        full_name = " ".join(
+            p for p in (student.get("first_name"), student.get("last_name")) if p
+        ) or na
+        pp = "Yes" if student.get("pupil_premium") else "No"
+
+        personal_lines = [
+            "STUDENT RECORD",
+            "=" * 60,
+            "",
+            "Personal Information",
+            f"  Student ID:    {student.get('student_id') or na}",
+            f"  First name:    {student.get('first_name') or na}",
+            f"  Last name:     {student.get('last_name') or na}",
+            f"  Full name:     {full_name}",
+            f"  Date of birth: {student.get('date_of_birth') or na}",
+            f"  Address:       {student.get('address') or na}",
+            "",
+            "School Details",
+            f"  Year group:    {student.get('year_group') or na}",
+            f"  Form group:    {student.get('form_group') or na}",
+            f"  Key stage:     {student.get('key_stage') or na}",
+            f"  SEN status:    {student.get('sen_status') or na}",
+            f"  Pupil Premium: {pp}",
+            f"  Status:        {student.get('status') or na}",
+            "",
+            "Parent / Guardian",
+            f"  Name:          {student.get('parent_name') or na}",
+            f"  Email:         {student.get('parent_email') or na}",
+            f"  Phone:         {student.get('parent_phone') or na}",
+            "",
+            "Emergency Contact",
+            f"  Name:          {student.get('emergency_contact_name') or na}",
+            f"  Phone:         {student.get('emergency_contact_phone') or na}",
+            "",
+            "Record",
+            f"  Created:       {student.get('created_at') or na}",
+            f"  Updated:       {student.get('updated_at') or na}",
+        ]
+        personal_text.insert("end", "\n".join(personal_lines))
+        personal_text.config(state="disabled")
+
+        # Subjects / enrollments tab
+        enrol_tab = ttk.Frame(notebook)
+        notebook.add(enrol_tab, text="Subjects")
+        enrol_tree = ttk.Treeview(
+            enrol_tab,
+            columns=("subject_code", "title", "teacher", "room"),
+            show="headings",
+        )
+        for col, hd, w in [
+            ("subject_code", "Code", 90),
+            ("title", "Subject", 250),
+            ("teacher", "Teacher", 160),
+            ("room", "Room", 80),
+        ]:
+            enrol_tree.heading(col, text=hd)
+            enrol_tree.column(col, width=w, anchor="w")
+        enrol_tree.pack(fill="both", expand=True, padx=10, pady=10)
+        try:
+            enrolments = self._enroll_svc.get_student_enrollments(pk)
+            for e in enrolments or []:
+                enrol_tree.insert("", "end", values=(
+                    e.get("subject_code", ""),
+                    e.get("title", ""),
+                    e.get("teacher", ""),
+                    e.get("room", ""),
+                ))
+        except Exception:
+            import logging
+            logging.getLogger(__name__).warning(
+                "Failed to load enrollments for student %s", pk, exc_info=True,
+            )
+
+        # Footer
+        footer = tk.Frame(win, pady=8)
+        footer.pack(fill="x")
+        if self._user_role() == "admin":
+            ttk.Button(
+                footer, text="Edit",
+                command=lambda: (win.destroy(), self._tree.selection_set(str(pk)),
+                                 self._on_edit()),
+            ).pack(side="left", padx=10)
+        ttk.Button(footer, text="Close", command=win.destroy).pack(side="right", padx=10)
 
     def _on_delete(self):
         pk = self._selected_pk()

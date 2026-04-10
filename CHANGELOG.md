@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.74.0 — 2026-04-10](#8740---2026-04-10)
 - [8.73.0 — 2026-04-10](#8730---2026-04-10)
 - [8.72.0 — 2026-04-07](#8720---2026-04-07)
 - [8.71.0 — 2026-04-07](#8710---2026-04-07)
@@ -164,6 +165,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.74.0] — 2026-04-10
+
+### Student/pupil details on double-click + idle-timeout auto-logout for College, Secondary, and Primary
+
+#### Added
+
+- **Double-click student/pupil details viewer** in the GUIs of College, Secondary, and Primary, mirroring the behaviour the University system already provides:
+  - College `StudentFrame` (`college_system/.../students/gui/student_gui.py`) — `<Double-1>` opens a `Toplevel` with `Personal` and `Enrollments` tabs
+  - Secondary `StudentFrame` (`secondary_school/.../students/gui/student_gui.py`) — `Personal` and `Subjects` tabs (subjects loaded via `EnrollmentService.get_student_enrollments`)
+  - Primary `PupilFrame` (`primary_school/.../pupils/gui/pupil_gui.py`) — `Personal` and `Contacts` tabs (covers parent/guardian 1 & 2, emergency contact, EAL/PP/FSM/looked-after flags)
+  - Role-gated: only `admin` / `staff` / `instructor` / `teacher` users get the popup; other roles silently no-op
+  - Each details window has a `Close` button always; `admin` users also see an `Edit` button that chains into the existing `_on_edit()` flow
+
+- **Idle / inactivity auto-logout** for all three subsystems (GUI **and** CLI), with a 30-minute default:
+
+  **GUI** — new shared helper `education_system/shared/gui/idle_timeout.py` exposing `attach_idle_timeout(root, on_timeout, timeout_minutes=30)`. Tracks real user activity by binding `<Motion>`, `<KeyPress>`, `<ButtonPress>`, `<MouseWheel>` via `bind_all`, wakes every 30 seconds via `root.after()`, and on expiry shows a `Session Expired` warning before invoking the supplied logout callback. Returns a `cancel()` function so the watchdog is torn down on `WM_DELETE_WINDOW`. Wired into:
+  - `CollegeApp.__init__` (`college_system/modules/shared/gui/main_gui.py`)
+  - `MainApplication.__init__` (`secondary_school/main_gui.py`)
+  - `MainApplication.__init__` (`primary_school/main_gui.py`)
+
+  **CLI** — `enable_idle_timeout(minutes, on_timeout)` / `disable_idle_timeout()` added to `education_system/shared/cli/cli_helpers.py`. Uses `signal.SIGALRM` to interrupt blocking `input()` inside `get_choice()` after the configured idle window; on expiry prints `⚠ Logged out after 30 minutes of inactivity.`, invokes the logout callback, and cleanly exits the process. No-op on platforms without `SIGALRM` (Windows). Wired into the `main()` function of:
+  - `college_system/modules/shared/cli/cli_main.py`
+  - `secondary_school/cli/cli_main.py`
+  - `primary_school/cli/cli_main.py`
+
+#### Notes
+
+- The idle-timeout implementation tracks **real** user activity (mouse/keyboard for GUI, prompt response for CLI) rather than the university system's older approach of timestamping login and self-resetting on each periodic check. The university CLI/GUI is unchanged in this release.
 
 ---
 

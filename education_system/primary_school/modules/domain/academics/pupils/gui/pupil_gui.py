@@ -212,6 +212,9 @@ class PupilFrame(tk.Frame):
         self._tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
 
+        # Admin/staff: double-click a row to view full pupil details
+        self._tree.bind("<Double-1>", self._on_double_click_pupil)
+
         # Status bar
         self._status_var = tk.StringVar(value="Ready")
         tk.Label(self, textvariable=self._status_var, anchor="w", bg="#ecf0f1",
@@ -294,3 +297,125 @@ class PupilFrame(tk.Frame):
         except Exception as e:
             traceback.print_exc()
             messagebox.showerror("Error", str(e))
+
+    # ------------------------------------------------------------------
+    # Details viewer (admin/staff double-click)
+    # ------------------------------------------------------------------
+
+    def _user_role(self) -> str:
+        """Return the current user's role (or empty string if not logged in)."""
+        if self._auth and getattr(self._auth, "current_user", None):
+            return self._auth.current_user.get("role", "")
+        return ""
+
+    def _on_double_click_pupil(self, _event=None):
+        """Open the pupil details window — only for admin/staff users."""
+        if self._user_role() not in ("admin", "staff", "instructor", "teacher"):
+            return
+        sel = self._tree.selection()
+        if not sel:
+            return
+        self._show_pupil_details(sel[0])
+
+    def _show_pupil_details(self, pupil_id: str):
+        """Display a read-only details window for the given pupil ID."""
+        pupil = self._service.get_pupil(pupil_id)
+        if not pupil:
+            messagebox.showerror("Error", "Pupil not found.")
+            return
+
+        win = tk.Toplevel(self)
+        win.title(f"Pupil Details — {pupil.get('pupil_id', '')}")
+        win.geometry("720x640")
+        win.transient(self.winfo_toplevel())
+
+        notebook = ttk.Notebook(win)
+        notebook.pack(fill="both", expand=True, padx=10, pady=10)
+
+        # Personal tab
+        personal_tab = ttk.Frame(notebook)
+        notebook.add(personal_tab, text="Personal")
+
+        personal_text = tk.Text(personal_tab, wrap="word", font=("Courier", 10),
+                                padx=15, pady=15, bd=0)
+        personal_text.pack(fill="both", expand=True)
+
+        na = "—"
+        full_name = " ".join(
+            p for p in (pupil.get("first_name"), pupil.get("last_name")) if p
+        ) or na
+        yes_no = lambda v: "Yes" if v else "No"
+
+        personal_lines = [
+            "PUPIL RECORD",
+            "=" * 60,
+            "",
+            "Personal Information",
+            f"  Pupil ID:        {pupil.get('pupil_id') or na}",
+            f"  First name:      {pupil.get('first_name') or na}",
+            f"  Last name:       {pupil.get('last_name') or na}",
+            f"  Preferred name:  {pupil.get('preferred_name') or na}",
+            f"  Full name:       {full_name}",
+            f"  Date of birth:   {pupil.get('date_of_birth') or na}",
+            f"  Gender:          {pupil.get('gender') or na}",
+            f"  Ethnicity:       {pupil.get('ethnicity') or na}",
+            f"  First language:  {pupil.get('first_language') or na}",
+            "",
+            "School Details",
+            f"  Year group:      {pupil.get('year_group') or na}",
+            f"  Class:           {pupil.get('class_name') or na}",
+            f"  Key stage:       {pupil.get('key_stage') or na}",
+            f"  SEN status:      {pupil.get('sen_status') or na}",
+            f"  EAL:             {yes_no(pupil.get('eal'))}",
+            f"  Pupil Premium:   {yes_no(pupil.get('pupil_premium'))}",
+            f"  Free Sch. Meals: {yes_no(pupil.get('free_school_meals'))}",
+            f"  Looked after:    {yes_no(pupil.get('looked_after'))}",
+            f"  Photo consent:   {yes_no(pupil.get('photo_consent'))}",
+            f"  Status:          {pupil.get('status') or na}",
+            "",
+            "Address & Notes",
+            f"  Address:         {pupil.get('address') or na}",
+            f"  Medical notes:   {pupil.get('medical_notes') or na}",
+            f"  Dietary req:     {pupil.get('dietary_requirements') or na}",
+            "",
+            "Record",
+            f"  Created:         {pupil.get('created_at') or na}",
+            f"  Updated:         {pupil.get('updated_at') or na}",
+        ]
+        personal_text.insert("end", "\n".join(personal_lines))
+        personal_text.config(state="disabled")
+
+        # Parents/guardians tab
+        contacts_tab = ttk.Frame(notebook)
+        notebook.add(contacts_tab, text="Contacts")
+        contacts_text = tk.Text(contacts_tab, wrap="word", font=("Courier", 10),
+                                padx=15, pady=15, bd=0)
+        contacts_text.pack(fill="both", expand=True)
+        contacts_lines = [
+            "Parent / Guardian 1",
+            f"  Name:   {pupil.get('parent1_name') or na}",
+            f"  Email:  {pupil.get('parent1_email') or na}",
+            f"  Phone:  {pupil.get('parent1_phone') or na}",
+            "",
+            "Parent / Guardian 2",
+            f"  Name:   {pupil.get('parent2_name') or na}",
+            f"  Email:  {pupil.get('parent2_email') or na}",
+            f"  Phone:  {pupil.get('parent2_phone') or na}",
+            "",
+            "Emergency Contact",
+            f"  Name:   {pupil.get('emergency_contact_name') or na}",
+            f"  Phone:  {pupil.get('emergency_contact_phone') or na}",
+        ]
+        contacts_text.insert("end", "\n".join(contacts_lines))
+        contacts_text.config(state="disabled")
+
+        # Footer
+        footer = tk.Frame(win, pady=8)
+        footer.pack(fill="x")
+        if self._user_role() == "admin":
+            ttk.Button(
+                footer, text="Edit",
+                command=lambda: (win.destroy(), self._tree.selection_set(pupil_id),
+                                 self._on_edit()),
+            ).pack(side="left", padx=10)
+        ttk.Button(footer, text="Close", command=win.destroy).pack(side="right", padx=10)

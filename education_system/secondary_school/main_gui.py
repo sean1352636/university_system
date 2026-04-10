@@ -175,6 +175,26 @@ class MainApplication(tk.Tk):
         self._build_ui()
         self._show_module("Dashboard")
 
+        # Idle / inactivity auto-logout (30 minutes)
+        from education_system.shared.gui.idle_timeout import attach_idle_timeout
+        self._cancel_idle_timeout = attach_idle_timeout(
+            self, self._idle_logout, timeout_minutes=30,
+        )
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    def _idle_logout(self):
+        """Auto-logout fired by the idle-timeout watchdog."""
+        from education_system.switch import request_logout
+        request_logout()
+        self.destroy()
+
+    def _on_close(self):
+        try:
+            self._cancel_idle_timeout()
+        except Exception:
+            pass
+        self.destroy()
+
     def _build_ui(self):
         # Top bar
         top = tk.Frame(self, bg=HEADER_BG, height=40)

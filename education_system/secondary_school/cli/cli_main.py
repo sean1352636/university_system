@@ -779,6 +779,18 @@ def main(db_path: str | None = None, user_info=None, role=None, shared_auth=None
 
     _show_dashboard_summary(role)
 
+    # Idle / inactivity auto-logout (30 minutes)
+    from education_system.shared.cli.cli_helpers import enable_idle_timeout
+
+    def _idle_logout():
+        try:
+            auth.logout()
+        except Exception:
+            pass
+        logger.info("CLI session ended via idle timeout")
+
+    enable_idle_timeout(30, _idle_logout)
+
     while True:
         result = None
         try:
