@@ -1,6 +1,7 @@
 """Main GUI application for the Primary School Management System.
 
-Provides login, dashboard, and sidebar navigation to all modules.
+Provides login, dashboard, and categorised navigation to all modules.
+Layout and colour scheme matches the University System GUI.
 """
 
 import logging
@@ -16,49 +17,510 @@ from education_system.primary_school.seed_subjects import seed_subjects
 
 logger = logging.getLogger(__name__)
 
-# ── Colour scheme ─────────────────────────────────────────────────────────
-HEADER_BG = "#1a5276"
-SIDEBAR_BG = "#2c3e50"
-MAIN_BG = "#ecf0f1"
-ACCENT = "#2980b9"
-
 
 # ══════════════════════════════════════════════════════════════════════════
-#  Dashboard
+#  Main application
 # ══════════════════════════════════════════════════════════════════════════
 
-class DashboardFrame(tk.Frame):
-    """Welcome dashboard with summary statistics."""
+class MainApplication(tk.Tk):
+    """Root window with categorised navigation and dynamic content area.
 
-    # Colour palette for quick action buttons
+    Mirrors the University System GUI layout: ttk clam theme, grid-based
+    LabelFrame panels, and category buttons that expand into sub-windows.
+    """
+
+    def __init__(self, user: dict, db_path: str):
+        super().__init__()
+        self._db_path = db_path
+        self._user = user
+        self._auth = user.get("_auth")
+        self._frames: dict[str, tk.Frame] = {}
+        self._nav_buttons: dict[str, ttk.Button] = {}
+
+        self.title("Primary School Management System")
+        self.geometry("1200x800")
+        self.minsize(1000, 700)
+
+        # Configure ttk style to match university
+        self.style = ttk.Style()
+        self.style.theme_use('clam')
+
+        # Status variables
+        self.current_user_var = tk.StringVar()
+        self.status_var = tk.StringVar(value="Ready")
+
+        self._setup_gui()
+        self._update_status()
+        self._show_welcome()
+
+        # Idle / inactivity auto-logout (30 minutes)
+        from education_system.shared.gui.idle_timeout import attach_idle_timeout
+        self._cancel_idle_timeout = attach_idle_timeout(
+            self, self._idle_logout, timeout_minutes=30,
+        )
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    def _idle_logout(self):
+        """Auto-logout fired by the idle-timeout watchdog."""
+        if self._auth:
+            try:
+                self._auth.logout()
+            except Exception:
+                pass
+        from education_system.switch import request_logout
+        request_logout()
+        self.destroy()
+
+    def _on_close(self):
+        try:
+            self._cancel_idle_timeout()
+        except Exception:
+            pass
+        self.destroy()
+
+    # ── GUI setup ─────────────────────────────────────────────────────
+
+    def _setup_gui(self):
+        """Setup the GUI interface matching university layout."""
+        main_frame = ttk.Frame(self, padding="10")
+        main_frame.grid(row=0, column=0, sticky="nsew")
+
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+        main_frame.columnconfigure(0, weight=0)
+        main_frame.columnconfigure(1, weight=1)
+        main_frame.rowconfigure(1, weight=1)
+
+        self._create_header(main_frame)
+        self._create_navigation_panel(main_frame)
+        self._create_content_area(main_frame)
+
+    def _create_header(self, parent):
+        """Create header with system status and control buttons."""
+        header_frame = ttk.LabelFrame(parent, text="System Control", padding="10")
+        header_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+
+        # Control buttons row
+        button_frame = ttk.Frame(header_frame)
+        button_frame.grid(row=0, column=0, columnspan=4, sticky="ew", pady=(0, 10))
+
+        ttk.Button(button_frame, text="Shutdown",
+                   command=self._shutdown).pack(side="left", padx=(0, 10))
+        ttk.Button(button_frame, text="Logout",
+                   command=self._logout).pack(side="left", padx=(0, 10))
+        ttk.Button(button_frame, text="Switch to CLI",
+                   command=self._switch_to_cli).pack(side="left", padx=(0, 10))
+
+        if self._is_superadmin():
+            ttk.Button(button_frame, text="Switch System",
+                       command=self._switch_system).pack(side="left", padx=(0, 10))
+
+        # Status info
+        ttk.Label(header_frame, text="Status:").grid(row=1, column=0, sticky="w")
+        ttk.Label(header_frame, textvariable=self.status_var).grid(row=1, column=1, sticky="w", padx=(10, 0))
+
+        ttk.Label(header_frame, text="Current User:").grid(row=2, column=0, sticky="w")
+        ttk.Label(header_frame, textvariable=self.current_user_var).grid(row=2, column=1, sticky="w", padx=(10, 0))
+
+        header_frame.columnconfigure(1, weight=1)
+
+    def _create_navigation_panel(self, parent):
+        """Create navigation panel with categorised buttons and scrollbar."""
+        nav_frame = ttk.LabelFrame(parent, text="Navigation", padding="5")
+        nav_frame.grid(row=1, column=0, sticky="nsew", padx=(0, 10))
+
+        nav_frame.rowconfigure(0, weight=1)
+        nav_frame.columnconfigure(0, weight=1)
+
+        # Canvas + scrollbar
+        canvas = tk.Canvas(nav_frame, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(nav_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind("<Configure>",
+                              lambda _: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Mousewheel scrolling
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def _on_mousewheel_linux(event):
+            canvas.yview_scroll(-3 if event.num == 4 else 3, "units")
+
+        canvas.bind('<Enter>', lambda e: (
+            canvas.bind_all("<MouseWheel>", _on_mousewheel),
+            canvas.bind_all("<Button-4>", _on_mousewheel_linux),
+            canvas.bind_all("<Button-5>", _on_mousewheel_linux),
+        ))
+        canvas.bind('<Leave>', lambda e: (
+            canvas.unbind_all("<MouseWheel>"),
+            canvas.unbind_all("<Button-4>"),
+            canvas.unbind_all("<Button-5>"),
+        ))
+
+        # Keep inner frame width = canvas width
+        def configure_canvas_width(_):
+            canvas.itemconfig(canvas_window, width=canvas.winfo_width())
+        canvas.bind('<Configure>', configure_canvas_width)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        # Build category buttons
+        self._build_navigation_categories(scrollable_frame)
+
+        scrollable_frame.update_idletasks()
+        canvas.configure(scrollregion=canvas.bbox("all"))
+
+    def _build_navigation_categories(self, parent):
+        """Create category buttons that expand into sub-windows."""
+        role = self._user.get("role", "")
+
+        # Determine which modules are visible for this role
+        admin_only = {
+            "HR", "CPD", "Cover", "Finance", "Payroll", "Users", "Settings",
+            "Audit Log", "Data Export", "Safeguarding", "Policies",
+            "Assets", "Visitors", "Academic Misconduct",
+            "Central Admin Portal", "GDPR Compliance",
+            "Complaints", "GDPR", "Data Dashboard",
+            "Appraisals", "Observations",
+        }
+        staff_modules = {
+            "Dashboard", "Pupils", "Subjects", "Classes", "Assessment",
+            "Attendance", "Timetable", "Homework", "SATs", "Phonics",
+            "Reading Records", "Progress", "Behaviour", "Rewards",
+            "SEND", "Pastoral", "Staff Directory", "Class Groups",
+            "Clubs", "Meals", "Library", "Medical", "Transport", "Trips",
+            "Consent", "Announcements", "Calendar", "Notifications",
+            "Email", "Parents Evening", "Communication Log",
+            "Admissions", "Documents", "Room Bookings", "Incidents",
+            "MFA Settings", "Certificates", "LMS", "Security Questions",
+            "Pupil Wellbeing", "Feedback", "Lesson Plans",
+            "Staff Wellbeing", "Portfolio", "Skills Tracker",
+        }
+        parent_modules = {
+            "Dashboard", "Announcements", "Calendar", "Notifications",
+            "MFA Settings", "Security Questions",
+        }
+
+        def is_visible(name):
+            if role in ("admin", "staff"):
+                return True
+            elif role in ("teacher", "teaching_assistant", "instructor"):
+                return name in staff_modules
+            elif role == "parent":
+                return name in parent_modules
+            elif role == "student":
+                return name == "Dashboard"
+            return name == "Dashboard"
+
+        def open_category_window(category_title, buttons_data):
+            """Open a window showing all buttons for a category in a 4-column grid."""
+            visible_buttons = [(n, t) for n, t in buttons_data if is_visible(n)]
+            if not visible_buttons:
+                messagebox.showinfo("Info", f"No features available in {category_title}")
+                return
+
+            cols = 4
+            cat_window = tk.Toplevel(self)
+            cat_window.title(category_title)
+            cat_window.geometry("820x500")
+            cat_window.transient(self)
+
+            # Header
+            header = tk.Frame(cat_window, bg='#2c3e50', height=50)
+            header.pack(fill='x')
+            header.pack_propagate(False)
+            tk.Label(header, text=category_title, font=('Arial', 16, 'bold'),
+                     bg='#2c3e50', fg='white').pack(expand=True)
+
+            # Scrollable button area
+            cat_canvas = tk.Canvas(cat_window, highlightthickness=0)
+            cat_scrollbar = ttk.Scrollbar(cat_window, orient="vertical", command=cat_canvas.yview)
+            scrollable = ttk.Frame(cat_canvas)
+
+            scrollable.bind("<Configure>",
+                            lambda e: cat_canvas.configure(scrollregion=cat_canvas.bbox("all")))
+            canvas_win = cat_canvas.create_window((0, 0), window=scrollable, anchor="nw")
+            cat_canvas.configure(yscrollcommand=cat_scrollbar.set)
+
+            def _resize_inner(event):
+                cat_canvas.itemconfig(canvas_win, width=event.width)
+            cat_canvas.bind('<Configure>', _resize_inner)
+
+            cat_canvas.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+            cat_scrollbar.pack(side="right", fill="y")
+
+            for c in range(cols):
+                scrollable.columnconfigure(c, weight=1)
+
+            for idx, (module_name, display_text) in enumerate(visible_buttons):
+                def make_command(name, window):
+                    def wrapped():
+                        window.destroy()
+                        self._show_module(name)
+                    return wrapped
+
+                row = idx // cols
+                col = idx % cols
+                btn = ttk.Button(scrollable, text=display_text,
+                                 command=make_command(module_name, cat_window))
+                btn.grid(row=row, column=col, padx=4, pady=4, sticky='nsew')
+
+            ttk.Button(cat_window, text="Close",
+                       command=cat_window.destroy).pack(pady=10)
+
+        # ── Category definitions ──────────────────────────────────────
+        # Each category: (category_title, [(module_name, display_text), ...])
+        categories = [
+            ("Academics", [
+                ("Pupils", "Pupils"),
+                ("Subjects", "Subjects"),
+                ("Classes", "Classes"),
+                ("Assessment", "Assessment"),
+                ("Homework", "Homework"),
+                ("SATs", "SATs"),
+                ("Phonics", "Phonics"),
+                ("Reading Records", "Reading Records"),
+                ("Progress", "Progress"),
+                ("Portfolio", "Portfolio"),
+                ("Skills Tracker", "Skills Tracker"),
+                ("LMS", "Learning Management"),
+            ]),
+            ("Scheduling & Attendance", [
+                ("Attendance", "Attendance"),
+                ("Timetable", "Timetable"),
+                ("Calendar", "Calendar"),
+            ]),
+            ("Pastoral Care", [
+                ("Behaviour", "Behaviour"),
+                ("Rewards", "Rewards"),
+                ("Safeguarding", "Safeguarding"),
+                ("SEND", "SEND"),
+                ("Pastoral", "Pastoral"),
+                ("Pupil Wellbeing", "Pupil Wellbeing"),
+            ]),
+            ("Staff", [
+                ("Staff Directory", "Staff Directory"),
+                ("HR", "HR"),
+                ("CPD", "CPD"),
+                ("Cover", "Cover"),
+                ("Appraisals", "Appraisals"),
+                ("Observations", "Observations"),
+                ("Staff Wellbeing", "Staff Wellbeing"),
+                ("Lesson Plans", "Lesson Plans"),
+            ]),
+            ("Pupil Life", [
+                ("Class Groups", "Class Groups"),
+                ("Clubs", "Clubs"),
+                ("Meals", "Meals"),
+                ("Library", "Library"),
+                ("Medical", "Medical"),
+                ("Transport", "Transport"),
+                ("Trips", "Trips"),
+                ("Consent", "Consent"),
+            ]),
+            ("Communication", [
+                ("Announcements", "Announcements"),
+                ("Notifications", "Notifications"),
+                ("Email", "Email"),
+                ("Parents Evening", "Parents Evening"),
+                ("Communication Log", "Communication Log"),
+                ("Feedback", "Feedback"),
+            ]),
+            ("Administration", [
+                ("Admissions", "Admissions"),
+                ("Finance", "Finance"),
+                ("Payroll", "Payroll"),
+                ("Policies", "Policies"),
+                ("Documents", "Documents"),
+                ("Users", "User Management"),
+                ("Settings", "Settings"),
+                ("Audit Log", "Audit Log"),
+                ("Data Export", "Data Export"),
+                ("Complaints", "Complaints"),
+                ("GDPR", "GDPR"),
+                ("Data Dashboard", "Data Dashboard"),
+                ("Academic Misconduct", "Academic Misconduct"),
+            ]),
+            ("Facilities", [
+                ("Room Bookings", "Room Bookings"),
+                ("Assets", "Assets"),
+                ("Visitors", "Visitors"),
+                ("Incidents", "Incidents"),
+            ]),
+            ("Security", [
+                ("MFA Settings", "MFA Settings"),
+                ("Security Questions", "Security Questions"),
+            ]),
+            ("Cross-System", [
+                ("Student Journey", "Student Journey"),
+                ("Analytics Dashboard", "Analytics Dashboard"),
+                ("Outcome Tracking", "Outcome Tracking"),
+                ("Predictive Alerts", "Predictive Alerts"),
+                ("Bulk Transfer", "Bulk Transfer"),
+                ("Transfer Documents", "Transfer Documents"),
+                ("Reverse Lookup", "Reverse Lookup"),
+                ("Parent Continuity", "Parent Continuity"),
+                ("Cross-System Calendar", "Cross-System Calendar"),
+                ("Central Admin Portal", "Central Admin Portal"),
+                ("GDPR Compliance", "GDPR Compliance"),
+                ("Shared Documents", "Shared Documents"),
+                ("Student Self-Service", "Student Self-Service"),
+                ("Digital Transcript", "Digital Transcript"),
+                ("Certificates", "Certificates"),
+                ("Extras & Tools", "Extras & Tools"),
+            ]),
+        ]
+
+        # Dashboard button always first
+        if is_visible("Dashboard"):
+            ttk.Button(parent, text="Dashboard",
+                       command=lambda: self._show_module("Dashboard")).pack(fill="x", pady=2, padx=5)
+
+        for cat_title, buttons_data in categories:
+            visible_in_cat = [b for b in buttons_data if is_visible(b[0])]
+            if visible_in_cat:
+                ttk.Button(
+                    parent, text=cat_title + " \u25b6",
+                    command=lambda t=cat_title, d=buttons_data: open_category_window(t, d),
+                ).pack(fill="x", pady=2, padx=5)
+
+    def _create_content_area(self, parent):
+        """Create the main content area with scrollbar."""
+        outer_frame = ttk.LabelFrame(parent, text="Content", padding="5")
+        outer_frame.grid(row=1, column=1, sticky="nsew")
+        outer_frame.columnconfigure(0, weight=1)
+        outer_frame.rowconfigure(0, weight=1)
+
+        # Canvas for scrolling
+        self._content_canvas = tk.Canvas(outer_frame, highlightthickness=0)
+        self._content_canvas.grid(row=0, column=0, sticky="nsew")
+
+        v_scrollbar = ttk.Scrollbar(outer_frame, orient="vertical", command=self._content_canvas.yview)
+        v_scrollbar.grid(row=0, column=1, sticky="ns")
+
+        h_scrollbar = ttk.Scrollbar(outer_frame, orient="horizontal", command=self._content_canvas.xview)
+        h_scrollbar.grid(row=1, column=0, sticky="ew")
+
+        self._content_canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+
+        # Inner frame
+        self._content = ttk.Frame(self._content_canvas, padding="10")
+        self._content_window = self._content_canvas.create_window((0, 0), window=self._content, anchor="nw")
+
+        self._content.bind("<Configure>",
+                           lambda _: self._content_canvas.configure(scrollregion=self._content_canvas.bbox("all")))
+
+        def configure_canvas_width(event):
+            self._content_canvas.itemconfig(self._content_window, width=event.width)
+        self._content_canvas.bind("<Configure>", configure_canvas_width)
+
+        # Mousewheel scrolling
+        def on_mousewheel(event):
+            self._content_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+        def on_mousewheel_linux(event):
+            self._content_canvas.yview_scroll(-3 if event.num == 4 else 3, "units")
+
+        self._content_canvas.bind("<Enter>", lambda e: (
+            self._content_canvas.bind_all("<MouseWheel>", on_mousewheel),
+            self._content_canvas.bind_all("<Button-4>", on_mousewheel_linux),
+            self._content_canvas.bind_all("<Button-5>", on_mousewheel_linux),
+        ))
+        self._content_canvas.bind("<Leave>", lambda e: (
+            self._content_canvas.unbind_all("<MouseWheel>"),
+            self._content_canvas.unbind_all("<Button-4>"),
+            self._content_canvas.unbind_all("<Button-5>"),
+        ))
+
+        self._content.columnconfigure(0, weight=1)
+        self._content.rowconfigure(0, weight=1)
+
+        parent.rowconfigure(1, weight=1)
+        parent.columnconfigure(1, weight=1)
+
+    # ── Status ────────────────────────────────────────────────────────
+
+    def _update_status(self):
+        user = self._user
+        display = user.get("display_name", user.get("username", "Unknown"))
+        role = user.get("role", "unknown")
+        self.current_user_var.set(f"{display} ({role})")
+        self.status_var.set("Logged in")
+
+    # ── Welcome / content ─────────────────────────────────────────────
+
+    def _show_welcome(self):
+        """Show the welcome dashboard in the content area."""
+        self._clear_content()
+
+        welcome = ttk.Frame(self._content)
+        welcome.pack(fill="both", expand=True)
+
+        user_name = self._user.get("display_name", "User")
+        role = self._user.get("role", "")
+
+        ttk.Label(welcome, text=f"Welcome, {user_name}",
+                  font=("Helvetica", 18, "bold")).pack(pady=(25, 2))
+        ttk.Label(welcome, text=f"Role: {role.title()}",
+                  font=("Helvetica", 11)).pack()
+        ttk.Label(welcome, text="Primary School Management System",
+                  font=("Helvetica", 12)).pack(pady=(2, 20))
+
+        # Stats cards
+        self._build_stats(welcome)
+
+        # Quick actions
+        self._build_quick_actions(welcome, role)
+
+        self._frames["Dashboard"] = welcome
+
+    def _build_stats(self, parent):
+        """Build summary statistics cards."""
+        cards_frame = ttk.Frame(parent)
+        cards_frame.pack(fill="x", padx=30, pady=(0, 10))
+
+        try:
+            from education_system.primary_school.modules.domain.academics.pupils.services.pupil_service import PupilService
+            svc = PupilService(self._db_path)
+            cards = []
+            total = svc.count_pupils()
+            cards.append(("Total Pupils", str(total), "#2ecc71"))
+            from education_system.primary_school.core.defaults import YEAR_GROUPS
+            for yg in YEAR_GROUPS:
+                cnt = svc.count_pupils(year_group=yg)
+                if cnt > 0:
+                    cards.append((yg, str(cnt), "#3498db"))
+        except Exception:
+            cards = [("Total Pupils", "0", "#2ecc71")]
+
+        for idx, (label, value, colour) in enumerate(cards):
+            row, col = divmod(idx, 4)
+            card = tk.Frame(cards_frame, bg=colour, padx=15, pady=10)
+            card.grid(row=row, column=col, padx=8, pady=8, sticky="nsew")
+            tk.Label(card, text=value, font=("Helvetica", 22, "bold"),
+                     bg=colour, fg="white").pack()
+            tk.Label(card, text=label, font=("Helvetica", 10),
+                     bg=colour, fg="white").pack()
+            cards_frame.columnconfigure(col, weight=1)
+
+    # Quick action configuration
     QUICK_ACTION_COLORS = {
-        "Pupils": "#2980b9",
-        "Subjects": "#8e44ad",
-        "Assessment": "#27ae60",
-        "Attendance": "#e67e22",
-        "Timetable": "#16a085",
-        "Behaviour": "#c0392b",
-        "Safeguarding": "#e74c3c",
-        "HR": "#2c3e50",
-        "Finance": "#f39c12",
-        "Users": "#7f8c8d",
-        "Admissions": "#1abc9c",
-        "Settings": "#95a5a6",
-        "Reports (Data Dashboard)": "#3498db",
-        "SEND": "#d35400",
-        "Staff Directory": "#34495e",
-        "Homework": "#9b59b6",
-        "Rewards": "#f1c40f",
-        "Lesson Plans": "#1a5276",
-        "Class Groups": "#117a65",
-        "Calendar": "#2471a3",
-        "Library": "#6c3483",
-        "Announcements": "#2e86c1",
-        "Notifications": "#ca6f1e",
+        "Pupils": "#2980b9", "Subjects": "#8e44ad", "Assessment": "#27ae60",
+        "Attendance": "#e67e22", "Timetable": "#16a085", "Behaviour": "#c0392b",
+        "Safeguarding": "#e74c3c", "HR": "#2c3e50", "Finance": "#f39c12",
+        "Users": "#7f8c8d", "Admissions": "#1abc9c", "Settings": "#95a5a6",
+        "Reports (Data Dashboard)": "#3498db", "SEND": "#d35400",
+        "Staff Directory": "#34495e", "Homework": "#9b59b6", "Rewards": "#f1c40f",
+        "Lesson Plans": "#1a5276", "Class Groups": "#117a65", "Calendar": "#2471a3",
+        "Library": "#6c3483", "Announcements": "#2e86c1", "Notifications": "#ca6f1e",
         "Parents Evening": "#148f77",
     }
 
-    # Role-based quick action definitions
     ROLE_QUICK_ACTIONS = {
         "admin": [
             "Pupils", "Subjects", "Assessment", "Attendance", "Timetable",
@@ -95,45 +557,20 @@ class DashboardFrame(tk.Frame):
         ],
     }
 
-    # Map quick action labels to sidebar module names
     _ACTION_TO_MODULE = {
         "Reports (Data Dashboard)": "Data Dashboard",
     }
 
-    def __init__(self, parent, db_path, auth=None, on_navigate=None):
-        super().__init__(parent, bg=MAIN_BG)
-        self._db_path = db_path
-        self._auth = auth
-        self._on_navigate = on_navigate
-
-        # Welcome
-        user_name = auth.current_user.get("display_name", "User") if auth and auth.current_user else "User"
-        role = auth.current_user.get("role", "") if auth and auth.current_user else ""
-        tk.Label(self, text=f"Welcome, {user_name}",
-                 font=("Helvetica", 18, "bold"), bg=MAIN_BG).pack(pady=(25, 2))
-        tk.Label(self, text=f"Role: {role.title()}",
-                 font=("Helvetica", 11), bg=MAIN_BG, fg="#7f8c8d").pack()
-        tk.Label(self, text="Primary School Management System",
-                 font=("Helvetica", 12), bg=MAIN_BG, fg="#34495e").pack(pady=(2, 20))
-
-        # Stats cards
-        self._cards_frame = tk.Frame(self, bg=MAIN_BG)
-        self._cards_frame.pack(fill="x", padx=30)
-        self._build_stats()
-
-        # Quick actions
-        self._build_quick_actions(role)
-
-    def _build_quick_actions(self, role):
+    def _build_quick_actions(self, parent, role):
         """Build role-appropriate quick action buttons."""
         actions = self.ROLE_QUICK_ACTIONS.get(role, [])
         if not actions:
             return
 
-        tk.Label(self, text="Quick Actions", font=("Helvetica", 14, "bold"),
-                 bg=MAIN_BG, fg="#2c3e50").pack(pady=(20, 8))
+        ttk.Label(parent, text="Quick Actions",
+                  font=("Helvetica", 14, "bold")).pack(pady=(20, 8))
 
-        qa_frame = tk.Frame(self, bg=MAIN_BG)
+        qa_frame = ttk.Frame(parent)
         qa_frame.pack(fill="x", padx=30)
 
         default_colour = "#2980b9"
@@ -146,209 +583,15 @@ class DashboardFrame(tk.Frame):
                 bg=colour, fg="white", bd=0, padx=10, pady=8,
                 activebackground=colour, activeforeground="white",
                 cursor="hand2",
-                command=lambda m=module_name: self._navigate(m),
+                command=lambda m=module_name: self._show_module(m),
             )
             btn.grid(row=row, column=col, padx=4, pady=4, sticky="nsew")
             qa_frame.columnconfigure(col, weight=1)
 
-    def _navigate(self, module_name):
-        """Navigate to a module via the callback."""
-        if self._on_navigate:
-            self._on_navigate(module_name)
+    # ── Module loading ────────────────────────────────────────────────
 
-    def _build_stats(self):
-        for w in self._cards_frame.winfo_children():
-            w.destroy()
-
-        from education_system.primary_school.modules.domain.academics.pupils.services.pupil_service import PupilService
-        svc = PupilService(self._db_path)
-
-        cards = []
-        try:
-            total = svc.count_pupils()
-            cards.append(("Total Pupils", str(total), "#2ecc71"))
-            from education_system.primary_school.core.defaults import YEAR_GROUPS
-            for yg in YEAR_GROUPS:
-                cnt = svc.count_pupils(year_group=yg)
-                if cnt > 0:
-                    cards.append((yg, str(cnt), "#3498db"))
-        except Exception:
-            cards.append(("Total Pupils", "0", "#2ecc71"))
-
-        for idx, (label, value, colour) in enumerate(cards):
-            row, col = divmod(idx, 4)
-            card = tk.Frame(self._cards_frame, bg=colour, padx=15, pady=10)
-            card.grid(row=row, column=col, padx=8, pady=8, sticky="nsew")
-            tk.Label(card, text=value, font=("Helvetica", 22, "bold"),
-                     bg=colour, fg="white").pack()
-            tk.Label(card, text=label, font=("Helvetica", 10),
-                     bg=colour, fg="white").pack()
-            self._cards_frame.columnconfigure(col, weight=1)
-
-    def refresh(self):
-        self._build_stats()
-
-
-# ══════════════════════════════════════════════════════════════════════════
-#  Main application
-# ══════════════════════════════════════════════════════════════════════════
-
-class MainApplication(tk.Tk):
-    """Root window with sidebar navigation and dynamic content area."""
-
-    def __init__(self, user: dict, db_path: str):
-        super().__init__()
-        self._db_path = db_path
-        self._user = user
-        self._auth = user.get("_auth")
-        self._frames: dict[str, tk.Frame] = {}
-        self._nav_buttons: dict[str, tk.Button] = {}
-
-        self.title("Primary School Management System")
-        self.geometry("1100x700")
-        self.minsize(900, 600)
-        self.configure(bg=MAIN_BG)
-
-        self._build_ui()
-        self._show_module("Dashboard")
-
-        # Idle / inactivity auto-logout (30 minutes)
-        from education_system.shared.gui.idle_timeout import attach_idle_timeout
-        self._cancel_idle_timeout = attach_idle_timeout(
-            self, self._idle_logout, timeout_minutes=30,
-        )
-        self.protocol("WM_DELETE_WINDOW", self._on_close)
-
-    def _idle_logout(self):
-        """Auto-logout fired by the idle-timeout watchdog."""
-        if self._auth:
-            try:
-                self._auth.logout()
-            except Exception:
-                pass
-        from education_system.switch import request_logout
-        request_logout()
-        self.destroy()
-
-    def _on_close(self):
-        try:
-            self._cancel_idle_timeout()
-        except Exception:
-            pass
-        self.destroy()
-
-    # ── Layout ────────────────────────────────────────────────────────
-
-    def _build_ui(self):
-        # Top bar
-        top = tk.Frame(self, bg=HEADER_BG, height=44)
-        top.pack(fill="x")
-        top.pack_propagate(False)
-        tk.Label(top, text="Primary School Management System",
-                 bg=HEADER_BG, fg="white", font=("Helvetica", 13, "bold")).pack(side="left", padx=15)
-        tk.Label(top, text=f"{self._user['display_name']} ({self._user['role']})",
-                 bg=HEADER_BG, fg="#d5dbdb", font=("Helvetica", 10)).pack(side="right", padx=15)
-
-        # Body
-        body = tk.Frame(self, bg=MAIN_BG)
-        body.pack(fill="both", expand=True)
-
-        # Sidebar (outer container)
-        sidebar_outer = tk.Frame(body, bg=SIDEBAR_BG, width=180)
-        sidebar_outer.pack(side="left", fill="y")
-        sidebar_outer.pack_propagate(False)
-
-        # Bottom bar — pack FIRST so it claims space before the canvas
-        bottom = tk.Frame(sidebar_outer, bg=SIDEBAR_BG)
-        bottom.pack(side="bottom", fill="x")
-        ttk.Separator(bottom).pack(fill="x")
-
-        tk.Button(bottom, text="Switch to CLI", font=("Helvetica", 9),
-                  bg="#1a252f", fg="white", bd=0, pady=8,
-                  activebackground="#34495e", activeforeground="white",
-                  command=self._switch_to_cli).pack(fill="x")
-        if self._is_superadmin():
-            tk.Button(bottom, text="Switch System", font=("Helvetica", 9),
-                      bg="#1a252f", fg="white", bd=0, pady=8,
-                      activebackground="#34495e", activeforeground="white",
-                      command=self._switch_system).pack(fill="x")
-        tk.Button(bottom, text="Logout", font=("Helvetica", 9),
-                  bg="#1a252f", fg="white", bd=0, pady=8,
-                  activebackground="#34495e", activeforeground="white",
-                  command=self._logout).pack(fill="x")
-        tk.Button(bottom, text="Shutdown", font=("Helvetica", 9),
-                  bg="#78281f", fg="white", bd=0, pady=8,
-                  activebackground="#943126", activeforeground="white",
-                  command=self._shutdown).pack(fill="x")
-
-        # Scrollable sidebar
-        sidebar_canvas = tk.Canvas(sidebar_outer, bg=SIDEBAR_BG, highlightthickness=0, width=164)
-        sidebar_scrollbar = tk.Scrollbar(sidebar_outer, orient="vertical", command=sidebar_canvas.yview)
-        sidebar_canvas.configure(yscrollcommand=sidebar_scrollbar.set)
-        sidebar_scrollbar.pack(side="right", fill="y")
-        sidebar_canvas.pack(side="left", fill="both", expand=True)
-
-        sidebar = tk.Frame(sidebar_canvas, bg=SIDEBAR_BG)
-        sidebar_canvas.create_window((0, 0), window=sidebar, anchor="nw", width=164)
-        sidebar.bind("<Configure>", lambda e: sidebar_canvas.configure(scrollregion=sidebar_canvas.bbox("all")))
-
-        # Cross-platform mousewheel
-        def _on_mousewheel(event):
-            sidebar_canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
-
-        def _on_mousewheel_linux(event):
-            sidebar_canvas.yview_scroll(-3 if event.num == 4 else 3, "units")
-
-        sidebar_canvas.bind_all("<MouseWheel>", _on_mousewheel)
-        sidebar_canvas.bind_all("<Button-4>", _on_mousewheel_linux)
-        sidebar_canvas.bind_all("<Button-5>", _on_mousewheel_linux)
-
-        # Content area
-        self._content = tk.Frame(body, bg=MAIN_BG)
-        self._content.pack(side="left", fill="both", expand=True)
-
-        # ── Module definitions ────────────────────────────────────────
-        role = self._user.get("role", "")
-        try:
-            modules = self._get_modules_for_role(role)
-        except Exception as e:
-            logger.error("Failed to load module definitions: %s", e, exc_info=True)
-            traceback.print_exc()
-            modules = [("Dashboard", DashboardFrame)]
-
-        # Create sidebar buttons
-        for name, _ in modules:
-            btn = tk.Button(
-                sidebar, text=name, font=("Helvetica", 10),
-                bg=SIDEBAR_BG, fg="white", bd=0, pady=10,
-                activebackground="#34495e", activeforeground="white",
-                anchor="w", padx=18,
-                command=lambda n=name: self._show_module(n),
-            )
-            btn.pack(fill="x")
-            self._nav_buttons[name] = btn
-
-        # Instantiate frames
-        for name, frame_cls in modules:
-            try:
-                if frame_cls is DashboardFrame:
-                    frame = frame_cls(self._content, self._db_path, auth=self._auth, on_navigate=self._show_module)
-                elif frame_cls is MisconductFrame:
-                    frame = frame_cls(self._content, self._db_path, auth=self._auth, system_key='primary')
-                else:
-                    frame = frame_cls(self._content, self._db_path, auth=self._auth)
-                self._frames[name] = frame
-            except Exception as e:
-                logger.error("Failed to load module %s: %s", name, e, exc_info=True)
-                traceback.print_exc()
-                err_frame = tk.Frame(self._content, bg=MAIN_BG)
-                tk.Label(err_frame, text=f"Failed to load {name}:\n{e}",
-                         bg=MAIN_BG, fg="red", font=("Helvetica", 11)).pack(expand=True)
-                self._frames[name] = err_frame
-
-    def _get_modules_for_role(self, role: str):
-        """Return list of (name, FrameClass) tuples visible to the given role."""
-        # Lazy imports to avoid circular imports and speed up startup
+    def _get_module_classes(self):
+        """Lazy-import all module frame classes. Returns dict of name -> class."""
         from education_system.primary_school.modules.domain.academics.pupils.gui.pupil_gui import PupilFrame
         from education_system.primary_school.modules.domain.academics.subjects.gui.subject_gui import SubjectFrame
         from education_system.primary_school.modules.domain.academics.classes.gui.class_gui import ClassFrame
@@ -416,7 +659,6 @@ class MainApplication(tk.Tk):
         from education_system.shared.extras.extras_frame import ExtrasFrame
         from education_system.shared.academic_misconduct.misconduct_frame import MisconductFrame
         from education_system.shared.lms.lms_gui import LMSFrame
-        # New modules
         from education_system.primary_school.modules.domain.pastoral_care.pupil_wellbeing.gui.pupil_wellbeing_gui import PupilWellbeingFrame
         from education_system.primary_school.modules.domain.communication.feedback.gui.feedback_gui import FeedbackFrame
         from education_system.primary_school.modules.domain.admin.complaints.gui.complaints_gui import ComplaintsFrame
@@ -429,160 +671,104 @@ class MainApplication(tk.Tk):
         from education_system.primary_school.modules.domain.academics.portfolio.gui.portfolio_gui import PortfolioFrame
         from education_system.primary_school.modules.domain.academics.skills_tracker.gui.skills_tracker_gui import SkillsTrackerFrame
 
-        # All modules in display order
-        all_modules = [
-            # ── Core ──────────────────────
-            ("Dashboard", DashboardFrame),
-            # ── Academics ─────────────────
-            ("Pupils", PupilFrame),
-            ("Subjects", SubjectFrame),
-            ("Classes", ClassFrame),
-            ("Assessment", AssessmentFrame),
-            ("Attendance", AttendanceFrame),
-            ("Timetable", TimetableFrame),
-            ("Homework", HomeworkFrame),
-            ("SATs", SATsFrame),
-            ("Phonics", PhonicsFrame),
-            ("Reading Records", ReadingRecordFrame),
-            ("Progress", ProgressFrame),
-            # ── Pastoral care ─────────────
-            ("Behaviour", BehaviourFrame),
-            ("Rewards", RewardsFrame),
-            ("Safeguarding", SafeguardingFrame),
-            ("SEND", SENDFrame),
-            ("Pastoral", PastoralFrame),
-            # ── Staff ─────────────────────
-            ("Staff Directory", StaffDirectoryFrame),
-            ("HR", HRFrame),
-            ("CPD", CPDFrame),
-            ("Cover", CoverFrame),
-            # ── Pupil life ────────────────
-            ("Class Groups", ClassGroupFrame),
-            ("Clubs", ClubFrame),
-            ("Meals", MealFrame),
-            ("Library", LibraryFrame),
-            ("Medical", MedicalFrame),
-            ("Transport", TransportFrame),
-            ("Trips", TripFrame),
-            ("Consent", ConsentFrame),
-            # ── Communication ─────────────
-            ("Announcements", AnnouncementFrame),
-            ("Calendar", CalendarFrame),
-            ("Notifications", NotificationFrame),
-            ("Email", EmailFrame),
-            ("Parents Evening", ParentsEveningFrame),
-            ("Communication Log", CommunicationLogFrame),
-            # ── Admin ─────────────────────
-            ("Admissions", AdmissionsFrame),
-            ("Finance", FinanceFrame),
-            ("Payroll", PayrollFrame),
-            ("Policies", PolicyFrame),
-            ("Documents", DocumentFrame),
-            ("Users", UserFrame),
-            ("Settings", SettingsFrame),
-            ("Audit Log", AuditLogFrame),
-            ("Data Export", DataExportFrame),
-            # ── Facilities ────────────────
-            ("Room Bookings", RoomBookingFrame),
-            ("Assets", AssetFrame),
-            ("Visitors", VisitorFrame),
-            ("Incidents", IncidentFrame),
-            # ── Security ──────────────────
-            ("MFA Settings", MFASettingsFrame),
-            ("Security Questions", SecurityQuestionsFrame),
-            # ── Cross-System ─────────────
-            ("Student Journey", JourneyDashboardFrame),
-            # ── Shared Modules ───────────
-            ("Analytics Dashboard", AnalyticsDashboardFrame),
-            ("Outcome Tracking", OutcomeTrackingFrame),
-            ("Predictive Alerts", PredictiveAlertsFrame),
-            ("Bulk Transfer", BulkTransferFrame),
-            ("Transfer Documents", TransferDocumentsFrame),
-            ("Reverse Lookup", ReverseLookupFrame),
-            ("Parent Continuity", ParentContinuityFrame),
-            ("Cross-System Calendar", CrossSystemCalendarFrame),
-            ("Central Admin Portal", CentralAdminFrame),
-            ("GDPR Compliance", GDPRComplianceFrame),
-            ("Shared Documents", SharedDocumentsFrame),
-            ("Student Self-Service", StudentSelfServiceFrame),
-            ("Digital Transcript", DigitalTranscriptFrame),
-            ("Certificates", CertificatesGUI),
-            # ── Extras ─────────────────
-            ("Extras & Tools", ExtrasFrame),
-            ("Academic Misconduct", MisconductFrame),
-            # ── Learning Management ──
-            ("LMS", LMSFrame),
-            # ── New Modules ──
-            ("Pupil Wellbeing", PupilWellbeingFrame),
-            ("Feedback", FeedbackFrame),
-            ("Complaints", ComplaintsFrame),
-            ("GDPR", GDPRFrame),
-            ("Data Dashboard", DataDashboardFrame),
-            ("Appraisals", AppraisalsFrame),
-            ("Observations", ObservationsFrame),
-            ("Staff Wellbeing", StaffWellbeingFrame),
-            ("Lesson Plans", LessonPlansFrame),
-            ("Portfolio", PortfolioFrame),
-            ("Skills Tracker", SkillsTrackerFrame),
-        ]
-
-        # Role-based filtering
-        admin_only = {
-            "HR", "CPD", "Cover", "Finance", "Payroll", "Users", "Settings",
-            "Audit Log", "Data Export", "Safeguarding", "Policies",
-            "Assets", "Visitors", "Academic Misconduct",
-            "Central Admin Portal", "GDPR Compliance",
-            "Complaints", "GDPR", "Data Dashboard",
-            "Appraisals", "Observations",
+        return {
+            "Pupils": PupilFrame, "Subjects": SubjectFrame, "Classes": ClassFrame,
+            "Assessment": AssessmentFrame, "Attendance": AttendanceFrame,
+            "Timetable": TimetableFrame, "Homework": HomeworkFrame,
+            "SATs": SATsFrame, "Phonics": PhonicsFrame,
+            "Reading Records": ReadingRecordFrame, "Progress": ProgressFrame,
+            "Behaviour": BehaviourFrame, "Rewards": RewardsFrame,
+            "Safeguarding": SafeguardingFrame, "SEND": SENDFrame,
+            "Pastoral": PastoralFrame, "Staff Directory": StaffDirectoryFrame,
+            "HR": HRFrame, "CPD": CPDFrame, "Cover": CoverFrame,
+            "Class Groups": ClassGroupFrame, "Clubs": ClubFrame,
+            "Meals": MealFrame, "Library": LibraryFrame, "Medical": MedicalFrame,
+            "Transport": TransportFrame, "Trips": TripFrame, "Consent": ConsentFrame,
+            "Announcements": AnnouncementFrame, "Calendar": CalendarFrame,
+            "Notifications": NotificationFrame, "Email": EmailFrame,
+            "Parents Evening": ParentsEveningFrame,
+            "Communication Log": CommunicationLogFrame,
+            "Admissions": AdmissionsFrame, "Finance": FinanceFrame,
+            "Payroll": PayrollFrame, "Policies": PolicyFrame,
+            "Documents": DocumentFrame, "Users": UserFrame,
+            "Settings": SettingsFrame, "Audit Log": AuditLogFrame,
+            "Data Export": DataExportFrame, "Room Bookings": RoomBookingFrame,
+            "Assets": AssetFrame, "Visitors": VisitorFrame,
+            "Incidents": IncidentFrame, "MFA Settings": MFASettingsFrame,
+            "Security Questions": SecurityQuestionsFrame,
+            "Student Journey": JourneyDashboardFrame,
+            "Analytics Dashboard": AnalyticsDashboardFrame,
+            "Outcome Tracking": OutcomeTrackingFrame,
+            "Predictive Alerts": PredictiveAlertsFrame,
+            "Bulk Transfer": BulkTransferFrame,
+            "Transfer Documents": TransferDocumentsFrame,
+            "Reverse Lookup": ReverseLookupFrame,
+            "Parent Continuity": ParentContinuityFrame,
+            "Cross-System Calendar": CrossSystemCalendarFrame,
+            "Central Admin Portal": CentralAdminFrame,
+            "GDPR Compliance": GDPRComplianceFrame,
+            "Shared Documents": SharedDocumentsFrame,
+            "Student Self-Service": StudentSelfServiceFrame,
+            "Digital Transcript": DigitalTranscriptFrame,
+            "Certificates": CertificatesGUI, "Extras & Tools": ExtrasFrame,
+            "Academic Misconduct": MisconductFrame, "LMS": LMSFrame,
+            "Pupil Wellbeing": PupilWellbeingFrame, "Feedback": FeedbackFrame,
+            "Complaints": ComplaintsFrame, "GDPR": GDPRFrame,
+            "Data Dashboard": DataDashboardFrame, "Appraisals": AppraisalsFrame,
+            "Observations": ObservationsFrame,
+            "Staff Wellbeing": StaffWellbeingFrame,
+            "Lesson Plans": LessonPlansFrame, "Portfolio": PortfolioFrame,
+            "Skills Tracker": SkillsTrackerFrame,
         }
-        staff_modules = {
-            "Dashboard", "Pupils", "Subjects", "Classes", "Assessment",
-            "Attendance", "Timetable", "Homework", "SATs", "Phonics",
-            "Reading Records", "Progress", "Behaviour", "Rewards",
-            "SEND", "Pastoral", "Staff Directory", "Class Groups",
-            "Clubs", "Meals", "Library", "Medical", "Transport", "Trips",
-            "Consent", "Announcements", "Calendar", "Notifications",
-            "Email", "Parents Evening", "Communication Log",
-            "Admissions", "Documents", "Room Bookings", "Incidents",
-            "MFA Settings",
-            "Certificates", "LMS", "Security Questions",
-            "Pupil Wellbeing", "Feedback", "Lesson Plans",
-            "Staff Wellbeing", "Portfolio", "Skills Tracker",
-        }
-        parent_modules = {
-            "Dashboard", "Announcements", "Calendar", "Notifications",
-            "MFA Settings", "Security Questions",
-        }
-
-        if role in ("admin", "staff"):
-            return all_modules
-        elif role in ("teacher", "teaching_assistant", "instructor"):
-            return [(n, c) for n, c in all_modules if n in staff_modules]
-        elif role == "parent":
-            return [(n, c) for n, c in all_modules if n in parent_modules]
-        elif role == "student":
-            return [("Dashboard", DashboardFrame)]
-        else:
-            return [("Dashboard", DashboardFrame)]
 
     # ── Navigation ────────────────────────────────────────────────────
 
+    def _clear_content(self):
+        """Remove all widgets from the content frame."""
+        for widget in self._content.winfo_children():
+            widget.destroy()
+        self._frames.clear()
+
     def _show_module(self, name: str):
-        for frame in self._frames.values():
+        """Show a module frame in the content area."""
+        if name == "Dashboard":
+            self._show_welcome()
+            return
+
+        # Lazy-load frames on first access
+        if name not in self._frames:
+            try:
+                classes = self._get_module_classes()
+                frame_cls = classes.get(name)
+                if frame_cls is None:
+                    logger.error("No frame class for module: %s", name)
+                    return
+
+                if frame_cls.__name__ == 'MisconductFrame':
+                    frame = frame_cls(self._content, self._db_path, auth=self._auth, system_key='primary')
+                else:
+                    frame = frame_cls(self._content, self._db_path, auth=self._auth)
+                self._frames[name] = frame
+            except Exception as e:
+                logger.error("Failed to load module %s: %s", name, e, exc_info=True)
+                traceback.print_exc()
+                err_frame = ttk.Frame(self._content)
+                ttk.Label(err_frame, text=f"Failed to load {name}:\n{e}",
+                          foreground="red", font=("Helvetica", 11)).pack(expand=True)
+                self._frames[name] = err_frame
+
+        # Hide all, show selected
+        for frame in self._content.winfo_children():
             frame.pack_forget()
 
-        for btn_name, btn in self._nav_buttons.items():
-            btn.configure(bg="#34495e" if btn_name == name else SIDEBAR_BG)
-
-        if name in self._frames:
-            frame = self._frames[name]
-            frame.pack(fill="both", expand=True)
-            if hasattr(frame, "refresh"):
-                try:
-                    frame.refresh()
-                except Exception as e:
-                    logger.error("Error refreshing %s: %s", name, e, exc_info=True)
-                    traceback.print_exc()
+        frame = self._frames[name]
+        frame.pack(fill="both", expand=True)
+        if hasattr(frame, "refresh"):
+            try:
+                frame.refresh()
+            except Exception as e:
+                logger.error("Error refreshing %s: %s", name, e, exc_info=True)
+                traceback.print_exc()
 
     # ── Actions ───────────────────────────────────────────────────────
 
@@ -603,11 +789,11 @@ class MainApplication(tk.Tk):
         picker.grab_set()
         picker.transient(self)
 
-        body = tk.Frame(picker, padx=30, pady=20)
-        body.pack(fill=tk.BOTH, expand=True)
-        tk.Label(body, text="Switch to:", font=("Helvetica", 14, "bold")).pack(pady=(0, 15))
+        body = ttk.Frame(picker, padding="30 20")
+        body.pack(fill="both", expand=True)
+        ttk.Label(body, text="Switch to:", font=("Helvetica", 14, "bold")).pack(pady=(0, 15))
 
-        btn_style = {"font": ("Helvetica", 12), "fg": "white", "relief": tk.FLAT,
+        btn_style = {"font": ("Helvetica", 12), "fg": "white", "relief": "flat",
                      "cursor": "hand2", "width": 30, "height": 2}
 
         tk.Button(body, text="University Management System",
@@ -620,15 +806,13 @@ class MainApplication(tk.Tk):
                   bg="#8e44ad", activebackground="#9b59b6", activeforeground="white",
                   command=lambda: self._do_switch(picker, "school"), **btn_style).pack(pady=5)
 
-        # Super Admin Dashboard button (only for superadmin users)
         if self._is_superadmin():
             ttk.Separator(body, orient="horizontal").pack(fill="x", pady=10)
             tk.Button(body, text="Super Admin Dashboard",
                       bg="#2c3e50", activebackground="#34495e", activeforeground="white",
                       command=lambda: self._do_switch(picker, "__superadmin__"), **btn_style).pack(pady=5)
 
-        tk.Button(body, text="Cancel", font=("Helvetica", 12), relief=tk.FLAT,
-                  padx=20, pady=4, cursor="hand2", command=picker.destroy).pack(pady=(10, 0))
+        ttk.Button(body, text="Cancel", command=picker.destroy).pack(pady=(10, 0))
 
     def _is_superadmin(self):
         """Check if current user has admin access to all 4 systems."""
