@@ -169,7 +169,7 @@ _CROSS_SYSTEM_MODULES = {
     "cross_reverse_lookup": ("education_system.shared.reverse_lookup.reverse_lookup_cli", "Reverse Lookup"),
     "cross_parent_continuity": ("education_system.shared.parent_continuity.parent_cli", "Parent Continuity"),
     "cross_calendar": ("education_system.shared.calendar.calendar_cli", "Cross-System Calendar"),
-    "cross_messaging": ("education_system.shared.messaging.messaging_cli", "Inter-System Messaging"),
+    "cross_messaging": ("education_system.shared.messaging.cross_system_cli", "Inter-System Messaging"),
     "cross_admin_portal": ("education_system.shared.admin_portal.admin_cli", "Central Admin Portal"),
     "cross_gdpr": ("education_system.shared.gdpr.gdpr_cli", "GDPR Compliance"),
     "cross_documents": ("education_system.shared.documents.document_cli", "Shared Documents"),
@@ -1616,6 +1616,9 @@ def display_communication_hub_menu(auth):
     print(f"{'10. Email Settings':<25} {'11. Test Configuration':<25} {'12. Email Templates':<25} {'13. Schedule Emails':<25}")
     print(f"{'14. Queue Status':<25} {'15. Stored Emails':<25}")
 
+    print("\n🌐 Cross-System:")
+    print(f"{'C.  Cross-System Messages':<25}")
+
     print("\n📊 Reports & Analytics:")
     print(f"{'16. Email Reports':<25}", end="")
     if LOG_MANAGEMENT_AVAILABLE:
@@ -1816,6 +1819,11 @@ def display_communication_hub_menu(auth):
                     break
                 else:
                     print("❌ Invalid choice.")
+            elif choice.upper() == 'C':
+                # Cross-System Messages — links the per-system Email Manager
+                # to the shared inter-system messaging CLI.
+                from education_system.shared.messaging import cross_system_cli
+                cross_system_cli.run(auth=auth)
             else:
                 print(f"❌ Invalid choice. Please enter a number between 1 and {max_choice}.")
 

@@ -738,14 +738,6 @@ UnifiedManagementGUI.show_study_room_booking_gui = show_study_room_booking_gui
 UnifiedManagementGUI.show_printing_services_gui = show_printing_services_gui
 
 
-def show_cross_system_communications_gui(self):
-    """Launch the Cross-System Communications frame in a top-level window."""
-    from education_system.shared.communications.gui import CrossSystemCommunicationsFrame
-    win = self.create_themed_toplevel(title="Cross-System Communications", geometry="900x600")
-    frame = CrossSystemCommunicationsFrame(win, db_path=None, auth=self.auth)
-    frame.pack(fill='both', expand=True)
-
-
 def show_student_journey_gui(self):
     """Launch the Student Journey Dashboard in a top-level window."""
     from education_system.shared.cross_system.journey_dashboard import JourneyDashboardFrame
@@ -860,7 +852,6 @@ def show_digital_transcript_gui(self):
     frame.pack(fill='both', expand=True)
 
 
-UnifiedManagementGUI.show_cross_system_communications_gui = show_cross_system_communications_gui
 UnifiedManagementGUI.show_student_journey_gui = show_student_journey_gui
 UnifiedManagementGUI.show_analytics_dashboard_gui = show_analytics_dashboard_gui
 UnifiedManagementGUI.show_outcome_tracking_gui = show_outcome_tracking_gui

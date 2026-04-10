@@ -9,6 +9,8 @@ from education_system.college_system.infrastructure.auth.core import UserAuth
 
 def sms_email_menu(auth: UserAuth):
     """SMS & Email management menu."""
+    from education_system.shared.messaging import cross_system_cli
+
     service = SmsEmailService(auth._db_path)
 
     while True:
@@ -19,6 +21,7 @@ def sms_email_menu(auth: UserAuth):
             ("3", "View Preference"),
             ("4", "Update Preference"),
             ("5", "Delete Preference"),
+            ("6", "Cross-System Messages"),
             ("0", "Back"),
         ]
         print_menu(options)
@@ -34,6 +37,8 @@ def sms_email_menu(auth: UserAuth):
             _update_preference(service)
         elif choice == "5":
             _delete_preference(service)
+        elif choice == "6":
+            cross_system_cli.run(db_path=auth._db_path, auth=auth)
         elif choice == "0":
             break
         else:

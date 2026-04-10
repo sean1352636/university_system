@@ -435,9 +435,21 @@ def _admin_facilities(auth):
     ])
 
 
+def _email_menu(auth):
+    """Email sub-menu with cross-system messaging."""
+    from education_system.shared.messaging import cross_system_cli
+    db_path = getattr(auth, '_db_path', None)
+    _run_submenu(auth, "Email", [
+        ("1", "Local Email (use GUI for compose/inbox)",
+         lambda a: print("\n  [Local email — use GUI for full features]")),
+        ("2", "Cross-System Messages",
+         lambda a: cross_system_cli.run(db_path=db_path, auth=a)),
+    ])
+
+
 def _admin_communication(auth):
     _run_submenu(auth, "Communication", [
-        ("1", "Email/Messages", lambda a: print("\n  [Email module — use GUI for full features]")),
+        ("1", "Email", lambda a: _email_menu(a)),
         ("2", "Notifications", lambda a: print("\n  [Notifications module — use GUI for full features]")),
         ("3", "Announcements", lambda a: print("\n  [Announcements module — use GUI for full features]")),
         ("4", "Calendar", lambda a: print("\n  [Calendar module — use GUI for full features]")),
@@ -472,7 +484,7 @@ def _cross_system_tools(auth):
         ("6", "Reverse Lookup", _run_shared("education_system.shared.reverse_lookup.reverse_lookup_cli", "Reverse Lookup")),
         ("7", "Parent Continuity", _run_shared("education_system.shared.parent_continuity.parent_cli", "Parent Continuity")),
         ("8", "Cross-System Calendar", _run_shared("education_system.shared.calendar.calendar_cli", "Cross-System Calendar")),
-        ("9", "Inter-System Messaging", _run_shared("education_system.shared.messaging.messaging_cli", "Inter-System Messaging")),
+        ("9", "Inter-System Messaging", _run_shared("education_system.shared.messaging.cross_system_cli", "Inter-System Messaging")),
         ("A", "Central Admin Portal", _run_shared("education_system.shared.admin_portal.admin_cli", "Central Admin Portal")),
         ("B", "GDPR Compliance", _run_shared("education_system.shared.gdpr.gdpr_cli", "GDPR Compliance")),
         ("C", "Shared Documents", _run_shared("education_system.shared.documents.document_cli", "Shared Documents")),

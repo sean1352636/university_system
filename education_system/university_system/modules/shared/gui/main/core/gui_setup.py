@@ -600,7 +600,6 @@ def create_navigation_panel(self, parent):
 
     # ---------- Cross-System ----------
     cross_system_buttons_data = [
-        ('cross_system_communications', 'Cross-System Communications', self.show_cross_system_communications_gui),
         ('student_journey', 'Student Journey', self.show_student_journey_gui),
         ('analytics_dashboard', 'Analytics Dashboard', self.show_analytics_dashboard_gui),
         ('outcome_tracking', 'Outcome Tracking', self.show_outcome_tracking_gui),
@@ -789,7 +788,7 @@ def get_visible_buttons_for_role(self, role=None):
             'office_hours',
             # New features - staff level
             # Cross-system modules
-            'cross_system_communications', 'student_journey',
+            'student_journey',
             'analytics_dashboard', 'outcome_tracking', 'predictive_alerts',
             'bulk_transfer', 'transfer_documents', 'reverse_lookup',
             'parent_continuity', 'cross_system_calendar',

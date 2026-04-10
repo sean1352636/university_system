@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.73.0 — 2026-04-10](#8730---2026-04-10)
 - [8.72.0 — 2026-04-07](#8720---2026-04-07)
 - [8.71.0 — 2026-04-07](#8710---2026-04-07)
 - [8.70.0 — 2026-04-07](#8700---2026-04-07)
@@ -163,6 +164,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.73.0] — 2026-04-10
+
+### Merge cross-system messaging into per-system Email GUIs and CLIs; remove standalone CrossSystemCommunicationsFrame
+
+#### Added
+
+- **`shared/messaging/cross_system_panel.py`** — new reusable `CrossSystemMessagePanel(tk.Frame)` exposing Inbox / Sent / Compose tabs over `InterSystemMessagingService`. Embedded into the per-system email GUIs so users can send messages between the four systems without leaving the email screen.
+- **Cross-system tab in every email GUI** — Primary, Secondary, College, and University email windows now have a `Cross-System` tab populated by `CrossSystemMessagePanel`:
+  - Primary `EmailFrame` and Secondary `EmailFrame` wrap their existing UI in a Notebook with `Local Email` + `Cross-System` tabs
+  - College `SmsEmailFrame` adds a `Cross-System Email` tab next to the existing `Preferences` tab
+  - University `EmailManagerGUI.create_cross_system_tab()` registers a new tab in the existing notebook
+- **`Cross-System Messages` link in every email CLI**:
+  - Primary `email_cli.py` — option `3) Cross-System Messages`
+  - Secondary `cli_main.py` — new `_email_menu(auth)` sub-menu with `Cross-System Messages` (replaces the previous "use GUI" stub)
+  - College `sms_email_cli.py` — option `6) Cross-System Messages`
+  - University `display_communication_hub_menu` — new `🌐 Cross-System` section with letter code `C) Cross-System Messages` (chosen to avoid renumbering the dynamic 1-20 menu)
+
+#### Changed
+
+- **`shared/messaging/messaging_cli.py` → `shared/messaging/cross_system_cli.py`** — renamed for naming parity with `cross_system_panel.py`. The four `Cross-System Tools` callers in primary/secondary/college `cli_main.py` and university `menu_router.py` updated to the new module path.
+- **`cross_system_cli.run()`** — now accepts both dict-style `auth` and `UserAuth`-style objects with a `current_user` attribute, matching the dual-mode handling in `CrossSystemMessagePanel`.
+
+#### Removed
+
+- **`shared/communications/`** — entire package deleted (`gui.py`, `__init__.py`). The standalone `CrossSystemCommunicationsFrame` is gone; its messaging functionality lives inside each per-system email GUI now.
+- **`shared/messaging/messaging_gui.py`** and **`shared/notifications/gui.py`** — alias re-exports of the deleted frame, removed.
+- **All menu/dispatch entries for `CrossSystemCommunicationsFrame`**:
+  - Primary `main_gui.py` and Secondary `main_gui.py` — removed import, frame map entry, and "Cross-System" menu entry
+  - College `modules/shared/gui/main_gui.py` — removed import, frame map entry, and `MENU_TREE` "Cross-System Tools" entry
+  - University `modules/shared/gui/main/main_gui.py` — removed `show_cross_system_communications_gui()` function and binding line
+  - University `modules/shared/gui/main/core/gui_setup.py` — removed cross-system buttons list entry and visibility set entry
+  - University `modules/shared/gui/main/staff_portal.py` and `student_portal.py` — removed sidebar buttons
+
+`CrossSystemNotificationService` (the role-based broadcast service) is preserved; only its GUI surface was removed.
 
 ---
 

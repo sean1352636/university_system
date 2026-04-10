@@ -5,6 +5,7 @@ from tkinter import ttk, messagebox
 
 from education_system.secondary_school.modules.domain.communication.email.services.email_service import EmailService
 from education_system.secondary_school.core.exceptions import EmailError
+from education_system.shared.messaging.cross_system_panel import CrossSystemMessagePanel
 
 HEADER_BG = "#1a5276"
 MAIN_BG = "#ecf0f1"
@@ -133,8 +134,20 @@ class EmailFrame(tk.Frame):
                                       bg=HEADER_BG, fg="#f9e79f")
         self._unread_label.pack(side="right", padx=20)
 
+        # Notebook: local email + cross-system messaging
+        notebook = ttk.Notebook(self)
+        notebook.pack(fill="both", expand=True)
+
+        local_tab = tk.Frame(notebook, bg=MAIN_BG)
+        notebook.add(local_tab, text="Local Email")
+
+        self._cross_panel = CrossSystemMessagePanel(
+            notebook, auth=self._auth, system_key="school", db_path=self._db_path,
+        )
+        notebook.add(self._cross_panel, text="Cross-System")
+
         # Toolbar
-        toolbar = tk.Frame(self, bg=MAIN_BG, pady=8)
+        toolbar = tk.Frame(local_tab, bg=MAIN_BG, pady=8)
         toolbar.pack(fill="x", padx=15)
         ttk.Button(toolbar, text="Compose", command=self._on_compose).pack(side="left", padx=4)
         ttk.Button(toolbar, text="Inbox", command=self._show_inbox).pack(side="left", padx=4)
@@ -147,7 +160,7 @@ class EmailFrame(tk.Frame):
         ttk.Button(toolbar, text="Delete", command=self._on_delete).pack(side="left", padx=4)
 
         # Email list
-        tree_frame = tk.Frame(self)
+        tree_frame = tk.Frame(local_tab)
         tree_frame.pack(fill="both", expand=True, padx=15, pady=(0, 5))
 
         self._tree = ttk.Treeview(tree_frame,
@@ -171,7 +184,7 @@ class EmailFrame(tk.Frame):
         self._tree.bind("<Double-1>", lambda _: self._on_read())
 
         # Preview pane
-        preview_frame = tk.LabelFrame(self, text="Preview", bg=MAIN_BG,
+        preview_frame = tk.LabelFrame(local_tab, text="Preview", bg=MAIN_BG,
                                       font=("Helvetica", 9))
         preview_frame.pack(fill="both", expand=True, padx=15, pady=(0, 10))
 
@@ -184,7 +197,7 @@ class EmailFrame(tk.Frame):
 
         # Status bar
         self._status_var = tk.StringVar(value="Ready")
-        tk.Label(self, textvariable=self._status_var, bg=MAIN_BG, anchor="w",
+        tk.Label(local_tab, textvariable=self._status_var, bg=MAIN_BG, anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(fill="x", padx=15, pady=(0, 8))
 
         # Store email data keyed by tree iid
@@ -192,6 +205,10 @@ class EmailFrame(tk.Frame):
 
     def refresh(self):
         self._load_emails()
+        try:
+            self._cross_panel.refresh()
+        except Exception:
+            pass
 
     def _show_inbox(self):
         self._current_view = "inbox"

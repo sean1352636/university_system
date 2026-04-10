@@ -197,7 +197,6 @@ class StudentPortalGUI:
         # Communication
         self._add_heading("Communication")
         self._add_button("Cross-System Calendar", self._launch('show_cross_system_calendar_gui'))
-        self._add_button("Cross-System Comms", self._launch('show_cross_system_communications_gui'))
 
         # Account
         self._add_heading("Account")

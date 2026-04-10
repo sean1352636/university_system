@@ -1,4 +1,9 @@
-"""CLI module for Inter-System Messaging."""
+"""CLI counterpart of :class:`CrossSystemMessagePanel`.
+
+Provides an interactive menu for sending and receiving messages between the
+four education systems.  Mirrors the GUI panel embedded in each per-system
+email window.
+"""
 
 from education_system.shared.messaging.messaging_service import InterSystemMessagingService
 
@@ -23,6 +28,11 @@ def run(db_path=None, auth=None):
         user_id = auth.get("user_id") or auth.get("id")
         user_name = auth.get("display_name") or auth.get("username", "")
         user_system = auth.get("system_key", "")
+    elif auth is not None and getattr(auth, "current_user", None):
+        cu = auth.current_user
+        user_id = cu.get("user_id") or cu.get("id")
+        user_name = cu.get("display_name") or cu.get("username", "")
+        user_system = cu.get("system_key", "")
 
     while True:
         unread = svc.get_unread_count(user_id, user_system) if user_id else 0

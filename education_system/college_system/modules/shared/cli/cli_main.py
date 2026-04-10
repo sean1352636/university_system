@@ -406,7 +406,7 @@ def _cross_system_tools(auth):
         ("6", "Reverse Lookup", _run_shared("education_system.shared.reverse_lookup.reverse_lookup_cli", "Reverse Lookup")),
         ("7", "Parent Continuity", _run_shared("education_system.shared.parent_continuity.parent_cli", "Parent Continuity")),
         ("8", "Cross-System Calendar", _run_shared("education_system.shared.calendar.calendar_cli", "Cross-System Calendar")),
-        ("9", "Inter-System Messaging", _run_shared("education_system.shared.messaging.messaging_cli", "Inter-System Messaging")),
+        ("9", "Inter-System Messaging", _run_shared("education_system.shared.messaging.cross_system_cli", "Inter-System Messaging")),
         ("A", "Central Admin Portal", _run_shared("education_system.shared.admin_portal.admin_cli", "Central Admin Portal")),
         ("B", "GDPR Compliance", _run_shared("education_system.shared.gdpr.gdpr_cli", "GDPR Compliance")),
         ("C", "Shared Documents", _run_shared("education_system.shared.documents.document_cli", "Shared Documents")),

@@ -373,7 +373,6 @@ class MainApplication(tk.Tk):
         from education_system.primary_school.modules.domain.facilities.incidents.gui.incident_gui import IncidentFrame
         from education_system.primary_school.modules.shared.gui.mfa_gui import MFASettingsFrame
         from education_system.shared.gui.security_questions_gui import SecurityQuestionsFrame
-        from education_system.shared.communications.gui import CrossSystemCommunicationsFrame
         from education_system.shared.cross_system.journey_dashboard import JourneyDashboardFrame
         from education_system.shared.analytics.analytics_gui import AnalyticsDashboardFrame
         from education_system.shared.outcomes.outcomes_gui import OutcomeTrackingFrame
@@ -467,7 +466,6 @@ class MainApplication(tk.Tk):
             ("MFA Settings", MFASettingsFrame),
             ("Security Questions", SecurityQuestionsFrame),
             # ── Cross-System ─────────────
-            ("Cross-System Communications", CrossSystemCommunicationsFrame),
             ("Student Journey", JourneyDashboardFrame),
             # ── Shared Modules ───────────
             ("Analytics Dashboard", AnalyticsDashboardFrame),

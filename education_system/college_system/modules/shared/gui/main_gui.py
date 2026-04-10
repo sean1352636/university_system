@@ -124,7 +124,6 @@ from education_system.college_system.modules.domain.onboarding.gui.onboarding_gu
 from education_system.college_system.modules.domain.expense_claims.gui.expense_claims_gui import ExpenseClaimFrame
 from education_system.college_system.modules.domain.baseline_assessment.gui.baseline_assessment_gui import BaselineAssessmentFrame
 from education_system.college_system.modules.domain.data_export.gui.data_export_gui import DataExportFrame
-from education_system.shared.communications.gui import CrossSystemCommunicationsFrame
 from education_system.shared.cross_system.journey_dashboard import JourneyDashboardFrame
 from education_system.shared.analytics.analytics_gui import AnalyticsDashboardFrame
 from education_system.shared.outcomes.outcomes_gui import OutcomeTrackingFrame
@@ -335,7 +334,6 @@ _SIDEBAR_SECTIONS = [
     ]),
     ("Cross-System Tools", [
         ("Student Journey",       "student_journey_gui",       "admin"),
-        ("Cross-System Communications", "cross_system_communications_gui", "admin"),
         ("Analytics Dashboard",   "analytics_dashboard_gui",   "admin"),
         ("Outcome Tracking",      "outcome_tracking_gui",      "admin"),
         ("Predictive Alerts",     "predictive_alerts_gui",     "admin"),
@@ -481,7 +479,6 @@ class CollegeApp(tk.Tk):
         "baseline_assessment_gui": BaselineAssessmentFrame,
         "data_export_gui":  DataExportFrame,
         # Cross-system modules
-        "cross_system_communications_gui": CrossSystemCommunicationsFrame,
         "student_journey_gui": JourneyDashboardFrame,
         # Shared modules
         "analytics_dashboard_gui": AnalyticsDashboardFrame,

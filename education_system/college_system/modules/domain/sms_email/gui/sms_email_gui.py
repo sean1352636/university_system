@@ -6,6 +6,7 @@ from tkinter import ttk, messagebox
 from education_system.college_system.modules.domain.sms_email.services.sms_email_service import SmsEmailService
 from education_system.college_system.core.exceptions import SmsEmailError
 from education_system.college_system.core.i18n import t
+from education_system.shared.messaging.cross_system_panel import CrossSystemMessagePanel
 
 
 class _PreferenceDialog(tk.Toplevel):
@@ -80,7 +81,19 @@ class SmsEmailFrame(tk.Frame):
                  font=("Helvetica", 15, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=10)
 
-        toolbar = tk.Frame(self, bg="#ecf0f1", pady=8)
+        # Notebook: preferences + cross-system messaging
+        notebook = ttk.Notebook(self)
+        notebook.pack(fill="both", expand=True)
+
+        prefs_tab = tk.Frame(notebook, bg="#ecf0f1")
+        notebook.add(prefs_tab, text="Preferences")
+
+        self._cross_panel = CrossSystemMessagePanel(
+            notebook, auth=self._auth, system_key="college", db_path=self._db_path,
+        )
+        notebook.add(self._cross_panel, text="Cross-System Email")
+
+        toolbar = tk.Frame(prefs_tab, bg="#ecf0f1", pady=8)
         toolbar.pack(fill="x", padx=15)
         ttk.Button(toolbar, text=t("sms_email.add"), command=self._on_add).pack(side="left", padx=4)
         ttk.Button(toolbar, text=t("common.edit"), command=self._on_edit).pack(side="left", padx=4)
@@ -88,7 +101,7 @@ class SmsEmailFrame(tk.Frame):
         ttk.Button(toolbar, text=t("common.refresh"), command=self._load_items).pack(side="left", padx=4)
         ttk.Button(toolbar, text="Export CSV", command=self._export_csv).pack(side="left", padx=4)
 
-        tree_frame = tk.Frame(self)
+        tree_frame = tk.Frame(prefs_tab)
         tree_frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
 
         columns = ('user_id', 'email_enabled', 'sms_enabled', 'phone_number', 'attendance_alerts', 'grade_alerts')
@@ -113,7 +126,7 @@ class SmsEmailFrame(tk.Frame):
         vsb.pack(side="right", fill="y")
 
         self._status_var = tk.StringVar(value=t("common.ready"))
-        tk.Label(self, textvariable=self._status_var, bg="#ecf0f1", anchor="w",
+        tk.Label(prefs_tab, textvariable=self._status_var, bg="#ecf0f1", anchor="w",
                  font=("Helvetica", 9), fg="#7f8c8d").pack(fill="x", padx=15, pady=(0, 8))
 
     def _export_csv(self):
@@ -122,6 +135,10 @@ class SmsEmailFrame(tk.Frame):
 
     def refresh(self):
         self._load_items()
+        try:
+            self._cross_panel.refresh()
+        except Exception:
+            pass
 
     def _load_items(self):
         self._tree.delete(*self._tree.get_children())

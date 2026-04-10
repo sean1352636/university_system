@@ -294,6 +294,7 @@ if optimize_database is None:
 
 # Import dialog classes used by EmailManagerGUI
 from education_system.university_system.modules.shared.gui.email.email_gui.utility_dialogs import HelpDialog, AboutDialog
+from education_system.shared.messaging.cross_system_panel import CrossSystemMessagePanel
 
 class EmailManagerGUI:
     def __init__(self, root, auth=None):
@@ -480,6 +481,16 @@ class EmailManagerGUI:
         self.create_announcements_tab()
         self.create_chat_tab()
         self.create_reports_tab()
+        self.create_cross_system_tab()
+
+    def create_cross_system_tab(self):
+        """Add a tab for cross-system messaging (replaces standalone frame)."""
+        tab = ttk.Frame(self.notebook)
+        self.notebook.add(tab, text=_t("email.tabs.cross_system", default="Cross-System"))
+        self._cross_system_panel = CrossSystemMessagePanel(
+            tab, auth=self.auth, system_key="university",
+        )
+        self._cross_system_panel.pack(fill=tk.BOTH, expand=True)
 
     def create_status_frame(self, parent):
         """Create status bar and notifications"""

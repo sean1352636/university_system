@@ -7,12 +7,18 @@ def email_menu(auth):
     """Email menu."""
     from education_system.primary_school.cli.cli_main import print_header, print_menu, get_choice
     from education_system.primary_school.modules.domain.communication.email.services.email_service import EmailService
+    from education_system.shared.messaging import cross_system_cli
 
     svc = EmailService(get_db_path())
 
     while True:
         print_header("Email")
-        print_menu([("1", "List emails"), ("2", "Send email"), ("0", "Back")])
+        print_menu([
+            ("1", "List emails"),
+            ("2", "Send email"),
+            ("3", "Cross-System Messages"),
+            ("0", "Back"),
+        ])
         choice = get_choice()
         if choice == "0":
             break
@@ -28,5 +34,7 @@ def email_menu(auth):
                 print("\n  Sent.")
             except Exception as e:
                 print(f"\n  Error: {e}")
+        elif choice == "3":
+            cross_system_cli.run(db_path=get_db_path(), auth=auth)
         else:
             print("\n  Invalid option.")

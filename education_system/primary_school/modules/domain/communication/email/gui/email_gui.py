@@ -4,11 +4,12 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.primary_school.modules.domain.communication.email.services.email_service import EmailService
+from education_system.shared.messaging.cross_system_panel import CrossSystemMessagePanel
 import traceback
 
 
 class EmailFrame(tk.Frame):
-    """Email compose and send log screen."""
+    """Email compose and send log screen with cross-system messaging tab."""
 
     HEADER_BG = "#1a5276"
 
@@ -25,8 +26,20 @@ class EmailFrame(tk.Frame):
         tk.Label(header, text="Email", fg="white", bg=self.HEADER_BG,
                  font=("Helvetica", 14, "bold")).pack(side="left", padx=15)
 
+        # Notebook: local email + cross-system messaging
+        notebook = ttk.Notebook(self)
+        notebook.pack(fill="both", expand=True)
+
+        local_tab = tk.Frame(notebook)
+        notebook.add(local_tab, text="Local Email")
+
+        cross_tab = CrossSystemMessagePanel(notebook, auth=auth, system_key="primary",
+                                            db_path=db_path)
+        notebook.add(cross_tab, text="Cross-System")
+        self._cross_panel = cross_tab
+
         # Compose form
-        compose_frame = tk.LabelFrame(self, text="Compose Email", padx=10, pady=5)
+        compose_frame = tk.LabelFrame(local_tab, text="Compose Email", padx=10, pady=5)
         compose_frame.pack(fill="x", padx=10, pady=5)
 
         row1 = tk.Frame(compose_frame)
@@ -53,11 +66,11 @@ class EmailFrame(tk.Frame):
         tk.Button(btn_row, text="Clear", command=self._on_clear, width=12).pack(side="left", padx=5)
 
         # Sent log
-        tk.Label(self, text="Sent Emails", font=("Helvetica", 11, "bold"),
+        tk.Label(local_tab, text="Sent Emails", font=("Helvetica", 11, "bold"),
                  anchor="w").pack(fill="x", padx=10, pady=(10, 2))
 
         columns = ("email_id", "to_address", "subject", "sent_at", "status")
-        tree_frame = tk.Frame(self)
+        tree_frame = tk.Frame(local_tab)
         tree_frame.pack(fill="both", expand=True, padx=5, pady=5)
         self._tree = ttk.Treeview(tree_frame, columns=columns, show="headings", selectmode="browse")
         for col in columns:
@@ -71,13 +84,17 @@ class EmailFrame(tk.Frame):
 
         # Status bar
         self._status_var = tk.StringVar(value="Ready")
-        tk.Label(self, textvariable=self._status_var, anchor="w", bg="#ecf0f1",
+        tk.Label(local_tab, textvariable=self._status_var, anchor="w", bg="#ecf0f1",
                  padx=10).pack(fill="x", side="bottom")
 
         self._load_items()
 
     def refresh(self):
         self._load_items()
+        try:
+            self._cross_panel.refresh()
+        except Exception:
+            pass
 
     def _load_items(self):
         for item in self._tree.get_children():

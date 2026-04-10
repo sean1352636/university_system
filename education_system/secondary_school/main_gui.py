@@ -283,7 +283,6 @@ class MainApplication(tk.Tk):
             ("Data Export", None),
             ("MFA Settings", None),
             ("Security Questions", None),
-            ("Cross-System Communications", None),
             ("Student Journey", None),
             # Shared modules
             ("Analytics Dashboard", None),
@@ -436,7 +435,6 @@ class MainApplication(tk.Tk):
         from education_system.secondary_school.modules.domain.facilities.incidents.gui.incident_gui import IncidentFrame
         from education_system.secondary_school.modules.shared.gui.mfa_gui import MFASettingsFrame
         from education_system.shared.gui.security_questions_gui import SecurityQuestionsFrame
-        from education_system.shared.communications.gui import CrossSystemCommunicationsFrame
         from education_system.shared.cross_system.journey_dashboard import JourneyDashboardFrame
         from education_system.shared.analytics.analytics_gui import AnalyticsDashboardFrame
         from education_system.shared.outcomes.outcomes_gui import OutcomeTrackingFrame
@@ -526,7 +524,6 @@ class MainApplication(tk.Tk):
             "Incidents": IncidentFrame,
             "MFA Settings": MFASettingsFrame,
             "Security Questions": SecurityQuestionsFrame,
-            "Cross-System Communications": CrossSystemCommunicationsFrame,
             "Student Journey": JourneyDashboardFrame,
             # Shared modules
             "Analytics Dashboard": AnalyticsDashboardFrame,
