@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.75.1 — 2026-04-10](#8751---2026-04-10)
 - [8.75.0 — 2026-04-10](#8750---2026-04-10)
 - [8.74.0 — 2026-04-10](#8740---2026-04-10)
 - [8.73.0 — 2026-04-10](#8730---2026-04-10)
@@ -166,6 +167,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.75.1] — 2026-04-10
+
+### Regenerate OpenAPI specs to include secondary and primary subsystems
+
+The previous v8.75.0 release documented standalone secondary and primary
+OpenAPI specs as a "known limitation" because the spec generator script
+hit `ModuleNotFoundError` when run against a working tree that contained
+in-progress edits introducing legacy import paths
+(`education_system.secondary_school_system`, `education_system.primary_system`).
+Those legacy paths were never present in any committed revision of the
+API factories — `HEAD` has always used the correct
+`secondary_school` / `primary_school` paths — so this release simply
+regenerates the specs against the current (correct) source.
+
+#### Added
+
+- `docs/api/openapi-secondary.json` — **319 endpoints**, standalone secondary school API spec.
+- `docs/api/openapi-primary.json` — **203 endpoints**, standalone primary school API spec.
+
+#### Changed
+
+- `docs/api/openapi.json` — unified spec regenerated; endpoint count
+  rose from **882 → 1363** because the unified server now loads the
+  secondary and primary subsystems at startup. Previous v8.75.0 spec
+  was generated in an environment where those subsystems failed to
+  import.
+- `docs/api/README.md` — updated file table with all four committed
+  specs and removed the now-resolved "secondary / primary not
+  generating" limitation.
 
 ---
 

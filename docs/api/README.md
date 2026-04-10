@@ -10,8 +10,10 @@ contract tests / API gateways.
 
 | File | Endpoints | Source app | Purpose |
 |------|-----------|------------|---------|
-| [`openapi.json`](openapi.json) | 882 | `unified_server.create_unified_app()` | The **production** spec — covers shared infrastructure (auth, MFA, parent portal, retention, LMS, webhooks, GraphQL, tenants), university routes, and college routes mounted at their canonical prefixes. |
-| [`openapi-college.json`](openapi-college.json) | 470 | `college/api_server.create_app()` | Standalone college API spec for deployments that run only the college subsystem. Same routes as in the unified spec but mounted at the college standalone server's URL prefixes. |
+| [`openapi.json`](openapi.json) | 1363 | `unified_server.create_unified_app()` | The **production** spec — covers shared infrastructure (auth, MFA, parent portal, retention, LMS, webhooks, GraphQL, tenants) plus all four subsystems (university, college, secondary school, primary school) mounted at their canonical prefixes. |
+| [`openapi-college.json`](openapi-college.json) | 470 | `college/api_server.create_app()` | Standalone college API spec for deployments that run only the college subsystem. |
+| [`openapi-secondary.json`](openapi-secondary.json) | 319 | `secondary/api_server.create_app()` | Standalone secondary school API spec for single-subsystem deployments. |
+| [`openapi-primary.json`](openapi-primary.json) | 203 | `primary/api_server.create_app()` | Standalone primary school API spec for single-subsystem deployments. |
 
 ## Generating / regenerating
 
@@ -46,18 +48,12 @@ freshest spec; commit the generated file when the change lands.
 
 ## Known limitations
 
-- **Standalone secondary and primary specs are not currently generated.**
-  The standalone `secondary/api_server.py` and `primary/api_server.py`
-  factories import legacy module paths
-  (`education_system.secondary_school_system`,
-  `education_system.primary_system`) that don't exist in the current
-  package layout. These need to be renamed to `secondary_school` /
-  `primary_school` before standalone specs can be generated. See the
-  per-system `api_server.py` files for the affected imports.
 - **Standalone university spec is not generated separately** — running
   `university/api_server.create_app()` after the unified app in the
   same process raises a Flask blueprint name collision (`'health'`).
-  University routes are fully covered by `openapi.json`.
+  University routes are fully covered by `openapi.json`. If you need
+  the standalone spec, run `--system university` in a fresh Python
+  process.
 - **Endpoint summaries are auto-generated from URL paths**, not from
   per-route docstrings. The current generator (`shared/api/docs.py`)
   doesn't introspect view-function docstrings; if you want richer
