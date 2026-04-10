@@ -352,7 +352,7 @@ class TestDashboardVisualization:
             # reportlab.lib.colors is a MagicMock — purge and reimport
             for k in [k for k in sys.modules if k.startswith('reportlab')]:
                 del sys.modules[k]
-            import reportlab.lib.colors  # noqa: reimport clean
+            import reportlab.lib.colors  # noqa: F401, F811  # deliberate reimport after MagicMock purge
             # Reload the forecasting module so its module-level imports pick
             # up the real reportlab objects
             forecasting_key = 'education_system.university_system.modules.domain.academics.grading.forecasting'
