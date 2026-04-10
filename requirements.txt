@@ -19,7 +19,7 @@ seaborn==0.13.2                # Statistical data visualization
 plotly==6.6.0                  # Interactive plots and dashboards
 scikit-learn==1.8.0            # Machine learning algorithms
 scipy==1.17.1                  # Scientific computing and statistics
-joblib==1.5.2                  # Parallel computing and model persistence
+joblib==1.5.3                  # Parallel computing and model persistence
 
 # ===============================
 # DOCUMENT GENERATION & REPORTS
