@@ -28,6 +28,29 @@ Manage student records with SEC-prefixed identifiers.
 - Track student status changes with date stamps
 - View a student's full profile: contacts, medical flags, SEN status, Pupil Premium
 
+### Viewing Student Details (Double-Click)
+
+In the GUI, **admin / staff / teacher / instructor** users can
+double-click any row in the Students treeview to open a read-only
+details window for that student. This mirrors the equivalent feature
+in the University System.
+
+The details window has two tabs:
+
+| Tab | Contents |
+|---|---|
+| Personal | Student ID, names, DOB, address, year/form/key-stage, SEN status, Pupil Premium, status, parent/guardian (name/email/phone), emergency contact, created/updated timestamps |
+| Subjects | Subject code, title, teacher, room — for every active enrolment, loaded via `EnrollmentService.get_student_enrollments(pk)` |
+
+Footer buttons: `Close` is always present; `admin` users also see an
+`Edit` button that closes the details window and opens the full edit
+dialog (the same flow as the toolbar `Edit Selected` button).
+
+Other roles (students, parents) silently no-op on double-click. The
+behaviour is implemented in
+`secondary_school/modules/domain/academics/students/gui/student_gui.py`
+via `_on_double_click_student` and `_show_student_details`.
+
 ## Subjects
 
 Define and organise the curriculum by department and key stage.

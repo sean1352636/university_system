@@ -26,6 +26,29 @@ Manage pupil records with unique **PRI-prefixed IDs** (PRI0001, PRI0002, etc.).
 - **Transfer year group** — Use the Year Group field to move a pupil at the start of a new academic year. Bulk promotion is available via Settings.
 - **View profile** — Click a pupil row to see their full profile including attendance, assessments, and pastoral notes.
 
+### Viewing Pupil Details (Double-Click)
+
+In the GUI, **admin / staff / teacher / instructor** users can
+double-click any row in the Pupils treeview to open a read-only details
+window for that pupil. This mirrors the equivalent feature in the
+University System.
+
+The details window has two tabs:
+
+| Tab | Contents |
+|---|---|
+| Personal | Pupil ID, names, preferred name, DOB, gender, ethnicity, first language, year/class/key stage, SEN status, EAL/Pupil Premium/Free School Meals/Looked After/Photo Consent flags, status, address, medical notes, dietary requirements, created/updated timestamps |
+| Contacts | Parent/Guardian 1 (name/email/phone), Parent/Guardian 2 (name/email/phone), Emergency Contact (name/phone) |
+
+Footer buttons: `Close` is always present; `admin` users also see an
+`Edit` button that closes the details window and opens the full edit
+dialog (the same flow as the toolbar `Edit Selected` button).
+
+Other roles (parents, students) silently no-op on double-click. The
+behaviour is implemented in
+`primary_school/modules/domain/academics/pupils/gui/pupil_gui.py`
+via `_on_double_click_pupil` and `_show_pupil_details`.
+
 ---
 
 ## Subjects

@@ -192,11 +192,79 @@ Record and track all contact with parents and carers.
 
 ---
 
+## Cross-System Messaging
+
+Secondary school staff often need to coordinate with colleagues at the
+feeder primary school (sending students up) or the receiving sixth-form
+college (transitions out). The **Cross-System Messaging** feature is
+embedded directly into the Secondary School Email screen and Email CLI
+sub-menu so you don't have to leave your inbox to talk to staff in
+Primary, College, or University.
+
+### Where to find it
+
+| Interface | Location |
+|-----------|----------|
+| GUI | **Communication → Email**, then the **Cross-System** tab |
+| CLI | **Communication → Email → 2) Cross-System Messages** |
+
+### What it does
+
+| Tab / option | Purpose |
+|---|---|
+| Inbox | Messages other systems' staff have sent to you. Sender, system, subject, related student, date, read state. |
+| Sent | Messages you've sent to other systems. |
+| Compose | Pick the target system (Primary / Secondary / College / University), then a recipient from that system's staff list, optionally tag a student name, then enter subject + body. |
+
+Messages are stored centrally in `auth.db` (`cross_system_messages`
+table) so the recipient sees them from whichever system they log into.
+
+### Service reference
+
+| Method | Purpose |
+|--------|---------|
+| `InterSystemMessagingService.send_message` | Send a message to a staff member in another system |
+| `InterSystemMessagingService.get_inbox` | Retrieve messages received from other systems |
+| `InterSystemMessagingService.get_sent` | Retrieve messages sent to other systems |
+| `InterSystemMessagingService.get_staff_list(system)` | List staff in a target system for the recipient picker |
+| `InterSystemMessagingService.search_messages` | Search inbox + sent by subject, body, or student name |
+
+The reusable GUI panel lives in
+`education_system.shared.messaging.cross_system_panel` and the CLI in
+`education_system.shared.messaging.cross_system_cli`.
+
+---
+
+## Idle / inactivity auto-logout
+
+The Secondary School GUI and CLI both auto-log-out after **30 minutes
+of inactivity** to reduce the risk of an unattended terminal exposing
+student data.
+
+| Interface | How activity is tracked |
+|-----------|-------------------------|
+| GUI | Mouse motion, key presses, mouse buttons, and scroll-wheel events on the main window reset the idle timer. |
+| CLI | The menu prompt is wrapped in a `SIGALRM` watchdog that fires after 30 minutes of no input. |
+
+When the timeout fires, the GUI shows a `Session Expired` warning then
+returns the user to the universal login screen; the CLI prints
+`⚠ Logged out after 30 minutes of inactivity.` and exits cleanly.
+
+To change the default, edit the `attach_idle_timeout(self, ..., timeout_minutes=30)`
+call in `secondary_school/main_gui.py` or the
+`enable_idle_timeout(30, ...)` call in `secondary_school/cli/cli_main.py`.
+
+See `docs/secondary_school/security/SESSION_TIMEOUT.md` for the full
+configuration and security rationale.
+
+---
+
 ## Access by Role
 
 | Module | Admin | Teacher | Student |
 |---|---|---|---|
 | Email | Full access | Send to own classes/parents | No access |
+| Cross-System Messaging | Full access | Send to staff in any other system | No access |
 | Notifications | Full access | Receive and manage own | Receive and manage own |
 | Announcements | Full CRUD | View all, create for own classes | View targeted |
 | Calendar | Full CRUD | View all, add class events | View all |

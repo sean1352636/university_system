@@ -32,6 +32,30 @@ The **students** module manages all student records within the college.
 | form_tutor     | Assigned form tutor                  |
 | status         | Active, withdrawn, etc.              |
 
+### Viewing Student Details (Double-Click)
+
+In the GUI, **admin / staff / instructor** users can double-click any
+row in the Students treeview to open a read-only details window for
+that student. This mirrors the equivalent feature in the University
+System and avoids opening the full edit dialog when you only need to
+look something up.
+
+The details window has two tabs:
+
+| Tab | Contents |
+|---|---|
+| Personal | Student ID, names, DOB, contact info (email/phone/address), year/form/tutor, status, created/updated timestamps |
+| Enrollments | Course ID, course name, status, and enrolment date for every active enrolment, loaded via `EnrollmentService.list_enrollments(student_pk=...)` |
+
+Footer buttons: `Close` is always present; `admin` users also see an
+`Edit` button that closes the details window and opens the full edit
+dialog (the same flow as the toolbar `Edit Selected` button).
+
+Other roles (students, parents) silently no-op on double-click — there
+is no error popup. The behaviour is implemented in
+`college_system/modules/domain/students/gui/student_gui.py` via
+`_on_double_click_student` and `_show_student_details`.
+
 ---
 
 ## Course Management

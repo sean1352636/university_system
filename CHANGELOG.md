@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.75.0 — 2026-04-10](#8750---2026-04-10)
 - [8.74.0 — 2026-04-10](#8740---2026-04-10)
 - [8.73.0 — 2026-04-10](#8730---2026-04-10)
 - [8.72.0 — 2026-04-07](#8720---2026-04-07)
@@ -165,6 +166,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.75.0] — 2026-04-10
+
+### Documentation backfill — recent features, OpenAPI specs, root TESTING.md, package docstrings
+
+This is a docs-only release. No runtime behaviour changes.
+
+#### Added
+
+- **OpenAPI specifications** committed under `docs/api/`:
+  - `docs/api/openapi.json` — unified server spec, **882 endpoints** covering shared infrastructure (auth, MFA, parent portal, retention, LMS, webhooks, GraphQL, tenants), university routes, and college routes.
+  - `docs/api/openapi-college.json` — standalone college API spec, **470 endpoints**.
+  - `docs/api/README.md` — explains the spec files, generation workflow, runtime equivalents, known limitations, and consumers (Swagger UI / SDK generators / contract tests / API gateways).
+  - `scripts/generate_openapi_spec.py` — auto-generator that imports each subsystem's `create_app()`, runs `build_openapi_spec(app)`, and writes deterministic JSON. Supports `--system <name>`, `--check` (CI mode), and writes only on change.
+
+- **Root [`TESTING.md`](TESTING.md)** — top-level entry point for running the test suite. Documents every `make test*` target, the pytest configuration in `pyproject.toml`, the marker conventions (`slow` / `integration` / `unit` / `gui` / `security` / `performance`), parallel execution via xdist, coverage workflow, common issues, and links out to the per-subsystem `TESTING_GUIDE.md` files.
+
+- **Per-subsystem `SESSION_TIMEOUT.md`** documenting the v8.74.0 idle-logout feature:
+  - `docs/college_system/security/SESSION_TIMEOUT.md`
+  - `docs/secondary_school/security/SESSION_TIMEOUT.md`
+  - `docs/primary_school/security/SESSION_TIMEOUT.md`
+
+  Each covers: how activity is tracked (tk events for GUI, `signal.SIGALRM` for CLI), what the user sees on timeout, how to change the default, the security rationale, and exact implementation file references.
+
+- **Cross-system messaging sections** added to the existing communication guides:
+  - `docs/college_system/guides/communication.md` — gained "Cross-System Messaging" and "Idle / inactivity auto-logout" sections.
+  - `docs/secondary_school/guides/communication.md` — same.
+  - `docs/primary_school/guides/communication.md` — same.
+
+  Each section documents where to find the feature in GUI and CLI, what each tab does, the central `cross_system_messages` table, and the relevant `InterSystemMessagingService` methods.
+
+- **Student/pupil double-click viewer** documented in the academics guides:
+  - `docs/college_system/guides/academics.md` — Student Records → "Viewing Student Details (Double-Click)".
+  - `docs/secondary_school/guides/academics.md` — Students → "Viewing Student Details (Double-Click)".
+  - `docs/primary_school/guides/academics.md` — Pupils → "Viewing Pupil Details (Double-Click)".
+
+  Each documents the role gating (admin / staff / teacher / instructor only), the tab contents, the admin-only `Edit` button, and the implementing module.
+
+#### Changed
+
+- **Package-level `__init__.py` docstrings** for the three non-university subsystems, mirroring the university model:
+  - `education_system/college_system/__init__.py` — added scope, Python/database/architecture summary, `__author__`, `__license__`, `__all__`, version aligned to `pyproject.toml` (8.70.0).
+  - `education_system/secondary_school/__init__.py` — was empty; now has full docstring + `__version__` / `__author__` / `__license__` / `__all__`.
+  - `education_system/primary_school/__init__.py` — was empty; now has full docstring + `__version__` / `__author__` / `__license__` / `__all__`.
+
+#### Notes
+
+- Standalone secondary and primary OpenAPI specs are not yet generated because the standalone `secondary/api_server.py` and `primary/api_server.py` factories import legacy module paths (`education_system.secondary_school_system`, `education_system.primary_system`) that no longer exist. The unified spec covers shared infrastructure used by all four subsystems; once those imports are corrected, running `python scripts/generate_openapi_spec.py` will pick up the additional standalone specs automatically. This is documented in `docs/api/README.md`.
 
 ---
 

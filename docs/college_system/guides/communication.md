@@ -258,6 +258,77 @@ The forums module provides discussion board functionality for staff and students
 Forums are particularly useful for course-specific discussions, student council communications, and cross-college consultation on policies or events.
 
 
+## Cross-System Messaging
+
+Staff often need to message colleagues in another education system — for
+example a college tutor talking to a Year 11 form tutor at the feeder
+secondary school about a transitioning student. This is handled by the
+**Cross-System Messaging** feature, embedded directly into the College
+SMS & Email screen and the College CLI's SMS/Email menu so you don't
+need to leave email to talk to staff in University, Secondary, or Primary.
+
+### Where to find it
+
+| Interface | Location |
+|-----------|----------|
+| GUI | **Communication → SMS & Email**, then the **Cross-System Email** tab |
+| CLI | **Communication → SMS & Email**, option `6) Cross-System Messages` |
+
+### What it does
+
+| Tab / option | Purpose |
+|---|---|
+| Inbox | Messages other systems' staff have sent to you. Shows sender name, system, subject, related student, date, and read state. |
+| Sent | Messages you've sent out to other systems. |
+| Compose | Pick a target system (Primary / Secondary / College / University), then a recipient from that system's staff list, optionally tag a student name, then enter subject + body. |
+
+Messages are stored centrally in `auth.db` (`cross_system_messages`
+table) so the same message is visible from whichever system the
+recipient logs into.
+
+### Service reference
+
+| Method | Purpose |
+|--------|---------|
+| `InterSystemMessagingService.send_message` | Send a message to a staff member in another system |
+| `InterSystemMessagingService.get_inbox` | Retrieve messages received from other systems |
+| `InterSystemMessagingService.get_sent` | Retrieve messages sent to other systems |
+| `InterSystemMessagingService.get_staff_list(system)` | List staff in a target system for the recipient picker |
+| `InterSystemMessagingService.mark_read` | Mark an inter-system message as read |
+| `InterSystemMessagingService.search_messages` | Search inbox + sent by subject, body, or student name |
+
+The CLI counterpart lives in
+`education_system.shared.messaging.cross_system_cli` and the reusable
+GUI panel in `education_system.shared.messaging.cross_system_panel`.
+
+
+## Idle / inactivity auto-logout
+
+The College GUI and CLI both auto-log-out after **30 minutes of inactivity**
+to reduce the risk of an unattended terminal exposing student data.
+
+| Interface | How activity is tracked |
+|-----------|-------------------------|
+| GUI | Mouse motion, key presses, mouse buttons, and scroll-wheel events on the main window (via `bind_all`) reset the idle timer. |
+| CLI | The menu prompt (`get_choice`) is wrapped in a `SIGALRM` watchdog. Any input — even pressing Enter at a menu — resets the timer. Long-running actions inside menu handlers (e.g. typing a long message body) are not bounded by the timeout; the clock starts again the next time you return to a menu prompt. |
+
+When the timeout fires:
+
+- **GUI:** A `Session Expired` dialog appears, then the application calls `auth.logout()`, requests the unified login screen via `request_logout()`, and destroys the window.
+- **CLI:** The terminal prints `⚠ Logged out after 30 minutes of inactivity.`, calls `auth.logout()`, and exits the process cleanly.
+
+The default of 30 minutes is set inside `CollegeApp.__init__` (GUI) and
+the College `cli_main.main()` (CLI). To change it, look for the
+`attach_idle_timeout(self, ..., timeout_minutes=30)` call in
+`college_system/modules/shared/gui/main_gui.py` or the
+`enable_idle_timeout(30, ...)` call in
+`college_system/modules/shared/cli/cli_main.py`. The CLI auto-logout
+is a no-op on platforms without `signal.SIGALRM` (e.g. Windows).
+
+See `docs/college_system/security/SESSION_TIMEOUT.md` for the full
+configuration and security rationale.
+
+
 ## Best Practices
 
 - Use announcements for broadcast information and messaging for individual communication.
@@ -265,3 +336,5 @@ Forums are particularly useful for course-specific discussions, student council 
 - Encourage parents to check the parent portal regularly by linking it to parents' evening bookings.
 - Use notification types consistently so users can quickly identify the urgency of alerts.
 - Review and archive old letter templates annually to ensure accuracy.
+- Use cross-system messaging to coordinate transitions and shared-student conversations with feeder/sender schools — keep one-off conversations there rather than spreading them across email and phone.
+- Don't disable the idle-timeout watchdog on shared/lab machines; lower it if you handle particularly sensitive records.
