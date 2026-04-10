@@ -115,7 +115,7 @@ email-validator==2.3.0         # Email address validation
 # CALENDAR & SCHEDULING EXTRAS
 # ===============================
 ics==0.7.2                     # ICS/iCalendar file generation and parsing
-holidays==0.93                 # Holiday calendar and date checking
+holidays==0.94                 # Holiday calendar and date checking
 recurring-ical-events==3.8.1   # Recurring event support for iCalendar
 
 # ===============================
