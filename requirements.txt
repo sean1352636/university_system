@@ -41,7 +41,7 @@ flask-socketio>=5.3.0          # WebSocket / Socket.IO integration for Flask
 python-socketio>=5.10.0        # Python Socket.IO server (dependency of flask-socketio)
 eventlet>=0.36.0               # Async networking library for Socket.IO concurrency
 Jinja2==3.1.6                  # Template engine for email templates
-Werkzeug==3.1.7                # WSGI utilities
+Werkzeug==3.1.8                # WSGI utilities
 urllib3==2.6.3                 # HTTP client library
 aiohttp==3.13.3                # Async HTTP client/server
 pydantic==2.12.5               # Data validation and schema definition
