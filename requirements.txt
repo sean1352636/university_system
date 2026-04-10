@@ -28,7 +28,7 @@ reportlab==4.4.10              # PDF generation and reports
 openpyxl==3.1.5                # Excel file handling and export
 fpdf2==2.8.7                   # Alternative PDF generation
 python-docx==1.2.0             # Word document support
-pypdf==6.9.2                   # PDF file processing and manipulation (replaces abandoned PyPDF2)
+pypdf==6.10.0                  # PDF file processing and manipulation (replaces abandoned PyPDF2; >=6.10.0 fixes infinite-loop on malformed comment)
 
 # ===============================
 # WEB & NETWORKING
@@ -62,7 +62,7 @@ PyMySQL==1.1.2                 # MySQL database support
 # ===============================
 pyotp==2.9.0                   # Two-factor authentication (TOTP)
 qrcode==8.2                    # QR code generation for 2FA
-cryptography==46.0.6           # Cryptographic functions and data encryption
+cryptography==46.0.7           # Cryptographic functions and data encryption (>=46.0.7 fixes GHSA buffer-overflow on non-contiguous buffers)
 bcrypt==5.0.0                  # Password hashing
 PyJWT==2.12.1                  # JSON Web Token authentication
 defusedxml>=0.7.1              # Safe XML parsing (prevents XXE attacks)

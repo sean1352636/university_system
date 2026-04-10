@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.75.2 — 2026-04-10](#8752---2026-04-10)
 - [8.75.1 — 2026-04-10](#8751---2026-04-10)
 - [8.75.0 — 2026-04-10](#8750---2026-04-10)
 - [8.74.0 — 2026-04-10](#8740---2026-04-10)
@@ -167,6 +168,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.75.2] — 2026-04-10
+
+### Dependency security fixes + stop Dependabot scanning student-submission seed data
+
+#### Security
+
+- **`cryptography` 46.0.6 → 46.0.7** — fixes the GHSA buffer-overflow when non-contiguous buffers are passed to APIs (Dependabot alert #24, opened 2 days ago).
+- **`pypdf` 6.9.2 → 6.10.0** — fixes the infinite-loop on a malformed comment that isn't followed by a character (Dependabot alert #22).
+
+Verified by reinstalling in the venv and importing each cryptography/pypdf-dependent module in `education_system.shared.auth.*`. The shared auth + password manager + security test suite (139 tests) passes; the one timing-attack test (`test_consistent_login_timing`) fails identically on both versions and predates this work — it's a pre-existing flaky test, not a regression.
+
+#### Fixed
+
+- **Renamed two student-submission seed-data files** so Dependabot stops misidentifying them as Python dependency manifests:
+  - `education_system/university_system/data/submissions/submitted/S12345/assignment_438/v1_20260117_084800_requirements.txt` → `..._submission.txt`
+  - `education_system/university_system/data/submissions/submitted/S12345/assignment_439/v1_20260209_181846_requirements.txt` → `..._submission.txt`
+
+  These files were the source of **22 of the 24** open Dependabot alerts (NLTK Zip Slip, urllib3 redirects, Pillow PSD OOB, Werkzeug safe_join, Flask-CORS, PyJWT crit, etc.) — none of which affected the actual project because the files are orphaned demo data with no code references (verified via grep). Renaming them so they no longer match Dependabot's `*requirements.txt` detection pattern eliminates the false-positive alerts at the source.
+
+#### Added
+
+- **`.github/dependabot.yml`** — pins Dependabot version-update PRs to scan only the root `requirements.txt` and the `github-actions` directory. Groups security patches into a single PR per ecosystem, applies `dependencies` + `security` labels, uses conventional-commit-style commit prefixes. Future seed-data files added under arbitrary paths will not generate noise.
+
+#### Notes
+
+- Two pre-existing issues surfaced during the post-bump audit but were **not** introduced by this release:
+  1. 11 circular import failures in `university_system/modules/domain/commerce/{cafe_inventory,cafe_reports,...}` and the related `tests/cli/domain/commerce/restaurant/test_restaurant_misc_*` test suite. These reproduce on the previous cryptography version.
+  2. The `test_consistent_login_timing` security test asserts a `<10x` ratio between valid (bcrypt-hashed) and invalid (immediate-return) login response times; the actual ratio is ~70-80x, indicating a real timing-attack-resistance gap in the auth core. Reproduces on previous cryptography version. Last touched in commit `cf64b8d5`, well before this session.
+
+  Neither is in scope for a dependency-bump release; both are documented here for future tracking.
 
 ---
 

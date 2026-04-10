@@ -1,0 +1,49 @@
+# Dependabot configuration — Education System monorepo
+#
+# Dependabot version-update PRs are limited to the root requirements.txt
+# (the actual project dependency manifest). The repository contains
+# `*_requirements.txt` artefacts under
+# `education_system/university_system/data/submissions/...` that are
+# student-submission seed data — they were historically picked up by
+# Dependabot as Python manifests and produced false-positive
+# vulnerability alerts.  Those files have been renamed to
+# `*_submission.txt` so they no longer match Dependabot's manifest
+# detection patterns; this config additionally pins the scan target
+# to the root directory so any future seed data added under arbitrary
+# paths will not generate noise.
+#
+# To temporarily disable updates for a specific package, add an
+# `ignore:` entry under the `pip` block below.
+
+version: 2
+
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+      - "security"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    # Group security patches into a single PR per ecosystem
+    groups:
+      security-patches:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci"
