@@ -10,7 +10,7 @@ from unittest import mock
 
 import pytest
 
-from education_system.university_system.modules.domain.commerce.services.restaurant.operations.connection import financials
+from education_system.university_system.modules.domain.commerce.services.restaurant.operations import financials
 
 @pytest.fixture
 def mock_db_connection():

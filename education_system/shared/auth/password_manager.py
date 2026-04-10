@@ -37,6 +37,19 @@ def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
+def constant_time_dummy_verify(password: str) -> None:
+    """Run a dummy bcrypt comparison so timing matches a real verify.
+
+    Call this from auth code paths that fail before reaching the real
+    :func:`verify_password` (e.g. unknown user, deactivated account) so an
+    attacker can't tell from response time whether a username exists.
+    """
+    try:
+        bcrypt.checkpw(password.encode("utf-8"), _DUMMY_HASH.encode("utf-8"))
+    except (ValueError, AttributeError):
+        pass
+
+
 def verify_password(password: str, password_hash: str, legacy_salt: str | None = None) -> bool:
     """Verify a password against its hash.
 

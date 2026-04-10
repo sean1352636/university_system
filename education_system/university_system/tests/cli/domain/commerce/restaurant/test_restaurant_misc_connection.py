@@ -10,7 +10,7 @@ from unittest import mock
 
 import pytest
 
-from education_system.university_system.modules.domain.commerce.services.restaurant.operations.connection import connection
+from education_system.university_system.modules.domain.commerce.services.restaurant.operations import connection
 
 @pytest.fixture
 def temp_db():

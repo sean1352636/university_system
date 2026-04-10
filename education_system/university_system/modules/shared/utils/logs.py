@@ -21,6 +21,7 @@ from education_system.university_system.core.logs import (
     display_activity_logs,
     export_communication_logs,
     display_communication_analytics_menu,
+    LOG_MANAGEMENT_AVAILABLE,
 )
 
 __all__ = [
@@ -33,4 +34,5 @@ __all__ = [
     "display_activity_logs",
     "export_communication_logs",
     "display_communication_analytics_menu",
+    "LOG_MANAGEMENT_AVAILABLE",
 ]

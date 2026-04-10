@@ -11,7 +11,7 @@ from unittest import mock
 
 import pytest
 
-from education_system.university_system.modules.domain.commerce.services.restaurant.operations.connection import exports
+from education_system.university_system.modules.domain.commerce.services.restaurant.operations import exports
 
 @pytest.fixture
 def mock_db_connection():

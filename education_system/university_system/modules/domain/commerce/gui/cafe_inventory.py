@@ -9,7 +9,7 @@ from tkinter import ttk, messagebox, simpledialog
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import get_db_connection
+from education_system.university_system.modules.domain.commerce.gui.cafe_common import get_db_connection
 
 
 class CafeInventoryMixin:

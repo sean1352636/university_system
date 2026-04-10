@@ -11,7 +11,7 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 
 def _get_db_connection():
     """Lazy import to break circular dependency with cafe_system_gui."""
-    from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import get_db_connection
+    from education_system.university_system.modules.domain.commerce.gui.cafe_common import get_db_connection
     return get_db_connection()
 
 

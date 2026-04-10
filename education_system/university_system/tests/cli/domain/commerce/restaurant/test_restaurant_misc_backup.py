@@ -11,7 +11,7 @@ from unittest import mock
 
 import pytest
 
-from education_system.university_system.modules.domain.commerce.services.restaurant.operations.connection import backup
+from education_system.university_system.modules.domain.commerce.services.restaurant.operations import backup
 
 
 @pytest.fixture

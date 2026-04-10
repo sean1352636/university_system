@@ -10,7 +10,7 @@ from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
-from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import get_db_connection, FINANCE_ACCOUNT_AVAILABLE, EMAIL_SERVICE_AVAILABLE
+from education_system.university_system.modules.domain.commerce.gui.cafe_common import get_db_connection, FINANCE_ACCOUNT_AVAILABLE, EMAIL_SERVICE_AVAILABLE
 
 try:
     from education_system.university_system.modules.shared.utils.finance_integration import (

@@ -272,8 +272,18 @@ def display_career_services_menu(auth):
         except Exception as e:
             print(get_text('career.error', default='Error: {error}').format(error=e))
 
-# Import GUI launcher
-from education_system.university_system.modules.domain.career.gui.career_services_gui import launch_career_services_gui
+# GUI launcher — lazy-loaded via __getattr__ to avoid the circular
+# import that happens because career_services_gui imports back from
+# this module.  Public surface stays the same: callers can still do
+# ``from ...career_services_core import launch_career_services_gui``.
+def __getattr__(name):
+    if name == "launch_career_services_gui":
+        from education_system.university_system.modules.domain.career.gui.career_services_gui import (
+            launch_career_services_gui as _launch,
+        )
+        return _launch
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __all__ = [
     'JobManager', 'ResumeManager', 'InterviewManager',

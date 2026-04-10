@@ -10,6 +10,7 @@ from education_system.shared.auth.password_manager import (
     hash_password,
     verify_password,
     validate_password_strength,
+    constant_time_dummy_verify,
 )
 from education_system.shared.auth.session_manager import SessionManager
 from education_system.shared.auth.role_manager import RoleManager
@@ -51,10 +52,16 @@ class UserAuth:
             ).fetchone()
 
             if not user:
+                # Run a dummy bcrypt check so unknown-user response time
+                # matches a real failed login (~400ms).  Without this an
+                # attacker can enumerate valid usernames by timing.
+                constant_time_dummy_verify(password)
                 logger.warning("Login failed: unknown user '%s'", username)
                 raise AuthError("Invalid username or password.")
 
             if not user["is_active"]:
+                # Same reasoning — don't leak account existence via timing.
+                constant_time_dummy_verify(password)
                 logger.warning("Login attempt on deactivated account: '%s'", username)
                 raise AuthError("Invalid username or password.")
 

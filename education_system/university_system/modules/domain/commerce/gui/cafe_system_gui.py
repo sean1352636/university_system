@@ -21,26 +21,25 @@ from education_system.university_system.modules.shared.utils.i18n import (
 )
 from education_system.university_system.modules.shared.utils.gui_language_selector import show_gui_language_selector
 
-# Import finance integration for student payments
-try:
-    from education_system.university_system.modules.shared.utils.finance_integration import (
+# Shared cafe helpers — also imported by every cafe_*Mixin module.  These
+# live in cafe_common to break the circular import that previously
+# happened when the mixin modules tried to import from cafe_system_gui.
+from education_system.university_system.modules.domain.commerce.gui.cafe_common import (
+    FINANCE_ACCOUNT_AVAILABLE,
+    EMAIL_SERVICE_AVAILABLE,
+    get_db_connection,
+)
+# Re-export the optional finance helpers for any external code that
+# imports them via cafe_system_gui (preserves the previous module surface).
+if FINANCE_ACCOUNT_AVAILABLE:
+    from education_system.university_system.modules.shared.utils.finance_integration import (  # noqa: F401
         process_student_finance_account_payment,
         get_student_finance_account_balance,
         get_student_info,
-        record_payment_to_finance
+        record_payment_to_finance,
     )
-    FINANCE_ACCOUNT_AVAILABLE = True
-except ImportError:
-    FINANCE_ACCOUNT_AVAILABLE = False
-    print("Warning: Student finance account integration not available")
-
-# Import email service for receipts
-try:
-    from education_system.university_system.infrastructure.email.email_service import send_email
-    EMAIL_SERVICE_AVAILABLE = True
-except ImportError:
-    EMAIL_SERVICE_AVAILABLE = False
-    print("Warning: Email service not available")
+if EMAIL_SERVICE_AVAILABLE:
+    from education_system.university_system.infrastructure.email.email_service import send_email  # noqa: F401
 
 # Import custom exceptions
 from education_system.university_system.infrastructure.exceptions import (
@@ -48,15 +47,6 @@ from education_system.university_system.infrastructure.exceptions import (
     DatabaseConnectionError,
     ValidationError
 )
-
-def get_db_connection():
-    """Get database connection with proper error handling"""
-    try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-        return conn
-    except (sqlite3.Error, OSError) as e:
-        print(f"Database connection error: {e}")
-        return None
 
 def init_db():
     """Initialize cafe database tables"""
