@@ -5,6 +5,8 @@ systems (primary -> secondary -> college -> university) and to execute batch
 transfers using the existing academic history extraction functions.
 """
 
+import json
+import logging
 import sqlite3
 import datetime
 from pathlib import Path
@@ -14,6 +16,8 @@ from education_system.shared.transfer.academic_history import (
     extract_secondary_history,
     extract_college_history,
 )
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -271,6 +275,14 @@ class BulkTransferService:
             dest_conn.close()
 
         self._last_results = summary
+
+        # Notify admin users of both systems
+        if summary["transferred"] > 0:
+            try:
+                self._notify_admins_of_transfer(summary)
+            except Exception as exc:
+                logger.warning("Admin notification failed: %s", exc)
+
         return summary
 
     def get_last_results(self):
@@ -346,7 +358,6 @@ class BulkTransferService:
 
     def _insert_transfer_record(self, dest_conn, source_system, student_id, name, history):
         """Insert an academic_transfer_history record in the destination DB."""
-        import json
         # Package everything into data_json to match the per-system schema
         data = dict(history) if history else {}
         data["student_name"] = name
@@ -374,3 +385,100 @@ class BulkTransferService:
                 )
         except Exception:
             pass
+
+    def _notify_admins_of_transfer(self, summary):
+        """Email admin users of both source and destination systems about the transfer.
+
+        Looks up admin users from the shared auth database, then sends each
+        admin of the source and destination systems a notification email.
+        """
+        from education_system.shared.database.paths import AUTH_DB, SYSTEM_LABELS
+
+        source = summary.get("source_system", "")
+        dest = summary.get("dest_system", "")
+        transferred = summary.get("transferred", 0)
+
+        if transferred == 0:
+            return
+
+        source_label = SYSTEM_LABELS.get(source, source.title())
+        dest_label = SYSTEM_LABELS.get(dest, dest.title())
+
+        # Collect transferred student names
+        student_lines = []
+        for d in summary.get("details", []):
+            if d.get("success"):
+                name = d.get("name", d.get("student_id", "Unknown"))
+                sid = d.get("student_id", "")
+                student_lines.append(f"  - {name} ({sid})")
+        student_list = "\n".join(student_lines) if student_lines else "  (no details available)"
+
+        # Look up admin emails from the shared auth DB
+        admin_emails = set()
+        try:
+            if not AUTH_DB.exists():
+                logger.warning("Auth DB not found; cannot send transfer notifications")
+                return
+
+            conn = sqlite3.connect(str(AUTH_DB))
+            conn.row_factory = sqlite3.Row
+            try:
+                rows = conn.execute(
+                    """SELECT DISTINCT u.email
+                       FROM users u
+                       JOIN user_systems us ON u.id = us.user_id
+                       WHERE us.role = 'admin'
+                         AND us.system_key IN (?, ?)
+                         AND u.is_active = 1
+                         AND u.email IS NOT NULL
+                         AND u.email != ''""",
+                    (source, dest),
+                ).fetchall()
+                for r in rows:
+                    email = r["email"].strip()
+                    if email:
+                        admin_emails.add(email)
+            finally:
+                conn.close()
+        except Exception as exc:
+            logger.warning("Failed to look up admin emails: %s", exc)
+            return
+
+        if not admin_emails:
+            logger.info("No admin emails found for %s / %s; skipping transfer notification", source, dest)
+            return
+
+        # Build and send the email
+        try:
+            from education_system.shared.email.email_service import EmailService
+
+            svc = EmailService()
+            if not svc.is_configured:
+                logger.info("Email not configured; skipping transfer notification")
+                return
+
+            subject = f"Student Transfer: {source_label} \u2192 {dest_label} ({transferred} student{'s' if transferred != 1 else ''})"
+
+            body = (
+                f"Student Transfer Notification\n"
+                f"{'=' * 40}\n\n"
+                f"Date: {summary.get('timestamp', datetime.datetime.now().isoformat())}\n"
+                f"From: {source_label}\n"
+                f"To:   {dest_label}\n"
+                f"Students transferred: {transferred}\n\n"
+                f"Students:\n{student_list}\n\n"
+                f"Failed transfers: {summary.get('failed', 0)}\n\n"
+                f"This is an automated notification from the Education System.\n"
+            )
+
+            result = svc.send_bulk_email(
+                recipients=list(admin_emails),
+                subject=subject,
+                body=body,
+            )
+            if result.get("success"):
+                logger.info("Transfer notification sent to %d admin(s)", len(admin_emails))
+            else:
+                logger.warning("Transfer notification send failed: %s", result.get("error", "unknown"))
+        except Exception as exc:
+            logger.warning("Failed to send transfer notification email: %s", exc)
