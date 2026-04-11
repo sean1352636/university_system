@@ -66,11 +66,11 @@ def _get_child_db(system_key: str) -> str | None:
     """Return the SQLite database path for *system_key* (school/college/primary/university)."""
     try:
         if system_key == "school":
-            from education_system.secondary_school.core.paths import DB_FILE
-            return str(DB_FILE)
+            from education_system.secondary_school.core.paths import DEFAULT_DB_PATH
+            return str(DEFAULT_DB_PATH)
         if system_key == "college":
-            from education_system.college_system.core.paths import DB_FILE
-            return str(DB_FILE)
+            from education_system.college_system.core.paths import DEFAULT_DB_PATH
+            return str(DEFAULT_DB_PATH)
         if system_key == "primary":
             from education_system.primary_school.infrastructure.database.db import get_db_path
             return str(get_db_path())

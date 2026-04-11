@@ -10,6 +10,7 @@ PROJECT_ROOT = _paths.project_root
 DATA_DIR = _paths.data_dir
 DB_DIR = _paths.db_dir
 DB_FILE = _paths.db_file
+DEFAULT_DB_PATH = DB_FILE  # alias used by shared/api and shared/core
 CONFIG_DIR = _paths.config_dir
 LOGS_DIR = _paths.logs_dir
 
