@@ -287,7 +287,7 @@ def init_peer_support_tables():
 
         # Create peer_review_criteria table
         cursor.execute('''
-        CREATE TABLE peer_review_criteria (
+        CREATE TABLE IF NOT EXISTS peer_review_criteria (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     review_id INTEGER NOT NULL,
                     criteria_name TEXT NOT NULL,
@@ -299,7 +299,7 @@ def init_peer_support_tables():
 
         # Create peer_reviews table
         cursor.execute('''
-        CREATE TABLE peer_reviews (
+        CREATE TABLE IF NOT EXISTS peer_reviews (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             assignment_id INTEGER NOT NULL,
             reviewer_id INTEGER NOT NULL,
@@ -319,7 +319,7 @@ def init_peer_support_tables():
 
         # Create study_groups table
         cursor.execute('''
-        CREATE TABLE study_groups (
+        CREATE TABLE IF NOT EXISTS study_groups (
                     study_group_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     subject TEXT,
                     topic TEXT,
@@ -337,7 +337,7 @@ def init_peer_support_tables():
 
         # Create tutoring_offers table
         cursor.execute('''
-        CREATE TABLE tutoring_offers (
+        CREATE TABLE IF NOT EXISTS tutoring_offers (
                     offer_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     tutor_id TEXT,
                     subject TEXT,

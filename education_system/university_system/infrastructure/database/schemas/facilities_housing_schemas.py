@@ -230,7 +230,7 @@ def init_housing_tables():
 
         # Create accommodation_templates table
         cursor.execute('''
-        CREATE TABLE accommodation_templates (
+        CREATE TABLE IF NOT EXISTS accommodation_templates (
                             name TEXT PRIMARY KEY,
                             accommodation_type TEXT NOT NULL,
                             description TEXT,
@@ -244,7 +244,7 @@ def init_housing_tables():
 
         # Create accommodation_types table
         cursor.execute('''
-        CREATE TABLE accommodation_types (
+        CREATE TABLE IF NOT EXISTS accommodation_types (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             type_name TEXT NOT NULL UNIQUE,
                             description TEXT,
@@ -256,7 +256,7 @@ def init_housing_tables():
 
         # Create accommodations table
         cursor.execute('''
-        CREATE TABLE accommodations (
+        CREATE TABLE IF NOT EXISTS accommodations (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             student_id TEXT NOT NULL,
                             accommodation_type TEXT NOT NULL,
@@ -275,7 +275,7 @@ def init_housing_tables():
 
         # Create chat_room_invitations table
         cursor.execute('''
-        CREATE TABLE chat_room_invitations (
+        CREATE TABLE IF NOT EXISTS chat_room_invitations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     room_id INTEGER NOT NULL,
                     user_id INTEGER NOT NULL,
@@ -291,7 +291,7 @@ def init_housing_tables():
 
         # Create chat_room_members table
         cursor.execute('''
-        CREATE TABLE chat_room_members (
+        CREATE TABLE IF NOT EXISTS chat_room_members (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         room_id INTEGER NOT NULL,
                         user_id INTEGER NOT NULL,
@@ -304,7 +304,7 @@ def init_housing_tables():
 
         # Create chat_rooms table
         cursor.execute('''
-        CREATE TABLE chat_rooms (
+        CREATE TABLE IF NOT EXISTS chat_rooms (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
                         description TEXT,
@@ -318,7 +318,7 @@ def init_housing_tables():
 
         # Create housing_applications table
         cursor.execute('''
-        CREATE TABLE housing_applications (
+        CREATE TABLE IF NOT EXISTS housing_applications (
                     application_id TEXT PRIMARY KEY,
                     student_id TEXT NOT NULL,
                     application_date TEXT NOT NULL,
@@ -340,7 +340,7 @@ def init_housing_tables():
 
         # Create housing_buildings table
         cursor.execute('''
-        CREATE TABLE housing_buildings (
+        CREATE TABLE IF NOT EXISTS housing_buildings (
                     building_id TEXT PRIMARY KEY,
                     building_name TEXT NOT NULL,
                     address TEXT NOT NULL,
@@ -358,7 +358,7 @@ def init_housing_tables():
 
         # Create housing_inspections table
         cursor.execute('''
-        CREATE TABLE housing_inspections (
+        CREATE TABLE IF NOT EXISTS housing_inspections (
                     inspection_id TEXT PRIMARY KEY,
                     room_id TEXT NOT NULL,
                     inspector TEXT NOT NULL,
@@ -376,7 +376,7 @@ def init_housing_tables():
 
         # Create housing_inventory table
         cursor.execute('''
-        CREATE TABLE housing_inventory (
+        CREATE TABLE IF NOT EXISTS housing_inventory (
                     item_id TEXT PRIMARY KEY,
                     room_id TEXT NOT NULL,
                     item_name TEXT NOT NULL,
@@ -393,7 +393,7 @@ def init_housing_tables():
 
         # Create housing_maintenance_requests table
         cursor.execute('''
-        CREATE TABLE housing_maintenance_requests (
+        CREATE TABLE IF NOT EXISTS housing_maintenance_requests (
                     request_id TEXT PRIMARY KEY,
                     room_id TEXT NOT NULL,
                     student_id TEXT NOT NULL,
@@ -415,7 +415,7 @@ def init_housing_tables():
 
         # Create housing_rooms table
         cursor.execute('''
-        CREATE TABLE housing_rooms (
+        CREATE TABLE IF NOT EXISTS housing_rooms (
                     room_id TEXT PRIMARY KEY,
                     building_id TEXT NOT NULL,
                     room_number TEXT NOT NULL,
@@ -591,7 +591,7 @@ def init_travel_tables():
 
         # Create trip_expenses table
         cursor.execute('''
-        CREATE TABLE trip_expenses (
+        CREATE TABLE IF NOT EXISTS trip_expenses (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         trip_id INTEGER NOT NULL,
                         category TEXT NOT NULL,
@@ -606,7 +606,7 @@ def init_travel_tables():
 
         # Create trip_itinerary table
         cursor.execute('''
-        CREATE TABLE trip_itinerary (
+        CREATE TABLE IF NOT EXISTS trip_itinerary (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         trip_id INTEGER NOT NULL,
                         day_number INTEGER NOT NULL,
@@ -622,7 +622,7 @@ def init_travel_tables():
 
         # Create trip_participants table
         cursor.execute('''
-        CREATE TABLE trip_participants (
+        CREATE TABLE IF NOT EXISTS trip_participants (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         trip_id INTEGER NOT NULL,
                         student_id TEXT,
@@ -644,7 +644,7 @@ def init_travel_tables():
 
         # Create trip_staff table
         cursor.execute('''
-        CREATE TABLE trip_staff (
+        CREATE TABLE IF NOT EXISTS trip_staff (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         trip_id INTEGER NOT NULL,
                         staff_user_id INTEGER NOT NULL,
@@ -659,7 +659,7 @@ def init_travel_tables():
 
         # Create trips table
         cursor.execute('''
-        CREATE TABLE trips (
+        CREATE TABLE IF NOT EXISTS trips (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         trip_name TEXT NOT NULL,
                         description TEXT,

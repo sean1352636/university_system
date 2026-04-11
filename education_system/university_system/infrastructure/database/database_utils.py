@@ -96,18 +96,20 @@ def init_db():
             db_needs_setup = True
             logging.info("Database file not found. Creating new database...")
         else:
-            # Check if database has any tables
+            # Check if database has required domain tables
+            required_tables = {'modules', 'student_modules', 'payments', 'assignments', 'support_tickets'}
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
                 cursor = conn.cursor()
                 cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-                tables = cursor.fetchall()
+                tables = {row[0] for row in cursor.fetchall()}
             finally:
                 conn.close()
 
-            if len(tables) == 0:
+            missing = required_tables - tables
+            if missing:
                 db_needs_setup = True
-                logging.info("Database is empty. Initializing schema...")
+                logging.info("Database missing tables %s. Running schema setup...", missing)
 
         if db_needs_setup:
             # Run the comprehensive database setup
@@ -117,14 +119,39 @@ def init_db():
             from education_system.university_system.infrastructure.database.schemas.misc_schemas import initialize_all_schemas
             initialize_all_schemas()
 
-            # Seed default staff profiles
-            from education_system.university_system.modules.setup_unified_database import seed_default_staff
-            seed_default_staff()
+            # Seed default staff profiles (may fail if staff_profiles table
+            # was not created by the active schema set — that's OK)
+            try:
+                from education_system.university_system.modules.setup_unified_database import seed_default_staff
+                seed_default_staff()
+            except Exception:
+                logging.debug("Skipped seeding staff profiles (table may not exist)")
 
             logging.info("Database initialized successfully with all tables!")
             print("✅ " + _t("database.init_success"))
             return True
-        else:
+        # Ensure student_modules has module_code column (migration for older schemas)
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            try:
+                cols = [row[1] for row in conn.execute("PRAGMA table_info(student_modules)").fetchall()]
+                migrations = {
+                    'module_code': 'TEXT',
+                    'module_name': 'TEXT',
+                    'module_type': "TEXT DEFAULT 'Standard'",
+                    'completion_date': 'TEXT',
+                }
+                for col, typedef in migrations.items():
+                    if col not in cols:
+                        conn.execute(f"ALTER TABLE student_modules ADD COLUMN {col} {typedef}")
+                        logging.info("Added missing column student_modules.%s", col)
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception:
+            logging.debug("student_modules migration check skipped")
+
+        if not db_needs_setup:
             logging.info(f"Database already initialized with {len(tables)} tables")
             return True
 

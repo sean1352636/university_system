@@ -109,7 +109,7 @@ def init_student_affairs_tables():
 
         # Create activity_log table
         cursor.execute('''
-        CREATE TABLE activity_log (
+        CREATE TABLE IF NOT EXISTS activity_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER,
                     username TEXT NOT NULL,
@@ -123,7 +123,7 @@ def init_student_affairs_tables():
 
         # Create book_clubs table
         cursor.execute('''
-        CREATE TABLE book_clubs (
+        CREATE TABLE IF NOT EXISTS book_clubs (
                     book_club_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     club_name TEXT,
                     current_book TEXT,
@@ -140,7 +140,7 @@ def init_student_affairs_tables():
 
         # Create class_reunions table
         cursor.execute('''
-        CREATE TABLE class_reunions (
+        CREATE TABLE IF NOT EXISTS class_reunions (
                     reunion_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     graduation_year INTEGER,
                     reunion_date TEXT,
@@ -156,7 +156,7 @@ def init_student_affairs_tables():
 
         # Create club_competitions table
         cursor.execute('''
-        CREATE TABLE club_competitions (
+        CREATE TABLE IF NOT EXISTS club_competitions (
                     competition_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     competition_name TEXT,
                     description TEXT,
@@ -174,7 +174,7 @@ def init_student_affairs_tables():
 
         # Create club_discussions table
         cursor.execute('''
-        CREATE TABLE club_discussions (
+        CREATE TABLE IF NOT EXISTS club_discussions (
                     discussion_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     club_id INTEGER,
                     author_id TEXT,
@@ -191,7 +191,7 @@ def init_student_affairs_tables():
 
         # Create club_expenses table
         cursor.execute('''
-        CREATE TABLE club_expenses (
+        CREATE TABLE IF NOT EXISTS club_expenses (
                     expense_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     club_id INTEGER,
                     requester_id TEXT,
@@ -212,7 +212,7 @@ def init_student_affairs_tables():
 
         # Create club_media table
         cursor.execute('''
-        CREATE TABLE club_media (
+        CREATE TABLE IF NOT EXISTS club_media (
                     media_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     club_id INTEGER,
                     uploader_id TEXT,
@@ -229,7 +229,7 @@ def init_student_affairs_tables():
 
         # Create course_events table
         cursor.execute('''
-        CREATE TABLE course_events (
+        CREATE TABLE IF NOT EXISTS course_events (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             event_id TEXT NOT NULL,
                             course_id TEXT NOT NULL,
@@ -243,7 +243,7 @@ def init_student_affairs_tables():
 
         # Create election_candidates table
         cursor.execute('''
-        CREATE TABLE election_candidates (
+        CREATE TABLE IF NOT EXISTS election_candidates (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     election_id INTEGER,
                     student_id TEXT,
@@ -256,7 +256,7 @@ def init_student_affairs_tables():
 
         # Create election_votes table
         cursor.execute('''
-        CREATE TABLE election_votes (
+        CREATE TABLE IF NOT EXISTS election_votes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     election_id INTEGER,
                     voter_id TEXT,
@@ -270,7 +270,7 @@ def init_student_affairs_tables():
 
         # Create event_categories table
         cursor.execute('''
-        CREATE TABLE event_categories (
+        CREATE TABLE IF NOT EXISTS event_categories (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             name TEXT UNIQUE NOT NULL,
                             color_code TEXT,
@@ -281,7 +281,7 @@ def init_student_affairs_tables():
 
         # Create event_dependencies table
         cursor.execute('''
-        CREATE TABLE event_dependencies (
+        CREATE TABLE IF NOT EXISTS event_dependencies (
                             id TEXT PRIMARY KEY,
                             prerequisite_event_id TEXT NOT NULL,
                             dependent_event_id TEXT NOT NULL,
@@ -298,7 +298,7 @@ def init_student_affairs_tables():
 
         # Create event_finances table
         cursor.execute('''
-        CREATE TABLE event_finances (
+        CREATE TABLE IF NOT EXISTS event_finances (
                     finance_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     event_id INTEGER,
                     expense_type TEXT,
@@ -313,7 +313,7 @@ def init_student_affairs_tables():
 
         # Create event_sequences table
         cursor.execute('''
-        CREATE TABLE event_sequences (
+        CREATE TABLE IF NOT EXISTS event_sequences (
                             id TEXT PRIMARY KEY,
                             workflow_id TEXT NOT NULL,
                             event_id TEXT NOT NULL,
@@ -327,7 +327,7 @@ def init_student_affairs_tables():
 
         # Create event_surveys table
         cursor.execute('''
-        CREATE TABLE event_surveys (
+        CREATE TABLE IF NOT EXISTS event_surveys (
                     survey_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     event_id INTEGER,
                     survey_title TEXT,
@@ -339,7 +339,7 @@ def init_student_affairs_tables():
 
         # Create event_tags table
         cursor.execute('''
-        CREATE TABLE event_tags (
+        CREATE TABLE IF NOT EXISTS event_tags (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             name TEXT UNIQUE NOT NULL,
                             color_code TEXT,
@@ -349,7 +349,7 @@ def init_student_affairs_tables():
 
         # Create event_tickets table
         cursor.execute('''
-        CREATE TABLE event_tickets (
+        CREATE TABLE IF NOT EXISTS event_tickets (
                     ticket_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     event_id INTEGER,
                     ticket_type TEXT,
@@ -366,7 +366,7 @@ def init_student_affairs_tables():
 
         # Create event_timezones table
         cursor.execute('''
-        CREATE TABLE event_timezones (
+        CREATE TABLE IF NOT EXISTS event_timezones (
                             event_id TEXT PRIMARY KEY,
                             timezone_name TEXT NOT NULL,
                             utc_offset_hours INTEGER NOT NULL,
@@ -378,7 +378,7 @@ def init_student_affairs_tables():
 
         # Create event_workflows table
         cursor.execute('''
-        CREATE TABLE event_workflows (
+        CREATE TABLE IF NOT EXISTS event_workflows (
                             id TEXT PRIMARY KEY,
                             workflow_name TEXT NOT NULL,
                             description TEXT,
@@ -431,7 +431,7 @@ def init_student_affairs_tables():
 
         # Create organizations table
         cursor.execute('''
-        CREATE TABLE organizations (
+        CREATE TABLE IF NOT EXISTS organizations (
                     org_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     domain TEXT,
@@ -446,7 +446,7 @@ def init_student_affairs_tables():
 
         # Create parent_activity_log table
         cursor.execute('''
-        CREATE TABLE parent_activity_log (
+        CREATE TABLE IF NOT EXISTS parent_activity_log (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         parent_id TEXT,
                         action TEXT,
@@ -460,7 +460,7 @@ def init_student_affairs_tables():
 
         # Create recurring_events table
         cursor.execute('''
-        CREATE TABLE recurring_events (
+        CREATE TABLE IF NOT EXISTS recurring_events (
                             id TEXT PRIMARY KEY,
                             base_event_id TEXT NOT NULL,
                             frequency TEXT NOT NULL,
@@ -479,7 +479,7 @@ def init_student_affairs_tables():
 
         # Create union_elections table
         cursor.execute('''
-        CREATE TABLE union_elections (
+        CREATE TABLE IF NOT EXISTS union_elections (
                     election_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     position TEXT,
                     department TEXT,
@@ -493,7 +493,7 @@ def init_student_affairs_tables():
 
         # Create union_equipment table
         cursor.execute('''
-        CREATE TABLE union_equipment (
+        CREATE TABLE IF NOT EXISTS union_equipment (
                     equipment_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     equipment_name TEXT,
                     category TEXT,
@@ -510,7 +510,7 @@ def init_student_affairs_tables():
 
         # Create union_facilities table
         cursor.execute('''
-        CREATE TABLE union_facilities (
+        CREATE TABLE IF NOT EXISTS union_facilities (
                     facility_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     facility_name TEXT UNIQUE,
                     location TEXT,
@@ -524,7 +524,7 @@ def init_student_affairs_tables():
 
         # Create union_representatives table
         cursor.execute('''
-        CREATE TABLE union_representatives (
+        CREATE TABLE IF NOT EXISTS union_representatives (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     position TEXT,
@@ -538,7 +538,7 @@ def init_student_affairs_tables():
 
         # Create user_activity_log table
         cursor.execute('''
-        CREATE TABLE user_activity_log (
+        CREATE TABLE IF NOT EXISTS user_activity_log (
                     log_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT,
                     activity_type TEXT,
@@ -574,7 +574,7 @@ def init_social_tables():
 
         # Create forum_replies table
         cursor.execute('''
-        CREATE TABLE forum_replies (
+        CREATE TABLE IF NOT EXISTS forum_replies (
                     reply_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     post_id INTEGER,
                     author_id TEXT,

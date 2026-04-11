@@ -22,14 +22,14 @@ def backup_existing_database():
     return None
 
 def create_unified_database():
-    """Create the unified student_records.db with all tables"""
+    """Create the unified student_records.db with all tables.
+
+    Uses CREATE TABLE IF NOT EXISTS so it can safely be called on an
+    existing database to add any missing tables without destroying data.
+    """
     db_path = str(DEFAULT_DB_PATH)
 
     print(get_text("setup.unified_database.creating", path=db_path))
-
-    # Remove existing file if it exists
-    if DEFAULT_DB_PATH.exists():
-        DEFAULT_DB_PATH.unlink()
 
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -40,7 +40,7 @@ def create_unified_database():
 
     # Students table (core student information)
     cursor.execute('''
-    CREATE TABLE students (
+    CREATE TABLE IF NOT EXISTS students (
         student_id TEXT PRIMARY KEY,
         email_address TEXT,
         title TEXT,
@@ -59,7 +59,7 @@ def create_unified_database():
 
     # Users table (system users including students, staff, admin)
     cursor.execute('''
-    CREATE TABLE users (
+    CREATE TABLE IF NOT EXISTS users (
         user_id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL,
         password_hash TEXT NOT NULL,
@@ -80,7 +80,7 @@ def create_unified_database():
 
     # Modules/Courses
     cursor.execute('''
-    CREATE TABLE modules (
+    CREATE TABLE IF NOT EXISTS modules (
         module_code TEXT PRIMARY KEY,
         module_name TEXT,
         module_type TEXT
@@ -89,11 +89,15 @@ def create_unified_database():
 
     # Student module enrollments
     cursor.execute('''
-    CREATE TABLE student_modules (
+    CREATE TABLE IF NOT EXISTS student_modules (
         enrollment_id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id TEXT NOT NULL,
         module_id TEXT NOT NULL,
+        module_code TEXT,
+        module_name TEXT,
+        module_type TEXT DEFAULT 'Standard',
         enrollment_date TEXT,
+        completion_date TEXT,
         status TEXT DEFAULT 'enrolled',
         grade TEXT,
         credits_earned INTEGER DEFAULT 0,
@@ -107,7 +111,7 @@ def create_unified_database():
 
     # Student grades
     cursor.execute('''
-    CREATE TABLE student_grades (
+    CREATE TABLE IF NOT EXISTS student_grades (
         grade_id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id TEXT NOT NULL,
         module_id TEXT NOT NULL,
@@ -128,7 +132,7 @@ def create_unified_database():
 
     # Attendance tracking
     cursor.execute('''
-    CREATE TABLE attendance (
+    CREATE TABLE IF NOT EXISTS attendance (
         attendance_id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id TEXT NOT NULL,
         module_id TEXT NOT NULL,
@@ -148,7 +152,7 @@ def create_unified_database():
 
     # Fee types
     cursor.execute('''
-    CREATE TABLE fee_types (
+    CREATE TABLE IF NOT EXISTS fee_types (
         fee_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
         fee_name TEXT NOT NULL,
         description TEXT,
@@ -165,7 +169,7 @@ def create_unified_database():
 
     # Program fees (fees by course/program)
     cursor.execute('''
-    CREATE TABLE program_fees (
+    CREATE TABLE IF NOT EXISTS program_fees (
         program_fee_id INTEGER PRIMARY KEY AUTOINCREMENT,
         fee_type_id INTEGER,
         course TEXT NOT NULL,
@@ -183,7 +187,7 @@ def create_unified_database():
 
     # Student fees (individual student fee records)
     cursor.execute('''
-    CREATE TABLE student_fees (
+    CREATE TABLE IF NOT EXISTS student_fees (
         student_fee_id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id TEXT NOT NULL,
         fee_type_id INTEGER NOT NULL,
@@ -202,7 +206,7 @@ def create_unified_database():
 
     # Payments
     cursor.execute('''
-    CREATE TABLE payments (
+    CREATE TABLE IF NOT EXISTS payments (
         payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id TEXT NOT NULL,
         amount DECIMAL(10,2) NOT NULL,
@@ -224,7 +228,7 @@ def create_unified_database():
 
     # Payment allocations (which payment covers which fee)
     cursor.execute('''
-    CREATE TABLE payment_allocations (
+    CREATE TABLE IF NOT EXISTS payment_allocations (
         allocation_id INTEGER PRIMARY KEY AUTOINCREMENT,
         payment_id INTEGER NOT NULL,
         student_fee_id INTEGER NOT NULL,
@@ -237,7 +241,7 @@ def create_unified_database():
 
     # Financial alerts
     cursor.execute('''
-    CREATE TABLE financial_alerts (
+    CREATE TABLE IF NOT EXISTS financial_alerts (
         alert_id INTEGER PRIMARY KEY AUTOINCREMENT,
         alert_type TEXT NOT NULL,
         priority TEXT DEFAULT 'medium',
@@ -259,7 +263,7 @@ def create_unified_database():
 
     # Scholarships
     cursor.execute('''
-    CREATE TABLE scholarships (
+    CREATE TABLE IF NOT EXISTS scholarships (
         scholarship_id INTEGER PRIMARY KEY AUTOINCREMENT,
         scholarship_name TEXT NOT NULL,
         description TEXT,
@@ -275,7 +279,7 @@ def create_unified_database():
 
     # Student scholarships (awarded scholarships)
     cursor.execute('''
-    CREATE TABLE student_scholarships (
+    CREATE TABLE IF NOT EXISTS student_scholarships (
         student_scholarship_id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id TEXT NOT NULL,
         scholarship_id INTEGER NOT NULL,
@@ -292,7 +296,7 @@ def create_unified_database():
 
     # Document types
     cursor.execute('''
-    CREATE TABLE document_types (
+    CREATE TABLE IF NOT EXISTS document_types (
         type_id INTEGER PRIMARY KEY AUTOINCREMENT,
         type_name TEXT NOT NULL UNIQUE,
         description TEXT,
@@ -347,7 +351,7 @@ def create_unified_database():
 
     # Parking lots
     cursor.execute('''
-    CREATE TABLE parking_lots (
+    CREATE TABLE IF NOT EXISTS parking_lots (
         lot_id INTEGER PRIMARY KEY AUTOINCREMENT,
         lot_name TEXT NOT NULL,
         location TEXT,
@@ -364,7 +368,7 @@ def create_unified_database():
 
     # Parking spaces
     cursor.execute('''
-    CREATE TABLE parking_spaces (
+    CREATE TABLE IF NOT EXISTS parking_spaces (
         space_id INTEGER PRIMARY KEY AUTOINCREMENT,
         lot_id INTEGER NOT NULL,
         space_number TEXT NOT NULL,
@@ -379,7 +383,7 @@ def create_unified_database():
 
     # Vehicles
     cursor.execute('''
-    CREATE TABLE vehicles (
+    CREATE TABLE IF NOT EXISTS vehicles (
         vehicle_id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id TEXT NOT NULL,
         license_plate TEXT NOT NULL UNIQUE,
@@ -397,7 +401,7 @@ def create_unified_database():
 
     # Parking permits
     cursor.execute('''
-    CREATE TABLE parking_permits (
+    CREATE TABLE IF NOT EXISTS parking_permits (
         permit_id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id TEXT NOT NULL,
         vehicle_id INTEGER NOT NULL,
@@ -417,7 +421,7 @@ def create_unified_database():
 
     # Parking violations
     cursor.execute('''
-    CREATE TABLE parking_violations (
+    CREATE TABLE IF NOT EXISTS parking_violations (
         violation_id INTEGER PRIMARY KEY AUTOINCREMENT,
         vehicle_id INTEGER,
         license_plate TEXT,
@@ -442,7 +446,7 @@ def create_unified_database():
 
     # Menu items
     cursor.execute('''
-    CREATE TABLE menu_items (
+    CREATE TABLE IF NOT EXISTS menu_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         description TEXT,
@@ -476,7 +480,7 @@ def create_unified_database():
 
     # Restaurant inventory
     cursor.execute('''
-    CREATE TABLE inventory (
+    CREATE TABLE IF NOT EXISTS inventory (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         item_name TEXT NOT NULL,
         quantity INTEGER NOT NULL,
@@ -490,7 +494,7 @@ def create_unified_database():
 
     # Restaurant staff schedules
     cursor.execute('''
-    CREATE TABLE staff_schedules (
+    CREATE TABLE IF NOT EXISTS staff_schedules (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         staff_id TEXT NOT NULL,
         shift_date DATE NOT NULL,
@@ -504,7 +508,7 @@ def create_unified_database():
 
     # Restaurant suppliers
     cursor.execute('''
-    CREATE TABLE restaurant_suppliers (
+    CREATE TABLE IF NOT EXISTS restaurant_suppliers (
         supplier_id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         contact_person TEXT,
@@ -520,7 +524,7 @@ def create_unified_database():
 
     # Purchase orders
     cursor.execute('''
-    CREATE TABLE purchase_orders (
+    CREATE TABLE IF NOT EXISTS purchase_orders (
         po_id INTEGER PRIMARY KEY AUTOINCREMENT,
         po_number TEXT UNIQUE NOT NULL,
         supplier_id INTEGER,
@@ -542,7 +546,7 @@ def create_unified_database():
 
     # Restaurant customers
     cursor.execute('''
-    CREATE TABLE restaurant_customers (
+    CREATE TABLE IF NOT EXISTS restaurant_customers (
         customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         email TEXT,
@@ -557,7 +561,7 @@ def create_unified_database():
 
     # System logs
     cursor.execute('''
-    CREATE TABLE logs (
+    CREATE TABLE IF NOT EXISTS logs (
         log_id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
         action TEXT NOT NULL,
@@ -575,7 +579,7 @@ def create_unified_database():
 
     # System alerts
     cursor.execute('''
-    CREATE TABLE alerts (
+    CREATE TABLE IF NOT EXISTS alerts (
         alert_id INTEGER PRIMARY KEY AUTOINCREMENT,
         alert_type TEXT NOT NULL,
         title TEXT NOT NULL,
@@ -594,7 +598,7 @@ def create_unified_database():
 
     # Saved searches
     cursor.execute('''
-    CREATE TABLE saved_searches (
+    CREATE TABLE IF NOT EXISTS saved_searches (
         search_id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
         search_name TEXT NOT NULL,
@@ -608,7 +612,7 @@ def create_unified_database():
 
     # Trip calendar events (if needed)
     cursor.execute('''
-    CREATE TABLE trip_calendar_events (
+    CREATE TABLE IF NOT EXISTS trip_calendar_events (
         event_id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         description TEXT,
@@ -651,23 +655,26 @@ def add_initial_data(cursor):
     ]
 
     cursor.executemany('''
-    INSERT INTO students
+    INSERT OR IGNORE INTO students
     (student_id, email_address, title, first_name, middle_name, last_name, gender, dob, age, course, registration_datetime, status, enrollment_date)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', students)
 
-    # Sample users
-    users = [
-        ('admin', 'admin_password_hash', 'admin@university.ac.uk', 'System', 'Administrator', 'admin', None, 1, None, now, now),
-        ('jsmith', 'student_password_hash', 'john.smith@university.ac.uk', 'John', 'Smith', 'student', 'STU001', 1, None, now, now),
-        ('sjohnson', 'student_password_hash', 'sarah.johnson@university.ac.uk', 'Sarah', 'Johnson', 'student', 'STU002', 1, None, now, now)
-    ]
+    # Sample users — skip if existing users table has a different schema (e.g. auth-created)
+    try:
+        users = [
+            ('admin', 'admin_password_hash', 'admin@university.ac.uk', 'System', 'Administrator', 'admin', None, 1, None, now, now),
+            ('jsmith', 'student_password_hash', 'john.smith@university.ac.uk', 'John', 'Smith', 'student', 'STU001', 1, None, now, now),
+            ('sjohnson', 'student_password_hash', 'sarah.johnson@university.ac.uk', 'Sarah', 'Johnson', 'student', 'STU002', 1, None, now, now)
+        ]
 
-    cursor.executemany('''
-    INSERT INTO users
-    (username, password_hash, email, first_name, last_name, role, student_id, is_active, last_login, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ''', users)
+        cursor.executemany('''
+        INSERT OR IGNORE INTO users
+        (username, password_hash, email, first_name, last_name, role, student_id, is_active, last_login, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', users)
+    except Exception:
+        pass  # users table may have different schema from auth system
 
     # Fee types
     fee_types = [
@@ -679,7 +686,7 @@ def add_initial_data(cursor):
     ]
 
     cursor.executemany('''
-    INSERT INTO fee_types
+    INSERT OR IGNORE INTO fee_types
     (fee_name, description, is_recurring, academic_year, is_late_fee,
      late_fee_calculation, late_fee_amount, grace_period_days, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -693,7 +700,7 @@ def add_initial_data(cursor):
     ]
 
     cursor.executemany('''
-    INSERT INTO financial_alerts
+    INSERT OR IGNORE INTO financial_alerts
     (alert_type, priority, title, message, student_id, amount, currency, status,
      created_at, acknowledged_at, resolved_at, acknowledged_by, resolved_by, metadata)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -708,7 +715,7 @@ def add_initial_data(cursor):
     ]
 
     cursor.executemany('''
-    INSERT INTO document_types
+    INSERT OR IGNORE INTO document_types
     (type_name, description, is_required, max_file_size, allowed_extensions, retention_days, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ''', document_types)
@@ -721,7 +728,7 @@ def add_initial_data(cursor):
     ]
 
     cursor.executemany('''
-    INSERT INTO modules
+    INSERT OR IGNORE INTO modules
     (module_code, module_name, module_type)
     VALUES (?, ?, ?)
     ''', modules)

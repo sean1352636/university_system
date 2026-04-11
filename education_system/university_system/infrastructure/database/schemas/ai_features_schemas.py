@@ -234,7 +234,7 @@ def init_ai_tables():
 
         # Create campaign_expenses table
         cursor.execute('''
-        CREATE TABLE campaign_expenses (
+        CREATE TABLE IF NOT EXISTS campaign_expenses (
                     expense_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     candidate_id INTEGER,
                     amount REAL,
@@ -248,7 +248,7 @@ def init_ai_tables():
 
         # Create campaign_materials table
         cursor.execute('''
-        CREATE TABLE campaign_materials (
+        CREATE TABLE IF NOT EXISTS campaign_materials (
                     material_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     candidate_id INTEGER,
                     material_type TEXT,
@@ -262,7 +262,7 @@ def init_ai_tables():
 
         # Create chatbot_conversations table
         cursor.execute('''
-        CREATE TABLE chatbot_conversations (
+        CREATE TABLE IF NOT EXISTS chatbot_conversations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER,
                     username TEXT NOT NULL,
@@ -278,7 +278,7 @@ def init_ai_tables():
 
         # Create fundraising_campaigns table
         cursor.execute('''
-        CREATE TABLE fundraising_campaigns (
+        CREATE TABLE IF NOT EXISTS fundraising_campaigns (
                     campaign_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     campaign_name TEXT,
                     description TEXT,
@@ -296,7 +296,7 @@ def init_ai_tables():
 
         # Create plagiarism_results table
         cursor.execute('''
-        CREATE TABLE plagiarism_results (
+        CREATE TABLE IF NOT EXISTS plagiarism_results (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             document_id INTEGER NOT NULL,
                             matched_document_id INTEGER,
@@ -315,7 +315,7 @@ def init_ai_tables():
 
         # Create risk_details table
         cursor.execute('''
-        CREATE TABLE risk_details (
+        CREATE TABLE IF NOT EXISTS risk_details (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     risk_factor_id INTEGER,
                     detail TEXT,
@@ -327,7 +327,7 @@ def init_ai_tables():
 
         # Create sustainability_tracking table
         cursor.execute('''
-        CREATE TABLE sustainability_tracking (
+        CREATE TABLE IF NOT EXISTS sustainability_tracking (
                     tracking_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     event_id INTEGER,
                     club_id INTEGER,
@@ -345,7 +345,7 @@ def init_ai_tables():
 
         # Create teacher_availability table
         cursor.execute('''
-        CREATE TABLE teacher_availability (
+        CREATE TABLE IF NOT EXISTS teacher_availability (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         teacher_id INTEGER,
                         day_of_week TEXT,

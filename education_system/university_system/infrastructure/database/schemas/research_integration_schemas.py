@@ -322,7 +322,7 @@ def init_integration_tables():
 
         # Create api_integrations table
         cursor.execute('''
-        CREATE TABLE api_integrations (
+        CREATE TABLE IF NOT EXISTS api_integrations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     integration_name TEXT UNIQUE,
                     api_key TEXT,
@@ -337,7 +337,7 @@ def init_integration_tables():
 
         # Create api_keys table
         cursor.execute('''
-        CREATE TABLE api_keys (
+        CREATE TABLE IF NOT EXISTS api_keys (
                     key_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     key_name TEXT NOT NULL,
                     api_key TEXT NOT NULL,
@@ -354,7 +354,7 @@ def init_integration_tables():
 
         # Create api_usage_log table
         cursor.execute('''
-        CREATE TABLE api_usage_log (
+        CREATE TABLE IF NOT EXISTS api_usage_log (
                     usage_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     api_key_id INTEGER,
                     endpoint TEXT NOT NULL,
@@ -370,7 +370,7 @@ def init_integration_tables():
 
         # Create system_integration_log table
         cursor.execute('''
-        CREATE TABLE system_integration_log (
+        CREATE TABLE IF NOT EXISTS system_integration_log (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         source_system TEXT,
                         target_system TEXT,
@@ -383,7 +383,7 @@ def init_integration_tables():
 
         # Create system_integrations table
         cursor.execute('''
-        CREATE TABLE system_integrations (
+        CREATE TABLE IF NOT EXISTS system_integrations (
                     integration_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     type TEXT NOT NULL,  -- sso, lms, sis, calendar, etc.
@@ -397,7 +397,7 @@ def init_integration_tables():
 
         # Create system_settings table
         cursor.execute('''
-        CREATE TABLE system_settings (
+        CREATE TABLE IF NOT EXISTS system_settings (
                         key TEXT PRIMARY KEY,
                         value TEXT,
                         description TEXT,

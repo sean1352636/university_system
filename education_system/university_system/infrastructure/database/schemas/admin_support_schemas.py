@@ -153,7 +153,7 @@ def init_auth_tables():
 
         # Create login_attempts table
         cursor.execute('''
-        CREATE TABLE login_attempts (
+        CREATE TABLE IF NOT EXISTS login_attempts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT NOT NULL,
                     attempt_time TEXT NOT NULL,
@@ -164,7 +164,7 @@ def init_auth_tables():
 
         # Create permissions table
         cursor.execute('''
-        CREATE TABLE permissions (
+        CREATE TABLE IF NOT EXISTS permissions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     permission_name TEXT UNIQUE NOT NULL,
                     description TEXT NOT NULL,
@@ -174,7 +174,7 @@ def init_auth_tables():
 
         # Create photo_permissions table
         cursor.execute('''
-        CREATE TABLE photo_permissions (
+        CREATE TABLE IF NOT EXISTS photo_permissions (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT,
                         permission_type TEXT,
@@ -190,7 +190,7 @@ def init_auth_tables():
 
         # Create role_permissions table
         cursor.execute('''
-        CREATE TABLE role_permissions (
+        CREATE TABLE IF NOT EXISTS role_permissions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     role_id INTEGER NOT NULL,
                     permission_id INTEGER NOT NULL,
@@ -202,7 +202,7 @@ def init_auth_tables():
 
         # Create roles table
         cursor.execute('''
-        CREATE TABLE roles (
+        CREATE TABLE IF NOT EXISTS roles (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     role_name TEXT UNIQUE NOT NULL,
                     description TEXT NOT NULL,
@@ -213,7 +213,7 @@ def init_auth_tables():
 
         # Create security_settings table
         cursor.execute('''
-        CREATE TABLE security_settings (
+        CREATE TABLE IF NOT EXISTS security_settings (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             setting_name TEXT UNIQUE,
                             setting_value TEXT,
@@ -224,7 +224,7 @@ def init_auth_tables():
 
         # Create two_fa_recovery_codes table
         cursor.execute('''
-        CREATE TABLE two_fa_recovery_codes (
+        CREATE TABLE IF NOT EXISTS two_fa_recovery_codes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
                     code_hash TEXT NOT NULL,
@@ -237,7 +237,7 @@ def init_auth_tables():
 
         # Create user_accounts table
         cursor.execute('''
-        CREATE TABLE user_accounts (
+        CREATE TABLE IF NOT EXISTS user_accounts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT UNIQUE NOT NULL,
                     password_hash TEXT NOT NULL,
@@ -256,7 +256,7 @@ def init_auth_tables():
 
         # Create user_achievements table
         cursor.execute('''
-        CREATE TABLE user_achievements (
+        CREATE TABLE IF NOT EXISTS user_achievements (
                     achievement_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT NOT NULL,
                     achievement_type TEXT NOT NULL,
@@ -269,7 +269,7 @@ def init_auth_tables():
 
         # Create user_permissions table
         cursor.execute('''
-        CREATE TABLE user_permissions (
+        CREATE TABLE IF NOT EXISTS user_permissions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
                     permission_id INTEGER NOT NULL,
@@ -282,7 +282,7 @@ def init_auth_tables():
 
         # Create user_preferences table
         cursor.execute('''
-        CREATE TABLE user_preferences (
+        CREATE TABLE IF NOT EXISTS user_preferences (
                     user_id TEXT PRIMARY KEY,
                     email_notifications BOOLEAN DEFAULT 1,
                     in_app_notifications BOOLEAN DEFAULT 1,
@@ -297,7 +297,7 @@ def init_auth_tables():
 
         # Create user_timezone_preferences table
         cursor.execute('''
-        CREATE TABLE user_timezone_preferences (
+        CREATE TABLE IF NOT EXISTS user_timezone_preferences (
                             user_id TEXT PRIMARY KEY,
                             timezone_name TEXT NOT NULL,
                             auto_dst BOOLEAN DEFAULT TRUE,
@@ -332,7 +332,7 @@ def init_audit_tables():
 
         # Create audit_log table
         cursor.execute('''
-        CREATE TABLE audit_log (
+        CREATE TABLE IF NOT EXISTS audit_log (
                     log_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT,
                     action TEXT NOT NULL,
@@ -349,7 +349,7 @@ def init_audit_tables():
 
         # Create audit_trail table
         cursor.execute('''
-        CREATE TABLE audit_trail (
+        CREATE TABLE IF NOT EXISTS audit_trail (
                     audit_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT NOT NULL,
                     action TEXT NOT NULL,
@@ -368,7 +368,7 @@ def init_audit_tables():
 
         # Create backup_history table
         cursor.execute('''
-        CREATE TABLE backup_history (
+        CREATE TABLE IF NOT EXISTS backup_history (
                             id TEXT PRIMARY KEY,
                             backup_type TEXT NOT NULL,
                             file_path TEXT NOT NULL,
@@ -381,7 +381,7 @@ def init_audit_tables():
 
         # Create backups table
         cursor.execute('''
-        CREATE TABLE backups (
+        CREATE TABLE IF NOT EXISTS backups (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         backup_name TEXT,
                         backup_path TEXT,
@@ -393,7 +393,7 @@ def init_audit_tables():
 
         # Create privacy_audit_log table
         cursor.execute('''
-        CREATE TABLE privacy_audit_log (
+        CREATE TABLE IF NOT EXISTS privacy_audit_log (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         action TEXT NOT NULL,
                         student_id TEXT,
@@ -429,7 +429,7 @@ def init_documents_tables():
 
         # Create document_repository table
         cursor.execute('''
-        CREATE TABLE document_repository (
+        CREATE TABLE IF NOT EXISTS document_repository (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             title TEXT NOT NULL CHECK(length(title) > 0),
                             content TEXT NOT NULL CHECK(length(content) > 0),
@@ -448,7 +448,7 @@ def init_documents_tables():
 
         # Create document_tags table
         cursor.execute('''
-        CREATE TABLE document_tags (
+        CREATE TABLE IF NOT EXISTS document_tags (
                         tag_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         tag_name TEXT UNIQUE,
                         tag_color TEXT,
@@ -458,7 +458,7 @@ def init_documents_tables():
 
         # Create document_workflow table
         cursor.execute('''
-        CREATE TABLE document_workflow (
+        CREATE TABLE IF NOT EXISTS document_workflow (
                         workflow_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         document_id INTEGER,
                         step_name TEXT,
@@ -474,7 +474,7 @@ def init_documents_tables():
 
         # Create response_templates table
         cursor.execute('''
-        CREATE TABLE response_templates (
+        CREATE TABLE IF NOT EXISTS response_templates (
                     template_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     subject TEXT,
@@ -490,7 +490,7 @@ def init_documents_tables():
 
         # Create schedule_templates table
         cursor.execute('''
-        CREATE TABLE schedule_templates (
+        CREATE TABLE IF NOT EXISTS schedule_templates (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         template_name TEXT UNIQUE,
                         description TEXT,
@@ -502,7 +502,7 @@ def init_documents_tables():
 
         # Create workflow_instances table
         cursor.execute('''
-        CREATE TABLE workflow_instances (
+        CREATE TABLE IF NOT EXISTS workflow_instances (
                     instance_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     workflow_id INTEGER NOT NULL,
                     entity_type TEXT NOT NULL, -- 'refund', 'payment_plan', 'scholarship', etc.
@@ -519,7 +519,7 @@ def init_documents_tables():
 
         # Create workflows table
         cursor.execute('''
-        CREATE TABLE workflows (
+        CREATE TABLE IF NOT EXISTS workflows (
                     workflow_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     workflow_name TEXT NOT NULL,
                     workflow_type TEXT NOT NULL, -- 'approval', 'notification', 'automation'
@@ -557,7 +557,7 @@ def init_support_tables():
 
         # Create escalation_rules table
         cursor.execute('''
-        CREATE TABLE escalation_rules (
+        CREATE TABLE IF NOT EXISTS escalation_rules (
                     rule_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     category TEXT,
@@ -574,7 +574,7 @@ def init_support_tables():
 
         # Create faqs table
         cursor.execute('''
-        CREATE TABLE faqs (
+        CREATE TABLE IF NOT EXISTS faqs (
                     faq_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     question TEXT NOT NULL,
                     answer TEXT NOT NULL,
@@ -591,7 +591,7 @@ def init_support_tables():
 
         # Create peer_support_groups table
         cursor.execute('''
-        CREATE TABLE peer_support_groups (
+        CREATE TABLE IF NOT EXISTS peer_support_groups (
                     group_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     group_name TEXT,
                     description TEXT,
@@ -608,7 +608,7 @@ def init_support_tables():
 
         # Create support_group_members table
         cursor.execute('''
-        CREATE TABLE support_group_members (
+        CREATE TABLE IF NOT EXISTS support_group_members (
                     membership_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     group_id INTEGER,
                     student_id TEXT,
@@ -622,7 +622,7 @@ def init_support_tables():
 
         # Create support_resources table
         cursor.execute('''
-        CREATE TABLE support_resources (
+        CREATE TABLE IF NOT EXISTS support_resources (
                     resource_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
                     description TEXT NOT NULL,
@@ -642,7 +642,7 @@ def init_support_tables():
 
         # Create support_tickets table
         cursor.execute('''
-        CREATE TABLE support_tickets (
+        CREATE TABLE IF NOT EXISTS support_tickets (
                     ticket_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     title TEXT NOT NULL,
@@ -668,7 +668,7 @@ def init_support_tables():
 
         # Create ticket_attachments table
         cursor.execute('''
-        CREATE TABLE ticket_attachments (
+        CREATE TABLE IF NOT EXISTS ticket_attachments (
                     attachment_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ticket_id INTEGER NOT NULL,
                     filename TEXT NOT NULL,
@@ -686,7 +686,7 @@ def init_support_tables():
 
         # Create ticket_audit_log table
         cursor.execute('''
-        CREATE TABLE ticket_audit_log (
+        CREATE TABLE IF NOT EXISTS ticket_audit_log (
                     audit_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ticket_id INTEGER,
                     user_id INTEGER,
@@ -703,7 +703,7 @@ def init_support_tables():
 
         # Create ticket_escalations table
         cursor.execute('''
-        CREATE TABLE ticket_escalations (
+        CREATE TABLE IF NOT EXISTS ticket_escalations (
                     escalation_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ticket_id INTEGER,
                     escalation_level INTEGER,
@@ -720,7 +720,7 @@ def init_support_tables():
 
         # Create ticket_links table
         cursor.execute('''
-        CREATE TABLE ticket_links (
+        CREATE TABLE IF NOT EXISTS ticket_links (
                     link_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ticket_id INTEGER,
                     linked_ticket_id INTEGER,
@@ -735,7 +735,7 @@ def init_support_tables():
 
         # Create ticket_replies table
         cursor.execute('''
-        CREATE TABLE ticket_replies (
+        CREATE TABLE IF NOT EXISTS ticket_replies (
                     reply_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ticket_id INTEGER,
                     user_id INTEGER,
@@ -752,7 +752,7 @@ def init_support_tables():
 
         # Create ticket_responses table
         cursor.execute('''
-        CREATE TABLE ticket_responses (
+        CREATE TABLE IF NOT EXISTS ticket_responses (
                     response_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ticket_id INTEGER NOT NULL,
                     responder_id TEXT NOT NULL,
@@ -768,7 +768,7 @@ def init_support_tables():
 
         # Create ticket_templates table
         cursor.execute('''
-        CREATE TABLE ticket_templates (
+        CREATE TABLE IF NOT EXISTS ticket_templates (
                     template_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     title_template TEXT NOT NULL,
@@ -784,7 +784,7 @@ def init_support_tables():
 
         # Create ticket_time_tracking table
         cursor.execute('''
-        CREATE TABLE ticket_time_tracking (
+        CREATE TABLE IF NOT EXISTS ticket_time_tracking (
                     time_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ticket_id INTEGER,
                     user_id INTEGER,
@@ -801,7 +801,7 @@ def init_support_tables():
 
         # Create ticket_workflows table
         cursor.execute('''
-        CREATE TABLE ticket_workflows (
+        CREATE TABLE IF NOT EXISTS ticket_workflows (
                     workflow_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     description TEXT,
@@ -879,7 +879,7 @@ def init_parent_tables():
 
         # Create parent_messages table
         cursor.execute('''
-        CREATE TABLE parent_messages (
+        CREATE TABLE IF NOT EXISTS parent_messages (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         parent_id TEXT,
                         teacher_id INTEGER,
@@ -898,7 +898,7 @@ def init_parent_tables():
 
         # Create parent_preferences table
         cursor.execute('''
-        CREATE TABLE parent_preferences (
+        CREATE TABLE IF NOT EXISTS parent_preferences (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     parent_id TEXT UNIQUE,
                     email_notifications BOOLEAN DEFAULT 1,
@@ -917,7 +917,7 @@ def init_parent_tables():
 
         # Create parent_teacher_meetings table
         cursor.execute('''
-        CREATE TABLE parent_teacher_meetings (
+        CREATE TABLE IF NOT EXISTS parent_teacher_meetings (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         parent_id TEXT,
                         teacher_id INTEGER,
@@ -938,7 +938,7 @@ def init_parent_tables():
 
         # Create parent_user_mapping table
         cursor.execute('''
-        CREATE TABLE parent_user_mapping (
+        CREATE TABLE IF NOT EXISTS parent_user_mapping (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER,
                     parent_id TEXT UNIQUE,
@@ -949,7 +949,7 @@ def init_parent_tables():
 
         # Create pickup_authorizations table
         cursor.execute('''
-        CREATE TABLE pickup_authorizations (
+        CREATE TABLE IF NOT EXISTS pickup_authorizations (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT,
                         authorized_person_name TEXT,
@@ -990,7 +990,7 @@ def init_library_tables():
 
         # Create book_loans table
         cursor.execute('''
-        CREATE TABLE book_loans (
+        CREATE TABLE IF NOT EXISTS book_loans (
                     loan_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     book_id TEXT NOT NULL,
                     user_id TEXT NOT NULL,
@@ -1009,7 +1009,7 @@ def init_library_tables():
 
         # Create book_recommendations table
         cursor.execute('''
-        CREATE TABLE book_recommendations (
+        CREATE TABLE IF NOT EXISTS book_recommendations (
                     recommendation_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT NOT NULL,
                     book_id TEXT NOT NULL,
@@ -1023,7 +1023,7 @@ def init_library_tables():
 
         # Create book_requests table
         cursor.execute('''
-        CREATE TABLE book_requests (
+        CREATE TABLE IF NOT EXISTS book_requests (
                     request_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT NOT NULL,
                     title TEXT NOT NULL,
@@ -1041,7 +1041,7 @@ def init_library_tables():
 
         # Create book_reservations table
         cursor.execute('''
-        CREATE TABLE book_reservations (
+        CREATE TABLE IF NOT EXISTS book_reservations (
                     reservation_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     book_id TEXT NOT NULL,
                     user_id TEXT NOT NULL,
@@ -1055,7 +1055,7 @@ def init_library_tables():
 
         # Create book_reviews table
         cursor.execute('''
-        CREATE TABLE book_reviews (
+        CREATE TABLE IF NOT EXISTS book_reviews (
                     review_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     book_id TEXT NOT NULL,
                     user_id TEXT NOT NULL,
@@ -1071,7 +1071,7 @@ def init_library_tables():
 
         # Create books table
         cursor.execute('''
-        CREATE TABLE books (
+        CREATE TABLE IF NOT EXISTS books (
                     book_id TEXT PRIMARY KEY,
                     title TEXT NOT NULL,
                     author TEXT NOT NULL,
@@ -1100,7 +1100,7 @@ def init_library_tables():
 
         # Create digital_library table
         cursor.execute('''
-        CREATE TABLE digital_library (
+        CREATE TABLE IF NOT EXISTS digital_library (
                     digital_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
                     author TEXT NOT NULL,
@@ -1117,7 +1117,7 @@ def init_library_tables():
 
         # Create interlibrary_loans table
         cursor.execute('''
-        CREATE TABLE interlibrary_loans (
+        CREATE TABLE IF NOT EXISTS interlibrary_loans (
                     ill_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT NOT NULL,
                     title TEXT NOT NULL,
@@ -1136,7 +1136,7 @@ def init_library_tables():
 
         # Create library_accounts table
         cursor.execute('''
-        CREATE TABLE library_accounts (
+        CREATE TABLE IF NOT EXISTS library_accounts (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT,
                         book_title TEXT,
@@ -1153,7 +1153,7 @@ def init_library_tables():
 
         # Create library_settings table
         cursor.execute('''
-        CREATE TABLE library_settings (
+        CREATE TABLE IF NOT EXISTS library_settings (
                         setting_name TEXT PRIMARY KEY,
                         setting_value TEXT NOT NULL,
                         description TEXT,
@@ -1166,7 +1166,7 @@ def init_library_tables():
 
         # Create reading_goals table
         cursor.execute('''
-        CREATE TABLE reading_goals (
+        CREATE TABLE IF NOT EXISTS reading_goals (
                     goal_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT NOT NULL,
                     goal_type TEXT NOT NULL,
@@ -1181,7 +1181,7 @@ def init_library_tables():
 
         # Create reading_list_items table
         cursor.execute('''
-        CREATE TABLE reading_list_items (
+        CREATE TABLE IF NOT EXISTS reading_list_items (
                     item_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     list_id INTEGER NOT NULL,
                     book_id TEXT NOT NULL,
@@ -1194,7 +1194,7 @@ def init_library_tables():
 
         # Create reading_lists table
         cursor.execute('''
-        CREATE TABLE reading_lists (
+        CREATE TABLE IF NOT EXISTS reading_lists (
                     list_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     description TEXT,
@@ -1209,7 +1209,7 @@ def init_library_tables():
 
         # Create resource_bookings table
         cursor.execute('''
-        CREATE TABLE resource_bookings (
+        CREATE TABLE IF NOT EXISTS resource_bookings (
                             id TEXT PRIMARY KEY,
                             resource_id TEXT NOT NULL,
                             event_id TEXT,
@@ -1248,7 +1248,7 @@ def init_commerce_tables():
 
         # Create inventory table
         cursor.execute('''
-        CREATE TABLE inventory (
+        CREATE TABLE IF NOT EXISTS inventory (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         item_name TEXT NOT NULL,
                         quantity INTEGER NOT NULL,
@@ -1262,7 +1262,7 @@ def init_commerce_tables():
 
         # Create meal_accounts table
         cursor.execute('''
-        CREATE TABLE meal_accounts (
+        CREATE TABLE IF NOT EXISTS meal_accounts (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT UNIQUE,
                         balance DECIMAL(10,2) DEFAULT 0.00,
@@ -1276,7 +1276,7 @@ def init_commerce_tables():
 
         # Create menu_items table
         cursor.execute('''
-        CREATE TABLE menu_items (
+        CREATE TABLE IF NOT EXISTS menu_items (
                         item_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
                         description TEXT,
@@ -1291,7 +1291,7 @@ def init_commerce_tables():
 
         # Create restaurant_customers table
         cursor.execute('''
-        CREATE TABLE restaurant_customers (
+        CREATE TABLE IF NOT EXISTS restaurant_customers (
                         customer_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
                         email TEXT,
@@ -1304,7 +1304,7 @@ def init_commerce_tables():
 
         # Create restaurant_inventory table
         cursor.execute('''
-        CREATE TABLE restaurant_inventory (
+        CREATE TABLE IF NOT EXISTS restaurant_inventory (
                         item_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
                         quantity REAL DEFAULT 0,
@@ -1316,7 +1316,7 @@ def init_commerce_tables():
 
         # Create restaurant_orders table
         cursor.execute('''
-        CREATE TABLE restaurant_orders (
+        CREATE TABLE IF NOT EXISTS restaurant_orders (
                         order_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         customer_id INTEGER,
                         order_time DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -1329,7 +1329,7 @@ def init_commerce_tables():
 
         # Create restaurant_staff table
         cursor.execute('''
-        CREATE TABLE restaurant_staff (
+        CREATE TABLE IF NOT EXISTS restaurant_staff (
                         staff_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         name TEXT NOT NULL,
                         role TEXT NOT NULL,
@@ -1341,7 +1341,7 @@ def init_commerce_tables():
 
         # Create restaurant_tables table
         cursor.execute('''
-        CREATE TABLE restaurant_tables (
+        CREATE TABLE IF NOT EXISTS restaurant_tables (
                         table_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         capacity INTEGER NOT NULL,
                         status TEXT DEFAULT 'Available',
@@ -1352,7 +1352,7 @@ def init_commerce_tables():
 
         # Create shop_cart table
         cursor.execute('''
-        CREATE TABLE shop_cart (
+        CREATE TABLE IF NOT EXISTS shop_cart (
                     cart_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id INTEGER NOT NULL,
                     product_id TEXT NOT NULL,
@@ -1366,7 +1366,7 @@ def init_commerce_tables():
 
         # Create shop_discounts table
         cursor.execute('''
-        CREATE TABLE shop_discounts (
+        CREATE TABLE IF NOT EXISTS shop_discounts (
                     discount_id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
                     description TEXT,
@@ -1383,7 +1383,7 @@ def init_commerce_tables():
 
         # Create shop_inventory table
         cursor.execute('''
-        CREATE TABLE shop_inventory (
+        CREATE TABLE IF NOT EXISTS shop_inventory (
                     inventory_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     product_id TEXT NOT NULL,
                     quantity INTEGER NOT NULL DEFAULT 0,
@@ -1395,7 +1395,7 @@ def init_commerce_tables():
 
         # Create shop_products table
         cursor.execute('''
-        CREATE TABLE shop_products (
+        CREATE TABLE IF NOT EXISTS shop_products (
                     product_id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
                     description TEXT,
@@ -1433,7 +1433,7 @@ def init_other_tables():
 
         # Create academic_goals table
         cursor.execute('''
-        CREATE TABLE academic_goals (
+        CREATE TABLE IF NOT EXISTS academic_goals (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT,
                         parent_id TEXT,
@@ -1451,7 +1451,7 @@ def init_other_tables():
 
         # Create academic_years table
         cursor.execute('''
-        CREATE TABLE academic_years (
+        CREATE TABLE IF NOT EXISTS academic_years (
                             id TEXT PRIMARY KEY,
                             start_date TEXT NOT NULL,
                             end_date TEXT NOT NULL,
@@ -1462,7 +1462,7 @@ def init_other_tables():
 
         # Create achievement_badges table
         cursor.execute('''
-        CREATE TABLE achievement_badges (
+        CREATE TABLE IF NOT EXISTS achievement_badges (
                     badge_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     badge_name TEXT,
                     badge_description TEXT,
@@ -1474,7 +1474,7 @@ def init_other_tables():
 
         # Create advanced_detection_results table
         cursor.execute('''
-        CREATE TABLE advanced_detection_results (
+        CREATE TABLE IF NOT EXISTS advanced_detection_results (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         submission_id INTEGER NOT NULL,
                         temporal_analysis TEXT,
@@ -1492,7 +1492,7 @@ def init_other_tables():
 
         # Create allergies table
         cursor.execute('''
-        CREATE TABLE allergies (
+        CREATE TABLE IF NOT EXISTS allergies (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             student_id TEXT,
                             allergen TEXT,
@@ -1508,7 +1508,7 @@ def init_other_tables():
 
         # Create assessment_competencies table
         cursor.execute('''
-        CREATE TABLE assessment_competencies (
+        CREATE TABLE IF NOT EXISTS assessment_competencies (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     assessment_id INTEGER NOT NULL,
                     competency_id INTEGER NOT NULL,
@@ -1520,7 +1520,7 @@ def init_other_tables():
 
         # Create assessment_outcomes table
         cursor.execute('''
-        CREATE TABLE assessment_outcomes (
+        CREATE TABLE IF NOT EXISTS assessment_outcomes (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     assessment_id INTEGER NOT NULL,
                     outcome_id INTEGER NOT NULL,
@@ -1532,7 +1532,7 @@ def init_other_tables():
 
         # Create assessments table
         cursor.execute('''
-        CREATE TABLE assessments (
+        CREATE TABLE IF NOT EXISTS assessments (
                     assessment_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     assessment_name TEXT NOT NULL,
                     assessment_type TEXT NOT NULL,
@@ -1549,7 +1549,7 @@ def init_other_tables():
 
         # Create business_directory table
         cursor.execute('''
-        CREATE TABLE business_directory (
+        CREATE TABLE IF NOT EXISTS business_directory (
                     business_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     alumni_id TEXT,
                     business_name TEXT,
@@ -1566,7 +1566,7 @@ def init_other_tables():
 
         # Create care_plans table
         cursor.execute('''
-        CREATE TABLE care_plans (
+        CREATE TABLE IF NOT EXISTS care_plans (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             student_id TEXT,
                             condition_id INTEGER,
@@ -1586,7 +1586,7 @@ def init_other_tables():
 
         # Create collection_agencies table
         cursor.execute('''
-        CREATE TABLE collection_agencies (
+        CREATE TABLE IF NOT EXISTS collection_agencies (
                     agency_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     agency_name TEXT NOT NULL,
                     contact_email TEXT,
@@ -1601,7 +1601,7 @@ def init_other_tables():
 
         # Create collection_cases table
         cursor.execute('''
-        CREATE TABLE collection_cases (
+        CREATE TABLE IF NOT EXISTS collection_cases (
                     case_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT NOT NULL,
                     agency_id INTEGER,
@@ -1621,7 +1621,7 @@ def init_other_tables():
 
         # Create competencies table
         cursor.execute('''
-        CREATE TABLE competencies (
+        CREATE TABLE IF NOT EXISTS competencies (
                     competency_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     description TEXT,
@@ -1631,7 +1631,7 @@ def init_other_tables():
 
         # Create competency_levels table
         cursor.execute('''
-        CREATE TABLE competency_levels (
+        CREATE TABLE IF NOT EXISTS competency_levels (
                     level_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     competency_id INTEGER NOT NULL,
                     level_name TEXT NOT NULL,
@@ -1643,7 +1643,7 @@ def init_other_tables():
 
         # Create competition_participants table
         cursor.execute('''
-        CREATE TABLE competition_participants (
+        CREATE TABLE IF NOT EXISTS competition_participants (
                     participant_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     competition_id INTEGER,
                     club_id INTEGER,
@@ -1659,7 +1659,7 @@ def init_other_tables():
 
         # Create currency_settings table
         cursor.execute('''
-        CREATE TABLE currency_settings (
+        CREATE TABLE IF NOT EXISTS currency_settings (
                     setting_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     base_currency TEXT DEFAULT 'GBP',
                     auto_update_rates BOOLEAN DEFAULT 1,
@@ -1672,7 +1672,7 @@ def init_other_tables():
 
         # Create data_retention table
         cursor.execute('''
-        CREATE TABLE data_retention (
+        CREATE TABLE IF NOT EXISTS data_retention (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         data_type TEXT NOT NULL,
                         retention_period INTEGER NOT NULL,
@@ -1683,7 +1683,7 @@ def init_other_tables():
 
         # Create data_retention_policies table
         cursor.execute('''
-        CREATE TABLE data_retention_policies (
+        CREATE TABLE IF NOT EXISTS data_retention_policies (
                     policy_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     data_type TEXT NOT NULL,
                     retention_period_months INTEGER NOT NULL,
@@ -1697,7 +1697,7 @@ def init_other_tables():
 
         # Create donor_recognition table
         cursor.execute('''
-        CREATE TABLE donor_recognition (
+        CREATE TABLE IF NOT EXISTS donor_recognition (
                     recognition_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     alumni_id TEXT,
                     recognition_level TEXT,
@@ -1710,7 +1710,7 @@ def init_other_tables():
 
         # Create emergency_contacts table
         cursor.execute('''
-        CREATE TABLE emergency_contacts (
+        CREATE TABLE IF NOT EXISTS emergency_contacts (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             student_id TEXT,
                             contact_name TEXT,
@@ -1728,7 +1728,7 @@ def init_other_tables():
 
         # Create engagement_points table
         cursor.execute('''
-        CREATE TABLE engagement_points (
+        CREATE TABLE IF NOT EXISTS engagement_points (
                     point_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     alumni_id TEXT,
                     activity_type TEXT,
@@ -1741,7 +1741,7 @@ def init_other_tables():
 
         # Create equipment_checkouts table
         cursor.execute('''
-        CREATE TABLE equipment_checkouts (
+        CREATE TABLE IF NOT EXISTS equipment_checkouts (
                     checkout_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     equipment_id INTEGER,
                     borrower_id TEXT,
@@ -1761,7 +1761,7 @@ def init_other_tables():
 
         # Create exchange_rates table
         cursor.execute('''
-        CREATE TABLE exchange_rates (
+        CREATE TABLE IF NOT EXISTS exchange_rates (
                     rate_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     from_currency TEXT NOT NULL,
                     to_currency TEXT NOT NULL,
@@ -1774,7 +1774,7 @@ def init_other_tables():
 
         # Create extension_requests table
         cursor.execute('''
-        CREATE TABLE extension_requests (
+        CREATE TABLE IF NOT EXISTS extension_requests (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     assignment_id INTEGER NOT NULL,
                     student_id TEXT NOT NULL,
@@ -1793,7 +1793,7 @@ def init_other_tables():
 
         # Create extracurricular_activities table
         cursor.execute('''
-        CREATE TABLE extracurricular_activities (
+        CREATE TABLE IF NOT EXISTS extracurricular_activities (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         activity_name TEXT,
                         description TEXT,
@@ -1808,7 +1808,7 @@ def init_other_tables():
 
         # Create graduation_requirements table
         cursor.execute('''
-        CREATE TABLE graduation_requirements (
+        CREATE TABLE IF NOT EXISTS graduation_requirements (
                             id TEXT PRIMARY KEY,
                             requirement_name TEXT NOT NULL,
                             requirement_type TEXT NOT NULL,
@@ -1822,7 +1822,7 @@ def init_other_tables():
 
         # Create holiday_calendars table
         cursor.execute('''
-        CREATE TABLE holiday_calendars (
+        CREATE TABLE IF NOT EXISTS holiday_calendars (
                             id TEXT PRIMARY KEY,
                             name TEXT NOT NULL,
                             country_code TEXT NOT NULL,
@@ -1834,7 +1834,7 @@ def init_other_tables():
 
         # Create holidays table
         cursor.execute('''
-        CREATE TABLE holidays (
+        CREATE TABLE IF NOT EXISTS holidays (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         holiday_name TEXT,
                         start_date DATE,
@@ -1846,7 +1846,7 @@ def init_other_tables():
 
         # Create institutions table
         cursor.execute('''
-        CREATE TABLE institutions (
+        CREATE TABLE IF NOT EXISTS institutions (
                         id TEXT PRIMARY KEY,
                         name TEXT NOT NULL,
                         type TEXT,
@@ -1857,7 +1857,7 @@ def init_other_tables():
 
         # Create intervention_types table
         cursor.execute('''
-        CREATE TABLE intervention_types (
+        CREATE TABLE IF NOT EXISTS intervention_types (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT,
                     description TEXT
@@ -1866,7 +1866,7 @@ def init_other_tables():
 
         # Create kb_articles table
         cursor.execute('''
-        CREATE TABLE kb_articles (
+        CREATE TABLE IF NOT EXISTS kb_articles (
                     article_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
                     content TEXT NOT NULL,
@@ -1888,7 +1888,7 @@ def init_other_tables():
 
         # Create knowledge_base table
         cursor.execute('''
-        CREATE TABLE knowledge_base (
+        CREATE TABLE IF NOT EXISTS knowledge_base (
                     article_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
                     content TEXT NOT NULL,
@@ -1908,7 +1908,7 @@ def init_other_tables():
 
         # Create learning_outcomes table
         cursor.execute('''
-        CREATE TABLE learning_outcomes (
+        CREATE TABLE IF NOT EXISTS learning_outcomes (
                     outcome_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     outcome_code TEXT NOT NULL,
                     description TEXT NOT NULL,
@@ -1919,7 +1919,7 @@ def init_other_tables():
 
         # Create networking_connections table
         cursor.execute('''
-        CREATE TABLE networking_connections (
+        CREATE TABLE IF NOT EXISTS networking_connections (
                     connection_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     requester_id TEXT,
                     recipient_id TEXT,
@@ -1933,7 +1933,7 @@ def init_other_tables():
 
         # Create newsletters table
         cursor.execute('''
-        CREATE TABLE newsletters (
+        CREATE TABLE IF NOT EXISTS newsletters (
                     newsletter_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT,
                     content TEXT,
@@ -1950,7 +1950,7 @@ def init_other_tables():
 
         # Create outcome_results table
         cursor.execute('''
-        CREATE TABLE outcome_results (
+        CREATE TABLE IF NOT EXISTS outcome_results (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT NOT NULL,
                     outcome_id INTEGER NOT NULL,
@@ -1964,7 +1964,7 @@ def init_other_tables():
 
         # Create photo_gallery table
         cursor.execute('''
-        CREATE TABLE photo_gallery (
+        CREATE TABLE IF NOT EXISTS photo_gallery (
                     photo_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     event_id INTEGER,
                     uploaded_by TEXT,
@@ -1979,7 +1979,7 @@ def init_other_tables():
 
         # Create privacy_consent table
         cursor.execute('''
-        CREATE TABLE privacy_consent (
+        CREATE TABLE IF NOT EXISTS privacy_consent (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT NOT NULL,
                         consent_type TEXT NOT NULL,
@@ -1993,7 +1993,7 @@ def init_other_tables():
 
         # Create processing_queue table
         cursor.execute('''
-        CREATE TABLE processing_queue (
+        CREATE TABLE IF NOT EXISTS processing_queue (
                         id TEXT PRIMARY KEY,
                         submission_data TEXT NOT NULL,
                         priority INTEGER DEFAULT 1,
@@ -2005,7 +2005,7 @@ def init_other_tables():
 
         # Create project_milestones table
         cursor.execute('''
-        CREATE TABLE project_milestones (
+        CREATE TABLE IF NOT EXISTS project_milestones (
                             id TEXT PRIMARY KEY,
                             project_name TEXT NOT NULL,
                             milestone_name TEXT NOT NULL,
@@ -2023,7 +2023,7 @@ def init_other_tables():
 
         # Create provider_schedules table
         cursor.execute('''
-        CREATE TABLE provider_schedules (
+        CREATE TABLE IF NOT EXISTS provider_schedules (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             provider_name TEXT,
                             day_of_week INTEGER,
@@ -2039,7 +2039,7 @@ def init_other_tables():
 
         # Create ranked_votes table
         cursor.execute('''
-        CREATE TABLE ranked_votes (
+        CREATE TABLE IF NOT EXISTS ranked_votes (
                     vote_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     election_id INTEGER,
                     voter_id TEXT,
@@ -2052,7 +2052,7 @@ def init_other_tables():
 
         # Create recommended_interventions table
         cursor.execute('''
-        CREATE TABLE recommended_interventions (
+        CREATE TABLE IF NOT EXISTS recommended_interventions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     risk_factor_id INTEGER,
@@ -2067,7 +2067,7 @@ def init_other_tables():
 
         # Create referrals table
         cursor.execute('''
-        CREATE TABLE referrals (
+        CREATE TABLE IF NOT EXISTS referrals (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             student_id TEXT,
                             referring_provider TEXT,
@@ -2086,7 +2086,7 @@ def init_other_tables():
 
         # Create resources table
         cursor.execute('''
-        CREATE TABLE resources (
+        CREATE TABLE IF NOT EXISTS resources (
                             id TEXT PRIMARY KEY,
                             name TEXT NOT NULL,
                             type TEXT NOT NULL,
@@ -2100,7 +2100,7 @@ def init_other_tables():
 
         # Create risk_assessments table
         cursor.execute('''
-        CREATE TABLE risk_assessments (
+        CREATE TABLE IF NOT EXISTS risk_assessments (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             student_id TEXT,
                             assessment_type TEXT,
@@ -2117,7 +2117,7 @@ def init_other_tables():
 
         # Create risk_factors table
         cursor.execute('''
-        CREATE TABLE risk_factors (
+        CREATE TABLE IF NOT EXISTS risk_factors (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     factor_name TEXT,
@@ -2131,7 +2131,7 @@ def init_other_tables():
 
         # Create rubric_criteria table
         cursor.execute('''
-        CREATE TABLE rubric_criteria (
+        CREATE TABLE IF NOT EXISTS rubric_criteria (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     rubric_id INTEGER NOT NULL,
                     criteria_name TEXT NOT NULL,
@@ -2145,7 +2145,7 @@ def init_other_tables():
 
         # Create rubrics table
         cursor.execute('''
-        CREATE TABLE rubrics (
+        CREATE TABLE IF NOT EXISTS rubrics (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     description TEXT,
@@ -2159,7 +2159,7 @@ def init_other_tables():
 
         # Create schedule_conflicts table
         cursor.execute('''
-        CREATE TABLE schedule_conflicts (
+        CREATE TABLE IF NOT EXISTS schedule_conflicts (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         conflict_type TEXT,
                         description TEXT,
@@ -2173,7 +2173,7 @@ def init_other_tables():
 
         # Create schedule_history table
         cursor.execute('''
-        CREATE TABLE schedule_history (
+        CREATE TABLE IF NOT EXISTS schedule_history (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         schedule_id INTEGER,
                         action TEXT,
@@ -2186,7 +2186,7 @@ def init_other_tables():
 
         # Create school_calendar table
         cursor.execute('''
-        CREATE TABLE school_calendar (
+        CREATE TABLE IF NOT EXISTS school_calendar (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         event_name TEXT,
                         event_description TEXT,
@@ -2201,7 +2201,7 @@ def init_other_tables():
 
         # Create screening_schedules table
         cursor.execute('''
-        CREATE TABLE screening_schedules (
+        CREATE TABLE IF NOT EXISTS screening_schedules (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             student_id TEXT,
                             screening_type TEXT,
@@ -2218,7 +2218,7 @@ def init_other_tables():
 
         # Create search_presets table
         cursor.execute('''
-        CREATE TABLE search_presets (
+        CREATE TABLE IF NOT EXISTS search_presets (
                             id TEXT PRIMARY KEY,
                             name TEXT NOT NULL,
                             user_id TEXT NOT NULL,
@@ -2230,7 +2230,7 @@ def init_other_tables():
 
         # Create shared_resources table
         cursor.execute('''
-        CREATE TABLE shared_resources (
+        CREATE TABLE IF NOT EXISTS shared_resources (
                     resource_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     uploader_id TEXT,
                     resource_title TEXT,
@@ -2247,7 +2247,7 @@ def init_other_tables():
 
         # Create sla_policies table
         cursor.execute('''
-        CREATE TABLE sla_policies (
+        CREATE TABLE IF NOT EXISTS sla_policies (
                     sla_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     description TEXT,
@@ -2266,7 +2266,7 @@ def init_other_tables():
 
         # Create staff_schedules table
         cursor.execute('''
-        CREATE TABLE staff_schedules (
+        CREATE TABLE IF NOT EXISTS staff_schedules (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         staff_id TEXT NOT NULL,
                         shift_date DATE NOT NULL,
@@ -2280,7 +2280,7 @@ def init_other_tables():
 
         # Create survey_responses table
         cursor.execute('''
-        CREATE TABLE survey_responses (
+        CREATE TABLE IF NOT EXISTS survey_responses (
                     response_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     survey_id INTEGER,
                     alumni_id TEXT,

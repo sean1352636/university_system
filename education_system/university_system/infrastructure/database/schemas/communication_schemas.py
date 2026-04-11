@@ -31,7 +31,7 @@ def init_email_system_db():
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='email_templates'")
         if not cursor.fetchone():
             cursor.execute('''
-            CREATE TABLE email_templates (
+            CREATE TABLE IF NOT EXISTS email_templates (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE,
                 category TEXT,
@@ -82,7 +82,7 @@ def init_communication_tables():
 
         # Create announcement_reads table
         cursor.execute('''
-        CREATE TABLE announcement_reads (
+        CREATE TABLE IF NOT EXISTS announcement_reads (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         announcement_id INTEGER,
                         parent_id TEXT,
@@ -95,7 +95,7 @@ def init_communication_tables():
 
         # Create announcement_viewers table
         cursor.execute('''
-        CREATE TABLE announcement_viewers (
+        CREATE TABLE IF NOT EXISTS announcement_viewers (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         announcement_id INTEGER NOT NULL,
                         viewer_id INTEGER NOT NULL,
@@ -107,7 +107,7 @@ def init_communication_tables():
 
         # Create chat_messages table
         cursor.execute('''
-        CREATE TABLE chat_messages (
+        CREATE TABLE IF NOT EXISTS chat_messages (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         room_id INTEGER NOT NULL,
                         sender_id INTEGER NOT NULL,
@@ -120,7 +120,7 @@ def init_communication_tables():
 
         # Create communication_log table
         cursor.execute('''
-        CREATE TABLE communication_log (
+        CREATE TABLE IF NOT EXISTS communication_log (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         user_id INTEGER NOT NULL,
                         action_type TEXT NOT NULL,
@@ -132,7 +132,7 @@ def init_communication_tables():
 
         # Create emails table
         cursor.execute('''
-        CREATE TABLE emails (
+        CREATE TABLE IF NOT EXISTS emails (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             recipient TEXT NOT NULL,
                             subject TEXT,
@@ -147,7 +147,7 @@ def init_communication_tables():
 
         # Create group_message_recipients table
         cursor.execute('''
-        CREATE TABLE group_message_recipients (
+        CREATE TABLE IF NOT EXISTS group_message_recipients (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         message_id INTEGER NOT NULL,
                         recipient_id INTEGER NOT NULL,
@@ -162,7 +162,7 @@ def init_communication_tables():
 
         # Create group_messages table
         cursor.execute('''
-        CREATE TABLE group_messages (
+        CREATE TABLE IF NOT EXISTS group_messages (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         sender_id INTEGER NOT NULL,
                         group_type TEXT NOT NULL,
@@ -177,7 +177,7 @@ def init_communication_tables():
 
         # Create notification_preferences table
         cursor.execute('''
-        CREATE TABLE notification_preferences (
+        CREATE TABLE IF NOT EXISTS notification_preferences (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             user_id TEXT NOT NULL,
                             notification_type TEXT NOT NULL,
@@ -191,7 +191,7 @@ def init_communication_tables():
 
         # Create notification_queue table
         cursor.execute('''
-        CREATE TABLE notification_queue (
+        CREATE TABLE IF NOT EXISTS notification_queue (
                             id TEXT PRIMARY KEY,
                             user_id TEXT NOT NULL,
                             event_id TEXT,
@@ -207,7 +207,7 @@ def init_communication_tables():
 
         # Create notification_schedules table
         cursor.execute('''
-        CREATE TABLE notification_schedules (
+        CREATE TABLE IF NOT EXISTS notification_schedules (
                     schedule_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     template_id INTEGER NOT NULL,
                     trigger_condition TEXT NOT NULL, -- JSON with conditions
@@ -223,7 +223,7 @@ def init_communication_tables():
 
         # Create notification_templates table
         cursor.execute('''
-        CREATE TABLE notification_templates (
+        CREATE TABLE IF NOT EXISTS notification_templates (
                     template_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     template_name TEXT NOT NULL,
                     template_type TEXT NOT NULL, -- 'payment_reminder', 'overdue_notice', 'payment_confirmation', etc.
@@ -238,7 +238,7 @@ def init_communication_tables():
 
         # Create notifications table
         cursor.execute('''
-        CREATE TABLE notifications (
+        CREATE TABLE IF NOT EXISTS notifications (
                     notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT NOT NULL,
                     title TEXT NOT NULL,
@@ -256,7 +256,7 @@ def init_communication_tables():
 
         # Create school_announcements table
         cursor.execute('''
-        CREATE TABLE school_announcements (
+        CREATE TABLE IF NOT EXISTS school_announcements (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         title TEXT,
                         content TEXT,
@@ -273,7 +273,7 @@ def init_communication_tables():
 
         # Create sent_notifications table
         cursor.execute('''
-        CREATE TABLE sent_notifications (
+        CREATE TABLE IF NOT EXISTS sent_notifications (
                     notification_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT NOT NULL,
                     template_id INTEGER NOT NULL,
@@ -293,7 +293,7 @@ def init_communication_tables():
 
         # Create stored_emails table
         cursor.execute('''
-        CREATE TABLE stored_emails (
+        CREATE TABLE IF NOT EXISTS stored_emails (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     recipient_email TEXT NOT NULL,
                     subject TEXT NOT NULL,

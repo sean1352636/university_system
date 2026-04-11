@@ -250,7 +250,7 @@ def init_health_tables():
 
         # Create disease_surveillance table
         cursor.execute('''
-        CREATE TABLE disease_surveillance (
+        CREATE TABLE IF NOT EXISTS disease_surveillance (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             disease_name TEXT,
                             case_date TEXT,
@@ -270,7 +270,7 @@ def init_health_tables():
 
         # Create health_appointments table
         cursor.execute('''
-        CREATE TABLE health_appointments (
+        CREATE TABLE IF NOT EXISTS health_appointments (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             student_id TEXT,
                             appointment_type TEXT,
@@ -287,7 +287,7 @@ def init_health_tables():
 
         # Create health_campaigns table
         cursor.execute('''
-        CREATE TABLE health_campaigns (
+        CREATE TABLE IF NOT EXISTS health_campaigns (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             campaign_name TEXT,
                             campaign_type TEXT,
@@ -305,7 +305,7 @@ def init_health_tables():
 
         # Create health_metrics table
         cursor.execute('''
-        CREATE TABLE health_metrics (
+        CREATE TABLE IF NOT EXISTS health_metrics (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             metric_name TEXT,
                             metric_value REAL,
@@ -319,7 +319,7 @@ def init_health_tables():
 
         # Create medical_conditions table
         cursor.execute('''
-        CREATE TABLE medical_conditions (
+        CREATE TABLE IF NOT EXISTS medical_conditions (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             student_id TEXT,
                             condition_name TEXT,
@@ -336,7 +336,7 @@ def init_health_tables():
 
         # Create prescriptions table
         cursor.execute('''
-        CREATE TABLE prescriptions (
+        CREATE TABLE IF NOT EXISTS prescriptions (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             student_id TEXT,
                             medication_name TEXT,
@@ -356,7 +356,7 @@ def init_health_tables():
 
         # Create vital_signs table
         cursor.execute('''
-        CREATE TABLE vital_signs (
+        CREATE TABLE IF NOT EXISTS vital_signs (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             student_id TEXT,
                             measurement_date TEXT,
@@ -399,7 +399,7 @@ def init_wellness_tables():
 
         # Create volunteer_opportunities table
         cursor.execute('''
-        CREATE TABLE volunteer_opportunities (
+        CREATE TABLE IF NOT EXISTS volunteer_opportunities (
                     opportunity_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     organization_name TEXT,
                     contact_person TEXT,
@@ -418,7 +418,7 @@ def init_wellness_tables():
 
         # Create volunteer_signups table
         cursor.execute('''
-        CREATE TABLE volunteer_signups (
+        CREATE TABLE IF NOT EXISTS volunteer_signups (
                     signup_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     opportunity_id INTEGER,
                     student_id TEXT,
@@ -434,7 +434,7 @@ def init_wellness_tables():
 
         # Create wellness_participation table
         cursor.execute('''
-        CREATE TABLE wellness_participation (
+        CREATE TABLE IF NOT EXISTS wellness_participation (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             student_id TEXT,
                             program_name TEXT,

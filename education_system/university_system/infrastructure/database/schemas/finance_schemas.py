@@ -164,7 +164,7 @@ def init_finance_tables():
 
         # Create budget_categories table
         cursor.execute('''
-        CREATE TABLE budget_categories (
+        CREATE TABLE IF NOT EXISTS budget_categories (
                     category_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     category_name TEXT NOT NULL,
                     category_type TEXT NOT NULL, -- 'revenue', 'expense'
@@ -178,7 +178,7 @@ def init_finance_tables():
 
         # Create budget_line_items table
         cursor.execute('''
-        CREATE TABLE budget_line_items (
+        CREATE TABLE IF NOT EXISTS budget_line_items (
                     line_item_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     budget_id INTEGER NOT NULL,
                     category_id INTEGER NOT NULL,
@@ -195,7 +195,7 @@ def init_finance_tables():
 
         # Create budget_plans table
         cursor.execute('''
-        CREATE TABLE budget_plans (
+        CREATE TABLE IF NOT EXISTS budget_plans (
                     budget_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     plan_name TEXT NOT NULL,
                     academic_year TEXT NOT NULL,
@@ -213,7 +213,7 @@ def init_finance_tables():
 
         # Create club_budgets table
         cursor.execute('''
-        CREATE TABLE club_budgets (
+        CREATE TABLE IF NOT EXISTS club_budgets (
                     budget_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     club_id INTEGER,
                     fiscal_year TEXT,
@@ -229,7 +229,7 @@ def init_finance_tables():
 
         # Create donations table
         cursor.execute('''
-        CREATE TABLE donations (
+        CREATE TABLE IF NOT EXISTS donations (
                     donation_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     alumni_id TEXT,
                     amount REAL,
@@ -254,7 +254,7 @@ def init_finance_tables():
 
         # Create financial_aid_types table
         cursor.execute('''
-        CREATE TABLE financial_aid_types (
+        CREATE TABLE IF NOT EXISTS financial_aid_types (
                     aid_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     aid_name TEXT NOT NULL,
                     aid_category TEXT, -- 'grant', 'loan', 'work_study', 'emergency'
@@ -274,7 +274,7 @@ def init_finance_tables():
 
         # Create financial_kpis table
         cursor.execute('''
-        CREATE TABLE financial_kpis (
+        CREATE TABLE IF NOT EXISTS financial_kpis (
                     kpi_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     kpi_name TEXT NOT NULL,
                     kpi_value DECIMAL(15,2) NOT NULL,
@@ -288,7 +288,7 @@ def init_finance_tables():
 
         # Create fundraising_donations table
         cursor.execute('''
-        CREATE TABLE fundraising_donations (
+        CREATE TABLE IF NOT EXISTS fundraising_donations (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         campaign_id INTEGER,
                         parent_id TEXT,
@@ -304,7 +304,7 @@ def init_finance_tables():
 
         # Create gateway_transactions table
         cursor.execute('''
-        CREATE TABLE gateway_transactions (
+        CREATE TABLE IF NOT EXISTS gateway_transactions (
                     transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     payment_id INTEGER,
                     gateway_id INTEGER NOT NULL,
@@ -326,7 +326,7 @@ def init_finance_tables():
 
         # Create late_fees table
         cursor.execute('''
-        CREATE TABLE late_fees (
+        CREATE TABLE IF NOT EXISTS late_fees (
                     late_fee_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_fee_id INTEGER NOT NULL,
                     late_fee_amount DECIMAL(10,2) NOT NULL,
@@ -344,7 +344,7 @@ def init_finance_tables():
 
         # Create meal_transactions table
         cursor.execute('''
-        CREATE TABLE meal_transactions (
+        CREATE TABLE IF NOT EXISTS meal_transactions (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT,
                         transaction_type TEXT,
@@ -358,7 +358,7 @@ def init_finance_tables():
 
         # Create payment_gateways table
         cursor.execute('''
-        CREATE TABLE payment_gateways (
+        CREATE TABLE IF NOT EXISTS payment_gateways (
                     gateway_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     gateway_name TEXT NOT NULL,
                     gateway_type TEXT NOT NULL, -- 'stripe', 'paypal', 'bank_transfer', etc.
@@ -375,7 +375,7 @@ def init_finance_tables():
 
         # Create payment_plan_installments table
         cursor.execute('''
-        CREATE TABLE payment_plan_installments (
+        CREATE TABLE IF NOT EXISTS payment_plan_installments (
                     installment_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     payment_plan_id INTEGER NOT NULL,
                     installment_number INTEGER NOT NULL,
@@ -393,7 +393,7 @@ def init_finance_tables():
 
         # Create payment_risk_scores table
         cursor.execute('''
-        CREATE TABLE payment_risk_scores (
+        CREATE TABLE IF NOT EXISTS payment_risk_scores (
                     score_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT NOT NULL,
                     risk_score DECIMAL(5,2) NOT NULL, -- 0-100
@@ -407,7 +407,7 @@ def init_finance_tables():
 
         # Create unified refunds table
         cursor.execute('''
-        CREATE TABLE unified_refunds (
+        CREATE TABLE IF NOT EXISTS unified_refunds (
                     refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     source_type TEXT NOT NULL,
                     source_refund_id TEXT,
@@ -438,7 +438,7 @@ def init_finance_tables():
 
         # Create shop_transaction_items table
         cursor.execute('''
-        CREATE TABLE shop_transaction_items (
+        CREATE TABLE IF NOT EXISTS shop_transaction_items (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     transaction_id TEXT NOT NULL,
                     product_id TEXT NOT NULL,
@@ -452,7 +452,7 @@ def init_finance_tables():
 
         # Create shop_transactions table
         cursor.execute('''
-        CREATE TABLE shop_transactions (
+        CREATE TABLE IF NOT EXISTS shop_transactions (
                     transaction_id TEXT PRIMARY KEY,
                     user_id INTEGER,
                     student_id TEXT,

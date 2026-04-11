@@ -431,7 +431,7 @@ def init_career_tables():
 
         # Create career_counseling table
         cursor.execute('''
-        CREATE TABLE career_counseling (
+        CREATE TABLE IF NOT EXISTS career_counseling (
                     session_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     counselor_id TEXT,
                     client_id TEXT,
@@ -448,7 +448,7 @@ def init_career_tables():
 
         # Create internship_applications table
         cursor.execute('''
-        CREATE TABLE internship_applications (
+        CREATE TABLE IF NOT EXISTS internship_applications (
                     application_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     internship_id INTEGER,
@@ -464,7 +464,7 @@ def init_career_tables():
 
         # Create internship_placements table
         cursor.execute('''
-        CREATE TABLE internship_placements (
+        CREATE TABLE IF NOT EXISTS internship_placements (
                     placement_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     internship_id INTEGER,
@@ -482,7 +482,7 @@ def init_career_tables():
 
         # Create internships table
         cursor.execute('''
-        CREATE TABLE internships (
+        CREATE TABLE IF NOT EXISTS internships (
                     internship_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
                     company TEXT NOT NULL,
@@ -506,7 +506,7 @@ def init_career_tables():
 
         # Create mentorship_relationships table
         cursor.execute('''
-        CREATE TABLE mentorship_relationships (
+        CREATE TABLE IF NOT EXISTS mentorship_relationships (
                     relationship_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     mentor_id TEXT,
                     mentee_id TEXT,
@@ -524,7 +524,7 @@ def init_career_tables():
 
         # Create mentorship_sessions table
         cursor.execute('''
-        CREATE TABLE mentorship_sessions (
+        CREATE TABLE IF NOT EXISTS mentorship_sessions (
                     session_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     relationship_id INTEGER,
                     session_date TEXT,
@@ -539,7 +539,7 @@ def init_career_tables():
 
         # Create mentorships table
         cursor.execute('''
-        CREATE TABLE mentorships (
+        CREATE TABLE IF NOT EXISTS mentorships (
                     mentorship_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     mentor_id TEXT,
                     mentee_id TEXT,
@@ -581,7 +581,7 @@ def init_alumni_tables():
 
         # Create alumni table
         cursor.execute('''
-        CREATE TABLE alumni (
+        CREATE TABLE IF NOT EXISTS alumni (
                     alumni_id TEXT PRIMARY KEY,
                     student_id TEXT,
                     email_address TEXT,
@@ -620,7 +620,7 @@ def init_alumni_tables():
 
         # Create alumni_badges table
         cursor.execute('''
-        CREATE TABLE alumni_badges (
+        CREATE TABLE IF NOT EXISTS alumni_badges (
                     alumni_badge_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     alumni_id TEXT,
                     badge_id INTEGER,
@@ -632,7 +632,7 @@ def init_alumni_tables():
 
         # Create alumni_directory_settings table
         cursor.execute('''
-        CREATE TABLE alumni_directory_settings (
+        CREATE TABLE IF NOT EXISTS alumni_directory_settings (
                     alumni_id TEXT PRIMARY KEY,
                     show_contact_info BOOLEAN DEFAULT 1,
                     show_employment BOOLEAN DEFAULT 1,
@@ -646,7 +646,7 @@ def init_alumni_tables():
 
         # Create alumni_forum table
         cursor.execute('''
-        CREATE TABLE alumni_forum (
+        CREATE TABLE IF NOT EXISTS alumni_forum (
                     post_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     author_id TEXT,
                     title TEXT,
@@ -663,7 +663,7 @@ def init_alumni_tables():
 
         # Create alumni_stories table
         cursor.execute('''
-        CREATE TABLE alumni_stories (
+        CREATE TABLE IF NOT EXISTS alumni_stories (
                     story_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     alumni_id TEXT,
                     title TEXT,
@@ -679,7 +679,7 @@ def init_alumni_tables():
 
         # Create ambassador_program table
         cursor.execute('''
-        CREATE TABLE ambassador_program (
+        CREATE TABLE IF NOT EXISTS ambassador_program (
                     ambassador_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     alumni_id TEXT,
                     start_date TEXT,
@@ -694,7 +694,7 @@ def init_alumni_tables():
 
         # Create chapter_memberships table
         cursor.execute('''
-        CREATE TABLE chapter_memberships (
+        CREATE TABLE IF NOT EXISTS chapter_memberships (
                     membership_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     chapter_id INTEGER,
                     alumni_id TEXT,
@@ -707,7 +707,7 @@ def init_alumni_tables():
 
         # Create regional_chapters table
         cursor.execute('''
-        CREATE TABLE regional_chapters (
+        CREATE TABLE IF NOT EXISTS regional_chapters (
                     chapter_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     chapter_name TEXT,
                     location TEXT,

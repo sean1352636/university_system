@@ -88,7 +88,7 @@ def init_academics_tables():
 
         # Create assignment_submissions table
         cursor.execute('''
-        CREATE TABLE assignment_submissions (
+        CREATE TABLE IF NOT EXISTS assignment_submissions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     assignment_id INTEGER NOT NULL,
                     student_id TEXT NOT NULL,
@@ -114,7 +114,7 @@ def init_academics_tables():
 
         # Create assignments table
         cursor.execute('''
-        CREATE TABLE assignments (
+        CREATE TABLE IF NOT EXISTS assignments (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     module_code TEXT NOT NULL,
                     title TEXT NOT NULL,
@@ -143,7 +143,7 @@ def init_academics_tables():
 
         # Create attendance_alerts table
         cursor.execute('''
-        CREATE TABLE attendance_alerts (
+        CREATE TABLE IF NOT EXISTS attendance_alerts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     alert_id TEXT UNIQUE,
                     student_id TEXT,
@@ -164,7 +164,7 @@ def init_academics_tables():
 
         # Create attendance_appeals table
         cursor.execute('''
-        CREATE TABLE attendance_appeals (
+        CREATE TABLE IF NOT EXISTS attendance_appeals (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     appeal_id TEXT UNIQUE,
                     student_id TEXT,
@@ -188,7 +188,7 @@ def init_academics_tables():
 
         # Create attendance_audit_log table
         cursor.execute('''
-        CREATE TABLE attendance_audit_log (
+        CREATE TABLE IF NOT EXISTS attendance_audit_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT,
                     action TEXT,
@@ -204,7 +204,7 @@ def init_academics_tables():
 
         # Create attendance_calendar_links table
         cursor.execute('''
-        CREATE TABLE attendance_calendar_links (
+        CREATE TABLE IF NOT EXISTS attendance_calendar_links (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         attendance_record_id INTEGER,
                         event_id TEXT,
@@ -218,7 +218,7 @@ def init_academics_tables():
 
         # Create attendance_gamification table
         cursor.execute('''
-        CREATE TABLE attendance_gamification (
+        CREATE TABLE IF NOT EXISTS attendance_gamification (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     points INTEGER DEFAULT 0,
@@ -237,7 +237,7 @@ def init_academics_tables():
 
         # Create attendance_policies table
         cursor.execute('''
-        CREATE TABLE attendance_policies (
+        CREATE TABLE IF NOT EXISTS attendance_policies (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     policy_id TEXT UNIQUE,
                     name TEXT,
@@ -260,7 +260,7 @@ def init_academics_tables():
 
         # Create attendance_predictions table
         cursor.execute('''
-        CREATE TABLE attendance_predictions (
+        CREATE TABLE IF NOT EXISTS attendance_predictions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     module_code TEXT,
@@ -279,7 +279,7 @@ def init_academics_tables():
 
         # Create attendance_settings table
         cursor.execute('''
-        CREATE TABLE attendance_settings (
+        CREATE TABLE IF NOT EXISTS attendance_settings (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     setting_name TEXT UNIQUE,
                     setting_value TEXT,
@@ -292,7 +292,7 @@ def init_academics_tables():
 
         # Create course_event_attendance table (references unified_events)
         cursor.execute('''
-        CREATE TABLE course_event_attendance (
+        CREATE TABLE IF NOT EXISTS course_event_attendance (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             event_id TEXT NOT NULL,
                             student_id TEXT NOT NULL,
@@ -330,7 +330,7 @@ def init_academics_tables():
 
         # Create event_tag_assignments table
         cursor.execute('''
-        CREATE TABLE event_tag_assignments (
+        CREATE TABLE IF NOT EXISTS event_tag_assignments (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             event_id TEXT NOT NULL,
                             tag_id INTEGER NOT NULL,
@@ -343,7 +343,7 @@ def init_academics_tables():
 
         # Create grade_analytics table
         cursor.execute('''
-        CREATE TABLE grade_analytics (
+        CREATE TABLE IF NOT EXISTS grade_analytics (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT,
                         module_code TEXT,
@@ -359,7 +359,7 @@ def init_academics_tables():
 
         # Create grade_statistics table
         cursor.execute('''
-        CREATE TABLE grade_statistics (
+        CREATE TABLE IF NOT EXISTS grade_statistics (
                     stat_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     assessment_id INTEGER,
                     mean REAL,
@@ -378,7 +378,7 @@ def init_academics_tables():
 
         # Create grades table
         cursor.execute('''
-        CREATE TABLE grades (
+        CREATE TABLE IF NOT EXISTS grades (
                     grade_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     assessment_id INTEGER,
@@ -393,7 +393,7 @@ def init_academics_tables():
 
         # Create homework_assignments table
         cursor.execute('''
-        CREATE TABLE homework_assignments (
+        CREATE TABLE IF NOT EXISTS homework_assignments (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT,
                         module_code TEXT,
@@ -412,7 +412,7 @@ def init_academics_tables():
 
         # Create housing_assignments table
         cursor.execute('''
-        CREATE TABLE housing_assignments (
+        CREATE TABLE IF NOT EXISTS housing_assignments (
                     assignment_id TEXT PRIMARY KEY,
                     application_id TEXT,
                     student_id TEXT NOT NULL,
@@ -434,7 +434,7 @@ def init_academics_tables():
 
         # Create module_grades table
         cursor.execute('''
-        CREATE TABLE module_grades (
+        CREATE TABLE IF NOT EXISTS module_grades (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     module_code TEXT,
@@ -448,7 +448,7 @@ def init_academics_tables():
 
         # Create normalized_grades table
         cursor.execute('''
-        CREATE TABLE normalized_grades (
+        CREATE TABLE IF NOT EXISTS normalized_grades (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     grade_id INTEGER,
                     z_score REAL,
@@ -461,7 +461,7 @@ def init_academics_tables():
 
         # Create parent_student_relationships table
         cursor.execute('''
-        CREATE TABLE parent_student_relationships (
+        CREATE TABLE IF NOT EXISTS parent_student_relationships (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     parent_id TEXT,
                     student_id TEXT,
@@ -475,7 +475,7 @@ def init_academics_tables():
 
         # Create peer_review_assignments table
         cursor.execute('''
-        CREATE TABLE peer_review_assignments (
+        CREATE TABLE IF NOT EXISTS peer_review_assignments (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     assignment_id TEXT UNIQUE NOT NULL,
                     session_id TEXT NOT NULL,
@@ -493,7 +493,7 @@ def init_academics_tables():
 
         # Create staff_assignments table
         cursor.execute('''
-        CREATE TABLE staff_assignments (
+        CREATE TABLE IF NOT EXISTS staff_assignments (
                     assignment_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     staff_id TEXT NOT NULL,
                     category TEXT NOT NULL,
@@ -507,7 +507,7 @@ def init_academics_tables():
 
         # Create student_absences table
         cursor.execute('''
-        CREATE TABLE student_absences (
+        CREATE TABLE IF NOT EXISTS student_absences (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT,
                         absence_date TEXT,
@@ -522,7 +522,7 @@ def init_academics_tables():
 
         # Create student_activities table
         cursor.execute('''
-        CREATE TABLE student_activities (
+        CREATE TABLE IF NOT EXISTS student_activities (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT,
                         activity_id INTEGER,
@@ -535,7 +535,7 @@ def init_academics_tables():
 
         # Create student_attendance table
         cursor.execute('''
-        CREATE TABLE student_attendance(
+        CREATE TABLE IF NOT EXISTS student_attendance(
           student_id TEXT,
           module_code TEXT,
           date TEXT,
@@ -547,7 +547,7 @@ def init_academics_tables():
 
         # Create student_badges table
         cursor.execute('''
-        CREATE TABLE student_badges (
+        CREATE TABLE IF NOT EXISTS student_badges (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     badge_id INTEGER,
@@ -559,7 +559,7 @@ def init_academics_tables():
 
         # Create student_behavior table
         cursor.execute('''
-        CREATE TABLE student_behavior (
+        CREATE TABLE IF NOT EXISTS student_behavior (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT,
                         incident_date TEXT,
@@ -576,7 +576,7 @@ def init_academics_tables():
 
         # Create student_biometrics table
         cursor.execute('''
-        CREATE TABLE student_biometrics (
+        CREATE TABLE IF NOT EXISTS student_biometrics (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     face_encoding BLOB,
@@ -590,7 +590,7 @@ def init_academics_tables():
 
         # Create student_competencies table
         cursor.execute('''
-        CREATE TABLE student_competencies (
+        CREATE TABLE IF NOT EXISTS student_competencies (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT NOT NULL,
                     competency_id INTEGER NOT NULL,
@@ -605,7 +605,7 @@ def init_academics_tables():
 
         # Create student_credits table
         cursor.execute('''
-        CREATE TABLE student_credits (
+        CREATE TABLE IF NOT EXISTS student_credits (
                     credit_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT NOT NULL,
                     credit_amount DECIMAL(10,2) NOT NULL,
@@ -624,7 +624,7 @@ def init_academics_tables():
 
         # Create student_demographics table
         cursor.execute('''
-        CREATE TABLE student_demographics (
+        CREATE TABLE IF NOT EXISTS student_demographics (
                         student_id TEXT PRIMARY KEY,
                         age_group TEXT,
                         gender TEXT,
@@ -637,7 +637,7 @@ def init_academics_tables():
 
         # Create student_financial_aid table
         cursor.execute('''
-        CREATE TABLE student_financial_aid (
+        CREATE TABLE IF NOT EXISTS student_financial_aid (
                     aid_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT NOT NULL,
                     aid_type_id INTEGER NOT NULL,
@@ -663,7 +663,7 @@ def init_academics_tables():
 
         # Create student_medical_info table
         cursor.execute('''
-        CREATE TABLE student_medical_info (
+        CREATE TABLE IF NOT EXISTS student_medical_info (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         student_id TEXT,
                         condition_type TEXT,
@@ -681,7 +681,7 @@ def init_academics_tables():
 
         # Create student_payment_plans table
         cursor.execute('''
-        CREATE TABLE student_payment_plans (
+        CREATE TABLE IF NOT EXISTS student_payment_plans (
                     payment_plan_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT NOT NULL,
                     template_id INTEGER,
@@ -704,7 +704,7 @@ def init_academics_tables():
 
         # Create student_points table
         cursor.execute('''
-        CREATE TABLE student_points (
+        CREATE TABLE IF NOT EXISTS student_points (
                     points_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     points_earned INTEGER,
@@ -719,7 +719,7 @@ def init_academics_tables():
 
         # Create student_requirement_progress table
         cursor.execute('''
-        CREATE TABLE student_requirement_progress (
+        CREATE TABLE IF NOT EXISTS student_requirement_progress (
                             id TEXT PRIMARY KEY,
                             student_id TEXT NOT NULL,
                             requirement_id TEXT NOT NULL,
@@ -736,7 +736,7 @@ def init_academics_tables():
 
         # Create student_risk_assessment table
         cursor.execute('''
-        CREATE TABLE student_risk_assessment (
+        CREATE TABLE IF NOT EXISTS student_risk_assessment (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT NOT NULL,
                     risk_score REAL NOT NULL,
@@ -750,7 +750,7 @@ def init_academics_tables():
 
         # Create teacher_student_permissions table
         cursor.execute('''
-        CREATE TABLE teacher_student_permissions (
+        CREATE TABLE IF NOT EXISTS teacher_student_permissions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     teacher_id INTEGER,
                     student_id TEXT,
@@ -762,7 +762,7 @@ def init_academics_tables():
 
         # Create ticket_assignments table
         cursor.execute('''
-        CREATE TABLE ticket_assignments (
+        CREATE TABLE IF NOT EXISTS ticket_assignments (
                     assignment_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ticket_id INTEGER,
                     assigned_from INTEGER,
@@ -800,7 +800,7 @@ def init_courses_tables():
 
         # Create course_analytics table
         cursor.execute('''
-        CREATE TABLE course_analytics (
+        CREATE TABLE IF NOT EXISTS course_analytics (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     course_id INTEGER NOT NULL,
                     semester TEXT NOT NULL,
@@ -816,7 +816,7 @@ def init_courses_tables():
 
         # Create course_categories table
         cursor.execute('''
-        CREATE TABLE course_categories (
+        CREATE TABLE IF NOT EXISTS course_categories (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT UNIQUE NOT NULL,
                     description TEXT,
@@ -827,7 +827,7 @@ def init_courses_tables():
 
         # Create course_history table
         cursor.execute('''
-        CREATE TABLE course_history (
+        CREATE TABLE IF NOT EXISTS course_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     course_id INTEGER NOT NULL,
                     field_name TEXT NOT NULL,
@@ -841,7 +841,7 @@ def init_courses_tables():
 
         # Create course_requirements table
         cursor.execute('''
-        CREATE TABLE course_requirements (
+        CREATE TABLE IF NOT EXISTS course_requirements (
                         requirement_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         course_code TEXT,
                         program TEXT,
@@ -854,7 +854,7 @@ def init_courses_tables():
 
         # Create course_schedule table
         cursor.execute('''
-        CREATE TABLE course_schedule (
+        CREATE TABLE IF NOT EXISTS course_schedule (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     course_id INTEGER NOT NULL,
                     semester TEXT NOT NULL,
@@ -872,7 +872,7 @@ def init_courses_tables():
 
         # Create course_waitlist table
         cursor.execute('''
-        CREATE TABLE course_waitlist (
+        CREATE TABLE IF NOT EXISTS course_waitlist (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     course_id INTEGER NOT NULL,
                     student_id INTEGER NOT NULL,
@@ -886,7 +886,7 @@ def init_courses_tables():
 
         # Create courses table
         cursor.execute('''
-        CREATE TABLE courses (
+        CREATE TABLE IF NOT EXISTS courses (
                             id TEXT PRIMARY KEY,
                             code TEXT UNIQUE NOT NULL,
                             name TEXT NOT NULL,
@@ -904,7 +904,7 @@ def init_courses_tables():
 
         # Create departments table
         cursor.execute('''
-        CREATE TABLE departments (
+        CREATE TABLE IF NOT EXISTS departments (
                     dept_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL UNIQUE,
                     description TEXT,
@@ -921,7 +921,7 @@ def init_courses_tables():
 
         # Create instructors table
         cursor.execute('''
-        CREATE TABLE instructors (
+        CREATE TABLE IF NOT EXISTS instructors (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         first_name TEXT NOT NULL,
                         last_name TEXT NOT NULL,
@@ -941,7 +941,7 @@ def init_courses_tables():
 
         # Create module_schedule table
         cursor.execute('''
-        CREATE TABLE module_schedule (
+        CREATE TABLE IF NOT EXISTS module_schedule (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         module_code TEXT,
                         day_of_week TEXT,
@@ -960,7 +960,7 @@ def init_courses_tables():
 
         # Create semesters table
         cursor.execute('''
-        CREATE TABLE semesters (
+        CREATE TABLE IF NOT EXISTS semesters (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             academic_year_id TEXT NOT NULL,
                             name TEXT NOT NULL,

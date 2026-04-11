@@ -358,7 +358,7 @@ def init_analytics_tables():
 
         # Create analytics_cache table
         cursor.execute('''
-        CREATE TABLE analytics_cache (
+        CREATE TABLE IF NOT EXISTS analytics_cache (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     cache_key TEXT UNIQUE NOT NULL,
                     cache_data TEXT NOT NULL,
@@ -369,7 +369,7 @@ def init_analytics_tables():
 
         # Create analytics_data table
         cursor.execute('''
-        CREATE TABLE analytics_data (
+        CREATE TABLE IF NOT EXISTS analytics_data (
                     analytics_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     metric_name TEXT,
                     metric_value REAL,
@@ -381,7 +381,7 @@ def init_analytics_tables():
 
         # Create quality_metrics table
         cursor.execute('''
-        CREATE TABLE quality_metrics (
+        CREATE TABLE IF NOT EXISTS quality_metrics (
                             id INTEGER PRIMARY KEY AUTOINCREMENT,
                             metric_name TEXT,
                             metric_category TEXT,
@@ -397,7 +397,7 @@ def init_analytics_tables():
 
         # Create search_analytics table
         cursor.execute('''
-        CREATE TABLE search_analytics (
+        CREATE TABLE IF NOT EXISTS search_analytics (
                     search_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     user_id TEXT,
                     search_query TEXT NOT NULL,
@@ -411,7 +411,7 @@ def init_analytics_tables():
 
         # Create system_metrics table
         cursor.execute('''
-        CREATE TABLE system_metrics (
+        CREATE TABLE IF NOT EXISTS system_metrics (
                     metric_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     metric_name TEXT NOT NULL,
                     metric_value REAL NOT NULL,
@@ -423,7 +423,7 @@ def init_analytics_tables():
 
         # Create teacher_reports table
         cursor.execute('''
-        CREATE TABLE teacher_reports (
+        CREATE TABLE IF NOT EXISTS teacher_reports (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT,
                     teacher_id INTEGER,
@@ -438,7 +438,7 @@ def init_analytics_tables():
 
         # Create usage_analytics table
         cursor.execute('''
-        CREATE TABLE usage_analytics (
+        CREATE TABLE IF NOT EXISTS usage_analytics (
                     analytics_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     date TEXT NOT NULL,
                     metric_name TEXT NOT NULL,
