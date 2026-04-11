@@ -106,6 +106,10 @@ def create_student_dialog(self):
         """Show dialog to select a student from the college system and autofill fields."""
         try:
             import sqlite3 as _sqlite3
+            if not COLLEGE_DB_FILE.exists():
+                messagebox.showinfo("Import", _t("student.college_db_not_found",
+                    "College database not found. No college data available for import."))
+                return
             conn = _sqlite3.connect(str(COLLEGE_DB_FILE))
             conn.row_factory = _sqlite3.Row
             cursor = conn.cursor()

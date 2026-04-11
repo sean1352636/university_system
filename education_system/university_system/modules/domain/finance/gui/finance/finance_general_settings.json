@@ -1,6 +1,6 @@
 {
-  "academic_year": "<MagicMock name='mock.globalgetvar()' id='545920472720'>",
-  "grace_period_days": "<MagicMock name='mock.globalgetvar()' id='545920472720'>",
-  "default_late_fee": "<MagicMock name='mock.globalgetvar()' id='545920472720'>",
-  "updated_at": "2026-04-03T11:51:49.934300"
+  "academic_year": "2024-2025",
+  "grace_period_days": "7",
+  "default_late_fee": "50.00",
+  "updated_at": "2026-04-09T08:33:41.815813"
 }

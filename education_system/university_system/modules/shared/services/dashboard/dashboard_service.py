@@ -768,14 +768,13 @@ class DashboardService:
                 # Course utilization (enrollment count vs capacity from courses table)
                 try:
                     rows = conn.execute(
-                        "SELECT c.code as module_code, c.name as module_name, "
+                        "SELECT c.course_code as module_code, c.course_name as module_name, "
                         "c.max_enrollment as capacity, "
                         "c.current_enrollment as enrolled, "
                         "CASE WHEN c.max_enrollment > 0 "
                         "  THEN ROUND(c.current_enrollment * 100.0 / c.max_enrollment, 1) "
                         "  ELSE 0 END as utilization_pct "
                         "FROM courses c "
-                        "WHERE c.id NOT LIKE 'course_%' "
                         "ORDER BY utilization_pct DESC"
                     ).fetchall()
                     data['course_utilization'] = [dict(r) for r in rows] if rows else []
