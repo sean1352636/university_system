@@ -93,20 +93,25 @@ class FirstAidService:
 
     def update_incident(self, incident_id: int, **kwargs) -> dict:
         """Update an incident (treatment, status, treated_by, parent_notified, notes)."""
-        allowed = {"treatment", "status", "treated_by", "parent_notified", "notes"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed}
-        if not updates:
-            raise FirstAidError("No valid fields to update.")
-        if "status" in updates and updates["status"] not in _STATUSES:
+        if "status" in kwargs and kwargs["status"] not in _STATUSES:
             raise FirstAidError(f"Status must be one of: {', '.join(_STATUSES)}")
+
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("notes", "parent_notified", "status", "treated_by", "treatment"):
+            if col in kwargs:
+                set_parts.append(f"{col} = ?")
+                vals.append(kwargs[col])
+        if not set_parts:
+            raise FirstAidError("No valid fields to update.")
 
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values())
-            vals.extend([datetime.now().isoformat(), incident_id])
+            sets = ", ".join(set_parts)
+            vals.append(datetime.now().isoformat())
+            vals.append(incident_id)
             conn.execute(
-                f"UPDATE first_aid_incidents SET {sets}, updated_at = ? WHERE id = ?",
+                f"UPDATE first_aid_incidents SET {sets}, updated_at = ? WHERE id = ?",  # nosec B608
                 vals,
             )
             conn.commit()

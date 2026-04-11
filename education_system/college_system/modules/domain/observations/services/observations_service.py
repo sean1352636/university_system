@@ -27,23 +27,22 @@ class ObservationService:
         conn = self._conn()
         try:
             # Build INSERT with only non-None values so DB defaults apply
-            fields = {k: v for k, v in {
-                'teacher_id': kwargs.get('teacher_id'),
-                'observer_id': kwargs.get('observer_id'),
-                'scheduled_date': kwargs.get('scheduled_date'),
-                'course_id': kwargs.get('course_id'),
-                'observation_type': kwargs.get('observation_type'),
-                'grade': kwargs.get('grade'),
-                'strengths': kwargs.get('strengths'),
-                'areas_for_development': kwargs.get('areas_for_development'),
-                'action_points': kwargs.get('action_points'),
-                'status': kwargs.get('status'),
-            }.items() if v is not None}
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            # Iterate over a literal column tuple so user-supplied keys
+            # never flow into the SQL identifier positions (py/sql-injection).
+            _insert_cols: list[str] = []
+            _insert_phs: list[str] = []
+            _insert_vals: list = []
+            for col in ('teacher_id', 'observer_id', 'scheduled_date', 'course_id', 'observation_type', 'grade', 'strengths', 'areas_for_development', 'action_points', 'status'):
+                val = kwargs.get(col)
+                if val is not None:
+                    _insert_cols.append(col)
+                    _insert_phs.append('?')
+                    _insert_vals.append(val)
+            cols_sql = ', '.join(_insert_cols)
+            ph_sql = ', '.join(_insert_phs)
             conn.execute(
-                f"INSERT INTO teaching_observations ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO teaching_observations ({cols_sql}) VALUES ({ph_sql})",
+                _insert_vals,
             )
             conn.commit()
             row = conn.execute(

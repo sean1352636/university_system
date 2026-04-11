@@ -4,7 +4,6 @@ import logging
 
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import SENDError
-from education_system.primary_school.core.sql_safety import validate_identifier  # nosec B608
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -91,16 +90,20 @@ class SENDService:
         conn = self._conn()
         try:
             cursor = conn.cursor()
-            allowed = {
-                "sen_status", "primary_need", "secondary_need",
-                "ehcp_status", "ehcp_review_date", "funding_band",
-                "key_worker_staff_id", "external_agencies", "notes",
-            }
-            updates = {k: v for k, v in kwargs.items() if k in allowed}
-            if not updates:
+            set_parts: list[str] = []
+            values: list = []
+            for col in (
+                "ehcp_review_date", "ehcp_status", "external_agencies",
+                "funding_band", "key_worker_staff_id", "notes",
+                "primary_need", "secondary_need", "sen_status",
+            ):
+                if col in kwargs:
+                    set_parts.append(f"{col} = ?")
+                    values.append(kwargs[col])
+            if not set_parts:
                 return None
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            values = list(updates.values()) + [pupil_id]
+            set_clause = ", ".join(set_parts)
+            values.append(pupil_id)
             cursor.execute(
                 f"UPDATE send_records SET {set_clause} WHERE pupil_id = ?",
                 values,
@@ -190,15 +193,19 @@ class SENDService:
         conn = self._conn()
         try:
             cursor = conn.cursor()
-            allowed = {
-                "provision_type", "description", "frequency", "delivered_by",
-                "start_date", "review_date", "status",
-            }
-            updates = {k: v for k, v in kwargs.items() if k in allowed}
-            if not updates:
+            set_parts: list[str] = []
+            values: list = []
+            for col in (
+                "delivered_by", "description", "frequency",
+                "provision_type", "review_date", "start_date", "status",
+            ):
+                if col in kwargs:
+                    set_parts.append(f"{col} = ?")
+                    values.append(kwargs[col])
+            if not set_parts:
                 return None
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            values = list(updates.values()) + [provision_id]
+            set_clause = ", ".join(set_parts)
+            values.append(provision_id)
             cursor.execute(
                 f"UPDATE send_provisions SET {set_clause} WHERE id = ?",
                 values,

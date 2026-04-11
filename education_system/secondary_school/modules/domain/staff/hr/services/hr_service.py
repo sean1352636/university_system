@@ -1,7 +1,6 @@
 """HR service for staff management."""
 
 import logging
-from education_system.secondary_school.core.sql_safety import validate_identifier  # nosec B608
 from education_system.secondary_school.core.exceptions import HRError
 from education_system.secondary_school.infrastructure.database.db import connect
 
@@ -92,23 +91,28 @@ class HRService:
             conn.close()
 
     def update_staff(self, staff_hr_id: int, **kwargs) -> dict:
-        allowed = {
-            "first_name", "last_name", "title", "email", "phone", "address",
-            "department", "job_title", "contract_type", "salary", "start_date",
-            "end_date", "dbs_check_date", "dbs_certificate",
-            "emergency_contact_name", "emergency_contact_phone",
-            "sick_days_used", "annual_leave_used", "annual_leave_entitlement",
-            "status", "notes",
-        }
-        updates = {k: v for k, v in kwargs.items() if k in allowed}
-        if not updates:
+        set_parts: list[str] = []
+        values: list = []
+        for col in (
+            "address", "annual_leave_entitlement", "annual_leave_used",
+            "contract_type", "dbs_certificate", "dbs_check_date",
+            "department", "email", "emergency_contact_name",
+            "emergency_contact_phone", "end_date", "first_name",
+            "job_title", "last_name", "notes", "phone", "salary",
+            "sick_days_used", "start_date", "status", "title",
+        ):
+            if col in kwargs:
+                set_parts.append(f"{col} = ?")
+                values.append(kwargs[col])
+        if not set_parts:
             raise HRError("No valid fields to update.")
+        set_clause = ", ".join(set_parts)
+        values.append(staff_hr_id)
         conn = self._conn()
         try:
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
             conn.execute(
                 f"UPDATE staff_hr SET {set_clause}, updated_at = datetime('now') WHERE id = ?",
-                (*updates.values(), staff_hr_id),
+                values,
             )
             conn.commit()
             row = conn.execute("SELECT * FROM staff_hr WHERE id = ?", (staff_hr_id,)).fetchone()

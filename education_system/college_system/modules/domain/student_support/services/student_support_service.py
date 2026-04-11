@@ -72,10 +72,14 @@ class StudentSupportService:
             conn.close()
 
     def update_intervention(self, intervention_id: int, **updates) -> dict:
-        allowed = {"intervention_type", "targets", "sessions_planned",
-                    "outcome", "impact_rating", "status"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("impact_rating", "intervention_type", "outcome",
+                    "sessions_planned", "status", "targets"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(updates[col])
+        if not set_parts:
             raise StudentSupportError("No valid fields to update.")
         conn = self._conn()
         try:
@@ -84,10 +88,11 @@ class StudentSupportService:
             ).fetchone()
             if not existing:
                 raise StudentSupportError("Intervention not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            vals.append(intervention_id)
             conn.execute(
-                f"UPDATE support_interventions SET {set_parts}, updated_at = datetime('now') WHERE id = ?",
-                (*updates.values(), intervention_id),
+                f"UPDATE support_interventions SET {set_clause}, updated_at = datetime('now') WHERE id = ?",  # nosec B608
+                vals,
             )
             conn.commit()
             logger.info("Intervention updated: id=%d", intervention_id)
@@ -201,19 +206,24 @@ class StudentSupportService:
             conn.close()
 
     def update_risk(self, risk_id: int, **updates) -> dict:
-        allowed = {"risk_type", "risk_level", "mitigations", "status"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("mitigations", "risk_level", "risk_type", "status"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(updates[col])
+        if not set_parts:
             raise StudentSupportError("No valid fields to update.")
         conn = self._conn()
         try:
             existing = conn.execute("SELECT id FROM risk_register WHERE id = ?", (risk_id,)).fetchone()
             if not existing:
                 raise StudentSupportError("Risk not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            vals.append(risk_id)
             conn.execute(
-                f"UPDATE risk_register SET {set_parts}, updated_at = datetime('now') WHERE id = ?",
-                (*updates.values(), risk_id),
+                f"UPDATE risk_register SET {set_clause}, updated_at = datetime('now') WHERE id = ?",  # nosec B608
+                vals,
             )
             conn.commit()
             logger.info("Risk updated: id=%d", risk_id)

@@ -3,7 +3,6 @@
 import logging
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import MedicalError
-from education_system.primary_school.core.sql_safety import validate_identifier  # nosec B608
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -70,16 +69,19 @@ class MedicalService:
         conn = self._conn()
         try:
             cursor = conn.cursor()
-            allowed = {
-                "condition", "medication", "dosage", "administration_time",
-                "care_plan", "allergy", "allergy_severity",
-                "emergency_protocol", "doctor_name", "doctor_phone", "notes",
-            }
-            updates = {k: v for k, v in kwargs.items() if k in allowed}
-            if not updates:
+            set_parts: list[str] = []
+            values: list = []
+            for col in (
+                "administration_time", "allergy", "allergy_severity",
+                "care_plan", "condition", "doctor_name", "doctor_phone",
+                "dosage", "emergency_protocol", "medication", "notes",
+            ):
+                if col in kwargs:
+                    set_parts.append(f"{col} = ?")
+                    values.append(kwargs[col])
+            if not set_parts:
                 return None
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            values = list(updates.values())
+            set_clause = ", ".join(set_parts)
             values.append(record_id)
             cursor.execute(
                 f"UPDATE medical_records SET {set_clause}, updated_at = datetime('now') WHERE id = ?",

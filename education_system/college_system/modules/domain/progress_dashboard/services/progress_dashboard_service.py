@@ -25,20 +25,22 @@ class ProgressDashboardService:
         conn = self._conn()
         try:
             # Build INSERT with only non-None values so DB defaults apply
-            fields = {k: v for k, v in {
-                'student_id': kwargs.get('student_id'),
-                'snapshot_date': kwargs.get('snapshot_date'),
-                'attendance_percent': kwargs.get('attendance_percent'),
-                'average_grade': kwargs.get('average_grade'),
-                'assignments_due': kwargs.get('assignments_due'),
-                'assignments_overdue': kwargs.get('assignments_overdue'),
-                'trajectory': kwargs.get('trajectory'),
-            }.items() if v is not None}
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            # Iterate over a literal column tuple so user-supplied keys
+            # never flow into the SQL identifier positions (py/sql-injection).
+            _insert_cols: list[str] = []
+            _insert_phs: list[str] = []
+            _insert_vals: list = []
+            for col in ('student_id', 'snapshot_date', 'attendance_percent', 'average_grade', 'assignments_due', 'assignments_overdue', 'trajectory'):
+                val = kwargs.get(col)
+                if val is not None:
+                    _insert_cols.append(col)
+                    _insert_phs.append('?')
+                    _insert_vals.append(val)
+            cols_sql = ', '.join(_insert_cols)
+            ph_sql = ', '.join(_insert_phs)
             conn.execute(
-                f"INSERT INTO progress_snapshots ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO progress_snapshots ({cols_sql}) VALUES ({ph_sql})",
+                _insert_vals,
             )
             conn.commit()
             row = conn.execute(

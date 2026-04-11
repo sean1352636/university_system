@@ -27,23 +27,22 @@ class CPDService:
         conn = self._conn()
         try:
             # Build INSERT with only non-None values so DB defaults apply
-            fields = {k: v for k, v in {
-                'staff_id': kwargs.get('staff_id'),
-                'title': kwargs.get('title'),
-                'provider': kwargs.get('provider'),
-                'cpd_type': kwargs.get('cpd_type'),
-                'hours': kwargs.get('hours'),
-                'certification': kwargs.get('certification'),
-                'expiry_date': kwargs.get('expiry_date'),
-                'evidence': kwargs.get('evidence'),
-                'reflection': kwargs.get('reflection'),
-                'status': kwargs.get('status'),
-            }.items() if v is not None}
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            # Iterate over a literal column tuple so user-supplied keys
+            # never flow into the SQL identifier positions (py/sql-injection).
+            _insert_cols: list[str] = []
+            _insert_phs: list[str] = []
+            _insert_vals: list = []
+            for col in ('staff_id', 'title', 'provider', 'cpd_type', 'hours', 'certification', 'expiry_date', 'evidence', 'reflection', 'status'):
+                val = kwargs.get(col)
+                if val is not None:
+                    _insert_cols.append(col)
+                    _insert_phs.append('?')
+                    _insert_vals.append(val)
+            cols_sql = ', '.join(_insert_cols)
+            ph_sql = ', '.join(_insert_phs)
             conn.execute(
-                f"INSERT INTO cpd_records ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO cpd_records ({cols_sql}) VALUES ({ph_sql})",
+                _insert_vals,
             )
             conn.commit()
             row = conn.execute(

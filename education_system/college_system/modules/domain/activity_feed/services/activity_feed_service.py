@@ -29,23 +29,22 @@ class ActivityFeedService:
         conn = self._conn()
         try:
             # Build INSERT with only non-None values so DB defaults apply
-            fields = {k: v for k, v in {
-                'user_id': kwargs.get('user_id'),
-                'activity_type': kwargs.get('activity_type'),
-                'title': kwargs.get('title'),
-                'description': kwargs.get('description'),
-                'entity_type': kwargs.get('entity_type'),
-                'entity_id': kwargs.get('entity_id'),
-                'target_role': kwargs.get('target_role'),
-                'target_user_id': kwargs.get('target_user_id'),
-                'is_read': kwargs.get('is_read'),
-                'dismissed': kwargs.get('dismissed'),
-            }.items() if v is not None}
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            # Iterate over a literal column tuple so user-supplied keys
+            # never flow into the SQL identifier positions (py/sql-injection).
+            _insert_cols: list[str] = []
+            _insert_phs: list[str] = []
+            _insert_vals: list = []
+            for col in ('user_id', 'activity_type', 'title', 'description', 'entity_type', 'entity_id', 'target_role', 'target_user_id', 'is_read', 'dismissed'):
+                val = kwargs.get(col)
+                if val is not None:
+                    _insert_cols.append(col)
+                    _insert_phs.append('?')
+                    _insert_vals.append(val)
+            cols_sql = ', '.join(_insert_cols)
+            ph_sql = ', '.join(_insert_phs)
             conn.execute(
-                f"INSERT INTO activity_feed_items ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO activity_feed_items ({cols_sql}) VALUES ({ph_sql})",
+                _insert_vals,
             )
             conn.commit()
             row = conn.execute(

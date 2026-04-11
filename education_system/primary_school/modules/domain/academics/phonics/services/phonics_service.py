@@ -3,7 +3,6 @@
 import logging
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import PhonicsError
-from education_system.primary_school.core.sql_safety import validate_identifier  # nosec B608
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -80,25 +79,29 @@ class PhonicsService:
         conn = self._conn()
         try:
             cursor = conn.cursor()
-            allowed = {"score", "threshold", "is_resit", "assessment_date"}
-            updates = {k: v for k, v in kwargs.items() if k in allowed}
-            if not updates:
+            set_parts: list[str] = []
+            values: list = []
+            for col in ("assessment_date", "is_resit", "score", "threshold"):
+                if col in kwargs:
+                    set_parts.append(f"{col} = ?")
+                    values.append(kwargs[col])
+            if not set_parts:
                 return None
 
             # Recalculate passed if score or threshold changed
-            if "score" in updates or "threshold" in updates:
+            if "score" in kwargs or "threshold" in kwargs:
                 cursor.execute(
                     "SELECT score, threshold FROM phonics_results WHERE id = ?",
                     (result_id,),
                 )
                 current = cursor.fetchone()
                 if current:
-                    new_score = updates.get("score", current["score"])
-                    new_threshold = updates.get("threshold", current["threshold"])
-                    updates["passed"] = 1 if new_score >= new_threshold else 0
+                    new_score = kwargs.get("score", current["score"])
+                    new_threshold = kwargs.get("threshold", current["threshold"])
+                    set_parts.append("passed = ?")
+                    values.append(1 if new_score >= new_threshold else 0)
 
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            values = list(updates.values())
+            set_clause = ", ".join(set_parts)
             values.append(result_id)
             cursor.execute(
                 f"UPDATE phonics_results SET {set_clause} WHERE id = ?", values

@@ -4,7 +4,6 @@ import logging
 from datetime import date as date_type
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import HomeworkError
-from education_system.primary_school.core.sql_safety import validate_identifier  # nosec B608
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -89,14 +88,17 @@ class HomeworkService:
         conn = self._conn()
         try:
             cursor = conn.cursor()
-            allowed = {"title", "class_name", "due_date", "subject_code",
-                       "description", "set_by", "status"}
-            updates = {k: v for k, v in kwargs.items() if k in allowed}
-            if not updates:
+            set_parts: list[str] = []
+            values: list = []
+            for col in ("class_name", "description", "due_date", "set_by",
+                        "status", "subject_code", "title"):
+                if col in kwargs:
+                    set_parts.append(f"{col} = ?")
+                    values.append(kwargs[col])
+            if not set_parts:
                 return None
 
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            values = list(updates.values())
+            set_clause = ", ".join(set_parts)
             values.append(homework_id)
             cursor.execute(
                 f"UPDATE homework SET {set_clause} WHERE id = ?", values

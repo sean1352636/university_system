@@ -61,15 +61,19 @@ class UCASService:
             conn.close()
 
     def update_application(self, app_id: int, **updates) -> dict:
-        allowed = {"ucas_id", "personal_statement_status", "reference_status",
-                    "predicted_tariff", "application_status", "notes"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("application_status", "notes", "personal_statement_status",
+                    "predicted_tariff", "reference_status", "ucas_id"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(updates[col])
+        if not set_parts:
             raise UCASError("No valid fields to update.")
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values()) + [app_id]
+            sets = ", ".join(set_parts)
+            vals.append(app_id)
             conn.execute(f"UPDATE ucas_applications SET {sets}, updated_at = datetime('now') WHERE id = ?", vals)
             conn.commit()
             return self.get_application(app_id)

@@ -408,16 +408,21 @@ def update_patient(patient_id: int):
         raise ValidationError(f"Patient {patient_id} not found")
 
     data = request.get_json(silent=True) or {}
-    allowed_fields = [
-        "user_phone", "address", "emergency_contact", "emergency_phone",
-        "medical_history", "allergies", "insurance_provider", "insurance_number", "notes",
-    ]
-    updates = {k: v for k, v in data.items() if k in allowed_fields}
-    if not updates:
+    set_parts: list[str] = []
+    values: list = []
+    for col in (
+        "address", "allergies", "emergency_contact", "emergency_phone",
+        "insurance_number", "insurance_provider", "medical_history",
+        "notes", "user_phone",
+    ):
+        if col in data:
+            set_parts.append(f"{col} = ?")
+            values.append(data[col])
+    if not set_parts:
         raise ValidationError("No valid fields to update")
 
-    set_clause = ", ".join(f"{k} = ?" for k in updates)
-    values = list(updates.values()) + [patient_id]
+    set_clause = ", ".join(set_parts)
+    values.append(patient_id)
 
     with transaction() as conn:
         conn.execute(

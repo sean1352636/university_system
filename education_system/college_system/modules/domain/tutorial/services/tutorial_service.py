@@ -89,9 +89,13 @@ class TutorialService:
             conn.close()
 
     def update_assignment(self, assignment_id: int, **updates) -> dict:
-        allowed = {"student_id", "tutor_id", "academic_year", "tutor_group", "status"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        values: list = []
+        for col in ("academic_year", "status", "student_id", "tutor_group", "tutor_id"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                values.append(updates[col])
+        if not set_parts:
             raise TutorialError("No valid fields to update.")
         conn = self._conn()
         try:
@@ -100,10 +104,11 @@ class TutorialService:
             ).fetchone()
             if not existing:
                 raise TutorialError("Assignment not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            values.append(assignment_id)
             conn.execute(
-                f"UPDATE tutor_assignments SET {set_parts} WHERE id = ?",
-                (*updates.values(), assignment_id),
+                f"UPDATE tutor_assignments SET {set_clause} WHERE id = ?",
+                values,
             )
             conn.commit()
             logger.info("Assignment updated: id=%d", assignment_id)

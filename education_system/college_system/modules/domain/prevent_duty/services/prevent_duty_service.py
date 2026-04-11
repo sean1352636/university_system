@@ -90,20 +90,22 @@ class PreventDutyService:
 
     def update_referral(self, referral_id: int, **updates) -> dict:
         """Update referral fields."""
-        allowed = {
-            "subject_name", "subject_type", "subject_id", "concern_type",
-            "concern_details", "risk_level", "channel_referral",
-            "channel_reference", "actions_taken", "outcome", "status",
-        }
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("actions_taken", "channel_reference", "channel_referral",
+                    "concern_details", "concern_type", "outcome", "risk_level",
+                    "status", "subject_id", "subject_name", "subject_type"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(updates[col])
+        if not set_parts:
             raise PreventDutyError("No valid fields to update.")
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values()) + [referral_id]
+            sets = ", ".join(set_parts)
+            vals.append(referral_id)
             conn.execute(
-                f"UPDATE prevent_referrals SET {sets}, updated_at = datetime('now') WHERE id = ?",
+                f"UPDATE prevent_referrals SET {sets}, updated_at = datetime('now') WHERE id = ?",  # nosec B608
                 vals,
             )
             conn.commit()

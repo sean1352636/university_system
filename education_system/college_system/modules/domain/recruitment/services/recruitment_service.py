@@ -88,11 +88,15 @@ class RecruitmentService:
             conn.close()
 
     def update_vacancy(self, vacancy_id: int, **updates) -> dict:
-        allowed = {"job_title", "department", "contract_type", "hours",
-                    "salary_range", "closing_date", "start_date", "description",
-                    "person_spec", "hiring_manager_id", "status"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("closing_date", "contract_type", "department", "description",
+                    "hiring_manager_id", "hours", "job_title", "person_spec",
+                    "salary_range", "start_date", "status"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(updates[col])
+        if not set_parts:
             raise RecruitmentError("No valid fields to update.")
         conn = self._conn()
         try:
@@ -101,10 +105,11 @@ class RecruitmentService:
             ).fetchone()
             if not existing:
                 raise RecruitmentError("Vacancy not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            vals.append(vacancy_id)
             conn.execute(
-                f"UPDATE job_vacancies SET {set_parts}, updated_at = datetime('now') WHERE id = ?",
-                (*updates.values(), vacancy_id),
+                f"UPDATE job_vacancies SET {set_clause}, updated_at = datetime('now') WHERE id = ?",  # nosec B608
+                vals,
             )
             conn.commit()
             logger.info("Vacancy updated: id=%d", vacancy_id)

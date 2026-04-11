@@ -371,17 +371,22 @@ class FundingService:
             conn.close()
 
     def update_resit(self, resit_id: int, **updates) -> dict:
-        allowed = {"current_level", "target_grade", "exam_entries_count",
-                    "latest_result", "status", "notes"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("current_level", "exam_entries_count", "latest_result",
+                    "notes", "status", "target_grade"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(updates[col])
+        if not set_parts:
             raise FundingError("No valid fields to update.")
         conn = self._conn()
         try:
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            vals.append(resit_id)
             conn.execute(
-                f"UPDATE resit_tracking SET {set_parts}, updated_at = datetime('now') WHERE id = ?",
-                (*updates.values(), resit_id),
+                f"UPDATE resit_tracking SET {set_clause}, updated_at = datetime('now') WHERE id = ?",  # nosec B608
+                vals,
             )
             conn.commit()
             row = conn.execute("SELECT * FROM resit_tracking WHERE id = ?", (resit_id,)).fetchone()

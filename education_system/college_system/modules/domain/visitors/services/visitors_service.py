@@ -29,25 +29,22 @@ class VisitorService:
         conn = self._conn()
         try:
             # Build INSERT with only non-None values so DB defaults apply
-            fields = {k: v for k, v in {
-                'first_name': kwargs.get('first_name'),
-                'last_name': kwargs.get('last_name'),
-                'organization': kwargs.get('organization'),
-                'purpose': kwargs.get('purpose'),
-                'visiting_staff_id': kwargs.get('visiting_staff_id'),
-                'dbs_checked': kwargs.get('dbs_checked'),
-                'safeguarding_briefed': kwargs.get('safeguarding_briefed'),
-                'badge_number': kwargs.get('badge_number'),
-                'sign_in_time': kwargs.get('sign_in_time'),
-                'sign_out_time': kwargs.get('sign_out_time'),
-                'vehicle_reg': kwargs.get('vehicle_reg'),
-                'status': kwargs.get('status'),
-            }.items() if v is not None}
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            # Iterate over a literal column tuple so user-supplied keys
+            # never flow into the SQL identifier positions (py/sql-injection).
+            _insert_cols: list[str] = []
+            _insert_phs: list[str] = []
+            _insert_vals: list = []
+            for col in ('first_name', 'last_name', 'organization', 'purpose', 'visiting_staff_id', 'dbs_checked', 'safeguarding_briefed', 'badge_number', 'sign_in_time', 'sign_out_time', 'vehicle_reg', 'status'):
+                val = kwargs.get(col)
+                if val is not None:
+                    _insert_cols.append(col)
+                    _insert_phs.append('?')
+                    _insert_vals.append(val)
+            cols_sql = ', '.join(_insert_cols)
+            ph_sql = ', '.join(_insert_phs)
             conn.execute(
-                f"INSERT INTO visitors ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO visitors ({cols_sql}) VALUES ({ph_sql})",
+                _insert_vals,
             )
             conn.commit()
             row = conn.execute(

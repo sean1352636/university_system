@@ -42,11 +42,11 @@ def _resolve_db(system_key: str) -> str | None:
     """Resolve the database path for a given system key."""
     try:
         if system_key == "college":
-            from education_system.college_system.core.paths import DB_FILE
-            return str(DB_FILE)
+            from education_system.college_system.core.paths import DEFAULT_DB_PATH
+            return str(DEFAULT_DB_PATH)
         elif system_key == "school":
-            from education_system.secondary_school.core.paths import DB_FILE
-            return str(DB_FILE)
+            from education_system.secondary_school.core.paths import DEFAULT_DB_PATH
+            return str(DEFAULT_DB_PATH)
         elif system_key == "primary":
             from education_system.primary_school.infrastructure.database.db import get_db_path
             return str(get_db_path())
@@ -1310,13 +1310,19 @@ def _secondary_list_or_create(table: str, system_key: str = "school"):
             allowed_cols = set()
 
     # Filter body to only valid column names (prevents injection via column names)
-    filtered = {k: v for k, v in body.items() if k in allowed_cols}
-    if not filtered:
+    col_parts: list[str] = []
+    placeholder_parts: list[str] = []
+    values: list = []
+    for col in sorted(allowed_cols):
+        if col in body:
+            col_parts.append(f"[{col}]")
+            placeholder_parts.append("?")
+            values.append(body[col])
+    if not col_parts:
         return jsonify({"error": "No valid fields provided"}), 400
 
-    cols_str = ", ".join(f"[{c}]" for c in filtered)
-    placeholders = ", ".join("?" for _ in filtered)
-    values = list(filtered.values())
+    cols_str = ", ".join(col_parts)
+    placeholders = ", ".join(placeholder_parts)
 
     try:
         import sqlite3 as _s3

@@ -79,22 +79,26 @@ class StudyProgrammesService:
             conn.close()
 
     def create_programme(self, student_id: int, **kwargs) -> dict:
-        allowed = {"academic_year", "programme_type", "substantive_qualification",
-                    "maths_requirement", "maths_enrollment_id",
-                    "english_requirement", "english_enrollment_id",
-                    "work_experience_completed", "work_experience_hours",
-                    "enrichment_hours", "tutorial_hours",
-                    "total_planned_hours", "total_delivered_hours",
-                    "is_valid", "validation_notes", "status"}
-        fields = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        fields["student_id"] = student_id
+        col_names: list[str] = ["student_id"]
+        placeholders: list[str] = ["?"]
+        insert_values: list = [student_id]
+        for col in ("academic_year", "english_enrollment_id", "english_requirement",
+                    "enrichment_hours", "is_valid", "maths_enrollment_id",
+                    "maths_requirement", "programme_type", "status",
+                    "substantive_qualification", "total_delivered_hours",
+                    "total_planned_hours", "tutorial_hours", "validation_notes",
+                    "work_experience_completed", "work_experience_hours"):
+            if col in kwargs and kwargs[col] is not None:
+                col_names.append(col)
+                placeholders.append("?")
+                insert_values.append(kwargs[col])
         conn = self._conn()
         try:
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            cols_sql = ", ".join(col_names)
+            ph_sql = ", ".join(placeholders)
             conn.execute(
-                f"INSERT INTO study_programmes ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO study_programmes ({cols_sql}) VALUES ({ph_sql})",
+                insert_values,
             )
             conn.commit()
             row = conn.execute(
@@ -215,11 +219,14 @@ class StudyProgrammesService:
 
     def create_component(self, programme_id: int, component_type: str,
                          component_name: str, **kwargs) -> dict:
-        allowed = {"planned_hours", "delivered_hours", "status"}
-        fields = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        fields["programme_id"] = programme_id
-        fields["component_type"] = component_type
-        fields["component_name"] = component_name
+        col_names: list[str] = ["programme_id", "component_type", "component_name"]
+        placeholders: list[str] = ["?", "?", "?"]
+        insert_values: list = [programme_id, component_type, component_name]
+        for col in ("delivered_hours", "planned_hours", "status"):
+            if col in kwargs and kwargs[col] is not None:
+                col_names.append(col)
+                placeholders.append("?")
+                insert_values.append(kwargs[col])
         conn = self._conn()
         try:
             # Verify programme exists
@@ -228,11 +235,11 @@ class StudyProgrammesService:
             ).fetchone()
             if not prog:
                 raise StudyProgrammeError("Programme not found.")
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            cols_sql = ", ".join(col_names)
+            ph_sql = ", ".join(placeholders)
             conn.execute(
-                f"INSERT INTO study_programme_components ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO study_programme_components ({cols_sql}) VALUES ({ph_sql})",
+                insert_values,
             )
             conn.commit()
             row = conn.execute(
@@ -251,10 +258,14 @@ class StudyProgrammesService:
             conn.close()
 
     def update_component(self, component_id: int, **kwargs) -> dict:
-        allowed = {"component_type", "component_name", "planned_hours",
-                    "delivered_hours", "status"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        values: list = []
+        for col in ("component_name", "component_type", "delivered_hours",
+                    "planned_hours", "status"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                values.append(kwargs[col])
+        if not set_parts:
             raise StudyProgrammeError("No valid fields to update.")
         conn = self._conn()
         try:
@@ -264,10 +275,11 @@ class StudyProgrammesService:
             ).fetchone()
             if not existing:
                 raise StudyProgrammeError("Component not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            values.append(component_id)
             conn.execute(
-                f"UPDATE study_programme_components SET {set_parts} WHERE id = ?",
-                (*updates.values(), component_id),
+                f"UPDATE study_programme_components SET {set_clause} WHERE id = ?",
+                values,
             )
             conn.commit()
             logger.info("Component updated: id=%d", component_id)

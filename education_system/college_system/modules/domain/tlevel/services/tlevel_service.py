@@ -85,13 +85,19 @@ class TLevelService:
             conn.close()
 
     def update_enrollment(self, enrollment_id: int, **updates) -> dict:
-        allowed = {"core_grade", "specialism_grade", "placement_hours_completed", "placement_employer",
-                    "placement_start_date", "placement_end_date", "placement_status", "overall_grade", "status", "notes"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("core_grade", "notes", "overall_grade", "placement_employer",
+                    "placement_end_date", "placement_hours_completed",
+                    "placement_start_date", "placement_status", "specialism_grade",
+                    "status"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(updates[col])
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values()) + [enrollment_id]
+            sets = ", ".join(set_parts)
+            vals.append(enrollment_id)
             conn.execute(f"UPDATE tlevel_enrollments SET {sets}, updated_at = datetime('now') WHERE id = ?", vals)
             conn.commit()
             return self.get_enrollment(enrollment_id)

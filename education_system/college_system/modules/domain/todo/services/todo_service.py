@@ -77,11 +77,15 @@ class TodoService:
 
     def update_item(self, item_id: int, user_id: int, **kwargs) -> dict:
         """Update a to-do item."""
-        allowed = {"title", "description", "priority", "due_date"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("description", "due_date", "priority", "title"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(kwargs[col])
+        if not set_parts:
             raise TodoError("No valid fields to update.")
-        if "priority" in updates and updates["priority"] not in ("low", "medium", "high"):
+        if "priority" in kwargs and kwargs["priority"] not in ("low", "medium", "high"):
             raise TodoError("Priority must be low, medium or high.")
 
         # Verify ownership
@@ -89,8 +93,7 @@ class TodoService:
 
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values())
+            sets = ", ".join(set_parts)
             vals.extend([datetime.now().isoformat(), item_id, user_id])
             conn.execute(
                 f"UPDATE todo_items SET {sets}, updated_at = ? WHERE id = ? AND user_id = ?",

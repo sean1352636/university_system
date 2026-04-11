@@ -3,7 +3,6 @@
 import logging
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import TripsError
-from education_system.primary_school.core.sql_safety import validate_identifier  # nosec B608
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -77,16 +76,19 @@ class TripService:
         conn = self._conn()
         try:
             cursor = conn.cursor()
-            allowed = {
-                "trip_name", "trip_date", "destination", "description",
-                "return_date", "year_groups", "lead_staff_id", "cost",
-                "max_places", "status",
-            }
-            updates = {k: v for k, v in kwargs.items() if k in allowed}
-            if not updates:
+            set_parts: list[str] = []
+            values: list = []
+            for col in (
+                "cost", "description", "destination", "lead_staff_id",
+                "max_places", "return_date", "status", "trip_date",
+                "trip_name", "year_groups",
+            ):
+                if col in kwargs:
+                    set_parts.append(f"{col} = ?")
+                    values.append(kwargs[col])
+            if not set_parts:
                 return None
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            values = list(updates.values())
+            set_clause = ", ".join(set_parts)
             values.append(trip_id)
             cursor.execute(
                 f"UPDATE trips SET {set_clause}, updated_at = datetime('now') WHERE id = ?",
@@ -143,17 +145,20 @@ class TripService:
         conn = self._conn()
         try:
             cursor = conn.cursor()
-            updates = {}
+            set_parts: list[str] = []
+            values: list = []
             if consent_received is not None:
-                updates["consent_received"] = consent_received
+                set_parts.append("consent_received = ?")
+                values.append(consent_received)
             if payment_received is not None:
-                updates["payment_received"] = payment_received
+                set_parts.append("payment_received = ?")
+                values.append(payment_received)
             if medical_info is not None:
-                updates["medical_info"] = medical_info
-            if not updates:
+                set_parts.append("medical_info = ?")
+                values.append(medical_info)
+            if not set_parts:
                 return None
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            values = list(updates.values())
+            set_clause = ", ".join(set_parts)
             values.extend([trip_id, pupil_id])
             cursor.execute(
                 f"UPDATE trip_attendees SET {set_clause} WHERE trip_id = ? AND pupil_id = ?",

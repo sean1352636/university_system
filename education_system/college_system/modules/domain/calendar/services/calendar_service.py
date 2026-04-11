@@ -116,15 +116,19 @@ class CalendarService:
             if not is_admin and event["user_id"] != user_id:
                 raise CalendarError("You can only edit your own events.")
 
-            allowed = {"title", "description", "event_date", "start_time",
-                       "end_time", "event_type", "is_all_day"}
-            updates = {k: v for k, v in kwargs.items() if k in allowed}
-            if not updates:
+            set_parts: list[str] = []
+            vals: list = []
+            for col in ("description", "end_time", "event_date", "event_type",
+                        "is_all_day", "start_time", "title"):
+                if col in kwargs:
+                    set_parts.append(f"{col} = ?")
+                    vals.append(kwargs[col])
+            if not set_parts:
                 raise CalendarError("No valid fields to update.")
 
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values()) + [event_id]
-            conn.execute(f"UPDATE calendar_events SET {sets} WHERE id = ?", vals)
+            sets = ", ".join(set_parts)
+            vals.append(event_id)
+            conn.execute(f"UPDATE calendar_events SET {sets} WHERE id = ?", vals)  # nosec B608
             conn.commit()
             logger.info("Calendar event updated: id=%d", event_id)
             return self._get_event_by_id(conn, event_id)

@@ -280,17 +280,23 @@ def create_savings_goal():
 @token_required
 def update_expense(expense_id: int):
     data = request.get_json(silent=True) or {}
-    allowed = ["amount", "expense_name", "category_id", "date", "notes"]
-    update_fields = {k: v for k, v in data.items() if k in allowed}
-    if not update_fields:
+    # Iterate over a literal column tuple so user-supplied keys never flow
+    # into the SQL identifier positions (py/sql-injection).
+    set_parts: list[str] = []
+    values: list = []
+    for col in ("amount", "expense_name", "category_id", "date", "notes"):
+        if col in data:
+            set_parts.append(f"{col} = ?")
+            values.append(data[col])
+    if not set_parts:
         raise ValidationError("No valid fields to update")
 
-    set_clause = ", ".join([f"{k} = ?" for k in update_fields])
-    values = list(update_fields.values()) + [expense_id]
+    set_clause = ", ".join(set_parts)
+    values.append(expense_id)
 
     with transaction() as conn:
         conn.execute(
-            "UPDATE budget_expenses SET " + set_clause + " WHERE expense_id = ?",
+            f"UPDATE budget_expenses SET {set_clause} WHERE expense_id = ?",
             values,
         )
 

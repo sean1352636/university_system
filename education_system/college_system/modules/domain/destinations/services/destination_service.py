@@ -70,20 +70,26 @@ class DestinationService:
             conn.close()
 
     def update_destination(self, dest_id: int, **updates) -> dict:
-        allowed = {"intended_destination", "confirmed_destination", "destination_type",
-                    "institution_name", "course_title", "neet_risk", "contact_made", "notes"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("confirmed_destination", "contact_made", "course_title",
+                    "destination_type", "institution_name", "intended_destination",
+                    "neet_risk", "notes"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(updates[col])
+        if not set_parts:
             raise DestinationError("No valid fields to update.")
         conn = self._conn()
         try:
             existing = conn.execute("SELECT id FROM destinations WHERE id = ?", (dest_id,)).fetchone()
             if not existing:
                 raise DestinationError("Destination not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            vals.append(dest_id)
             conn.execute(
-                f"UPDATE destinations SET {set_parts}, updated_at = datetime('now') WHERE id = ?",
-                (*updates.values(), dest_id),
+                f"UPDATE destinations SET {set_clause}, updated_at = datetime('now') WHERE id = ?",  # nosec B608
+                vals,
             )
             conn.commit()
             logger.info("Destination updated: id=%d", dest_id)

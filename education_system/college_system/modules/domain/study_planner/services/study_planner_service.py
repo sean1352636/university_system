@@ -29,21 +29,22 @@ class StudyPlannerService:
         conn = self._conn()
         try:
             # Build INSERT with only non-None values so DB defaults apply
-            fields = {k: v for k, v in {
-                'student_id': kwargs.get('student_id'),
-                'subject': kwargs.get('subject'),
-                'topic': kwargs.get('topic'),
-                'planned_date': kwargs.get('planned_date'),
-                'planned_duration': kwargs.get('planned_duration'),
-                'actual_duration': kwargs.get('actual_duration'),
-                'session_type': kwargs.get('session_type'),
-                'completed': kwargs.get('completed'),
-            }.items() if v is not None}
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            # Iterate over a literal column tuple so user-supplied keys
+            # never flow into the SQL identifier positions (py/sql-injection).
+            _insert_cols: list[str] = []
+            _insert_phs: list[str] = []
+            _insert_vals: list = []
+            for col in ('student_id', 'subject', 'topic', 'planned_date', 'planned_duration', 'actual_duration', 'session_type', 'completed'):
+                val = kwargs.get(col)
+                if val is not None:
+                    _insert_cols.append(col)
+                    _insert_phs.append('?')
+                    _insert_vals.append(val)
+            cols_sql = ', '.join(_insert_cols)
+            ph_sql = ', '.join(_insert_phs)
             conn.execute(
-                f"INSERT INTO study_sessions ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO study_sessions ({cols_sql}) VALUES ({ph_sql})",
+                _insert_vals,
             )
             conn.commit()
             row = conn.execute(

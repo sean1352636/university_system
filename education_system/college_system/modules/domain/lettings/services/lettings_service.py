@@ -29,25 +29,21 @@ class LettingsService:
         conn = self._conn()
         try:
             now = _NOW()
-            cols = ["hirer_name", "facility", "booking_date",
-                    "start_time", "end_time", "created_at", "updated_at"]
-            vals = [hirer_name, facility, booking_date,
-                    start_time, end_time, now, now]
-            allowed = [
-                "organisation", "contact_email", "contact_phone",
-                "recurrence", "purpose", "attendee_count",
-                "dbs_required", "dbs_verified", "insurance_verified",
-                "risk_assessment_done", "fee", "payment_status",
-                "invoice_number", "status", "notes",
-            ]
-            for k, v in kwargs.items():
-                if k in allowed and v is not None:
-                    cols.append(k)
-                    vals.append(v)
+            cols: list[str] = ["hirer_name", "facility", "booking_date",
+                               "start_time", "end_time", "created_at", "updated_at"]
+            vals: list = [hirer_name, facility, booking_date,
+                          start_time, end_time, now, now]
+            for col in ("attendee_count", "contact_email", "contact_phone",
+                        "dbs_required", "dbs_verified", "fee", "insurance_verified",
+                        "invoice_number", "notes", "organisation", "payment_status",
+                        "purpose", "recurrence", "risk_assessment_done", "status"):
+                if col in kwargs and kwargs[col] is not None:
+                    cols.append(col)
+                    vals.append(kwargs[col])
             placeholders = ", ".join("?" for _ in cols)
             col_str = ", ".join(cols)
             conn.execute(
-                f"INSERT INTO lettings_bookings ({col_str}) VALUES ({placeholders})",
+                f"INSERT INTO lettings_bookings ({col_str}) VALUES ({placeholders})",  # nosec B608
                 vals,
             )
             conn.commit()
@@ -103,16 +99,27 @@ class LettingsService:
             conn.close()
 
     def update_booking(self, booking_id: int, **kwargs) -> dict:
-        updates = {k: v for k, v in kwargs.items() if v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("attendee_count", "booking_date", "contact_email",
+                    "contact_phone", "dbs_required", "dbs_verified", "end_time",
+                    "facility", "fee", "hirer_name", "insurance_verified",
+                    "invoice_number", "notes", "organisation", "payment_status",
+                    "purpose", "recurrence", "risk_assessment_done", "start_time",
+                    "status"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(kwargs[col])
+        if not set_parts:
             raise LettingsError("No valid fields to update.")
-        updates["updated_at"] = _NOW()
+        set_parts.append("updated_at = ?")
+        vals.append(_NOW())
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values()) + [booking_id]
+            sets = ", ".join(set_parts)
+            vals.append(booking_id)
             conn.execute(
-                f"UPDATE lettings_bookings SET {sets} WHERE id = ?", vals
+                f"UPDATE lettings_bookings SET {sets} WHERE id = ?", vals  # nosec B608
             )
             conn.commit()
             return self.get_booking(booking_id)
@@ -150,20 +157,17 @@ class LettingsService:
         conn = self._conn()
         try:
             now = _NOW()
-            cols = ["hirer_name", "created_at"]
-            vals = [hirer_name, now]
-            allowed = [
-                "organisation", "contract_start", "contract_end",
-                "terms", "agreed_fee", "signed_date", "status",
-            ]
-            for k, v in kwargs.items():
-                if k in allowed and v is not None:
-                    cols.append(k)
-                    vals.append(v)
+            cols: list[str] = ["hirer_name", "created_at"]
+            vals: list = [hirer_name, now]
+            for col in ("agreed_fee", "contract_end", "contract_start",
+                        "organisation", "signed_date", "status", "terms"):
+                if col in kwargs and kwargs[col] is not None:
+                    cols.append(col)
+                    vals.append(kwargs[col])
             placeholders = ", ".join("?" for _ in cols)
             col_str = ", ".join(cols)
             conn.execute(
-                f"INSERT INTO lettings_contracts ({col_str}) VALUES ({placeholders})",
+                f"INSERT INTO lettings_contracts ({col_str}) VALUES ({placeholders})",  # nosec B608
                 vals,
             )
             conn.commit()
@@ -212,15 +216,21 @@ class LettingsService:
             conn.close()
 
     def update_contract(self, contract_id: int, **kwargs) -> dict:
-        updates = {k: v for k, v in kwargs.items() if v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("agreed_fee", "contract_end", "contract_start", "hirer_name",
+                    "organisation", "signed_date", "status", "terms"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(kwargs[col])
+        if not set_parts:
             raise LettingsError("No valid fields to update.")
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values()) + [contract_id]
+            sets = ", ".join(set_parts)
+            vals.append(contract_id)
             conn.execute(
-                f"UPDATE lettings_contracts SET {sets} WHERE id = ?", vals
+                f"UPDATE lettings_contracts SET {sets} WHERE id = ?", vals  # nosec B608
             )
             conn.commit()
             return self.get_contract(contract_id)

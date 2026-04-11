@@ -286,9 +286,16 @@ def create_staff():
 @token_required
 def update_service(service_id: int):
     data = request.get_json(silent=True) or {}
-    allowed = ["name", "service_type", "description", "duration_minutes", "price", "is_available"]
-    updates = {k: v for k, v in data.items() if k in allowed}
-    if not updates:
+    set_parts: list[str] = []
+    values: list = []
+    for col in (
+        "description", "duration_minutes", "is_available", "name",
+        "price", "service_type",
+    ):
+        if col in data:
+            set_parts.append(f"{col} = ?")
+            values.append(data[col])
+    if not set_parts:
         raise ValidationError("No valid fields to update")
 
     with get_connection() as conn:
@@ -298,8 +305,8 @@ def update_service(service_id: int):
     if not existing:
         raise ValidationError(f"Service {service_id} not found")
 
-    set_clause = ", ".join(f"{k} = ?" for k in updates)
-    values = list(updates.values()) + [service_id]
+    set_clause = ", ".join(set_parts)
+    values.append(service_id)
     with transaction() as conn:
         conn.execute(
             f"UPDATE barber_services SET {set_clause} WHERE service_id = ?", values

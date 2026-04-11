@@ -90,14 +90,21 @@ class ApprenticeshipService:
             conn.close()
 
     def update_enrollment(self, enrollment_id: int, **updates) -> dict:
-        allowed = {"employer_name", "employer_contact", "expected_end_date", "epa_status",
-                    "epa_grade", "gateway_met", "progress_review_date", "status", "notes"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("employer_contact", "employer_name", "epa_grade", "epa_status",
+                    "expected_end_date", "gateway_met", "notes", "progress_review_date",
+                    "status"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(updates[col])
+        if not set_parts:
+            return self.get_enrollment(enrollment_id)
+        sets = ", ".join(set_parts)
+        vals.append(enrollment_id)
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values()) + [enrollment_id]
-            conn.execute(f"UPDATE apprenticeship_enrollments SET {sets}, updated_at = datetime('now') WHERE id = ?", vals)
+            conn.execute(f"UPDATE apprenticeship_enrollments SET {sets}, updated_at = datetime('now') WHERE id = ?", vals)  # nosec B608
             conn.commit()
             return self.get_enrollment(enrollment_id)
         except Exception as e:

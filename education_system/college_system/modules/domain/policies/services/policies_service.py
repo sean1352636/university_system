@@ -27,22 +27,22 @@ class PolicyService:
         conn = self._conn()
         try:
             # Build INSERT with only non-None values so DB defaults apply
-            fields = {k: v for k, v in {
-                'title': kwargs.get('title'),
-                'category': kwargs.get('category'),
-                'version': kwargs.get('version'),
-                'author_id': kwargs.get('author_id'),
-                'content': kwargs.get('content'),
-                'file_path': kwargs.get('file_path'),
-                'review_date': kwargs.get('review_date'),
-                'status': kwargs.get('status'),
-                'approved_by': kwargs.get('approved_by'),
-            }.items() if v is not None}
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            # Iterate over a literal column tuple so user-supplied keys
+            # never flow into the SQL identifier positions (py/sql-injection).
+            _insert_cols: list[str] = []
+            _insert_phs: list[str] = []
+            _insert_vals: list = []
+            for col in ('title', 'category', 'version', 'author_id', 'content', 'file_path', 'review_date', 'status', 'approved_by'):
+                val = kwargs.get(col)
+                if val is not None:
+                    _insert_cols.append(col)
+                    _insert_phs.append('?')
+                    _insert_vals.append(val)
+            cols_sql = ', '.join(_insert_cols)
+            ph_sql = ', '.join(_insert_phs)
             conn.execute(
-                f"INSERT INTO policies ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO policies ({cols_sql}) VALUES ({ph_sql})",
+                _insert_vals,
             )
             conn.commit()
             row = conn.execute(

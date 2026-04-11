@@ -5,7 +5,6 @@ from datetime import date
 
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import RewardsError
-from education_system.primary_school.core.sql_safety import validate_identifier  # nosec B608
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -83,15 +82,19 @@ class RewardsService:
         conn = self._conn()
         try:
             cursor = conn.cursor()
-            allowed = {
-                "reward_type", "reason", "awarded_by", "house",
-                "points", "award_date",
-            }
-            updates = {k: v for k, v in kwargs.items() if k in allowed}
-            if not updates:
+            set_parts: list[str] = []
+            values: list = []
+            for col in (
+                "award_date", "awarded_by", "house", "points",
+                "reason", "reward_type",
+            ):
+                if col in kwargs:
+                    set_parts.append(f"{col} = ?")
+                    values.append(kwargs[col])
+            if not set_parts:
                 return None
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            values = list(updates.values()) + [reward_id]
+            set_clause = ", ".join(set_parts)
+            values.append(reward_id)
             cursor.execute(
                 f"UPDATE rewards SET {set_clause} WHERE id = ?", values,
             )

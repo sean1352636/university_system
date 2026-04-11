@@ -154,17 +154,25 @@ class AbsenceRequestService:
 
     def update_request(self, pk: int, **kwargs) -> dict:
         """Update request record."""
-        allowed = {"staff_id", "absence_type", "start_date", "end_date", "reason", "status", "approved_by"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        values: list = []
+        validated: dict = {}
+        for col in ("absence_type", "approved_by", "end_date", "reason",
+                    "staff_id", "start_date", "status"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                values.append(kwargs[col])
+                validated[col] = kwargs[col]
+        if not set_parts:
             raise ValidationError("No valid fields to update.")
-        self._validate_request_data(updates, is_update=True)
-        updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-        params = list(updates.values()) + [pk]
+        self._validate_request_data(validated, is_update=True)
+        set_parts.append("updated_at = ?")
+        values.append(datetime.utcnow().isoformat())
+        set_clause = ", ".join(set_parts)
+        values.append(pk)
         conn = self._conn()
         try:
-            conn.execute(f"UPDATE absence_requests SET {set_clause} WHERE id = ?", params)  # nosec B608
+            conn.execute(f"UPDATE absence_requests SET {set_clause} WHERE id = ?", values)  # nosec B608
             conn.commit()
             logger.info("Request updated: pk=%d", pk)
             row = conn.execute("SELECT * FROM absence_requests WHERE id = ?", (pk,)).fetchone()

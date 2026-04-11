@@ -25,19 +25,22 @@ class GDPRService:
         conn = self._conn()
         try:
             # Build INSERT with only non-None values so DB defaults apply
-            fields = {k: v for k, v in {
-                'user_id': kwargs.get('user_id'),
-                'consent_marketing': kwargs.get('consent_marketing'),
-                'consent_analytics': kwargs.get('consent_analytics'),
-                'consent_third_party': kwargs.get('consent_third_party'),
-                'erasure_requested': kwargs.get('erasure_requested'),
-                'erasure_completed_at': kwargs.get('erasure_completed_at'),
-            }.items() if v is not None}
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            # Iterate over a literal column tuple so user-supplied keys
+            # never flow into the SQL identifier positions (py/sql-injection).
+            _insert_cols: list[str] = []
+            _insert_phs: list[str] = []
+            _insert_vals: list = []
+            for col in ('user_id', 'consent_marketing', 'consent_analytics', 'consent_third_party', 'erasure_requested', 'erasure_completed_at'):
+                val = kwargs.get(col)
+                if val is not None:
+                    _insert_cols.append(col)
+                    _insert_phs.append('?')
+                    _insert_vals.append(val)
+            cols_sql = ', '.join(_insert_cols)
+            ph_sql = ', '.join(_insert_phs)
             conn.execute(
-                f"INSERT INTO data_subjects ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO data_subjects ({cols_sql}) VALUES ({ph_sql})",
+                _insert_vals,
             )
             conn.commit()
             row = conn.execute(

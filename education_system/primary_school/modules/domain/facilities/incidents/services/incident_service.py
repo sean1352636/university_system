@@ -4,7 +4,6 @@ import logging
 
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import IncidentError
-from education_system.primary_school.core.sql_safety import validate_identifier  # nosec B608
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -102,16 +101,19 @@ class IncidentService:
         conn = self._conn()
         try:
             cursor = conn.cursor()
-            allowed = {
-                "incident_type", "description", "location", "severity",
-                "pupil_ids", "staff_ids", "action_taken",
-                "parent_notified", "first_aid_given", "status",
-            }
-            updates = {k: v for k, v in kwargs.items() if k in allowed}
-            if not updates:
+            set_parts: list[str] = []
+            values: list = []
+            for col in (
+                "action_taken", "description", "first_aid_given",
+                "incident_type", "location", "parent_notified",
+                "pupil_ids", "severity", "staff_ids", "status",
+            ):
+                if col in kwargs:
+                    set_parts.append(f"{col} = ?")
+                    values.append(kwargs[col])
+            if not set_parts:
                 return None
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            values = list(updates.values())
+            set_clause = ", ".join(set_parts)
             values.append(incident_id)
             cursor.execute(
                 f"UPDATE incidents SET {set_clause}, "

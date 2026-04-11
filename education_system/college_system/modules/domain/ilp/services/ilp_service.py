@@ -66,15 +66,20 @@ class ILPService:
             conn.close()
 
     def update_plan(self, plan_id: int, **updates) -> dict:
-        allowed = {"long_term_goal", "support_needs", "review_frequency", "next_review_date", "status", "notes"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("long_term_goal", "next_review_date", "notes",
+                    "review_frequency", "status", "support_needs"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(updates[col])
+        if not set_parts:
             raise ILPError("No valid fields to update.")
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values()) + [plan_id]
-            conn.execute(f"UPDATE ilp_plans SET {sets}, updated_at = datetime('now') WHERE id = ?", vals)
+            sets = ", ".join(set_parts)
+            vals.append(plan_id)
+            conn.execute(f"UPDATE ilp_plans SET {sets}, updated_at = datetime('now') WHERE id = ?", vals)  # nosec B608
             conn.commit()
             return self.get_plan(plan_id)
         except Exception as e:

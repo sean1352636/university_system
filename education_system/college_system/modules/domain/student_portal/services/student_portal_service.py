@@ -91,17 +91,21 @@ class StudentPortalService:
             conn.close()
 
     def update_page(self, page_id: int, **kwargs) -> dict:
-        allowed = {"page_title", "page_slug", "content", "category",
-                    "is_published", "sort_order", "created_by"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("category", "content", "created_by", "is_published",
+                    "page_slug", "page_title", "sort_order"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(kwargs[col])
+        if not set_parts:
             raise StudentPortalError("No valid fields to update.")
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values()) + [page_id]
+            sets = ", ".join(set_parts)
+            vals.append(page_id)
             conn.execute(
-                f"UPDATE portal_pages SET {sets}, updated_at = datetime('now') WHERE id = ?",
+                f"UPDATE portal_pages SET {sets}, updated_at = datetime('now') WHERE id = ?",  # nosec B608
                 vals,
             )
             conn.commit()

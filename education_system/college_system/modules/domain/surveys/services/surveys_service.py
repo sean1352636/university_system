@@ -27,21 +27,22 @@ class SurveyService:
         conn = self._conn()
         try:
             # Build INSERT with only non-None values so DB defaults apply
-            fields = {k: v for k, v in {
-                'title': kwargs.get('title'),
-                'created_by': kwargs.get('created_by'),
-                'survey_type': kwargs.get('survey_type'),
-                'is_anonymous': kwargs.get('is_anonymous'),
-                'target_role': kwargs.get('target_role'),
-                'open_date': kwargs.get('open_date'),
-                'close_date': kwargs.get('close_date'),
-                'status': kwargs.get('status'),
-            }.items() if v is not None}
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            # Iterate over a literal column tuple so user-supplied keys
+            # never flow into the SQL identifier positions (py/sql-injection).
+            _insert_cols: list[str] = []
+            _insert_phs: list[str] = []
+            _insert_vals: list = []
+            for col in ('title', 'created_by', 'survey_type', 'is_anonymous', 'target_role', 'open_date', 'close_date', 'status'):
+                val = kwargs.get(col)
+                if val is not None:
+                    _insert_cols.append(col)
+                    _insert_phs.append('?')
+                    _insert_vals.append(val)
+            cols_sql = ', '.join(_insert_cols)
+            ph_sql = ', '.join(_insert_phs)
             conn.execute(
-                f"INSERT INTO surveys ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO surveys ({cols_sql}) VALUES ({ph_sql})",
+                _insert_vals,
             )
             conn.commit()
             row = conn.execute(

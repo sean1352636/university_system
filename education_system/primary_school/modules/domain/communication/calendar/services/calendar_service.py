@@ -4,7 +4,6 @@ import logging
 
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import CalendarError
-from education_system.primary_school.core.sql_safety import validate_identifier  # nosec B608
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -92,16 +91,17 @@ class CalendarService:
         conn = self._conn()
         try:
             cursor = conn.cursor()
-            allowed = {
-                "title", "start_date", "end_date", "start_time", "end_time",
-                "description", "event_type", "location", "all_day",
-                "year_groups",
-            }
-            updates = {k: v for k, v in kwargs.items() if k in allowed}
-            if not updates:
+            set_parts: list[str] = []
+            values: list = []
+            for col in ("all_day", "description", "end_date", "end_time",
+                        "event_type", "location", "start_date", "start_time",
+                        "title", "year_groups"):
+                if col in kwargs:
+                    set_parts.append(f"{col} = ?")
+                    values.append(kwargs[col])
+            if not set_parts:
                 return None
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            values = list(updates.values())
+            set_clause = ", ".join(set_parts)
             values.append(event_id)
             cursor.execute(
                 f"UPDATE calendar_events SET {set_clause}, "

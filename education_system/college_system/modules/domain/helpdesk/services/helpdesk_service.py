@@ -118,22 +118,27 @@ class HelpdeskService:
 
     def update_ticket(self, ticket_id: int, **kwargs) -> dict:
         """Update ticket status, priority, or assigned_to."""
-        allowed = {"status", "priority", "assigned_to"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed}
-        if not updates:
-            raise HelpdeskError("No valid fields to update.")
-        if "status" in updates and updates["status"] not in _STATUSES:
+        if "status" in kwargs and kwargs["status"] not in _STATUSES:
             raise HelpdeskError(f"Status must be one of: {', '.join(_STATUSES)}")
-        if "priority" in updates and updates["priority"] not in _PRIORITIES:
+        if "priority" in kwargs and kwargs["priority"] not in _PRIORITIES:
             raise HelpdeskError(f"Priority must be one of: {', '.join(_PRIORITIES)}")
+
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("assigned_to", "priority", "status"):
+            if col in kwargs:
+                set_parts.append(f"{col} = ?")
+                vals.append(kwargs[col])
+        if not set_parts:
+            raise HelpdeskError("No valid fields to update.")
 
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values())
-            vals.extend([datetime.now().isoformat(), ticket_id])
+            sets = ", ".join(set_parts)
+            vals.append(datetime.now().isoformat())
+            vals.append(ticket_id)
             conn.execute(
-                f"UPDATE helpdesk_tickets SET {sets}, updated_at = ? WHERE id = ?",
+                f"UPDATE helpdesk_tickets SET {sets}, updated_at = ? WHERE id = ?",  # nosec B608
                 vals,
             )
             conn.commit()

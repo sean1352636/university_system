@@ -168,19 +168,31 @@ class OfficeHoursService:
             ValueError: If no valid fields are provided.
             sqlite3.Error: On database failure.
         """
-        allowed_fields = {
+        # Iterate over a literal column tuple so user-supplied keys never
+        # flow into the SQL identifier positions (py/sql-injection).
+        set_parts: list[str] = []
+        values: list = []
+        updates: dict = {}
+        for col in (
             'day_of_week', 'start_time', 'end_time', 'location',
             'capacity', 'notes', 'is_active',
-        }
-        updates = {k: v for k, v in kwargs.items() if k in allowed_fields}
-        if not updates:
+        ):
+            if col in kwargs:
+                set_parts.append(f"{col} = ?")
+                values.append(kwargs[col])
+                updates[col] = kwargs[col]
+        if not set_parts:
             raise ValueError(
-                f"No valid fields to update. Allowed fields: {', '.join(sorted(allowed_fields))}"
+                "No valid fields to update. Allowed fields: "
+                "capacity, day_of_week, end_time, is_active, location, notes, start_time"
             )
 
-        updates['updated_at'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        set_clause = ', '.join(f'{col} = ?' for col in updates)
-        values = list(updates.values()) + [office_hour_id]
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        set_parts.append("updated_at = ?")
+        values.append(now)
+        updates['updated_at'] = now
+        set_clause = ', '.join(set_parts)
+        values.append(office_hour_id)
 
         try:
             with transaction() as conn:

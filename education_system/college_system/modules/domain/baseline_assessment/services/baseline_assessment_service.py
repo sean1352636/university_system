@@ -82,15 +82,23 @@ class BaselineAssessmentService:
             conn.close()
 
     def update_baseline(self, baseline_id: int, **kwargs) -> dict:
-        updates = {k: v for k, v in kwargs.items() if v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("academic_year", "additional_needs_identified", "assessment_date",
+                    "assessment_type", "assessor_id", "english_score", "gcse_english_grade",
+                    "gcse_maths_grade", "ict_score", "learning_style", "maths_score",
+                    "notes", "overall_baseline", "prior_attainment", "student_id"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(kwargs[col])
+        if not set_parts:
             raise BaselineAssessmentError("No valid fields to update.")
+        sets = ", ".join(set_parts)
+        vals.append(baseline_id)
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values()) + [baseline_id]
             conn.execute(
-                f"UPDATE baseline_assessments SET {sets} WHERE id = ?", vals
+                f"UPDATE baseline_assessments SET {sets} WHERE id = ?", vals  # nosec B608
             )
             conn.commit()
             return self.get_baseline(baseline_id)
@@ -179,15 +187,22 @@ class BaselineAssessmentService:
             conn.close()
 
     def update_checkpoint(self, checkpoint_id: int, **kwargs) -> dict:
-        updates = {k: v for k, v in kwargs.items() if v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("actions", "attendance_pct", "checkpoint_date", "concerns",
+                    "course_id", "current_grade", "effort_grade", "reviewer_id",
+                    "student_id", "target_grade"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(kwargs[col])
+        if not set_parts:
             raise BaselineAssessmentError("No valid fields to update.")
+        sets = ", ".join(set_parts)
+        vals.append(checkpoint_id)
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values()) + [checkpoint_id]
             conn.execute(
-                f"UPDATE progress_checkpoints SET {sets} WHERE id = ?", vals
+                f"UPDATE progress_checkpoints SET {sets} WHERE id = ?", vals  # nosec B608
             )
             conn.commit()
             return self.get_checkpoint(checkpoint_id)

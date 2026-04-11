@@ -290,9 +290,16 @@ def create_technician():
 @token_required
 def update_treatment(treatment_id: int):
     data = request.get_json(silent=True) or {}
-    allowed_fields = ["name", "category", "description", "duration_minutes", "price", "is_available"]
-    updates = {k: v for k, v in data.items() if k in allowed_fields}
-    if not updates:
+    set_parts: list[str] = []
+    params: list = []
+    for col in (
+        "category", "description", "duration_minutes", "is_available",
+        "name", "price",
+    ):
+        if col in data:
+            set_parts.append(f"{col} = ?")
+            params.append(data[col])
+    if not set_parts:
         raise ValidationError("No valid fields to update")
 
     with get_connection() as conn:
@@ -302,8 +309,8 @@ def update_treatment(treatment_id: int):
     if not existing:
         raise ValidationError(f"Treatment {treatment_id} not found")
 
-    set_clause = ", ".join(f"{k} = ?" for k in updates)
-    params = list(updates.values()) + [treatment_id]
+    set_clause = ", ".join(set_parts)
+    params.append(treatment_id)
 
     with transaction() as conn:
         conn.execute(

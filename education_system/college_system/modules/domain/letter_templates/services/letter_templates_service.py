@@ -111,23 +111,28 @@ class LetterTemplateService:
 
     def update_template(self, template_id: int, **kwargs) -> dict:
         """Update a template's fields."""
-        allowed = {"template_name", "body_template", "category",
-                    "subject_line", "merge_fields", "is_active"}
-        updates = {k: v for k, v in kwargs.items()
-                   if k in allowed and v is not None}
-        if not updates:
-            raise LetterTemplateError("No valid fields to update.")
-        if "category" in updates and updates["category"] not in _CATEGORIES:
+        if "category" in kwargs and kwargs["category"] not in _CATEGORIES:
             raise LetterTemplateError(
                 f"Category must be one of: {', '.join(_CATEGORIES)}")
 
-        updates["updated_at"] = datetime.now().isoformat()
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("body_template", "category", "is_active", "merge_fields",
+                    "subject_line", "template_name"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(kwargs[col])
+        if not set_parts:
+            raise LetterTemplateError("No valid fields to update.")
+
+        set_parts.append("updated_at = ?")
+        vals.append(datetime.now().isoformat())
         conn = self._conn()
         try:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values()) + [template_id]
+            sets = ", ".join(set_parts)
+            vals.append(template_id)
             conn.execute(
-                f"UPDATE letter_templates SET {sets} WHERE id = ?", vals)
+                f"UPDATE letter_templates SET {sets} WHERE id = ?", vals)  # nosec B608
             conn.commit()
             logger.info("Letter template updated: id=%d", template_id)
             return self.get_template(template_id)

@@ -74,15 +74,19 @@ class FunctionalSkillsService:
     def create_enrollment(self, student_id: int, subject: str, **kwargs) -> dict:
         conn = self._conn()
         try:
-            fields = {k: v for k, v in kwargs.items()
-                      if k in self.ENROLLMENT_ALLOWED and v is not None}
-            fields["student_id"] = student_id
-            fields["subject"] = subject
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            col_names: list[str] = ["student_id", "subject"]
+            insert_values: list = [student_id, subject]
+            for col in ("attendance_pct", "current_grade", "entry_grade", "exam_board",
+                        "exam_date", "exam_series", "level", "notes",
+                        "qualification_type", "result", "status", "target_grade"):
+                if col in kwargs and kwargs[col] is not None:
+                    col_names.append(col)
+                    insert_values.append(kwargs[col])
+            cols = ", ".join(col_names)
+            placeholders = ", ".join("?" for _ in col_names)
             conn.execute(
-                f"INSERT INTO functional_skills_enrollments ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO functional_skills_enrollments ({cols}) VALUES ({placeholders})",  # nosec B608
+                insert_values,
             )
             conn.commit()
             logger.info("Enrollment created: student=%d subject=%s", student_id, subject)
@@ -97,9 +101,16 @@ class FunctionalSkillsService:
             conn.close()
 
     def update_enrollment(self, enrollment_id: int, **kwargs) -> dict:
-        updates = {k: v for k, v in kwargs.items()
-                   if k in self.ENROLLMENT_ALLOWED and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("attendance_pct", "current_grade", "entry_grade", "exam_board",
+                    "exam_date", "exam_series", "level", "notes",
+                    "qualification_type", "result", "status", "student_id",
+                    "subject", "target_grade"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(kwargs[col])
+        if not set_parts:
             raise FunctionalSkillsError("No valid fields to update.")
         conn = self._conn()
         try:
@@ -109,10 +120,11 @@ class FunctionalSkillsService:
             ).fetchone()
             if not existing:
                 raise FunctionalSkillsError("Enrollment not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            vals.append(enrollment_id)
             conn.execute(
-                f"UPDATE functional_skills_enrollments SET {set_parts}, updated_at = datetime('now') WHERE id = ?",
-                (*updates.values(), enrollment_id),
+                f"UPDATE functional_skills_enrollments SET {set_clause}, updated_at = datetime('now') WHERE id = ?",  # nosec B608
+                vals,
             )
             conn.commit()
             logger.info("Enrollment updated: id=%d", enrollment_id)
@@ -201,14 +213,18 @@ class FunctionalSkillsService:
             ).fetchone()
             if not enr:
                 raise FunctionalSkillsError("Enrollment not found.")
-            fields = {k: v for k, v in kwargs.items()
-                      if k in self.ASSESSMENT_ALLOWED and v is not None}
-            fields["enrollment_id"] = enrollment_id
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            col_names: list[str] = ["enrollment_id"]
+            insert_values: list = [enrollment_id]
+            for col in ("assessment_date", "assessment_type", "feedback",
+                        "grade", "score"):
+                if col in kwargs and kwargs[col] is not None:
+                    col_names.append(col)
+                    insert_values.append(kwargs[col])
+            cols = ", ".join(col_names)
+            placeholders = ", ".join("?" for _ in col_names)
             conn.execute(
-                f"INSERT INTO functional_skills_assessments ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO functional_skills_assessments ({cols}) VALUES ({placeholders})",  # nosec B608
+                insert_values,
             )
             conn.commit()
             logger.info("Assessment created for enrollment=%d", enrollment_id)
@@ -226,9 +242,14 @@ class FunctionalSkillsService:
             conn.close()
 
     def update_assessment(self, assessment_id: int, **kwargs) -> dict:
-        updates = {k: v for k, v in kwargs.items()
-                   if k in self.ASSESSMENT_ALLOWED and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("assessment_date", "assessment_type", "enrollment_id",
+                    "feedback", "grade", "score"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(kwargs[col])
+        if not set_parts:
             raise FunctionalSkillsError("No valid fields to update.")
         conn = self._conn()
         try:
@@ -238,10 +259,11 @@ class FunctionalSkillsService:
             ).fetchone()
             if not existing:
                 raise FunctionalSkillsError("Assessment not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            vals.append(assessment_id)
             conn.execute(
-                f"UPDATE functional_skills_assessments SET {set_parts} WHERE id = ?",
-                (*updates.values(), assessment_id),
+                f"UPDATE functional_skills_assessments SET {set_clause} WHERE id = ?",  # nosec B608
+                vals,
             )
             conn.commit()
             logger.info("Assessment updated: id=%d", assessment_id)

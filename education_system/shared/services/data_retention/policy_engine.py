@@ -189,19 +189,27 @@ class RetentionPolicyEngine:
             conn.close()
 
     def update_policy(self, policy_id: int, **kwargs) -> dict | None:
-        allowed = {"entity_type", "system_key", "retention_days", "action",
-                   "description", "is_active"}
-        fields = {k: v for k, v in kwargs.items() if k in allowed}
-        if not fields:
+        set_parts: list[str] = []
+        values: list = []
+        for col in (
+            "action", "description", "entity_type", "is_active",
+            "retention_days", "system_key",
+        ):
+            if col in kwargs:
+                set_parts.append(f"{col} = ?")
+                values.append(kwargs[col])
+        if not set_parts:
             raise ValueError("No valid fields provided to update.")
         now = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
-        fields["updated_at"] = now
-        set_clause = ", ".join(f"{k} = ?" for k in fields)
+        set_parts.append("updated_at = ?")
+        values.append(now)
+        set_clause = ", ".join(set_parts)
+        values.append(policy_id)
         conn = _retention_connect(self._db_path)
         try:
             conn.execute(
                 f"UPDATE retention_policies SET {set_clause} WHERE id = ?",  # noqa: S608
-                [*fields.values(), policy_id],
+                values,
             )
             conn.commit()
             row = conn.execute(

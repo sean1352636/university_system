@@ -3,7 +3,6 @@
 from datetime import datetime
 from education_system.college_system.core.exceptions import OnboardingError
 from education_system.college_system.infrastructure.database.db import connect
-from education_system.college_system.core.sql_safety import validate_identifier  # nosec B608
 import logging
 
 logger = logging.getLogger(__name__)
@@ -97,20 +96,23 @@ class OnboardingService:
 
     def update_checklist(self, checklist_id: int, **kwargs) -> dict:
         """Update an existing checklist."""
-        allowed = {
-            "staff_id", "start_date", "mentor_id", "probation_end_date",
-            "probation_outcome", "overall_status", "notes",
-        }
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        params: list = []
+        for col in ("mentor_id", "notes", "overall_status", "probation_end_date",
+                    "probation_outcome", "staff_id", "start_date"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                params.append(kwargs[col])
+        if not set_parts:
             raise OnboardingError("No valid fields to update.")
-        updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-        params = list(updates.values()) + [checklist_id]
+        set_parts.append("updated_at = ?")
+        params.append(datetime.utcnow().isoformat())
+        set_clause = ", ".join(set_parts)
+        params.append(checklist_id)
         conn = self._conn()
         try:
             conn.execute(
-                f"UPDATE onboarding_checklists SET {set_clause} WHERE id = ?", params
+                f"UPDATE onboarding_checklists SET {set_clause} WHERE id = ?", params  # nosec B608
             )
             conn.commit()
             logger.info("Checklist updated: id=%d", checklist_id)
@@ -265,19 +267,21 @@ class OnboardingService:
 
     def update_task(self, task_id: int, **kwargs) -> dict:
         """Update an existing task."""
-        allowed = {
-            "checklist_id", "task_name", "category", "assigned_to",
-            "due_date", "completed", "completed_date", "notes",
-        }
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        params: list = []
+        for col in ("assigned_to", "category", "checklist_id", "completed",
+                    "completed_date", "due_date", "notes", "task_name"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                params.append(kwargs[col])
+        if not set_parts:
             raise OnboardingError("No valid fields to update.")
-        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-        params = list(updates.values()) + [task_id]
+        set_clause = ", ".join(set_parts)
+        params.append(task_id)
         conn = self._conn()
         try:
             conn.execute(
-                f"UPDATE onboarding_tasks SET {set_clause} WHERE id = ?", params
+                f"UPDATE onboarding_tasks SET {set_clause} WHERE id = ?", params  # nosec B608
             )
             conn.commit()
             logger.info("Task updated: id=%d", task_id)
@@ -425,20 +429,22 @@ class OnboardingService:
 
     def update_review(self, review_id: int, **kwargs) -> dict:
         """Update an existing probation review."""
-        allowed = {
-            "checklist_id", "review_date", "reviewer_id", "review_number",
-            "performance_rating", "areas_of_strength", "areas_for_development",
-            "targets", "recommendation",
-        }
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        params: list = []
+        for col in ("areas_for_development", "areas_of_strength", "checklist_id",
+                    "performance_rating", "recommendation", "review_date",
+                    "review_number", "reviewer_id", "targets"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                params.append(kwargs[col])
+        if not set_parts:
             raise OnboardingError("No valid fields to update.")
-        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-        params = list(updates.values()) + [review_id]
+        set_clause = ", ".join(set_parts)
+        params.append(review_id)
         conn = self._conn()
         try:
             conn.execute(
-                f"UPDATE probation_reviews SET {set_clause} WHERE id = ?", params
+                f"UPDATE probation_reviews SET {set_clause} WHERE id = ?", params  # nosec B608
             )
             conn.commit()
             logger.info("Review updated: id=%d", review_id)

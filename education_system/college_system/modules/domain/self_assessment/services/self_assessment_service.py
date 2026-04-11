@@ -78,20 +78,26 @@ class SelfAssessmentService:
             conn.close()
 
     def update_section(self, section_id: int, **updates) -> dict:
-        allowed = {"section_name", "section_number", "academic_year", "self_grade",
-                    "strengths", "areas_for_improvement", "evidence", "last_updated_by", "status"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("academic_year", "areas_for_improvement", "evidence",
+                    "last_updated_by", "section_name", "section_number",
+                    "self_grade", "status", "strengths"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(updates[col])
+        if not set_parts:
             raise SelfAssessmentError("No valid fields to update.")
         conn = self._conn()
         try:
             existing = conn.execute("SELECT id FROM sef_sections WHERE id = ?", (section_id,)).fetchone()
             if not existing:
                 raise SelfAssessmentError("SEF section not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            vals.append(section_id)
             conn.execute(
-                f"UPDATE sef_sections SET {set_parts}, updated_at = datetime('now') WHERE id = ?",
-                (*updates.values(), section_id),
+                f"UPDATE sef_sections SET {set_clause}, updated_at = datetime('now') WHERE id = ?",  # nosec B608
+                vals,
             )
             conn.commit()
             logger.info("SEF section updated: id=%d", section_id)

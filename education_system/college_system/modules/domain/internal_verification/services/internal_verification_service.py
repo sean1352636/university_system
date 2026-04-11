@@ -82,10 +82,14 @@ class InternalVerificationService:
             conn.close()
 
     def update_plan(self, plan_id: int, **kwargs) -> dict:
-        allowed = {"course_id", "academic_year", "lead_iv_id",
-                    "sampling_strategy", "sample_size_pct", "status"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        vals: list = []
+        for col in ("academic_year", "course_id", "lead_iv_id",
+                    "sample_size_pct", "sampling_strategy", "status"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                vals.append(kwargs[col])
+        if not set_parts:
             raise InternalVerificationError("No valid fields to update.")
         conn = self._conn()
         try:
@@ -94,10 +98,10 @@ class InternalVerificationService:
             ).fetchone()
             if not existing:
                 raise InternalVerificationError(f"Plan {plan_id} not found.")
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            vals = list(updates.values()) + [plan_id]
+            sets = ", ".join(set_parts)
+            vals.append(plan_id)
             conn.execute(
-                f"UPDATE iv_plans SET {sets}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                f"UPDATE iv_plans SET {sets}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",  # nosec B608
                 vals,
             )
             conn.commit()

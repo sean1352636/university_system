@@ -88,11 +88,15 @@ class StudentWellbeingService:
             conn.close()
 
     def update_referral(self, referral_id: int, **kwargs) -> dict:
-        allowed = {"referral_type", "concern_category", "concern_details",
-                    "risk_level", "service_referred_to", "external_agency",
-                    "consent_obtained", "appointment_date", "outcome", "status"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        values: list = []
+        for col in ("appointment_date", "concern_category", "concern_details",
+                    "consent_obtained", "external_agency", "outcome",
+                    "referral_type", "risk_level", "service_referred_to", "status"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                values.append(kwargs[col])
+        if not set_parts:
             raise StudentWellbeingError("No valid fields to update.")
         conn = self._conn()
         try:
@@ -101,10 +105,11 @@ class StudentWellbeingService:
             ).fetchone()
             if not existing:
                 raise StudentWellbeingError("Referral not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            values.append(referral_id)
             conn.execute(
-                f"UPDATE wellbeing_referrals SET {set_parts}, updated_at = datetime('now') WHERE id = ?",
-                (*updates.values(), referral_id),
+                f"UPDATE wellbeing_referrals SET {set_clause}, updated_at = datetime('now') WHERE id = ?",
+                values,
             )
             conn.commit()
             logger.info("Referral updated: id=%d", referral_id)
@@ -234,10 +239,14 @@ class StudentWellbeingService:
             conn.close()
 
     def update_log(self, log_id: int, **kwargs) -> dict:
-        allowed = {"mood_rating", "anxiety_level", "sleep_quality",
-                    "notes", "follow_up_needed", "log_date"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        values: list = []
+        for col in ("anxiety_level", "follow_up_needed", "log_date",
+                    "mood_rating", "notes", "sleep_quality"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                values.append(kwargs[col])
+        if not set_parts:
             raise StudentWellbeingError("No valid fields to update.")
         conn = self._conn()
         try:
@@ -246,10 +255,11 @@ class StudentWellbeingService:
             ).fetchone()
             if not existing:
                 raise StudentWellbeingError("Wellbeing log not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            values.append(log_id)
             conn.execute(
-                f"UPDATE wellbeing_logs SET {set_parts} WHERE id = ?",
-                (*updates.values(), log_id),
+                f"UPDATE wellbeing_logs SET {set_clause} WHERE id = ?",
+                values,
             )
             conn.commit()
             logger.info("Wellbeing log updated: id=%d", log_id)
@@ -356,11 +366,15 @@ class StudentWellbeingService:
             conn.close()
 
     def update_session(self, session_id: int, **kwargs) -> dict:
-        allowed = {"counsellor_id", "session_date", "session_number",
-                    "session_type", "presenting_issues", "session_notes",
-                    "risk_assessment", "next_appointment", "status"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        values: list = []
+        for col in ("counsellor_id", "next_appointment", "presenting_issues",
+                    "risk_assessment", "session_date", "session_notes",
+                    "session_number", "session_type", "status"):
+            if col in kwargs and kwargs[col] is not None:
+                set_parts.append(f"{col} = ?")
+                values.append(kwargs[col])
+        if not set_parts:
             raise StudentWellbeingError("No valid fields to update.")
         conn = self._conn()
         try:
@@ -369,10 +383,11 @@ class StudentWellbeingService:
             ).fetchone()
             if not existing:
                 raise StudentWellbeingError("Counselling session not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            values.append(session_id)
             conn.execute(
-                f"UPDATE counselling_sessions SET {set_parts} WHERE id = ?",
-                (*updates.values(), session_id),
+                f"UPDATE counselling_sessions SET {set_clause} WHERE id = ?",
+                values,
             )
             conn.commit()
             logger.info("Counselling session updated: id=%d", session_id)

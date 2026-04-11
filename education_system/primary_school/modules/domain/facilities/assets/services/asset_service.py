@@ -4,7 +4,6 @@ import logging
 
 from education_system.primary_school.infrastructure.database.db import connect
 from education_system.primary_school.core.exceptions import AssetError
-from education_system.primary_school.core.sql_safety import validate_identifier  # nosec B608
 import traceback
 
 logger = logging.getLogger(__name__)
@@ -88,16 +87,19 @@ class AssetService:
         conn = self._conn()
         try:
             cursor = conn.cursor()
-            allowed = {
-                "asset_name", "asset_type", "serial_number", "location",
-                "assigned_to", "purchase_date", "purchase_cost",
-                "condition", "notes", "status",
-            }
-            updates = {k: v for k, v in kwargs.items() if k in allowed}
-            if not updates:
+            set_parts: list[str] = []
+            values: list = []
+            for col in (
+                "asset_name", "asset_type", "assigned_to", "condition",
+                "location", "notes", "purchase_cost", "purchase_date",
+                "serial_number", "status",
+            ):
+                if col in kwargs:
+                    set_parts.append(f"{col} = ?")
+                    values.append(kwargs[col])
+            if not set_parts:
                 return None
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            values = list(updates.values())
+            set_clause = ", ".join(set_parts)
             values.append(asset_id)
             cursor.execute(
                 f"UPDATE assets SET {set_clause}, "

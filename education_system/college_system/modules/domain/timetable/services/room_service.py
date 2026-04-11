@@ -70,21 +70,26 @@ class RoomService:
             conn.close()
 
     def update_room(self, room_id: int, **updates) -> dict:
-        allowed = {"room_code", "building", "floor", "room_type", "capacity",
-                    "has_projector", "has_whiteboard", "has_computers",
-                    "wheelchair_accessible", "status"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
+        set_parts: list[str] = []
+        values: list = []
+        for col in ("building", "capacity", "floor", "has_computers",
+                    "has_projector", "has_whiteboard", "room_code",
+                    "room_type", "status", "wheelchair_accessible"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                values.append(updates[col])
+        if not set_parts:
             raise RoomError("No valid fields to update.")
         conn = self._conn()
         try:
             existing = conn.execute("SELECT id FROM rooms WHERE id = ?", (room_id,)).fetchone()
             if not existing:
                 raise RoomError("Room not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            values.append(room_id)
             conn.execute(
-                f"UPDATE rooms SET {set_parts}, updated_at = datetime('now') WHERE id = ?",
-                (*updates.values(), room_id),
+                f"UPDATE rooms SET {set_clause}, updated_at = datetime('now') WHERE id = ?",
+                values,
             )
             conn.commit()
             logger.info("Room updated: id=%d", room_id)

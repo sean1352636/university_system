@@ -205,12 +205,18 @@ class TAService:
         Raises:
             ValueError: If role_type is provided but invalid.
         """
-        allowed_fields = {
-            'role_type', 'hours_per_week', 'status', 'instructor_id', 'end_date',
-        }
-        update_fields = {k: v for k, v in kwargs.items() if k in allowed_fields}
+        # Iterate over a literal column tuple so user-supplied keys never
+        # flow into the SQL identifier positions (py/sql-injection).
+        set_parts: list[str] = []
+        values: list = []
+        update_fields: dict = {}
+        for col in ('role_type', 'hours_per_week', 'status', 'instructor_id', 'end_date'):
+            if col in kwargs:
+                set_parts.append(f"{col} = ?")
+                values.append(kwargs[col])
+                update_fields[col] = kwargs[col]
 
-        if not update_fields:
+        if not set_parts:
             logger.warning(f"No valid fields provided for TA update: id={ta_id}")
             return False
 
@@ -221,10 +227,12 @@ class TAService:
             )
 
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        set_parts.append("updated_at = ?")
+        values.append(now)
         update_fields['updated_at'] = now
 
-        set_clause = ', '.join(f'{field} = ?' for field in update_fields)
-        values = list(update_fields.values()) + [ta_id]
+        set_clause = ', '.join(set_parts)
+        values.append(ta_id)
 
         with transaction() as conn:
             cursor = conn.cursor()

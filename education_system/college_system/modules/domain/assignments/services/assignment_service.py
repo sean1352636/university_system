@@ -63,17 +63,21 @@ class AssignmentService:
 
     def update_assignment(self, assignment_id: int, **updates) -> dict:
         """Update an assignment."""
-        allowed = {"title", "description", "due_date", "max_score", "allow_late"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
-            raise AssignmentError("No valid fields to update.")
-
-        if "title" in updates:
+        if "title" in updates and updates["title"] is not None:
             updates["title"] = validate_non_empty(updates["title"], "Title")
-        if "due_date" in updates:
+        if "due_date" in updates and updates["due_date"] is not None:
             updates["due_date"] = validate_date(updates["due_date"])
-        if "allow_late" in updates:
+        if "allow_late" in updates and updates["allow_late"] is not None:
             updates["allow_late"] = 1 if updates["allow_late"] else 0
+
+        set_parts: list[str] = []
+        values: list = []
+        for col in ("allow_late", "description", "due_date", "max_score", "title"):
+            if col in updates and updates[col] is not None:
+                set_parts.append(f"{col} = ?")
+                values.append(updates[col])
+        if not set_parts:
+            raise AssignmentError("No valid fields to update.")
 
         conn = self._conn()
         try:
@@ -83,10 +87,11 @@ class AssignmentService:
             if not existing:
                 raise AssignmentError("Assignment not found.")
 
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
+            values.append(assignment_id)
             conn.execute(
-                f"UPDATE assignments SET {set_parts} WHERE id = ?",
-                (*updates.values(), assignment_id),
+                f"UPDATE assignments SET {set_clause} WHERE id = ?",  # nosec B608
+                values,
             )
             conn.commit()
 

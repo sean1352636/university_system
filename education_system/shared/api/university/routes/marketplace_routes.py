@@ -10,7 +10,7 @@ from flask import Blueprint, g, jsonify, request
 from education_system.shared.api.university.auth import token_required
 from education_system.shared.api.university.pagination import get_pagination_params, paginated_response
 from education_system.university_system.core.exceptions import ValidationError
-from education_system.university_system.core.sql_safety import escape_like, validate_identifier  # nosec B608
+from education_system.university_system.core.sql_safety import escape_like
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity
 
@@ -302,19 +302,21 @@ def create_free_item():
 @token_required
 def update_listing(listing_id: int):
     data = request.get_json(silent=True) or {}
-    allowed_fields = {
-        "title", "description", "category", "price", "condition_status",
-        "location", "contact_method", "contact_info", "is_negotiable", "status",
-    }
-    valid_updates = {k: v for k, v in data.items() if k in allowed_fields}
-    if not valid_updates:
+    set_parts: list[str] = []
+    values: list = []
+    for col in (
+        "category", "condition_status", "contact_info", "contact_method",
+        "description", "is_negotiable", "location", "price", "status",
+        "title",
+    ):
+        if col in data:
+            set_parts.append(f"{col} = ?")
+            values.append(data[col])
+    if not set_parts:
         raise ValidationError("No valid fields to update")
 
-    set_clause = ", ".join(
-        [validate_identifier(f, "column") + " = ?" for f in valid_updates]
-    )
+    set_clause = ", ".join(set_parts)
     set_clause += ", updated_at = ?"
-    values = list(valid_updates.values())
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     values.append(now)
     values.append(listing_id)

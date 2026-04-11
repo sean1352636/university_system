@@ -27,18 +27,22 @@ class AdvancedSearchService:
         conn = self._conn()
         try:
             # Build INSERT with only non-None values so DB defaults apply
-            fields = {k: v for k, v in {
-                'user_id': kwargs.get('user_id'),
-                'query': kwargs.get('query'),
-                'module_filter': kwargs.get('module_filter'),
-                'result_count': kwargs.get('result_count'),
-                'searched_at': kwargs.get('searched_at'),
-            }.items() if v is not None}
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            # Iterate over a literal column tuple so user-supplied keys
+            # never flow into the SQL identifier positions (py/sql-injection).
+            _insert_cols: list[str] = []
+            _insert_phs: list[str] = []
+            _insert_vals: list = []
+            for col in ('user_id', 'query', 'module_filter', 'result_count', 'searched_at'):
+                val = kwargs.get(col)
+                if val is not None:
+                    _insert_cols.append(col)
+                    _insert_phs.append('?')
+                    _insert_vals.append(val)
+            cols_sql = ', '.join(_insert_cols)
+            ph_sql = ', '.join(_insert_phs)
             conn.execute(
-                f"INSERT INTO search_history ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO search_history ({cols_sql}) VALUES ({ph_sql})",
+                _insert_vals,
             )
             conn.commit()
             row = conn.execute(
