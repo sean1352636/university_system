@@ -61,19 +61,24 @@ class StudentWellbeingService:
             conn.close()
 
     def create_referral(self, student_id: int, concern_details: str, **kwargs) -> dict:
-        allowed = {"referred_by", "referral_type", "concern_category",
+        # Iterate over a literal column tuple so user-supplied keys never
+        # flow into the SQL identifier positions (py/sql-injection).
+        col_names: list[str] = ["student_id", "concern_details"]
+        values: list = [student_id, concern_details]
+        for col in ("referred_by", "referral_type", "concern_category",
                     "risk_level", "service_referred_to", "external_agency",
-                    "consent_obtained", "appointment_date", "status"}
-        fields = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        fields["student_id"] = student_id
-        fields["concern_details"] = concern_details
+                    "consent_obtained", "appointment_date", "status"):
+            val = kwargs.get(col)
+            if val is not None:
+                col_names.append(col)
+                values.append(val)
+        cols_sql = ", ".join(col_names)
+        ph_sql = ", ".join("?" for _ in col_names)
         conn = self._conn()
         try:
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                f"INSERT INTO wellbeing_referrals ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO wellbeing_referrals ({cols_sql}) VALUES ({ph_sql})",
+                values,
             )
             conn.commit()
             logger.info("Referral created: student=%d", student_id)
@@ -339,19 +344,24 @@ class StudentWellbeingService:
             conn.close()
 
     def create_session(self, student_id: int, session_date: str, **kwargs) -> dict:
-        allowed = {"counsellor_id", "session_number", "session_type",
+        # Iterate over a literal column tuple so user-supplied keys never
+        # flow into the SQL identifier positions (py/sql-injection).
+        col_names: list[str] = ["student_id", "session_date"]
+        values: list = [student_id, session_date]
+        for col in ("counsellor_id", "session_number", "session_type",
                     "presenting_issues", "session_notes", "risk_assessment",
-                    "next_appointment", "status"}
-        fields = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        fields["student_id"] = student_id
-        fields["session_date"] = session_date
+                    "next_appointment", "status"):
+            val = kwargs.get(col)
+            if val is not None:
+                col_names.append(col)
+                values.append(val)
+        cols_sql = ", ".join(col_names)
+        ph_sql = ", ".join("?" for _ in col_names)
         conn = self._conn()
         try:
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                f"INSERT INTO counselling_sessions ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO counselling_sessions ({cols_sql}) VALUES ({ph_sql})",
+                values,
             )
             conn.commit()
             logger.info("Counselling session created: student=%d date=%s", student_id, session_date)
