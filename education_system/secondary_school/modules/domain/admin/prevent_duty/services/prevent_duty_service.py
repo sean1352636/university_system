@@ -9,68 +9,62 @@ logger = logging.getLogger(__name__)
 class PreventDutyService:
     """Prevent duty management."""
 
-    ALLOWED_COLUMNS = {
-        "student_id",
-        "first_name",
-        "last_name",
-        "email",
-        "phone",
-        "referral_reason",
-        "risk_level",
-        "notes",
-        "status",
-        "referred_at",
-        "updated_at",
-    }
-
     def __init__(self, db_path=None):
         self._db_path = db_path
 
     def _conn(self):
         return connect(self._db_path)
 
-    def _sanitize_fields(self, fields: dict, allow_empty: bool = False, drop_none: bool = False) -> dict:
-        sanitized = {}
-        for key, value in fields.items():
-            if key not in self.ALLOWED_COLUMNS:
-                raise ValueError(f"Invalid field: {key}")
-            if drop_none and value is None:
-                continue
-            sanitized[key] = value
-
-        if not allow_empty and not sanitized:
-            raise ValueError("No valid fields provided.")
-        return sanitized
-
     def create(self, **kwargs):
+        # Iterate over a literal allowed-column tuple so user-supplied keys
+        # never flow into the SQL identifier positions (py/sql-injection).
+        col_names: list[str] = []
+        placeholders: list[str] = []
+        values: list = []
+        for col in ('student_id', 'staff_reporter_id', 'concern_type', 'description', 'risk_level', 'action_taken', 'referral_date', 'status', 'outcome', 'resolved_date'):
+            if col in kwargs and kwargs[col] is not None:
+                col_names.append(col)
+                placeholders.append("?")
+                values.append(kwargs[col])
+        if not col_names:
+            raise ValueError("No valid fields to insert.")
+        cols_sql = ", ".join(col_names)
+        ph_sql = ", ".join(placeholders)
         conn = self._conn()
         try:
-            safe_kwargs = self._sanitize_fields(kwargs)
-            cols = ", ".join(safe_kwargs.keys())
-            placeholders = ", ".join("?" for _ in safe_kwargs)
             cursor = conn.execute(
-                f"INSERT INTO prevent_referrals ({cols}) VALUES ({placeholders})",
-                list(safe_kwargs.values()))
+                f"INSERT INTO prevent_referrals ({cols_sql}) VALUES ({ph_sql})",
+                values,
+            )
             conn.commit()
-            row = conn.execute("SELECT * FROM prevent_referrals WHERE id = ?", (cursor.lastrowid,)).fetchone()
+            row = conn.execute(
+                "SELECT * FROM prevent_referrals WHERE id = ?", (cursor.lastrowid,)
+            ).fetchone()
             return dict(row) if row else {"id": cursor.lastrowid}
-        except Exception as e:
+        except Exception:
             conn.rollback()
             raise
         finally:
             conn.close()
 
     def list_all(self, limit=100, offset=0, **filters):
+        # Iterate over a literal column tuple so filter keys are constrained
+        # to known columns; user-supplied filter names cannot reach the SQL.
+        where_parts: list[str] = ["1=1"]
+        params: list = []
+        for col in ('id', 'student_id', 'staff_reporter_id', 'concern_type', 'description', 'risk_level', 'action_taken', 'referral_date', 'status', 'outcome', 'resolved_date'):
+            val = filters.get(col)
+            if val is not None:
+                where_parts.append(f"{col} = ?")
+                params.append(val)
+        where_clause = " AND ".join(where_parts)
+        params.extend([limit, offset])
         conn = self._conn()
         try:
-            safe_filters = self._sanitize_fields(filters, allow_empty=True, drop_none=True)
-            sql = "SELECT * FROM prevent_referrals WHERE 1=1"
-            params = []
-            for key, val in safe_filters.items():
-                sql += f" AND {key} = ?"
-                params.append(val)
-            sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
-            params.extend([limit, offset])
+            sql = (
+                f"SELECT * FROM prevent_referrals WHERE {where_clause} "
+                "ORDER BY id DESC LIMIT ? OFFSET ?"
+            )
             return [dict(r) for r in conn.execute(sql, params).fetchall()]
         finally:
             conn.close()
@@ -86,16 +80,28 @@ class PreventDutyService:
     def update(self, record_id, **kwargs):
         if not kwargs:
             return None
+        set_parts: list[str] = []
+        values: list = []
+        for col in ('student_id', 'staff_reporter_id', 'concern_type', 'description', 'risk_level', 'action_taken', 'referral_date', 'status', 'outcome', 'resolved_date'):
+            if col in kwargs:
+                set_parts.append(f"{col} = ?")
+                values.append(kwargs[col])
+        if not set_parts:
+            return None
+        set_clause = ", ".join(set_parts)
+        values.append(record_id)
         conn = self._conn()
         try:
-            safe_kwargs = self._sanitize_fields(kwargs)
-            set_clause = ", ".join(f"{k} = ?" for k in safe_kwargs)
-            values = list(safe_kwargs.values()) + [record_id]
-            conn.execute(f"UPDATE prevent_referrals SET {set_clause} WHERE id = ?", values)
+            conn.execute(
+                f"UPDATE prevent_referrals SET {set_clause} WHERE id = ?",
+                values,
+            )
             conn.commit()
-            row = conn.execute("SELECT * FROM prevent_referrals WHERE id = ?", (record_id,)).fetchone()
+            row = conn.execute(
+                "SELECT * FROM prevent_referrals WHERE id = ?", (record_id,)
+            ).fetchone()
             return dict(row) if row else None
-        except Exception as e:
+        except Exception:
             conn.rollback()
             raise
         finally:
@@ -109,4 +115,3 @@ class PreventDutyService:
             return True
         finally:
             conn.close()
-
