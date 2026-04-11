@@ -83,15 +83,21 @@ class AccessibilityService:
 
     def update_preference(self, pk: int, **kwargs) -> dict:
         """Update preference record."""
-        allowed = {"user_id", "theme", "font_size", "font_family", "reduce_animations", "screen_reader_mode", "high_contrast"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_parts: list[str] = []
+        params: list = []
+        for col in ("user_id", "theme", "font_size", "font_family", "reduce_animations", "screen_reader_mode", "high_contrast"):
+            val = kwargs.get(col)
+            if val is not None:
+                set_parts.append(f"{validate_identifier(col)} = ?")
+                params.append(val)
+        if not set_parts:
             raise ValidationError("No valid fields to update.")
-        updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-        if not set_clause:
-            raise ValidationError("No valid fields to update.")
-        params = list(updates.values()) + [pk]
+        set_parts.append("updated_at = ?")
+        params.append(datetime.utcnow().isoformat())
+        params.append(pk)
+        set_clause = ", ".join(set_parts)
         conn = self._conn()
         try:
             conn.execute(f"UPDATE accessibility_preferences SET {set_clause} WHERE id = ?", params)  # nosec B608

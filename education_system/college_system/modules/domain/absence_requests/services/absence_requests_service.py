@@ -79,20 +79,21 @@ class AbsenceRequestService:
             kwargs["status"] = "pending"
         conn = self._conn()
         try:
-            fields = {k: v for k, v in {
-                'staff_id': kwargs.get('staff_id'),
-                'absence_type': kwargs.get('absence_type'),
-                'start_date': kwargs.get('start_date'),
-                'end_date': kwargs.get('end_date'),
-                'reason': kwargs.get('reason'),
-                'status': kwargs.get('status'),
-                'approved_by': kwargs.get('approved_by'),
-            }.items() if v is not None}
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
+            # Iterate over a literal column tuple so CodeQL recognises
+            # the column names as untainted (py/sql-injection).
+            col_names: list[str] = []
+            values: list = []
+            for col in ('staff_id', 'absence_type', 'start_date', 'end_date',
+                        'reason', 'status', 'approved_by'):
+                val = kwargs.get(col)
+                if val is not None:
+                    col_names.append(col)
+                    values.append(val)
+            cols = ", ".join(col_names)
+            placeholders = ", ".join("?" for _ in col_names)
             conn.execute(
-                f"INSERT INTO absence_requests ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                f"INSERT INTO absence_requests ({cols}) VALUES ({placeholders})",  # nosec B608
+                values,
             )
             conn.commit()
             row = conn.execute(

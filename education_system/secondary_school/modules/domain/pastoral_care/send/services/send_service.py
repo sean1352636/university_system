@@ -54,16 +54,23 @@ class SENDService:
             conn.close()
 
     def update_record(self, record_id, **kwargs):
-        allowed = {"sen_type", "primary_need", "ehcp", "key_worker", "ehcp_review_date",
-                    "external_agencies", "diagnosis", "strategies", "access_arrangements", "notes", "status"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed}
-        if not updates:
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_parts: list[str] = []
+        params: list = []
+        for col in ("sen_type", "primary_need", "ehcp", "key_worker", "ehcp_review_date",
+                    "external_agencies", "diagnosis", "strategies", "access_arrangements", "notes", "status"):
+            if col in kwargs:
+                set_parts.append(f"{validate_identifier(col)} = ?")
+                params.append(kwargs[col])
+        if not set_parts:
             return
+        params.append(record_id)
         conn = self._conn()
         try:
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
+            set_clause = ", ".join(set_parts)
             conn.execute(f"UPDATE send_records SET {set_clause}, updated_at = datetime('now') WHERE id = ?",  # nosec B608
-                         (*updates.values(), record_id))
+                         params)
             conn.commit()
         finally:
             conn.close()

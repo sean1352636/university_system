@@ -116,17 +116,24 @@ class CourseService:
 
     def update_course(self, course_pk: int, **kwargs) -> dict:
         """Update a course record."""
-        allowed = {"title", "description", "credits", "capacity", "subject_area",
-                    "teacher", "term", "schedule", "status", "qualification_type"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_parts: list[str] = []
+        params: list = []
+        for col in ("title", "description", "credits", "capacity", "subject_area",
+                    "teacher", "term", "schedule", "status", "qualification_type"):
+            val = kwargs.get(col)
+            if val is not None:
+                set_parts.append(f"{validate_identifier(col)} = ?")
+                params.append(val)
 
-        if not updates:
+        if not set_parts:
             raise ValidationError("No valid fields to update.")
 
-        updates["updated_at"] = datetime.utcnow().isoformat()
-
-        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-        params = list(updates.values()) + [course_pk]
+        set_parts.append("updated_at = ?")
+        params.append(datetime.utcnow().isoformat())
+        params.append(course_pk)
+        set_clause = ", ".join(set_parts)
 
         conn = self._conn()
         try:

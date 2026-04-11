@@ -72,20 +72,28 @@ class MarketingService:
             conn.close()
 
     def update_event(self, event_id: int, **updates) -> dict:
-        allowed = {"event_name", "event_date", "event_type", "start_time", "end_time",
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_pieces: list[str] = []
+        params: list = []
+        for col in ("event_name", "event_date", "event_type", "start_time", "end_time",
                     "capacity", "registrations", "attendees", "location", "description",
-                    "target_audience", "status"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
+                    "target_audience", "status"):
+            val = updates.get(col)
+            if val is not None:
+                set_pieces.append(f"{col} = ?")
+                params.append(val)
+        if not set_pieces:
             raise MarketingError("No valid fields to update.")
+        params.append(event_id)
         conn = self._conn()
         try:
             existing = conn.execute("SELECT id FROM open_days WHERE id = ?", (event_id,)).fetchone()
             if not existing:
                 raise MarketingError("Event not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_parts = ", ".join(set_pieces)
             conn.execute(f"UPDATE open_days SET {set_parts} WHERE id = ?",  # nosec B608
-                         (*updates.values(), event_id))
+                         params)
             conn.commit()
             logger.info("Event updated: id=%d", event_id)
             row = conn.execute("SELECT * FROM open_days WHERE id = ?", (event_id,)).fetchone()

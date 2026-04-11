@@ -1,0 +1,26 @@
+# Register validate_identifier() as a SQL injection sanitizer.
+#
+# validate_identifier() enforces ^[a-zA-Z_][a-zA-Z0-9_]*$ on its input,
+# raising ValueError for anything else.  This makes the return value safe
+# for use as a SQL identifier (column/table name).
+#
+# Using "value" kind (not "taint") means CodeQL treats the output as a
+# sanitized value — taint does NOT flow through the function.
+#
+# Source: education_system/shared/database/sql_safety.py
+# Re-exported by each subsystem's core/sql_safety.py
+
+extensions:
+  - addsTo:
+      pack: codeql/python-all
+      extensible: summaryModel
+    data:
+      # Format: [type, path, input, output, kind]
+      # Shared canonical module
+      - ["education_system.shared.database.sql_safety", "Member[validate_identifier]", "Argument[0]", "ReturnValue", "value"]
+      # College system re-export
+      - ["education_system.college_system.core.sql_safety", "Member[validate_identifier]", "Argument[0]", "ReturnValue", "value"]
+      # Secondary school re-export
+      - ["education_system.secondary_school.core.sql_safety", "Member[validate_identifier]", "Argument[0]", "ReturnValue", "value"]
+      # Primary school re-export
+      - ["education_system.primary_school.core.sql_safety", "Member[validate_identifier]", "Argument[0]", "ReturnValue", "value"]

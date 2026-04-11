@@ -82,19 +82,27 @@ class StudentCouncilService:
             conn.close()
 
     def update_member(self, member_id: int, **kwargs) -> dict:
-        allowed = {"role", "year_group", "department", "elected_date",
-                    "term_end_date", "status"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_pieces: list[str] = []
+        params: list = []
+        for col in ("role", "year_group", "department", "elected_date",
+                    "term_end_date", "status"):
+            val = kwargs.get(col)
+            if val is not None:
+                set_pieces.append(f"{col} = ?")
+                params.append(val)
+        if not set_pieces:
             raise StudentCouncilError("No valid fields to update.")
+        params.append(member_id)
         conn = self._conn()
         try:
             existing = conn.execute("SELECT id FROM council_members WHERE id = ?", (member_id,)).fetchone()
             if not existing:
                 raise StudentCouncilError("Member not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_parts = ", ".join(set_pieces)
             conn.execute(f"UPDATE council_members SET {set_parts} WHERE id = ?",  # nosec B608
-                         (*updates.values(), member_id))
+                         params)
             conn.commit()
             logger.info("Council member updated: id=%d", member_id)
             return self.get_member(member_id)

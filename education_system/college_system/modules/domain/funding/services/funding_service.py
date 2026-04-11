@@ -70,19 +70,27 @@ class FundingService:
             conn.close()
 
     def update_funding_record(self, record_id: int, **updates) -> dict:
-        allowed = {"learning_aim", "aim_type", "funding_model", "planned_hours",
-                    "actual_hours", "start_date", "planned_end_date", "outcome"}
-        updates = {k: v for k, v in updates.items() if k in allowed and v is not None}
-        if not updates:
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_pieces: list[str] = []
+        params: list = []
+        for col in ("learning_aim", "aim_type", "funding_model", "planned_hours",
+                    "actual_hours", "start_date", "planned_end_date", "outcome"):
+            val = updates.get(col)
+            if val is not None:
+                set_pieces.append(f"{col} = ?")
+                params.append(val)
+        if not set_pieces:
             raise FundingError("No valid fields to update.")
+        params.append(record_id)
         conn = self._conn()
         try:
             existing = conn.execute("SELECT id FROM funding_records WHERE id = ?", (record_id,)).fetchone()
             if not existing:
                 raise FundingError("Funding record not found.")
-            set_parts = ", ".join(f"{k} = ?" for k in updates)
+            set_parts = ", ".join(set_pieces)
             conn.execute(f"UPDATE funding_records SET {set_parts} WHERE id = ?",  # nosec B608
-                         (*updates.values(), record_id))
+                         params)
             conn.commit()
             logger.info("Funding record updated: id=%d", record_id)
             row = conn.execute("SELECT * FROM funding_records WHERE id = ?", (record_id,)).fetchone()

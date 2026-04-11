@@ -89,14 +89,20 @@ class GradeService:
             conn.close()
 
     def update_grade(self, grade_id: int, **kwargs) -> dict:
-        allowed = {"score", "grade", "assessment_type", "assessment_name",
-                    "term", "academic_year", "teacher_comment"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_parts: list[str] = []
+        params: list = []
+        for col in ("score", "grade", "assessment_type", "assessment_name",
+                    "term", "academic_year", "teacher_comment"):
+            val = kwargs.get(col)
+            if val is not None:
+                set_parts.append(f"{validate_identifier(col)} = ?")
+                params.append(val)
+        if not set_parts:
             raise GradeError("No valid fields to update.")
-
-        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-        params = list(updates.values()) + [grade_id]
+        params.append(grade_id)
+        set_clause = ", ".join(set_parts)
 
         conn = self._conn()
         try:

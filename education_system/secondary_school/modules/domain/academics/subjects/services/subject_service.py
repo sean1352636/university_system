@@ -98,15 +98,23 @@ class SubjectService:
             conn.close()
 
     def update_subject(self, subject_pk: int, **kwargs) -> dict:
-        allowed = {"subject_code", "title", "description", "department", "key_stage",
-                    "is_core", "capacity", "teacher", "room", "status"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_parts: list[str] = []
+        params: list = []
+        for col in ("subject_code", "title", "description", "department", "key_stage",
+                    "is_core", "capacity", "teacher", "room", "status"):
+            val = kwargs.get(col)
+            if val is not None:
+                set_parts.append(f"{validate_identifier(col)} = ?")
+                params.append(val)
+        if not set_parts:
             raise ValidationError("No valid fields to update.")
 
-        updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-        params = list(updates.values()) + [subject_pk]
+        set_parts.append("updated_at = ?")
+        params.append(datetime.utcnow().isoformat())
+        params.append(subject_pk)
+        set_clause = ", ".join(set_parts)
 
         conn = self._conn()
         try:

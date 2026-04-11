@@ -66,14 +66,21 @@ def update_profile():
     validate_profile_update(data)
 
     user_id = g.current_user["user_id"]
-    allowed = {"first_name", "last_name", "email", "phone"}
-    updates = {k: v for k, v in data.items() if k in allowed and v is not None}
+    # Iterate over a literal allowed-column tuple so CodeQL recognises
+    # the column names as untainted (py/sql-injection).
+    set_parts: list[str] = []
+    values: list = []
+    for col in ("first_name", "last_name", "email", "phone"):
+        val = data.get(col)
+        if val is not None:
+            set_parts.append(f"{validate_identifier(col)} = ?")
+            values.append(val)
 
-    if not updates:
+    if not set_parts:
         return jsonify({"error": "No valid fields to update", "status": 400}), 400
 
-    set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-    values = list(updates.values()) + [user_id]
+    values.append(user_id)
+    set_clause = ", ".join(set_parts)
 
     with get_connection() as conn:
         conn.execute(f"UPDATE users SET {set_clause} WHERE id = ?", values)  # nosec B608

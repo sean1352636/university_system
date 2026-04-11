@@ -83,13 +83,21 @@ class AdvancedSearchService:
 
     def update_search(self, pk: int, **kwargs) -> dict:
         """Update search record."""
-        allowed = {"user_id", "query", "module_filter", "result_count", "searched_at"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_parts: list[str] = []
+        params: list = []
+        for col in ("user_id", "query", "module_filter", "result_count", "searched_at"):
+            val = kwargs.get(col)
+            if val is not None:
+                set_parts.append(f"{validate_identifier(col)} = ?")
+                params.append(val)
+        if not set_parts:
             raise ValidationError("No valid fields to update.")
-        updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-        params = list(updates.values()) + [pk]
+        set_parts.append("updated_at = ?")
+        params.append(datetime.utcnow().isoformat())
+        params.append(pk)
+        set_clause = ", ".join(set_parts)
         conn = self._conn()
         try:
             conn.execute(f"UPDATE search_history SET {set_clause} WHERE id = ?", params)  # nosec B608

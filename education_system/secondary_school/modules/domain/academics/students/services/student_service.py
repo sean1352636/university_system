@@ -152,27 +152,35 @@ class StudentService:
 
     def update_student(self, student_pk: int, **kwargs) -> dict:
         """Update a student record."""
-        allowed = {"first_name", "last_name", "email", "date_of_birth",
+        # Apply value transformations up-front so the loop only handles
+        # column iteration. Mutating kwargs is safe — it's a local copy.
+        if kwargs.get("email") is not None:
+            kwargs["email"] = validate_email(kwargs["email"])
+        # Auto-set key stage if year group changes (overrides any provided key_stage)
+        if kwargs.get("year_group") is not None:
+            kwargs["key_stage"] = self._key_stage_for_year(kwargs["year_group"])
+
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_parts: list[str] = []
+        params: list = []
+        for col in ("first_name", "last_name", "email", "date_of_birth",
                     "address", "year_group", "form_group", "form_tutor", "status",
                     "key_stage", "sen_status", "pupil_premium",
                     "parent_name", "parent_email", "parent_phone",
-                    "emergency_contact_name", "emergency_contact_phone", "user_id"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
+                    "emergency_contact_name", "emergency_contact_phone", "user_id"):
+            val = kwargs.get(col)
+            if val is not None:
+                set_parts.append(f"{validate_identifier(col)} = ?")
+                params.append(val)
 
-        if not updates:
+        if not set_parts:
             raise ValidationError("No valid fields to update.")
 
-        if "email" in updates:
-            updates["email"] = validate_email(updates["email"])
-
-        # Auto-set key stage if year group changes
-        if "year_group" in updates:
-            updates["key_stage"] = self._key_stage_for_year(updates["year_group"])
-
-        updates["updated_at"] = datetime.utcnow().isoformat()
-
-        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-        params = list(updates.values()) + [student_pk]
+        set_parts.append("updated_at = ?")
+        params.append(datetime.utcnow().isoformat())
+        params.append(student_pk)
+        set_clause = ", ".join(set_parts)
 
         conn = self._conn()
         try:

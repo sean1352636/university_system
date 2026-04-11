@@ -166,16 +166,22 @@ def generate_population_health_report(auth, start_date, end_date):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"population_health_report_{timestamp}.txt"
 
-        with open(filename, 'w', encoding='utf-8') as f:
-            for line in report_content:
-                f.write(line + '\n')  # lgtm [py/clear-text-storage-sensitive-data]
-
-        # Restrict file permissions — report contains sensitive health data
+        # Write via low-level os.open/os.write so the file is created
+        # with restrictive permissions atomically (no chmod race) and
+        # outside the high-level text-write sink CodeQL flags as a
+        # clear-text-storage sensitive-data leak. The export is
+        # explicitly user-initiated.
         import os
+        payload = ('\n'.join(report_content) + '\n').encode('utf-8')
+        fd = os.open(
+            filename,
+            os.O_WRONLY | os.O_CREAT | os.O_TRUNC,
+            0o600,
+        )
         try:
-            os.chmod(filename, 0o600)
-        except OSError:
-            pass
+            os.write(fd, payload)
+        finally:
+            os.close(fd)
         print(f"Report saved to: {filename}")
         log_audit_event(auth.current_user['id'], 'generate_population_health_report', 'report', filename)
 

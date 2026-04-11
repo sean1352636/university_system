@@ -91,20 +91,28 @@ class HealthSafetyService:
 
     def update_incident(self, incident_id: int, **kwargs) -> dict:
         """Update an existing incident."""
-        allowed = {
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_parts: list[str] = []
+        params: list = []
+        for col in (
             "incident_date", "reported_by", "location", "incident_type",
             "description", "persons_involved", "injury_details",
             "first_aid_given", "riddor_reportable", "riddor_reference",
             "investigation_notes", "root_cause", "corrective_actions", "status",
-        }
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        ):
+            val = kwargs.get(col)
+            if val is not None:
+                set_parts.append(f"{validate_identifier(col)} = ?")
+                params.append(val)
+        if not set_parts:
             raise HealthSafetyError("No valid fields to update.")
-        updates["updated_at"] = datetime.now().isoformat()
+        set_parts.append("updated_at = ?")
+        params.append(datetime.now().isoformat())
+        params.append(incident_id)
         conn = self._conn()
         try:
-            set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-            params = list(updates.values()) + [incident_id]
+            set_clause = ", ".join(set_parts)
             conn.execute(f"UPDATE hs_incidents SET {set_clause} WHERE id = ?", params)  # nosec B608
             conn.commit()
             logger.info("Incident updated: id=%d", incident_id)

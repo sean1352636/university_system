@@ -125,21 +125,28 @@ class StudentService:
 
     def update_student(self, student_pk: int, **kwargs) -> dict:
         """Update a student record."""
-        allowed = {"first_name", "last_name", "email", "phone", "date_of_birth",
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_parts: list[str] = []
+        params: list = []
+        for col in ("first_name", "last_name", "email", "phone", "date_of_birth",
                     "address", "year_group", "form_group", "form_tutor", "status",
-                    "user_id"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
+                    "user_id"):
+            val = kwargs.get(col)
+            if val is None:
+                continue
+            if col == "email":
+                val = validate_email(val)
+            set_parts.append(f"{validate_identifier(col)} = ?")
+            params.append(val)
 
-        if not updates:
+        if not set_parts:
             raise ValidationError("No valid fields to update.")
 
-        if "email" in updates:
-            updates["email"] = validate_email(updates["email"])
-
-        updates["updated_at"] = datetime.utcnow().isoformat()
-
-        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-        params = list(updates.values()) + [student_pk]
+        set_parts.append("updated_at = ?")
+        params.append(datetime.utcnow().isoformat())
+        params.append(student_pk)
+        set_clause = ", ".join(set_parts)
 
         conn = self._conn()
         try:

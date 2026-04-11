@@ -118,20 +118,27 @@ class StaffService:
 
     def update_staff(self, staff_pk: int, **kwargs) -> dict:
         """Update a staff record."""
-        allowed = {"first_name", "last_name", "title", "email", "phone",
-                    "subject_area", "form_group", "status", "user_id"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_parts: list[str] = []
+        params: list = []
+        for col in ("first_name", "last_name", "title", "email", "phone",
+                    "subject_area", "form_group", "status", "user_id"):
+            val = kwargs.get(col)
+            if val is None:
+                continue
+            if col == "email":
+                val = validate_email(val)
+            set_parts.append(f"{validate_identifier(col)} = ?")
+            params.append(val)
 
-        if not updates:
+        if not set_parts:
             raise ValidationError("No valid fields to update.")
 
-        if "email" in updates:
-            updates["email"] = validate_email(updates["email"])
-
-        updates["updated_at"] = datetime.utcnow().isoformat()
-
-        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-        params = list(updates.values()) + [staff_pk]
+        set_parts.append("updated_at = ?")
+        params.append(datetime.utcnow().isoformat())
+        params.append(staff_pk)
+        set_clause = ", ".join(set_parts)
 
         conn = self._conn()
         try:

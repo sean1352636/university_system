@@ -92,13 +92,21 @@ class VisitorService:
 
     def update_visitor(self, pk: int, **kwargs) -> dict:
         """Update visitor record."""
-        allowed = {"first_name", "last_name", "organization", "purpose", "visiting_staff_id", "dbs_checked", "safeguarding_briefed", "badge_number", "sign_in_time", "sign_out_time", "vehicle_reg", "status"}
-        updates = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        if not updates:
+        # Iterate over a literal allowed-column tuple so CodeQL recognises
+        # the column names as untainted (py/sql-injection).
+        set_parts: list[str] = []
+        params: list = []
+        for col in ("first_name", "last_name", "organization", "purpose", "visiting_staff_id", "dbs_checked", "safeguarding_briefed", "badge_number", "sign_in_time", "sign_out_time", "vehicle_reg", "status"):
+            val = kwargs.get(col)
+            if val is not None:
+                set_parts.append(f"{validate_identifier(col)} = ?")
+                params.append(val)
+        if not set_parts:
             raise ValidationError("No valid fields to update.")
-        updates["updated_at"] = datetime.utcnow().isoformat()
-        set_clause = ", ".join(f"{validate_identifier(k)} = ?" for k in updates)
-        params = list(updates.values()) + [pk]
+        set_parts.append("updated_at = ?")
+        params.append(datetime.utcnow().isoformat())
+        params.append(pk)
+        set_clause = ", ".join(set_parts)
         conn = self._conn()
         try:
             conn.execute(f"UPDATE visitors SET {set_clause} WHERE id = ?", params)  # nosec B608
