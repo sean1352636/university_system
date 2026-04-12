@@ -69,6 +69,7 @@ def add_prerequisite(auth):
         print("You don't have permission to manage prerequisites.")
         return False
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -79,45 +80,48 @@ def add_prerequisite(auth):
 
         if len(courses) < 2:
             print("Need at least 2 courses to set prerequisites.")
-            conn.close()
             return False
 
         print("\nAvailable Courses:")
-        for course in courses:
-            print(f"{course[0]}. {course[1]} - {course[2]}")
+        for i, course in enumerate(courses, 1):
+            print(f"{i}. {course[1]} - {course[2]}")
 
         # Select main course
         while True:
+            choice = input("\nEnter course number to add prerequisite to (or press Enter to go back): ").strip()
+            if not choice:
+                return False
             try:
-                course_id = int(input("\nEnter course ID to add prerequisite to: "))
-                if any(c[0] == course_id for c in courses):
+                idx = int(choice)
+                if 1 <= idx <= len(courses):
+                    course_id = courses[idx - 1][0]
                     break
-                print("Invalid course ID.")
+                print("Invalid choice.")
             except ValueError:
                 print("Please enter a valid number.")
 
         # Select prerequisite course
         print("\nSelect prerequisite course:")
         available_prereqs = [c for c in courses if c[0] != course_id]
-        for course in available_prereqs:
-            print(f"{course[0]}. {course[1]} - {course[2]}")
+        for i, course in enumerate(available_prereqs, 1):
+            print(f"{i}. {course[1]} - {course[2]}")
 
         while True:
+            choice = input("\nEnter prerequisite course number (or press Enter to go back): ").strip()
+            if not choice:
+                return False
             try:
-                prereq_id = int(input("\nEnter prerequisite course ID: "))
-                if prereq_id == course_id:
-                    print("A course cannot be a prerequisite for itself.")
-                    continue
-                if any(c[0] == prereq_id for c in available_prereqs):
+                idx = int(choice)
+                if 1 <= idx <= len(available_prereqs):
+                    prereq_id = available_prereqs[idx - 1][0]
                     break
-                print("Invalid prerequisite course ID.")
+                print("Invalid choice.")
             except ValueError:
                 print("Please enter a valid number.")
 
         # Check for circular dependencies
         if check_circular_prerequisite(cursor, course_id, prereq_id):
             print("Error: This would create a circular dependency.")
-            conn.close()
             return False
 
         is_required = input("Is this a required prerequisite? (y/n): ").strip().lower() == 'y'
@@ -130,20 +134,19 @@ def add_prerequisite(auth):
         ''', (course_id, prereq_id, is_required, timestamp))
 
         conn.commit()
-        conn.close()
 
         print("Prerequisite added successfully!")
         return True
 
     except sqlite3.IntegrityError:
         print("Error: This prerequisite already exists.")
-        conn.close()
         return False
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
-            conn.close()
         return False
+    finally:
+        if conn:
+            conn.close()
 
 
 @log_read(module="course_management", description="Viewing course prerequisites")
@@ -153,6 +156,7 @@ def view_prerequisites(auth):
         print("You must be logged in to view prerequisites.")
         return
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -206,11 +210,10 @@ def view_prerequisites(auth):
             else:
                 print("No prerequisites found in the system.")
 
-        conn.close()
-
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
+    finally:
+        if conn:
             conn.close()
 
 
@@ -225,6 +228,7 @@ def remove_prerequisite(auth):
         print("You don't have permission to manage prerequisites.")
         return False
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -242,20 +246,23 @@ def remove_prerequisite(auth):
 
         if not courses_with_prereqs:
             print("No courses with prerequisites found.")
-            conn.close()
             return False
 
         print("\nCourses with Prerequisites:")
-        for course in courses_with_prereqs:
-            print(f"{course[0]}. {course[1]} - {course[2]} ({course[3]} prerequisites)")
+        for i, course in enumerate(courses_with_prereqs, 1):
+            print(f"{i}. {course[1]} - {course[2]} ({course[3]} prerequisites)")
 
         # Select course
         while True:
+            choice = input("\nEnter course number to remove prerequisite from (or press Enter to go back): ").strip()
+            if not choice:
+                return False
             try:
-                course_id = int(input("\nEnter course ID to remove prerequisite from: "))
-                if any(c[0] == course_id for c in courses_with_prereqs):
+                idx = int(choice)
+                if 1 <= idx <= len(courses_with_prereqs):
+                    course_id = courses_with_prereqs[idx - 1][0]
                     break
-                print("Invalid course ID.")
+                print("Invalid choice.")
             except ValueError:
                 print("Please enter a valid number.")
 
@@ -272,30 +279,31 @@ def remove_prerequisite(auth):
         prerequisites = cursor.fetchall()
 
         print(f"\nPrerequisites for {prerequisites[0][1]} - {prerequisites[0][2]}:")
-        print(f"{'ID':<5} {'Prerequisite Code':<15} {'Prerequisite Name':<30} {'Type':<12}")
+        print(f"{'#':<5} {'Prerequisite Code':<15} {'Prerequisite Name':<30} {'Type':<12}")
         print("-" * 62)
 
-        for prereq in prerequisites:
+        for i, prereq in enumerate(prerequisites, 1):
             req_type = "Required" if prereq[5] else "Recommended"
-            print(f"{prereq[0]:<5} {prereq[3]:<15} {prereq[4]:<30} {req_type:<12}")
+            print(f"{i:<5} {prereq[3]:<15} {prereq[4]:<30} {req_type:<12}")
 
         # Select prerequisite to remove
         while True:
+            choice = input("\nEnter prerequisite number to remove (or press Enter to go back): ").strip()
+            if not choice:
+                return False
             try:
-                prereq_id = int(input("\nEnter prerequisite ID to remove: "))
-                if any(p[0] == prereq_id for p in prerequisites):
+                idx = int(choice)
+                if 1 <= idx <= len(prerequisites):
+                    selected_prereq = prerequisites[idx - 1]
+                    prereq_id = selected_prereq[0]
                     break
-                print("Invalid prerequisite ID.")
+                print("Invalid choice.")
             except ValueError:
                 print("Please enter a valid number.")
-
-        # Get prerequisite details for confirmation
-        selected_prereq = next(p for p in prerequisites if p[0] == prereq_id)
 
         confirm = input(f"\nRemove prerequisite '{selected_prereq[3]} - {selected_prereq[4]}'? (y/n): ").strip().lower()
         if confirm != 'y':
             print("Removal cancelled.")
-            conn.close()
             return False
 
         # Remove the prerequisite
@@ -303,7 +311,6 @@ def remove_prerequisite(auth):
         rows_deleted = cursor.rowcount
 
         conn.commit()
-        conn.close()
 
         if rows_deleted > 0:
             print(f"\nPrerequisite '{selected_prereq[3]} - {selected_prereq[4]}' removed successfully!")
@@ -314,6 +321,7 @@ def remove_prerequisite(auth):
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
-            conn.close()
         return False
+    finally:
+        if conn:
+            conn.close()

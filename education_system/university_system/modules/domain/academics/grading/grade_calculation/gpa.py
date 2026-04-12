@@ -171,15 +171,22 @@ def calculate_gpa():
             # Sort by GPA (highest first)
             student_gpas.sort(key=lambda x: x['gpa'], reverse=True)
 
+            # Filter to students with grades
+            graded_students = [s for s in student_gpas if s['gpa'] > 0]
+
+            if not graded_students:
+                print("\nNo students with grades found in the database.")
+                conn.close()
+                return
+
             # Display results
             print("\nStudent GPA Summary:")
             print("-" * 80)
             print(f"{'Rank':<6} {'Student ID':<12} {'Name':<40} {'Course':<8} {'GPA':<8} {'Credits'}")
             print("-" * 80)
 
-            for i, student in enumerate(student_gpas):
-                if student['gpa'] > 0:  # Only show students with grades
-                    print(f"{i+1:<6} {student['id']:<12} {student['name']:<40} {student['course']:<8} {student['gpa']:<8.2f} {student['credits']}")
+            for i, student in enumerate(graded_students):
+                print(f"{i+1:<6} {student['id']:<12} {student['name']:<40} {student['course']:<8} {student['gpa']:<8.2f} {student['credits']}")
 
             # Ask if the user wants to export this data
             export = input("\nDo you want to export this GPA summary to CSV? (y/n): ").strip().lower()

@@ -926,11 +926,9 @@ Student Union Finance Team
         try:
             from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui import RestaurantManagementGUI
 
-            restaurant_window = tk.Toplevel(self.root)
-            restaurant_window.title(f"University Restaurant - {club_name} Booking")
-            restaurant_window.geometry("1200x800")
-
-            restaurant_gui = RestaurantManagementGUI(restaurant_window, auth=self.auth_manager)
+            # Pass parent root — show_restaurant_management() creates its own Toplevel
+            restaurant_gui = RestaurantManagementGUI(self.root, auth=self.auth_manager)
+            restaurant_gui.show_restaurant_management()
 
             # Pre-populate club booking information if method exists
             if hasattr(restaurant_gui, 'create_club_reservation'):

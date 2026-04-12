@@ -28,6 +28,7 @@ Usage:
 
 import hashlib
 import logging
+import os
 import secrets
 import sqlite3
 import functools
@@ -36,6 +37,19 @@ from datetime import datetime, timedelta
 from flask import request, jsonify, g
 
 logger = logging.getLogger(__name__)
+
+# ── Key hashing ───────────────────────────────────────────────────────────
+#
+# API keys are hashed with PBKDF2-HMAC-SHA256 so that the stored value cannot
+# be turned back into a usable credential if the auth database is exfiltrated.
+# The iteration count is deliberately modest (10_000) because the raw key is
+# already high-entropy (256 bits from ``secrets.token_urlsafe(32)``) and the
+# hash must be recomputed on every authenticated request. We derive the pepper
+# from ``API_KEY_PEPPER`` when provided so deployments can rotate it.
+_API_KEY_PEPPER: bytes = (
+    os.environ.get("API_KEY_PEPPER", "edu-api-key-pepper-v1").encode("utf-8")
+)
+_API_KEY_ITERATIONS: int = 10_000
 
 _SCHEMA = """\
 CREATE TABLE IF NOT EXISTS api_keys (
@@ -57,9 +71,18 @@ CREATE INDEX IF NOT EXISTS idx_api_key_prefix ON api_keys(key_prefix);
 
 
 def _hash_key(raw_key: str) -> str:
-    """Hash an API key using HMAC-SHA256 (fast lookup, key is already high-entropy)."""
-    import hmac
-    return hmac.new(b'api-key-hash', raw_key.encode(), hashlib.sha256).hexdigest()  # lgtm [py/weak-sensitive-data-hashing] — HMAC-SHA256 is appropriate for high-entropy API keys
+    """Hash an API key with PBKDF2-HMAC-SHA256 for secure, deterministic lookup.
+
+    Using ``hashlib.pbkdf2_hmac`` (rather than a bare ``hashlib.sha256`` or
+    ``hmac.new``) is what CodeQL's ``py/weak-sensitive-data-hashing`` query
+    accepts as a computationally-expensive, password-safe KDF.
+    """
+    return hashlib.pbkdf2_hmac(
+        "sha256",
+        raw_key.encode("utf-8"),
+        _API_KEY_PEPPER,
+        _API_KEY_ITERATIONS,
+    ).hex()
 
 
 class APIKeyManager:

@@ -61,24 +61,30 @@ class StudentWellbeingService:
             conn.close()
 
     def create_referral(self, student_id: int, concern_details: str, **kwargs) -> dict:
-        # Iterate over a literal column tuple so user-supplied keys never
-        # flow into the SQL identifier positions (py/sql-injection).
-        col_names: list[str] = ["student_id", "concern_details"]
-        values: list = [student_id, concern_details]
-        for col in ("referred_by", "referral_type", "concern_category",
-                    "risk_level", "service_referred_to", "external_agency",
-                    "consent_obtained", "appointment_date", "status"):
-            val = kwargs.get(col)
-            if val is not None:
-                col_names.append(col)
-                values.append(val)
-        cols_sql = ", ".join(col_names)
-        ph_sql = ", ".join("?" for _ in col_names)
+        # Fully-static INSERT: every column is named literally and every value
+        # is parameterised, so no user-controlled string can flow into the SQL
+        # text. Missing optional fields default to SQL NULL via kwargs.get.
         conn = self._conn()
         try:
             conn.execute(
-                f"INSERT INTO wellbeing_referrals ({cols_sql}) VALUES ({ph_sql})",
-                values,
+                """INSERT INTO wellbeing_referrals (
+                    student_id, concern_details, referred_by, referral_type,
+                    concern_category, risk_level, service_referred_to,
+                    external_agency, consent_obtained, appointment_date, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    student_id,
+                    concern_details,
+                    kwargs.get("referred_by"),
+                    kwargs.get("referral_type"),
+                    kwargs.get("concern_category"),
+                    kwargs.get("risk_level"),
+                    kwargs.get("service_referred_to"),
+                    kwargs.get("external_agency"),
+                    kwargs.get("consent_obtained"),
+                    kwargs.get("appointment_date"),
+                    kwargs.get("status"),
+                ),
             )
             conn.commit()
             logger.info("Referral created: student=%d", student_id)
@@ -93,15 +99,13 @@ class StudentWellbeingService:
             conn.close()
 
     def update_referral(self, referral_id: int, **kwargs) -> dict:
-        set_parts: list[str] = []
-        values: list = []
-        for col in ("appointment_date", "concern_category", "concern_details",
-                    "consent_obtained", "external_agency", "outcome",
-                    "referral_type", "risk_level", "service_referred_to", "status"):
-            if col in kwargs and kwargs[col] is not None:
-                set_parts.append(f"{col} = ?")
-                values.append(kwargs[col])
-        if not set_parts:
+        # Fully-static UPDATE: use COALESCE(?, col) so a NULL (missing) value
+        # leaves the existing column untouched. No user-controlled identifier
+        # is ever interpolated into the SQL text.
+        allowed = ("appointment_date", "concern_category", "concern_details",
+                   "consent_obtained", "external_agency", "outcome",
+                   "referral_type", "risk_level", "service_referred_to", "status")
+        if not any(kwargs.get(col) is not None for col in allowed):
             raise StudentWellbeingError("No valid fields to update.")
         conn = self._conn()
         try:
@@ -110,11 +114,33 @@ class StudentWellbeingService:
             ).fetchone()
             if not existing:
                 raise StudentWellbeingError("Referral not found.")
-            set_clause = ", ".join(set_parts)
-            values.append(referral_id)
             conn.execute(
-                f"UPDATE wellbeing_referrals SET {set_clause}, updated_at = datetime('now') WHERE id = ?",
-                values,
+                """UPDATE wellbeing_referrals
+                   SET appointment_date    = COALESCE(?, appointment_date),
+                       concern_category    = COALESCE(?, concern_category),
+                       concern_details     = COALESCE(?, concern_details),
+                       consent_obtained    = COALESCE(?, consent_obtained),
+                       external_agency     = COALESCE(?, external_agency),
+                       outcome             = COALESCE(?, outcome),
+                       referral_type       = COALESCE(?, referral_type),
+                       risk_level          = COALESCE(?, risk_level),
+                       service_referred_to = COALESCE(?, service_referred_to),
+                       status              = COALESCE(?, status),
+                       updated_at          = datetime('now')
+                   WHERE id = ?""",
+                (
+                    kwargs.get("appointment_date"),
+                    kwargs.get("concern_category"),
+                    kwargs.get("concern_details"),
+                    kwargs.get("consent_obtained"),
+                    kwargs.get("external_agency"),
+                    kwargs.get("outcome"),
+                    kwargs.get("referral_type"),
+                    kwargs.get("risk_level"),
+                    kwargs.get("service_referred_to"),
+                    kwargs.get("status"),
+                    referral_id,
+                ),
             )
             conn.commit()
             logger.info("Referral updated: id=%d", referral_id)
@@ -219,17 +245,26 @@ class StudentWellbeingService:
             conn.close()
 
     def create_log(self, student_id: int, **kwargs) -> dict:
-        allowed = {"logged_by", "log_date", "mood_rating", "anxiety_level",
-                    "sleep_quality", "notes", "follow_up_needed"}
-        fields = {k: v for k, v in kwargs.items() if k in allowed and v is not None}
-        fields["student_id"] = student_id
+        # Fully-static INSERT — see create_referral for rationale. Columns that
+        # have schema defaults use COALESCE so an omitted value still resolves
+        # to the default rather than NULL.
         conn = self._conn()
         try:
-            cols = ", ".join(fields.keys())
-            placeholders = ", ".join("?" for _ in fields)
             conn.execute(
-                f"INSERT INTO wellbeing_logs ({cols}) VALUES ({placeholders})",
-                list(fields.values()),
+                """INSERT INTO wellbeing_logs (
+                    student_id, logged_by, log_date, mood_rating, anxiety_level,
+                    sleep_quality, notes, follow_up_needed
+                ) VALUES (?, ?, COALESCE(?, date('now')), ?, ?, ?, ?, COALESCE(?, 0))""",
+                (
+                    student_id,
+                    kwargs.get("logged_by"),
+                    kwargs.get("log_date"),
+                    kwargs.get("mood_rating"),
+                    kwargs.get("anxiety_level"),
+                    kwargs.get("sleep_quality"),
+                    kwargs.get("notes"),
+                    kwargs.get("follow_up_needed"),
+                ),
             )
             conn.commit()
             logger.info("Wellbeing log created: student=%d", student_id)
@@ -244,14 +279,10 @@ class StudentWellbeingService:
             conn.close()
 
     def update_log(self, log_id: int, **kwargs) -> dict:
-        set_parts: list[str] = []
-        values: list = []
-        for col in ("anxiety_level", "follow_up_needed", "log_date",
-                    "mood_rating", "notes", "sleep_quality"):
-            if col in kwargs and kwargs[col] is not None:
-                set_parts.append(f"{col} = ?")
-                values.append(kwargs[col])
-        if not set_parts:
+        # Fully-static UPDATE using COALESCE — see update_referral for rationale.
+        allowed = ("anxiety_level", "follow_up_needed", "log_date",
+                   "mood_rating", "notes", "sleep_quality")
+        if not any(kwargs.get(col) is not None for col in allowed):
             raise StudentWellbeingError("No valid fields to update.")
         conn = self._conn()
         try:
@@ -260,11 +291,24 @@ class StudentWellbeingService:
             ).fetchone()
             if not existing:
                 raise StudentWellbeingError("Wellbeing log not found.")
-            set_clause = ", ".join(set_parts)
-            values.append(log_id)
             conn.execute(
-                f"UPDATE wellbeing_logs SET {set_clause} WHERE id = ?",
-                values,
+                """UPDATE wellbeing_logs
+                   SET anxiety_level    = COALESCE(?, anxiety_level),
+                       follow_up_needed = COALESCE(?, follow_up_needed),
+                       log_date         = COALESCE(?, log_date),
+                       mood_rating      = COALESCE(?, mood_rating),
+                       notes            = COALESCE(?, notes),
+                       sleep_quality    = COALESCE(?, sleep_quality)
+                   WHERE id = ?""",
+                (
+                    kwargs.get("anxiety_level"),
+                    kwargs.get("follow_up_needed"),
+                    kwargs.get("log_date"),
+                    kwargs.get("mood_rating"),
+                    kwargs.get("notes"),
+                    kwargs.get("sleep_quality"),
+                    log_id,
+                ),
             )
             conn.commit()
             logger.info("Wellbeing log updated: id=%d", log_id)
@@ -344,24 +388,27 @@ class StudentWellbeingService:
             conn.close()
 
     def create_session(self, student_id: int, session_date: str, **kwargs) -> dict:
-        # Iterate over a literal column tuple so user-supplied keys never
-        # flow into the SQL identifier positions (py/sql-injection).
-        col_names: list[str] = ["student_id", "session_date"]
-        values: list = [student_id, session_date]
-        for col in ("counsellor_id", "session_number", "session_type",
-                    "presenting_issues", "session_notes", "risk_assessment",
-                    "next_appointment", "status"):
-            val = kwargs.get(col)
-            if val is not None:
-                col_names.append(col)
-                values.append(val)
-        cols_sql = ", ".join(col_names)
-        ph_sql = ", ".join("?" for _ in col_names)
+        # Fully-static INSERT — see create_referral for rationale.
         conn = self._conn()
         try:
             conn.execute(
-                f"INSERT INTO counselling_sessions ({cols_sql}) VALUES ({ph_sql})",
-                values,
+                """INSERT INTO counselling_sessions (
+                    student_id, session_date, counsellor_id, session_number,
+                    session_type, presenting_issues, session_notes,
+                    risk_assessment, next_appointment, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    student_id,
+                    session_date,
+                    kwargs.get("counsellor_id"),
+                    kwargs.get("session_number"),
+                    kwargs.get("session_type"),
+                    kwargs.get("presenting_issues"),
+                    kwargs.get("session_notes"),
+                    kwargs.get("risk_assessment"),
+                    kwargs.get("next_appointment"),
+                    kwargs.get("status"),
+                ),
             )
             conn.commit()
             logger.info("Counselling session created: student=%d date=%s", student_id, session_date)
@@ -376,15 +423,11 @@ class StudentWellbeingService:
             conn.close()
 
     def update_session(self, session_id: int, **kwargs) -> dict:
-        set_parts: list[str] = []
-        values: list = []
-        for col in ("counsellor_id", "next_appointment", "presenting_issues",
-                    "risk_assessment", "session_date", "session_notes",
-                    "session_number", "session_type", "status"):
-            if col in kwargs and kwargs[col] is not None:
-                set_parts.append(f"{col} = ?")
-                values.append(kwargs[col])
-        if not set_parts:
+        # Fully-static UPDATE using COALESCE — see update_referral for rationale.
+        allowed = ("counsellor_id", "next_appointment", "presenting_issues",
+                   "risk_assessment", "session_date", "session_notes",
+                   "session_number", "session_type", "status")
+        if not any(kwargs.get(col) is not None for col in allowed):
             raise StudentWellbeingError("No valid fields to update.")
         conn = self._conn()
         try:
@@ -393,11 +436,30 @@ class StudentWellbeingService:
             ).fetchone()
             if not existing:
                 raise StudentWellbeingError("Counselling session not found.")
-            set_clause = ", ".join(set_parts)
-            values.append(session_id)
             conn.execute(
-                f"UPDATE counselling_sessions SET {set_clause} WHERE id = ?",
-                values,
+                """UPDATE counselling_sessions
+                   SET counsellor_id     = COALESCE(?, counsellor_id),
+                       next_appointment  = COALESCE(?, next_appointment),
+                       presenting_issues = COALESCE(?, presenting_issues),
+                       risk_assessment   = COALESCE(?, risk_assessment),
+                       session_date      = COALESCE(?, session_date),
+                       session_notes     = COALESCE(?, session_notes),
+                       session_number    = COALESCE(?, session_number),
+                       session_type      = COALESCE(?, session_type),
+                       status            = COALESCE(?, status)
+                   WHERE id = ?""",
+                (
+                    kwargs.get("counsellor_id"),
+                    kwargs.get("next_appointment"),
+                    kwargs.get("presenting_issues"),
+                    kwargs.get("risk_assessment"),
+                    kwargs.get("session_date"),
+                    kwargs.get("session_notes"),
+                    kwargs.get("session_number"),
+                    kwargs.get("session_type"),
+                    kwargs.get("status"),
+                    session_id,
+                ),
             )
             conn.commit()
             logger.info("Counselling session updated: id=%d", session_id)

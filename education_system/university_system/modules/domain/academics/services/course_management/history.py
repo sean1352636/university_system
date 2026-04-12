@@ -13,6 +13,7 @@ def view_course_history(auth):
         print("You don't have permission to view course history.")
         return
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -33,7 +34,6 @@ def view_course_history(auth):
 
                 if not course_info:
                     print("Course not found.")
-                    conn.close()
                     return
 
                 print(f"\nHistory for {course_info[0]} - {course_info[1]}:")
@@ -51,7 +51,6 @@ def view_course_history(auth):
 
                 if not history:
                     print("No history found for this course.")
-                    conn.close()
                     return
 
                 print(f"{'Date/Time':<20} {'Field':<20} {'Old Value':<20} {'New Value':<20} {'Changed By':<15}")
@@ -65,7 +64,6 @@ def view_course_history(auth):
 
             except ValueError:
                 print("Invalid course ID.")
-                conn.close()
                 return
 
         else:
@@ -86,7 +84,6 @@ def view_course_history(auth):
 
             if not recent_changes:
                 print("No history found.")
-                conn.close()
                 return
 
             print(f"{'Course':<12} {'Field':<15} {'Old Value':<15} {'New Value':<15} {'User':<12} {'Date':<12}")
@@ -131,9 +128,8 @@ def view_course_history(auth):
         for field, count in field_stats:
             print(f"  {field}: {count} changes")
 
-        conn.close()
-
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
+    finally:
+        if conn:
             conn.close()

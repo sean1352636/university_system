@@ -106,7 +106,7 @@ def display_student_union_menu():
             return
         elif choice == '19':
             # Sync Academic Calendar
-            manager = AcademicCalendarManager()
+            manager = AcademicCalendarManager(auth_manager=ctx.auth)
             ical_url = input(get_text("student_union.menu.calendar_url_prompt")).strip()
             manager.calendar_sync(ical_url)
             print(get_text("student_union.menu.sync_done"))

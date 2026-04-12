@@ -948,7 +948,7 @@ def display_student_union_menu():
             return
         elif choice == '20':
             # Sync Academic Calendar
-            manager = AcademicCalendarManager()
+            manager = AcademicCalendarManager(auth_manager=auth)
             ical_url = input(get_text('union.prompt.ical_url', default="Academic calendar iCal URL: ")).strip()
             manager.calendar_sync(ical_url)
             print(get_text('union.sync_done', default="Done syncing. Check your calendar for any conflicts or upcoming deadlines."))

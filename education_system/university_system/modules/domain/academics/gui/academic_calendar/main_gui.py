@@ -43,6 +43,29 @@ except ImportError:
     _current_auth_instance = None
     CENTRAL_AUTH_AVAILABLE = False
 
+# Import trip management GUI
+try:
+    from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
+    from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.trip_dialogs import (
+        TripDetailsDialog, CreateTripDialog, TripSelectionDialog
+    )
+    from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.registration_dialogs import (
+        RegisterForTripDialog
+    )
+    from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.calendar_dialogs import (
+        CreateCalendarEventDialog
+    )
+    TRIP_GUI_AVAILABLE = True
+except ImportError:
+    TRIP_GUI_AVAILABLE = False
+
+# Import trip management service for trip-calendar links
+try:
+    from education_system.university_system.modules.domain.mobility.services import trip_management
+    TRIP_MANAGEMENT_AVAILABLE = True
+except ImportError:
+    TRIP_MANAGEMENT_AVAILABLE = False
+
 # Import activity logger for audit trail
 try:
     from education_system.university_system.modules.shared.utils.activity_logger import log_activity
@@ -445,6 +468,15 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
             (_("academic_calendar.nav.settings"), self._show_settings),
         ]
 
+        # Add trip management buttons if available
+        if TRIP_GUI_AVAILABLE:
+            nav_buttons.append(
+                (_("academic_calendar.nav.trip_manager", default="\U0001f3d5 Trip Manager"), self._open_trip_manager))
+            nav_buttons.append(
+                (_("academic_calendar.nav.trip_calendar_event", default="\U0001f517 Trip Calendar Event"), self._create_trip_calendar_event))
+            nav_buttons.append(
+                (_("academic_calendar.nav.trip_links", default="\U0001f4cb Trip-Calendar Links"), self._view_trip_calendar_links))
+
         # Add buttons if user has permissions
         if self.auth_manager and self.auth_manager.current_user:
             for text, command in nav_buttons:
@@ -553,6 +585,22 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
             resources_menu.add_command(label=_("academic_calendar.menu.manage_resources"), command=self._show_resource_management)
             resources_menu.add_command(label=_("academic_calendar.menu.manage_courses"), command=self._show_course_management)
             resources_menu.add_command(label=_("academic_calendar.menu.project_milestones"), command=self._show_project_milestones)
+
+        # Trips menu (if trip management GUI is available)
+        if TRIP_GUI_AVAILABLE:
+            trips_menu = tk.Menu(menubar, tearoff=0)
+            menubar.add_cascade(label=_("academic_calendar.menu.trips", default="Trips"), menu=trips_menu)
+            trips_menu.add_command(
+                label=_("academic_calendar.menu.open_trip_manager", default="Open Trip Manager"),
+                command=self._open_trip_manager)
+            trips_menu.add_separator()
+            if is_admin or is_staff:
+                trips_menu.add_command(
+                    label=_("academic_calendar.menu.create_trip_event", default="Create Calendar Event for Trip"),
+                    command=self._create_trip_calendar_event)
+            trips_menu.add_command(
+                label=_("academic_calendar.menu.view_trip_links", default="View Trip-Calendar Links"),
+                command=self._view_trip_calendar_links)
 
         # View menu
         view_menu = tk.Menu(menubar, tearoff=0)

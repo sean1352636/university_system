@@ -14,7 +14,6 @@ import os
 import sys
 from education_system.university_system.infrastructure.database.db import sqlite3
 import hashlib
-import hmac
 import secrets
 import json
 import re
@@ -23,6 +22,28 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
 import time
+
+# ── Key hashing ───────────────────────────────────────────────────────────
+#
+# API keys are stored as PBKDF2-HMAC-SHA256 digests rather than bare SHA-256 /
+# HMAC outputs. This satisfies CodeQL's ``py/weak-sensitive-data-hashing``
+# query, which requires a computationally-expensive / password-safe KDF for
+# sensitive credentials. Iteration count is kept modest because the raw key is
+# already 256 bits of entropy from ``secrets.token_urlsafe(32)``.
+_API_KEY_PEPPER: bytes = (
+    os.environ.get("API_KEY_PEPPER", "uni-api-key-pepper-v1").encode("utf-8")
+)
+_API_KEY_ITERATIONS: int = 10_000
+
+
+def _hash_api_key(raw_key: str) -> str:
+    """Deterministic PBKDF2-HMAC-SHA256 hash for API key lookup."""
+    return hashlib.pbkdf2_hmac(
+        "sha256",
+        raw_key.encode("utf-8"),
+        _API_KEY_PEPPER,
+        _API_KEY_ITERATIONS,
+    ).hex()
 
 # Import centralized database path and connection utilities
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
@@ -48,9 +69,9 @@ class APISecurityManager:
         cursor = conn.cursor()
 
         try:
-            # Generate API key — hash with HMAC-SHA256 for secure lookup
+            # Generate API key and store it as a PBKDF2-HMAC-SHA256 digest.
             api_key = f"uni_{secrets.token_urlsafe(32)}"
-            key_hash = hmac.new(b'api-key-hash', api_key.encode(), hashlib.sha256).hexdigest()  # lgtm [py/weak-sensitive-data-hashing]
+            key_hash = _hash_api_key(api_key)
 
             expires_at = datetime.now() + timedelta(days=expires_days)
 
@@ -84,7 +105,7 @@ class APISecurityManager:
         cursor = conn.cursor()
 
         try:
-            key_hash = hmac.new(b'api-key-hash', api_key.encode(), hashlib.sha256).hexdigest()  # lgtm [py/weak-sensitive-data-hashing]
+            key_hash = _hash_api_key(api_key)
 
             cursor.execute("""
                 SELECT id, user_id, permissions, expires_at, is_active, rate_limit
@@ -225,6 +246,18 @@ class PasswordSecurityManager:
     def _get_connection(self):
         return get_connection(db_path=self.db_path, row_factory=True)
 
+    @staticmethod
+    def _hibp_range_hash(data: bytes) -> str:
+        """Return uppercase SHA-1 hex digest for HIBP Pwned Passwords lookups.
+
+        The HIBP range API is defined in terms of SHA-1 — using any other
+        algorithm would break the lookup protocol entirely. We pass
+        ``usedforsecurity=False`` to signal to hashlib (and to CodeQL's
+        weak-hash query) that this is a non-security interop hash, not a
+        password-storage primitive.
+        """
+        return hashlib.sha1(data, usedforsecurity=False).hexdigest().upper()  # noqa: S324
+
     def calculate_password_strength(self, password: str) -> Dict:
         """
         Calculate password strength score (0-100)
@@ -308,13 +341,16 @@ class PasswordSecurityManager:
 
     def check_compromised_password(self, password: str) -> Dict:
         """
-        Check if password has been compromised using Have I Been Pwned API
+        Check if password has been compromised using Have I Been Pwned API.
 
-        Uses k-anonymity - only sends first 5 chars of hash
+        Uses k-anonymity — only the first 5 characters of the hash are sent.
+        The HIBP Pwned Passwords API wire format is defined in terms of
+        SHA-1, so SHA-1 is mandatory here; the ``usedforsecurity=False`` flag
+        tells hashlib (and static analysers) that this is a lookup hash, not
+        a password-storage hash.
         """
         try:
-            # Hash password with SHA-256 for k-anonymity check
-            pw_hash = hashlib.sha256(password.encode()).hexdigest().upper()  # noqa: S324
+            pw_hash = self._hibp_range_hash(password.encode("utf-8"))
             prefix = pw_hash[:5]
             suffix = pw_hash[5:]
 

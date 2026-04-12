@@ -9,6 +9,7 @@ def recommend_courses(auth):
         print("You must be logged in to get recommendations.")
         return
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -24,7 +25,7 @@ def recommend_courses(auth):
             SELECT course_code, course_name, current_enrollment,
                    ROUND(CAST(current_enrollment AS FLOAT) / max_enrollment * 100, 1) as popularity
             FROM courses
-            WHERE status = 'Active' AND max_enrollment > 0
+            WHERE LOWER(status) = 'active' AND max_enrollment > 0
             ORDER BY current_enrollment DESC, popularity DESC
             LIMIT 10
             """)
@@ -42,7 +43,7 @@ def recommend_courses(auth):
             SELECT course_code, course_name, current_enrollment, max_enrollment,
                    (max_enrollment - current_enrollment) as available_spots
             FROM courses
-            WHERE status = 'Active' AND current_enrollment < max_enrollment
+            WHERE LOWER(status) = 'active' AND current_enrollment < max_enrollment
             ORDER BY available_spots DESC, course_code
             """)
 
@@ -59,14 +60,19 @@ def recommend_courses(auth):
             courses = cursor.fetchall()
 
             print("\nAvailable Courses:")
-            for course in courses[:10]:  # Show first 10
-                print(f"{course[0]}. {course[1]} - {course[2]}")
+            for i, course in enumerate(courses[:10], 1):  # Show first 10
+                print(f"{i}. {course[1]} - {course[2]}")
 
             if len(courses) > 10:
                 print("... and more")
 
             try:
-                target_course_id = int(input("\nEnter course ID to see prerequisites: "))
+                choice_num = int(input("\nEnter course number to see prerequisites: "))
+                if 1 <= choice_num <= len(courses[:10]):
+                    target_course_id = courses[choice_num - 1][0]
+                else:
+                    print("Invalid course number.")
+                    return
 
                 cursor.execute("""
                 SELECT c1.course_code, c1.course_name, c2.course_code, c2.course_name, cp.is_required
@@ -88,16 +94,15 @@ def recommend_courses(auth):
                 else:
                     print("No prerequisites found for this course.")
             except ValueError:
-                print("Invalid course ID.")
+                print("Invalid course number.")
 
         else:
             print("Invalid choice.")
 
-        conn.close()
-
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
+    finally:
+        if conn:
             conn.close()
 
 
@@ -112,6 +117,7 @@ def find_alternative_courses(auth):
         print("You don't have permission to view courses.")
         return
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -120,29 +126,35 @@ def find_alternative_courses(auth):
         print("=======================")
 
         # Show courses for reference
-        cursor.execute("SELECT id, course_code, course_name, department, level FROM courses WHERE status = 'Active' ORDER BY course_code")
+        cursor.execute("SELECT id, course_code, course_name, department, level FROM courses WHERE LOWER(status) = 'active' ORDER BY course_code")
         courses = cursor.fetchall()
 
         if not courses:
             print("No active courses found.")
-            conn.close()
             return
 
+        displayed = courses[:20]
         print("\nActive Courses:")
-        for i, course in enumerate(courses[:20]):  # Show first 20
-            print(f"{course[0]}. {course[1]} - {course[2]} ({course[3]}, {course[4]})")
+        for i, course in enumerate(displayed, 1):
+            print(f"{i}. {course[1]} - {course[2]} ({course[3]}, {course[4]})")
 
         if len(courses) > 20:
             print("... and more")
 
         # Get reference course
         while True:
-            ref_course_id = input("\nEnter course ID to find alternatives for: ").strip()
-            # Match by string comparison since IDs can be text or numeric
-            ref_course = next((c for c in courses if str(c[0]) == ref_course_id), None)
-            if ref_course:
+            ref_input = input("\nEnter course number to find alternatives for (or press Enter to go back): ").strip()
+            if not ref_input:
+                return
+            try:
+                ref_num = int(ref_input)
+            except ValueError:
+                print("Invalid course number.")
+                continue
+            if 1 <= ref_num <= len(displayed):
+                ref_course = displayed[ref_num - 1]
                 break
-            print("Invalid course ID.")
+            print("Invalid course number.")
 
         ref_id, ref_code, ref_name, ref_dept, ref_level = ref_course
 
@@ -157,9 +169,9 @@ def find_alternative_courses(auth):
         SELECT id, course_code, course_name, department, level, current_enrollment, max_enrollment,
                'Same Dept & Level' as match_type
         FROM courses
-        WHERE department = ? AND level = ? AND id != ? AND status = 'Active'
+        WHERE department = ? AND level = ? AND id != ? AND LOWER(status) = 'active'
         ORDER BY course_name
-        """, (ref_dept, ref_level, ref_course_id))
+        """, (ref_dept, ref_level, ref_id))
 
         alternatives.extend(cursor.fetchall())
 
@@ -168,9 +180,9 @@ def find_alternative_courses(auth):
         SELECT id, course_code, course_name, department, level, current_enrollment, max_enrollment,
                'Same Department' as match_type
         FROM courses
-        WHERE department = ? AND level != ? AND id != ? AND status = 'Active'
+        WHERE department = ? AND level != ? AND id != ? AND LOWER(status) = 'active'
         ORDER BY course_name
-        """, (ref_dept, ref_level, ref_course_id))
+        """, (ref_dept, ref_level, ref_id))
 
         alternatives.extend(cursor.fetchall())
 
@@ -179,30 +191,30 @@ def find_alternative_courses(auth):
         SELECT id, course_code, course_name, department, level, current_enrollment, max_enrollment,
                'Same Level' as match_type
         FROM courses
-        WHERE level = ? AND department != ? AND id != ? AND status = 'Active'
+        WHERE level = ? AND department != ? AND id != ? AND LOWER(status) = 'active'
         ORDER BY course_name
-        """, (ref_level, ref_dept, ref_course_id))
+        """, (ref_level, ref_dept, ref_id))
 
         alternatives.extend(cursor.fetchall())
 
         # 4. Similar credit hours
-        cursor.execute("SELECT credit_hours FROM courses WHERE id = ?", (ref_course_id,))
-        ref_credits = cursor.fetchone()[0] if cursor.fetchone() else 3.0
+        cursor.execute("SELECT credit_hours FROM courses WHERE id = ?", (ref_id,))
+        _credits_row = cursor.fetchone()
+        ref_credits = _credits_row[0] if _credits_row else 3.0
 
         cursor.execute("""
         SELECT id, course_code, course_name, department, level, current_enrollment, max_enrollment,
                'Similar Credits' as match_type
         FROM courses
-        WHERE credit_hours = ? AND id != ? AND status = 'Active'
+        WHERE credit_hours = ? AND id != ? AND LOWER(status) = 'active'
           AND NOT (department = ? AND level = ?)
         ORDER BY course_name
-        """, (ref_credits, ref_course_id, ref_dept, ref_level))
+        """, (ref_credits, ref_id, ref_dept, ref_level))
 
         alternatives.extend(cursor.fetchall())
 
         if not alternatives:
             print("No alternative courses found.")
-            conn.close()
             return
 
         # Remove duplicates while preserving order
@@ -234,7 +246,7 @@ def find_alternative_courses(auth):
                 print("-" * 30)
 
                 # Get detailed info for both courses
-                cursor.execute("SELECT * FROM courses WHERE id = ?", (ref_course_id,))
+                cursor.execute("SELECT * FROM courses WHERE id = ?", (ref_id,))
                 ref_details = cursor.fetchone()
 
                 cursor.execute("SELECT * FROM courses WHERE id = ?", (alt_course[0],))
@@ -262,9 +274,8 @@ def find_alternative_courses(auth):
             else:
                 print("Course code not found in alternatives.")
 
-        conn.close()
-
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
+    finally:
+        if conn:
             conn.close()

@@ -18,6 +18,7 @@ def add_to_waitlist(auth):
         print("You don't have permission to manage waitlists.")
         return False
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -26,7 +27,7 @@ def add_to_waitlist(auth):
         cursor.execute("""
         SELECT id, course_code, course_name, current_enrollment, max_enrollment
         FROM courses
-        WHERE current_enrollment >= max_enrollment AND status = 'Active'
+        WHERE current_enrollment >= max_enrollment AND LOWER(status) = 'active'
         ORDER BY course_code
         """)
 
@@ -34,20 +35,23 @@ def add_to_waitlist(auth):
 
         if not full_courses:
             print("No full courses found.")
-            conn.close()
             return False
 
         print("\nFull Courses Available for Waitlist:")
-        for course in full_courses:
-            print(f"{course[0]}. {course[1]} - {course[2]} ({course[3]}/{course[4]})")
+        for idx, course in enumerate(full_courses, 1):
+            print(f"{idx}. {course[1]} - {course[2]} ({course[3]}/{course[4]})")
 
         # Select course
         while True:
+            choice = input("\nEnter course number (or press Enter to go back): ").strip()
+            if not choice:
+                return False
             try:
-                course_id = int(input("\nEnter course ID: "))
-                if any(c[0] == course_id for c in full_courses):
+                idx = int(choice)
+                if 1 <= idx <= len(full_courses):
+                    course_id = full_courses[idx - 1][0]
                     break
-                print("Invalid course ID.")
+                print("Invalid course number.")
             except ValueError:
                 print("Please enter a valid number.")
 
@@ -61,7 +65,6 @@ def add_to_waitlist(auth):
                       (course_id, student_id))
         if cursor.fetchone():
             print("Student is already on the waitlist for this course.")
-            conn.close()
             return False
 
         # Get next position
@@ -77,16 +80,16 @@ def add_to_waitlist(auth):
         ''', (course_id, student_id, position, timestamp))
 
         conn.commit()
-        conn.close()
 
         print(f"\nStudent {student_id} added to waitlist at position {position}.")
         return True
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
-            conn.close()
         return False
+    finally:
+        if conn:
+            conn.close()
 
 
 @log_read(module="course_management", description="Viewing course waitlists")
@@ -96,6 +99,7 @@ def view_waitlists(auth):
         print("You must be logged in to view waitlists.")
         return
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -144,11 +148,10 @@ def view_waitlists(auth):
             else:
                 print("No waitlists found in the system.")
 
-        conn.close()
-
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
+    finally:
+        if conn:
             conn.close()
 
 
@@ -163,6 +166,7 @@ def process_waitlist(auth):
         print("You don't have permission to process waitlists.")
         return False
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -174,7 +178,7 @@ def process_waitlist(auth):
                COUNT(w.id) as waitlist_count
         FROM courses c
         LEFT JOIN course_waitlist w ON c.id = w.course_id AND w.status = 'Waiting'
-        WHERE c.status = 'Active' AND c.current_enrollment < c.max_enrollment
+        WHERE LOWER(c.status) = 'active' AND c.current_enrollment < c.max_enrollment
         GROUP BY c.id, c.course_code, c.course_name, c.current_enrollment, c.max_enrollment
         HAVING waitlist_count > 0
         ORDER BY available_spots DESC, waitlist_count DESC
@@ -184,29 +188,31 @@ def process_waitlist(auth):
 
         if not courses_with_waitlists:
             print("No courses with available spots and waitlists found.")
-            conn.close()
             return False
 
         print("\nCourses with Available Spots and Waitlists:")
-        print(f"{'ID':<5} {'Code':<8} {'Name':<25} {'Enrolled':<10} {'Available':<10} {'Waitlist':<10}")
+        print(f"{'#':<5} {'Code':<8} {'Name':<25} {'Enrolled':<10} {'Available':<10} {'Waitlist':<10}")
         print("-" * 68)
 
-        for course in courses_with_waitlists:
+        for idx, course in enumerate(courses_with_waitlists, 1):
             enrollment_str = f"{course[3]}/{course[4]}"
-            print(f"{course[0]:<5} {course[1]:<8} {course[2]:<25} {enrollment_str:<10} {course[5]:<10} {course[6]:<10}")
+            print(f"{idx:<5} {course[1]:<8} {course[2]:<25} {enrollment_str:<10} {course[5]:<10} {course[6]:<10}")
 
         # Select course to process
         while True:
+            choice = input("\nEnter course number to process waitlist (0 for all, or press Enter to go back): ").strip()
+            if not choice:
+                return False
             try:
-                course_id = int(input("\nEnter course ID to process waitlist (0 to process all): "))
-                if course_id == 0:
+                choice_num = int(choice)
+                if choice_num == 0:
                     selected_courses = courses_with_waitlists
                     break
-                elif any(c[0] == course_id for c in courses_with_waitlists):
-                    selected_courses = [c for c in courses_with_waitlists if c[0] == course_id]
+                elif 1 <= choice_num <= len(courses_with_waitlists):
+                    selected_courses = [courses_with_waitlists[choice_num - 1]]
                     break
                 else:
-                    print("Invalid course ID.")
+                    print("Invalid course number.")
             except ValueError:
                 print("Please enter a valid number.")
 
@@ -263,7 +269,6 @@ def process_waitlist(auth):
             """, (len(waitlist_students), course_id))
 
         conn.commit()
-        conn.close()
 
         print(f"\nWaitlist processing completed!")
         print(f"Total students enrolled: {total_processed}")
@@ -271,6 +276,7 @@ def process_waitlist(auth):
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
-            conn.close()
         return False
+    finally:
+        if conn:
+            conn.close()

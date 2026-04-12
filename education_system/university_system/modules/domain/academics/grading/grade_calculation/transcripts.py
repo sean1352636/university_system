@@ -82,7 +82,8 @@ def generate_transcript():
         assessment_grades = cursor.fetchall()
 
         # Create the exports directory if it doesn't exist
-        exports_dir = 'transcripts'
+        exports_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', '..', 'data', 'transcripts')
+        exports_dir = os.path.normpath(exports_dir)
         if not os.path.exists(exports_dir):
             os.makedirs(exports_dir)
 
@@ -165,7 +166,7 @@ def create_transcript_pdf(filename, student_id, first_name, middle_name, last_na
             ['ID:', student_id],
             ['Course:', course],
             ['Email:', email],
-            ['Gender:', gender.capitalize()],
+            ['Gender:', gender.capitalize() if gender else "N/A"],
             ['Date of Birth:', dob],
             ['GPA:', f"{gpa:.2f}" if gpa else "N/A"],
             ['Credits Completed:', str(credits)]

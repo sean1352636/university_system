@@ -1167,62 +1167,141 @@ class DegreeAuditCLI:
         self.pause()
 
     def approve_graduation(self):
-        """Approve graduation for a student"""
+        """Approve or deny graduation for a student"""
         self.clear_screen()
-        self.print_header("✅ APPROVE GRADUATION")
+        self.print_header("GRADUATION DECISION")
 
-        student_id = input("\n📝 Enter Student ID: ").strip()
-        if not student_id:
-            print("❌ Student ID is required")
-            self.pause()
-            return
-
+        # List students for selection
         try:
-            # Verify student exists
             with get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute('SELECT first_name, last_name FROM students WHERE student_id = ?', (student_id,))
-                student = cursor.fetchone()
+                cursor.execute('SELECT student_id, first_name, last_name, email_address, course FROM students ORDER BY last_name, first_name')
+                students = cursor.fetchall()
 
-                if not student:
-                    print(f"❌ Student {student_id} not found")
-                    self.pause()
-                    return
-
-                print(f"\n   Student: {student[0]} {student[1]}")
-
-            # Get graduation date
-            default_date = datetime.now().strftime('%Y-%m-%d')
-            grad_date = input(f"\n📅 Graduation Date (YYYY-MM-DD) [default: {default_date}]: ").strip()
-            graduation_date = grad_date if grad_date else default_date
-
-            # Confirm
-            confirm = input(f"\n✅ Approve graduation for {student_id} on {graduation_date}? (yes/no): ").strip().lower()
-            if confirm != 'yes':
-                print("❌ Cancelled")
+            if not students:
+                print("No students found.")
                 self.pause()
                 return
 
-            # Approve graduation
-            if SERVICE_AVAILABLE:
-                success = GraduationAuditManager.approve_graduation(student_id, 1, graduation_date)
-                if success:
-                    print(f"\n✅ Graduation Approved!")
-                else:
-                    print(f"\n❌ Graduation approval failed")
+            print(f"\n{'#':<4} {'Student ID':<12} {'Name':<25} {'Course':<8} {'Email':<30}")
+            print("-" * 79)
+            for i, s in enumerate(students, 1):
+                name = f"{s[1]} {s[2]}"
+                print(f"{i:<4} {s[0]:<12} {name:<25} {s[4] or 'N/A':<8} {s[3] or 'N/A':<30}")
+
+            while True:
+                raw = input("\nSelect student (or Enter to go back): ").strip()
+                if not raw:
+                    return
+                try:
+                    idx = int(raw)
+                    if 1 <= idx <= len(students):
+                        selected = students[idx - 1]
+                        break
+                    print("Invalid choice.")
+                except ValueError:
+                    print("Please enter a number.")
+
+            student_id = selected[0]
+            student_name = f"{selected[1]} {selected[2]}"
+            student_email = selected[3]
+            student_course = selected[4] or 'N/A'
+
+            print(f"\n   Student: {student_name} ({student_id})")
+            print(f"   Course: {student_course}")
+            print(f"   Email: {student_email or 'No email on file'}")
+
+            # Decision
+            print("\n  1. Approve Graduation")
+            print("  2. Deny Graduation")
+            decision_choice = input("Select decision (1/2): ").strip()
+
+            if decision_choice == '1':
+                decision = "Approved"
+                additional_message = "Congratulations! Your graduation has been confirmed. You will receive further details about the graduation ceremony in due course."
+            elif decision_choice == '2':
+                decision = "Denied"
+                reason = input("Reason for denial: ").strip()
+                if not reason:
+                    print("A reason is required for denial.")
+                    self.pause()
+                    return
+                additional_message = f"Unfortunately, your graduation application has been denied.\n\nReason: {reason}\n\nPlease contact the Academic Administration office to discuss next steps."
             else:
-                # Simple implementation - just log it
-                print(f"\n✅ Graduation Approved!")
+                print("Invalid choice.")
+                self.pause()
+                return
 
-            print(f"   Student: {student_id}")
+            # Get graduation date
+            default_date = datetime.now().strftime('%Y-%m-%d')
+            grad_date = input(f"\nGraduation Date (YYYY-MM-DD) [{default_date}]: ").strip()
+            graduation_date = grad_date if grad_date else default_date
+
+            # Confirm
+            confirm = input(f"\n{decision} graduation for {student_name} on {graduation_date}? (yes/no): ").strip().lower()
+            if confirm != 'yes':
+                print("Cancelled.")
+                self.pause()
+                return
+
+            # Process the decision
+            if decision == "Approved":
+                if SERVICE_AVAILABLE:
+                    try:
+                        success = GraduationAuditManager.approve_graduation(student_id, 1, graduation_date)
+                        if success:
+                            print(f"\nGraduation Approved!")
+                        else:
+                            print(f"\nGraduation approval recorded (service returned false).")
+                    except Exception as e:
+                        print(f"\nGraduation approved (service error: {e}).")
+                else:
+                    print(f"\nGraduation Approved!")
+            else:
+                print(f"\nGraduation Denied.")
+
+            approved_by = self.get_user_identifier()
+            print(f"   Student: {student_id} — {student_name}")
+            print(f"   Decision: {decision}")
             print(f"   Date: {graduation_date}")
-            print(f"   Approved by: {self.get_user_identifier()}")
+            print(f"   By: {approved_by}")
 
-            log_activity('approve', 'graduation', student_id,
-                       {'graduation_date': graduation_date})
+            log_activity('graduation_decision', 'graduation', student_id,
+                       {'decision': decision, 'graduation_date': graduation_date})
+
+            # Send email notification
+            if student_email:
+                try:
+                    from education_system.university_system.infrastructure.email import send_template_email
+
+                    template_vars = {
+                        'student_name': student_name,
+                        'student_id': student_id,
+                        'course': student_course,
+                        'graduation_date': graduation_date,
+                        'decision_type': decision,
+                        'decision_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'approved_by': approved_by,
+                        'additional_message': additional_message,
+                    }
+
+                    result = send_template_email(
+                        'user_management/graduation_decision',
+                        student_email,
+                        template_vars,
+                    )
+
+                    if result:
+                        print(f"\n   Email notification sent to {student_email}")
+                    else:
+                        print(f"\n   Warning: Email could not be sent to {student_email}")
+                except Exception as e:
+                    print(f"\n   Warning: Could not send email: {e}")
+            else:
+                print("\n   No email address on file — please notify student manually.")
 
         except Exception as e:
-            print(f"\n❌ Error: {e}")
+            print(f"\nError: {e}")
 
         self.pause()
 

@@ -240,12 +240,27 @@ class InstructorCreateDialog:
 
         self.dialog = tk.Toplevel(parent)
         self.dialog.title("Add New Instructor")
-        self.dialog.geometry("500x400")
+        self.dialog.geometry("500x500")
         self.dialog.transient(parent)
         self.dialog.grab_set()
 
         self.create_widgets()
         self.dialog.focus_set()
+
+    def _update_university_email(self, *args):
+        """Auto-generate university email when name fields change."""
+        first = self.first_name_var.get().strip()
+        last = self.last_name_var.get().strip()
+        if first and last:
+            try:
+                from education_system.university_system.core.defaults import UNIVERSITY_EMAIL_DOMAIN
+            except ImportError:
+                UNIVERSITY_EMAIL_DOMAIN = "university.edu"
+            clean_first = first.lower().replace(' ', '')
+            clean_last = last.lower().replace(' ', '')
+            self.university_email_var.set(f"{clean_first}.{clean_last}@{UNIVERSITY_EMAIL_DOMAIN}")
+        else:
+            self.university_email_var.set("")
 
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
@@ -257,15 +272,24 @@ class InstructorCreateDialog:
 
         ttk.Label(personal_frame, text="First Name:").grid(row=0, column=0, sticky=tk.W)
         self.first_name_var = tk.StringVar()
+        self.first_name_var.trace_add('write', self._update_university_email)
         ttk.Entry(personal_frame, textvariable=self.first_name_var, width=25).grid(row=0, column=1, sticky=tk.W, padx=5)
 
         ttk.Label(personal_frame, text="Last Name:").grid(row=1, column=0, sticky=tk.W)
         self.last_name_var = tk.StringVar()
+        self.last_name_var.trace_add('write', self._update_university_email)
         ttk.Entry(personal_frame, textvariable=self.last_name_var, width=25).grid(row=1, column=1, sticky=tk.W, padx=5)
 
-        ttk.Label(personal_frame, text="Email:").grid(row=2, column=0, sticky=tk.W)
-        self.email_var = tk.StringVar()
-        ttk.Entry(personal_frame, textvariable=self.email_var, width=35).grid(row=2, column=1, sticky=tk.W, padx=5)
+        ttk.Label(personal_frame, text="University Email:").grid(row=2, column=0, sticky=tk.W)
+        self.university_email_var = tk.StringVar()
+        uni_email_entry = ttk.Entry(personal_frame, textvariable=self.university_email_var, width=35, state='readonly')
+        uni_email_entry.grid(row=2, column=1, sticky=tk.W, padx=5)
+        ttk.Label(personal_frame, text="(auto-generated from name)", font=('Arial', 8)).grid(row=3, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(personal_frame, text="Personal Email:").grid(row=4, column=0, sticky=tk.W)
+        self.personal_email_var = tk.StringVar()
+        ttk.Entry(personal_frame, textvariable=self.personal_email_var, width=35).grid(row=4, column=1, sticky=tk.W, padx=5)
+        ttk.Label(personal_frame, text="(optional)", font=('Arial', 8)).grid(row=5, column=1, sticky=tk.W, padx=5)
 
         # Professional Information
         prof_frame = ttk.LabelFrame(main_frame, text="Professional Information", padding=10)
@@ -313,17 +337,22 @@ class InstructorCreateDialog:
             # Validate inputs
             first_name = self.first_name_var.get().strip()
             last_name = self.last_name_var.get().strip()
-            email = self.email_var.get().strip()
 
-            if not first_name or not last_name or not email:
-                messagebox.showerror(_("common.validation_error"), "First name, last name, and email are required.")
+            if not first_name or not last_name:
+                messagebox.showerror(_("common.validation_error"), "First name and last name are required.")
                 return
 
-            # Validate email format
-            email_pattern = r'^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}$'
-            if not re.match(email_pattern, email):
-                messagebox.showerror(_("common.validation_error"), "Please enter a valid email address.")
+            university_email = self.university_email_var.get().strip()
+            if not university_email:
+                messagebox.showerror(_("common.validation_error"), "University email could not be generated. Please enter first and last name.")
                 return
+
+            personal_email = self.personal_email_var.get().strip()
+            if personal_email:
+                email_pattern = r'^[A-Za-z0-9._%+-]+@(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}$'
+                if not re.match(email_pattern, personal_email):
+                    messagebox.showerror(_("common.validation_error"), "Please enter a valid personal email address.")
+                    return
 
             department = self.department_var.get().strip()
             specialization = self.specialization_var.get().strip()
@@ -366,11 +395,21 @@ class InstructorCreateDialog:
                 )
                 ''')
 
-                # Check for duplicate email
-                cursor.execute("SELECT email FROM instructors WHERE email = ?", (email,))
-                if cursor.fetchone():
-                    messagebox.showerror(_("common.duplicate_error"), f"Email '{email}' already exists.")
-                    return
+                # Check for duplicate email, append number if needed
+                final_email = university_email
+                counter = 1
+                while True:
+                    cursor.execute("SELECT email FROM instructors WHERE email = ?", (final_email,))
+                    if not cursor.fetchone():
+                        break
+                    try:
+                        from education_system.university_system.core.defaults import UNIVERSITY_EMAIL_DOMAIN
+                    except ImportError:
+                        UNIVERSITY_EMAIL_DOMAIN = "university.edu"
+                    clean_first = first_name.lower().strip().replace(' ', '')
+                    clean_last = last_name.lower().strip().replace(' ', '')
+                    final_email = f"{clean_first}.{clean_last}{counter}@{UNIVERSITY_EMAIL_DOMAIN}"
+                    counter += 1
 
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
@@ -379,17 +418,50 @@ class InstructorCreateDialog:
                                        max_courses_per_semester, max_hours_per_week, preferred_days,
                                        preferred_times, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (first_name, last_name, email, department, specialization, max_courses,
+                ''', (first_name, last_name, final_email, department, specialization, max_courses,
                       max_hours, preferred_days, preferred_times, timestamp, timestamp))
 
                 conn.commit()
 
-            messagebox.showinfo(_("common.success"), f"Instructor {first_name} {last_name} added successfully.")
+            # Create login account and send welcome email
+            from education_system.university_system.modules.domain.academics.services.course_management.instructors import (
+                _generate_temp_password, _create_instructor_account, _send_instructor_welcome_email,
+            )
+
+            temp_password = _generate_temp_password()
+            username = final_email.split('@')[0]
+            display_name = f"{first_name} {last_name}"
+
+            account_msg = ""
+            user_id = _create_instructor_account(self.auth, username, temp_password, display_name, final_email)
+            if user_id:
+                account_msg = f"\n\nLogin Account Created:\n  Username: {username}\n  Temporary Password: {temp_password}"
+            else:
+                account_msg = f"\n\nLogin account could not be created automatically.\n  Suggested username: {username}\n  Temporary password: {temp_password}"
+
+            email_msg = ""
+            email_sent = _send_instructor_welcome_email(
+                first_name, last_name, username, final_email,
+                department, specialization, temp_password,
+            )
+            if email_sent:
+                email_msg = f"\n\nWelcome email sent to {final_email}"
+            else:
+                email_msg = f"\n\nWelcome email could not be sent. Please notify instructor manually."
+
+            messagebox.showinfo(
+                _("common.success"),
+                f"Instructor {first_name} {last_name} added successfully!\n"
+                f"University Email: {final_email}"
+                f"{account_msg}{email_msg}"
+            )
             self.result = f"{first_name} {last_name}"
             self.dialog.destroy()
 
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to add instructor: {e}")
+        except Exception as e:
+            messagebox.showerror(_("common.error"), f"Error: {e}")
 
 
 class AssignInstructorDialog:

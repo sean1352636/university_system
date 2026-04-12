@@ -323,14 +323,14 @@ class UniversityShopGUI:
         sidebar_container.columnconfigure(0, weight=1)
 
         # Keep sidebar width in sync with canvas width
-    def _on_sidebar_canvas_configure(event):
-        self.sidebar_canvas.itemconfig(self.sidebar_window, width=event.width)
+        def _on_sidebar_canvas_configure(event):
+            self.sidebar_canvas.itemconfig(self.sidebar_window, width=event.width)
         self.sidebar_canvas.bind("<Configure>", _on_sidebar_canvas_configure)
 
         # Update scrollregion whenever sidebar content changes
         self.sidebar_frame.bind(
-        "<Configure>",
-        lambda e: self.sidebar_canvas.configure(scrollregion=self.sidebar_canvas.bbox("all"))
+            "<Configure>",
+            lambda e: self.sidebar_canvas.configure(scrollregion=self.sidebar_canvas.bbox("all"))
         )
 
         # Bind mouse wheel scrolling for sidebar
@@ -580,7 +580,7 @@ class UniversityShopGUI:
             cli_text.insert(tk.END, "=" * 50 + "\n\n")
             cli_text.insert(tk.END, "The original CLI functions are available and can be called programmatically.\n")
             cli_text.insert(tk.END, "To use the full CLI interface, run from project root:\n")
-            cli_text.insert(tk.END, "python -m university_system.modules.domain.commerce.services.shop_management\n\n")
+            cli_text.insert(tk.END, "python -m education_system.university_system.modules.domain.commerce.services.shop_management\n\n")
             cli_text.insert(tk.END, "Available CLI functions:\n")
             cli_text.insert(tk.END, "- browse_products()\n")
             cli_text.insert(tk.END, "- add_to_shopping_cart()\n")
@@ -602,18 +602,12 @@ class UniversityShopGUI:
                     import sys
                     import os
 
-                    # Find project root (where university_system package is located)
+                    # Find project root (parent of education_system/)
                     current_file = os.path.abspath(__file__)
-                    # Navigate up from gui -> commerce -> domain -> modules -> university_system -> project_root
-                    project_root = os.path.dirname(
-                        os.path.dirname(
-                            os.path.dirname(
-                                os.path.dirname(
-                                    os.path.dirname(current_file)
-                                )
-                            )
-                        )
-                    )
+                    # Navigate up 8 levels: shop_management_gui -> gui -> commerce -> domain -> modules -> university_system -> education_system -> project_root
+                    project_root = current_file
+                    for _ in range(8):
+                        project_root = os.path.dirname(project_root)
 
                     # Set up environment with PYTHONPATH
                     env = os.environ.copy()
@@ -621,7 +615,7 @@ class UniversityShopGUI:
 
                     # Launch as module to avoid import issues
                     subprocess.Popen(
-                        [sys.executable, "-m", "university_system.modules.domain.commerce.services.shop_management"],
+                        [sys.executable, "-m", "education_system.university_system.modules.domain.commerce.services.shop_management"],
                         cwd=project_root,
                         env=env
                     )
@@ -728,6 +722,10 @@ try:
         UniversityShopGUI.update_status = dashboard_manager.update_status
     if hasattr(dashboard_manager, 'show_low_stock_report'):
         UniversityShopGUI.show_low_stock_report = dashboard_manager.show_low_stock_report
+    if hasattr(dashboard_manager, 'toggle_discount_status'):
+        UniversityShopGUI.toggle_discount_status = dashboard_manager.toggle_discount_status
+    if hasattr(dashboard_manager, 'toggle_product_status'):
+        UniversityShopGUI.toggle_product_status = dashboard_manager.toggle_product_status
 
     # Bind product browser methods
     if hasattr(product_browser, 'show_browse_products'):
@@ -764,6 +762,8 @@ try:
         UniversityShopGUI.show_mgmt_context_menu = product_manager.show_mgmt_context_menu
     if hasattr(product_manager, 'load_products_for_management'):
         UniversityShopGUI.load_products_for_management = product_manager.load_products_for_management
+    if hasattr(product_manager, 'show_quick_add_product_dialog'):
+        UniversityShopGUI.show_quick_add_product_dialog = product_manager.show_quick_add_product_dialog
 
     # Bind cart methods
     if hasattr(cart_manager, 'show_shopping_cart'):
@@ -808,6 +808,8 @@ try:
         UniversityShopGUI.export_transactions = order_manager.export_transactions
     if hasattr(order_manager, 'view_refund_transaction_details'):
         UniversityShopGUI.view_refund_transaction_details = order_manager.view_refund_transaction_details
+    if hasattr(order_manager, 'view_transaction_details'):
+        UniversityShopGUI.view_transaction_details = order_manager.view_transaction_details
 
     # Bind inventory methods
     if hasattr(inventory_manager, 'show_manage_inventory'):
@@ -820,6 +822,8 @@ try:
         UniversityShopGUI.restock_selected_item = inventory_manager.restock_selected_item
     if hasattr(inventory_manager, 'update_selected_stock'):
         UniversityShopGUI.update_selected_stock = inventory_manager.update_selected_stock
+    if hasattr(inventory_manager, 'load_inventory_data'):
+        UniversityShopGUI.load_inventory_data = inventory_manager.load_inventory_data
 
     # Bind discount methods
     if hasattr(discount_manager, 'show_manage_discounts'):
@@ -868,6 +872,8 @@ try:
         UniversityShopGUI.import_products = bulk_operations.import_products
     if hasattr(bulk_operations, 'export_products'):
         UniversityShopGUI.export_products = bulk_operations.export_products
+    if hasattr(bulk_operations, 'backup_shop_database'):
+        UniversityShopGUI.backup_shop_database = bulk_operations.backup_shop_database
 
     # Bind utility methods
     if hasattr(utils, 'clear_content'):

@@ -22,6 +22,7 @@ def create_enhanced_course(auth):
         print(get_text('course_mgmt.no_permission_create', default="You don't have permission to create courses."))
         return False
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -183,7 +184,6 @@ def create_enhanced_course(auth):
 
         course_id = cursor.lastrowid
         conn.commit()
-        conn.close()
 
         print(f"\nEnhanced course '{course_name}' (Code: {course_code}) created successfully!")
         print(f"Course ID: {course_id}")
@@ -191,14 +191,13 @@ def create_enhanced_course(auth):
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
-            conn.close()
         return False
     except Exception as e:
         print(f"Error creating course: {e}")
-        if 'conn' in locals():
-            conn.close()
         return False
+    finally:
+        if conn:
+            conn.close()
 
 
 @log_create(module="course_management", description="Creating new course")
@@ -218,6 +217,7 @@ def view_all_courses(auth):
         print(get_text('course_mgmt.no_permission_view', default="You don't have permission to view courses."))
         return
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -226,7 +226,6 @@ def view_all_courses(auth):
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='courses'")
         if not cursor.fetchone():
             print(get_text('course_mgmt.no_courses_table', default='No courses found. The courses table has not been created yet.'))
-            conn.close()
             return
 
         # Get all courses with enhanced information
@@ -241,7 +240,6 @@ def view_all_courses(auth):
 
         if not courses:
             print(get_text('course_mgmt.no_courses_found', default='No courses found in the system.'))
-            conn.close()
             return
 
         print(f"\n{get_text('course_mgmt.all_courses_title', default='All Courses (Enhanced View)')}:")
@@ -269,15 +267,12 @@ def view_all_courses(auth):
             except ValueError:
                 print(get_text('course_mgmt.errors.invalid_id', default='Invalid ID. Please enter a number.'))
 
-        conn.close()
-
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
-            conn.close()
     except Exception as e:
         print(f"Error viewing courses: {e}")
-        if 'conn' in locals():
+    finally:
+        if conn:
             conn.close()
 
 
@@ -325,6 +320,7 @@ def update_course(auth):
         print("You don't have permission to update courses.")
         return False
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -333,7 +329,6 @@ def update_course(auth):
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='courses'")
         if not cursor.fetchone():
             print("No courses found. The courses table has not been created yet.")
-            conn.close()
             return False
 
         # Show all courses for selection
@@ -342,21 +337,25 @@ def update_course(auth):
 
         if not courses:
             print("No courses found in the system.")
-            conn.close()
             return False
 
         print("\nSelect a course to update:")
-        for course in courses:
-            course_id, code, name, status = course
-            print(f"{course_id}. {code} - {name} ({status})")
+        for i, course in enumerate(courses, 1):
+            db_id, code, name, status = course
+            print(f"{i}. {code} - {name} ({status})")
 
         while True:
             try:
-                course_id = int(input("\nEnter course ID to update (or 0 to cancel): "))
-                if course_id == 0:
+                choice_num = int(input("\nEnter course number to update (or 0 to cancel): "))
+                if choice_num == 0:
                     print("Update cancelled.")
-                    conn.close()
                     return False
+
+                if 1 <= choice_num <= len(courses):
+                    course_id = courses[choice_num - 1][0]
+                else:
+                    print(f"Please enter a number between 0 and {len(courses)}.")
+                    continue
 
                 # Get current course details
                 cursor.execute("SELECT * FROM courses WHERE id = ?", (course_id,))
@@ -426,16 +425,16 @@ def update_course(auth):
         """, (new_code, new_name, new_desc, new_credit_hours, new_max_enrollment, timestamp, course_id))
 
         conn.commit()
-        conn.close()
 
         print(f"\nCourse updated successfully: {new_code} - {new_name}")
         return True
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
-            conn.close()
         return False
+    finally:
+        if conn:
+            conn.close()
 
 
 @log_delete(module="course_management", description="Deleting course")
@@ -450,6 +449,7 @@ def delete_course(auth):
         print("You don't have permission to delete courses.")
         return False
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -460,22 +460,26 @@ def delete_course(auth):
 
         if not courses:
             print("No courses found in the system.")
-            conn.close()
             return False
 
         print("\nSelect a course to delete:")
-        for course in courses:
-            course_id, code, name, enrolled = course
+        for i, course in enumerate(courses, 1):
+            db_id, code, name, enrolled = course
             enrolled_display = enrolled if enrolled is not None else 0
-            print(f"{course_id}. {code} - {name} (Enrolled: {enrolled_display})")
+            print(f"{i}. {code} - {name} (Enrolled: {enrolled_display})")
 
         while True:
             try:
-                course_id = int(input("\nEnter course ID to delete (or 0 to cancel): "))
-                if course_id == 0:
+                choice_num = int(input("\nEnter course number to delete (or 0 to cancel): "))
+                if choice_num == 0:
                     print("Delete cancelled.")
-                    conn.close()
                     return False
+
+                if 1 <= choice_num <= len(courses):
+                    course_id = courses[choice_num - 1][0]
+                else:
+                    print(f"Please enter a number between 0 and {len(courses)}.")
+                    continue
 
                 # Check if course exists
                 cursor.execute("SELECT course_code, course_name, current_enrollment FROM courses WHERE id = ?", (course_id,))
@@ -517,14 +521,12 @@ def delete_course(auth):
 
             if confirm != 'DELETE CONFIRMED':
                 print("Delete cancelled.")
-                conn.close()
                 return False
         else:
             confirm = input(f"\nAre you sure you want to delete '{code} - {name}'? This cannot be undone. (y/n): ").lower()
 
             if confirm != 'y':
                 print("Delete cancelled.")
-                conn.close()
                 return False
 
         # Delete related records first
@@ -550,11 +552,11 @@ def delete_course(auth):
         else:
             print("Error: No course was deleted.")
 
-        conn.close()
         return True
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
-            conn.close()
         return False
+    finally:
+        if conn:
+            conn.close()

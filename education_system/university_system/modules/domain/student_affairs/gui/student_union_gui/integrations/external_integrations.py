@@ -363,11 +363,9 @@ def open_restaurant_for_club_booking(self, club_name, event_type="Club Event"):
     """Open full restaurant GUI"""
     try:
         from education_system.university_system.modules.domain.commerce.gui.restaurant_management_gui import RestaurantManagementGUI
-        restaurant_window = tk.Toplevel(self.root)
-        restaurant_window.title("University Restaurant Management")
-        restaurant_window.geometry("1200x800")
-        # Initialize full restaurant GUI
-        restaurant_gui = RestaurantManagementGUI(restaurant_window, auth=self.auth_manager)
+        # Pass parent root — show_restaurant_management() creates its own Toplevel
+        restaurant_gui = RestaurantManagementGUI(self.root, auth=self.auth_manager)
+        restaurant_gui.show_restaurant_management()
     except ImportError:
         messagebox.showerror("Error", "Restaurant system is not available")
     except (tk.TclError, AttributeError) as e:

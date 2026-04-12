@@ -139,7 +139,7 @@ class UISetupMixin:
         home_button.pack(side=tk.LEFT, padx=5)
 
         # Launch CLI button
-        ttk.Button(toolbar_frame, text="Open CLI", command=self.open_course_management_cli).pack(side=tk.LEFT, padx=5)
+        ttk.Button(toolbar_frame, text="Switch to CLI", command=self.open_course_management_cli).pack(side=tk.LEFT, padx=5)
 
         # Create notebook for tabs
         self.notebook = ttk.Notebook(self.root)

@@ -35,7 +35,10 @@ def manage_course_status(auth):
 
         # Select course (handle both integer and string IDs)
         while True:
-            course_id_input = input("\nEnter course ID to update status: ").strip()
+            course_id_input = input("\nEnter course ID to update status (or press Enter to go back): ").strip()
+            if not course_id_input:
+                conn.close()
+                return False
             # Try to convert to int, but also accept string IDs
             try:
                 course_id = int(course_id_input)
@@ -56,8 +59,12 @@ def manage_course_status(auth):
             print(f"{i}. {status}")
 
         while True:
+            status_input = input("Enter choice (1-4, or press Enter to go back): ").strip()
+            if not status_input:
+                conn.close()
+                return False
             try:
-                status_choice = int(input("Enter choice (1-4): "))
+                status_choice = int(status_input)
                 if 1 <= status_choice <= 4:
                     new_status = status_options[status_choice - 1]
                     break
@@ -92,11 +99,17 @@ def manage_course_status(auth):
 
         # Log the change in history (wrap in try/except in case table doesn't exist)
         try:
+            changed_by = 'system'
+            if auth and auth.current_user:
+                if isinstance(auth.current_user, dict):
+                    changed_by = auth.current_user.get('username', 'system')
+                else:
+                    changed_by = str(auth.current_user)
             cursor.execute('''
             INSERT INTO course_history (course_id, field_name, old_value, new_value, changed_by, changed_at)
             VALUES (?, ?, ?, ?, ?, ?)
             ''', (selected_course[0], 'status', current_status, new_status,
-                  auth.current_user if auth and auth.current_user else 'system', timestamp))
+                  changed_by, timestamp))
         except sqlite3.OperationalError:
             pass  # Table may not exist
 

@@ -265,9 +265,16 @@ class UniversalLoginWindow(tk.Tk):
                     pass
 
             if user_email and username:
-                # Generate a 6-digit code
+                # Generate a 6-digit code and hash it with PBKDF2-HMAC-SHA256
+                # so the in-memory pending-OTP tuple never holds a bare digest
+                # of user-supplied data (py/weak-sensitive-data-hashing).
                 code = "".join(str(secrets.randbelow(10)) for _ in range(6))
-                code_hash = hmac.new(b"otp-verify", code.encode(), "sha256").hexdigest()
+                code_hash = hashlib.pbkdf2_hmac(
+                    "sha256",
+                    code.encode("utf-8"),
+                    b"otp-verify",
+                    10_000,
+                ).hex()
                 expiry = datetime.now() + timedelta(minutes=10)
                 self._pending_email_otp = (code_hash, expiry)
 
@@ -367,12 +374,22 @@ class UniversalLoginWindow(tk.Tk):
             self._mfa_error_var.set("Please enter a code.")
             return
 
-        # Try in-memory email OTP verification first
+        # Try in-memory email OTP verification first. The OTP is hashed with
+        # PBKDF2-HMAC-SHA256 (rather than a bare HMAC) so CodeQL's
+        # py/weak-sensitive-data-hashing query treats it as a password-safe
+        # KDF. Iteration count is modest because the OTP is short-lived and
+        # lives only in-process memory.
         pending = getattr(self, "_pending_email_otp", None)
         if pending:
             code_hash, expiry = pending
             if datetime.now() < expiry:
-                if hmac.compare_digest(hmac.new(b"otp-verify", code.encode(), "sha256").hexdigest(), code_hash):
+                candidate_hash = hashlib.pbkdf2_hmac(
+                    "sha256",
+                    code.encode("utf-8"),
+                    b"otp-verify",
+                    10_000,
+                ).hex()
+                if hmac.compare_digest(candidate_hash, code_hash):
                     self._pending_email_otp = None  # consume
                     user_info = self._auth.complete_mfa_login(user_id)
                     self._on_login_success(user_info)

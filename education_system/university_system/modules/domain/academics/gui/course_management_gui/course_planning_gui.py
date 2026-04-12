@@ -12,6 +12,8 @@ Main GUI interface for course planning with:
 from __future__ import annotations
 
 import json
+import logging
+import threading
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 from typing import Optional, Dict, List
@@ -133,6 +135,7 @@ class CoursePlanningGUI:
             bottom_frame = ttk.Frame(self.window)
             bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
             ttk.Button(bottom_frame, text="Close", command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+            ttk.Button(bottom_frame, text="Switch to CLI", command=self._switch_to_cli).pack(side=tk.LEFT, padx=5)
 
         # Main notebook with tabs
         self.notebook = ttk.Notebook(self.window)
@@ -148,6 +151,30 @@ class CoursePlanningGUI:
 
         log_activity('view', 'course_planning_gui', user_id=self.student_id,
                     details={'action': 'opened_gui'})
+
+    def _switch_to_cli(self):
+        """Switch from GUI to Course Planning CLI."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.course_management_gui.cli.course_planning_cli import display_course_planning_menu
+
+            # Hide GUI temporarily
+            target = self.window if self.window else self.root
+            target.withdraw()
+
+            import threading
+            def run_cli():
+                try:
+                    display_course_planning_menu()
+                except Exception as e:
+                    logging.error(f"CLI mode error: {e}")
+                finally:
+                    target.after(0, target.deiconify)
+
+            cli_thread = threading.Thread(target=run_cli, daemon=True)
+            cli_thread.start()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to launch CLI: {e}")
 
     def _select_student_for_planning(self):
         """Show dialog for admin to select a student."""

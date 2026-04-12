@@ -232,6 +232,104 @@ class MenuActionsMixin:
             self._show_error(_("academic_calendar.messages.failed_to_launch_cli").format(error=e))
             self.root.deiconify()  # Make sure GUI is visible
 
+    def _open_trip_manager(self):
+        """Open the trip management GUI in a child window"""
+        try:
+            from education_system.university_system.modules.domain.mobility.gui.trip_management_gui import TripManagementGUI
+            trip_window = tk.Toplevel(self.root)
+            trip_window.title(_("academic_calendar.trips.manager_title", default="Trip Management"))
+            trip_window.geometry("1200x800")
+            trip_window.transient(self.root)
+            TripManagementGUI(auth_instance=self.auth_manager, root=trip_window)
+        except ImportError:
+            self._show_error(_("academic_calendar.trips.not_available",
+                              default="Trip management module is not available."))
+        except Exception as e:
+            self._show_error(_("academic_calendar.trips.open_error",
+                              default="Error opening trip manager: {error}").format(error=e))
+
+    def _create_trip_calendar_event(self):
+        """Create a calendar event for a trip"""
+        try:
+            from education_system.university_system.modules.domain.mobility.gui.trip_management_gui.calendar_dialogs import CreateCalendarEventDialog
+            CreateCalendarEventDialog(
+                self.root, self.auth_manager, self.calendar_manager, self._refresh_current_view)
+        except ImportError:
+            self._show_error(_("academic_calendar.trips.not_available",
+                              default="Trip management module is not available."))
+        except Exception as e:
+            self._show_error(_("academic_calendar.trips.calendar_event_error",
+                              default="Error creating trip calendar event: {error}").format(error=e))
+
+    def _view_trip_calendar_links(self):
+        """View existing trip-calendar event links in a dialog"""
+        try:
+            from education_system.university_system.modules.domain.mobility.gui.trip_management_gui._imports import safe_db_operation
+
+            def get_links(conn):
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT t.trip_name, t.destination, t.start_date, t.end_date,
+                           e.name as event_name, e.event_type, tce.created_at
+                    FROM trip_calendar_events tce
+                    JOIN trips t ON tce.trip_id = t.id
+                    JOIN academic_calendar_events e ON tce.event_id = e.id
+                    ORDER BY t.start_date
+                ''')
+                return cursor.fetchall()
+
+            links = safe_db_operation(get_links)
+
+            dialog = tk.Toplevel(self.root)
+            dialog.title(_("academic_calendar.trips.links_title", default="Trip-Calendar Links"))
+            dialog.geometry("800x400")
+            dialog.transient(self.root)
+            dialog.grab_set()
+
+            tree = ttk.Treeview(dialog,
+                                columns=('trip', 'destination', 'dates', 'event', 'type', 'created'),
+                                show='headings', height=15)
+            tree.heading('trip', text=_("academic_calendar.trips.col_trip", default="Trip"))
+            tree.heading('destination', text=_("academic_calendar.trips.col_destination", default="Destination"))
+            tree.heading('dates', text=_("academic_calendar.trips.col_dates", default="Dates"))
+            tree.heading('event', text=_("academic_calendar.trips.col_event", default="Calendar Event"))
+            tree.heading('type', text=_("academic_calendar.trips.col_type", default="Type"))
+            tree.heading('created', text=_("academic_calendar.trips.col_created", default="Created"))
+
+            tree.column('trip', width=150)
+            tree.column('destination', width=100)
+            tree.column('dates', width=150)
+            tree.column('event', width=150)
+            tree.column('type', width=80)
+            tree.column('created', width=100)
+
+            scrollbar = ttk.Scrollbar(dialog, orient="vertical", command=tree.yview)
+            tree.configure(yscrollcommand=scrollbar.set)
+
+            tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(10, 0), pady=10)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 10), pady=10)
+
+            if links:
+                for link in links:
+                    trip_name, dest, start, end, event_name, event_type, created = link
+                    tree.insert('', tk.END, values=(
+                        trip_name, dest, f"{start} - {end}",
+                        event_name, event_type, created[:10] if created else ''))
+            else:
+                tree.insert('', tk.END, values=(
+                    _("academic_calendar.trips.no_links", default="No trip-calendar links found"),
+                    '', '', '', '', ''))
+
+            ttk.Button(dialog, text=_("common.close", default="Close"),
+                       command=dialog.destroy).pack(pady=(0, 10))
+
+        except ImportError:
+            self._show_error(_("academic_calendar.trips.not_available",
+                              default="Trip management module is not available."))
+        except Exception as e:
+            self._show_error(_("academic_calendar.trips.links_error",
+                              default="Error viewing trip-calendar links: {error}").format(error=e))
+
     def _show_help(self):
         """Show help dialog"""
         _get_help_dialog()(self.root)

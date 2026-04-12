@@ -367,182 +367,89 @@ def create_dashboard_visualizations(dashboard_data):
     # Create a comprehensive dashboard figure
     fig = plt.figure(figsize=(16, 12))
 
-    # 1. GPA Distribution (top left)
-    if 'gpa_stats' in dashboard_data:
-        ax1 = plt.subplot(3, 3, 1)
+    # Extract data from flat DataBag format
+    total_students = dashboard_data.get('total_students', 0)
+    total_courses = dashboard_data.get('total_courses', 0)
+    total_grades = dashboard_data.get('total_grades', 0)
+    grade_dist = dashboard_data.get('grade_distribution', {})
+    course_avgs = dashboard_data.get('course_averages', [])
+    at_risk = dashboard_data.get('at_risk_students', [])
+    monthly = dashboard_data.get('monthly_trends', [])
 
-        # Create sample GPA distribution for visualization
-        gpa_stats = dashboard_data['gpa_stats']
-        mean_gpa = gpa_stats['avg_gpa']
-        std_gpa = gpa_stats['std_gpa']
+    at_risk_count = len(at_risk) if isinstance(at_risk, list) else 0
+    safe_count = max(0, total_students - at_risk_count)
 
-        # Generate sample data for histogram
-        sample_gpas = np.random.normal(mean_gpa, std_gpa, 1000)
-        sample_gpas = np.clip(sample_gpas, 0, 4.3)  # Clip to valid GPA range
-
-        ax1.hist(sample_gpas, bins=20, alpha=0.7, color='skyblue', edgecolor='black')
-        ax1.axvline(mean_gpa, color='red', linestyle='--', label=f'Mean: {mean_gpa:.2f}')
-        ax1.set_title('GPA Distribution')
-        ax1.set_xlabel('GPA')
-        ax1.set_ylabel('Count')
-        ax1.legend()
-
-    # 2. Grade Distribution (top center)
-    ax2 = plt.subplot(3, 3, 2)
-    grade_dist = dashboard_data['grade_distribution']['distribution']
-
-    if grade_dist:
+    # 1. Grade Distribution (top left)
+    ax1 = plt.subplot(2, 3, 1)
+    if isinstance(grade_dist, dict) and grade_dist:
         grades = list(grade_dist.keys())
-        counts = list(grade_dist.values())
+        counts = [(v or 0) for v in grade_dist.values()]
+        if any(c > 0 for c in counts):
+            bars = ax1.bar(grades, counts, color='lightgreen', alpha=0.7)
+            ax1.set_title('Grade Distribution')
+            ax1.set_xlabel('Grade')
+            ax1.set_ylabel('Count')
+            for bar in bars:
+                height = bar.get_height()
+                if height > 0:
+                    ax1.text(bar.get_x() + bar.get_width()/2., height + 0.5,
+                            f'{int(height)}', ha='center', va='bottom')
 
-        # Sort grades properly
-        sorted_items = sorted(zip(grades, counts),
-                            key=lambda x: letter_to_gpa(x[0]), reverse=True)
-        grades, counts = zip(*sorted_items)
+    # 2. Course Performance (top center)
+    ax2 = plt.subplot(2, 3, 2)
+    if course_avgs:
+        courses = [c.get('course', '?') for c in course_avgs[:8]]
+        avg_scores = [c.get('avg_score', 0) or 0 for c in course_avgs[:8]]
+        bars = ax2.bar(courses, avg_scores, color='gold', alpha=0.7)
+        ax2.set_title('Course Performance')
+        ax2.set_xlabel('Course')
+        ax2.set_ylabel('Average Score (%)')
+        ax2.tick_params(axis='x', rotation=45)
 
-        bars = ax2.bar(grades, counts, color='lightgreen', alpha=0.7)
-        ax2.set_title('Grade Distribution')
-        ax2.set_xlabel('Grade')
-        ax2.set_ylabel('Count')
+    # 3. Risk Assessment Pie Chart (top right)
+    ax3 = plt.subplot(2, 3, 3)
+    labels = ['Safe', 'At Risk']
+    sizes = [safe_count, at_risk_count]
+    pie_colors = ['green', 'red']
+    non_zero = [(l, s, c) for l, s, c in zip(labels, sizes, pie_colors) if s > 0]
+    if non_zero:
+        labels, sizes, pie_colors = zip(*non_zero)
+        ax3.pie(sizes, labels=labels, colors=pie_colors, autopct='%1.1f%%', startangle=90)
+    ax3.set_title('Student Risk Distribution')
 
-        # Add count labels
-        for bar in bars:
-            height = bar.get_height()
-            ax2.text(bar.get_x() + bar.get_width()/2., height + 0.5,
-                    f'{int(height)}', ha='center', va='bottom')
-
-    # 3. Course Performance (top right)
-    ax3 = plt.subplot(3, 3, 3)
-    course_perf = dashboard_data['course_performance']
-
-    if course_perf:
-        courses = [c[0] for c in course_perf]
-        avg_scores = [c[2] for c in course_perf]
-
-        bars = ax3.bar(courses, avg_scores, color='gold', alpha=0.7)
-        ax3.set_title('Course Performance')
-        ax3.set_xlabel('Course')
-        ax3.set_ylabel('Average Score (%)')
-        ax3.tick_params(axis='x', rotation=45)
-
-        # Add value labels
-        for bar in bars:
-            height = bar.get_height()
-            if height:  # Check if height is not None
-                ax3.text(bar.get_x() + bar.get_width()/2., height + 1,
-                        f'{height:.1f}%', ha='center', va='bottom')
-
-    # 4. Risk Assessment Pie Chart (middle left)
-    ax4 = plt.subplot(3, 3, 4)
-    risk_stats = dashboard_data['risk_stats']
-
-    total_students = dashboard_data['overview']['total_students']
-    at_risk = risk_stats['at_risk_students']
-    high_risk = risk_stats['high_risk_students']
-    low_risk = at_risk - high_risk
-    safe = total_students - at_risk
-
-    labels = ['Safe', 'Low Risk', 'High Risk']
-    sizes = [safe, low_risk, high_risk]
-    colors = ['green', 'orange', 'red']
-
-    # Only include non-zero segments
-    non_zero_data = [(label, size, color) for label, size, color in zip(labels, sizes, colors) if size > 0]
-    if non_zero_data:
-        labels, sizes, colors = zip(*non_zero_data)
-        ax4.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%', startangle=90)
-
-    ax4.set_title('Student Risk Distribution')
-
-    # 5. Recent Trends (middle center)
-    ax5 = plt.subplot(3, 3, 5)
-    recent_trends = dashboard_data['recent_trends']
-
-    if recent_trends:
-        dates = [trend[0] for trend in recent_trends]
-        performances = [trend[1] for trend in recent_trends]
-
-        ax5.plot(dates, performances, 'b-', marker='o', markersize=4)
-        ax5.set_title('Recent Performance Trends (30 days)')
-        ax5.set_xlabel('Date')
-        ax5.set_ylabel('Performance (%)')
-        ax5.tick_params(axis='x', rotation=45)
-        ax5.grid(True, alpha=0.3)
-
-    # 6. System Overview (middle right)
-    ax6 = plt.subplot(3, 3, 6)
-    overview = dashboard_data['overview']
-
-    categories = ['Students', 'Modules', 'Assessments', 'Grades']
-    values = [overview['total_students'], overview['total_modules'],
-              overview['total_assessments'], overview['total_grades']]
-
-    bars = ax6.bar(categories, values, color=['skyblue', 'lightcoral', 'lightgreen', 'gold'])
-    ax6.set_title('System Overview')
-    ax6.set_ylabel('Count')
-
-    # Add value labels
-    for bar in bars:
-        height = bar.get_height()
-        ax6.text(bar.get_x() + bar.get_width()/2., height + max(values)*0.01,
-                f'{int(height)}', ha='center', va='bottom')
-
-    # 7. Performance Metrics (bottom left)
-    ax7 = plt.subplot(3, 3, 7)
-
-    # Create a simple metrics display
-    if 'gpa_stats' in dashboard_data:
-        metrics = [
-            ('Avg GPA', dashboard_data['gpa_stats']['avg_gpa'], 'good' if dashboard_data['gpa_stats']['avg_gpa'] >= 3.0 else 'poor'),
-            ('Pass Rate', dashboard_data['grade_distribution']['passing_rate'], 'good' if dashboard_data['grade_distribution']['passing_rate'] >= 80 else 'poor'),
-            ('At Risk %', dashboard_data['risk_stats']['at_risk_percentage'], 'poor' if dashboard_data['risk_stats']['at_risk_percentage'] >= 20 else 'good')
-        ]
-
-        metric_names = [m[0] for m in metrics]
-        metric_values = [m[1] for m in metrics]
-        metric_colors = ['green' if m[2] == 'good' else 'red' for m in metrics]
-
-        bars = ax7.bar(metric_names, metric_values, color=metric_colors, alpha=0.7)
-        ax7.set_title('Key Performance Metrics')
-        ax7.set_ylabel('Value')
-
-        # Add value labels
-        for i, bar in enumerate(bars):
-            height = bar.get_height()
-            label = f'{height:.1f}%' if i > 0 else f'{height:.2f}'
-            ax7.text(bar.get_x() + bar.get_width()/2., height + max(metric_values)*0.01,
-                    label, ha='center', va='bottom')
-
-    # 8. Grade Trends (bottom center) - placeholder for future enhancement
-    ax8 = plt.subplot(3, 3, 8)
-    ax8.text(0.5, 0.5, 'Grade Trends\n(Placeholder)', ha='center', va='center',
-             transform=ax8.transAxes, fontsize=12)
-    ax8.set_title('Grade Trends Over Time')
-
-    # 9. Alert Summary (bottom right)
-    ax9 = plt.subplot(3, 3, 9)
-
-    # Create alert summary
-    alert_data = {
-        'Critical': high_risk,
-        'Warning': low_risk,
-        'Info': max(0, total_students - at_risk - 5)  # Some info alerts
-    }
-
-    alert_types = list(alert_data.keys())
-    alert_counts = list(alert_data.values())
-    alert_colors = ['red', 'orange', 'blue']
-
-    bars = ax9.bar(alert_types, alert_counts, color=alert_colors, alpha=0.7)
-    ax9.set_title('Active Alerts')
-    ax9.set_ylabel('Count')
-
-    # Add count labels
+    # 4. System Overview (bottom left)
+    ax4 = plt.subplot(2, 3, 4)
+    categories = ['Students', 'Courses', 'Grades']
+    values = [total_students, total_courses, total_grades]
+    bars = ax4.bar(categories, values, color=['skyblue', 'lightcoral', 'lightgreen'])
+    ax4.set_title('System Overview')
+    ax4.set_ylabel('Count')
     for bar in bars:
         height = bar.get_height()
         if height > 0:
-            ax9.text(bar.get_x() + bar.get_width()/2., height + 0.1,
+            ax4.text(bar.get_x() + bar.get_width()/2., height + max(values)*0.01,
                     f'{int(height)}', ha='center', va='bottom')
+
+    # 5. Monthly Trends (bottom center)
+    ax5 = plt.subplot(2, 3, 5)
+    if monthly:
+        months = [t.get('month', '') for t in monthly]
+        scores = [t.get('avg_score', 0) or 0 for t in monthly]
+        ax5.plot(months, scores, 'b-', marker='o', markersize=4)
+        ax5.set_title('Monthly Performance Trends')
+        ax5.set_xlabel('Month')
+        ax5.set_ylabel('Avg Score (%)')
+        ax5.tick_params(axis='x', rotation=45)
+        ax5.grid(True, alpha=0.3)
+    else:
+        ax5.text(0.5, 0.5, 'No trend data', ha='center', va='center', transform=ax5.transAxes)
+        ax5.set_title('Monthly Performance Trends')
+
+    # 6. Placeholder
+    ax6 = plt.subplot(2, 3, 6)
+    ax6.text(0.5, 0.5, 'Grade Trends\n(Placeholder)', ha='center', va='center',
+             transform=ax6.transAxes, fontsize=12)
+    ax6.set_title('Grade Trends Over Time')
 
     plt.tight_layout()
 
@@ -580,11 +487,12 @@ def generate_dashboard_report(dashboard_data):
     # Executive Summary
     elements.append(Paragraph("Executive Summary", styles['Heading2']))
 
-    overview = dashboard_data['overview']
+    total_students = dashboard_data.get('total_students', 0)
+    total_courses = dashboard_data.get('total_courses', 0)
+    total_grades = dashboard_data.get('total_grades', 0)
     summary_text = f"""
-    This report provides a comprehensive overview of academic performance across {overview['total_students']} students,
-    {overview['total_modules']} modules, and {overview['total_assessments']} assessments.
-    A total of {overview['total_grades']} grades have been recorded in the system.
+    This report provides a comprehensive overview of academic performance across {total_students} students,
+    {total_courses} courses/modules, and {total_grades} grades recorded in the system.
     """
 
     elements.append(Paragraph(summary_text, styles['Normal']))
@@ -595,18 +503,27 @@ def generate_dashboard_report(dashboard_data):
 
     kpi_data = [['Metric', 'Value', 'Status']]
 
-    if 'gpa_stats' in dashboard_data:
-        gpa_stats = dashboard_data['gpa_stats']
-        gpa_status = "Excellent" if gpa_stats['avg_gpa'] >= 3.5 else "Good" if gpa_stats['avg_gpa'] >= 3.0 else "Needs Improvement"
-        kpi_data.append(['Average GPA', f"{gpa_stats['avg_gpa']:.2f}", gpa_status])
+    avg_score = dashboard_data.get('avg_score')
+    if avg_score is not None:
+        score_status = "Excellent" if avg_score >= 80 else "Good" if avg_score >= 60 else "Needs Improvement"
+        kpi_data.append(['Average Score', f"{avg_score:.1f}%", score_status])
 
-    grade_data = dashboard_data['grade_distribution']
-    pass_status = "Excellent" if grade_data['passing_rate'] >= 90 else "Good" if grade_data['passing_rate'] >= 80 else "Needs Improvement"
-    kpi_data.append(['Passing Rate', f"{grade_data['passing_rate']:.1f}%", pass_status])
+    # Calculate passing rate from grade distribution
+    grade_dist = dashboard_data.get('grade_distribution', {})
+    if isinstance(grade_dist, dict):
+        total = sum((grade_dist.get(g, 0) or 0) for g in ["A", "B", "C", "D", "F"])
+        passing = sum((grade_dist.get(g, 0) or 0) for g in ["A", "B", "C", "D"])
+        passing_rate = (passing / total * 100) if total > 0 else 0
+    else:
+        passing_rate = 0
+    pass_status = "Excellent" if passing_rate >= 90 else "Good" if passing_rate >= 80 else "Needs Improvement"
+    kpi_data.append(['Passing Rate', f"{passing_rate:.1f}%", pass_status])
 
-    risk_stats = dashboard_data['risk_stats']
-    risk_status = "Good" if risk_stats['at_risk_percentage'] < 10 else "Moderate" if risk_stats['at_risk_percentage'] < 20 else "High Concern"
-    kpi_data.append(['At-Risk Students', f"{risk_stats['at_risk_percentage']:.1f}%", risk_status])
+    at_risk = dashboard_data.get('at_risk_students', [])
+    at_risk_count = len(at_risk) if isinstance(at_risk, list) else 0
+    at_risk_pct = (at_risk_count / total_students * 100) if total_students > 0 else 0
+    risk_status = "Good" if at_risk_pct < 10 else "Moderate" if at_risk_pct < 20 else "High Concern"
+    kpi_data.append(['At-Risk Students', f"{at_risk_pct:.1f}%", risk_status])
 
     kpi_table = Table(kpi_data, colWidths=[150, 100, 150])
     kpi_table.setStyle(TableStyle([
@@ -624,22 +541,23 @@ def generate_dashboard_report(dashboard_data):
     # Course Performance Section
     elements.append(Paragraph("Course Performance Analysis", styles['Heading2']))
 
-    course_perf = dashboard_data['course_performance']
-    if course_perf:
-        course_data = [['Course', 'Students', 'Average Score', 'Performance Level']]
+    course_avgs = dashboard_data.get('course_averages', [])
+    if course_avgs:
+        course_data = [['Course', 'Grades', 'Average Score', 'Performance Level']]
 
-        for course, students, avg_score in course_perf:
-            if avg_score:  # Check if avg_score is not None
-                if avg_score >= 85:
-                    level = "Excellent"
-                elif avg_score >= 75:
-                    level = "Good"
-                elif avg_score >= 65:
-                    level = "Satisfactory"
-                else:
-                    level = "Needs Improvement"
-
-                course_data.append([course, str(students), f"{avg_score:.1f}%", level])
+        for entry in course_avgs:
+            course_name = entry.get('course', 'N/A')
+            count = entry.get('count', 0)
+            avg = entry.get('avg_score', 0) or 0
+            if avg >= 85:
+                level = "Excellent"
+            elif avg >= 75:
+                level = "Good"
+            elif avg >= 65:
+                level = "Satisfactory"
+            else:
+                level = "Needs Improvement"
+            course_data.append([course_name, str(count), f"{avg:.1f}%", level])
 
         course_table = Table(course_data, colWidths=[100, 80, 100, 120])
         course_table.setStyle(TableStyle([
@@ -659,10 +577,8 @@ def generate_dashboard_report(dashboard_data):
     elements.append(Paragraph("Risk Assessment Summary", styles['Heading2']))
 
     risk_summary = f"""
-    Current risk assessment indicates {risk_stats['at_risk_students']} students requiring attention
-    ({risk_stats['at_risk_percentage']:.1f}% of total student population). Of these,
-    {risk_stats['high_risk_students']} students are classified as high-risk and require
-    immediate intervention.
+    Current risk assessment indicates {at_risk_count} students requiring attention
+    ({at_risk_pct:.1f}% of total student population).
     """
 
     elements.append(Paragraph(risk_summary, styles['Normal']))
@@ -685,34 +601,44 @@ def generate_dashboard_recommendations(dashboard_data):
     """Generate strategic recommendations based on dashboard data"""
     recommendations = []
 
-    # GPA-based recommendations
-    if 'gpa_stats' in dashboard_data:
-        avg_gpa = dashboard_data['gpa_stats']['avg_gpa']
-        if avg_gpa < 2.5:
-            recommendations.append("Implement comprehensive academic support program - average GPA indicates systemic issues")
-        elif avg_gpa < 3.0:
-            recommendations.append("Enhance tutoring services and academic advising to improve overall GPA")
+    # Score-based recommendations
+    avg_score = dashboard_data.get('avg_score')
+    if avg_score is not None:
+        if avg_score < 50:
+            recommendations.append("Implement comprehensive academic support program - average score indicates systemic issues")
+        elif avg_score < 65:
+            recommendations.append("Enhance tutoring services and academic advising to improve overall performance")
 
     # Passing rate recommendations
-    passing_rate = dashboard_data['grade_distribution']['passing_rate']
+    grade_dist = dashboard_data.get('grade_distribution', {})
+    if isinstance(grade_dist, dict):
+        total = sum((grade_dist.get(g, 0) or 0) for g in ["A", "B", "C", "D", "F"])
+        passing = sum((grade_dist.get(g, 0) or 0) for g in ["A", "B", "C", "D"])
+        passing_rate = (passing / total * 100) if total > 0 else 100
+    else:
+        passing_rate = 100
+
     if passing_rate < 75:
         recommendations.append("Review curriculum difficulty and assessment standards - low passing rate detected")
     elif passing_rate < 85:
         recommendations.append("Strengthen student support services to improve success rates")
 
     # Risk-based recommendations
-    risk_pct = dashboard_data['risk_stats']['at_risk_percentage']
+    at_risk = dashboard_data.get('at_risk_students', [])
+    total_students = dashboard_data.get('total_students', 0)
+    risk_pct = (len(at_risk) / total_students * 100) if total_students > 0 else 0
+
     if risk_pct > 20:
         recommendations.append("Deploy emergency intervention protocols - high percentage of at-risk students")
     elif risk_pct > 10:
         recommendations.append("Expand early warning systems and proactive student outreach")
 
     # Course performance recommendations
-    course_perf = dashboard_data['course_performance']
-    if course_perf:
-        lowest_performing = min(course_perf, key=lambda x: x[2] if x[2] else 0)
-        if lowest_performing[2] and lowest_performing[2] < 70:
-            recommendations.append(f"Conduct detailed review of {lowest_performing[0]} course - lowest performance detected")
+    course_avgs = dashboard_data.get('course_averages', [])
+    if course_avgs:
+        lowest = min(course_avgs, key=lambda x: x.get('avg_score', 0) or 0)
+        if (lowest.get('avg_score', 0) or 0) < 70:
+            recommendations.append(f"Conduct detailed review of {lowest.get('course', 'unknown')} course - lowest performance detected")
 
     # General recommendations
     recommendations.extend([
@@ -728,34 +654,51 @@ def generate_dashboard_alerts(dashboard_data):
     """Generate alerts and recommendations based on dashboard data"""
     alerts = []
 
-    # Check passing rate
-    passing_rate = dashboard_data['grade_distribution']['passing_rate']
-    if passing_rate < 70:
-        alerts.append(f"⚠️  Low passing rate ({passing_rate:.1f}%) - consider curriculum review")
-    elif passing_rate < 80:
-        alerts.append(f"📊 Moderate passing rate ({passing_rate:.1f}%) - monitor closely")
+    # Calculate passing rate from grade distribution
+    grade_dist = dashboard_data.get('grade_distribution', {})
+    if isinstance(grade_dist, dict):
+        # Handle flat DataBag format (keys: A, B, C, D, F)
+        if 'passing_rate' in grade_dist:
+            passing_rate = grade_dist['passing_rate']
+        else:
+            total = sum((grade_dist.get(g, 0) or 0) for g in ["A", "B", "C", "D", "F"])
+            passing = sum((grade_dist.get(g, 0) or 0) for g in ["A", "B", "C", "D"])
+            passing_rate = (passing / total * 100) if total > 0 else 100
+
+        if passing_rate < 70:
+            alerts.append(f"Low passing rate ({passing_rate:.1f}%) - consider curriculum review")
+        elif passing_rate < 80:
+            alerts.append(f"Moderate passing rate ({passing_rate:.1f}%) - monitor closely")
 
     # Check at-risk percentage
-    at_risk_pct = dashboard_data['risk_stats']['at_risk_percentage']
-    if at_risk_pct > 20:
-        alerts.append(f"🚨 High percentage of at-risk students ({at_risk_pct:.1f}%) - immediate intervention needed")
-    elif at_risk_pct > 10:
-        alerts.append(f"⚠️  Elevated at-risk student percentage ({at_risk_pct:.1f}%) - enhance support services")
+    at_risk = dashboard_data.get('at_risk_students', [])
+    total_students = dashboard_data.get('total_students', 0)
+    if isinstance(at_risk, list) and total_students > 0:
+        at_risk_pct = (len(at_risk) / total_students) * 100
+    elif isinstance(dashboard_data.get('risk_stats'), dict):
+        at_risk_pct = dashboard_data['risk_stats'].get('at_risk_percentage', 0)
+    else:
+        at_risk_pct = 0
 
-    # Check GPA statistics
-    if 'gpa_stats' in dashboard_data:
-        avg_gpa = dashboard_data['gpa_stats']['avg_gpa']
-        if avg_gpa < 2.5:
-            alerts.append(f"📉 Low average GPA ({avg_gpa:.2f}) - academic support needed")
-        elif avg_gpa > 3.5:
-            alerts.append(f"🎉 Excellent average GPA ({avg_gpa:.2f}) - maintain current standards")
+    if at_risk_pct > 20:
+        alerts.append(f"High percentage of at-risk students ({at_risk_pct:.1f}%) - immediate intervention needed")
+    elif at_risk_pct > 10:
+        alerts.append(f"Elevated at-risk student percentage ({at_risk_pct:.1f}%) - enhance support services")
+
+    # Check average score
+    avg_score = dashboard_data.get('avg_score')
+    if avg_score is not None:
+        if avg_score < 50:
+            alerts.append(f"Low average score ({avg_score:.1f}%) - academic support needed")
+        elif avg_score > 80:
+            alerts.append(f"Excellent average score ({avg_score:.1f}%) - maintain current standards")
 
     # Display alerts
     if alerts:
         for alert in alerts:
             print(f"   {alert}")
     else:
-        print("   ✅ No critical alerts - performance within acceptable ranges")
+        print("   No critical alerts - performance within acceptable ranges")
 
 def extract_student_features(cursor, student_id):
     """Extract features for a student for machine learning"""

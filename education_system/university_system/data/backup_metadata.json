@@ -1,6 +1,21 @@
 {
     "backups": [
         {
+            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_update_20260412_084108.db.gz",
+            "filename": "student_records_before_update_20260412_084108.db.gz",
+            "type": "full",
+            "manual": false,
+            "operation": "update",
+            "timestamp": "20260412_084108",
+            "size": 1093723,
+            "file_hash": "f1be1ec9746dfd4e16559cbd0042a7d25420b2e2d9436691c0002e7e6808d2a7",
+            "compressed": true,
+            "encrypted": false,
+            "cloud_uploaded": false,
+            "remote_uploaded": false,
+            "backup_type": "full"
+        },
+        {
             "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_update_20260405_083624.db.gz",
             "filename": "student_records_before_update_20260405_083624.db.gz",
             "type": "full",
@@ -89,24 +104,9 @@
             "cloud_uploaded": false,
             "remote_uploaded": false,
             "backup_type": "full"
-        },
-        {
-            "path": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_update_provider_schedule_20260404_085232.db.gz",
-            "filename": "student_records_before_update_provider_schedule_20260404_085232.db.gz",
-            "type": "full",
-            "manual": false,
-            "operation": "update_provider_schedule",
-            "timestamp": "20260404_085232",
-            "size": 6754,
-            "file_hash": "66fdf41102a9c51d04277c16bd0e1c90f9a264af7175c835685942c879cd6dd2",
-            "compressed": true,
-            "encrypted": false,
-            "cloud_uploaded": false,
-            "remote_uploaded": false,
-            "backup_type": "full"
         }
     ],
-    "last_full": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_update_20260405_083624.db.gz",
+    "last_full": "/home/seancatchpole989/education_system/university_system/backups/database/student_records_before_update_20260412_084108.db.gz",
     "statistics": {
         "total_backups": 7,
         "total_size": 48429,

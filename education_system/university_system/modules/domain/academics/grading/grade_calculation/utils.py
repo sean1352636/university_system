@@ -53,8 +53,47 @@ def select_assessment(cursor):
     ''')
     rows = cursor.fetchall()
     if not rows:
-        print("No assessments found.")
-        return None
+        # Fall back to assignments table and auto-import into assessments
+        try:
+            cursor.execute('''
+                SELECT id, title, module_code, max_marks, assignment_type, due_date, description
+                FROM assignments
+                WHERE is_active = 1 AND archived = 0
+                ORDER BY created_at DESC
+            ''')
+            assignment_rows = cursor.fetchall()
+        except Exception:
+            assignment_rows = []
+
+        if not assignment_rows:
+            print("No assessments found.")
+            return None
+
+        print("\nNo assessments found. Importing from assignments...")
+        for a_id, title, module_code, max_marks, a_type, due_date, description in assignment_rows:
+            # Check if this assignment was already imported
+            cursor.execute(
+                'SELECT assessment_id FROM assessments WHERE assessment_name = ? AND module_code = ?',
+                (title, module_code),
+            )
+            if not cursor.fetchone():
+                cursor.execute('''
+                    INSERT INTO assessments
+                    (assessment_name, assessment_type, module_code, max_points, weight, due_date, description)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (title, a_type or 'assignment', module_code, max_marks or 100, 100, due_date, description))
+        cursor.connection.commit()
+
+        # Re-query
+        cursor.execute('''
+            SELECT assessment_id, assessment_name, module_code
+            FROM assessments
+            ORDER BY date_created DESC
+        ''')
+        rows = cursor.fetchall()
+        if not rows:
+            print("No assessments found.")
+            return None
 
     print("\nAvailable Assessments:")
     for i, (aid, name, module) in enumerate(rows, start=1):

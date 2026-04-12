@@ -43,6 +43,29 @@ class LMSTabMixin:
     # Tab creation
     # ------------------------------------------------------------------
 
+    def _lms_switch_to_cli(self):
+        """Switch from LMS GUI to LMS CLI."""
+        try:
+            from education_system.university_system.modules.domain.academics.services.lms.lms_core import display_lms_menu
+            import threading
+
+            self.root.withdraw()
+
+            def run_cli():
+                try:
+                    display_lms_menu(self.auth)
+                except Exception as e:
+                    import logging
+                    logging.error(f"LMS CLI error: {e}")
+                finally:
+                    self.root.after(0, self.root.deiconify)
+
+            cli_thread = threading.Thread(target=run_cli, daemon=True)
+            cli_thread.start()
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to launch LMS CLI: {e}")
+
     def create_lms_tab(self):
         """Create the LMS tab with its own sub-notebook."""
         if not LMS_AVAILABLE:
@@ -85,6 +108,11 @@ class LMSTabMixin:
 
         lms_frame = ttk.Frame(self.notebook)
         self.notebook.add(lms_frame, text=_("lms.title"))
+
+        # LMS toolbar
+        lms_toolbar = ttk.Frame(lms_frame)
+        lms_toolbar.pack(fill=tk.X, padx=5, pady=(5, 0))
+        ttk.Button(lms_toolbar, text="Switch to CLI", command=self._lms_switch_to_cli).pack(side=tk.LEFT, padx=5)
 
         self.lms_notebook = ttk.Notebook(lms_frame)
         self.lms_notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)

@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.76.2 — 2026-04-12](#8762---2026-04-12)
+- [8.76.1 — 2026-04-12](#8761---2026-04-12)
+- [8.76.0 — 2026-04-12](#8760---2026-04-12)
 - [8.75.5 — 2026-04-11](#8755---2026-04-11)
 - [8.75.4 — 2026-04-11](#8754---2026-04-11)
 - [8.75.3 — 2026-04-10](#8753---2026-04-10)
@@ -171,6 +174,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.76.2] — 2026-04-12
+
+### Grade tracking CLI — 10 bug fixes across schema conflicts, missing data, and dashboard crashes
+
+#### Fixed
+
+- **`risk_factors` table schema conflict**: The admin-support schema created `risk_factors` with incompatible columns (`id`, `student_id`, `factor_name`, `factor_value`), blocking the grade-tracking version (`factor_id`, `name`, `description`, `weight`). Renamed the admin-support table to `admin_risk_factors` in `admin_support_schemas.py` and `ai_features_schemas.py`. Both DB init functions now detect and rename the conflicting table at startup so existing databases self-heal.
+- **"No assessments found" in Record Grades, Grade Curve Analysis, and all assessment-dependent menus**: The `assessments` table was empty while assignments existed in the `assignments` table. `select_assessment()` now auto-imports active assignments into the `assessments` table when none exist, bridging the two systems.
+- **Generate Transcript crash — `'NoneType' object has no attribute 'capitalize'`**: `gender` can be `NULL` in the students table. The transcript PDF builder now renders "N/A" when gender is missing instead of crashing.
+- **Calculate GPA "all students" shows blank table**: When no students have grades, the function printed the table header with zero rows and no explanation. Now prints "No students with grades found in the database." and returns early.
+- **Learning Outcome Tracking — `no such column: course` / `no such column: importance`**: The `learning_outcomes` table was created by another subsystem with columns `level` (not `importance`) and without `course`. DB init now adds the missing columns via `ALTER TABLE`. All queries in `management.py` and `grade_calculation/learning_outcomes.py` fall back to the alternate schema when the primary columns don't exist.
+- **`modules` table missing `course` column**: The modules table was created by a different subsystem without `course`, `module_code`, or `module_type` columns that grade tracking expects. `init_basic_database()` now adds missing columns via `ALTER TABLE`.
+- **Performance Dashboard crash — `KeyError: 'overview'`**: `collect_dashboard_data()` returns a flat `DataBag` with keys like `total_students`, `total_grades`, but `display_performance_dashboard()` expected nested dicts (`dashboard_data['overview']`, `dashboard_data['risk_stats']`, etc.). Rewrote `display_performance_dashboard()` to use the actual flat format.
+- **`create_dashboard_visualizations()` crash**: Same nested-key mismatch as above. Rewrote to use flat `DataBag` keys (`total_students`, `grade_distribution`, `course_averages`, `at_risk_students`, `monthly_trends`).
+- **`generate_dashboard_report()` crash**: Same nested-key mismatch. Rewrote executive summary, KPI table, course performance section, and risk assessment section to use flat `DataBag` format.
+- **`generate_dashboard_alerts()` and `generate_dashboard_recommendations()` crash**: Both functions accessed `dashboard_data['grade_distribution']['passing_rate']` and `dashboard_data['risk_stats']` which don't exist in the `DataBag`. Rewrote to compute passing rate from the `{A, B, C, D, F}` grade distribution dict and derive at-risk percentage from the `at_risk_students` list.
+
+---
+
+## [8.76.1] — 2026-04-12
+
+### Module management CLI expansion, scheduling GUI overhaul, and bug fixes
+
+#### Added
+
+- **Module management CLI — 8 new features** bringing CLI to parity with the GUI:
+  - Schedule module (day/time/room/instructor with availability filtering)
+  - View module timetable (tabular view sorted by day/time, filterable by day/code/instructor)
+  - Generate module report (with email-to-admin and save-to-file options)
+  - Email all students on a module (bulk notification)
+  - Import modules from CSV
+  - Export modules to CSV
+  - Validate module data (orphan detection, duplicate checks, room conflict detection, auto-cleanup)
+  - Backup module data (SQL dump of modules, student_modules, module_schedule tables)
+- **Enrollment report email-to-admin** (CLI): After generating any report type, option to send to admin via email template or save to file. Created `enrollment_report.json` email template.
+- **Schedule notification email template** (`schedule_notification.json`): Used by both create and update schedule flows in CLI and GUI.
+
+#### Changed
+
+- **Course management GUI — CreateScheduleDialog rewritten**: Time slots (09:00–17:00 hourly dropdowns), day checkboxes (Mon–Fri), rooms and instructors auto-refresh based on selected time/day/semester to show only available options. Duplicate schedule check before insert. Email notification on create.
+- **Course management GUI — UpdateScheduleFormDialog rewritten**: Same time/day/room/instructor controls as create, pre-populated with current values. Availability filtering excludes current schedule from conflict checks. Change detection prevents no-op updates. Shows change summary in success dialog. Emails old instructor (if unassigned) and new/current instructor.
+- **Module management CLI menu** reorganised into categorised sections (CRUD, Search, Scheduling, Reports & Email, Bulk Operations, Maintenance) with view-only users getting a reduced menu.
+
+#### Fixed
+
+- **Course planning CLI `no such column: major`**: The `students` table has `course` not `major`. Fixed 4 queries and dict key references in `course_planning_cli.py`.
+- **Course planning CLI `NOT NULL constraint failed: course_prerequisites.created_at`**: INSERT was missing the `created_at` column. Now provides timestamp.
+- **Course planning CLI `FOREIGN KEY constraint failed` on prerequisites**: CLI passed course codes (e.g. `'CS'`) but FK references `courses.id` (integer). Now resolves codes to actual IDs before inserting.
+- **Course planning CLI `foreign key mismatch` on course_offerings**: FK declaration points at `courses(id)` but column stores course codes. Replaced `INSERT ... ON CONFLICT` with explicit check-then-update-or-insert to avoid FK enforcement mismatch.
+- **Course analytics `NoneType` format crash**: `AVG()` returns `None` with no rows; `:.1f` can't format `None`. Added null guards across all affected print statements.
+- **Course recommendations `fetchone()` called twice**: `cursor.fetchone()[0] if cursor.fetchone() else 3.0` consumed the row in the condition, then got `None` on the second call. Fixed to fetch once into a variable.
+
+---
+
+## [8.76.0] — 2026-04-12
+
+### University shop/restaurant GUI fixes, course management overhaul, and instructor onboarding
+
+#### Added
+
+- **Instructor onboarding workflow** (CLI + GUI): Creating an instructor now automatically generates a university email (`firstname.lastname@university.edu`), creates a system login account with a secure temporary password, and sends a welcome email via the DB email system.
+- **Instructor welcome email template** (`templates/email/user_management/instructor_welcome.json`): JSON-based template using `$variable` substitution — no hardcoded email content.
+- **Course management CLI/GUI switching**: Added "Switch to GUI" option (option 35) in the CLI menu and renamed the GUI toolbar button to "Switch to CLI" for consistency.
+
+#### Fixed
+
+- **University Shop GUI blank page**: Fixed indentation bug in `create_widgets()` where `_on_sidebar_canvas_configure` broke out of the method, preventing `_bind_sidebar_scroll_events()` from running and leaving `content_frame` as `None`.
+- **University Shop GUI missing methods**: Bound 5 unbound methods to `UniversityShopGUI` — `show_quick_add_product_dialog`, `load_inventory_data`, `view_transaction_details`, `backup_shop_database`, `toggle_discount_status`, `toggle_product_status`.
+- **University Restaurant GUI blank page**: The student union's "University Restaurant" button created an empty `Toplevel` but never called `show_restaurant_management()`. Fixed both callers (`external_integrations.py` and `utilities.py`) to pass the parent root and invoke `show_restaurant_management()`.
+- **Shop CLI module path**: Fixed subprocess launch using `university_system.modules...` (missing `education_system.` prefix) and corrected `project_root` calculation from 5 levels up to 8 levels up.
+- **Academic calendar sync permission error**: `AcademicCalendarManager()` was constructed without `auth_manager` in `student_union_core.py` and `student_union/services/menu.py`, causing the fallback auth manager to fail on `_current_auth_instance` import. Fixed both call sites to pass the existing auth instance.
+- **Course management — "database is locked" errors**: All functions across 10 files (`status.py`, `prerequisites.py`, `instructors.py`, `scheduling.py`, `waitlist.py`, `analytics.py`, `import_export.py`, `recommendations.py`, `history.py`, `maintenance.py`, `courses.py`, `search.py`) changed from scattered `conn.close()` calls to `conn = None` + `finally: if conn: conn.close()`. This ensures connections are released before `@log_*` decorators try to write activity logs.
+- **Course management — DB IDs as display numbers**: All interactive course/instructor/schedule/prerequisite listings changed from displaying raw database IDs (which may not be sequential) to `enumerate(..., 1)` with user-friendly row numbers mapped back to actual DB IDs.
+- **Course management — trapped input loops**: All `while True` input loops across the module now accept empty input (Enter) to go back instead of showing "Invalid choice" with no way to exit.
+- **Course management — `dict` type SQL binding errors**: Fixed `auth.current_user` (a dict) being passed directly as a SQL string parameter in `status.py` (`changed_by` column) and `import_export.py` (`bulk_update_courses`). Now extracts `username` from the dict.
+- **Course management — case-sensitive status filtering**: Courses stored with `status = 'active'` (lowercase) were invisible to queries filtering `WHERE status = 'Active'`. Changed all status comparisons across all course management files to `LOWER(status) = 'active'` for case-insensitive matching. Also fixed malformed `table_alias.LOWER(status)` → `LOWER(table_alias.status)` syntax in 4 places.
+- **Course analytics `NoneType` format crash**: SQL aggregate functions (`AVG`, `ROUND`) return `None` when no rows match, but `:.1f` format strings cannot handle `None`. Added null guards across all 7 affected print statements in `analytics.py`.
 
 ---
 

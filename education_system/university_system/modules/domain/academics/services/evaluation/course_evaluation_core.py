@@ -286,9 +286,22 @@ class AnonymisedEvaluationService:
     def submit_response(self, form_id, student_id, answers):
         """Submit response. Student ID is hashed for anonymity."""
         h = self._hash_student(student_id, form_id)
-        with transaction() as conn:
+
+        # Validate form exists and is active
+        form = self.get_form(form_id)
+        if not form:
+            raise ValueError(f"Evaluation form {form_id} not found.")
+        if form.get('status') != 'active':
+            raise ValueError(f"Form is not active (status: {form.get('status')}). Only active forms accept responses.")
+
+        conn = None
+        try:
+            conn = get_connection()
+
+            # Check for duplicate submission
             if conn.execute("SELECT id FROM eval_form_responses WHERE form_id=? AND student_hash=?", (form_id, h)).fetchone():
                 raise ValueError("You have already submitted a response for this evaluation.")
+
             cur = conn.execute("INSERT INTO eval_form_responses (form_id,student_hash) VALUES (?,?)", (form_id, h))
             rid = cur.lastrowid
             for a in answers:
@@ -296,6 +309,17 @@ class AnonymisedEvaluationService:
                              (rid, a['question_id'], a.get('rating_value'), a.get('text_value')))
             conn.commit()
             return rid
+        except sqlite3.IntegrityError as e:
+            if conn:
+                conn.rollback()
+            raise ValueError(f"Could not submit response: {e}") from e
+        except Exception:
+            if conn:
+                conn.rollback()
+            raise
+        finally:
+            if conn:
+                conn.close()
 
     def get_anonymised_results(self, form_id):
         """Aggregated results only — no individual responses."""
@@ -325,12 +349,65 @@ class AnonymisedEvaluationService:
             return {"form_id": form_id, "responses": conn.execute("SELECT COUNT(*) FROM eval_form_responses WHERE form_id=?", (form_id,)).fetchone()[0]}
 
 
+def _pick_form(service, prompt="Select form", status_filter=None):
+    """List forms and let user pick one. Returns form dict or None."""
+    forms = service.list_forms(status=status_filter)
+    if not forms:
+        filter_msg = f" (status: {status_filter})" if status_filter else ""
+        print(f"No evaluation forms found{filter_msg}.")
+        return None
+    print(f"\n{'#':<4} {'ID':<5} {'Module':<12} {'Name':<25} {'Year':<10} {'Status':<10}")
+    print("-" * 66)
+    for i, f in enumerate(forms, 1):
+        print(f"{i:<4} {f['id']:<5} {f['module_code']:<12} {(f['module_name'] or '')[:25]:<25} {f['academic_year']:<10} {f['status']:<10}")
+    while True:
+        raw = input(f"\n{prompt} (or Enter to go back): ").strip()
+        if not raw:
+            return None
+        try:
+            idx = int(raw)
+            if 1 <= idx <= len(forms):
+                return forms[idx - 1]
+            print("Invalid choice.")
+        except ValueError:
+            print("Please enter a number.")
+
+
+def _pick_module(cursor):
+    """List modules from DB and let user pick one. Returns (module_code, module_name) or None."""
+    cursor.execute("SELECT module_code, module_name FROM modules ORDER BY module_code")
+    modules = cursor.fetchall()
+    if not modules:
+        print("No modules found in the system.")
+        return None
+    print("\nAvailable Modules:")
+    for i, m in enumerate(modules, 1):
+        print(f"  {i}. {m[0]} - {m[1]}")
+    while True:
+        raw = input("Select module (or Enter to go back): ").strip()
+        if not raw:
+            return None
+        try:
+            idx = int(raw)
+            if 1 <= idx <= len(modules):
+                return modules[idx - 1]
+            print("Invalid choice.")
+        except ValueError:
+            print("Please enter a number.")
+
+
 def display_course_evaluation_menu(auth):
     """Course Evaluation System CLI — fully functional with anonymised feedback."""
     service = AnonymisedEvaluationService()
 
+    user_id = 'unknown'
+    if auth and auth.current_user:
+        if isinstance(auth.current_user, dict):
+            user_id = auth.current_user.get('username', 'unknown')
+        else:
+            user_id = str(auth.current_user)
+
     while True:
-        print("\033[2J\033[H", end="")
         print("\n" + "=" * 70)
         print("COURSE EVALUATION SYSTEM".center(70))
         print("=" * 70)
@@ -346,69 +423,292 @@ def display_course_evaluation_menu(auth):
         print("=" * 70)
 
         choice = input("\nSelect: ").strip()
-        if choice == '0':
+        if choice == '0' or not choice:
             break
-        elif choice == '1':
-            forms = service.list_forms()
-            print(f"\n{'ID':<5} {'Module':<12} {'Name':<25} {'Year':<10} {'Status':<10}")
-            print("-" * 65)
-            for f in forms:
-                print(f"{f['id']:<5} {f['module_code']:<12} {f['module_name']:<25} {f['academic_year']:<10} {f['status']:<10}")
-        elif choice == '2':
-            code = input("Module code: ").strip()
-            name = input("Module name: ").strip()
-            year = input("Academic year: ").strip()
-            sem = input("Semester: ").strip()
-            fid = service.create_form(code, name, year, sem)
-            print(f"\nForm created with ID: {fid}")
-        elif choice == '3':
-            fid = int(input("Form ID: ").strip())
-            text = input("Question text: ").strip()
-            qtype = input("Type (rating/text/multiple_choice) [rating]: ").strip() or 'rating'
-            order = int(input("Display order [0]: ").strip() or '0')
-            service.add_question(fid, text, qtype, display_order=order)
-            print("Question added.")
-        elif choice == '4':
-            fid = int(input("Form ID to activate: ").strip())
-            service.activate_form(fid)
-            print("Form activated.")
-        elif choice == '5':
-            fid = int(input("Form ID to close: ").strip())
-            service.close_form(fid)
-            print("Form closed.")
-        elif choice == '6':
-            fid = int(input("Form ID: ").strip())
-            student_id = auth.current_user.get('username', 'unknown') if auth and auth.current_user else input("Student ID: ").strip()
-            questions = service.get_questions(fid)
-            answers = []
-            for q in questions:
-                print(f"\n  {q['question_text']} ({q['question_type']})")
-                if q['question_type'] == 'rating':
-                    val = int(input("  Rating (1-5): ").strip())
-                    answers.append({"question_id": q['id'], "rating_value": val})
+
+        try:
+            # --- 1. List Evaluation Forms ---
+            if choice == '1':
+                forms = service.list_forms()
+                if not forms:
+                    print("No evaluation forms found.")
                 else:
-                    val = input("  Answer: ").strip()
-                    answers.append({"question_id": q['id'], "text_value": val})
-            try:
-                service.submit_response(fid, student_id, answers)
-                print("\nResponse submitted (anonymised).")
-            except ValueError as e:
-                print(f"\n{e}")
-        elif choice == '7':
-            fid = int(input("Form ID: ").strip())
-            results = service.get_anonymised_results(fid)
-            print(f"\nTotal responses: {results['total_responses']}")
-            for q in results['questions']:
-                print(f"\n  Q: {q['question_text']}")
-                if q['question_type'] == 'rating':
-                    print(f"    Avg: {q.get('avg_rating', 0)} | Responses: {q.get('response_count', 0)}")
-                elif q['question_type'] == 'text':
-                    print(f"    {q.get('response_count', 0)} text responses")
-        elif choice == '8':
-            forms = service.list_forms()
-            for f in forms:
-                rate = service.get_response_rate(f['id'])
-                print(f"  {f['module_code']} ({f['status']}): {rate['responses']} responses")
+                    print(f"\n{'ID':<5} {'Module':<12} {'Name':<25} {'Year':<10} {'Sem':<8} {'Status':<10} {'Qs':<4}")
+                    print("-" * 74)
+                    for f in forms:
+                        # Count questions for each form
+                        try:
+                            qcount = len(service.get_questions(f['id']))
+                        except Exception:
+                            qcount = 0
+                        print(f"{f['id']:<5} {f['module_code']:<12} {(f['module_name'] or '')[:25]:<25} "
+                              f"{f['academic_year']:<10} {(f.get('semester') or ''):<8} {f['status']:<10} {qcount:<4}")
+
+            # --- 2. Create Evaluation Form ---
+            elif choice == '2':
+                print("\nCreate Evaluation Form")
+                print("-" * 30)
+
+                # Pick module from DB
+                conn = get_connection()
+                module = _pick_module(conn.cursor())
+                conn.close()
+
+                if not module:
+                    continue
+
+                module_code, module_name = module[0], module[1]
+                print(f"Selected: {module_code} - {module_name}")
+
+                # Check for duplicate form
+                existing_forms = service.list_forms()
+                year = input("Academic year (e.g. 2025/26, or Enter to go back): ").strip()
+                if not year:
+                    continue
+
+                sem = input("Semester (optional): ").strip()
+
+                # Check duplicate
+                for ef in existing_forms:
+                    if (ef['module_code'] == module_code and
+                            ef['academic_year'] == year and
+                            ef.get('semester', '') == sem and
+                            ef['status'] != 'closed'):
+                        print(f"An active/draft form already exists for {module_code} in {year} (ID: {ef['id']}).")
+                        break
+                else:
+                    fid = service.create_form(module_code, module_name, year, sem, created_by=user_id)
+                    print(f"\nForm created successfully (ID: {fid})")
+                    print("Next: Add questions (option 3), then activate (option 4).")
+
+            # --- 3. Add Question to Form ---
+            elif choice == '3':
+                form = _pick_form(service, "Select form to add question to")
+                if not form:
+                    continue
+
+                if form['status'] == 'closed':
+                    print("Cannot add questions to a closed form.")
+                    continue
+
+                print(f"\nAdding question to: {form['module_code']} - {form['module_name']}")
+
+                existing = service.get_questions(form['id'])
+                if existing:
+                    print(f"\nExisting questions ({len(existing)}):")
+                    for q in existing:
+                        print(f"  {q.get('display_order', 0)}. [{q['question_type']}] {q['question_text']}")
+
+                text = input("\nQuestion text (or Enter to go back): ").strip()
+                if not text:
+                    continue
+
+                print("Question types:")
+                print("  1. Rating (1-5 scale)")
+                print("  2. Text (free text response)")
+                print("  3. Multiple choice")
+                while True:
+                    qt_choice = input("Select type (1-3) [1]: ").strip()
+                    if not qt_choice:
+                        qt_choice = '1'
+                    if qt_choice in ('1', '2', '3'):
+                        break
+                    print("Please enter 1, 2 or 3.")
+                qtype = {'1': 'rating', '2': 'text', '3': 'multiple_choice'}[qt_choice]
+
+                options = None
+                if qtype == 'multiple_choice':
+                    options = input("Options (comma-separated, e.g. Yes,No,Maybe): ").strip()
+                    if not options:
+                        print("Multiple choice requires at least one option.")
+                        continue
+
+                order = len(existing) + 1
+                required = input("Required? (y/n) [y]: ").strip().lower() != 'n'
+
+                service.add_question(form['id'], text, qtype, options=options,
+                                    display_order=order, is_required=1 if required else 0)
+                print(f"Question added (order: {order}).")
+
+            # --- 4. Activate Form ---
+            elif choice == '4':
+                form = _pick_form(service, "Select form to activate", status_filter='draft')
+                if not form:
+                    continue
+
+                questions = service.get_questions(form['id'])
+                if not questions:
+                    print("Cannot activate: form has no questions. Add questions first (option 3).")
+                    continue
+
+                confirm = input(f"Activate '{form['module_code']} - {form['module_name']}' with {len(questions)} question(s)? (y/n): ").strip().lower()
+                if confirm != 'y':
+                    print("Cancelled.")
+                    continue
+
+                service.activate_form(form['id'])
+                print(f"Form is now ACTIVE. Students can submit responses.")
+
+            # --- 5. Close Form ---
+            elif choice == '5':
+                form = _pick_form(service, "Select form to close", status_filter='active')
+                if not form:
+                    continue
+
+                rate = service.get_response_rate(form['id'])
+                print(f"\nThis form has {rate['responses']} response(s).")
+                confirm = input("Close this form? This cannot be undone. (y/n): ").strip().lower()
+                if confirm != 'y':
+                    print("Cancelled.")
+                    continue
+
+                service.close_form(form['id'])
+                print(f"Form '{form['module_code']}' closed. No more responses will be accepted.")
+
+            # --- 6. Submit Response ---
+            elif choice == '6':
+                form = _pick_form(service, "Select form to evaluate", status_filter='active')
+                if not form:
+                    continue
+
+                questions = service.get_questions(form['id'])
+                if not questions:
+                    print("This form has no questions.")
+                    continue
+
+                print(f"\nEvaluating: {form['module_code']} - {form['module_name']}")
+                print(f"  {len(questions)} question(s). Your identity will be anonymised.")
+                print("  (Enter blank to skip optional questions)\n")
+
+                answers = []
+                cancelled = False
+                for i, q in enumerate(questions, 1):
+                    is_req = q.get('is_required', 1)
+                    req_tag = " *" if is_req else ""
+                    print(f"  Question {i}/{len(questions)}{req_tag}: {q['question_text']}")
+
+                    if q['question_type'] == 'rating':
+                        while True:
+                            raw = input("    Rating (1-5): ").strip()
+                            if not raw:
+                                if not is_req:
+                                    answers.append({"question_id": q['id'], "rating_value": None})
+                                    break
+                                print("    This question is required.")
+                                continue
+                            try:
+                                val = int(raw)
+                                if 1 <= val <= 5:
+                                    answers.append({"question_id": q['id'], "rating_value": val})
+                                    break
+                                print("    Please enter 1-5.")
+                            except ValueError:
+                                print("    Please enter a number 1-5.")
+
+                    elif q['question_type'] == 'multiple_choice' and q.get('options'):
+                        opts = [o.strip() for o in q['options'].split(',')]
+                        for oi, opt in enumerate(opts, 1):
+                            print(f"      {oi}. {opt}")
+                        while True:
+                            raw = input("    Select option: ").strip()
+                            if not raw:
+                                if not is_req:
+                                    answers.append({"question_id": q['id'], "text_value": None})
+                                    break
+                                print("    This question is required.")
+                                continue
+                            try:
+                                oidx = int(raw)
+                                if 1 <= oidx <= len(opts):
+                                    answers.append({"question_id": q['id'], "text_value": opts[oidx - 1]})
+                                    break
+                                print(f"    Please enter 1-{len(opts)}.")
+                            except ValueError:
+                                print("    Please enter a number.")
+                    else:  # text
+                        while True:
+                            val = input("    Your answer: ").strip()
+                            if not val and is_req:
+                                print("    This question is required.")
+                                continue
+                            answers.append({"question_id": q['id'], "text_value": val or None})
+                            break
+
+                confirm = input(f"\nSubmit your {len(answers)} answer(s)? (y/n): ").strip().lower()
+                if confirm != 'y':
+                    print("Submission cancelled.")
+                    continue
+
+                try:
+                    service.submit_response(form['id'], user_id, answers)
+                    print("\nResponse submitted successfully (anonymised).")
+                except ValueError as e:
+                    print(f"\n{e}")
+
+            # --- 7. View Anonymised Results ---
+            elif choice == '7':
+                form = _pick_form(service, "Select form to view results")
+                if not form:
+                    continue
+
+                results = service.get_anonymised_results(form['id'])
+                total = results.get('total_responses', 0)
+
+                print(f"\n{'=' * 60}")
+                print(f"Results: {form['module_code']} - {form['module_name']}")
+                print(f"Status: {form['status']}  |  Total responses: {total}")
+                print(f"{'=' * 60}")
+
+                if total == 0:
+                    print("\n  No responses yet.")
+                else:
+                    for q in results['questions']:
+                        print(f"\n  Q: {q['question_text']} [{q['question_type']}]")
+                        if q['question_type'] == 'rating':
+                            avg = q.get('avg_rating', 0)
+                            count = q.get('response_count', 0)
+                            bar = "█" * int(avg) + "░" * (5 - int(avg)) if avg else "░" * 5
+                            print(f"    Average: {avg}/5 {bar}  ({count} responses)")
+                            dist = q.get('distribution', {})
+                            if dist:
+                                for rating in range(5, 0, -1):
+                                    cnt = dist.get(rating, 0)
+                                    pct = (cnt / count * 100) if count else 0
+                                    bar_d = "▓" * int(pct / 5)
+                                    print(f"      {rating}★: {bar_d} {cnt} ({pct:.0f}%)")
+                        elif q['question_type'] in ('text', 'multiple_choice'):
+                            count = q.get('response_count', 0)
+                            print(f"    {count} response(s)")
+                            for resp in q.get('responses', [])[:5]:
+                                print(f"      - {resp[:80]}")
+                            if count > 5:
+                                print(f"      ... and {count - 5} more")
+
+            # --- 8. Response Rates ---
+            elif choice == '8':
+                forms = service.list_forms()
+                if not forms:
+                    print("No forms found.")
+                else:
+                    print(f"\n{'Module':<12} {'Name':<25} {'Year':<10} {'Status':<10} {'Responses':<10}")
+                    print("-" * 67)
+                    for f in forms:
+                        rate = service.get_response_rate(f['id'])
+                        print(f"{f['module_code']:<12} {(f['module_name'] or '')[:25]:<25} "
+                              f"{f['academic_year']:<10} {f['status']:<10} {rate['responses']:<10}")
+
+            else:
+                print("Invalid choice. Please enter 0-8.")
+
+        except (ValueError, TypeError) as e:
+            print(f"Input error: {e}")
+        except sqlite3.IntegrityError as e:
+            print(f"Database constraint error: {e}")
+        except (sqlite3.Error, DatabaseError) as e:
+            print(f"Database error: {e}")
+        except Exception as e:
+            print(f"Error: {e}")
+
         input("\nPress Enter to continue...")
 
 # Import the full GUI

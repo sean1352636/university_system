@@ -321,7 +321,7 @@ def init_ai_tables():
                     detail TEXT,
                     weight REAL,
                     created_at TEXT,
-                    FOREIGN KEY (risk_factor_id) REFERENCES risk_factors (id)
+                    FOREIGN KEY (risk_factor_id) REFERENCES admin_risk_factors (id)
                 )
         ''')
 

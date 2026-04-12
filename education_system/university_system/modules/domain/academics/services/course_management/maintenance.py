@@ -15,6 +15,7 @@ def system_maintenance(auth):
         print("You don't have permission to perform system maintenance.")
         return False
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -42,7 +43,6 @@ def system_maintenance(auth):
                 print("Please enter a valid number.")
 
         if choice == 0:
-            conn.close()
             return False
 
         elif choice == 1:  # Database integrity check
@@ -241,16 +241,14 @@ def system_maintenance(auth):
 
             print(f"✓ Database backup saved as {backup_file}")
 
-        conn.close()
         return True
 
     except sqlite3.Error as e:
         print(f"Database error during maintenance: {e}")
-        if 'conn' in locals():
-            conn.close()
         return False
     except Exception as e:
         print(f"Error during maintenance: {e}")
-        if 'conn' in locals():
-            conn.close()
         return False
+    finally:
+        if conn:
+            conn.close()

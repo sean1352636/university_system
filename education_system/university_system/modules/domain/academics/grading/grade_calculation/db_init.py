@@ -80,6 +80,13 @@ def init_enhanced_grades_db():
         )
         ''')
 
+        # Add missing columns if learning_outcomes was created by another subsystem
+        for col, col_type in [('course', 'TEXT'), ('importance', 'INTEGER')]:
+            try:
+                cursor.execute(f'ALTER TABLE learning_outcomes ADD COLUMN {col} {col_type}')
+            except sqlite3.OperationalError:
+                pass  # Column already exists
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS assessment_outcomes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -151,6 +158,17 @@ def init_enhanced_grades_db():
         ''')
 
         # 4. Predictive Analytics Tables
+        # If risk_factors was created by admin_support_schemas with a different schema,
+        # rename it so we can create the grade-tracking version
+        try:
+            cursor.execute("SELECT name FROM risk_factors LIMIT 0")
+        except sqlite3.OperationalError:
+            # 'name' column doesn't exist — table has the wrong schema
+            try:
+                cursor.execute('ALTER TABLE risk_factors RENAME TO admin_risk_factors')
+            except sqlite3.OperationalError:
+                pass  # admin_risk_factors already exists
+
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS risk_factors (
             factor_id INTEGER PRIMARY KEY AUTOINCREMENT,

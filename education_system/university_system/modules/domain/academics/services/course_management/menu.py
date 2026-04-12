@@ -56,6 +56,25 @@ def _launch_degree_audit_cli(auth):
         input("Press Enter to continue...")
 
 
+def _switch_to_gui(auth):
+    """Switch from CLI to Course Management GUI."""
+    try:
+        import tkinter as tk
+        from education_system.university_system.modules.domain.academics.gui.course_management_gui import CourseManagementGUI
+        print("\nLaunching Course Management GUI...")
+        root = tk.Tk()
+        root.title("Course Management System")
+        root.geometry("1200x800")
+        app = CourseManagementGUI(root, auth_system=auth)
+        root.mainloop()
+    except ImportError as e:
+        print(f"\nCourse Management GUI not available: {e}")
+        input("Press Enter to continue...")
+    except Exception as e:
+        print(f"\nError launching GUI: {e}")
+        input("Press Enter to continue...")
+
+
 @log_menu_navigation(description="Displaying enhanced course management menu")
 def display_enhanced_course_menu(auth):
     """Display the enhanced course management menu"""
@@ -104,11 +123,11 @@ def display_enhanced_course_menu(auth):
             print(f"{'30. Course Planning Assistant':<25} {'31. Learning Management (LMS)':<30} {'32. Course Evaluation':<25} {'33. Degree Audit':<25}")
 
             print(f"\n⚙️  {get_text('course_mgmt.sections.settings', default='SETTINGS')}:")
-            print(f"{'34. ' + get_text('course_mgmt.menu.language', default='Change Language'):<25}")
+            print(f"{'34. ' + get_text('course_mgmt.menu.language', default='Change Language'):<25} {'35. Switch to GUI':<25}")
 
             print(f"\n0.  {get_text('course_mgmt.menu.return_main', default='Return to Main Menu')}")
 
-            max_option = 34
+            max_option = 35
 
         elif auth.check_permission('view_courses'):
             print(f"\n📚 {get_text('course_mgmt.sections.course_viewing', default='COURSE VIEWING')}:")
@@ -122,9 +141,10 @@ def display_enhanced_course_menu(auth):
             print(f"8. Course Evaluation")
             print(f"9. Degree Audit")
             print(f"10. {get_text('course_mgmt.menu.language', default='Change Language')}")
+            print(f"11. Switch to GUI")
             print(f"0. {get_text('course_mgmt.menu.return_main', default='Return to Main Menu')}")
 
-            max_option = 10
+            max_option = 11
         else:
             print(get_text('course_mgmt.no_permission', default="You don't have permission to manage courses."))
             return
@@ -206,6 +226,9 @@ def display_enhanced_course_menu(auth):
                 _launch_degree_audit_cli(auth)
             elif choice == '34':
                 display_language_menu_option()
+            elif choice == '35':
+                _switch_to_gui(auth)
+                return  # Exit CLI menu after launching GUI
             else:
                 print(get_text('course_mgmt.invalid_choice', default='Invalid choice. Please enter a number between 0 and {max_option}.').format(max_option=max_option))
 
@@ -230,6 +253,9 @@ def display_enhanced_course_menu(auth):
                 _launch_degree_audit_cli(auth)
             elif choice == '10':
                 display_language_menu_option()
+            elif choice == '11':
+                _switch_to_gui(auth)
+                return  # Exit CLI menu after launching GUI
             else:
                 print(get_text('course_mgmt.invalid_choice', default='Invalid choice. Please enter a number between 0 and {max_option}.').format(max_option=max_option))
 

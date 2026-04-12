@@ -533,59 +533,66 @@ def display_performance_dashboard(dashboard_data):
     print("="*100)
 
     # Overview Section
-    overview = dashboard_data['overview']
-    print(f"\n📊 SYSTEM OVERVIEW")
-    print(f"   Total Students: {overview['total_students']}")
-    print(f"   Total Modules: {overview['total_modules']}")
-    print(f"   Total Assessments: {overview['total_assessments']}")
-    print(f"   Total Grades Recorded: {overview['total_grades']}")
-
-    # GPA Statistics
-    if 'gpa_stats' in dashboard_data:
-        gpa_stats = dashboard_data['gpa_stats']
-        print(f"\n🎓 GPA STATISTICS")
-        print(f"   Average GPA: {gpa_stats['avg_gpa']:.2f}")
-        print(f"   Median GPA: {gpa_stats['median_gpa']:.2f}")
-        print(f"   GPA Range: {gpa_stats['min_gpa']:.2f} - {gpa_stats['max_gpa']:.2f}")
-        print(f"   Students with GPA: {gpa_stats['students_with_gpa']}")
+    print(f"\n SYSTEM OVERVIEW")
+    print(f"   Total Students: {dashboard_data.get('total_students', 0)}")
+    print(f"   Total Courses/Modules: {dashboard_data.get('total_courses', 0)}")
+    print(f"   Total Grades Recorded: {dashboard_data.get('total_grades', 0)}")
+    avg_score = dashboard_data.get('avg_score')
+    if avg_score is not None:
+        print(f"   Average Score: {avg_score:.1f}%")
 
     # Grade Distribution
-    grade_data = dashboard_data['grade_distribution']
-    print(f"\n📈 GRADE DISTRIBUTION")
-    print(f"   Overall Passing Rate: {grade_data['passing_rate']:.1f}%")
-    print(f"   Total Module Grades: {grade_data['total_grades']}")
-
-    # Top grade performers
-    sorted_grades = sorted(grade_data['distribution'].items(),
-                          key=lambda x: letter_to_gpa(x[0]), reverse=True)
-    print(f"   Grade Breakdown:")
-    for grade, count in sorted_grades[:5]:  # Top 5 grades
-        percentage = (count / grade_data['total_grades']) * 100
-        print(f"     {grade}: {count} ({percentage:.1f}%)")
+    grade_dist = dashboard_data.get('grade_distribution', {})
+    if isinstance(grade_dist, dict) and grade_dist:
+        total = sum((v or 0) for v in grade_dist.values())
+        if total > 0:
+            passing = sum((grade_dist.get(g, 0) or 0) for g in ["A", "B", "C", "D"])
+            passing_rate = (passing / total) * 100
+            print(f"\n GRADE DISTRIBUTION")
+            print(f"   Overall Passing Rate: {passing_rate:.1f}%")
+            print(f"   Total Grades: {total}")
+            print(f"   Grade Breakdown:")
+            for grade in ["A", "B", "C", "D", "F"]:
+                count = grade_dist.get(grade, 0) or 0
+                if count > 0:
+                    pct = (count / total) * 100
+                    print(f"     {grade}: {count} ({pct:.1f}%)")
 
     # Course Performance
-    course_perf = dashboard_data['course_performance']
-    print(f"\n🏆 TOP PERFORMING COURSES")
-    for i, (course, students, avg_score) in enumerate(course_perf[:3], 1):
-        print(f"   {i}. {course}: {avg_score:.1f}% avg ({students} students)")
+    course_avgs = dashboard_data.get('course_averages', [])
+    if course_avgs:
+        print(f"\n TOP PERFORMING COURSES")
+        for i, entry in enumerate(course_avgs[:5], 1):
+            course = entry.get('course', 'N/A')
+            avg = entry.get('avg_score', 0) or 0
+            count = entry.get('count', 0)
+            print(f"   {i}. {course}: {avg:.1f}% avg ({count} grades)")
 
     # Risk Assessment
-    risk_stats = dashboard_data['risk_stats']
-    print(f"\n⚠️  RISK ASSESSMENT")
-    print(f"   At-Risk Students: {risk_stats['at_risk_students']} ({risk_stats['at_risk_percentage']:.1f}%)")
-    print(f"   High-Risk Students: {risk_stats['high_risk_students']}")
+    at_risk = dashboard_data.get('at_risk_students', [])
+    total_students = dashboard_data.get('total_students', 0)
+    if total_students > 0:
+        at_risk_count = len(at_risk)
+        at_risk_pct = (at_risk_count / total_students) * 100
+        print(f"\n RISK ASSESSMENT")
+        print(f"   At-Risk Students: {at_risk_count} ({at_risk_pct:.1f}%)")
 
-    # Recent Trends
-    recent_trends = dashboard_data['recent_trends']
-    if recent_trends:
-        recent_avg = np.mean([trend[1] for trend in recent_trends])
-        print(f"\n📊 RECENT PERFORMANCE (Last 30 days)")
-        print(f"   Average Performance: {recent_avg:.1f}%")
-        print(f"   Assessment Days: {len(recent_trends)}")
+    # Monthly Trends
+    monthly = dashboard_data.get('monthly_trends', [])
+    if monthly:
+        recent_avg = np.mean([t.get('avg_score', 0) or 0 for t in monthly[-3:]])
+        print(f"\n RECENT PERFORMANCE TRENDS")
+        print(f"   Average Score (recent months): {recent_avg:.1f}%")
+        print(f"   Months with data: {len(monthly)}")
 
-    # Alert Messages
-    print(f"\n🚨 ALERTS & RECOMMENDATIONS")
-    generate_dashboard_alerts(dashboard_data)
+    # Notes
+    notes = dashboard_data.get('notes', [])
+    if notes:
+        print(f"\n NOTES")
+        for note in notes:
+            print(f"   - {note}")
+
+    print("\n" + "="*100)
 
 def export_module_performance(module_stats):
     """Export module performance summary to CSV"""

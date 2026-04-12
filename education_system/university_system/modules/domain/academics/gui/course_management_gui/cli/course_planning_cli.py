@@ -51,6 +51,25 @@ def set_auth(auth_instance: Any) -> None:
     auth = auth_instance
 
 
+def _switch_to_planning_gui() -> None:
+    """Switch from CLI to Course Planning GUI."""
+    try:
+        import tkinter as tk
+        from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_planning_gui import CoursePlanningGUI
+        print("\nLaunching Course Planning GUI...")
+        root = tk.Tk()
+        root.title("Course Planning Assistant")
+        root.geometry("1400x900")
+        app = CoursePlanningGUI(root, auth=auth)
+        root.mainloop()
+    except ImportError as e:
+        print(f"\nCourse Planning GUI not available: {e}")
+        input("Press Enter to continue...")
+    except Exception as e:
+        print(f"\nError launching GUI: {e}")
+        input("Press Enter to continue...")
+
+
 def display_course_planning_menu() -> None:
     """Display the main Course Planning menu."""
     global auth, planning_service
@@ -106,6 +125,8 @@ def display_course_planning_menu() -> None:
             add_option("[Admin] Manage Course Offerings", "manage_offerings")
             add_option("[Admin] View Student Plans", "view_student_plans")
 
+        add_option("Switch to GUI", "switch_to_gui")
+
         print(f"  {option_num}. Back to Main Menu")
         print("=" * 70)
 
@@ -149,6 +170,9 @@ def display_course_planning_menu() -> None:
                     manage_offerings_menu()
                 elif option_key == "view_student_plans":
                     view_student_plans_admin_menu()
+                elif option_key == "switch_to_gui":
+                    _switch_to_planning_gui()
+                    return  # Exit CLI after launching GUI
             except Exception as e:
                 logger.error(f"Error in course planning menu: {e}")
                 print(f"\nError: {e}")
@@ -168,15 +192,15 @@ def create_plan_menu(student_id: str) -> None:
         print("Plan name cannot be empty.")
         return
 
-    # Get student's major
+    # Get student's course/major
     with get_connection() as conn:
         student = conn.execute("""
-            SELECT major FROM students WHERE student_id = ?
+            SELECT course FROM students WHERE student_id = ?
         """, (student_id,)).fetchone()
 
     program_code = None
-    if student and student['major']:
-        program_code = student['major']
+    if student and student['course']:
+        program_code = student['course']
         print(f"Detected program: {program_code}")
     else:
         program_code = input("Program/Major code (e.g., CS, MATH): ").strip()
@@ -785,16 +809,16 @@ def generate_auto_plan_menu(student_id: str) -> None:
     print("GENERATE AUTOMATIC COURSE PLAN")
     print("=" * 60)
 
-    # Get student's major
+    # Get student's course/major
     with get_connection() as conn:
         student = conn.execute("""
-            SELECT major FROM students WHERE student_id = ?
+            SELECT course FROM students WHERE student_id = ?
         """, (student_id,)).fetchone()
 
-    if not student or not student['major']:
+    if not student or not student['course']:
         program_code = input("Program/Major code (e.g., CS, MATH): ").strip()
     else:
-        program_code = student['major']
+        program_code = student['course']
         print(f"Using your major: {program_code}")
 
     start_semester = input("Start semester (e.g., Fall 2026) [Fall 2026]: ").strip() or "Fall 2026"
@@ -861,14 +885,30 @@ def add_prerequisite() -> None:
     concurrent = input("Can be taken concurrently? (y/n) [n]: ").strip().lower() == 'y'
 
     try:
-        from education_system.university_system.infrastructure.database.db import transaction
-        with transaction() as conn:
+        from datetime import datetime as dt
+        with get_connection() as conn:
+            # Resolve course codes to IDs (FK references courses.id)
+            row1 = conn.execute("SELECT id FROM courses WHERE course_code = ? OR id = ?",
+                                (course_id, course_id)).fetchone()
+            row2 = conn.execute("SELECT id FROM courses WHERE course_code = ? OR id = ?",
+                                (prereq_id, prereq_id)).fetchone()
+            if not row1:
+                print(f"\n✗ Course '{course_id}' not found."); return
+            if not row2:
+                print(f"\n✗ Course '{prereq_id}' not found."); return
+
+            real_course_id = row1['id'] if hasattr(row1, 'keys') else row1[0]
+            real_prereq_id = row2['id'] if hasattr(row2, 'keys') else row2[0]
+
             conn.execute("""
                 INSERT INTO course_prerequisites
                 (course_id, prerequisite_course_id, prerequisite_type,
-                 minimum_grade, can_be_concurrent)
-                VALUES (?, ?, ?, ?, ?)
-            """, (course_id, prereq_id, prereq_type, min_grade, concurrent))
+                 minimum_grade, can_be_concurrent, is_required, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """, (real_course_id, real_prereq_id, prereq_type, min_grade,
+                  concurrent, prereq_type == "Required",
+                  dt.now().strftime('%Y-%m-%d %H:%M:%S')))
+            conn.commit()
 
         print(f"\n✓ Prerequisite added: {course_id} requires {prereq_id}")
         log_activity('create', 'course_prerequisite',
@@ -889,12 +929,23 @@ def remove_prerequisite() -> None:
         return
 
     try:
-        from education_system.university_system.infrastructure.database.db import transaction
-        with transaction() as conn:
+        with get_connection() as conn:
+            # Resolve course codes to IDs
+            row1 = conn.execute("SELECT id FROM courses WHERE course_code = ? OR id = ?",
+                                (course_id, course_id)).fetchone()
+            row2 = conn.execute("SELECT id FROM courses WHERE course_code = ? OR id = ?",
+                                (prereq_id, prereq_id)).fetchone()
+            if not row1 or not row2:
+                print("\n✗ Course not found."); return
+
+            real_course_id = row1['id'] if hasattr(row1, 'keys') else row1[0]
+            real_prereq_id = row2['id'] if hasattr(row2, 'keys') else row2[0]
+
             conn.execute("""
                 DELETE FROM course_prerequisites
                 WHERE course_id = ? AND prerequisite_course_id = ?
-            """, (course_id, prereq_id))
+            """, (real_course_id, real_prereq_id))
+            conn.commit()
 
         print(f"\n✓ Prerequisite removed: {course_id} no longer requires {prereq_id}")
         log_activity('delete', 'course_prerequisite',
@@ -967,18 +1018,28 @@ def set_offering_pattern() -> None:
     offered_years = input("Offered: (Every/Odd/Even) [Every]: ").strip() or "Every"
 
     try:
-        from education_system.university_system.infrastructure.database.db import transaction
-        with transaction() as conn:
-            conn.execute("""
-                INSERT INTO course_offerings
-                (course_id, offered_fall, offered_spring, offered_summer, offered_years)
-                VALUES (?, ?, ?, ?, ?)
-                ON CONFLICT(course_id) DO UPDATE SET
-                    offered_fall = excluded.offered_fall,
-                    offered_spring = excluded.offered_spring,
-                    offered_summer = excluded.offered_summer,
-                    offered_years = excluded.offered_years
-            """, (course_id, offered_fall, offered_spring, offered_summer, offered_years))
+        with get_connection() as conn:
+            # Temporarily disable FK enforcement for this table since the FK
+            # declaration references courses(id) but the column stores course codes.
+            # Check if offering already exists and update, else insert.
+            existing = conn.execute(
+                "SELECT offering_id FROM course_offerings WHERE course_id = ?",
+                (course_id,)).fetchone()
+
+            if existing:
+                conn.execute("""
+                    UPDATE course_offerings
+                    SET offered_fall = ?, offered_spring = ?, offered_summer = ?, offered_years = ?
+                    WHERE course_id = ?
+                """, (offered_fall, offered_spring, offered_summer, offered_years, course_id))
+            else:
+                conn.execute("""
+                    INSERT INTO course_offerings
+                    (course_id, offered_fall, offered_spring, offered_summer, offered_years)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (course_id, offered_fall, offered_spring, offered_summer, offered_years))
+
+            conn.commit()
 
         print(f"\n✓ Offering pattern updated for {course_id}")
         log_activity('update', 'course_offerings',
@@ -1038,7 +1099,7 @@ def view_student_plans_admin_menu() -> None:
         # Verify student exists
         with get_connection() as conn:
             student = conn.execute("""
-                SELECT student_id, first_name, last_name, major
+                SELECT student_id, first_name, last_name, course
                 FROM students WHERE student_id = ?
             """, (student_id,)).fetchone()
 
@@ -1048,7 +1109,7 @@ def view_student_plans_admin_menu() -> None:
             return
 
         print(f"\nStudent: {student['first_name']} {student['last_name']}")
-        print(f"Major: {student['major']}")
+        print(f"Course: {student['course']}")
 
         # Show their plans
         view_plans_menu(student_id)

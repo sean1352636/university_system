@@ -15,6 +15,7 @@ def search_courses(auth):
         print("You don't have permission to view courses.")
         return
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -92,7 +93,6 @@ def search_courses(auth):
 
         if not results:
             print("\nNo courses found matching your criteria.")
-            conn.close()
             return
 
         print(f"\nSearch Results ({len(results)} courses found):")
@@ -112,9 +112,8 @@ def search_courses(auth):
             except ValueError:
                 print("Invalid course ID.")
 
-        conn.close()
-
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
+    finally:
+        if conn:
             conn.close()

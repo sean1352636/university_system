@@ -84,6 +84,7 @@ def import_courses_from_csv(auth):
         print("File path cannot be empty.")
         return False
 
+    conn = None
     try:
         with open(file_path, 'r', newline='', encoding='utf-8') as csvfile:
             reader = csv.DictReader(csvfile)
@@ -154,7 +155,6 @@ def import_courses_from_csv(auth):
                     continue
 
             conn.commit()
-            conn.close()
 
             print(f"\nImport completed!")
             print(f"Successfully imported: {success_count} courses")
@@ -168,6 +168,9 @@ def import_courses_from_csv(auth):
     except Exception as e:
         print(f"Error importing courses: {e}")
         return False
+    finally:
+        if conn:
+            conn.close()
 
 
 @log_read(module="course_management", description="Exporting courses to CSV")
@@ -181,6 +184,7 @@ def export_courses_to_csv(auth):
         print("You don't have permission to export courses.")
         return False
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -217,7 +221,6 @@ def export_courses_to_csv(auth):
 
         if not courses:
             print("No courses found to export.")
-            conn.close()
             return False
 
         # Get column names
@@ -238,19 +241,18 @@ def export_courses_to_csv(auth):
             for course in courses:
                 writer.writerow(course)
 
-        conn.close()
-
         print(f"\nExported {len(courses)} courses to {filename}")
         return True
 
     except sqlite3.Error as e:
         print(f"Database error: {e}")
-        if 'conn' in locals():
-            conn.close()
         return False
     except Exception as e:
         print(f"Error exporting courses: {e}")
         return False
+    finally:
+        if conn:
+            conn.close()
 
 
 @log_update(module="course_management", description="Bulk updating courses")
@@ -264,6 +266,7 @@ def bulk_update_courses(auth):
         print("You don't have permission to bulk update courses.")
         return False
 
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -281,7 +284,11 @@ def bulk_update_courses(auth):
 
         while True:
             try:
-                criteria = int(input("Enter choice (1-5): "))
+                raw = input("Enter choice (1-5): ").strip()
+                if not raw:
+                    print("Bulk update cancelled.")
+                    return False
+                criteria = int(raw)
                 if 1 <= criteria <= 5:
                     break
                 print("Invalid choice.")
@@ -348,19 +355,20 @@ def bulk_update_courses(auth):
             cursor.execute("SELECT id, course_code, course_name, status FROM courses ORDER BY course_code")
             all_courses = cursor.fetchall()
 
-            print("\nSelect courses (enter IDs separated by commas):")
-            for course in all_courses:
-                print(f"{course[0]}. {course[1]} - {course[2]} ({course[3]})")
+            print("\nSelect courses (enter row numbers separated by commas):")
+            for i, course in enumerate(all_courses, 1):
+                print(f"{i}. {course[1]} - {course[2]} ({course[3]})")
 
-            id_input = input("\nEnter course IDs: ").strip()
-            selected_ids = [int(id.strip()) for id in id_input.split(',') if id.strip().isdigit()]
+            id_input = input("\nEnter course numbers: ").strip()
+            selected_indices = [int(idx.strip()) for idx in id_input.split(',') if idx.strip().isdigit()]
+            selected_ids = [all_courses[i - 1][0] for i in selected_indices if 1 <= i <= len(all_courses)]
 
-            cursor.execute("SELECT id, course_code, course_name FROM courses WHERE id IN (" + ','.join(['?']*len(selected_ids)) + ")", selected_ids)
-            courses_to_update = cursor.fetchall()
+            if selected_ids:
+                cursor.execute("SELECT id, course_code, course_name FROM courses WHERE id IN (" + ','.join(['?']*len(selected_ids)) + ")", selected_ids)
+                courses_to_update = cursor.fetchall()
 
         if not courses_to_update:
             print("No courses selected for update.")
-            conn.close()
             return False
 
         print(f"\nSelected {len(courses_to_update)} courses for update:")
@@ -378,7 +386,11 @@ def bulk_update_courses(auth):
 
         while True:
             try:
-                field_choice = int(input("Enter choice (1-6): "))
+                raw = input("Enter choice (1-6): ").strip()
+                if not raw:
+                    print("Bulk update cancelled.")
+                    return False
+                field_choice = int(raw)
                 if 1 <= field_choice <= 6:
                     break
                 print("Invalid choice.")
@@ -409,7 +421,6 @@ def bulk_update_courses(auth):
         confirm = input(f"\nUpdate {field_name} to '{new_value}' for {len(courses_to_update)} courses? (y/n): ").strip().lower()
         if confirm != 'y':
             print("Bulk update cancelled.")
-            conn.close()
             return False
 
         # Perform bulk update
@@ -421,7 +432,6 @@ def bulk_update_courses(auth):
         })
         if field_name not in _BULK_UPDATE_ALLOWED_COLUMNS:
             print(f"Invalid field name: {field_name}")
-            conn.close()
             return False
 
         placeholders = ','.join(['?'] * len(course_ids))
@@ -431,14 +441,14 @@ def bulk_update_courses(auth):
         updated_count = cursor.rowcount
 
         # Log changes in history
+        changed_by = auth.current_user.get('username', 'system') if isinstance(auth.current_user, dict) else str(auth.current_user)
         for course_id in course_ids:
             cursor.execute('''
             INSERT INTO course_history (course_id, field_name, old_value, new_value, changed_by, changed_at)
             VALUES (?, ?, ?, ?, ?, ?)
-            ''', (course_id, field_name, "bulk_update", str(new_value), auth.current_user, timestamp))
+            ''', (course_id, field_name, "bulk_update", str(new_value), changed_by, timestamp))
 
         conn.commit()
-        conn.close()
 
         print(f"\nBulk update completed!")
         print(f"Updated {updated_count} courses")
@@ -448,6 +458,7 @@ def bulk_update_courses(auth):
 
     except (ValueError, sqlite3.Error) as e:
         print(f"Error during bulk update: {e}")
-        if 'conn' in locals():
-            conn.close()
         return False
+    finally:
+        if conn:
+            conn.close()

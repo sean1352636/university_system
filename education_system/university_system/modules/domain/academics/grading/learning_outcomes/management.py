@@ -21,11 +21,20 @@ def manage_learning_outcomes():
 
             if choice == '1':
                 # View all outcomes
-                cursor.execute('''
-                SELECT outcome_id, course, outcome_code, description, category, importance
-                FROM learning_outcomes
-                ORDER BY course, outcome_code
-                ''')
+                # course/importance columns may not exist if table was created by another subsystem
+                try:
+                    cursor.execute('''
+                    SELECT outcome_id, course, outcome_code, description, category, importance
+                    FROM learning_outcomes
+                    ORDER BY course, outcome_code
+                    ''')
+                except sqlite3.OperationalError:
+                    cursor.execute('''
+                    SELECT outcome_id, NULL as course, outcome_code, description, category,
+                           COALESCE(level, 0) as importance
+                    FROM learning_outcomes
+                    ORDER BY outcome_code
+                    ''')
 
                 outcomes = cursor.fetchall()
 
@@ -62,11 +71,19 @@ def manage_learning_outcomes():
                         print("Please enter a valid number.")
 
                 # Insert the new outcome
-                cursor.execute('''
-                INSERT INTO learning_outcomes
-                (course, outcome_code, description, category, importance)
-                VALUES (?, ?, ?, ?, ?)
-                ''', (course, outcome_code, description, category, importance))
+                # Try with course/importance first, fall back if columns don't exist
+                try:
+                    cursor.execute('''
+                    INSERT INTO learning_outcomes
+                    (course, outcome_code, description, category, importance)
+                    VALUES (?, ?, ?, ?, ?)
+                    ''', (course, outcome_code, description, category, importance))
+                except sqlite3.OperationalError:
+                    cursor.execute('''
+                    INSERT INTO learning_outcomes
+                    (outcome_code, description, category, level)
+                    VALUES (?, ?, ?, ?)
+                    ''', (outcome_code, description, category, importance))
 
                 conn.commit()
                 print("Learning outcome added successfully.")
@@ -82,11 +99,19 @@ def manage_learning_outcomes():
                     continue
 
                 # Check if outcome exists
-                cursor.execute('''
-                SELECT outcome_id, course, outcome_code, description, category, importance
-                FROM learning_outcomes
-                WHERE outcome_id = ?
-                ''', (outcome_id,))
+                try:
+                    cursor.execute('''
+                    SELECT outcome_id, course, outcome_code, description, category, importance
+                    FROM learning_outcomes
+                    WHERE outcome_id = ?
+                    ''', (outcome_id,))
+                except sqlite3.OperationalError:
+                    cursor.execute('''
+                    SELECT outcome_id, NULL as course, outcome_code, description, category,
+                           COALESCE(level, 0) as importance
+                    FROM learning_outcomes
+                    WHERE outcome_id = ?
+                    ''', (outcome_id,))
 
                 outcome = cursor.fetchone()
 
@@ -129,11 +154,18 @@ def manage_learning_outcomes():
                     importance = outcome[5]
 
                 # Update the outcome
-                cursor.execute('''
-                UPDATE learning_outcomes
-                SET course = ?, outcome_code = ?, description = ?, category = ?, importance = ?
-                WHERE outcome_id = ?
-                ''', (course, code, description, category, importance, outcome_id))
+                try:
+                    cursor.execute('''
+                    UPDATE learning_outcomes
+                    SET course = ?, outcome_code = ?, description = ?, category = ?, importance = ?
+                    WHERE outcome_id = ?
+                    ''', (course, code, description, category, importance, outcome_id))
+                except sqlite3.OperationalError:
+                    cursor.execute('''
+                    UPDATE learning_outcomes
+                    SET outcome_code = ?, description = ?, category = ?, level = ?
+                    WHERE outcome_id = ?
+                    ''', (code, description, category, importance, outcome_id))
 
                 conn.commit()
                 print("Learning outcome updated successfully.")

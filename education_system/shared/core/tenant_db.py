@@ -20,7 +20,7 @@ the cap is reached the oldest connection is closed before adding the new one.
 from __future__ import annotations
 
 import logging
-import os
+import re
 import shutil
 import sqlite3
 import threading
@@ -33,7 +33,11 @@ logger = logging.getLogger(__name__)
 # ── Constants ────────────────────────────────────────────────────────────────
 
 _SHARED_ROOT = Path(__file__).resolve().parent.parent           # …/shared/
-_TENANTS_BASE = _SHARED_ROOT / "data" / "tenants"
+_TENANTS_BASE = (_SHARED_ROOT / "data" / "tenants").resolve()
+
+#: Strict slug pattern: lowercase/uppercase letters, digits, hyphen, underscore.
+#: No dots, no path separators, no null bytes, length 1–64.
+_SLUG_RE = re.compile(r"\A[A-Za-z0-9_\-]{1,64}\Z")
 
 #: Systems we know how to provision.
 KNOWN_SYSTEMS: tuple[str, ...] = ("college", "school", "primary", "university")
@@ -91,40 +95,81 @@ def _pool_evict(slug: str, system_key: str | None = None) -> None:
 
 # ── Internal helpers ──────────────────────────────────────────────────────────
 
+def _validate_slug(slug: str) -> str:
+    """Validate a slug to prevent path traversal attacks.
+
+    Only bare alphanumerics, hyphens, and underscores are accepted. Anything
+    that could yield a directory separator, parent reference, or null byte is
+    rejected before the string ever touches a filesystem API.
+    """
+    if not isinstance(slug, str) or not _SLUG_RE.fullmatch(slug):
+        raise ValueError(
+            "Invalid slug: must match [A-Za-z0-9_-]{1,64}"
+        )
+    return slug
+
+
+def _safe_tenant_path(tenant_slug: str, *slug_parts: str) -> Path:
+    """Return an absolute Path under ``_TENANTS_BASE`` for the given slug.
+
+    Each element of ``slug_parts`` must itself match ``_SLUG_RE``; file suffixes
+    are appended by the caller via :func:`_db_path_for`, not via this helper.
+
+    Performs three layered defences that CodeQL recognises as sanitisation
+    for ``py/path-injection``:
+
+    1. A strict whitelist regex on the slug and on every sub-component.
+    2. Resolving the candidate path and requiring it to be *relative to*
+       the tenants root (``Path.is_relative_to``).
+    3. Rejecting any ``..`` / absolute segment before joining.
+    """
+    _validate_slug(tenant_slug)
+    for part in slug_parts:
+        _validate_slug(part)
+
+    candidate = _TENANTS_BASE.joinpath(tenant_slug, *slug_parts).resolve()
+    if not candidate.is_relative_to(_TENANTS_BASE):
+        raise ValueError(
+            f"Path traversal detected for slug={tenant_slug!r}"
+        )
+    return candidate
+
+
+def _tenant_dir(tenant_slug: str) -> Path:
+    """Return the absolute directory for *tenant_slug* (validated)."""
+    return _safe_tenant_path(tenant_slug)
+
+
+def _db_path_for(tenant_slug: str, system_key: str) -> str:
+    """Return the absolute DB path for *tenant_slug* / *system_key* (validated).
+
+    Both ``tenant_slug`` and ``system_key`` must pass :func:`_validate_slug`;
+    the ``.db`` suffix is a static constant so it cannot introduce traversal.
+    """
+    _validate_slug(system_key)
+    tenant_dir = _safe_tenant_path(tenant_slug)
+    db_path = (tenant_dir / f"{system_key}.db").resolve()
+    if not db_path.is_relative_to(_TENANTS_BASE):
+        raise ValueError(
+            f"Path traversal detected for slug={tenant_slug!r}"
+        )
+    return str(db_path)
+
+
 def _open_connection(db_path: str) -> sqlite3.Connection:
-    Path(db_path).parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db_path, timeout=30, check_same_thread=False)
+    # Defence-in-depth: even though callers use _db_path_for/_safe_tenant_path,
+    # re-verify that the DB lives under the tenants root before opening it.
+    resolved = Path(db_path).resolve()
+    if not resolved.is_relative_to(_TENANTS_BASE):
+        raise ValueError(
+            f"Refusing to open database outside tenants root: {db_path!r}"
+        )
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(resolved), timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     return conn
-
-
-def _validate_slug(slug: str) -> str:
-    """Validate a slug to prevent path traversal attacks.
-
-    Raises ValueError if the slug contains path separators, parent-directory
-    references, or other dangerous characters.
-    """
-    import re
-    if not slug or not re.fullmatch(r'[a-zA-Z0-9_\-]+', slug):
-        raise ValueError(f"Invalid slug: must be alphanumeric/hyphen/underscore only")
-    return slug
-
-
-def _tenant_dir(tenant_slug: str) -> Path:
-    tenant_slug = _validate_slug(tenant_slug)  # raises on invalid chars
-    resolved = (_TENANTS_BASE / tenant_slug).resolve()
-    # Path traversal guard: resolved must stay under the tenants root
-    base_resolved = _TENANTS_BASE.resolve()
-    if not str(resolved).startswith(str(base_resolved) + os.sep) and resolved != base_resolved:
-        raise ValueError("Path traversal detected in tenant slug")
-    return resolved  # lgtm [py/path-injection] — validated above
-
-
-def _db_path_for(tenant_slug: str, system_key: str) -> str:
-    _validate_slug(system_key)  # raises on invalid chars
-    return str(_tenant_dir(tenant_slug) / f"{system_key}.db")  # lgtm [py/path-injection]
 
 
 # ── Schema initialisation per system ─────────────────────────────────────────
@@ -274,12 +319,14 @@ class TenantDatabaseManager:
         -------
         Absolute path to the backup directory created.
         """
+        # Validate slug before constructing any paths.
+        _validate_slug(tenant_slug)
+        tenant_dir = _tenant_dir(tenant_slug)
+
         timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
         backup_base = Path(backup_base) if backup_base else (_TENANTS_BASE / "_backups")
         backup_dir = backup_base / f"{tenant_slug}_{timestamp}"
         backup_dir.mkdir(parents=True, exist_ok=True)
-
-        tenant_dir = _tenant_dir(tenant_slug)
         if not tenant_dir.exists():
             raise FileNotFoundError(f"Tenant directory not found: {tenant_dir}")
 

@@ -112,9 +112,67 @@ def display_academic_calendar_menu():
             options.append(('view_calendar', lambda: handle_view_calendar(calendar_manager)))
             option_num += 1
 
+            print(f"{option_num}. {get_text('calendar.menu.search_events', default='Search Events')}")
+            options.append(('search_events', lambda: handle_search_events(calendar_manager)))
+            option_num += 1
+
             if auth.check_permission('export_data'):
                 print(f"{option_num}. {get_text('calendar.menu.export_calendar', default='Export Calendar')}")
                 options.append(('export_calendar', lambda: handle_export_calendar(calendar_manager)))
+                option_num += 1
+
+            if auth.check_permission('manage_schedules'):
+                print(f"{option_num}. {get_text('calendar.menu.import_calendar', default='Import Calendar')}")
+                options.append(('import_calendar', lambda: handle_import_calendar(calendar_manager)))
+                option_num += 1
+
+            # Academic structure
+            if auth.check_permission('manage_schedules'):
+                print(f"\n\U0001f4da {get_text('calendar.sections.academic_structure', default='ACADEMIC STRUCTURE')}:")
+                print(f"{option_num}. {get_text('calendar.menu.add_academic_year', default='Add Academic Year')}")
+                options.append(('add_academic_year', lambda: handle_add_academic_year(calendar_manager)))
+                option_num += 1
+
+                print(f"{option_num}. {get_text('calendar.menu.add_semester', default='Add Semester')}")
+                options.append(('add_semester', lambda: handle_add_semester(calendar_manager)))
+                option_num += 1
+
+                print(f"{option_num}. {get_text('calendar.menu.recurring_event', default='Create Recurring Event')}")
+                options.append(('recurring_event', lambda: handle_create_recurring_event(calendar_manager)))
+                option_num += 1
+
+                print(f"{option_num}. {get_text('calendar.menu.event_dependencies', default='Event Dependencies')}")
+                options.append(('event_dependencies', lambda: handle_event_dependencies(calendar_manager)))
+                option_num += 1
+
+                print(f"{option_num}. {get_text('calendar.menu.project_milestones', default='Project Milestones')}")
+                options.append(('project_milestones', lambda: handle_project_milestones(calendar_manager)))
+                option_num += 1
+
+                print(f"{option_num}. {get_text('calendar.menu.bulk_operations', default='Bulk Operations')}")
+                options.append(('bulk_operations', lambda: handle_bulk_operations(calendar_manager)))
+                option_num += 1
+
+            # Reporting & Visualizations
+            if auth.check_permission('export_data') or auth.check_permission('view_reports'):
+                print(f"\n\U0001f4ca {get_text('calendar.sections.reporting', default='REPORTING & VISUALIZATIONS')}:")
+                print(f"{option_num}. {get_text('calendar.menu.advanced_reports', default='Advanced Reports')}")
+                options.append(('advanced_reports', lambda: handle_advanced_reports(calendar_manager)))
+                option_num += 1
+
+                print(f"{option_num}. {get_text('calendar.menu.visualizations', default='Data Visualizations')}")
+                options.append(('visualizations', lambda: handle_visualizations(calendar_manager)))
+                option_num += 1
+
+            # System management
+            if auth.check_permission('system_config') or auth.check_permission('manage_schedules'):
+                print(f"\n\U0001f6e0 {get_text('calendar.sections.system', default='SYSTEM MANAGEMENT')}:")
+                print(f"{option_num}. {get_text('calendar.menu.system_management', default='System Management')}")
+                options.append(('system_management', lambda: handle_system_management(calendar_manager)))
+                option_num += 1
+
+                print(f"{option_num}. {get_text('calendar.menu.restore_database', default='Restore Database')}")
+                options.append(('restore_database', lambda: handle_restore_database(calendar_manager)))
                 option_num += 1
 
             # Trip management options (if available)
@@ -599,6 +657,88 @@ def handle_export_calendar(calendar_manager):
         print("Invalid choice.")
     except Exception as e:
         print(f"Export error: {e}")
+
+    input("\nPress Enter to continue...")
+
+def handle_import_calendar(calendar_manager):
+    """Handle importing calendar from file"""
+    print("\nImport Calendar")
+    print("-" * 30)
+
+    print("Supported formats:")
+    formats = [
+        ("JSON", "json"),
+        ("CSV", "csv"),
+        ("iCal", "ics"),
+    ]
+
+    for i, (name, ext) in enumerate(formats, 1):
+        print(f"{i}. {name} (.{ext})")
+
+    try:
+        format_choice = int(input(f"Select format (1-{len(formats)}): "))
+
+        if 1 <= format_choice <= len(formats):
+            format_name, format_ext = formats[format_choice - 1]
+
+            file_path = input(f"File path to import (.{format_ext}): ").strip()
+            if not file_path:
+                print("File path is required.")
+                return
+
+            import os
+            if not os.path.exists(file_path):
+                print(f"File not found: {file_path}")
+                return
+
+            result = calendar_manager.import_calendar(file_path, format_ext)
+            if result.get('success'):
+                print(f"\nImported {result.get('imported_count', 0)} events successfully.")
+                if result.get('skipped_count', 0) > 0:
+                    print(f"Skipped {result['skipped_count']} events (duplicates or errors).")
+            else:
+                print(f"\nImport failed: {result.get('message', 'Unknown error')}")
+        else:
+            print("Invalid choice.")
+
+    except ValueError:
+        print("Invalid choice.")
+    except Exception as e:
+        print(f"Import error: {e}")
+
+    input("\nPress Enter to continue...")
+
+def handle_restore_database(calendar_manager):
+    """Handle restoring database from backup"""
+    print("\nRestore Database")
+    print("-" * 30)
+
+    file_path = input("Backup file path: ").strip()
+    if not file_path:
+        print("File path is required.")
+        input("\nPress Enter to continue...")
+        return
+
+    import os
+    if not os.path.exists(file_path):
+        print(f"File not found: {file_path}")
+        input("\nPress Enter to continue...")
+        return
+
+    confirm = input("WARNING: This will overwrite the current database. Continue? (yes/no): ").strip().lower()
+    if confirm != 'yes':
+        print("Restore cancelled.")
+        input("\nPress Enter to continue...")
+        return
+
+    try:
+        result = calendar_manager.restore_backup(file_path)
+        if result.get('success'):
+            print(f"\nDatabase restored successfully: {result.get('message', '')}")
+        else:
+            print(f"\nRestore failed: {result.get('message', 'Unknown error')}")
+    except Exception as e:
+        print(f"Restore error: {e}")
 
     input("\nPress Enter to continue...")
 

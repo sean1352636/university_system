@@ -58,29 +58,43 @@ def map_assessments_to_outcomes():
         else:
             print("\nNo learning outcomes are currently mapped to this assessment.")
 
-        # Get the module's course
-        cursor.execute('''
-        SELECT course
-        FROM modules
-        WHERE module_code = ?
-        ''', (module_code,))
-
-        course_result = cursor.fetchone()
-        course = course_result[0] if course_result else None
+        # Get the module's course (course column may not exist)
+        course = None
+        try:
+            cursor.execute('''
+            SELECT course
+            FROM modules
+            WHERE module_code = ?
+            ''', (module_code,))
+            course_result = cursor.fetchone()
+            course = course_result[0] if course_result else None
+        except Exception:
+            pass
 
         # Get available learning outcomes for this course
-        if course:
+        # importance column may not exist (may be called 'level')
+        try:
+            if course:
+                cursor.execute('''
+                SELECT outcome_id, outcome_code, description, category,
+                       COALESCE(importance, level, 0) as importance
+                FROM learning_outcomes
+                WHERE course = ? OR course = 'ALL' OR course IS NULL
+                ORDER BY importance DESC, outcome_code
+                ''', (course,))
+            else:
+                cursor.execute('''
+                SELECT outcome_id, outcome_code, description, category,
+                       COALESCE(importance, level, 0) as importance
+                FROM learning_outcomes
+                ORDER BY importance DESC, outcome_code
+                ''')
+        except Exception:
+            # Fallback if COALESCE with importance/level fails
             cursor.execute('''
-            SELECT outcome_id, outcome_code, description, category, importance
+            SELECT outcome_id, outcome_code, description, category, 0 as importance
             FROM learning_outcomes
-            WHERE course = ? OR course = 'ALL'
-            ORDER BY importance DESC, outcome_code
-            ''', (course,))
-        else:
-            cursor.execute('''
-            SELECT outcome_id, outcome_code, description, category, importance
-            FROM learning_outcomes
-            ORDER BY importance DESC, outcome_code
+            ORDER BY outcome_code
             ''')
 
         outcomes = cursor.fetchall()
@@ -97,6 +111,7 @@ def map_assessments_to_outcomes():
 
         for outcome in outcomes:
             id, code, description, category, importance = outcome
+            category = category or ""
             # Truncate long descriptions for display
             short_desc = description[:40] + "..." if len(description) > 40 else description
             print(f"{id:<5} {code:<15} {category:<15} {importance:<10} {short_desc}")
