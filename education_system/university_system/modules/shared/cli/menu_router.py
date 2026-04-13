@@ -364,14 +364,18 @@ def display_menu():
             add_option(get_text('cli.menu.virtual_classroom', default='Virtual Classroom'), "virtual_classroom"),
             add_option(get_text('cli.menu.predictive_analytics', default='Predictive Analytics'), "predictive_analytics"),
             add_option("Exam Management", "exam_portal"),
+            add_option("Course Planning", "course_planning"),
         ]
+        print_row(items)
+        items = []
         if DEGREE_AUDIT_CLI_AVAILABLE:
             items.append(add_option(get_text('cli.menu.degree_audit', default='Degree Audit'), "degree_audit"))
         if OFFICE_HOURS_CLI_AVAILABLE:
             items.append(add_option("Office Hours", "office_hours"))
         if TA_MANAGEMENT_CLI_AVAILABLE:
             items.append(add_option("TA Management", "ta_management"))
-        print_row(items)
+        if items:
+            print_row(items)
 
         # 👥 STUDENT SERVICES
         print(f"\n👥 {get_text('cli.menu.student_services', default='STUDENT SERVICES')}")
@@ -393,6 +397,13 @@ def display_menu():
             items.append(add_option(get_text('cli.menu.legal_services', default='Legal Services'), "legal_services"))
         print_row(items)
         items = []
+        items.append(add_option("Advising", "advising"))
+        items.append(add_option("Wellbeing", "student_wellbeing"))
+        items.append(add_option("Student Finance", "student_finance"))
+        items.append(add_option("Notifications", "notifications"))
+        print_row(items)
+        items = []
+        items.append(add_option("Student ID", "student_id_card"))
         if GYM_AVAILABLE:
             items.append(add_option(get_text('cli.menu.gym', default='Gym/Fitness'), "gym"))
         if DENTIST_AVAILABLE:
@@ -515,6 +526,9 @@ def display_menu():
         ]
         print_row(items)
         items = [
+            add_option("Printing", "printing"),
+            add_option("Study Rooms", "study_rooms"),
+            add_option("Textbooks", "textbooks"),
         ]
         print_row(items)
 
@@ -933,6 +947,70 @@ def display_menu():
                     display_clearing_adjustment_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Clearing & Adjustment CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "course_planning":
+                try:
+                    from education_system.university_system.modules.domain.course_planning.cli.planning_cli import main as course_planning_main
+                    course_planning_main()
+                except ImportError as e:
+                    print(f"\n  Course Planning CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "advising":
+                try:
+                    from education_system.university_system.modules.domain.advising.cli.advising_cli import main as advising_main
+                    advising_main()
+                except ImportError as e:
+                    print(f"\n  Advising CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "student_wellbeing":
+                try:
+                    from education_system.university_system.modules.domain.student_wellbeing.cli.student_wellbeing_cli import main as wellbeing_main
+                    wellbeing_main()
+                except ImportError as e:
+                    print(f"\n  Student Wellbeing CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "student_finance":
+                try:
+                    from education_system.university_system.modules.domain.student_finance.cli.student_finance_cli import main as student_finance_main
+                    student_finance_main()
+                except ImportError as e:
+                    print(f"\n  Student Finance CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "notifications":
+                try:
+                    from education_system.university_system.modules.domain.notifications.cli.notifications_cli import NotificationsCLI
+                    cli = NotificationsCLI()
+                    cli.main_menu()
+                except ImportError as e:
+                    print(f"\n  Notifications CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "student_id_card":
+                try:
+                    from education_system.university_system.modules.domain.student_id.cli.student_id_cli import main as student_id_main
+                    student_id_main()
+                except ImportError as e:
+                    print(f"\n  Student ID CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "printing":
+                try:
+                    from education_system.university_system.modules.domain.printing.cli.printing_cli import main as printing_main
+                    printing_main()
+                except ImportError as e:
+                    print(f"\n  Printing CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "study_rooms":
+                try:
+                    from education_system.university_system.modules.domain.study_rooms.cli.study_rooms_cli import main as study_rooms_main
+                    study_rooms_main()
+                except ImportError as e:
+                    print(f"\n  Study Rooms CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "textbooks":
+                try:
+                    from education_system.university_system.modules.domain.textbooks.cli.textbooks_cli import main as textbooks_main
+                    textbooks_main()
+                except ImportError as e:
+                    print(f"\n  Textbooks CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option.startswith("cross_"):
                 _handle_cross_system_tool(option, auth)
