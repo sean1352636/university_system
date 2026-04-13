@@ -107,7 +107,7 @@ dev = [
 ]
 
 ai = [
-    "tensorflow>=2.7.0",
+    "tensorflow>=2.21.0",
     "transformers>=4.15.0",
     "opencv-python>=4.5.0",
     "torch>=1.10.0",
