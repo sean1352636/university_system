@@ -10,7 +10,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.primary_school.core.logs import setup_logging
-from education_system.primary_school.core.paths import DB_FILE
+from education_system.primary_school.core.paths import DB_FILE, ensure_directories
 from education_system.primary_school.infrastructure.database.schema import initialise_database, seed_default_users, seed_default_staff
 from education_system.primary_school.infrastructure.auth.core import UserAuth
 from education_system.primary_school.seed_subjects import seed_subjects
@@ -866,6 +866,7 @@ def run(user_info=None, role=None, shared_auth=None):
     If *user_info* and *role* are provided (from universal login), the
     login dialog is skipped.
     """
+    ensure_directories()
     setup_logging()
     db_path = str(DB_FILE)
 

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.76.6 — 2026-04-13](#8766---2026-04-13)
 - [8.76.5 — 2026-04-13](#8765---2026-04-13)
 - [8.76.4 — 2026-04-13](#8764---2026-04-13)
 - [8.76.3 — 2026-04-13](#8763---2026-04-13)
@@ -177,6 +178,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.76.6] — 2026-04-13
+
+### Primary school core module improvements
+
+#### Changed
+
+- **exceptions.py**: Introduced mid-level category bases (`AcademicError`, `PastoralCareError`, `StaffManagementError`, `AdminError`, `PupilLifeError`, `CommunicationError`, `FacilitiesError`) so callers can catch a whole domain category. Added `detail` dict support on `SchoolSystemError` for structured error context. Renamed `ClassError` → `FormError` (UK terminology) and `ValidationError` → `SchoolValidationError` (avoids library conflicts), with backward-compatible aliases. Added `DatabaseError`. Moved `PayrollError` under Staff. Added `__all__`.
+- **logs.py**: `setup_logging()` now returns the configured logger. Accepts string-form levels (e.g. `"DEBUG"`) with validation. Falls back to `PRIMARY_SCHOOL_LOG_LEVEL` env var. Added module-level `logger` and `__all__`.
+- **paths.py**: Removed import-time side effect (`ensure_directories()` no longer called on import). Added path grouping comments, docstring, and `__all__`. Updated `main_gui.py` to call `ensure_directories()` explicitly.
+- **defaults.py**: JWT secret path now uses `DATA_DIR` from `paths.py` instead of manual `Path(__file__)` traversal. Fixed `DEFAULT_PARENT_USERNAME` from `"parent"` to `"parent3"` for consistency with subsystem suffix convention. Added comments explaining the suffix scheme, password generation behaviour, Nursery exclusion, and EYFS vs KS1/KS2 assessment scale differences. Added `__all__`.
+- **sql_safety.py**: Replaced `# noqa: F401` with proper `__all__`. Expanded docstring to explain why the re-export module exists.
 
 ---
 
