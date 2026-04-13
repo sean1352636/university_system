@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.76.4 — 2026-04-13](#8764---2026-04-13)
 - [8.76.3 — 2026-04-13](#8763---2026-04-13)
 - [8.76.2 — 2026-04-12](#8762---2026-04-12)
 - [8.76.1 — 2026-04-12](#8761---2026-04-12)
@@ -175,6 +176,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.76.4] — 2026-04-13
+
+### Extract service layers from 6 GUI-only domains
+
+#### Added
+
+- **Cinema service layer** (`cinema/services/cinema_service.py`, 1,574 LOC): `CinemaService` class with 46 methods extracted from the GUI's `database.py` and management modules — movie CRUD, screening management, seat queries, booking operations, ticket validation, member/loyalty management, promo codes, staff management, payments/refunds, gift cards, audit logging, and 6 report queries (sales summary, daily sales, revenue by movie, occupancy, payment methods, booking statuses).
+- **Advising service layer** (`advising/services/advising_service.py`): Database init, advisor management, appointment scheduling/cancellation, and degree plan queries.
+- **Printing service layer** (`printing/services/printing_service.py`): Print quota management, cost calculation (colour/duplex pricing), job submission with credit validation, print history, and credit purchase transactions.
+- **Student ID service layer** (`student_id/services/student_id_service.py`): Card generation (SHA-256 based card numbers), student detail lookup with flexible column detection, and lost card replacement flow.
+- **Study Rooms service layer** (`study_rooms/services/study_room_service.py`): Room availability queries, time-slot conflict checking, booking creation/cancellation, and sample room seeding.
+- **Textbooks service layer** (`textbooks/services/textbook_service.py`): Textbook search (with SQL-safe LIKE escaping), listing management, order processing with self-purchase prevention, and ISBN lookup.
+
+All service files are tkinter-free, use `get_connection()` from the database infrastructure, and preserve the exact table/column names from the original GUI code.
 
 ---
 
