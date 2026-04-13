@@ -1,0 +1,1 @@
+"""Student Affairs GUI package."""
