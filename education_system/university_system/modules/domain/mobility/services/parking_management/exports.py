@@ -162,6 +162,7 @@ def export_permits(format_type):
 
     except sqlite3.Error as e:
         logging.error(f"Database error in export_permits: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Error in export_permits: {e}")
@@ -317,6 +318,7 @@ def export_vehicles(format_type):
 
     except sqlite3.Error as e:
         logging.error(f"Database error in export_vehicles: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Error in export_vehicles: {e}")
@@ -485,6 +487,7 @@ def export_violations(format_type):
 
     except sqlite3.Error as e:
         logging.error(f"Database error in export_violations: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Error in export_violations: {e}")
@@ -669,6 +672,7 @@ def export_parking_lots(format_type):
 
     except sqlite3.Error as e:
         logging.error(f"Database error in export_parking_lots: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Error in export_parking_lots: {e}")
@@ -873,6 +877,7 @@ def export_users(format_type):
 
     except sqlite3.Error as e:
         logging.error(f"Database error in export_users: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Error in export_users: {e}")

@@ -550,6 +550,7 @@ def view_parking_permit():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in view_parking_permit: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in view_parking_permit: {e}")
@@ -968,6 +969,7 @@ def update_parking_permit():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in update_parking_permit: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in update_parking_permit: {e}")
@@ -1033,6 +1035,7 @@ def delete_parking_permit():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in delete_parking_permit: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in delete_parking_permit: {e}")

@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import logging
+
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.domain.student_affairs.student_union.services import context as ctx
 from education_system.university_system.modules.domain.student_affairs.student_union.services.union_context import auto_award_points
+
+logger = logging.getLogger(__name__)
 
 def manage_green_initiatives():
     """Main green initiatives interface"""
@@ -62,8 +66,10 @@ def manage_green_initiatives():
         conn.close()
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def track_carbon_footprint(student_id, cursor, conn):
@@ -237,8 +243,10 @@ def track_carbon_footprint(student_id, cursor, conn):
             print("- Consider applying for green event certification")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def waste_reduction_tracking(student_id, cursor, conn):
@@ -430,8 +438,10 @@ def waste_reduction_tracking(student_id, cursor, conn):
             print("- End-of-term move-out collection")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def green_transport_tracking(student_id, cursor, conn):
@@ -587,8 +597,10 @@ def green_transport_tracking(student_id, cursor, conn):
             print("- Maintenance workshops")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def view_eco_suppliers(cursor):
@@ -649,6 +661,7 @@ def view_eco_suppliers(cursor):
         print("5. Contact: sustainability@studentunion.ac.uk")
 
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def green_certification_system(student_id, cursor, conn):
@@ -812,6 +825,8 @@ def green_certification_system(student_id, cursor, conn):
             print("✓ Impact reporting published")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")

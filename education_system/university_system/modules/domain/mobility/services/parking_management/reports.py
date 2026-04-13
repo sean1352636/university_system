@@ -254,6 +254,7 @@ def generate_permit_report():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in generate_permit_report: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in generate_permit_report: {e}")
@@ -538,6 +539,7 @@ def generate_violation_report():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in generate_violation_report: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in generate_violation_report: {e}")
@@ -864,6 +866,7 @@ def generate_compliance_report():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in generate_compliance_report: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in generate_compliance_report: {e}")
@@ -945,6 +948,7 @@ def generate_compliance_report():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in generate_user_activity_report: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in generate_user_activity_report: {e}")
@@ -1154,6 +1158,7 @@ def generate_analytics_dashboard():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in generate_analytics_dashboard: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in generate_analytics_dashboard: {e}")
@@ -1478,6 +1483,7 @@ def generate_revenue_report():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in generate_revenue_report: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in generate_revenue_report: {e}")
@@ -1886,6 +1892,7 @@ def generate_user_activity_report():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in generate_user_activity_report: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in generate_user_activity_report: {e}")

@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import logging
+
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.domain.student_affairs.student_union.services.union_context import auto_award_points
+
+logger = logging.getLogger(__name__)
 
 def view_active_competitions(cursor):
     """View currently active competitions"""
@@ -52,8 +56,10 @@ def view_active_competitions(cursor):
             print("-" * 50)
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def view_competition_results(cursor):
@@ -137,8 +143,10 @@ def view_competition_results(cursor):
                 print(f"{participant[0]} {participant[1]:<25} {participant[2][:25]:<25} {score:<15}")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def view_my_competition_history(student_id, cursor):
@@ -187,8 +195,10 @@ def view_my_competition_history(student_id, cursor):
             print(f"Average Rank: {average_rank:.1f}")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def create_new_competition(organizer_id, cursor, conn):
@@ -288,8 +298,10 @@ def create_new_competition(organizer_id, cursor, conn):
         print(f"Status: {status}")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def update_competition_scores(cursor, conn):
@@ -448,6 +460,8 @@ def update_competition_scores(cursor, conn):
             print("Invalid choice.")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")

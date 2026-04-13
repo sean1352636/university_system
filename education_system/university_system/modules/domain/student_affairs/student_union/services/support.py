@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import logging
+
 import random
 import string
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.domain.student_affairs.student_union.services import context as ctx
 from education_system.university_system.modules.domain.student_affairs.student_union.services.union_context import auto_award_points
+
+logger = logging.getLogger(__name__)
 
 def manage_peer_support_system():
     """Main peer support system interface"""
@@ -73,8 +77,10 @@ def manage_peer_support_system():
         conn.close()
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def browse_support_groups(cursor):
@@ -115,8 +121,10 @@ def browse_support_groups(cursor):
             print("-" * 40)
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def join_support_group(student_id, cursor, conn):
@@ -206,8 +214,10 @@ def join_support_group(student_id, cursor, conn):
                         f"Joined support group: {group[0]}", cursor, conn)
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def view_my_support_groups(student_id, cursor):
@@ -248,8 +258,10 @@ def view_my_support_groups(student_id, cursor):
         print("- Contact your facilitator if you need support")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def create_support_group(student_id, cursor, conn):
@@ -334,8 +346,10 @@ def create_support_group(student_id, cursor, conn):
                         f"Created support group: {group_name}", cursor, conn)
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def anonymous_peer_matching(student_id, cursor, conn):
@@ -388,6 +402,7 @@ def anonymous_peer_matching(student_id, cursor, conn):
                             "Sought anonymous peer support", cursor, conn)
 
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def view_wellness_resources():
@@ -428,6 +443,7 @@ def view_wellness_resources():
         print("- Professional support is available")
 
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def manage_academic_support():
@@ -481,8 +497,10 @@ def manage_academic_support():
         conn.close()
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def manage_study_groups(student_id, cursor, conn):
@@ -645,8 +663,10 @@ def manage_study_groups(student_id, cursor, conn):
                 print("Invalid choice.")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def manage_peer_tutoring(student_id, cursor, conn):
@@ -838,8 +858,10 @@ def manage_peer_tutoring(student_id, cursor, conn):
                 print("Invalid choice.")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def manage_shared_resources(student_id, cursor, conn):
@@ -1035,8 +1057,10 @@ def manage_shared_resources(student_id, cursor, conn):
                 print("Invalid choice.")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def exam_preparation_groups(student_id, cursor, conn):
@@ -1086,8 +1110,10 @@ def exam_preparation_groups(student_id, cursor, conn):
                             f"Created exam prep group: {subject}", cursor, conn)
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def view_academic_workshops(cursor):
@@ -1117,4 +1143,5 @@ def view_academic_workshops(cursor):
         print("- Check the events calendar")
 
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")

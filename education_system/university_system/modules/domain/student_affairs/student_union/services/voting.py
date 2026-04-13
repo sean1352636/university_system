@@ -93,8 +93,10 @@ def manage_enhanced_voting():
         conn.close()
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def ranked_choice_voting(cursor, conn):
@@ -218,8 +220,10 @@ def ranked_choice_voting(cursor, conn):
         print("Thank you for participating in the democratic process.")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def configure_voting_methods(cursor, conn):
@@ -403,8 +407,10 @@ def configure_voting_methods(cursor, conn):
                 print("Invalid choice.")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def review_pending_materials(cursor):
@@ -447,6 +453,7 @@ def review_pending_materials(cursor):
         input("\nPress Enter to continue...")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
 
 def send_spending_warnings(cursor, violations, spending_limit):
@@ -543,6 +550,7 @@ def view_detailed_spending(cursor):
         input("\nPress Enter to continue...")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
 
 def approve_reject_materials(cursor):
@@ -620,6 +628,7 @@ def approve_reject_materials(cursor):
                 continue
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
 
 def access_control_review(cursor):
@@ -682,6 +691,7 @@ def access_control_review(cursor):
         input("\nPress Enter to continue...")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
 
 def log_configuration_change(cursor, conn, config_key, old_value, new_value, description):
@@ -1060,4 +1070,5 @@ def manage_union_reps():
 
         conn.close()
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")

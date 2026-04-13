@@ -40,6 +40,7 @@ def view_parking_lots():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in view_parking_lots: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in view_parking_lots: {e}")
@@ -137,6 +138,7 @@ def add_parking_lot():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in add_parking_lot: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in add_parking_lot: {e}")
@@ -312,6 +314,7 @@ def update_parking_lot():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in update_parking_lot: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in update_parking_lot: {e}")
@@ -381,6 +384,7 @@ def delete_parking_lot():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in delete_parking_lot: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in delete_parking_lot: {e}")
@@ -452,6 +456,7 @@ def update_available_spaces():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in update_available_spaces: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in update_available_spaces: {e}")

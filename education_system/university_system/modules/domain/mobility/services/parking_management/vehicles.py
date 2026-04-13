@@ -157,6 +157,7 @@ def register_vehicle():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in register_vehicle: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in register_vehicle: {e}")
@@ -299,6 +300,7 @@ def view_vehicle():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in view_vehicle: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in view_vehicle: {e}")
@@ -596,6 +598,7 @@ def update_vehicle():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in update_vehicle: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in update_vehicle: {e}")
@@ -740,6 +743,7 @@ def delete_vehicle():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in delete_vehicle: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in delete_vehicle: {e}")

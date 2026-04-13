@@ -107,8 +107,9 @@ class ActivityLogger:
         target_logger = getattr(ActivityLogger, 'logger', None) or self.logger
         try:
             target_logger.info(log_entry)
-        except Exception:
-            pass
+        except Exception as exc:
+            import sys
+            print(f"[ActivityLogger] Failed to write audit log: {exc}", file=sys.stderr)
 
     def log_login(self, username: str, success: bool = True):
         """Log a login attempt."""

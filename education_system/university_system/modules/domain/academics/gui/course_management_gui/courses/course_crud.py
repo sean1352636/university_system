@@ -222,7 +222,7 @@ def reassign_students_from_deleted_course(self, cursor, course_code):
             cursor.execute('''
                 DELETE FROM student_modules
                 WHERE student_id = ? AND module_code IN (
-                    SELECT module_code FROM modules WHERE department = ?
+                    SELECT module_code FROM modules WHERE course = ?
                 )
             ''', (student_id, course_code))
 
@@ -255,7 +255,7 @@ def delete_modules_for_course(self, cursor, course_code):
     """Delete all modules and their assignments for a specific course"""
     try:
         # Get all modules for this course
-        cursor.execute('SELECT module_code FROM modules WHERE department = ?', (course_code,))
+        cursor.execute('SELECT module_code FROM modules WHERE course = ?', (course_code,))
         modules = [row[0] for row in cursor.fetchall()]
 
         for module_code in modules:
@@ -263,7 +263,7 @@ def delete_modules_for_course(self, cursor, course_code):
             self.delete_assignments_for_module(cursor, module_code)
 
         # Delete all modules for this course
-        cursor.execute('DELETE FROM modules WHERE department = ?', (course_code,))
+        cursor.execute('DELETE FROM modules WHERE course = ?', (course_code,))
         print(_("course_management.success.modules_deleted", count=len(modules), code=course_code))
 
     except Exception as e:
@@ -311,7 +311,7 @@ def assign_student_to_course_modules(self, cursor, student_id, course_code):
         # Get available modules for the new course
         cursor.execute('''
             SELECT module_code, module_name FROM modules
-            WHERE department = ? AND is_active = 1
+            WHERE course = ? AND is_active = 1
         ''', (course_code,))
         available_modules = cursor.fetchall()
 

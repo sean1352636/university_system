@@ -146,6 +146,7 @@ def record_violation():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in record_violation: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in record_violation: {e}")
@@ -361,6 +362,7 @@ def view_violations():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in view_violations: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in view_violations: {e}")
@@ -544,6 +546,7 @@ def update_violation():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in update_violation: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in update_violation: {e}")
@@ -611,6 +614,7 @@ def delete_violation():
 
     except sqlite3.Error as e:
         logging.error(f"Database error in delete_violation: {e}")
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
         logging.error(f"Unexpected error in delete_violation: {e}")

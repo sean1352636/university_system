@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import logging
+
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.domain.student_affairs.student_union.services import context as ctx
+
+logger = logging.getLogger(__name__)
 
 def generate_advanced_analytics():
     """Advanced analytics dashboard"""
@@ -50,8 +54,10 @@ def generate_advanced_analytics():
         conn.close()
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def activity_correlation_analysis(cursor):
@@ -163,8 +169,10 @@ def activity_correlation_analysis(cursor):
                 print(f"  {pref[1]}: {pref[2]} attendances")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def generate_personalized_recommendations(cursor):
@@ -288,8 +296,10 @@ def generate_personalized_recommendations(cursor):
             print("- Mentor new club members")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def performance_benchmarking(cursor):
@@ -428,8 +438,10 @@ def performance_benchmarking(cursor):
                 print(f"{segment[0]:<18} {segment[1]:<10} {segment[2]:<10.1f} {segment[3]:<10.1f}")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def learning_analytics_dashboard(student_id, cursor):
@@ -534,6 +546,8 @@ def learning_analytics_dashboard(student_id, cursor):
                 print("Invalid goal amount.")
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")

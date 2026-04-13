@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import logging
+
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.domain.student_affairs.student_union.services import context as ctx
 from education_system.university_system.modules.domain.student_affairs.student_union.services.union_context import (
+
+logger = logging.getLogger(__name__)
     manage_book_clubs, manage_shared_resources, knowledge_sharing_sessions,
     learning_analytics_dashboard, auto_award_points
 )
@@ -85,6 +89,7 @@ def manage_live_streaming(cursor):
         print("Stream will start automatically at event time.")
 
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def interactive_virtual_features(cursor):
@@ -225,6 +230,7 @@ def interactive_virtual_features(cursor):
         print("Features will be available during the virtual event.")
 
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def recording_and_replay_management(cursor):
@@ -343,6 +349,7 @@ def recording_and_replay_management(cursor):
             print("Processing will complete within 2 hours after event ends.")
 
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def manage_learning_integration():
@@ -399,8 +406,10 @@ def manage_learning_integration():
         conn.close()
 
     except sqlite3.Error as e:
+        logger.error("Database error: %s", e, exc_info=True)
         print(f"Database error: {e}")
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def organize_academic_conferences(student_id, cursor, conn):
@@ -616,6 +625,7 @@ def organize_academic_conferences(student_id, cursor, conn):
             print("Virtual conference platform configured!")
 
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")
 
 def research_presentation_platform(student_id, cursor, conn):
@@ -824,4 +834,5 @@ def research_presentation_platform(student_id, cursor, conn):
                 print("• Improvement area: Visual aids")
 
     except Exception as e:
+        logger.error("Error: %s", e, exc_info=True)
         print(f"An error occurred: {e}")

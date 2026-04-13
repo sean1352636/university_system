@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.76.3 — 2026-04-13](#8763---2026-04-13)
 - [8.76.2 — 2026-04-12](#8762---2026-04-12)
 - [8.76.1 — 2026-04-12](#8761---2026-04-12)
 - [8.76.0 — 2026-04-12](#8760---2026-04-12)
@@ -174,6 +175,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.76.3] — 2026-04-13
+
+### Code quality sweep — missing interfaces, empty packages, silent errors, and column mismatch
+
+#### Added
+
+- **Blockchain CLI** (`blockchain/cli/blockchain_cli.py`): Menu-driven CLI wrapping all 12 blockchain credential and digital badge operations from the existing service layer.
+- **Dentist CLI** (`dentist/cli/dentist_cli.py`): Full CLI with 6 sections — patient management, appointments, treatments, prescriptions, payments, and reports — using all service classes.
+- **Course Planning CLI** (`course_planning/cli/planning_cli.py`): 17-option CLI covering semester plans, prerequisite checking and visualisation, schedule conflict detection, course recommendations, and planning analytics.
+- **Notifications GUI** (`notifications/gui/notifications_gui.py`): Tkinter GUI with treeview listing, detail panel, mark-read/archive actions, channel/priority filtering, and a settings dialog for quiet hours and channel preferences.
+
+#### Fixed
+
+- **Course management `modules WHERE department = ?` crash**: The `modules` table has no `department` column (the correct column is `course`). Fixed 8 SQL queries across `course_crud.py` and `course_operations.py` — affects course deletion, module reassignment, and student re-enrollment.
+- **Activity logger silent error swallowing**: `core/activity_logger.py` had bare `except Exception: pass` on the audit log write path. Failures now print to stderr so compliance-critical logging gaps are visible.
+- **Print-only error handling in 12 service files**: Added `logger.error(..., exc_info=True)` before every `print(f"Database error: {e}")` in 6 parking management files (28 instances) and 6 student union service files (72 instances). Added `import logging` and module-level loggers to the 5 student union files that lacked them.
+- **Alumni domain orphaned**: `alumni/__init__.py` now re-exports `display_alumni_menu`, `display_alumni_relations_menu`, `launch_alumni_relations_gui`, and `setup_alumni_permissions` from `student_affairs.alumni_management`.
+
+#### Changed
+
+- **129 empty `__init__.py` files populated**: Every package under `modules/domain/` now has a docstring and `__all__` exports listing sibling modules and sub-packages.
 
 ---
 
