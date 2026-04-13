@@ -11,6 +11,7 @@ from tkinter import ttk, messagebox
 
 from education_system.primary_school.core.logs import setup_logging
 from education_system.primary_school.core.paths import DB_FILE, ensure_directories
+from education_system.primary_school.infrastructure.auth.role_manager import RoleManager
 from education_system.primary_school.infrastructure.database.schema import initialise_database, seed_default_users, seed_default_staff
 from education_system.primary_school.infrastructure.auth.core import UserAuth
 from education_system.primary_school.seed_subjects import seed_subjects
@@ -178,44 +179,10 @@ class MainApplication(tk.Tk):
     def _build_navigation_categories(self, parent):
         """Create category buttons that expand into sub-windows."""
         role = self._user.get("role", "")
-
-        # Determine which modules are visible for this role
-        admin_only = {
-            "HR", "CPD", "Cover", "Finance", "Payroll", "Users", "Settings",
-            "Audit Log", "Data Export", "Safeguarding", "Policies",
-            "Assets", "Visitors", "Academic Misconduct",
-            "Central Admin Portal", "GDPR Compliance",
-            "Complaints", "GDPR", "Data Dashboard",
-            "Appraisals", "Observations",
-        }
-        staff_modules = {
-            "Dashboard", "Pupils", "Subjects", "Classes", "Assessment",
-            "Attendance", "Timetable", "Homework", "SATs", "Phonics",
-            "Reading Records", "Progress", "Behaviour", "Rewards",
-            "SEND", "Pastoral", "Staff Directory", "Class Groups",
-            "Clubs", "Meals", "Library", "Medical", "Transport", "Trips",
-            "Consent", "Announcements", "Calendar", "Notifications",
-            "Email", "Parents Evening", "Communication Log",
-            "Admissions", "Documents", "Room Bookings", "Incidents",
-            "MFA Settings", "Certificates", "LMS", "Security Questions",
-            "Pupil Wellbeing", "Feedback", "Lesson Plans",
-            "Staff Wellbeing", "Portfolio", "Skills Tracker",
-        }
-        parent_modules = {
-            "Dashboard", "Announcements", "Calendar", "Notifications",
-            "MFA Settings", "Security Questions",
-        }
+        role_mgr = RoleManager()
 
         def is_visible(name):
-            if role in ("admin", "staff"):
-                return True
-            elif role in ("teacher", "teaching_assistant", "instructor"):
-                return name in staff_modules
-            elif role == "parent":
-                return name in parent_modules
-            elif role == "student":
-                return name == "Dashboard"
-            return name == "Dashboard"
+            return role_mgr.can_access_module(role, name)
 
         def open_category_window(category_title, buttons_data):
             """Open a window showing all buttons for a category in a 4-column grid."""
@@ -521,41 +488,16 @@ class MainApplication(tk.Tk):
         "Parents Evening": "#148f77",
     }
 
-    ROLE_QUICK_ACTIONS = {
-        "admin": [
-            "Pupils", "Subjects", "Assessment", "Attendance", "Timetable",
-            "Behaviour", "Safeguarding", "HR", "Finance", "Users",
-            "Admissions", "Settings", "Reports (Data Dashboard)", "SEND",
-            "Staff Directory",
-        ],
-        "staff": [
-            "Pupils", "Subjects", "Assessment", "Attendance", "Timetable",
-            "Behaviour", "Safeguarding", "HR", "Finance", "Users",
-            "Admissions", "Settings", "Reports (Data Dashboard)", "SEND",
-            "Staff Directory",
-        ],
-        "teacher": [
-            "Pupils", "Assessment", "Attendance", "Homework", "Timetable",
-            "Behaviour", "Rewards", "SEND", "Lesson Plans", "Class Groups",
-            "Calendar", "Library",
-        ],
-        "instructor": [
-            "Pupils", "Assessment", "Attendance", "Homework", "Timetable",
-            "Behaviour", "Rewards", "SEND", "Lesson Plans", "Class Groups",
-            "Calendar", "Library",
-        ],
-        "teaching_assistant": [
-            "Pupils", "Assessment", "Attendance", "Homework", "Timetable",
-            "Behaviour", "Rewards", "SEND", "Lesson Plans", "Class Groups",
-            "Calendar", "Library",
-        ],
-        "parent": [
-            "Announcements", "Calendar", "Parents Evening", "Notifications",
-        ],
-        "student": [
-            "Announcements", "Calendar", "Library",
-        ],
-    }
+    # Ordered candidate list for quick actions — the first N that pass the
+    # permission check for the current role are shown.
+    _QUICK_ACTION_CANDIDATES = [
+        "Pupils", "Subjects", "Assessment", "Attendance", "Timetable",
+        "Behaviour", "Safeguarding", "HR", "Finance", "Users",
+        "Admissions", "Settings", "Reports (Data Dashboard)", "SEND",
+        "Staff Directory", "Homework", "Rewards", "Lesson Plans",
+        "Class Groups", "Calendar", "Library", "Announcements",
+        "Notifications", "Parents Evening",
+    ]
 
     _ACTION_TO_MODULE = {
         "Reports (Data Dashboard)": "Data Dashboard",
@@ -563,7 +505,11 @@ class MainApplication(tk.Tk):
 
     def _build_quick_actions(self, parent, role):
         """Build role-appropriate quick action buttons."""
-        actions = self.ROLE_QUICK_ACTIONS.get(role, [])
+        role_mgr = RoleManager()
+        actions = [
+            a for a in self._QUICK_ACTION_CANDIDATES
+            if role_mgr.can_access_module(role, self._ACTION_TO_MODULE.get(a, a))
+        ]
         if not actions:
             return
 

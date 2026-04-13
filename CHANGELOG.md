@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.76.7 — 2026-04-13](#8767---2026-04-13)
 - [8.76.6 — 2026-04-13](#8766---2026-04-13)
 - [8.76.5 — 2026-04-13](#8765---2026-04-13)
 - [8.76.4 — 2026-04-13](#8764---2026-04-13)
@@ -178,6 +179,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.76.7] — 2026-04-13
+
+### Wire RoleManager permission checks into CLI, GUI, and API
+
+#### Added
+
+- **`role_manager.py`**: `MODULE_PERMISSIONS` mapping (70+ UI module names to required permissions), `_SECTION_PERMISSIONS` for CLI sections, `can_access_module()` and `accessible_sections()` methods. New permissions: `view_pupils`, `view_parents_evening`, `view_communication` to properly distinguish parent-level from staff-level access.
+- **`shared/api/primary/auth.py`**: `permission_required(*permissions)` decorator for API routes — checks against the `RoleManager` permission hierarchy so `@permission_required("manage_pupils")` automatically grants access to admin, teacher, and any role that inherits the permission.
+
+#### Changed
+
+- **`cli_main.py`**: Replaced hardcoded `_ROLE_SECTIONS` dict with `_role_mgr.accessible_sections()`. Menu dispatch uses `has_minimum_role()` instead of role-name string checks. Parent/student dashboards filtered through `can_access_module()`.
+- **`main_gui.py`**: Replaced three hardcoded visibility sets (`admin_only`, `staff_modules`, `parent_modules`) and the `is_visible()` function with a single `role_mgr.can_access_module()` call. Replaced `ROLE_QUICK_ACTIONS` (7 role-to-module dicts) with a candidate list filtered by permissions.
+
+#### Removed
+
+- **`session_manager.py`**: Deleted unused re-export shim (zero consumers).
 
 ---
 

@@ -5,10 +5,13 @@ import sys
 import logging
 
 from education_system.primary_school.infrastructure.auth.core import UserAuth
+from education_system.primary_school.infrastructure.auth.role_manager import RoleManager
 from education_system.primary_school.infrastructure.database.schema import initialise_database, seed_default_users, seed_default_staff
 from education_system.primary_school.infrastructure.database.db import get_db_path
 from education_system.primary_school.core.paths import ensure_directories
 from education_system.primary_school.core.logs import setup_logging
+
+_role_mgr = RoleManager()
 from education_system.shared.cli.cli_helpers import (
     print_header, print_menu, get_choice, run_submenu as _run_submenu, login_prompt,
 )
@@ -473,34 +476,20 @@ def student_menu(auth: UserAuth):
             print("\n  Invalid option.")
 
 
+_FLAT_MENU_MODULES = {
+    "parent": ["Announcements", "Calendar", "Parents Evening", "Communication Log"],
+    "student": ["Announcements", "Calendar", "Library"],
+}
+
+
 def _show_dashboard_summary(auth, role):
     """Print a dashboard summary showing role and available sections."""
-    _ROLE_SECTIONS = {
-        "admin": [
-            "Academics", "Pastoral Care", "Staff", "Administration",
-            "Pupil Life", "Communication", "Facilities", "Cross-System Tools",
-        ],
-        "staff": [
-            "Academics", "Pastoral Care", "Staff", "Administration",
-            "Pupil Life", "Communication", "Facilities", "Cross-System Tools",
-        ],
-        "teacher": [
-            "Academics", "Pastoral Care", "Staff", "Pupil Life",
-            "Communication", "Facilities",
-        ],
-        "instructor": [
-            "Academics", "Pastoral Care", "Staff", "Pupil Life",
-            "Communication", "Facilities",
-        ],
-        "parent": [
-            "Announcements", "Calendar", "Parents Evening", "Communication Log",
-        ],
-        "student": [
-            "Announcements", "Calendar", "Library",
-        ],
-    }
-
-    sections = _ROLE_SECTIONS.get(role, ["Announcements", "Calendar", "Library"])
+    flat = _FLAT_MENU_MODULES.get(role)
+    if flat is not None:
+        # Parent / student: show individual modules, not sections
+        sections = [m for m in flat if _role_mgr.can_access_module(role, m)]
+    else:
+        sections = _role_mgr.accessible_sections(role)
     role_display = role.replace("_", " ").title()
 
     # Format sections with wrapping at ~55 chars
@@ -589,9 +578,9 @@ def main(db_path: str | None = None, user_info=None, role=None, shared_auth=None
     while True:
         result = None
         try:
-            if role in ("admin", "staff"):
+            if _role_mgr.has_minimum_role(role, "staff"):
                 result = admin_menu(auth)
-            elif role in ("teacher", "instructor"):
+            elif _role_mgr.has_minimum_role(role, "teaching_assistant"):
                 result = teacher_menu(auth)
             elif role == "parent":
                 result = parent_menu(auth)
