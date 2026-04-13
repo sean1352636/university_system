@@ -194,6 +194,141 @@ from education_system.primary_school.modules.domain.academics.portfolio.services
 from education_system.primary_school.modules.domain.academics.skills_tracker.services.skills_tracker_service import (
     SkillsTrackerService,
 )
+from education_system.primary_school.modules.domain.academics.academic_year.services.academic_year_service import (
+    AcademicYearService,
+)
+from education_system.primary_school.modules.domain.academics.assignments.services.assignments_service import (
+    AssignmentService,
+)
+from education_system.primary_school.modules.domain.academics.baseline_assessment.services.baseline_assessment_service import (
+    BaselineAssessmentService,
+)
+from education_system.primary_school.modules.domain.academics.markbook.services.markbook_service import (
+    MarkbookService,
+)
+from education_system.primary_school.modules.domain.academics.question_analysis.services.question_analysis_service import (
+    QuestionAnalysisService,
+)
+from education_system.primary_school.modules.domain.academics.target_setting.services.target_setting_service import (
+    TargetSettingService,
+)
+from education_system.primary_school.modules.domain.admin.audit_reports.services.audit_reports_service import (
+    AuditReportsService,
+)
+from education_system.primary_school.modules.domain.admin.bulk_operations.services.bulk_operations_service import (
+    BulkOperationsService,
+)
+from education_system.primary_school.modules.domain.admin.census.services.census_service import (
+    CensusService,
+)
+from education_system.primary_school.modules.domain.admin.compliance.services.compliance_service import (
+    ComplianceService,
+)
+from education_system.primary_school.modules.domain.admin.health_safety.services.health_safety_service import (
+    HealthSafetyService,
+)
+from education_system.primary_school.modules.domain.admin.helpdesk.services.helpdesk_service import (
+    HelpdeskService,
+)
+from education_system.primary_school.modules.domain.admin.letter_templates.services.letter_templates_service import (
+    LetterTemplatesService,
+)
+from education_system.primary_school.modules.domain.admin.multi_language.services.multi_language_service import (
+    MultiLanguageService,
+)
+from education_system.primary_school.modules.domain.admin.onboarding.services.onboarding_service import (
+    OnboardingService,
+)
+from education_system.primary_school.modules.domain.admin.prevent_duty.services.prevent_duty_service import (
+    PreventDutyService,
+)
+from education_system.primary_school.modules.domain.admin.quality_assurance.services.quality_assurance_service import (
+    QualityAssuranceService,
+)
+from education_system.primary_school.modules.domain.admin.risk_management.services.risk_management_service import (
+    RiskManagementService,
+)
+from education_system.primary_school.modules.domain.admin.self_assessment.services.self_assessment_service import (
+    SelfAssessmentService,
+)
+from education_system.primary_school.modules.domain.admin.todo.services.todo_service import (
+    TodoService,
+)
+from education_system.primary_school.modules.domain.communication.activity_feed.services.activity_feed_service import (
+    ActivityFeedService,
+)
+from education_system.primary_school.modules.domain.communication.messaging.services.messaging_service import (
+    MessagingService,
+)
+from education_system.primary_school.modules.domain.communication.sms_email.services.sms_email_service import (
+    SmsEmailService,
+)
+from education_system.primary_school.modules.domain.communication.surveys.services.surveys_service import (
+    SurveysService,
+)
+from education_system.primary_school.modules.domain.facilities.departments.services.departments_service import (
+    DepartmentsService,
+)
+from education_system.primary_school.modules.domain.facilities.emergency.services.emergency_service import (
+    EmergencyService,
+)
+from education_system.primary_school.modules.domain.facilities.lettings.services.lettings_service import (
+    LettingsService,
+)
+from education_system.primary_school.modules.domain.facilities.resource_booking.services.resource_booking_service import (
+    ResourceBookingService,
+)
+from education_system.primary_school.modules.domain.pastoral_care.absence_requests.services.absence_requests_service import (
+    AbsenceRequestsService,
+)
+from education_system.primary_school.modules.domain.pastoral_care.accessibility.services.accessibility_service import (
+    AccessibilityService,
+)
+from education_system.primary_school.modules.domain.pastoral_care.early_warning.services.early_warning_service import (
+    EarlyWarningService,
+)
+from education_system.primary_school.modules.domain.pupil_life.equality_diversity.services.equality_diversity_service import (
+    EqualityDiversityService,
+)
+from education_system.primary_school.modules.domain.pupil_life.ilp.services.ilp_service import (
+    IlpService,
+)
+from education_system.primary_school.modules.domain.pupil_life.peer_mentoring.services.peer_mentoring_service import (
+    PeerMentoringService,
+)
+from education_system.primary_school.modules.domain.pupil_life.pupil_support.services.pupil_support_service import (
+    PupilSupportService,
+)
+from education_system.primary_school.modules.domain.staff.dbs_checks.services.dbs_checks_service import (
+    DbsChecksService,
+)
+from education_system.primary_school.modules.domain.staff.first_aid.services.first_aid_service import (
+    FirstAidService,
+)
+from education_system.primary_school.modules.domain.staff.recruitment.services.recruitment_service import (
+    RecruitmentService,
+)
+from education_system.primary_school.modules.domain.staff.staff_absence.services.staff_absence_service import (
+    StaffAbsenceService,
+)
+from education_system.primary_school.modules.domain.portals.document_hub.services.document_hub_service import (
+    DocumentHubService,
+)
+from education_system.primary_school.modules.domain.portals.kpi_dashboard.services.kpi_dashboard_service import (
+    KpiDashboardService,
+)
+from education_system.primary_school.modules.domain.portals.mobile_dashboard.services.mobile_dashboard_service import (
+    MobileDashboardService,
+)
+from education_system.primary_school.modules.domain.portals.parent_portal.services.parent_portal_service import (
+    ParentPortalService,
+)
+from education_system.primary_school.modules.domain.portals.progress_dashboard.services.progress_dashboard_service import (
+    ProgressDashboardService,
+)
+from education_system.primary_school.modules.domain.portals.pupil_portal.services.pupil_portal_service import (
+    PupilPortalService,
+)
 
 
 # ── Template and per-test DB fixtures (shared boilerplate) ───────────────
@@ -659,3 +794,231 @@ def sample_staff(hr_service):
         role="Teacher",
         department="Year 1",
     )
+
+
+# ── New module service fixtures ──────────────────────────────────────────
+
+
+@pytest.fixture
+def academic_year_service(db_path):
+    return AcademicYearService(db_path)
+
+
+@pytest.fixture
+def assignment_service(db_path):
+    return AssignmentService(db_path)
+
+
+@pytest.fixture
+def baseline_assessment_service(db_path):
+    return BaselineAssessmentService(db_path)
+
+
+@pytest.fixture
+def markbook_service(db_path):
+    return MarkbookService(db_path)
+
+
+@pytest.fixture
+def question_analysis_service(db_path):
+    return QuestionAnalysisService(db_path)
+
+
+@pytest.fixture
+def target_setting_service(db_path):
+    return TargetSettingService(db_path)
+
+
+@pytest.fixture
+def audit_reports_service(db_path):
+    return AuditReportsService(db_path)
+
+
+@pytest.fixture
+def bulk_operations_service(db_path):
+    return BulkOperationsService(db_path)
+
+
+@pytest.fixture
+def census_service(db_path):
+    return CensusService(db_path)
+
+
+@pytest.fixture
+def compliance_service(db_path):
+    return ComplianceService(db_path)
+
+
+@pytest.fixture
+def health_safety_service(db_path):
+    return HealthSafetyService(db_path)
+
+
+@pytest.fixture
+def helpdesk_service(db_path):
+    return HelpdeskService(db_path)
+
+
+@pytest.fixture
+def letter_templates_service(db_path):
+    return LetterTemplatesService(db_path)
+
+
+@pytest.fixture
+def multi_language_service(db_path):
+    return MultiLanguageService(db_path)
+
+
+@pytest.fixture
+def onboarding_service(db_path):
+    return OnboardingService(db_path)
+
+
+@pytest.fixture
+def prevent_duty_service(db_path):
+    return PreventDutyService(db_path)
+
+
+@pytest.fixture
+def quality_assurance_service(db_path):
+    return QualityAssuranceService(db_path)
+
+
+@pytest.fixture
+def risk_management_service(db_path):
+    return RiskManagementService(db_path)
+
+
+@pytest.fixture
+def self_assessment_service(db_path):
+    return SelfAssessmentService(db_path)
+
+
+@pytest.fixture
+def todo_service(db_path):
+    return TodoService(db_path)
+
+
+@pytest.fixture
+def activity_feed_service(db_path):
+    return ActivityFeedService(db_path)
+
+
+@pytest.fixture
+def messaging_service(db_path):
+    return MessagingService(db_path)
+
+
+@pytest.fixture
+def sms_email_service(db_path):
+    return SmsEmailService(db_path)
+
+
+@pytest.fixture
+def surveys_service(db_path):
+    return SurveysService(db_path)
+
+
+@pytest.fixture
+def departments_service(db_path):
+    return DepartmentsService(db_path)
+
+
+@pytest.fixture
+def emergency_service(db_path):
+    return EmergencyService(db_path)
+
+
+@pytest.fixture
+def lettings_service(db_path):
+    return LettingsService(db_path)
+
+
+@pytest.fixture
+def resource_booking_service(db_path):
+    return ResourceBookingService(db_path)
+
+
+@pytest.fixture
+def absence_requests_service(db_path):
+    return AbsenceRequestsService(db_path)
+
+
+@pytest.fixture
+def accessibility_service(db_path):
+    return AccessibilityService(db_path)
+
+
+@pytest.fixture
+def early_warning_service(db_path):
+    return EarlyWarningService(db_path)
+
+
+@pytest.fixture
+def equality_diversity_service(db_path):
+    return EqualityDiversityService(db_path)
+
+
+@pytest.fixture
+def ilp_service(db_path):
+    return IlpService(db_path)
+
+
+@pytest.fixture
+def peer_mentoring_service(db_path):
+    return PeerMentoringService(db_path)
+
+
+@pytest.fixture
+def pupil_support_service(db_path):
+    return PupilSupportService(db_path)
+
+
+@pytest.fixture
+def dbs_checks_service(db_path):
+    return DbsChecksService(db_path)
+
+
+@pytest.fixture
+def first_aid_service(db_path):
+    return FirstAidService(db_path)
+
+
+@pytest.fixture
+def recruitment_service(db_path):
+    return RecruitmentService(db_path)
+
+
+@pytest.fixture
+def staff_absence_service(db_path):
+    return StaffAbsenceService(db_path)
+
+
+@pytest.fixture
+def document_hub_service(db_path):
+    return DocumentHubService(db_path)
+
+
+@pytest.fixture
+def kpi_dashboard_service(db_path):
+    return KpiDashboardService(db_path)
+
+
+@pytest.fixture
+def mobile_dashboard_service(db_path):
+    return MobileDashboardService(db_path)
+
+
+@pytest.fixture
+def parent_portal_service(db_path):
+    return ParentPortalService(db_path)
+
+
+@pytest.fixture
+def progress_dashboard_service(db_path):
+    return ProgressDashboardService(db_path)
+
+
+@pytest.fixture
+def pupil_portal_service(db_path):
+    return PupilPortalService(db_path)

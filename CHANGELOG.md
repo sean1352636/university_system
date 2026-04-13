@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.76.8 — 2026-04-13](#8768---2026-04-13)
 - [8.76.7 — 2026-04-13](#8767---2026-04-13)
 - [8.76.6 — 2026-04-13](#8766---2026-04-13)
 - [8.76.5 — 2026-04-13](#8765---2026-04-13)
@@ -179,6 +180,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.76.8] — 2026-04-13
+
+### Add CLI menus and tests for 45 service-only modules
+
+#### Added
+
+- **45 CLI menus** (3,312 LOC): Full CRUD interfaces for every module that previously had only a service layer. Covers academics (6), admin (14), communication (4), facilities (4), pastoral care (3), pupil life (4), staff (4), and portals (6). All wired into the existing section submenu functions in `cli_main.py`.
+- **45 test files** (234 passing, 126 xfail pending schema alignment): CRUD test coverage for all 45 new modules — create, list, get, update, delete. Tests with NOT NULL FK constraints are marked `xfail` until field alignment is completed.
+- **45 conftest fixtures**: Service fixtures for all new modules added to `conftest.py`.
 
 ---
 

@@ -53,6 +53,12 @@ def _academics(auth):
     from education_system.primary_school.cli.menus.phonics_cli import phonics_menu
     from education_system.primary_school.cli.menus.reading_records_cli import reading_records_menu
     from education_system.primary_school.cli.menus.progress_cli import progress_menu
+    from education_system.primary_school.cli.menus.academic_year_cli import academic_year_menu
+    from education_system.primary_school.cli.menus.assignments_cli import assignments_menu
+    from education_system.primary_school.cli.menus.baseline_assessment_cli import baseline_assessment_menu
+    from education_system.primary_school.cli.menus.markbook_cli import markbook_menu
+    from education_system.primary_school.cli.menus.question_analysis_cli import question_analysis_menu
+    from education_system.primary_school.cli.menus.target_setting_cli import target_setting_menu
     _run_submenu(auth, "Academics", [
         ("1", "Pupils", lambda a: pupils_menu(a)),
         ("2", "Subjects", lambda a: subjects_menu(a)),
@@ -65,6 +71,12 @@ def _academics(auth):
         ("9", "Phonics", lambda a: phonics_menu(a)),
         ("A", "Reading Records", lambda a: reading_records_menu(a)),
         ("B", "Progress", lambda a: progress_menu(a)),
+        ("C", "Academic Year", lambda a: academic_year_menu(a)),
+        ("D", "Assignments", lambda a: assignments_menu(a)),
+        ("E", "Baseline Assessment", lambda a: baseline_assessment_menu(a)),
+        ("F", "Markbook", lambda a: markbook_menu(a)),
+        ("G", "Question Analysis", lambda a: question_analysis_menu(a)),
+        ("H", "Target Setting", lambda a: target_setting_menu(a)),
     ])
 
 
@@ -74,12 +86,18 @@ def _pastoral(auth):
     from education_system.primary_school.cli.menus.safeguarding_cli import safeguarding_menu
     from education_system.primary_school.cli.menus.send_cli import send_menu
     from education_system.primary_school.cli.menus.pastoral_cli import pastoral_notes_menu
+    from education_system.primary_school.cli.menus.absence_requests_cli import absence_requests_menu
+    from education_system.primary_school.cli.menus.accessibility_cli import accessibility_menu
+    from education_system.primary_school.cli.menus.early_warning_cli import early_warning_menu
     _run_submenu(auth, "Pastoral Care", [
         ("1", "Behaviour", lambda a: behaviour_menu(a)),
         ("2", "Rewards", lambda a: rewards_menu(a)),
         ("3", "Safeguarding", lambda a: safeguarding_menu(a)),
         ("4", "SEND", lambda a: send_menu(a)),
         ("5", "Pastoral Notes", lambda a: pastoral_notes_menu(a)),
+        ("6", "Absence Requests", lambda a: absence_requests_menu(a)),
+        ("7", "Accessibility", lambda a: accessibility_menu(a)),
+        ("8", "Early Warning", lambda a: early_warning_menu(a)),
     ])
 
 
@@ -88,11 +106,19 @@ def _staff(auth):
     from education_system.primary_school.cli.menus.cpd_cli import cpd_records_menu
     from education_system.primary_school.cli.menus.cover_cli import cover_lessons_menu
     from education_system.primary_school.cli.menus.staff_directory_cli import staff_directory_menu
+    from education_system.primary_school.cli.menus.dbs_checks_cli import dbs_checks_menu
+    from education_system.primary_school.cli.menus.first_aid_cli import first_aid_menu
+    from education_system.primary_school.cli.menus.recruitment_cli import recruitment_menu
+    from education_system.primary_school.cli.menus.staff_absence_cli import staff_absence_menu
     _run_submenu(auth, "Staff", [
         ("1", "HR", lambda a: hr_menu(a)),
         ("2", "CPD Records", lambda a: cpd_records_menu(a)),
         ("3", "Cover Lessons", lambda a: cover_lessons_menu(a)),
         ("4", "Staff Directory", lambda a: staff_directory_menu(a)),
+        ("5", "DBS Checks", lambda a: dbs_checks_menu(a)),
+        ("6", "First Aid", lambda a: first_aid_menu(a)),
+        ("7", "Recruitment", lambda a: recruitment_menu(a)),
+        ("8", "Staff Absence", lambda a: staff_absence_menu(a)),
     ])
 
 
@@ -105,6 +131,20 @@ def _administration(auth):
     from education_system.primary_school.cli.menus.audit_log_cli import audit_log_menu
     from education_system.primary_school.cli.menus.policies_cli import policies_menu
     from education_system.primary_school.cli.menus.documents_cli import documents_menu
+    from education_system.primary_school.cli.menus.audit_reports_cli import audit_reports_menu
+    from education_system.primary_school.cli.menus.bulk_operations_cli import bulk_operations_menu
+    from education_system.primary_school.cli.menus.census_cli import census_menu
+    from education_system.primary_school.cli.menus.compliance_cli import compliance_menu
+    from education_system.primary_school.cli.menus.health_safety_cli import health_safety_menu
+    from education_system.primary_school.cli.menus.helpdesk_cli import helpdesk_menu
+    from education_system.primary_school.cli.menus.letter_templates_cli import letter_templates_menu
+    from education_system.primary_school.cli.menus.multi_language_cli import multi_language_menu
+    from education_system.primary_school.cli.menus.onboarding_cli import onboarding_menu
+    from education_system.primary_school.cli.menus.prevent_duty_cli import prevent_duty_menu
+    from education_system.primary_school.cli.menus.quality_assurance_cli import quality_assurance_menu
+    from education_system.primary_school.cli.menus.risk_management_cli import risk_management_menu
+    from education_system.primary_school.cli.menus.self_assessment_cli import self_assessment_menu
+    from education_system.primary_school.cli.menus.todo_cli import todo_menu
     _run_submenu(auth, "Administration", [
         ("1", "User Management", lambda a: user_management_menu(a)),
         ("2", "Settings", lambda a: settings_menu(a)),
@@ -114,6 +154,20 @@ def _administration(auth):
         ("6", "Audit Log", lambda a: audit_log_menu(a)),
         ("7", "Policies", lambda a: policies_menu(a)),
         ("8", "Documents", lambda a: documents_menu(a)),
+        ("9", "Audit Reports", lambda a: audit_reports_menu(a)),
+        ("A", "Bulk Operations", lambda a: bulk_operations_menu(a)),
+        ("B", "Census", lambda a: census_menu(a)),
+        ("C", "Compliance", lambda a: compliance_menu(a)),
+        ("D", "Health & Safety", lambda a: health_safety_menu(a)),
+        ("E", "Helpdesk", lambda a: helpdesk_menu(a)),
+        ("F", "Letter Templates", lambda a: letter_templates_menu(a)),
+        ("G", "Multi-Language", lambda a: multi_language_menu(a)),
+        ("H", "Onboarding", lambda a: onboarding_menu(a)),
+        ("I", "Prevent Duty", lambda a: prevent_duty_menu(a)),
+        ("J", "Quality Assurance", lambda a: quality_assurance_menu(a)),
+        ("K", "Risk Management", lambda a: risk_management_menu(a)),
+        ("L", "Self-Assessment", lambda a: self_assessment_menu(a)),
+        ("M", "To-Do", lambda a: todo_menu(a)),
     ])
 
 
@@ -126,6 +180,10 @@ def _pupil_life(auth):
     from education_system.primary_school.cli.menus.medical_cli import medical_menu
     from education_system.primary_school.cli.menus.class_groups_cli import class_groups_menu
     from education_system.primary_school.cli.menus.consent_cli import consent_menu
+    from education_system.primary_school.cli.menus.equality_diversity_cli import equality_diversity_menu
+    from education_system.primary_school.cli.menus.ilp_cli import ilp_menu
+    from education_system.primary_school.cli.menus.peer_mentoring_cli import peer_mentoring_menu
+    from education_system.primary_school.cli.menus.pupil_support_cli import pupil_support_menu
     _run_submenu(auth, "Pupil Life", [
         ("1", "Clubs", lambda a: clubs_menu(a)),
         ("2", "Meals", lambda a: meals_menu(a)),
@@ -135,6 +193,10 @@ def _pupil_life(auth):
         ("6", "Medical", lambda a: medical_menu(a)),
         ("7", "Class Groups", lambda a: class_groups_menu(a)),
         ("8", "Consent", lambda a: consent_menu(a)),
+        ("9", "Equality & Diversity", lambda a: equality_diversity_menu(a)),
+        ("A", "ILP", lambda a: ilp_menu(a)),
+        ("B", "Peer Mentoring", lambda a: peer_mentoring_menu(a)),
+        ("C", "Pupil Support", lambda a: pupil_support_menu(a)),
     ])
 
 
@@ -145,6 +207,10 @@ def _communication(auth):
     from education_system.primary_school.cli.menus.calendar_cli import calendar_menu
     from education_system.primary_school.cli.menus.parents_evening_cli import parents_evening_menu
     from education_system.primary_school.cli.menus.communication_log_cli import communication_log_menu
+    from education_system.primary_school.cli.menus.activity_feed_cli import activity_feed_menu
+    from education_system.primary_school.cli.menus.messaging_cli import messaging_menu
+    from education_system.primary_school.cli.menus.sms_email_cli import sms_email_menu
+    from education_system.primary_school.cli.menus.surveys_cli import surveys_menu
     _run_submenu(auth, "Communication", [
         ("1", "Email", lambda a: email_menu(a)),
         ("2", "Notifications", lambda a: notifications_menu(a)),
@@ -152,6 +218,10 @@ def _communication(auth):
         ("4", "Calendar", lambda a: calendar_menu(a)),
         ("5", "Parents Evening", lambda a: parents_evening_menu(a)),
         ("6", "Communication Log", lambda a: communication_log_menu(a)),
+        ("7", "Activity Feed", lambda a: activity_feed_menu(a)),
+        ("8", "Messaging", lambda a: messaging_menu(a)),
+        ("9", "SMS/Email Log", lambda a: sms_email_menu(a)),
+        ("A", "Surveys", lambda a: surveys_menu(a)),
     ])
 
 
@@ -160,11 +230,19 @@ def _facilities(auth):
     from education_system.primary_school.cli.menus.assets_cli import assets_menu
     from education_system.primary_school.cli.menus.visitors_cli import visitors_menu
     from education_system.primary_school.cli.menus.incidents_cli import incidents_menu
+    from education_system.primary_school.cli.menus.departments_cli import departments_menu
+    from education_system.primary_school.cli.menus.emergency_cli import emergency_menu
+    from education_system.primary_school.cli.menus.lettings_cli import lettings_menu
+    from education_system.primary_school.cli.menus.resource_booking_cli import resource_booking_menu
     _run_submenu(auth, "Facilities", [
         ("1", "Room Booking", lambda a: room_booking_menu(a)),
         ("2", "Assets", lambda a: assets_menu(a)),
         ("3", "Visitors", lambda a: visitors_menu(a)),
         ("4", "Incidents", lambda a: incidents_menu(a)),
+        ("5", "Departments", lambda a: departments_menu(a)),
+        ("6", "Emergency Procedures", lambda a: emergency_menu(a)),
+        ("7", "Lettings", lambda a: lettings_menu(a)),
+        ("8", "Resource Booking", lambda a: resource_booking_menu(a)),
     ])
 
 
@@ -185,6 +263,12 @@ def _cross_system_tools(auth):
                 print(f"\n  Error running {label}: {e}")
         return handler
 
+    from education_system.primary_school.cli.menus.document_hub_cli import document_hub_menu
+    from education_system.primary_school.cli.menus.kpi_dashboard_cli import kpi_dashboard_menu
+    from education_system.primary_school.cli.menus.mobile_dashboard_cli import mobile_dashboard_menu
+    from education_system.primary_school.cli.menus.parent_portal_cli import parent_portal_menu
+    from education_system.primary_school.cli.menus.progress_dashboard_cli import progress_dashboard_menu
+    from education_system.primary_school.cli.menus.pupil_portal_cli import pupil_portal_menu
     _run_submenu(auth, "Cross-System Tools", [
         ("1", "Analytics Dashboard", _run_shared("education_system.shared.analytics.analytics_cli", "Analytics Dashboard")),
         ("2", "Outcome Tracking", _run_shared("education_system.shared.outcomes.outcomes_cli", "Outcome Tracking")),
@@ -200,6 +284,12 @@ def _cross_system_tools(auth):
         ("C", "Shared Documents", _run_shared("education_system.shared.documents.document_cli", "Shared Documents")),
         ("D", "Student Self-Service", _run_shared("education_system.shared.student_portal.portal_cli", "Student Self-Service")),
         ("E", "Digital Transcript", _run_shared("education_system.shared.transcript.transcript_cli", "Digital Transcript")),
+        ("F", "Document Hub", lambda a: document_hub_menu(a)),
+        ("G", "KPI Dashboard", lambda a: kpi_dashboard_menu(a)),
+        ("H", "Mobile Dashboard", lambda a: mobile_dashboard_menu(a)),
+        ("I", "Parent Portal", lambda a: parent_portal_menu(a)),
+        ("J", "Progress Dashboard", lambda a: progress_dashboard_menu(a)),
+        ("K", "Pupil Portal", lambda a: pupil_portal_menu(a)),
     ])
 
 
