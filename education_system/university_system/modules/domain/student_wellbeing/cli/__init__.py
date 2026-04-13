@@ -1,0 +1,1 @@
+"""Student Wellbeing CLI interface."""

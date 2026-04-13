@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.76.5 — 2026-04-13](#8765---2026-04-13)
 - [8.76.4 — 2026-04-13](#8764---2026-04-13)
 - [8.76.3 — 2026-04-13](#8763---2026-04-13)
 - [8.76.2 — 2026-04-12](#8762---2026-04-12)
@@ -176,6 +177,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.76.5] — 2026-04-13
+
+### Add CLI interfaces to 19 domains that were GUI-only
+
+#### Added
+
+- **Cinema CLI** (916 lines): 7 menu sections — movies, screenings, bookings, members/loyalty, staff, promo codes, reports — wrapping all 46 `CinemaService` methods.
+- **Barber CLI** (720 lines): Services, staff (including blocked slots), appointments, payments, waitlist, and reports.
+- **Betting CLI** (686 lines): Accounts, sports betting, prediction markets, casino games (slots/blackjack/roulette), and reports.
+- **Music Shop CLI** (692 lines): Product CRUD/search, multi-item orders, payments/refunds, wishlists, and 6 report types.
+- **Legal CLI** (689 lines): Case lifecycle, consultations, documents with version history, payments, fee calculation, and invoice generation.
+- **Butcher CLI** (570 lines): Products, orders, payments, and reports.
+- **Car Rental CLI** (551 lines): Vehicles, rentals, payments, and reports.
+- **Gym CLI** (520 lines): Memberships, check-in/out, class booking, PT sessions, equipment, payments, and reports.
+- **Mail CLI** (523 lines): Package receiving/tracking/collection, PO boxes, forwarding, payments, and reports.
+- **Equipment CLI** (487 lines): Inventory CRUD, rental lifecycle, payments/refunds, and 5 report types.
+- **Nail Bar CLI** (468 lines): Treatments by category, technicians, appointments, payments, and reports.
+- **Phone Shop CLI** (466 lines): Products by category, multi-item orders, payments/refunds, and reports.
+- **Student Wellbeing CLI** (239 lines): Referral CRUD with type/urgency/status filtering and pagination.
+- **Student Finance CLI** (229 lines): Fee record CRUD with multi-field filtering and pagination.
+- **Textbooks CLI** (222 lines): Search, used listings, buy/sell, orders, and module code browsing.
+- **Advising CLI** (180 lines): Advisors, appointment scheduling, degree plans, and credit tracking.
+- **Printing CLI** (159 lines): Quota management, job submission, history, credit purchases, and cost calculator.
+- **Study Rooms CLI** (133 lines): Room availability with filters, booking with conflict checks, and cancellation.
+- **Student ID CLI** (75 lines): Card viewing/generation and lost card replacement.
+
+All 19 CLIs total 8,525 lines. Every domain in the system now has CLI access.
 
 ---
 
