@@ -167,17 +167,29 @@ def api_generate_report():
 
 @app.route('/api/analytics/quality', methods=['GET'])
 def api_data_quality():
-    quality_report = DataQualityMonitor.run_quality_checks()
-    return jsonify(quality_report)
+    try:
+        quality_report = DataQualityMonitor.run_quality_checks()
+        return jsonify(quality_report)
+    except Exception:
+        logger.exception("Data quality check failed")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
 
 @app.route('/api/analytics/predictions', methods=['GET'])
 def api_predictions():
-    predictions = PredictiveAnalytics.predict_dropout_risk()
-    return jsonify(predictions)
+    try:
+        predictions = PredictiveAnalytics.predict_dropout_risk()
+        return jsonify(predictions)
+    except Exception:
+        logger.exception("Dropout risk prediction failed")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
 
 
 @app.route('/api/analytics/anomalies', methods=['GET'])
 def api_anomalies():
-    anomalies = PredictiveAnalytics.detect_anomalies()
-    return jsonify(anomalies)
+    try:
+        anomalies = PredictiveAnalytics.detect_anomalies()
+        return jsonify(anomalies)
+    except Exception:
+        logger.exception("Anomaly detection failed")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500

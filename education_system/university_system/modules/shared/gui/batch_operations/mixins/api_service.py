@@ -117,7 +117,7 @@ class ApiServiceMixin:
 
                                 except Exception as e:
                                     result.failed_imports += 1
-                                    result.errors.append(str(e))
+                                    result.errors.append(f"Record import failed (row {result.total_records})")
 
                             conn.commit()
 
