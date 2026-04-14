@@ -10,12 +10,12 @@ import os
 from datetime import datetime
 from unittest.mock import patch
 
-from education_system.university_system.modules.domain.musicshop.services.musicshop_core import (
+from education_system.university_system.modules.domain.commerce.musicshop.services.musicshop_core import (
     ProductManager, OrderManager, TransactionManager, WishlistManager,
     ReportManager, init_musicshop_db,
 )
 
-PATCH_TARGET = 'education_system.university_system.modules.domain.musicshop.services.musicshop_core.get_musicshop_db_path'
+PATCH_TARGET = 'education_system.university_system.modules.domain.commerce.musicshop.services.musicshop_core.get_musicshop_db_path'
 
 
 @pytest.fixture

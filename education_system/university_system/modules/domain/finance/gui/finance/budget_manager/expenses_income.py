@@ -149,7 +149,7 @@ class ExpensesIncomeMixin:
             student_id = current_user.get('username') if current_user else 'guest'
 
             # Import expense manager
-            from education_system.university_system.modules.domain.budget.services.budget_service import ExpenseManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import ExpenseManager
 
             expense_id = ExpenseManager.add_expense(
                 student_id=student_id,
@@ -201,7 +201,7 @@ class ExpensesIncomeMixin:
             student_id = current_user.get('username') if current_user else 'guest'
 
             # Import income manager
-            from education_system.university_system.modules.domain.budget.services.budget_service import IncomeManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import IncomeManager
 
             income_id = IncomeManager.add_income(
                 student_id=student_id,
@@ -233,7 +233,7 @@ class ExpensesIncomeMixin:
             current_user = self.gui.auth.get_current_user() if self.gui.auth else None
             student_id = current_user.get('username') if current_user else 'guest'
 
-            from education_system.university_system.modules.domain.budget.services.budget_service import ExpenseManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import ExpenseManager
 
             expenses = ExpenseManager.get_student_expenses(student_id)
             for expense in expenses:
@@ -256,7 +256,7 @@ class ExpensesIncomeMixin:
             current_user = self.gui.auth.get_current_user() if self.gui.auth else None
             student_id = current_user.get('username') if current_user else 'guest'
 
-            from education_system.university_system.modules.domain.budget.services.budget_service import IncomeManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import IncomeManager
 
             income_list = IncomeManager.get_student_income(student_id)
             for income in income_list:
@@ -292,7 +292,7 @@ class ExpensesIncomeMixin:
             expense_desc = item['values'][1] if len(item['values']) > 1 else 'this expense'
 
             if messagebox.askyesno("Confirm", f"Delete {expense_desc}?"):
-                from education_system.university_system.modules.domain.budget.services.budget_service import ExpenseManager
+                from education_system.university_system.modules.domain.finance.budget.services.budget_service import ExpenseManager
                 messagebox.showinfo("Success", "Expense deleted!")
                 self.refresh_expenses_list()
                 self.refresh_dashboard()

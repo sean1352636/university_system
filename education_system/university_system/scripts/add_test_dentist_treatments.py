@@ -89,7 +89,7 @@ def add_test_treatments():
         ]
 
         # Treatment fees
-        from education_system.university_system.modules.domain.dentist.services.dentist_core import TREATMENT_TYPES
+        from education_system.university_system.modules.domain.health.dentist.services.dentist_core import TREATMENT_TYPES
 
         treatments_added = 0
         with transaction() as conn:

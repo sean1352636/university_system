@@ -23,7 +23,7 @@ except ImportError:
     get_auth = None
     _DummyAuth = None
 
-from education_system.university_system.modules.domain.dentist.services.dentist_core import (
+from education_system.university_system.modules.domain.health.dentist.services.dentist_core import (
     PatientManager, AppointmentManager, TreatmentManager, PrescriptionManager,
     TransactionManager, ReportManager, init_dentist_db,
     TREATMENT_TYPES, DENTIST_STAFF, APPOINTMENT_SLOTS

@@ -15,7 +15,7 @@ from education_system.university_system.infrastructure.shared_context import get
 
 # Import gym core services
 try:
-    from education_system.university_system.modules.domain.gym.services.gym_core import (
+    from education_system.university_system.modules.domain.commerce.gym.services.gym_core import (
         init_gym_db, MEMBERSHIP_TYPES, CLASS_TYPES, PT_SESSION_FEES,
         generate_membership_id, generate_booking_ref, generate_reference
     )

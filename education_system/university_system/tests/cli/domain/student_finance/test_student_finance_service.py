@@ -5,7 +5,7 @@ import sqlite3
 import tempfile
 import os
 
-from education_system.university_system.modules.domain.student_finance.services.student_finance_service import (
+from education_system.university_system.modules.domain.finance.student_finance.services.student_finance_service import (
     StudentFinanceService,
 )
 

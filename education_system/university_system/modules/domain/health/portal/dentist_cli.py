@@ -15,7 +15,7 @@ from education_system.university_system.infrastructure.shared_context import get
 
 # Import dentist core services
 try:
-    from education_system.university_system.modules.domain.dentist.services.dentist_core import (
+    from education_system.university_system.modules.domain.health.dentist.services.dentist_core import (
         init_dentist_db, TREATMENT_TYPES, DENTIST_STAFF, APPOINTMENT_SLOTS,
         generate_appointment_ref, generate_patient_id, generate_reference
     )

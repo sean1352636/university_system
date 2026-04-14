@@ -59,7 +59,7 @@ from education_system.university_system.modules.domain.student_affairs.services.
 from education_system.university_system.modules.domain.student_affairs.services.student_support.features.dashboard import display_support_menu
 from education_system.university_system.modules.domain.student_affairs.services.student_support.auth import set_auth as set_support_auth
 from education_system.university_system.modules.domain.academics.services.library.menu import display_library_menu
-from education_system.university_system.modules.domain.facilities.services.facilities_management_core import display_facilities_management_menu
+from education_system.university_system.modules.domain.campus.facilities.services.facilities_management_core import display_facilities_management_menu
 from education_system.university_system.modules.domain.admissions.services.admissions_crm_core import display_admissions_crm_menu
 from education_system.university_system.modules.domain.research.services.research_grants_core import display_research_grants_menu
 from education_system.university_system.modules.domain.campus.services.campus_events_core import display_campus_events_menu
@@ -146,7 +146,7 @@ from education_system.university_system.modules.shared.services.ai_features.ai_f
 from education_system.university_system.modules.shared.services.integrations.integration_marketplace_core import display_integration_marketplace_menu
 
 # Import domain-specific menus
-from education_system.university_system.modules.domain.blockchain.services.blockchain_credentials_core import display_blockchain_credentials_menu
+from education_system.university_system.modules.domain.finance.blockchain.services.blockchain_credentials_core import display_blockchain_credentials_menu
 from education_system.university_system.modules.domain.mobility.services.mobile_app_pwa_core import display_mobile_app_pwa_menu
 from education_system.university_system.modules.domain.academics.services.virtual_classroom.classroom_manager import VirtualClassroomManager
 from education_system.university_system.modules.domain.academics.services.virtual_classroom.session_manager import SessionManager
@@ -908,77 +908,77 @@ def display_menu():
                 display_language_menu_option()
             elif option == "hesa_export":
                 try:
-                    from education_system.university_system.modules.domain.hesa_export.cli.hesa_export_cli import display_hesa_export_menu
+                    from education_system.university_system.modules.domain.admissions.hesa_export.cli.hesa_export_cli import display_hesa_export_menu
                     display_hesa_export_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ HESA Export CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "external_examiners":
                 try:
-                    from education_system.university_system.modules.domain.external_examiners.cli.external_examiner_cli import display_external_examiner_menu
+                    from education_system.university_system.modules.domain.academics.external_examiners.cli.external_examiner_cli import display_external_examiner_menu
                     display_external_examiner_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ External Examiners CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "student_app":
                 try:
-                    from education_system.university_system.modules.domain.student_app.cli.student_app_cli import display_student_app_menu
+                    from education_system.university_system.modules.domain.student_affairs.student_app.cli.student_app_cli import display_student_app_menu
                     display_student_app_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Student App CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "achievement_badges":
                 try:
-                    from education_system.university_system.modules.domain.achievement_badges.cli.achievement_badge_cli import display_achievement_badge_menu
+                    from education_system.university_system.modules.domain.student_affairs.achievement_badges.cli.achievement_badge_cli import display_achievement_badge_menu
                     display_achievement_badge_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Achievement Badges CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "study_recommendations":
                 try:
-                    from education_system.university_system.modules.domain.study_recommendations.cli.study_recommendation_cli import display_study_recommendation_menu
+                    from education_system.university_system.modules.domain.academics.study_recommendations.cli.study_recommendation_cli import display_study_recommendation_menu
                     display_study_recommendation_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Study Recommendations CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "clearing_adjustment":
                 try:
-                    from education_system.university_system.modules.domain.clearing_adjustment.cli.clearing_adjustment_cli import display_clearing_adjustment_menu
+                    from education_system.university_system.modules.domain.academics.clearing_adjustment.cli.clearing_adjustment_cli import display_clearing_adjustment_menu
                     display_clearing_adjustment_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Clearing & Adjustment CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "course_planning":
                 try:
-                    from education_system.university_system.modules.domain.course_planning.cli.planning_cli import main as course_planning_main
+                    from education_system.university_system.modules.domain.academics.course_planning.cli.planning_cli import main as course_planning_main
                     course_planning_main()
                 except ImportError as e:
                     print(f"\n  Course Planning CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "advising":
                 try:
-                    from education_system.university_system.modules.domain.advising.cli.advising_cli import main as advising_main
+                    from education_system.university_system.modules.domain.academics.advising.cli.advising_cli import main as advising_main
                     advising_main()
                 except ImportError as e:
                     print(f"\n  Advising CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "student_wellbeing":
                 try:
-                    from education_system.university_system.modules.domain.student_wellbeing.cli.student_wellbeing_cli import main as wellbeing_main
+                    from education_system.university_system.modules.domain.student_affairs.student_wellbeing.cli.student_wellbeing_cli import main as wellbeing_main
                     wellbeing_main()
                 except ImportError as e:
                     print(f"\n  Student Wellbeing CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "student_finance":
                 try:
-                    from education_system.university_system.modules.domain.student_finance.cli.student_finance_cli import main as student_finance_main
+                    from education_system.university_system.modules.domain.finance.student_finance.cli.student_finance_cli import main as student_finance_main
                     student_finance_main()
                 except ImportError as e:
                     print(f"\n  Student Finance CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "notifications":
                 try:
-                    from education_system.university_system.modules.domain.notifications.cli.notifications_cli import NotificationsCLI
+                    from education_system.university_system.modules.domain.communications.notifications.cli.notifications_cli import NotificationsCLI
                     cli = NotificationsCLI()
                     cli.main_menu()
                 except ImportError as e:
@@ -986,28 +986,28 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option == "student_id_card":
                 try:
-                    from education_system.university_system.modules.domain.student_id.cli.student_id_cli import main as student_id_main
+                    from education_system.university_system.modules.domain.student_affairs.student_id.cli.student_id_cli import main as student_id_main
                     student_id_main()
                 except ImportError as e:
                     print(f"\n  Student ID CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "printing":
                 try:
-                    from education_system.university_system.modules.domain.printing.cli.printing_cli import main as printing_main
+                    from education_system.university_system.modules.domain.campus.printing.cli.printing_cli import main as printing_main
                     printing_main()
                 except ImportError as e:
                     print(f"\n  Printing CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "study_rooms":
                 try:
-                    from education_system.university_system.modules.domain.study_rooms.cli.study_rooms_cli import main as study_rooms_main
+                    from education_system.university_system.modules.domain.campus.study_rooms.cli.study_rooms_cli import main as study_rooms_main
                     study_rooms_main()
                 except ImportError as e:
                     print(f"\n  Study Rooms CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "textbooks":
                 try:
-                    from education_system.university_system.modules.domain.textbooks.cli.textbooks_cli import main as textbooks_main
+                    from education_system.university_system.modules.domain.commerce.textbooks.cli.textbooks_cli import main as textbooks_main
                     textbooks_main()
                 except ImportError as e:
                     print(f"\n  Textbooks CLI is not available: {e}")

@@ -15,7 +15,7 @@ from education_system.university_system.infrastructure.shared_context import get
 
 # Import mail core services
 try:
-    from education_system.university_system.modules.domain.mail.services.mail_post_core import (
+    from education_system.university_system.modules.domain.communications.mail.services.mail_post_core import (
         init_mail_db, PACKAGE_TYPES, STORAGE_FEES, FORWARDING_FEES,
         PO_BOX_MONTHLY_FEE, generate_tracking_number, generate_reference
     )

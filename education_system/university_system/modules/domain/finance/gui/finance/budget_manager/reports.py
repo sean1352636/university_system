@@ -153,7 +153,7 @@ class BudgetReportsMixin:
             current_user = self.gui.auth.get_current_user() if self.gui.auth else None
             student_id = current_user.get('username') if current_user else 'guest'
 
-            from education_system.university_system.modules.domain.budget.services.budget_service import (
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import (
                 BudgetManager, ExpenseManager, IncomeManager
             )
 
@@ -210,7 +210,7 @@ class BudgetReportsMixin:
             current_user = self.gui.auth.get_current_user() if self.gui.auth else None
             student_id = current_user.get('username') if current_user else 'guest'
 
-            from education_system.university_system.modules.domain.budget.services.budget_service import ExpenseManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import ExpenseManager
 
             # Get last 30 days
             start_date = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
@@ -255,7 +255,7 @@ class BudgetReportsMixin:
             current_user = self.gui.auth.get_current_user() if self.gui.auth else None
             student_id = current_user.get('username') if current_user else 'guest'
 
-            from education_system.university_system.modules.domain.budget.services.budget_service import BudgetManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import BudgetManager
 
             budgets = BudgetManager.get_student_budgets(student_id, active_only=True)
             if not budgets:
@@ -318,7 +318,7 @@ class BudgetReportsMixin:
             current_user = self.gui.auth.get_current_user() if self.gui.auth else None
             student_id = current_user.get('username') if current_user else 'guest'
 
-            from education_system.university_system.modules.domain.budget.services.budget_service import ExpenseManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import ExpenseManager
 
             trends = ExpenseManager.get_spending_trends(student_id, days=30)
             stats = trends['statistics']

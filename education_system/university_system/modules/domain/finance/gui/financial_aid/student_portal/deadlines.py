@@ -69,7 +69,7 @@ class DeadlinesMixin:
 
             days = int(self.deadline_days_var.get().strip())
 
-            from education_system.university_system.modules.domain.scholarship_finder.services.scholarship_service import ApplicationManager
+            from education_system.university_system.modules.domain.finance.scholarship_finder.services.scholarship_service import ApplicationManager
 
             deadlines = ApplicationManager.get_upcoming_deadlines(self.student_id, days)
 

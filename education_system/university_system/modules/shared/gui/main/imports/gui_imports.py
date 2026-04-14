@@ -685,7 +685,7 @@ _LAUNCHER_MAP = {
     "launch_timetable_optimizer_gui": "education_system.university_system.modules.domain.academics.services.module_scheduling",
     "launch_campus_events_gui": "education_system.university_system.modules.domain.campus.services.campus_events_gui",
     "launch_alumni_relations_gui": "education_system.university_system.modules.domain.student_affairs.services.alumni_management",
-    "launch_facilities_management_gui": "education_system.university_system.modules.domain.facilities.services.facilities_management_core",
+    "launch_facilities_management_gui": "education_system.university_system.modules.domain.campus.facilities.services.facilities_management_core",
     "launch_business_intelligence_gui": "education_system.university_system.modules.shared.services.business_intelligence.business_intelligence_gui",
     "launch_ai_features_gui": "education_system.university_system.modules.shared.services.ai_features.ai_features_core",
     "launch_mobile_app_pwa_gui": "education_system.university_system.modules.domain.mobility.gui.mobile_app_pwa_gui",
@@ -734,7 +734,7 @@ except ImportError as e:
     LEGAL_SERVICES_GUI_AVAILABLE = False
 
 try:
-    from education_system.university_system.modules.domain.betting.gui.betting_shop_gui import BettingShopGUI, launch_betting_shop_gui
+    from education_system.university_system.modules.domain.commerce.betting.gui.betting_shop_gui import BettingShopGUI, launch_betting_shop_gui
     BETTING_SHOP_GUI_AVAILABLE = True
 except ImportError as e:
     BettingShopGUI = None
@@ -743,7 +743,7 @@ except ImportError as e:
 
 # Mail/Post System GUI
 try:
-    from education_system.university_system.modules.domain.mail.gui.mail_post_gui import MailPostGUI, launch_mail_post_gui
+    from education_system.university_system.modules.domain.communications.mail.gui.mail_post_gui import MailPostGUI, launch_mail_post_gui
     MAIL_POST_GUI_AVAILABLE = True
 except ImportError as e:
     MailPostGUI = None
@@ -752,7 +752,7 @@ except ImportError as e:
 
 # Gym/Fitness Center GUI
 try:
-    from education_system.university_system.modules.domain.gym.gui.gym_gui import GymGUI, launch_gym_gui
+    from education_system.university_system.modules.domain.commerce.gym.gui.gym_gui import GymGUI, launch_gym_gui
     GYM_GUI_AVAILABLE = True
 except ImportError as e:
     GymGUI = None
@@ -770,7 +770,7 @@ except ImportError as e:
 
 # Butcher Shop GUI
 try:
-    from education_system.university_system.modules.domain.butcher.gui.butcher_gui import ButcherGUI, launch_butcher_gui
+    from education_system.university_system.modules.domain.commerce.butcher.gui.butcher_gui import ButcherGUI, launch_butcher_gui
     BUTCHER_GUI_AVAILABLE = True
 except ImportError as e:
     ButcherGUI = None
@@ -779,7 +779,7 @@ except ImportError as e:
 
 # Barber Shop GUI
 try:
-    from education_system.university_system.modules.domain.barber.gui.barber_gui import BarberGUI, launch_barber_gui
+    from education_system.university_system.modules.domain.commerce.barber.gui.barber_gui import BarberGUI, launch_barber_gui
     BARBER_GUI_AVAILABLE = True
 except ImportError as e:
     BarberGUI = None
@@ -788,7 +788,7 @@ except ImportError as e:
 
 # Nail Bar/Salon GUI
 try:
-    from education_system.university_system.modules.domain.nailbar.gui.nailbar_gui import NailBarGUI, launch_nailbar_gui
+    from education_system.university_system.modules.domain.commerce.nailbar.gui.nailbar_gui import NailBarGUI, launch_nailbar_gui
     NAILBAR_GUI_AVAILABLE = True
 except ImportError as e:
     NailBarGUI = None
@@ -797,7 +797,7 @@ except ImportError as e:
 
 # Car Rental GUI
 try:
-    from education_system.university_system.modules.domain.carrental.gui.carrental_gui import CarRentalGUI, launch_carrental_gui
+    from education_system.university_system.modules.domain.commerce.carrental.gui.carrental_gui import CarRentalGUI, launch_carrental_gui
     CARRENTAL_GUI_AVAILABLE = True
 except ImportError as e:
     CarRentalGUI = None
@@ -806,7 +806,7 @@ except ImportError as e:
 
 # Equipment Rental GUI
 try:
-    from education_system.university_system.modules.domain.equipment.gui.equipment_gui import EquipmentRentalGUI as EquipmentGUI, launch_equipment_gui
+    from education_system.university_system.modules.domain.campus.equipment.gui.equipment_gui import EquipmentRentalGUI as EquipmentGUI, launch_equipment_gui
     EQUIPMENT_GUI_AVAILABLE = True
 except ImportError as e:
     EquipmentGUI = None
@@ -815,7 +815,7 @@ except ImportError as e:
 
 # Phone Shop GUI
 try:
-    from education_system.university_system.modules.domain.phoneshop.gui.phoneshop_gui import PhoneShopGUI, launch_phoneshop_gui
+    from education_system.university_system.modules.domain.commerce.phoneshop.gui.phoneshop_gui import PhoneShopGUI, launch_phoneshop_gui
     PHONESHOP_GUI_AVAILABLE = True
 except ImportError as e:
     PhoneShopGUI = None
@@ -824,7 +824,7 @@ except ImportError as e:
 
 # Music Shop GUI
 try:
-    from education_system.university_system.modules.domain.musicshop.gui.musicshop_gui import MusicShopGUI, launch_musicshop_gui
+    from education_system.university_system.modules.domain.commerce.musicshop.gui.musicshop_gui import MusicShopGUI, launch_musicshop_gui
     MUSICSHOP_GUI_AVAILABLE = True
 except ImportError as e:
     MusicShopGUI = None
@@ -866,8 +866,8 @@ except ImportError as e:
 
 # Cinema Booking GUI
 try:
-    from education_system.university_system.modules.domain.cinema.gui.cinema_gui.core.main_gui import CinemaApp
-    from education_system.university_system.modules.domain.cinema.gui.cinema_gui.database import init_database as init_cinema_database
+    from education_system.university_system.modules.domain.commerce.cinema.gui.cinema_gui.core.main_gui import CinemaApp
+    from education_system.university_system.modules.domain.commerce.cinema.gui.cinema_gui.database import init_database as init_cinema_database
     CINEMA_GUI_AVAILABLE = True
 except ImportError as e:
     CinemaApp = None

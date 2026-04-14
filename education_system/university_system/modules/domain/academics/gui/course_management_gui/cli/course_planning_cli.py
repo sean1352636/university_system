@@ -18,7 +18,7 @@ import tempfile
 from typing import Any, Optional
 
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.modules.domain.course_planning.services.planning_service import PlanningService
+from education_system.university_system.modules.domain.academics.course_planning.services.planning_service import PlanningService
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity
 
 try:

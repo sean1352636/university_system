@@ -20,7 +20,7 @@ from typing import Optional, Dict, List
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.modules.domain.course_planning.services.planning_service import PlanningService
+from education_system.university_system.modules.domain.academics.course_planning.services.planning_service import PlanningService
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity
 
 

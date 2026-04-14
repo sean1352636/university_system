@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 def show_academic_progress_gui(self):
     """Launch Academic Progress Dashboard GUI"""
     try:
-        from education_system.university_system.modules.domain.academic_progress.gui.progress_gui import AcademicProgressGUI
+        from education_system.university_system.modules.domain.academics.academic_progress.gui.progress_gui import AcademicProgressGUI
         # AcademicProgressGUI creates its own window
         gui = AcademicProgressGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
@@ -37,7 +37,7 @@ def show_academic_progress_gui(self):
 def show_ai_study_gui(self):
     """Launch AI Study Companion GUI"""
     try:
-        from education_system.university_system.modules.domain.ai_study.gui.ai_study_gui import AIStudyGUI
+        from education_system.university_system.modules.domain.academics.ai_study.gui.ai_study_gui import AIStudyGUI
         gui = AIStudyGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import AI Study GUI: {e}")
@@ -49,7 +49,7 @@ def show_ai_study_gui(self):
 def show_budget_tracker_gui(self):
     """Launch Budget Tracker GUI"""
     try:
-        from education_system.university_system.modules.domain.budget.gui.budget_gui import BudgetTrackerGUI
+        from education_system.university_system.modules.domain.finance.budget.gui.budget_gui import BudgetTrackerGUI
         from education_system.university_system.infrastructure.shared_context import get_auth
         auth = get_auth()
         gui = BudgetTrackerGUI(parent=self.root, auth=auth)
@@ -63,7 +63,7 @@ def show_budget_tracker_gui(self):
 def show_student_jobs_gui(self):
     """Launch Student Job Board GUI"""
     try:
-        from education_system.university_system.modules.domain.student_jobs.gui.jobs_gui import StudentJobsGUI
+        from education_system.university_system.modules.domain.career.student_jobs.gui.jobs_gui import StudentJobsGUI
         from education_system.university_system.infrastructure.shared_context import get_auth
         auth = get_auth()
         gui = StudentJobsGUI(parent=self.root, auth=auth)
@@ -77,7 +77,7 @@ def show_student_jobs_gui(self):
 def show_scholarship_finder_gui(self):
     """Launch Scholarship Finder GUI"""
     try:
-        from education_system.university_system.modules.domain.scholarship_finder.gui.scholarship_gui import ScholarshipFinderGUI
+        from education_system.university_system.modules.domain.finance.scholarship_finder.gui.scholarship_gui import ScholarshipFinderGUI
         gui = ScholarshipFinderGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Scholarship Finder GUI: {e}")
@@ -89,7 +89,7 @@ def show_scholarship_finder_gui(self):
 def show_study_matching_gui(self):
     """Launch Peer Study Matching GUI"""
     try:
-        from education_system.university_system.modules.domain.study_matching.gui.study_matching_gui import StudyMatchingGUI
+        from education_system.university_system.modules.domain.academics.study_matching.gui.study_matching_gui import StudyMatchingGUI
         gui = StudyMatchingGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Study Matching GUI: {e}")
@@ -116,7 +116,7 @@ def show_course_planning_gui(self):
 def show_roommate_finder_gui(self):
     """Launch Roommate Finder GUI"""
     try:
-        from education_system.university_system.modules.domain.roommate_finder.gui.roommate_gui import RoommateFinderGUI
+        from education_system.university_system.modules.domain.student_affairs.roommate_finder.gui.roommate_gui import RoommateFinderGUI
         gui = RoommateFinderGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Roommate Finder GUI: {e}")
@@ -129,7 +129,7 @@ def show_campus_navigation_gui(self):
     """Launch Campus Navigation GUI"""
     try:
         import tkinter as tk
-        from education_system.university_system.modules.domain.campus_navigation.gui.navigation_gui import NavigationGUI
+        from education_system.university_system.modules.domain.campus.campus_navigation.gui.navigation_gui import NavigationGUI
         # Create a new Toplevel window
         window = tk.Toplevel(self.root)
         window.title(_t("student_success.windows.campus_navigation"))
@@ -145,7 +145,7 @@ def show_campus_navigation_gui(self):
 def show_lost_found_gui(self):
     """Launch Lost & Found GUI"""
     try:
-        from education_system.university_system.modules.domain.lost_found.gui.lost_found_gui import LostFoundGUI
+        from education_system.university_system.modules.domain.campus.lost_found.gui.lost_found_gui import LostFoundGUI
         gui = LostFoundGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Lost & Found GUI: {e}")
@@ -157,7 +157,7 @@ def show_lost_found_gui(self):
 def show_marketplace_gui(self):
     """Launch Student Marketplace GUI"""
     try:
-        from education_system.university_system.modules.domain.marketplace.gui.marketplace_gui import MarketplaceGUI
+        from education_system.university_system.modules.domain.commerce.marketplace.gui.marketplace_gui import MarketplaceGUI
         gui = MarketplaceGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Student Marketplace GUI: {e}")
@@ -169,7 +169,7 @@ def show_marketplace_gui(self):
 def show_wellness_hub_gui(self):
     """Launch Wellness Hub GUI"""
     try:
-        from education_system.university_system.modules.domain.wellness.gui.wellness_gui import WellnessGUI
+        from education_system.university_system.modules.domain.student_affairs.wellness.gui.wellness_gui import WellnessGUI
         gui = WellnessGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Wellness Hub GUI: {e}")
@@ -181,7 +181,7 @@ def show_wellness_hub_gui(self):
 def show_accessibility_portal_gui(self):
     """Launch Accessibility Portal GUI"""
     try:
-        from education_system.university_system.modules.domain.accessibility.gui.accessibility_gui import AccessibilityGUI
+        from education_system.university_system.modules.domain.campus.accessibility.gui.accessibility_gui import AccessibilityGUI
         gui = AccessibilityGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Accessibility Portal GUI: {e}")
@@ -210,7 +210,7 @@ def show_events_discovery_gui(self):
 def show_social_matching_gui(self):
     """Launch Social Matching GUI"""
     try:
-        from education_system.university_system.modules.domain.social_matching.gui.social_matching_gui import SocialMatchingGUI
+        from education_system.university_system.modules.domain.student_affairs.social_matching.gui.social_matching_gui import SocialMatchingGUI
         gui = SocialMatchingGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Social Matching GUI: {e}")
@@ -222,7 +222,7 @@ def show_social_matching_gui(self):
 def show_portfolio_system_gui(self):
     """Launch Portfolio System GUI"""
     try:
-        from education_system.university_system.modules.domain.portfolio.gui.portfolio_gui import PortfolioGUI
+        from education_system.university_system.modules.domain.events.portfolio.gui.portfolio_gui import PortfolioGUI
         gui = PortfolioGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Portfolio System GUI: {e}")
@@ -261,7 +261,7 @@ def show_notifications_hub_gui(self):
 def show_feedback_system_gui(self):
     """Launch Feedback System GUI"""
     try:
-        from education_system.university_system.modules.domain.feedback.gui.feedback_gui import FeedbackGUI
+        from education_system.university_system.modules.domain.communications.feedback.gui.feedback_gui import FeedbackGUI
         gui = FeedbackGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Feedback System GUI: {e}")
@@ -273,7 +273,7 @@ def show_feedback_system_gui(self):
 def show_advising_portal_gui(self):
     """Launch Academic Advising Portal GUI"""
     try:
-        from education_system.university_system.modules.domain.advising.gui.advising_gui import AdvisingPortalGUI
+        from education_system.university_system.modules.domain.academics.advising.gui.advising_gui import AdvisingPortalGUI
         gui = AdvisingPortalGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Advising Portal GUI: {e}")
@@ -285,7 +285,7 @@ def show_advising_portal_gui(self):
 def show_student_id_gui(self):
     """Launch Digital Student ID GUI"""
     try:
-        from education_system.university_system.modules.domain.student_id.gui.student_id_gui import StudentIDGUI
+        from education_system.university_system.modules.domain.student_affairs.student_id.gui.student_id_gui import StudentIDGUI
         gui = StudentIDGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Student ID GUI: {e}")
@@ -297,7 +297,7 @@ def show_student_id_gui(self):
 def show_study_room_booking_gui(self):
     """Launch Study Room Booking GUI"""
     try:
-        from education_system.university_system.modules.domain.study_rooms.gui.study_room_gui import StudyRoomBookingGUI
+        from education_system.university_system.modules.domain.campus.study_rooms.gui.study_room_gui import StudyRoomBookingGUI
         gui = StudyRoomBookingGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Study Room Booking GUI: {e}")
@@ -309,7 +309,7 @@ def show_study_room_booking_gui(self):
 def show_printing_services_gui(self):
     """Launch Printing Services GUI"""
     try:
-        from education_system.university_system.modules.domain.printing.gui.printing_gui import PrintingServicesGUI
+        from education_system.university_system.modules.domain.campus.printing.gui.printing_gui import PrintingServicesGUI
         gui = PrintingServicesGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Printing Services GUI: {e}")
@@ -321,7 +321,7 @@ def show_printing_services_gui(self):
 def show_textbook_store_gui(self):
     """Launch Textbook & Course Materials GUI"""
     try:
-        from education_system.university_system.modules.domain.textbooks.gui.textbook_gui import TextbookStoreGUI
+        from education_system.university_system.modules.domain.commerce.textbooks.gui.textbook_gui import TextbookStoreGUI
         gui = TextbookStoreGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Textbook Store GUI: {e}")
@@ -410,7 +410,7 @@ def _show_feature_gui(self, title, description, cli_instruction):
 def show_student_app_gui(self):
     """Launch Student App / Portal GUI"""
     try:
-        from education_system.university_system.modules.domain.student_app.gui.student_app_gui import StudentAppGUI
+        from education_system.university_system.modules.domain.student_affairs.student_app.gui.student_app_gui import StudentAppGUI
         gui = StudentAppGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Student App GUI: {e}")
@@ -423,7 +423,7 @@ def show_student_app_gui(self):
 def show_achievement_badge_gui(self):
     """Launch Achievement Badge GUI"""
     try:
-        from education_system.university_system.modules.domain.achievement_badges.gui.achievement_badge_gui import AchievementBadgeGUI
+        from education_system.university_system.modules.domain.student_affairs.achievement_badges.gui.achievement_badge_gui import AchievementBadgeGUI
         gui = AchievementBadgeGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Achievement Badge GUI: {e}")
@@ -436,7 +436,7 @@ def show_achievement_badge_gui(self):
 def show_study_recommendations_gui(self):
     """Launch Study Recommendations GUI"""
     try:
-        from education_system.university_system.modules.domain.study_recommendations.gui.study_recommendation_gui import StudyRecommendationGUI
+        from education_system.university_system.modules.domain.academics.study_recommendations.gui.study_recommendation_gui import StudyRecommendationGUI
         gui = StudyRecommendationGUI(parent=self.root, auth=self.auth)
     except ImportError as e:
         logger.error(f"Failed to import Study Recommendations GUI: {e}")

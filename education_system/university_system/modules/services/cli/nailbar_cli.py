@@ -18,7 +18,7 @@ from education_system.university_system.infrastructure.shared_context import get
 
 # Import nailbar core services
 try:
-    from education_system.university_system.modules.domain.nailbar.services.nailbar_core import (
+    from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import (
         init_nailbar_db, NAIL_TREATMENTS
     )
     NAILBAR_CORE_AVAILABLE = True

@@ -7,7 +7,7 @@ import os
 from contextlib import contextmanager
 from unittest.mock import patch
 
-MODULE = "education_system.university_system.modules.domain.nailbar.services.nailbar_core"
+MODULE = "education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core"
 
 
 @pytest.fixture
@@ -187,7 +187,7 @@ class TestTreatmentManager:
         conn.close()
 
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TreatmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TreatmentManager
             tid = TreatmentManager.add_treatment("Classic Mani", "manicure", 18.0, 30, "Basic")
         assert isinstance(tid, int) and tid > 0
 
@@ -198,7 +198,7 @@ class TestTreatmentManager:
         tid = _seed_treatment(temp_db)
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TreatmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TreatmentManager
             result = TreatmentManager.get_treatment(tid)
         assert result is not None
         assert result["name"] == "Gel Manicure"
@@ -209,7 +209,7 @@ class TestTreatmentManager:
         conn.close()
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TreatmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TreatmentManager
             assert TreatmentManager.get_treatment(999) is None
 
     def test_get_all_treatments_by_category(self, temp_db):
@@ -220,7 +220,7 @@ class TestTreatmentManager:
         _seed_treatment(temp_db, "Classic Pedi", "pedicure", 25)
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TreatmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TreatmentManager
             gels = TreatmentManager.get_all_treatments(category="gel_nails")
         assert len(gels) == 1
         assert gels[0]["category"] == "gel_nails"
@@ -236,7 +236,7 @@ class TestTreatmentManager:
         conn.close()
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TreatmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TreatmentManager
             results = TreatmentManager.get_all_treatments(available_only=True)
         assert len(results) == 0
 
@@ -247,7 +247,7 @@ class TestTreatmentManager:
         tid = _seed_treatment(temp_db, price=20)
 
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TreatmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TreatmentManager
             assert TreatmentManager.update_treatment(tid, price=25.0) is True
 
         conn = _connect(temp_db)
@@ -261,7 +261,7 @@ class TestTreatmentManager:
         conn.close()
 
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TreatmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TreatmentManager
             assert TreatmentManager.update_treatment(1, unknown_field="x") is False
 
 
@@ -275,7 +275,7 @@ class TestTechnicianManager:
         conn.close()
 
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TechnicianManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TechnicianManager
             tid = TechnicianManager.add_technician("Bob", "EMP002", "gel_nails", "07700900000", "bob@test.com", "NVQ3")
         assert isinstance(tid, int) and tid > 0
 
@@ -286,7 +286,7 @@ class TestTechnicianManager:
         tid = _seed_technician(temp_db, "Carol", "EMP003")
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TechnicianManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TechnicianManager
             result = TechnicianManager.get_technician(tid)
         assert result["name"] == "Carol"
 
@@ -301,7 +301,7 @@ class TestTechnicianManager:
         conn2.close()
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TechnicianManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TechnicianManager
             results = TechnicianManager.get_all_technicians(active_only=True)
         assert len(results) == 1
 
@@ -322,7 +322,7 @@ class TestTechnicianManager:
         conn.close()
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TechnicianManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TechnicianManager
             slots = TechnicianManager.get_technician_availability(tech_id, "2026-04-10")
         assert "09:00" not in slots
         assert "09:30" in slots
@@ -344,7 +344,7 @@ class TestAppointmentManager:
             patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)),
             patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)),
         ):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import AppointmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import AppointmentManager
             appt_id, ref = AppointmentManager.create_appointment(
                 "CUST01", "Jane Doe", "2026-04-10", "10:00",
                 treatment_ids=[tid], technician_id=tech,
@@ -361,7 +361,7 @@ class TestAppointmentManager:
         appt_id, _, _, _ = self._create_appointment(temp_db)
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import AppointmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import AppointmentManager
             appt = AppointmentManager.get_appointment(appt_id)
         assert appt is not None
         assert appt["customer_name"] == "Jane Doe"
@@ -371,7 +371,7 @@ class TestAppointmentManager:
         appt_id, ref, _, _ = self._create_appointment(temp_db)
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import AppointmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import AppointmentManager
             appt = AppointmentManager.get_appointment_by_reference(ref)
         assert appt is not None
         assert appt["appointment_id"] == appt_id
@@ -380,7 +380,7 @@ class TestAppointmentManager:
         appt_id, _, _, _ = self._create_appointment(temp_db)
 
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import AppointmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import AppointmentManager
             assert AppointmentManager.update_status(appt_id, "confirmed") is True
 
         conn = _connect(temp_db)
@@ -389,14 +389,14 @@ class TestAppointmentManager:
         assert row["status"] == "confirmed"
 
     def test_update_status_invalid(self, temp_db):
-        from education_system.university_system.modules.domain.nailbar.services.nailbar_core import AppointmentManager
+        from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import AppointmentManager
         assert AppointmentManager.update_status(1, "invalid_status") is False
 
     def test_cancel_appointment(self, temp_db):
         appt_id, _, _, _ = self._create_appointment(temp_db)
 
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import AppointmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import AppointmentManager
             assert AppointmentManager.cancel_appointment(appt_id, "Changed mind") is True
 
         conn = _connect(temp_db)
@@ -408,7 +408,7 @@ class TestAppointmentManager:
         appt_id, _, _, _ = self._create_appointment(temp_db)
 
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import AppointmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import AppointmentManager
             assert AppointmentManager.reschedule_appointment(appt_id, "2026-04-12", "14:00") is True
 
         conn = _connect(temp_db)
@@ -421,7 +421,7 @@ class TestAppointmentManager:
         self._create_appointment(temp_db)
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import AppointmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import AppointmentManager
             results = AppointmentManager.get_appointments_by_date("2026-04-10")
         assert len(results) == 1
 
@@ -429,7 +429,7 @@ class TestAppointmentManager:
         self._create_appointment(temp_db)
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import AppointmentManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import AppointmentManager
             results = AppointmentManager.get_customer_appointments("CUST01")
         assert len(results) == 1
 
@@ -455,7 +455,7 @@ class TestTransactionManager:
         appt_id = self._setup_paid_appointment(temp_db)
 
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TransactionManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TransactionManager
             txn_id = TransactionManager.process_payment(appt_id, 50.0, "card", "C1", tip_amount=5.0)
         assert isinstance(txn_id, int) and txn_id > 0
 
@@ -468,11 +468,11 @@ class TestTransactionManager:
         appt_id = self._setup_paid_appointment(temp_db)
 
         with patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TransactionManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TransactionManager
             txn_id = TransactionManager.process_payment(appt_id, 50.0, "cash", "C1")
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TransactionManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TransactionManager
             txn = TransactionManager.get_transaction(txn_id)
         assert txn is not None
         assert float(txn["amount"]) == 50.0
@@ -483,7 +483,7 @@ class TestTransactionManager:
         conn.close()
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import TransactionManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import TransactionManager
             rev = TransactionManager.get_daily_revenue("2026-04-10")
         assert rev["transaction_count"] == 0
         assert rev["total_revenue"] == 0
@@ -499,7 +499,7 @@ class TestReportManager:
         conn.close()
 
         with patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import ReportManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import ReportManager
             report = ReportManager.generate_sales_report("2026-04-01", "2026-04-30")
         assert "period" in report
         assert report["period"]["start"] == "2026-04-01"
@@ -513,7 +513,7 @@ class TestReportManager:
             patch(f"{MODULE}.transaction", lambda **kw: _fake_transaction(temp_db)),
             patch(f"{MODULE}.get_db_connection", lambda **kw: _fake_get_db(temp_db)),
         ):
-            from education_system.university_system.modules.domain.nailbar.services.nailbar_core import ReportManager
+            from education_system.university_system.modules.domain.commerce.nailbar.services.nailbar_core import ReportManager
             text = ReportManager.generate_admin_report()
         assert "NAIL BAR" in text
         assert "WEEKLY SUMMARY" in text

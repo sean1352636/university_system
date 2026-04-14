@@ -79,7 +79,7 @@ class SavingsGoalsMixin:
             student_id = current_user.get('username') if current_user else 'guest'
 
             # Import savings goal manager
-            from education_system.university_system.modules.domain.budget.services.budget_service import SavingsGoalManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import SavingsGoalManager
 
             goal_id = SavingsGoalManager.create_goal(
                 student_id=student_id,
@@ -112,7 +112,7 @@ class SavingsGoalsMixin:
 
             amount = simpledialog.askfloat("Add Funds", "Amount to add (\u00a3):", minvalue=0.01, parent=self.root)
             if amount:
-                from education_system.university_system.modules.domain.budget.services.budget_service import SavingsGoalManager
+                from education_system.university_system.modules.domain.finance.budget.services.budget_service import SavingsGoalManager
                 SavingsGoalManager.update_goal_progress(goal_id, amount)
                 messagebox.showinfo("Success", f"Added \u00a3{amount:.2f} to goal!")
                 self.refresh_savings_goals()
@@ -129,7 +129,7 @@ class SavingsGoalsMixin:
             current_user = self.gui.auth.get_current_user() if self.gui.auth else None
             student_id = current_user.get('username') if current_user else 'guest'
 
-            from education_system.university_system.modules.domain.budget.services.budget_service import SavingsGoalManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import SavingsGoalManager
             goals = SavingsGoalManager.get_student_goals(student_id, active_only=False)
 
             for goal in goals:

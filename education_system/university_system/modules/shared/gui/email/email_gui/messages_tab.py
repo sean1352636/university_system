@@ -50,7 +50,7 @@ from education_system.university_system.modules.shared.gui.email.email_gui.chat_
 
 # Import notifications service
 try:
-    from education_system.university_system.modules.domain.notifications.services.notifications_service import (
+    from education_system.university_system.modules.domain.communications.notifications.services.notifications_service import (
         NotificationsService,
         NotificationPriority,
         NotificationChannel

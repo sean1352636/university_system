@@ -44,7 +44,7 @@ class BudgetManager(
 
         # Initialize Budget Tracker database tables
         try:
-            from education_system.university_system.modules.domain.budget.services.budget_service import BudgetManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import BudgetManager
             BudgetManager.create_tables()
         except Exception as e:
             logger.warning(f"Could not initialize budget tables: {e}")

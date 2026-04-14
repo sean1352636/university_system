@@ -519,13 +519,13 @@ def manage_study_groups(student_id, cursor, conn):
             if choice == '1':
                 # Browse study groups
                 cursor.execute('''
-                SELECT sg.study_group_id, sg.subject, sg.topic, sg.organizer_id,
+                SELECT sg.group_id, sg.course_id, sg.group_name, sg.creator_id,
                        s.first_name, s.last_name, sg.current_members, sg.max_members,
-                       sg.meeting_time, sg.location, sg.study_date, sg.status
+                       sg.meeting_schedule, sg.location, sg.created_at, sg.status
                 FROM study_groups sg
-                JOIN students s ON sg.organizer_id = s.student_id
-                WHERE sg.status = 'open' AND sg.study_date >= date('now')
-                ORDER BY sg.subject, sg.study_date
+                JOIN students s ON sg.creator_id = s.student_id
+                WHERE sg.status = 'Active'
+                ORDER BY sg.course_id, sg.created_at
                 ''')
 
                 groups = cursor.fetchall()
@@ -535,7 +535,7 @@ def manage_study_groups(student_id, cursor, conn):
                     continue
 
                 print(f"\nAvailable Study Groups:")
-                print(f"{'ID':<6} {'Subject':<15} {'Topic':<20} {'Organizer':<20} {'Date':<12} {'Members':<10}")
+                print(f"{'ID':<6} {'Subject':<15} {'Topic':<20} {'Organizer':<20} {'Created':<12} {'Members':<10}")
                 print("-" * 90)
 
                 for group in groups:
@@ -553,13 +553,6 @@ def manage_study_groups(student_id, cursor, conn):
                 topic = input("Specific topic: ").strip()
                 meeting_time = input("Meeting time (e.g., '2pm-4pm'): ").strip()
                 location = input("Location: ").strip()
-                study_date = input("Study date (YYYY-MM-DD): ").strip()
-
-                try:
-                    datetime.strptime(study_date, '%Y-%m-%d')
-                except ValueError:
-                    print("Invalid date format.")
-                    continue
 
                 try:
                     max_members = int(input("Maximum group size (2-10): ").strip())
@@ -570,16 +563,14 @@ def manage_study_groups(student_id, cursor, conn):
                     print("Invalid number format.")
                     continue
 
-                description = input("Description (optional): ").strip()
-
                 cursor.execute('''
                 INSERT INTO study_groups (
-                    subject, topic, organizer_id, max_members, current_members,
-                    meeting_time, location, study_date, status, description
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    course_id, group_name, creator_id, max_members, current_members,
+                    meeting_schedule, location, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     subject, topic, student_id, max_members, 1,
-                    meeting_time, location, study_date, 'open', description
+                    meeting_time, location, 'Active'
                 ))
 
                 conn.commit()
@@ -599,9 +590,9 @@ def manage_study_groups(student_id, cursor, conn):
                     continue
 
                 cursor.execute('''
-                SELECT subject, topic, current_members, max_members, organizer_id
+                SELECT course_id, group_name, current_members, max_members, creator_id
                 FROM study_groups
-                WHERE study_group_id = ? AND status = 'open'
+                WHERE group_id = ? AND status = 'Active'
                 ''', (group_id,))
 
                 group = cursor.fetchone()
@@ -622,7 +613,7 @@ def manage_study_groups(student_id, cursor, conn):
                 cursor.execute('''
                 UPDATE study_groups
                 SET current_members = current_members + 1
-                WHERE study_group_id = ?
+                WHERE group_id = ?
                 ''', (group_id,))
 
                 conn.commit()
@@ -636,11 +627,11 @@ def manage_study_groups(student_id, cursor, conn):
             elif choice == '4':
                 # My study groups
                 cursor.execute('''
-                SELECT study_group_id, subject, topic, meeting_time, location,
-                       study_date, current_members, status
+                SELECT group_id, course_id, group_name, meeting_schedule, location,
+                       created_at, current_members, status
                 FROM study_groups
-                WHERE organizer_id = ?
-                ORDER BY study_date DESC
+                WHERE creator_id = ?
+                ORDER BY created_at DESC
                 ''', (student_id,))
 
                 my_groups = cursor.fetchall()
@@ -650,7 +641,7 @@ def manage_study_groups(student_id, cursor, conn):
                     continue
 
                 print(f"\nYour Study Groups:")
-                print(f"{'ID':<6} {'Subject':<15} {'Topic':<20} {'Date':<12} {'Members':<8} {'Status':<10}")
+                print(f"{'ID':<6} {'Subject':<15} {'Topic':<20} {'Created':<12} {'Members':<8} {'Status':<10}")
                 print("-" * 75)
 
                 for group in my_groups:

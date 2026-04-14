@@ -16,7 +16,7 @@ from education_system.university_system.infrastructure.shared_context import get
 
 # Import barber core services
 try:
-    from education_system.university_system.modules.domain.barber.services.barber_core import (
+    from education_system.university_system.modules.domain.commerce.barber.services.barber_core import (
         init_barber_db, init_extended_barber_db,
         ServiceManager, StaffManager, AppointmentManager, TransactionManager,
         ReportManager, CustomerManager, AnalyticsManager,

@@ -11,13 +11,13 @@ from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 from contextlib import contextmanager
 
-from education_system.university_system.modules.domain.mail.services.mail_post_core import (
+from education_system.university_system.modules.domain.communications.mail.services.mail_post_core import (
     PackageManager, POBoxManager, ForwardingManager, TransactionManager,
     ReportManager, generate_tracking_number, generate_reference,
     STORAGE_FEES, DAILY_STORAGE_FEE, FREE_STORAGE_DAYS, FORWARDING_FEES,
 )
 
-PATCH_BASE = 'education_system.university_system.modules.domain.mail.services.mail_post_core'
+PATCH_BASE = 'education_system.university_system.modules.domain.communications.mail.services.mail_post_core'
 
 
 class _UnclosableConn:

@@ -1,3 +1,19 @@
-""". module."""
+"""University system domain modules."""
 
-__all__ = ['academic_progress', 'academics', 'accessibility', 'achievement_badges', 'admissions', 'advising', 'ai_study', 'alumni', 'barber', 'betting', 'blockchain', 'budget', 'butcher', 'campus', 'campus_navigation', 'career', 'carrental', 'cinema', 'clearing_adjustment', 'commerce', 'course_planning', 'dentist', 'equipment', 'events', 'external_examiners', 'facilities', 'feedback', 'finance', 'gym', 'health', 'hesa_export', 'housing', 'legal', 'lost_found', 'mail', 'marketplace', 'mobility', 'musicshop', 'nailbar', 'notifications', 'phoneshop', 'portfolio', 'printing', 'research', 'roommate_finder', 'scholarship_finder', 'social_matching', 'staff_hr', 'student_affairs', 'student_app', 'student_finance', 'student_id', 'student_jobs', 'student_wellbeing', 'study_matching', 'study_recommendations', 'study_rooms', 'textbooks', 'wellness']
+__all__ = [
+    'academics',
+    'admissions',
+    'campus',
+    'career',
+    'commerce',
+    'communications',
+    'events',
+    'finance',
+    'health',
+    'housing',
+    'legal',
+    'mobility',
+    'research',
+    'staff_hr',
+    'student_affairs',
+]

@@ -398,7 +398,7 @@ class ScholarshipsMixin:
     def _show_scholarship_details_dialog(self, scholarship_id: int):
         """Show detailed scholarship information in dialog"""
         try:
-            from education_system.university_system.modules.domain.scholarship_finder.services.scholarship_service import ScholarshipDatabase
+            from education_system.university_system.modules.domain.finance.scholarship_finder.services.scholarship_service import ScholarshipDatabase
 
             scholarship = ScholarshipDatabase.get_scholarship_details(scholarship_id)
             if not scholarship:

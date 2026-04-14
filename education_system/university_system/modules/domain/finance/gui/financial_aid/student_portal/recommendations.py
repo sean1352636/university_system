@@ -85,7 +85,7 @@ class RecommendationsMixin:
             for item in self.rec_tree.get_children():
                 self.rec_tree.delete(item)
 
-            from education_system.university_system.modules.domain.scholarship_finder.services.scholarship_service import RecommendationEngine
+            from education_system.university_system.modules.domain.finance.scholarship_finder.services.scholarship_service import RecommendationEngine
 
             recommendations = RecommendationEngine.get_cached_recommendations(self.student_id)
 
@@ -128,7 +128,7 @@ class RecommendationsMixin:
         from tkinter import messagebox
         if messagebox.askyesno(get_text("financial_aid.student_portal.confirm", "Confirm"), get_text("financial_aid.student_portal.recommendations.confirm_generate", "Generate new personalized recommendations?\n\nThis will analyze your profile and find matching scholarships.")):
             try:
-                from education_system.university_system.modules.domain.scholarship_finder.services.scholarship_service import RecommendationEngine
+                from education_system.university_system.modules.domain.finance.scholarship_finder.services.scholarship_service import RecommendationEngine
 
                 recommendations = RecommendationEngine.generate_recommendations(self.student_id, limit=20)
 
@@ -153,7 +153,7 @@ class RecommendationsMixin:
             tags = self.rec_tree.item(selection[0])['tags']
             if tags:
                 scholarship_id = int(tags[0])
-                from education_system.university_system.modules.domain.scholarship_finder.services.scholarship_service import ScholarshipDatabase
+                from education_system.university_system.modules.domain.finance.scholarship_finder.services.scholarship_service import ScholarshipDatabase
                 scholarship = ScholarshipDatabase.get_scholarship_details(scholarship_id)
                 if scholarship:
                     self._display_recommendation_details(scholarship, tags)
@@ -209,7 +209,7 @@ class RecommendationsMixin:
 
             from tkinter import messagebox
             if messagebox.askyesno(get_text("financial_aid.student_portal.confirm", "Confirm"), get_text("financial_aid.student_portal.recommendations.confirm_start_application", "Start application for this scholarship?")):
-                from education_system.university_system.modules.domain.scholarship_finder.services.scholarship_service import ApplicationManager
+                from education_system.university_system.modules.domain.finance.scholarship_finder.services.scholarship_service import ApplicationManager
 
                 app_id = ApplicationManager.start_application(self.student_id, scholarship_id, match_score)
                 show_success(get_text("financial_aid.student_portal.success.title", "Success"), get_text("financial_aid.student_portal.success.application_started", "Application started! ID: {id}", id=app_id))

@@ -30,7 +30,7 @@ class ProfileMixin:
 
         # Profile completeness
         try:
-            from education_system.university_system.modules.domain.scholarship_finder.services.scholarship_service import StudentProfileManager
+            from education_system.university_system.modules.domain.finance.scholarship_finder.services.scholarship_service import StudentProfileManager
 
             profile = StudentProfileManager.get_student_profile(self.student_id) or {}
             completeness = profile.get('profile_completeness', 0)
@@ -213,7 +213,7 @@ class ProfileMixin:
     def _save_basic_info(self):
         """Save basic information"""
         try:
-            from education_system.university_system.modules.domain.scholarship_finder.services.scholarship_service import StudentProfileManager
+            from education_system.university_system.modules.domain.finance.scholarship_finder.services.scholarship_service import StudentProfileManager
 
             profile_data = {
                 'citizenship_status': self.citizenship_var.get().strip(),
@@ -234,7 +234,7 @@ class ProfileMixin:
     def _save_academic_info(self):
         """Save academic information"""
         try:
-            from education_system.university_system.modules.domain.scholarship_finder.services.scholarship_service import StudentProfileManager
+            from education_system.university_system.modules.domain.finance.scholarship_finder.services.scholarship_service import StudentProfileManager
 
             profile_data = {
                 'financial_need_level': self.financial_need_var.get(),
@@ -251,7 +251,7 @@ class ProfileMixin:
     def _save_activities(self):
         """Save activities information"""
         try:
-            from education_system.university_system.modules.domain.scholarship_finder.services.scholarship_service import StudentProfileManager
+            from education_system.university_system.modules.domain.finance.scholarship_finder.services.scholarship_service import StudentProfileManager
 
             service_hours = int(self.service_hours_var.get().strip()) if self.service_hours_var.get().strip() else 0
 
@@ -276,7 +276,7 @@ class ProfileMixin:
     def _save_preferences(self):
         """Save preferences"""
         try:
-            from education_system.university_system.modules.domain.scholarship_finder.services.scholarship_service import StudentProfileManager
+            from education_system.university_system.modules.domain.finance.scholarship_finder.services.scholarship_service import StudentProfileManager
 
             min_amount = float(self.min_award_pref_var.get().strip()) if self.min_award_pref_var.get().strip() else 0
             max_letters = int(self.max_letters_var.get().strip()) if self.max_letters_var.get().strip() else 3

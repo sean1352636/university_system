@@ -16,7 +16,7 @@ from education_system.university_system.infrastructure.shared_context import get
 
 # Import butcher core services
 try:
-    from education_system.university_system.modules.domain.butcher.services.butcher_core import (
+    from education_system.university_system.modules.domain.commerce.butcher.services.butcher_core import (
         init_butcher_db, MEAT_PRODUCTS, PRODUCT_CATEGORIES
     )
     BUTCHER_CORE_AVAILABLE = True

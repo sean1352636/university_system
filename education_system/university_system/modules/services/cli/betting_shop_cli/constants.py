@@ -16,7 +16,7 @@ from education_system.university_system.infrastructure.shared_context import get
 
 # Import betting core services
 try:
-    from education_system.university_system.modules.domain.betting.services.betting_core import (
+    from education_system.university_system.modules.domain.commerce.betting.services.betting_core import (
         init_betting_db, AccountManager, SportsBettingManager,
         PredictionMarketManager, CasinoManager, ReportManager,
         MIN_BET, MAX_BET, MIN_DEPOSIT, MAX_DEPOSIT,

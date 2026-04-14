@@ -201,7 +201,7 @@ class AssignmentGUI:
     def show_external_examiners(self):
         """Launch the External Examiner GUI"""
         try:
-            from education_system.university_system.modules.domain.external_examiners.gui.external_examiner_gui import ExternalExaminerGUI
+            from education_system.university_system.modules.domain.academics.external_examiners.gui.external_examiner_gui import ExternalExaminerGUI
             ExternalExaminerGUI(parent=self.root)
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to open External Examiners: {e}")

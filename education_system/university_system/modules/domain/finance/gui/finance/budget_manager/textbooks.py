@@ -86,7 +86,7 @@ class TextbooksMixin:
                 messagebox.showwarning("Warning", "Please enter ISBN or Course Code.")
                 return
 
-            from education_system.university_system.modules.domain.budget.services.budget_service import TextbookComparisonManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import TextbookComparisonManager
             listings = TextbookComparisonManager.compare_textbook_prices(
                 isbn=isbn, course_code=course_code)
 
@@ -114,7 +114,7 @@ class TextbooksMixin:
             current_user = self.gui.auth.get_current_user() if self.gui.auth else None
             student_id = current_user.get('username') if current_user else 'guest'
 
-            from education_system.university_system.modules.domain.budget.services.budget_service import TextbookComparisonManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import TextbookComparisonManager
             textbooks = TextbookComparisonManager.get_student_textbooks(student_id)
 
             for book in textbooks:

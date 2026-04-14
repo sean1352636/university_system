@@ -6,7 +6,7 @@ import tempfile
 import os
 from unittest.mock import patch
 
-MODULE = "education_system.university_system.modules.domain.phoneshop.services.phoneshop_core"
+MODULE = "education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core"
 
 
 @pytest.fixture
@@ -141,7 +141,7 @@ class TestProductManager:
         conn.close()
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ProductManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ProductManager
             pid = ProductManager.add_product("SKU001", "Galaxy S24", "Smartphone", 849.99, brand="Samsung", model="S24", stock_quantity=20)
         assert isinstance(pid, int) and pid > 0
 
@@ -152,7 +152,7 @@ class TestProductManager:
         _seed_product(temp_db, sku="DUP001")
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ProductManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ProductManager
             result = ProductManager.add_product("DUP001", "Duplicate", "Smartphone", 100)
         assert result is None
 
@@ -163,7 +163,7 @@ class TestProductManager:
         pid = _seed_product(temp_db)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ProductManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ProductManager
             product = ProductManager.get_product(pid)
         assert product is not None
         assert product["name"] == "iPhone 15"
@@ -174,7 +174,7 @@ class TestProductManager:
         conn.close()
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ProductManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ProductManager
             assert ProductManager.get_product(999) is None
 
     def test_get_all_products(self, temp_db):
@@ -185,7 +185,7 @@ class TestProductManager:
         _seed_product(temp_db, "P2", "Phone B", "Smartphone", 600)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ProductManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ProductManager
             products = ProductManager.get_all_products()
         assert len(products) == 2
 
@@ -197,7 +197,7 @@ class TestProductManager:
         _seed_product(temp_db, "A1", "Case", "Accessories", 20)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ProductManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ProductManager
             results = ProductManager.get_products_by_category("Accessories")
         assert len(results) == 1
         assert results[0]["category"] == "Accessories"
@@ -209,7 +209,7 @@ class TestProductManager:
         pid = _seed_product(temp_db, price=500)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ProductManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ProductManager
             assert ProductManager.update_product(pid, price=549.99) is True
 
         conn = _connect(temp_db)
@@ -223,7 +223,7 @@ class TestProductManager:
         conn.close()
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ProductManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ProductManager
             assert ProductManager.update_product(1) is False
 
     def test_update_stock(self, temp_db):
@@ -233,7 +233,7 @@ class TestProductManager:
         pid = _seed_product(temp_db, stock=10)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ProductManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ProductManager
             assert ProductManager.update_stock(pid, 5) is True
 
         conn = _connect(temp_db)
@@ -249,7 +249,7 @@ class TestProductManager:
         _seed_product(temp_db, "HI1", "High Stock Phone", "Smartphone", 300, stock=100)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ProductManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ProductManager
             low = ProductManager.get_low_stock_products()
         assert len(low) == 1
         assert low[0]["sku"] == "LOW1"
@@ -262,7 +262,7 @@ class TestProductManager:
         _seed_product(temp_db, "GS24", "Galaxy S24", "Smartphone", 849, brand="Samsung")
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ProductManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ProductManager
             results = ProductManager.search_products("iPhone")
         assert len(results) == 1
         assert "iPhone" in results[0]["name"]
@@ -281,7 +281,7 @@ class TestOrderManager:
 
         items = [{"product_id": pid, "product_name": "iPhone 15", "quantity": 1, "unit_price": 999.99}]
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import OrderManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import OrderManager
             oid = OrderManager.create_order("CUST01", "John Doe", items)
         return oid, pid
 
@@ -300,7 +300,7 @@ class TestOrderManager:
         oid, _ = self._create_order(temp_db)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import OrderManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import OrderManager
             order = OrderManager.get_order(oid)
         assert order is not None
         assert order["customer_name"] == "John Doe"
@@ -310,7 +310,7 @@ class TestOrderManager:
         self._create_order(temp_db)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import OrderManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import OrderManager
             pending = OrderManager.get_orders_by_status("pending")
         assert len(pending) == 1
 
@@ -318,7 +318,7 @@ class TestOrderManager:
         self._create_order(temp_db)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import OrderManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import OrderManager
             orders = OrderManager.get_customer_orders("CUST01")
         assert len(orders) == 1
 
@@ -326,7 +326,7 @@ class TestOrderManager:
         oid, _ = self._create_order(temp_db)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import OrderManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import OrderManager
             assert OrderManager.update_order_status(oid, "shipped") is True
 
         conn = _connect(temp_db)
@@ -338,7 +338,7 @@ class TestOrderManager:
         oid, pid = self._create_order(temp_db)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import OrderManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import OrderManager
             assert OrderManager.cancel_order(oid, "Customer request") is True
 
         conn = _connect(temp_db)
@@ -359,7 +359,7 @@ class TestTransactionManager:
 
         items = [{"product_id": pid, "product_name": "iPhone 15", "quantity": 1, "unit_price": 999.99}]
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import OrderManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import OrderManager
             oid = OrderManager.create_order("CUST01", "John Doe", items)
         return oid
 
@@ -367,7 +367,7 @@ class TestTransactionManager:
         oid = self._setup_order(temp_db)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import TransactionManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import TransactionManager
             txn_id = TransactionManager.record_payment(oid, "CUST01", 1199.99, "card")
         assert isinstance(txn_id, int) and txn_id > 0
 
@@ -380,7 +380,7 @@ class TestTransactionManager:
         oid = self._setup_order(temp_db)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import TransactionManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import TransactionManager
             TransactionManager.record_payment(oid, "CUST01", 1199.99, "card")
             refund_id = TransactionManager.process_refund(oid, 1199.99, reason="Defective")
         assert isinstance(refund_id, int) and refund_id > 0
@@ -396,7 +396,7 @@ class TestTransactionManager:
         conn.close()
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import TransactionManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import TransactionManager
             assert TransactionManager.process_refund(999, 100.0) is None
 
 
@@ -410,7 +410,7 @@ class TestReportManager:
         conn.close()
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ReportManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ReportManager
             summary = ReportManager.get_sales_summary()
         assert summary["total_orders"] == 0
         assert summary["total_revenue"] == 0
@@ -423,7 +423,7 @@ class TestReportManager:
         _seed_product(temp_db, "INV2", "Phone B", "Smartphone", 300, stock=20)
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ReportManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ReportManager
             inv = ReportManager.get_inventory_summary()
         assert inv["total_products"] == 2
         assert inv["total_stock"] == 30
@@ -437,7 +437,7 @@ class TestReportManager:
         # Create an order so the product has sales
         items = [{"product_id": pid, "product_name": "iPhone 15", "quantity": 2, "unit_price": 999.99}]
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import OrderManager, ReportManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import OrderManager, ReportManager
             OrderManager.create_order("CUST01", "Buyer", items)
             top = ReportManager.get_top_selling_products(limit=5)
         assert len(top) == 1
@@ -449,7 +449,7 @@ class TestReportManager:
         conn.close()
 
         with patch(f"{MODULE}.get_phoneshop_db_path", return_value=temp_db):
-            from education_system.university_system.modules.domain.phoneshop.services.phoneshop_core import ReportManager
+            from education_system.university_system.modules.domain.commerce.phoneshop.services.phoneshop_core import ReportManager
             text = ReportManager.generate_admin_report()
         assert "PHONE SHOP" in text
         assert "INVENTORY SUMMARY" in text

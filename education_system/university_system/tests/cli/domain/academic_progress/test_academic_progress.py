@@ -46,13 +46,13 @@ def mock_auth():
 def mock_service():
     """Create a fully mocked ProgressService."""
     with patch(
-        'education_system.university_system.modules.domain.academic_progress.services.progress_service.ProgressService._ensure_tables_exist'
+        'education_system.university_system.modules.domain.academics.academic_progress.services.progress_service.ProgressService._ensure_tables_exist'
     ):
         with patch(
-            'education_system.university_system.modules.domain.academic_progress.services.progress_service.get_connection'
+            'education_system.university_system.modules.domain.academics.academic_progress.services.progress_service.get_connection'
         ) as mock_gc:
             with patch(
-                'education_system.university_system.modules.domain.academic_progress.services.progress_service.transaction'
+                'education_system.university_system.modules.domain.academics.academic_progress.services.progress_service.transaction'
             ) as mock_tx:
                 mock_conn = MagicMock()
                 mock_gc.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -60,7 +60,7 @@ def mock_service():
                 mock_tx.return_value.__enter__ = MagicMock(return_value=mock_conn)
                 mock_tx.return_value.__exit__ = MagicMock(return_value=False)
 
-                from education_system.university_system.modules.domain.academic_progress.services.progress_service import ProgressService
+                from education_system.university_system.modules.domain.academics.academic_progress.services.progress_service import ProgressService
                 svc = ProgressService()
                 yield svc, mock_conn
 
@@ -69,16 +69,16 @@ def mock_service():
 def cli_instance(mock_auth):
     """Create an AcademicProgressCLI with mocked service and auth."""
     with patch(
-        'education_system.university_system.modules.domain.academic_progress.cli.progress_cli.ProgressService'
+        'education_system.university_system.modules.domain.academics.academic_progress.cli.progress_cli.ProgressService'
     ) as MockSvc:
         with patch(
-            'education_system.university_system.modules.domain.academic_progress.cli.progress_cli.get_auth',
+            'education_system.university_system.modules.domain.academics.academic_progress.cli.progress_cli.get_auth',
             return_value=mock_auth,
         ):
             mock_svc_instance = MagicMock()
             MockSvc.return_value = mock_svc_instance
 
-            from education_system.university_system.modules.domain.academic_progress.cli.progress_cli import AcademicProgressCLI
+            from education_system.university_system.modules.domain.academics.academic_progress.cli.progress_cli import AcademicProgressCLI
             cli = AcademicProgressCLI()
             cli.service = mock_svc_instance
             cli.auth = mock_auth
@@ -142,7 +142,7 @@ class TestProgressServiceCalculateDegreeProgress:
 
         # Mock _update_progress_records and log_activity
         with patch.object(svc, '_update_progress_records'):
-            with patch('education_system.university_system.modules.domain.academic_progress.services.progress_service.log_activity'):
+            with patch('education_system.university_system.modules.domain.academics.academic_progress.services.progress_service.log_activity'):
                 result = svc.calculate_degree_progress('STU001', 'CSCI')
                 assert isinstance(result, dict)
                 assert 'overall_completion' in result
@@ -174,7 +174,7 @@ class TestProgressServiceCalculateWhatIfGPA:
             insert_cursor.lastrowid = 42
             mock_conn.execute.return_value = insert_cursor
 
-            with patch('education_system.university_system.modules.domain.academic_progress.services.progress_service.log_activity'):
+            with patch('education_system.university_system.modules.domain.academics.academic_progress.services.progress_service.log_activity'):
                 with patch.object(svc, '_analyze_gpa_impact', return_value='Moderate improvement'):
                     result = svc.calculate_what_if_gpa(
                         'STU001',
@@ -224,7 +224,7 @@ class TestProgressServiceCheckEarlyWarnings:
             ]
             mock_conn.execute.return_value.fetchall.return_value = []
 
-            with patch('education_system.university_system.modules.domain.academic_progress.services.progress_service.log_activity'):
+            with patch('education_system.university_system.modules.domain.academics.academic_progress.services.progress_service.log_activity'):
                 try:
                     result = svc.check_early_warnings('STU001')
                     assert isinstance(result, list)
@@ -261,14 +261,14 @@ class TestProgressServiceAcknowledgeWarning:
 
     def test_valid_warning_id(self, mock_service):
         svc, mock_conn = mock_service
-        with patch('education_system.university_system.modules.domain.academic_progress.services.progress_service.log_activity'):
+        with patch('education_system.university_system.modules.domain.academics.academic_progress.services.progress_service.log_activity'):
             result = svc.acknowledge_warning(1)
             assert result is True
 
     def test_nonexistent_warning_id_still_returns_true(self, mock_service):
         """acknowledge_warning always returns True (no existence check in source)."""
         svc, mock_conn = mock_service
-        with patch('education_system.university_system.modules.domain.academic_progress.services.progress_service.log_activity'):
+        with patch('education_system.university_system.modules.domain.academics.academic_progress.services.progress_service.log_activity'):
             result = svc.acknowledge_warning(99999)
             assert result is True
 
@@ -278,20 +278,20 @@ class TestProgressServiceResolveWarning:
 
     def test_valid_warning_id(self, mock_service):
         svc, mock_conn = mock_service
-        with patch('education_system.university_system.modules.domain.academic_progress.services.progress_service.log_activity'):
+        with patch('education_system.university_system.modules.domain.academics.academic_progress.services.progress_service.log_activity'):
             result = svc.resolve_warning(1)
             assert result is True
 
     def test_with_notes(self, mock_service):
         svc, mock_conn = mock_service
-        with patch('education_system.university_system.modules.domain.academic_progress.services.progress_service.log_activity'):
+        with patch('education_system.university_system.modules.domain.academics.academic_progress.services.progress_service.log_activity'):
             result = svc.resolve_warning(1, notes='Student improved GPA')
             assert result is True
 
     def test_nonexistent_warning_id(self, mock_service):
         """resolve_warning always returns True (no existence check in source)."""
         svc, mock_conn = mock_service
-        with patch('education_system.university_system.modules.domain.academic_progress.services.progress_service.log_activity'):
+        with patch('education_system.university_system.modules.domain.academics.academic_progress.services.progress_service.log_activity'):
             result = svc.resolve_warning(99999)
             assert result is True
 
@@ -318,7 +318,7 @@ class TestProgressServiceForecastGraduation:
             with patch.object(svc, '_calculate_current_gpa', return_value={
                 'current_gpa': 3.2, 'total_credits': 60, 'total_points': 192.0,
             }):
-                with patch('education_system.university_system.modules.domain.academic_progress.services.progress_service.log_activity'):
+                with patch('education_system.university_system.modules.domain.academics.academic_progress.services.progress_service.log_activity'):
                     result = svc.forecast_graduation('STU001', 'CSCI')
                     assert isinstance(result, dict)
 
@@ -342,7 +342,7 @@ class TestProgressServiceCreateProgressSnapshot:
                     insert_cursor.lastrowid = 7
                     mock_conn.execute.return_value = insert_cursor
 
-                    with patch('education_system.university_system.modules.domain.academic_progress.services.progress_service.log_activity'):
+                    with patch('education_system.university_system.modules.domain.academics.academic_progress.services.progress_service.log_activity'):
                         try:
                             result = svc.create_progress_snapshot('STU001', 'Fall 2025')
                             assert isinstance(result, int)
@@ -755,12 +755,12 @@ class TestGUIImports:
 
     def test_academic_progress_gui_import(self):
         """AcademicProgressGUI can be imported."""
-        from education_system.university_system.modules.domain.academic_progress.gui.progress_gui import AcademicProgressGUI
+        from education_system.university_system.modules.domain.academics.academic_progress.gui.progress_gui import AcademicProgressGUI
         assert AcademicProgressGUI is not None
 
     def test_gpa_calculator_gui_class_exists(self):
         """Check if GPACalculatorGUI exists as a class or tab method in the GUI module."""
-        import education_system.university_system.modules.domain.academic_progress.gui.progress_gui as gui_mod
+        import education_system.university_system.modules.domain.academics.academic_progress.gui.progress_gui as gui_mod
         # AcademicProgressGUI is the main class; GPA calculator is a tab within it
         assert hasattr(gui_mod, 'AcademicProgressGUI')
         gui_cls = gui_mod.AcademicProgressGUI
@@ -769,14 +769,14 @@ class TestGUIImports:
 
     def test_degree_progress_gui_class_exists(self):
         """Check if DegreeProgressGUI exists as a class or tab method."""
-        import education_system.university_system.modules.domain.academic_progress.gui.progress_gui as gui_mod
+        import education_system.university_system.modules.domain.academics.academic_progress.gui.progress_gui as gui_mod
         assert hasattr(gui_mod, 'AcademicProgressGUI')
         gui_cls = gui_mod.AcademicProgressGUI
         assert hasattr(gui_cls, 'create_degree_progress_tab') or hasattr(gui_mod, 'DegreeProgressGUI')
 
     def test_grades_breakdown_gui_class_exists(self):
         """Check if GradesBreakdownGUI exists as a class or tab method."""
-        import education_system.university_system.modules.domain.academic_progress.gui.progress_gui as gui_mod
+        import education_system.university_system.modules.domain.academics.academic_progress.gui.progress_gui as gui_mod
         assert hasattr(gui_mod, 'AcademicProgressGUI')
         gui_cls = gui_mod.AcademicProgressGUI
         # Grades breakdown is within my_grades_tab

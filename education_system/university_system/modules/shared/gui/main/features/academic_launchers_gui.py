@@ -946,7 +946,7 @@ def show_exam_portal(self):
 def show_hesa_export_gui(self):
     """Launch HESA Data Export GUI"""
     try:
-        from education_system.university_system.modules.domain.hesa_export.gui.hesa_export_gui import HESAExportGUI
+        from education_system.university_system.modules.domain.admissions.hesa_export.gui.hesa_export_gui import HESAExportGUI
         gui = HESAExportGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import HESA Export GUI: {e}")
@@ -959,7 +959,7 @@ def show_hesa_export_gui(self):
 def show_clearing_adjustment_gui(self):
     """Launch Clearing & Adjustment GUI"""
     try:
-        from education_system.university_system.modules.domain.clearing_adjustment.gui.clearing_adjustment_gui import ClearingAdjustmentGUI
+        from education_system.university_system.modules.domain.academics.clearing_adjustment.gui.clearing_adjustment_gui import ClearingAdjustmentGUI
         gui = ClearingAdjustmentGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Clearing & Adjustment GUI: {e}")

@@ -632,7 +632,7 @@ class LayoutManager:
     def show_academic_progress(self):
         """Launch Academic Progress GUI"""
         try:
-            from education_system.university_system.modules.domain.academic_progress.gui.progress_gui import AcademicProgressGUI
+            from education_system.university_system.modules.domain.academics.academic_progress.gui.progress_gui import AcademicProgressGUI
             import tkinter as tk
             window = tk.Toplevel(self.root)
             window.title("Academic Progress")

@@ -168,7 +168,7 @@ class PersonalBudgetMixin:
             student_id = current_user.get('username') if current_user else 'guest'
 
             # Import budget manager from budget tracker
-            from education_system.university_system.modules.domain.budget.services.budget_service import BudgetManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import BudgetManager
 
             # Calculate dates based on budget type
             start_date = datetime.now().strftime('%Y-%m-%d')
@@ -213,7 +213,7 @@ class PersonalBudgetMixin:
             item = self.my_budgets_tree.item(selection[0])
             budget_id = item['values'][0]
 
-            from education_system.university_system.modules.domain.budget.services.budget_service import BudgetManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import BudgetManager
             summary = BudgetManager.get_budget_summary(budget_id)
 
             # Create detail window
@@ -258,7 +258,7 @@ Time Analysis:
             current_user = self.gui.auth.get_current_user() if self.gui.auth else None
             student_id = current_user.get('username') if current_user else 'guest'
 
-            from education_system.university_system.modules.domain.budget.services.budget_service import (
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import (
                 BudgetManager, ExpenseManager, IncomeManager
             )
 
@@ -314,7 +314,7 @@ Time Analysis:
             current_user = self.gui.auth.get_current_user() if self.gui.auth else None
             student_id = current_user.get('username') if current_user else 'guest'
 
-            from education_system.university_system.modules.domain.budget.services.budget_service import BudgetManager
+            from education_system.university_system.modules.domain.finance.budget.services.budget_service import BudgetManager
             budgets = BudgetManager.get_student_budgets(student_id, active_only=False)
 
             for budget in budgets:

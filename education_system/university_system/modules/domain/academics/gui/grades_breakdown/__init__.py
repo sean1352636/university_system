@@ -4,6 +4,6 @@ Re-exports GradesBreakdownGUI from its new location in academic_progress
 for backward compatibility.
 """
 
-from education_system.university_system.modules.domain.academic_progress.gui.grades_breakdown_gui import GradesBreakdownGUI
+from education_system.university_system.modules.domain.academics.academic_progress.gui.grades_breakdown_gui import GradesBreakdownGUI
 
 __all__ = ['GradesBreakdownGUI']

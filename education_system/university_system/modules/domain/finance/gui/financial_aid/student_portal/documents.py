@@ -102,7 +102,7 @@ class DocumentsMixin:
             all_text = get_text("financial_aid.student_portal.documents.types.all", "All")
             doc_type_filter = None if doc_type == all_text else doc_type.lower().replace(' ', '-')
 
-            from education_system.university_system.modules.domain.scholarship_finder.services.scholarship_service import DocumentVaultManager
+            from education_system.university_system.modules.domain.finance.scholarship_finder.services.scholarship_service import DocumentVaultManager
 
             documents = DocumentVaultManager.get_student_documents(self.student_id, doc_type_filter)
 
@@ -211,7 +211,7 @@ class DocumentsMixin:
             tags = tags_var.get().strip()
 
             try:
-                from education_system.university_system.modules.domain.scholarship_finder.services.scholarship_service import DocumentVaultManager
+                from education_system.university_system.modules.domain.finance.scholarship_finder.services.scholarship_service import DocumentVaultManager
 
                 doc_id = DocumentVaultManager.upload_document(
                     self.student_id, name, doc_type, path,

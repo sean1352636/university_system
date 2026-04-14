@@ -224,7 +224,7 @@ class InstructorPortalCLI:
 
     def _handle_academic_progress(self):
         try:
-            from education_system.university_system.modules.domain.academic_progress.cli.progress_cli import AcademicProgressCLI
+            from education_system.university_system.modules.domain.academics.academic_progress.cli.progress_cli import AcademicProgressCLI
             cli = AcademicProgressCLI()
             cli.run()
         except ImportError as e:

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.77.0 — 2026-04-14](#8770---2026-04-14)
 - [8.76.9 — 2026-04-14](#8769---2026-04-14)
 - [8.76.8 — 2026-04-13](#8768---2026-04-13)
 - [8.76.7 — 2026-04-13](#8767---2026-04-13)
@@ -181,6 +182,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.77.0] — 2026-04-14
+
+### Reorganise university_system domain directory from 63 folders to 15 categories
+
+#### Changed
+
+- **domain/ directory structure**: Consolidated 45 micro-modules (most under 3,000 LOC) into their natural parent categories, reducing top-level domain folders from 63 to 15. All import paths updated across the codebase (401 files, zero stale references).
+
+#### New category structure
+
+- **academics/** absorbed: `academic_progress`, `advising`, `ai_study`, `clearing_adjustment`, `course_planning`, `external_examiners`, `study_matching`, `study_recommendations`
+- **student_affairs/** absorbed: `achievement_badges`, `roommate_finder`, `social_matching`, `student_app`, `student_id`, `student_wellbeing`, `wellness`
+- **finance/** absorbed: `blockchain`, `budget`, `scholarship_finder`, `student_finance`
+- **commerce/** absorbed: `barber`, `betting`, `butcher`, `carrental`, `cinema`, `gym`, `marketplace`, `musicshop`, `nailbar`, `phoneshop`, `textbooks`
+- **campus/** absorbed: `accessibility`, `campus_navigation`, `equipment`, `facilities`, `lost_found`, `printing`, `study_rooms`
+- **communications/** (new): `feedback`, `mail`, `notifications`
+- **career/** absorbed: `alumni`, `student_jobs`
+- **health/** absorbed: `dentist`
+- **admissions/** absorbed: `hesa_export`
+- **events/** absorbed: `portfolio`
+- **housing/**, **legal/**, **mobility/**, **research/**, **staff_hr/**: unchanged
+
+#### Also included (from earlier in this session)
+
+- Fixed student union CLI broken functions: `manage_study_groups` (7 wrong column names in `support.py`), `access_control_review` and `approve_reject_materials` (missing columns in `voting.py`), `performance_benchmarking` (wrong column in `analytics.py`). Added missing `reviewed_at`, `reviewed_by`, `rejection_reason` columns to `campaign_materials` schema.
 
 ---
 

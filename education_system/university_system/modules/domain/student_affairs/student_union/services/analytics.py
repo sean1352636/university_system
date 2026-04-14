@@ -315,7 +315,7 @@ def performance_benchmarking(cursor):
             c.member_count,
             COUNT(DISTINCT e.event_id) as events_organized,
             AVG(e.current_attendees) as avg_event_attendance,
-            COUNT(DISTINCT er.student_id) as unique_event_attendees
+            COUNT(DISTINCT er.user_id) as unique_event_attendees
         FROM student_clubs c
         LEFT JOIN union_events e ON c.club_id = e.organizer_id
             AND e.event_date >= date('now', '-12 months')

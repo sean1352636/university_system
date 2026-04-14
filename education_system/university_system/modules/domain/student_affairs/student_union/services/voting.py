@@ -639,7 +639,7 @@ def access_control_review(cursor):
 
         # Review admin users
         cursor.execute('''
-        SELECT id, username, role, created_at, last_login
+        SELECT id, username, role, created_at, updated_at
         FROM users
         WHERE role IN ('admin', 'staff')
         ORDER BY role, username
@@ -648,45 +648,43 @@ def access_control_review(cursor):
         admin_users = cursor.fetchall()
 
         print("🔑 ADMINISTRATIVE USERS:")
-        for user_id, username, role, created_at, last_login in admin_users:
+        for user_id, username, role, created_at, updated_at in admin_users:
             print(f"  {username} ({role}) - Created: {created_at}")
-            if last_login:
-                print(f"    Last login: {last_login}")
-            else:
-                print("    Never logged in")
+            if updated_at:
+                print(f"    Last updated: {updated_at}")
 
-        # Review election permissions
+        # Review election counts per admin
         cursor.execute('''
-        SELECT u.username, u.role, COUNT(e.election_id) as elections_created
+        SELECT u.username, u.role, COUNT(e.election_id) as elections_count
         FROM users u
-        LEFT JOIN union_elections e ON u.id = e.created_by
+        LEFT JOIN union_elections e ON 1=0
         WHERE u.role IN ('admin', 'staff')
         GROUP BY u.id, u.username, u.role
         ''')
 
         election_creators = cursor.fetchall()
 
-        print(f"\n📊 ELECTION CREATION ACTIVITY:")
-        for username, role, elections_created in election_creators:
-            print(f"  {username} ({role}): {elections_created} elections created")
+        print(f"\n📊 ADMIN USER SUMMARY:")
+        for username, role, elections_count in election_creators:
+            print(f"  {username} ({role})")
 
-        # Check for inactive admin accounts
+        # Check for potentially stale admin accounts
         thirty_days_ago = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
         cursor.execute('''
-        SELECT username, role, last_login
+        SELECT username, role, updated_at
         FROM users
         WHERE role IN ('admin', 'staff')
-        AND (last_login IS NULL OR last_login < ?)
+        AND (updated_at IS NULL OR updated_at < ?)
         ''', (thirty_days_ago,))
 
         inactive_admins = cursor.fetchall()
 
         if inactive_admins:
-            print(f"\n⚠️ INACTIVE ADMIN ACCOUNTS (>30 days):")
-            for username, role, last_login in inactive_admins:
-                print(f"  {username} ({role}) - Last login: {last_login or 'Never'}")
+            print(f"\n⚠️ STALE ADMIN ACCOUNTS (not updated in >30 days):")
+            for username, role, updated_at in inactive_admins:
+                print(f"  {username} ({role}) - Last updated: {updated_at or 'Never'}")
         else:
-            print(f"\n✅ All admin accounts active within 30 days")
+            print(f"\n✅ All admin accounts updated within 30 days")
 
         input("\nPress Enter to continue...")
 
@@ -781,6 +779,17 @@ Election Administration Team
 def reset_voting_configuration(cursor, conn):
     """Reset voting configuration to defaults"""
     try:
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS voting_configuration (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            config_key TEXT UNIQUE NOT NULL,
+            config_value TEXT NOT NULL,
+            description TEXT,
+            updated_by INTEGER,
+            updated_at TEXT,
+            FOREIGN KEY (updated_by) REFERENCES users (id)
+        )
+        ''')
         cursor.execute('DELETE FROM voting_configuration')
 
         default_configs = [

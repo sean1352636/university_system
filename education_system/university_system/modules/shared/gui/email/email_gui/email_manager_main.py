@@ -589,7 +589,7 @@ class EmailManagerGUI:
         else:
             # Fallback to old behavior if notifications_tab not loaded
             try:
-                from education_system.university_system.modules.domain.notifications.gui.notifications_gui import NotificationsGUI
+                from education_system.university_system.modules.domain.communications.notifications.gui.notifications_gui import NotificationsGUI
                 gui = NotificationsGUI(parent=self.root)
                 logger.info("Opened Notifications Hub from Email Manager")
             except ImportError as e:
