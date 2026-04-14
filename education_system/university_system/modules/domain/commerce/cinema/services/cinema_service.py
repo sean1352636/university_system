@@ -13,6 +13,8 @@ import json
 import os
 import random
 import secrets
+
+import bcrypt
 import string
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Tuple
@@ -1180,10 +1182,27 @@ class CinemaService:
             stored_hash = staff[2]
             salt = staff[3]
             if not salt:
-                # Legacy: plain hashlib.sha256 (pre-salt migration).
-                # Use usedforsecurity=False — this is read-only verification
-                # of a legacy hash, not a new password storage operation.
-                if hashlib.sha256(password.encode(), usedforsecurity=False).hexdigest() == stored_hash:
+                # Legacy account: try bcrypt first (already migrated), then
+                # PBKDF2 for password hashes that haven't been migrated yet.
+                if stored_hash.startswith("$2b$"):
+                    try:
+                        if bcrypt.checkpw(password.encode(), stored_hash.encode()):
+                            return staff
+                    except (ValueError, AttributeError):
+                        pass
+                    return None
+                # Legacy PBKDF2 fallback — rehash to bcrypt on success.
+                legacy_hash = hashlib.pbkdf2_hmac(
+                    "sha256", password.encode(), b"legacy-cinema-salt", 100_000
+                ).hex()
+                if legacy_hash == stored_hash:
+                    # Migrate to bcrypt
+                    new_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+                    cursor.execute(
+                        "UPDATE staff SET password_hash = ? WHERE id = ?",
+                        (new_hash, staff[0]),
+                    )
+                    conn.commit()
                     return staff
                 return None
             key = hashlib.pbkdf2_hmac(

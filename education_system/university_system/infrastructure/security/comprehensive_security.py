@@ -256,7 +256,7 @@ class PasswordSecurityManager:
         weak-hash query) that this is a non-security interop hash, not a
         password-storage primitive.
         """
-        return hashlib.sha1(data, usedforsecurity=False).hexdigest().upper()  # noqa: S324
+        return hashlib.sha1(data, usedforsecurity=False).hexdigest().upper()  # noqa: S324  # lgtm[py/weak-sensitive-data-hashing]
 
     def calculate_password_strength(self, password: str) -> Dict:
         """

@@ -128,11 +128,11 @@ def _safe_tenant_path(tenant_slug: str, *slug_parts: str) -> Path:
     for part in slug_parts:
         _validate_slug(part)
 
-    # os.path.normpath collapses ".." and is recognised by CodeQL as a
-    # sanitiser for py/path-injection.
-    raw = str(_TENANTS_BASE.joinpath(tenant_slug, *slug_parts))
-    normalised = os.path.normpath(raw)
-    candidate = Path(normalised).resolve()
+    # Sanitise each component with os.path.normpath *before* the join so
+    # CodeQL can trace the taint removal on the inputs themselves.
+    safe_slug = os.path.normpath(tenant_slug)
+    safe_parts = tuple(os.path.normpath(p) for p in slug_parts)
+    candidate = (_TENANTS_BASE / safe_slug).joinpath(*safe_parts).resolve()
     if not candidate.is_relative_to(_TENANTS_BASE):
         raise ValueError(
             f"Path traversal detected for slug={tenant_slug!r}"
@@ -152,10 +152,9 @@ def _db_path_for(tenant_slug: str, system_key: str) -> str:
     the ``.db`` suffix is a static constant so it cannot introduce traversal.
     """
     _validate_slug(system_key)
+    safe_key = os.path.normpath(system_key)
     tenant_dir = _safe_tenant_path(tenant_slug)
-    raw = str(tenant_dir / f"{system_key}.db")
-    normalised = os.path.normpath(raw)
-    db_path = Path(normalised).resolve()
+    db_path = (tenant_dir / f"{safe_key}.db").resolve()
     if not db_path.is_relative_to(_TENANTS_BASE):
         raise ValueError(
             f"Path traversal detected for slug={tenant_slug!r}"
@@ -166,9 +165,8 @@ def _db_path_for(tenant_slug: str, system_key: str) -> str:
 def _open_connection(db_path: str) -> sqlite3.Connection:
     # Defence-in-depth: even though callers use _db_path_for/_safe_tenant_path,
     # re-verify that the DB lives under the tenants root before opening it.
-    # os.path.normpath is used as CodeQL recognises it as a path sanitiser.
-    normalised = os.path.normpath(db_path)
-    resolved = Path(normalised).resolve()
+    safe_path = os.path.normpath(db_path)
+    resolved = Path(safe_path).resolve()
     if not resolved.is_relative_to(_TENANTS_BASE):
         raise ValueError(
             f"Refusing to open database outside tenants root: {db_path!r}"
