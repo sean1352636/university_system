@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.76.9 — 2026-04-14](#8769---2026-04-14)
 - [8.76.8 — 2026-04-13](#8768---2026-04-13)
 - [8.76.7 — 2026-04-13](#8767---2026-04-13)
 - [8.76.6 — 2026-04-13](#8766---2026-04-13)
@@ -180,6 +181,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.76.9] — 2026-04-14
+
+### Fix syntax errors, broken imports, SQL injection, and schema mismatches across university_system
+
+#### Fixed
+
+- **Syntax error** in `student_union/services/events.py`: `logger` assignment was accidentally placed inside an `import (...)` block, causing a `SyntaxError` that prevented the university GUI from launching.
+- **Broken import paths** (2 files): `academics/gui/grade_tracking/layout_manager.py` pointed to non-existent `shared/gui/academic_progress/` (corrected to `domain/academic_progress/gui/progress_gui`); `finance/core/security_automation.py` pointed to non-existent `shared/utils/infrastructure/email` (corrected to `infrastructure/email/email_service/core`).
+- **SQL injection risk** in `student_wellbeing/services/wellbeing_service.py` and `student_finance/services/student_finance_service.py`: `**kwargs` keys were interpolated directly into SQL column positions in `create`, `update`, and `list_all` methods. All three methods in both files now validate keys through `validate_identifier()` from `core.sql_safety`.
+- **Column name mismatches** in auth managers: `sso_manager.py` used `config`/`enabled` instead of `config_json`/`is_enabled`; `webauthn_manager.py` used `credential_name` instead of `device_name`; `comprehensive_security.py` used `category`/`reported_by` instead of `incident_type`/`detected_by`. All corrected to match their respective CREATE TABLE definitions.
+- **Committee table schema mismatches** in `staff_hr_schemas_all.py`: renamed `meeting_agenda_items` table to `committee_agenda_items` (matching code); renamed PK columns (`committee_id` → `id`, `membership_id` → `id`, `meeting_id` → `id`, `item_id` → `id`) to match how `committee_manager.py` queries them; added missing `status`, `created_by`, `updated_at` columns to `committees`; added missing `joined_at` column to `committee_members`. Updated all FK references in `meeting_minutes`, `committee_votes`.
+- **`data_retention_policies` schema conflict**: health modules created the table with `retention_period_days` columns, but the security dashboard GUI queried `retention_period_months`, `deletion_method`, `last_cleanup_date`, `is_active`. Unified all three health CREATE TABLE definitions to include both column sets so the table is complete regardless of init order.
+
+#### Added
+
+- **`peer_review_criteria_templates`** CREATE TABLE in `core_schemas.py` — the only table referenced in code (`academics/gui/assignment_system/peer_review.py`) with no schema definition anywhere.
 
 ---
 

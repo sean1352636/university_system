@@ -180,7 +180,7 @@ class SSOManager:
 
                 cursor.execute(
                     '''INSERT INTO sso_providers
-                       (provider_id, provider_type, display_name, config, enabled, created_at, updated_at)
+                       (provider_id, provider_type, display_name, config_json, is_enabled, created_at, updated_at)
                        VALUES (?, ?, ?, ?, 1, ?, ?)''',
                     (provider_id, provider_type, display_name, config_json, timestamp, timestamp),
                 )
@@ -237,14 +237,14 @@ class SSOManager:
 
                 if enabled_only:
                     cursor.execute(
-                        '''SELECT provider_id, provider_type, display_name, enabled,
+                        '''SELECT provider_id, provider_type, display_name, is_enabled,
                                   created_at, updated_at
-                           FROM sso_providers WHERE enabled = 1
+                           FROM sso_providers WHERE is_enabled = 1
                            ORDER BY display_name''',
                     )
                 else:
                     cursor.execute(
-                        '''SELECT provider_id, provider_type, display_name, enabled,
+                        '''SELECT provider_id, provider_type, display_name, is_enabled,
                                   created_at, updated_at
                            FROM sso_providers
                            ORDER BY display_name''',
@@ -296,8 +296,8 @@ class SSOManager:
                 cursor = conn.cursor()
 
                 cursor.execute(
-                    '''SELECT provider_id, provider_type, display_name, config,
-                              enabled, created_at, updated_at
+                    '''SELECT provider_id, provider_type, display_name, config_json,
+                              is_enabled, created_at, updated_at
                        FROM sso_providers WHERE provider_id = ?''',
                     (provider_id,),
                 )
@@ -397,7 +397,7 @@ class SSOManager:
                                 'success': False,
                                 'message': 'Configuration must be a dictionary.',
                             }
-                        update_fields.append('config = ?')
+                        update_fields.append('config_json = ?')
                         update_values.append(self._serialize_config(value))
                     else:
                         update_fields.append(f'{key} = ?')
@@ -567,7 +567,7 @@ class SSOManager:
 
                 # Check provider exists
                 cursor.execute(
-                    'SELECT provider_id, display_name, enabled FROM sso_providers WHERE provider_id = ?',
+                    'SELECT provider_id, display_name, is_enabled FROM sso_providers WHERE provider_id = ?',
                     (provider_id,),
                 )
                 existing = cursor.fetchone()
@@ -589,7 +589,7 @@ class SSOManager:
 
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 cursor.execute(
-                    'UPDATE sso_providers SET enabled = ?, updated_at = ? WHERE provider_id = ?',
+                    'UPDATE sso_providers SET is_enabled = ?, updated_at = ? WHERE provider_id = ?',
                     (1 if enabled else 0, timestamp, provider_id),
                 )
                 conn.commit()

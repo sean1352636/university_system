@@ -5,6 +5,7 @@ import traceback
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import connect
+from education_system.university_system.core.sql_safety import validate_identifier
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class StudentFinanceService:
         """Create a new fee record record."""
         conn = self._conn()
         try:
-            cols = ", ".join(kwargs.keys())
+            cols = ", ".join(validate_identifier(k, "column") for k in kwargs)
             placeholders = ", ".join("?" for _ in kwargs)
             cursor = conn.cursor()
             cursor.execute(
@@ -45,7 +46,7 @@ class StudentFinanceService:
             params = []
             for key, val in filters.items():
                 if val is not None:
-                    sql += f" AND {key} = ?"
+                    sql += f" AND {validate_identifier(key, 'column')} = ?"
                     params.append(val)
             sql += " ORDER BY id DESC LIMIT ? OFFSET ?"
             params.extend([limit, offset])
@@ -72,7 +73,7 @@ class StudentFinanceService:
             return False
         conn = self._conn()
         try:
-            set_clause = ", ".join(f"{k} = ?" for k in kwargs)
+            set_clause = ", ".join(f"{validate_identifier(k, 'column')} = ?" for k in kwargs)
             values = list(kwargs.values()) + [record_id]
             conn.execute(
                 f"UPDATE student_fees SET {set_clause} WHERE id = ?",

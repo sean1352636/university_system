@@ -727,7 +727,7 @@ class IncidentResponseManager:
         try:
             cursor.execute("""
                 INSERT INTO security_incidents (
-                    category, severity, description, reported_by,
+                    incident_type, severity, description, detected_by,
                     status, detected_at
                 )
                 VALUES (?, ?, ?, ?, 'open', CURRENT_TIMESTAMP)

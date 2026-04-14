@@ -847,7 +847,7 @@ def init_staff_hr_v2_schemas():
         # Committees
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS committees (
-                committee_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 description TEXT,
                 committee_type TEXT DEFAULT 'standing',
@@ -859,14 +859,17 @@ def init_staff_hr_v2_schemas():
                 meeting_frequency TEXT,
                 meeting_location TEXT,
                 is_active INTEGER DEFAULT 1,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                status TEXT DEFAULT 'active',
+                created_by TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         ''')
 
         # Committee Members
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS committee_members (
-                membership_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 committee_id INTEGER NOT NULL,
                 user_id TEXT NOT NULL,
                 user_name TEXT,
@@ -875,7 +878,8 @@ def init_staff_hr_v2_schemas():
                 end_date TEXT,
                 is_active INTEGER DEFAULT 1,
                 notes TEXT,
-                FOREIGN KEY (committee_id) REFERENCES committees(committee_id),
+                joined_at TEXT,
+                FOREIGN KEY (committee_id) REFERENCES committees(id),
                 UNIQUE(committee_id, user_id)
             )
         ''')
@@ -904,7 +908,7 @@ def init_staff_hr_v2_schemas():
                 status TEXT DEFAULT 'draft',
                 document_path TEXT,
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (committee_id) REFERENCES committees(committee_id)
+                FOREIGN KEY (committee_id) REFERENCES committees(id)
             )
         ''')
 
@@ -2836,7 +2840,7 @@ def init_staff_hr_v6_schemas():
             # Committee Meetings Table
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS committee_meetings (
-                    meeting_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     committee_id INTEGER NOT NULL,
                     title TEXT NOT NULL,
                     meeting_date TEXT NOT NULL,
@@ -2852,14 +2856,14 @@ def init_staff_hr_v6_schemas():
                     created_by TEXT,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (committee_id) REFERENCES committees(committee_id)
+                    FOREIGN KEY (committee_id) REFERENCES committees(id)
                 )
             ''')
 
             # Meeting Agenda Items Table
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS meeting_agenda_items (
-                    item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                CREATE TABLE IF NOT EXISTS committee_agenda_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
                     meeting_id INTEGER NOT NULL,
                     item_order INTEGER NOT NULL DEFAULT 1,
                     title TEXT NOT NULL,
@@ -2870,7 +2874,7 @@ def init_staff_hr_v6_schemas():
                     resolution TEXT,
                     status TEXT DEFAULT 'pending',
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                    FOREIGN KEY (meeting_id) REFERENCES committee_meetings(meeting_id)
+                    FOREIGN KEY (meeting_id) REFERENCES committee_meetings(id)
                 )
             ''')
 
@@ -2892,8 +2896,8 @@ def init_staff_hr_v6_schemas():
                     opened_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     closed_at TEXT,
                     created_by TEXT,
-                    FOREIGN KEY (meeting_id) REFERENCES committee_meetings(meeting_id),
-                    FOREIGN KEY (committee_id) REFERENCES committees(committee_id)
+                    FOREIGN KEY (meeting_id) REFERENCES committee_meetings(id),
+                    FOREIGN KEY (committee_id) REFERENCES committees(id)
                 )
             ''')
 
@@ -3294,7 +3298,7 @@ def _create_v6_indexes(cursor):
         ('idx_committee_meetings_committee', 'committee_meetings', 'committee_id'),
         ('idx_committee_meetings_date', 'committee_meetings', 'meeting_date'),
         ('idx_committee_meetings_status', 'committee_meetings', 'status'),
-        ('idx_meeting_agenda_meeting', 'meeting_agenda_items', 'meeting_id'),
+        ('idx_meeting_agenda_meeting', 'committee_agenda_items', 'meeting_id'),
         ('idx_committee_votes_meeting', 'committee_votes', 'meeting_id'),
         ('idx_committee_votes_committee', 'committee_votes', 'committee_id'),
         ('idx_committee_ballots_vote', 'committee_ballots', 'vote_id'),

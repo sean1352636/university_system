@@ -343,7 +343,7 @@ def send_email_notification(email, subject, body, method='smtp'):
     """Safe wrapper for email notifications"""
     try:
         # Try to use your email_manager
-        from education_system.university_system.modules.shared.utils.infrastructure.email import send_email
+        from education_system.university_system.infrastructure.email.email_service.core import send_email
         return send_email(recipient=email, subject=subject, body=body)
     except ImportError:
         print(f"📧 EMAIL NOTIFICATION: {email}")
