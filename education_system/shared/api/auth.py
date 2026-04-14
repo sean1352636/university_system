@@ -638,7 +638,7 @@ def oauth_callback(provider: str):
         result = svc.handle_callback(provider, code, state)
     except Exception as e:
         logger.error("OAuth callback failed: %s", e)
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": "OAuth authentication failed. Please try again."}), 400
 
     systems = result.get("systems", [])
     access_token = generate_token(result["user_id"], result["username"], systems, "access")

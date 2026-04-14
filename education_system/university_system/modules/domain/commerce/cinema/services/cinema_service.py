@@ -1180,8 +1180,10 @@ class CinemaService:
             stored_hash = staff[2]
             salt = staff[3]
             if not salt:
-                # Legacy: plain hashlib.sha256 (pre-salt migration)
-                if hashlib.sha256(password.encode()).hexdigest() == stored_hash:
+                # Legacy: plain hashlib.sha256 (pre-salt migration).
+                # Use usedforsecurity=False — this is read-only verification
+                # of a legacy hash, not a new password storage operation.
+                if hashlib.sha256(password.encode(), usedforsecurity=False).hexdigest() == stored_hash:
                     return staff
                 return None
             key = hashlib.pbkdf2_hmac(

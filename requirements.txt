@@ -43,7 +43,7 @@ eventlet>=0.36.0               # Async networking library for Socket.IO concurre
 Jinja2==3.1.6                  # Template engine for email templates
 Werkzeug==3.1.7                # WSGI utilities
 urllib3==2.6.3                 # HTTP client library
-aiohttp==3.13.5                # Async HTTP client/server (>=3.13.5 fixes Host-header bypass, multipart DoS, Windows static-file disclosure)
+aiohttp>=3.13.5                # Async HTTP client/server (>=3.13.5 fixes Host-header bypass, multipart DoS, Windows static-file disclosure)
 pydantic==2.12.5               # Data validation and schema definition
 
 # ===============================

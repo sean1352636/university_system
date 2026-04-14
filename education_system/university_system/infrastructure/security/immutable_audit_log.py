@@ -214,14 +214,11 @@ class ImmutableAuditLog:
             session_id or '',
         ])
 
-        # PBKDF2-HMAC-SHA256 with one iteration: functionally a keyed MAC over
-        # ``hash_input``. See module docstring for why this replaces the
-        # previous bare ``hmac.new`` call.
         return hashlib.pbkdf2_hmac(
             'sha256',
             hash_input.encode('utf-8'),
             ImmutableAuditLog._SECRET_KEY,
-            1,
+            1_000,
         ).hex()
 
     def _calculate_hmac(self, data: str) -> str:
@@ -238,7 +235,7 @@ class ImmutableAuditLog:
             'sha256',
             data.encode('utf-8'),
             ImmutableAuditLog._SECRET_KEY,
-            1,
+            1_000,
         ).hex()
 
     def add_entry(
