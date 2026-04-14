@@ -235,7 +235,7 @@ def mfa_verify():
 
         if not result.get("success"):
             return jsonify({
-                "error": result.get("error", "Invalid MFA code"),
+                "error": "Invalid MFA code",
                 "status": 401,
             }), 401
 
@@ -311,7 +311,8 @@ def mfa_send_code():
             return jsonify({"error": "Method must be 'sms' or 'email'", "status": 400}), 400
 
         if not result.get("success"):
-            return jsonify({"error": result.get("error", "Failed to send code"), "status": 500}), 500
+            logger.warning("MFA send-code failed for user %s", user_id)
+            return jsonify({"error": "Failed to send code", "status": 500}), 500
 
         resp = {
             "message": result.get("message", "Verification code sent"),

@@ -619,7 +619,7 @@ def oauth_authorize(provider: str):
         return jsonify({"authorize_url": url})
     except Exception as e:
         logger.error("OAuth authorize failed: %s", e)
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": "OAuth authorization failed. Please try again."}), 400
 
 
 @auth_bp.route("/oauth/<provider>/callback", methods=["GET", "POST"])

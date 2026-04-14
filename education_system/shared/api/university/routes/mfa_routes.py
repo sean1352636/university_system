@@ -44,7 +44,8 @@ def setup_totp():
 
     result = svc.setup_totp(user_id, username)
     if not result.get("success"):
-        return jsonify({"error": result.get("error", "TOTP setup failed"), "status": 500}), 500
+        logger.warning("TOTP setup failed for user %s", user_id)
+        return jsonify({"error": "TOTP setup failed", "status": 500}), 500
 
     return jsonify({
         "secret": result.get("secret"),
@@ -67,7 +68,7 @@ def verify_totp_setup():
 
     result = svc.verify_totp(user_id, code)
     if not result.get("success"):
-        return jsonify({"error": result.get("error", "Invalid code"), "status": 400}), 400
+        return jsonify({"error": "Invalid code", "status": 400}), 400
 
     return jsonify({"message": "TOTP setup verified successfully"})
 
@@ -86,7 +87,8 @@ def setup_sms():
 
     result = svc.generate_sms_otp(user_id, phone)
     if not result.get("success"):
-        return jsonify({"error": result.get("error", "Failed to send SMS"), "status": 500}), 500
+        logger.warning("SMS OTP generation failed for user %s", user_id)
+        return jsonify({"error": "Failed to send SMS", "status": 500}), 500
 
     resp = {
         "message": result.get("message", "Verification code sent via SMS"),
@@ -111,7 +113,7 @@ def verify_sms_setup():
 
     result = svc.verify_sms_otp(user_id, code)
     if not result.get("success"):
-        return jsonify({"error": result.get("error", "Invalid code"), "status": 400}), 400
+        return jsonify({"error": "Invalid code", "status": 400}), 400
 
     return jsonify({"message": "SMS MFA setup verified successfully"})
 
@@ -130,7 +132,8 @@ def setup_email():
 
     result = svc.generate_email_otp(user_id, email)
     if not result.get("success"):
-        return jsonify({"error": result.get("error", "Failed to send email"), "status": 500}), 500
+        logger.warning("Email OTP generation failed for user %s", user_id)
+        return jsonify({"error": "Failed to send email", "status": 500}), 500
 
     resp = {
         "message": result.get("message", "Verification code sent via email"),
@@ -155,7 +158,7 @@ def verify_email_setup():
 
     result = svc.verify_email_otp(user_id, code)
     if not result.get("success"):
-        return jsonify({"error": result.get("error", "Invalid code"), "status": 400}), 400
+        return jsonify({"error": "Invalid code", "status": 400}), 400
 
     return jsonify({"message": "Email MFA setup verified successfully"})
 
@@ -169,7 +172,8 @@ def generate_recovery_codes():
 
     result = svc.generate_recovery_codes(user_id)
     if not result.get("success"):
-        return jsonify({"error": result.get("error", "Failed to generate codes"), "status": 500}), 500
+        logger.warning("Recovery code generation failed for user %s", user_id)
+        return jsonify({"error": "Failed to generate codes", "status": 500}), 500
 
     return jsonify({"codes": result.get("codes", [])})
 
@@ -183,7 +187,8 @@ def enable_mfa():
 
     result = svc.enable_mfa(user_id)
     if not result.get("success"):
-        return jsonify({"error": result.get("error", "Failed to enable MFA"), "status": 500}), 500
+        logger.warning("MFA enable failed for user %s", user_id)
+        return jsonify({"error": "Failed to enable MFA", "status": 500}), 500
 
     return jsonify({"message": "MFA enabled successfully"})
 
@@ -197,7 +202,8 @@ def disable_mfa():
 
     result = svc.disable_mfa(user_id)
     if not result.get("success"):
-        return jsonify({"error": result.get("error", "Failed to disable MFA"), "status": 500}), 500
+        logger.warning("MFA disable failed for user %s", user_id)
+        return jsonify({"error": "Failed to disable MFA", "status": 500}), 500
 
     return jsonify({"message": "MFA disabled successfully"})
 
@@ -211,7 +217,8 @@ def list_trusted_devices():
 
     result = svc.get_trusted_devices(user_id)
     if not result.get("success"):
-        return jsonify({"error": result.get("error", "Failed to get devices"), "status": 500}), 500
+        logger.warning("Failed to get trusted devices for user %s", user_id)
+        return jsonify({"error": "Failed to get devices", "status": 500}), 500
 
     return jsonify({"devices": result.get("devices", [])})
 
@@ -225,6 +232,7 @@ def revoke_trusted_device(device_id):
 
     result = svc.revoke_trusted_device(user_id, device_id)
     if not result.get("success"):
-        return jsonify({"error": result.get("error", "Failed to revoke device"), "status": 500}), 500
+        logger.warning("Failed to revoke device %s for user %s", device_id, user_id)
+        return jsonify({"error": "Failed to revoke device", "status": 500}), 500
 
-    return jsonify({"message": result.get("message", "Device trust revoked")})
+    return jsonify({"message": "Device trust revoked"})

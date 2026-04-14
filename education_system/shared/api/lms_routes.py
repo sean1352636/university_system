@@ -85,7 +85,7 @@ def list_connections():
         return jsonify({"connections": connections, "count": len(connections)})
     except Exception as exc:
         logger.exception("Failed to list LMS connections")
-        return _json_error(str(exc), 500)
+        return _json_error("Failed to list LMS connections", 500)
 
 
 @lms_bp.post("/connections")
@@ -126,10 +126,11 @@ def add_connection():
         )
         return jsonify({"id": connection_id, "message": "Connection added"}), 201
     except ValueError as exc:
-        return _json_error(str(exc))
+        logger.warning("Invalid LMS connection request: %s", exc)
+        return _json_error("Invalid connection configuration")
     except Exception as exc:
         logger.exception("Failed to add LMS connection")
-        return _json_error(str(exc), 500)
+        return _json_error("Failed to add LMS connection", 500)
 
 
 @lms_bp.delete("/connections/<int:connection_id>")
@@ -142,7 +143,7 @@ def remove_connection(connection_id: int):
         return jsonify({"message": f"Connection {connection_id} removed"})
     except Exception as exc:
         logger.exception("Failed to remove LMS connection %d", connection_id)
-        return _json_error(str(exc), 500)
+        return _json_error("Failed to remove connection", 500)
 
 
 @lms_bp.post("/connections/<int:connection_id>/test")
@@ -159,7 +160,7 @@ def test_connection(connection_id: int):
         return jsonify(result), status_code
     except Exception as exc:
         logger.exception("Connection test failed for id=%d", connection_id)
-        return _json_error(str(exc), 500)
+        return _json_error("Connection test failed", 500)
 
 
 @lms_bp.post("/connections/<int:connection_id>/sync")
@@ -188,7 +189,7 @@ def trigger_sync(connection_id: int):
         return jsonify(result), status_code
     except Exception as exc:
         logger.exception("Sync failed for connection id=%d", connection_id)
-        return _json_error(str(exc), 500)
+        return _json_error("Sync operation failed", 500)
 
 
 @lms_bp.get("/sync-log")
