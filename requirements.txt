@@ -77,7 +77,7 @@ defusedxml>=0.7.1              # Safe XML parsing (prevents XXE attacks)
 # ===============================
 # IMAGE PROCESSING & BARCODES
 # ===============================
-Pillow==12.1.1                 # Image processing library
+Pillow>=12.2.0                 # Image processing library
 python-barcode==0.16.1         # Barcode generation for library cards
 
 # ===============================
