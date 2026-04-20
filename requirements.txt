@@ -13,7 +13,7 @@
 # DATA PROCESSING & ANALYTICS
 # ===============================
 pandas==2.3.3                  # Data manipulation and analysis
-numpy==2.4.3                   # Numerical computing
+numpy==2.4.4                   # Numerical computing
 matplotlib==3.10.8             # Data visualization and plotting
 seaborn==0.13.2                # Statistical data visualization
 plotly==6.6.0                  # Interactive plots and dashboards
