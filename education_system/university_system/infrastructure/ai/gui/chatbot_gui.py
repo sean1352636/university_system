@@ -67,11 +67,24 @@ class ChatbotGUI(
         self.session_id = None
         self.conversation_active = False
 
-        # Use central authentication system
-        self.auth_system = get_auth()
+        # Prefer the auth instance the caller passed in (they've already
+        # authenticated through the main GUI); fall back to the central
+        # get_auth() so callers that don't wire one through still work.
+        self.auth_system = auth_system
+        if self.auth_system is None or not getattr(
+                self.auth_system, 'current_user', None):
+            try:
+                central = get_auth()
+            except Exception:
+                central = None
+            if central is not None and getattr(central, 'current_user', None):
+                self.auth_system = central
+            elif self.auth_system is None:
+                self.auth_system = central
 
         # Check authentication BEFORE creating GUI
-        if not self.auth_system.current_user:
+        if not self.auth_system or not getattr(
+                self.auth_system, 'current_user', None):
             messagebox.showerror(
                 _t("chatbot.auth_required_title", default="Authentication Required"),
                 _t("chatbot.auth_required_msg", default="Please log in through the main University System GUI first.\n\nRun: python run.py --gui")
