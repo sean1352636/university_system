@@ -261,54 +261,195 @@ except ImportError as e:
                 pass
             return False
 
+    def _safe_count(cursor, table):
+        try:
+            validate_table_name(table)
+            cursor.execute(f"SELECT COUNT(*) FROM {table}")
+            return cursor.fetchone()[0]
+        except Exception:
+            return 0
+
     def search_analytics_dashboard():
-        return "Analytics dashboard data would be displayed here..."
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            total = _safe_count(cursor, "search_analytics")
+            cursor.execute(
+                "SELECT search_type, COUNT(*) FROM search_analytics "
+                "GROUP BY search_type ORDER BY 2 DESC LIMIT 10"
+            )
+            by_type = cursor.fetchall()
+            cursor.execute(
+                "SELECT COALESCE(AVG(execution_time), 0), COALESCE(MAX(execution_time), 0) "
+                "FROM search_analytics"
+            )
+            avg_t, max_t = cursor.fetchone()
+            conn.close()
+            lines = [f"Search analytics dashboard (total searches: {total})"]
+            lines.append(f"  Avg execution: {float(avg_t or 0)*1000:.1f} ms | Max: {float(max_t or 0)*1000:.1f} ms")
+            if by_type:
+                lines.append("  By type:")
+                for stype, count in by_type:
+                    lines.append(f"    - {stype or '(unknown)'}: {count}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Analytics dashboard error: {e}"
 
     def student_demographics_reports():
-        """Generate demographics reports"""
-        return "Demographics analysis:\n- Total students: 5\n- Demographics breakdown would be displayed here..."
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            total = _safe_count(cursor, "students")
+            cursor.execute("SELECT COALESCE(gender, 'Unknown'), COUNT(*) FROM students GROUP BY gender")
+            by_gender = cursor.fetchall()
+            cursor.execute("SELECT COALESCE(course, 'Unknown'), COUNT(*) FROM students GROUP BY course")
+            by_course = cursor.fetchall()
+            conn.close()
+            lines = [f"Demographics analysis (total students: {total})", "  By gender:"]
+            for g, c in by_gender:
+                lines.append(f"    - {g}: {c}")
+            lines.append("  By course:")
+            for course, c in by_course:
+                lines.append(f"    - {course}: {c}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Demographics error: {e}"
 
     def academic_performance_analysis():
-        """Analyze academic performance"""
-        return "Academic performance analysis:\n- Performance metrics would be displayed here..."
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('student_modules','grades')")
+            tables = {row[0] for row in cursor.fetchall()}
+            if 'student_modules' in tables:
+                cursor.execute(
+                    "SELECT COALESCE(AVG(grade), 0), COUNT(*) FROM student_modules WHERE grade IS NOT NULL"
+                )
+                avg_grade, n = cursor.fetchone()
+                conn.close()
+                return f"Academic performance:\n  Graded enrollments: {n}\n  Average grade: {float(avg_grade or 0):.2f}"
+            conn.close()
+            return "Academic performance: no grade data tables available."
+        except Exception as e:
+            return f"Performance analysis error: {e}"
 
     def duplicate_detection():
-        """Detect duplicate student records"""
-        return "Duplicate detection results:\n- No duplicates found in current dataset..."
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT LOWER(TRIM(first_name||' '||last_name)) AS name_key, COUNT(*) "
+                "FROM students WHERE first_name IS NOT NULL AND last_name IS NOT NULL "
+                "GROUP BY name_key HAVING COUNT(*) > 1"
+            )
+            dups = cursor.fetchall()
+            conn.close()
+            if not dups:
+                return "Duplicate detection: no duplicate student names found."
+            lines = [f"Duplicate detection: {len(dups)} duplicate name group(s):"]
+            for name_key, c in dups[:25]:
+                lines.append(f"  - {name_key}: {c} records")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Duplicate detection error: {e}"
 
     def data_quality_reports():
-        """Generate data quality reports"""
-        return "Data quality assessment:\n- Database integrity: Good\n- Missing data: Minimal..."
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            total = _safe_count(cursor, "students")
+            cursor.execute(
+                "SELECT SUM(CASE WHEN email_address IS NULL OR email_address='' THEN 1 ELSE 0 END), "
+                "SUM(CASE WHEN dob IS NULL OR dob='' THEN 1 ELSE 0 END), "
+                "SUM(CASE WHEN course IS NULL OR course='' THEN 1 ELSE 0 END) FROM students"
+            )
+            missing_email, missing_dob, missing_course = cursor.fetchone()
+            conn.close()
+            return (
+                f"Data quality assessment (students: {total})\n"
+                f"  Missing email: {missing_email or 0}\n"
+                f"  Missing DOB: {missing_dob or 0}\n"
+                f"  Missing course: {missing_course or 0}"
+            )
+        except Exception as e:
+            return f"Data quality error: {e}"
 
     def generate_custom_reports():
-        """Generate custom reports"""
-        return "Custom report generation:\n- Report templates available\n- Custom reports would be generated here..."
+        return "Custom report generation: use reports menu to build SQL-based or template reports."
 
     def export_system_statistics():
-        """Export system statistics"""
-        return "System statistics:\n- Database size: Optimal\n- Performance metrics: Good..."
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            stats = {t: _safe_count(cursor, t) for t in ("students", "modules", "student_modules", "search_analytics")}
+            conn.close()
+            lines = ["System statistics:"]
+            for t, c in stats.items():
+                lines.append(f"  {t}: {c}")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Statistics error: {e}"
 
     def interactive_charts():
-        """Generate interactive charts"""
-        return "Chart data:\n- Interactive visualizations would be displayed here..."
+        return "Interactive charts: open the Visualization menu to generate charts from the loaded dataset."
 
     def view_search_audit_trail():
-        """View search audit trail"""
-        return "Audit trail:\n- Recent search activities would be logged here..."
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT COALESCE(timestamp, search_datetime, ''), COALESCE(user_id,''), "
+                "COALESCE(search_type,''), COALESCE(results_count, 0) "
+                "FROM search_analytics ORDER BY id DESC LIMIT 25"
+            )
+            rows = cursor.fetchall()
+            conn.close()
+            if not rows:
+                return "Audit trail: no search activity recorded yet."
+            lines = [f"Audit trail ({len(rows)} most recent):"]
+            for ts, user, stype, rc in rows:
+                lines.append(f"  [{ts}] {user or 'anon'} {stype} -> {rc} results")
+            return "\n".join(lines)
+        except Exception as e:
+            return f"Audit trail error: {e}"
 
     def manage_user_permissions():
-        """Manage user permissions"""
-        return "User permissions:\n- Permission management interface would be here..."
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT role, COUNT(*) FROM users GROUP BY role")
+            by_role = cursor.fetchall()
+            conn.close()
+            lines = ["User permissions (by role):"]
+            for role, c in by_role:
+                lines.append(f"  - {role or 'unspecified'}: {c}")
+            return "\n".join(lines) if by_role else "User permissions: no users found."
+        except Exception as e:
+            return f"User permissions error: {e}"
 
     def manage_scheduled_reports():
-        """Manage scheduled reports"""
-        return "Scheduled reports:\n- Report scheduling interface would be here..."
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='scheduled_reports'")
+            exists = cursor.fetchone() is not None
+            count = _safe_count(cursor, "scheduled_reports") if exists else 0
+            conn.close()
+            return f"Scheduled reports: {count} configured." if exists else "Scheduled reports: table not yet created."
+        except Exception as e:
+            return f"Scheduled reports error: {e}"
 
     def performance_optimization():
-        """Optimize system performance"""
-        return "Performance optimization:\n- System optimization completed..."
-
-    # Add other minimal functions as needed...
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("VACUUM")
+            cursor.execute("ANALYZE")
+            conn.commit()
+            conn.close()
+            return "Performance optimization: VACUUM and ANALYZE completed."
+        except Exception as e:
+            return f"Optimization error: {e}"
 
 # ---------------------------------------------------------------------------
 # Shared helpers for analytics table compatibility
@@ -1196,7 +1337,8 @@ class AdvancedSearchGUI:
         self.results_frame.rowconfigure(1, weight=1)
 
         self.results_tree = ttk.Treeview(
-            tree_container, columns=columns, show='headings', height=15
+            tree_container, columns=columns, show='headings', height=15,
+            selectmode='extended'
         )
 
         # Configure columns
@@ -1222,6 +1364,23 @@ class AdvancedSearchGUI:
 
         # Double-click event
         self.results_tree.bind('<Double-1>', self.show_student_details)
+
+        # Right-click context menu for bulk actions on selected rows
+        self.results_context_menu = tk.Menu(self.results_tree, tearoff=0)
+        self.results_context_menu.add_command(label="Select All",
+                                              command=self.select_all_results)
+        self.results_context_menu.add_separator()
+        self.results_context_menu.add_command(label="Copy IDs",
+                                              command=lambda: self.copy_selected_results_column(0))
+        self.results_context_menu.add_command(label="Copy Names",
+                                              command=lambda: self.copy_selected_results_column(1))
+        self.results_context_menu.add_command(label="Copy Emails",
+                                              command=lambda: self.copy_selected_results_column(2))
+        self.results_context_menu.add_separator()
+        self.results_context_menu.add_command(label="Export Selected to CSV…",
+                                              command=self.export_selected_results_csv)
+        self.results_tree.bind('<Button-3>', self._show_results_context_menu)
+        self.results_tree.bind('<Control-a>', lambda e: (self.select_all_results(), "break")[1])
     def create_pagination_controls(self):
         """Create pagination controls for results"""
         pagination_frame = ttk.Frame(self.results_frame)
@@ -1369,3 +1528,66 @@ class AdvancedSearchGUI:
             print_error(f"Error returning to main menu: {e}")
             import traceback
             traceback.print_exc()
+
+    def _show_results_context_menu(self, event):
+        """Post the right-click context menu on the results tree."""
+        try:
+            row = self.results_tree.identify_row(event.y)
+            if row and row not in self.results_tree.selection():
+                self.results_tree.selection_set(row)
+            self.results_context_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self.results_context_menu.grab_release()
+
+    def select_all_results(self):
+        """Select every row currently visible in the results tree."""
+        items = self.results_tree.get_children()
+        if items:
+            self.results_tree.selection_set(items)
+
+    def copy_selected_results_column(self, column_index: int):
+        """Copy a single column from the selected result rows to the clipboard."""
+        selection = self.results_tree.selection()
+        if not selection:
+            messagebox.showinfo("Copy", "No rows selected.")
+            return
+        values = []
+        for iid in selection:
+            row = self.results_tree.item(iid)['values']
+            if column_index < len(row) and row[column_index] not in ("", None):
+                values.append(str(row[column_index]))
+        if not values:
+            messagebox.showinfo("Copy", "No values found in the selected rows for that column.")
+            return
+        try:
+            self.master.clipboard_clear()
+            self.master.clipboard_append("\n".join(values))
+            self.master.update()
+            self.log_output(f"Copied {len(values)} value(s) to clipboard.")
+        except Exception as e:
+            messagebox.showerror("Copy failed", str(e))
+
+    def export_selected_results_csv(self):
+        """Export the currently selected result rows to a CSV file."""
+        selection = self.results_tree.selection()
+        if not selection:
+            messagebox.showinfo("Export Selected", "No rows selected.")
+            return
+        path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV", "*.csv")],
+            title="Export selected rows",
+        )
+        if not path:
+            return
+        try:
+            columns = self.results_tree['columns']
+            with open(path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(columns)
+                for iid in selection:
+                    writer.writerow(self.results_tree.item(iid)['values'])
+            self.log_output(f"Exported {len(selection)} selected row(s) to {path}")
+            messagebox.showinfo("Export Selected", f"Exported {len(selection)} row(s).")
+        except Exception as e:
+            messagebox.showerror("Export failed", str(e))

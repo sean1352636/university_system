@@ -875,6 +875,66 @@ def get_connection():
 
 from education_system.university_system.modules.shared.gui.advanced_search.base import AdvancedSearchGUI
 
+
+def _load_recent_search_terms(self, limit: int = 10):
+    """Return the most recent distinct search queries for the current user.
+
+    Falls back to the global history if no per-user rows exist. Returns [] when
+    the search_analytics table is empty or unavailable.
+    """
+    try:
+        conn = get_connection()
+        if conn is None:
+            return []
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(search_analytics)")
+        cols = {row[1] for row in cursor.fetchall()}
+        if not cols:
+            conn.close()
+            return []
+        query_col = "search_query" if "search_query" in cols else (
+            "search_criteria" if "search_criteria" in cols else None
+        )
+        if query_col is None:
+            conn.close()
+            return []
+
+        user_id = self._current_user_id()
+        sql = (
+            f"SELECT {query_col} FROM search_analytics "
+            f"WHERE {query_col} IS NOT NULL AND {query_col} != '' "
+            f"AND user_id = ? ORDER BY id DESC LIMIT ?"
+        )
+        cursor.execute(sql, (user_id, max(1, int(limit)) * 3))
+        rows = [r[0] for r in cursor.fetchall()]
+
+        if not rows:
+            sql = (
+                f"SELECT {query_col} FROM search_analytics "
+                f"WHERE {query_col} IS NOT NULL AND {query_col} != '' "
+                f"ORDER BY id DESC LIMIT ?"
+            )
+            cursor.execute(sql, (max(1, int(limit)) * 3,))
+            rows = [r[0] for r in cursor.fetchall()]
+
+        conn.close()
+
+        seen = set()
+        result = []
+        for term in rows:
+            t = str(term).strip()
+            if not t or t in seen:
+                continue
+            seen.add(t)
+            result.append(t[:80])
+            if len(result) >= limit:
+                break
+        return result
+    except Exception:
+        return []
+AdvancedSearchGUI._load_recent_search_terms = _load_recent_search_terms
+
+
 def show_favorites_manager(self):
     """Show favorites management interface"""
     dialog = tk.Toplevel(self.master)
@@ -1015,19 +1075,18 @@ def show_smart_suggestions(self):
     recent_frame = ttk.Frame(notebook, padding="10")
     notebook.add(recent_frame, text="Recent Searches")
 
-    recent_searches = [
-        "John Smith",
-        "CS101 module",
-        "Age between 20-25",
-        "Registration after 2024-01-01"
-    ]
-
     ttk.Label(recent_frame, text="Your recent searches:").pack(anchor='w', pady=(0, 10))
 
-    for search in recent_searches:
-        btn = ttk.Button(recent_frame, text=f"🔄 {search}",
-                        command=lambda s=search: self.execute_suggestion(s, dialog))
-        btn.pack(fill=tk.X, pady=2)
+    recent_searches = self._load_recent_search_terms(limit=10)
+
+    if not recent_searches:
+        ttk.Label(recent_frame, text="(no recorded search activity yet)",
+                  foreground="#888").pack(anchor='w', pady=2)
+    else:
+        for search in recent_searches:
+            btn = ttk.Button(recent_frame, text=f"🔄 {search}",
+                            command=lambda s=search: self.execute_suggestion(s, dialog))
+            btn.pack(fill=tk.X, pady=2)
 
     # Recommended tab
     recommended_frame = ttk.Frame(notebook, padding="10")

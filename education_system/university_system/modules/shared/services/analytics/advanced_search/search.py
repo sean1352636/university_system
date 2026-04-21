@@ -4,7 +4,9 @@ import time
 from datetime import datetime, timedelta
 from difflib import SequenceMatcher
 
-from education_system.university_system.core.sql_safety import escape_like
+from education_system.university_system.core.sql_safety import (
+    escape_like, validate_table_name, validate_column_name,
+)
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.services.analytics.advanced_search import _globals
 from education_system.university_system.modules.shared.services.analytics.advanced_search.display import display_search_results
@@ -12,86 +14,166 @@ from education_system.university_system.modules.shared.services.analytics.advanc
 from education_system.university_system.modules.shared.services.analytics.advanced_search.admin import audit_log
 
 
+# Entity search configurations, mirroring the GUI multi-entity form.
+# Each field: (label, prompt_key, op, column, choices_or_None)
+#   op: "like" | "eq" | "ge" | "le"
+ENTITY_SEARCH_CONFIGS = {
+    "students": {
+        "table": "students",
+        "display": "Students",
+        "fields": [
+            ("Student ID", "student_id", "like", "student_id", None),
+            ("First Name", "first_name", "like", "first_name", None),
+            ("Last Name", "last_name", "like", "last_name", None),
+            ("Gender", "gender", "eq", "gender", ["male", "female", "other"]),
+            ("Course", "course", "like", "course", None),
+            ("Minimum Age", "min_age", "ge", "age", None),
+            ("Maximum Age", "max_age", "le", "age", None),
+        ],
+    },
+    "staff": {
+        "table": "staff_profiles",
+        "display": "Staff",
+        "fields": [
+            ("Employee ID", "employee_id", "like", "employee_id", None),
+            ("User ID", "user_id", "like", "user_id", None),
+            ("Department", "department", "like", "department", None),
+            ("Job Title", "job_title", "like", "job_title", None),
+            ("Employment Type", "employment_type", "eq", "employment_type",
+                ["full-time", "part-time", "contract", "temporary"]),
+        ],
+    },
+    "modules": {
+        "table": "modules",
+        "display": "Modules",
+        "fields": [
+            ("Module Code", "module_code", "like", "module_code", None),
+            ("Module Name", "module_name", "like", "module_name", None),
+            ("Module Type", "module_type", "like", "module_type", None),
+            ("Course", "course", "like", "course", None),
+            ("Semester", "semester", "like", "semester", None),
+        ],
+    },
+    "courses": {
+        "table": "courses",
+        "display": "Courses",
+        "fields": [
+            ("Course Code", "course_code", "like", "course_code", None),
+            ("Course Name", "name", "like", "name", None),
+            ("Department", "department", "like", "department", None),
+            ("Level", "level", "like", "level", None),
+        ],
+    },
+}
+
+
+def _prompt_entity_type():
+    """Prompt the user to pick an entity to search. Returns the config key."""
+    keys = list(ENTITY_SEARCH_CONFIGS.keys())
+    print("\nEntity type:")
+    for i, key in enumerate(keys, 1):
+        print(f"  {i}. {ENTITY_SEARCH_CONFIGS[key]['display']}")
+    raw = input(f"Select (1-{len(keys)}) [1]: ").strip() or "1"
+    try:
+        idx = int(raw) - 1
+        if 0 <= idx < len(keys):
+            return keys[idx]
+    except ValueError:
+        pass
+    print("Invalid choice — defaulting to Students.")
+    return "students"
+
+
 @audit_log
 def multi_criteria_search():
-    """Enhanced multi-criteria search with caching"""
-    print("\nMulti-Criteria Student Search")
+    """Enhanced multi-entity multi-criteria search with caching."""
+    entity_key = _prompt_entity_type()
+    config = ENTITY_SEARCH_CONFIGS[entity_key]
+    print(f"\nMulti-Criteria {config['display']} Search")
     print("Enter search criteria (leave blank to ignore):")
 
-    # Get search criteria from user
     criteria = {}
-    criteria['student_id'] = input("Student ID: ").strip()
-    criteria['first_name'] = input("First Name: ").strip()
-    criteria['last_name'] = input("Last Name: ").strip()
-    criteria['gender'] = input("Gender (male/female/other): ").strip().lower()
-    criteria['course'] = input("Course (CS/DS): ").strip().upper()
+    for label, key, op, _col, choices in config["fields"]:
+        hint = f" ({'/'.join(choices)})" if choices else ""
+        raw = input(f"{label}{hint}: ").strip()
+        if not raw:
+            continue
+        if op in ("ge", "le"):
+            try:
+                criteria[key] = int(raw)
+            except ValueError:
+                print(f"Invalid number for {label}; ignoring.")
+                continue
+        elif choices and raw.lower() not in [c.lower() for c in choices]:
+            print(f"Invalid {label}. Expected one of: {', '.join(choices)}.")
+            return
+        else:
+            criteria[key] = raw
 
-    age_min = input("Minimum Age: ").strip()
-    age_max = input("Maximum Age: ").strip()
-
-    # Validate inputs
-    if criteria['gender'] and criteria['gender'] not in ['male', 'female', 'other']:
-        print("Invalid gender. Please enter 'male', 'female', or 'other'.")
+    if not criteria:
+        print("No criteria entered — aborting.")
         return
 
-    if criteria['course'] and criteria['course'] not in ['CS', 'DS']:
-        print("Invalid course. Please enter 'CS' or 'DS'.")
-        return
-
-    try:
-        criteria['age_min'] = int(age_min) if age_min else None
-        criteria['age_max'] = int(age_max) if age_max else None
-    except ValueError:
-        print("Invalid age. Please enter a valid number.")
-        return
-
-    # Check cache first
-    cache_key = hashlib.sha256(str(criteria).encode()).hexdigest()
+    cache_key = hashlib.sha256(f"{entity_key}:{criteria}".encode()).hexdigest()
     if cache_key in _globals.search_cache:
         print("📦 Loading results from cache...")
         results = _globals.search_cache[cache_key]
-        log_search("multi_criteria_cached", criteria, len(results))
+        log_search(f"multi_criteria_{entity_key}_cached", criteria, len(results))
         display_search_results(results)
         return
 
-    # Build the SQL query based on provided criteria
-    query = "SELECT * FROM students WHERE 1=1"
+    field_specs = {f[1]: f for f in config["fields"]}
+    table = config["table"]
+
+    try:
+        validate_table_name(table)
+    except Exception as e:
+        print(f"Invalid table for entity '{entity_key}': {e}")
+        return
+
+    query = f"SELECT * FROM {table} WHERE 1=1"  # nosec B608 - table validated
     params = []
-
-    for key, value in criteria.items():
-        if value and key not in ['age_min', 'age_max']:
-            if key in ['student_id', 'first_name', 'last_name']:
-                query += f" AND LOWER({key}) LIKE LOWER(?)"
-                params.append(f"%{escape_like(value)}%")
-            else:
-                query += f" AND LOWER({key}) = LOWER(?)"
-                params.append(value)
-
-    if criteria['age_min'] is not None:
-        query += " AND age >= ?"
-        params.append(criteria['age_min'])
-
-    if criteria['age_max'] is not None:
-        query += " AND age <= ?"
-        params.append(criteria['age_max'])
-
-    # Execute the search
     try:
         conn = get_connection()
         cursor = conn.cursor()
+
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?", (table,))
+        if cursor.fetchone() is None:
+            print(f"Table '{table}' does not exist in the current database.")
+            conn.close()
+            return
+
+        cursor.execute(f"PRAGMA table_info({table})")
+        available_cols = {row[1] for row in cursor.fetchall()}
+
+        for key, value in criteria.items():
+            spec = field_specs.get(key)
+            if not spec:
+                continue
+            _label, _k, op, column, _choices = spec
+            if column not in available_cols:
+                continue
+            validate_column_name(column)
+            if op == "like":
+                query += f" AND LOWER({column}) LIKE LOWER(?)"
+                params.append(f"%{escape_like(str(value))}%")
+            elif op == "eq":
+                query += f" AND LOWER({column}) = LOWER(?)"
+                params.append(str(value))
+            elif op == "ge":
+                query += f" AND {column} >= ?"
+                params.append(int(value))
+            elif op == "le":
+                query += f" AND {column} <= ?"
+                params.append(int(value))
 
         start_time = time.time()
         cursor.execute(query, params)
         results = cursor.fetchall()
         execution_time = time.time() - start_time
 
-        # Cache results
         _globals.search_cache[cache_key] = results
-
-        # Log search
-        log_search("multi_criteria", criteria, len(results))
-
-        # Display and store results
+        log_search(f"multi_criteria_{entity_key}", criteria, len(results))
         display_search_results(results)
         conn.close()
 

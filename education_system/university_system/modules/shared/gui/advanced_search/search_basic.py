@@ -905,70 +905,145 @@ def _run_profile_search(self, criteria: Dict[str, Any]):
         return []
 AdvancedSearchGUI._run_profile_search = _run_profile_search
 
+# Entity search configurations. Each field: (key, label, op, column, widget, options)
+#   op: "like" | "eq" | "ge" | "le"
+#   widget: "entry" | "combo"
+ENTITY_SEARCH_CONFIGS = {
+    "students": {
+        "table": "students",
+        "display": _t('advanced_search.entity.students') if callable(_t) else "Students",
+        "fields": [
+            ("student_id", _t('advanced_search.student_id'), "like", "student_id", "entry", None),
+            ("first_name", _t('advanced_search.first_name'), "like", "first_name", "entry", None),
+            ("last_name", _t('advanced_search.last_name'), "like", "last_name", "entry", None),
+            ("email", _t('advanced_search.email'), "like", "email_address", "entry", None),
+            ("gender", _t('advanced_search.gender'), "eq", "gender", "combo", ["", "Male", "Female", "Other"]),
+            ("course", _t('advanced_search.course'), "like", "course", "entry", None),
+            ("min_age", _t('advanced_search.min_age'), "ge", "age", "entry", None),
+            ("max_age", _t('advanced_search.max_age'), "le", "age", "entry", None),
+        ],
+    },
+    "staff": {
+        "table": "staff_profiles",
+        "display": "Staff",
+        "fields": [
+            ("employee_id", "Employee ID", "like", "employee_id", "entry", None),
+            ("user_id", "User ID", "like", "user_id", "entry", None),
+            ("department", "Department", "like", "department", "entry", None),
+            ("job_title", "Job Title", "like", "job_title", "entry", None),
+            ("employment_type", "Employment Type", "eq", "employment_type", "combo",
+                ["", "full-time", "part-time", "contract", "temporary"]),
+        ],
+    },
+    "modules": {
+        "table": "modules",
+        "display": "Modules",
+        "fields": [
+            ("module_code", "Module Code", "like", "module_code", "entry", None),
+            ("module_name", "Module Name", "like", "module_name", "entry", None),
+            ("module_type", "Module Type", "like", "module_type", "entry", None),
+            ("course", "Course", "like", "course", "entry", None),
+            ("semester", "Semester", "like", "semester", "entry", None),
+        ],
+    },
+    "courses": {
+        "table": "courses",
+        "display": "Courses",
+        "fields": [
+            ("course_code", "Course Code", "like", "course_code", "entry", None),
+            ("name", "Course Name", "like", "name", "entry", None),
+            ("department", "Department", "like", "department", "entry", None),
+            ("level", "Level", "like", "level", "entry", None),
+        ],
+    },
+}
+
+
+def _table_exists(cursor, table_name):
+    try:
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name = ?", (table_name,))
+        return cursor.fetchone() is not None
+    except Exception:
+        return False
+
+
+def _table_columns(cursor, table_name):
+    try:
+        validate_table_name(table_name)
+        cursor.execute(f"PRAGMA table_info({table_name})")
+        return {row[1] for row in cursor.fetchall()}
+    except Exception:
+        return set()
+
+
 def create_search_form(self):
-    """Create a comprehensive search form"""
-    # Clear current content and create search form
+    """Create a comprehensive multi-entity search form."""
     search_window = tk.Toplevel(self.master)
     search_window.title(f"🔍 {_t('advanced_search.multi_criteria_search')}")
-    search_window.geometry("600x500")
+    search_window.geometry("640x560")
     search_window.transient(self.master)
     search_window.grab_set()
 
     main_frame = ttk.Frame(search_window, padding="20")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Title
-    title_label = ttk.Label(main_frame, text=_t('advanced_search.search_form_title'), style='Title.TLabel')
-    title_label.pack(pady=(0, 20))
+    ttk.Label(main_frame, text=_t('advanced_search.search_form_title'), style='Title.TLabel').pack(pady=(0, 12))
 
-    # Search criteria frame
+    # Entity selector
+    entity_frame = ttk.Frame(main_frame)
+    entity_frame.pack(fill=tk.X, pady=(0, 10))
+    ttk.Label(entity_frame, text="Entity Type:").pack(side=tk.LEFT, padx=(0, 8))
+    self.search_entity_type = tk.StringVar(value="students")
+    entity_combo = ttk.Combobox(
+        entity_frame,
+        textvariable=self.search_entity_type,
+        values=list(ENTITY_SEARCH_CONFIGS.keys()),
+        state='readonly',
+        width=18,
+    )
+    entity_combo.pack(side=tk.LEFT)
+
     criteria_frame = ttk.LabelFrame(main_frame, text=_t('advanced_search.search_criteria'), padding="10")
     criteria_frame.pack(fill=tk.X, pady=(0, 20))
 
-    # Search fields
     self.search_vars = {}
-    fields = [
-        (_t('advanced_search.student_id'), "student_id"),
-        (_t('advanced_search.first_name'), "first_name"),
-        (_t('advanced_search.last_name'), "last_name"),
-        (_t('advanced_search.email'), "email"),
-        (_t('advanced_search.gender'), "gender"),
-        (_t('advanced_search.course'), "course"),
-        (_t('advanced_search.min_age'), "min_age"),
-        (_t('advanced_search.max_age'), "max_age")
-    ]
 
-    for i, (label, var_name) in enumerate(fields):
-        row = i // 2
-        col = (i % 2) * 2
+    def rebuild_fields(*_):
+        for child in criteria_frame.winfo_children():
+            child.destroy()
+        self.search_vars = {}
+        entity = self.search_entity_type.get() or "students"
+        config = ENTITY_SEARCH_CONFIGS.get(entity, ENTITY_SEARCH_CONFIGS["students"])
+        for i, (key, label, _op, _col, widget, options) in enumerate(config["fields"]):
+            row = i // 2
+            col = (i % 2) * 2
+            ttk.Label(criteria_frame, text=f"{label}:").grid(row=row, column=col, sticky=tk.W, padx=(0, 5), pady=2)
+            var = tk.StringVar()
+            self.search_vars[key] = var
+            if widget == "combo":
+                cb = ttk.Combobox(criteria_frame, textvariable=var, values=options or [""],
+                                  width=15, state='readonly')
+                cb.grid(row=row, column=col + 1, sticky=(tk.W, tk.E), padx=(0, 10), pady=2)
+            else:
+                ttk.Entry(criteria_frame, textvariable=var, width=18).grid(
+                    row=row, column=col + 1, sticky=(tk.W, tk.E), padx=(0, 10), pady=2
+                )
+        for i in range(2):
+            criteria_frame.columnconfigure(i * 2 + 1, weight=1)
 
-        ttk.Label(criteria_frame, text=f"{label}:").grid(row=row, column=col, sticky=tk.W, padx=(0, 5), pady=2)
+    entity_combo.bind("<<ComboboxSelected>>", rebuild_fields)
+    rebuild_fields()
 
-        if var_name in ["gender", "course"]:
-            # Dropdown for specific fields
-            self.search_vars[var_name] = tk.StringVar()
-            values = ["", "male", "female", "other"] if var_name == "gender" else ["", "CS", "DS"]
-            combo = ttk.Combobox(criteria_frame, textvariable=self.search_vars[var_name],
-                               values=values, width=15, state='readonly')
-            combo.grid(row=row, column=col+1, sticky=(tk.W, tk.E), padx=(0, 10), pady=2)
-        else:
-            # Regular entry fields
-            self.search_vars[var_name] = tk.StringVar()
-            entry = ttk.Entry(criteria_frame, textvariable=self.search_vars[var_name], width=18)
-            entry.grid(row=row, column=col+1, sticky=(tk.W, tk.E), padx=(0, 10), pady=2)
-
-    # Configure grid weights
-    for i in range(2):
-        criteria_frame.columnconfigure(i*2+1, weight=1)
-
-    # Buttons frame
     button_frame = ttk.Frame(main_frame)
     button_frame.pack(fill=tk.X)
 
-    ttk.Button(button_frame, text=f"🔍 {_t('advanced_search.search_button')}", command=lambda: self.execute_search(search_window),
-              style='Action.TButton').pack(side=tk.LEFT, padx=(0, 10))
-    ttk.Button(button_frame, text=f"🔄 {_t('advanced_search.clear_button')}", command=self.clear_search_form).pack(side=tk.LEFT, padx=(0, 10))
-    ttk.Button(button_frame, text=f"❌ {_t('advanced_search.cancel_button')}", command=search_window.destroy).pack(side=tk.RIGHT)
+    ttk.Button(button_frame, text=f"🔍 {_t('advanced_search.search_button')}",
+               command=lambda: self.execute_search(search_window),
+               style='Action.TButton').pack(side=tk.LEFT, padx=(0, 10))
+    ttk.Button(button_frame, text=f"🔄 {_t('advanced_search.clear_button')}",
+               command=self.clear_search_form).pack(side=tk.LEFT, padx=(0, 10))
+    ttk.Button(button_frame, text=f"❌ {_t('advanced_search.cancel_button')}",
+               command=search_window.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.create_search_form = create_search_form
 
 def execute_search(self, search_window):
@@ -1161,28 +1236,55 @@ def execute_search_with_logging(self, search_window):
 AdvancedSearchGUI.execute_search_with_logging = execute_search_with_logging
 
 def perform_database_search(self, criteria):
-    """Perform the actual database search"""
+    """Perform a multi-entity database search based on the active entity type."""
+    entity = getattr(self, 'search_entity_type', None)
+    entity_key = entity.get() if entity is not None else "students"
+    config = ENTITY_SEARCH_CONFIGS.get(entity_key, ENTITY_SEARCH_CONFIGS["students"])
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Build query
-        query = "SELECT * FROM students WHERE 1=1"
-        params = []
+        table = config["table"]
+        if not _table_exists(cursor, table):
+            conn.close()
+            raise Exception(f"Table '{table}' does not exist in the current database.")
+
+        # Validate table and gather available columns for safe query construction.
+        validate_table_name(table)
+        available_cols = _table_columns(cursor, table)
+
+        field_specs = {f[0]: f for f in config["fields"]}
+
+        query = f"SELECT * FROM {table} WHERE 1=1"  # nosec B608 - table validated
+        params: list = []
 
         for key, value in criteria.items():
-            if key in ['student_id', 'first_name', 'last_name', 'email']:
-                query += f" AND LOWER({key}) LIKE LOWER(?)"
-                params.append(f"%{escape_like(value)}%")
-            elif key in ['gender', 'course']:
-                query += f" AND LOWER({key}) = LOWER(?)"
-                params.append(value)
-            elif key == 'min_age':
-                query += " AND age >= ?"
-                params.append(int(value))
-            elif key == 'max_age':
-                query += " AND age <= ?"
-                params.append(int(value))
+            spec = field_specs.get(key)
+            if not spec:
+                continue
+            _k, _label, op, column, _widget, _opts = spec
+            if column not in available_cols:
+                continue
+            validate_column_name(column)
+            if op == "like":
+                query += f" AND LOWER({column}) LIKE LOWER(?)"
+                params.append(f"%{escape_like(str(value))}%")
+            elif op == "eq":
+                query += f" AND LOWER({column}) = LOWER(?)"
+                params.append(str(value))
+            elif op == "ge":
+                try:
+                    params.append(int(value))
+                except (TypeError, ValueError):
+                    continue
+                query += f" AND {column} >= ?"
+            elif op == "le":
+                try:
+                    params.append(int(value))
+                except (TypeError, ValueError):
+                    continue
+                query += f" AND {column} <= ?"
 
         cursor.execute(query, params)
         results = cursor.fetchall()

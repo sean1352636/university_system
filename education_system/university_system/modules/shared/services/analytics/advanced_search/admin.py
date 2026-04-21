@@ -23,29 +23,84 @@ def audit_log(func):
     return wrapper
 
 def view_search_audit_trail():
-    """View search audit trail"""
+    """View search audit trail backed by the search_analytics table."""
     print("\n🔍 SEARCH AUDIT TRAIL")
-    print("="*50)
+    print("=" * 50)
 
-    # Read from log file
+    limit_raw = input("How many recent entries to show [50]: ").strip()
+    try:
+        limit = max(1, min(1000, int(limit_raw))) if limit_raw else 50
+    except ValueError:
+        limit = 50
+    user_filter = input("Filter by user (blank for all): ").strip()
+
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(search_analytics)")
+        cols = {row[1] for row in cursor.fetchall()}
+        if not cols:
+            print("search_analytics table is not initialized yet.")
+            conn.close()
+            return _fallback_audit_log_file()
+
+        ts_col = "timestamp" if "timestamp" in cols else ("search_datetime" if "search_datetime" in cols else "NULL")
+        query_col = "search_query" if "search_query" in cols else ("search_criteria" if "search_criteria" in cols else "NULL")
+        results_col = "results_count" if "results_count" in cols else ("result_count" if "result_count" in cols else "NULL")
+
+        sql = (
+            f"SELECT COALESCE({ts_col}, ''), COALESCE(user_id, ''), COALESCE(search_type, ''), "
+            f"COALESCE({query_col}, ''), COALESCE({results_col}, 0), COALESCE(execution_time, 0) "
+            f"FROM search_analytics"
+        )
+        params = []
+        if user_filter:
+            sql += " WHERE user_id LIKE ?"
+            params.append(f"%{user_filter}%")
+        sql += " ORDER BY id DESC LIMIT ?"
+        params.append(limit)
+
+        cursor.execute(sql, params)
+        rows = cursor.fetchall()
+        conn.close()
+
+        if not rows:
+            print("No matching audit entries found.")
+            return
+
+        print(f"\n{'Timestamp':<20} {'User':<16} {'Type':<18} {'Results':<8} {'Exec(ms)':<10} Query")
+        print("-" * 100)
+        for ts, user, stype, query, rcount, etime in rows:
+            try:
+                exec_ms = f"{float(etime) * 1000:.1f}"
+            except (TypeError, ValueError):
+                exec_ms = "0.0"
+            query_short = (query or "")[:60]
+            print(f"{str(ts)[:19]:<20} {(user or 'anon')[:15]:<16} {(stype or '')[:17]:<18} "
+                  f"{int(rcount):<8} {exec_ms:<10} {query_short}")
+
+        print(f"\n{len(rows)} entries shown.")
+
+    except Exception as e:
+        print(f"Error reading audit trail from database: {e}")
+        _fallback_audit_log_file()
+
+
+def _fallback_audit_log_file():
+    """Fallback: print tail of the audit log file if it exists."""
     try:
         if os.path.exists('search_audit.log'):
-            with open('refactored/core/logs/search_audit.log', 'r') as f:
+            with open('search_audit.log', 'r') as f:
                 lines = f.readlines()
-
-            # Show last 20 entries
             recent_lines = lines[-20:] if len(lines) > 20 else lines
-
-            print("Recent search activities:")
+            print("\nRecent audit log file entries:")
             print("-" * 80)
-
             for line in recent_lines:
                 print(line.strip())
         else:
-            print("No audit log found.")
-
+            print("No audit log file found.")
     except Exception as e:
-        print(f"Error reading audit log: {e}")
+        print(f"Error reading audit log file: {e}")
 
 def manage_user_permissions():
     """Manage user permissions (admin feature)"""

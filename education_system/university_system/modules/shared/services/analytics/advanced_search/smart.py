@@ -4,9 +4,64 @@ from education_system.university_system.modules.shared.utils.sql_safety import (
     validate_field_for_query,
     SQLIdentifierError,
 )
+from education_system.university_system.modules.shared.services.analytics.advanced_search import _globals
 from education_system.university_system.modules.shared.services.analytics.advanced_search.display import display_search_results
 from education_system.university_system.modules.shared.services.analytics.advanced_search.system import log_search
 from education_system.university_system.modules.shared.services.analytics.advanced_search.admin import audit_log
+
+
+def _load_recent_search_terms(limit=10):
+    """Return the most recent distinct search queries for the current user."""
+    try:
+        conn = get_connection()
+        if conn is None:
+            return []
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(search_analytics)")
+        cols = {row[1] for row in cursor.fetchall()}
+        if not cols:
+            conn.close()
+            return []
+        query_col = "search_query" if "search_query" in cols else (
+            "search_criteria" if "search_criteria" in cols else None
+        )
+        if query_col is None:
+            conn.close()
+            return []
+
+        user_id = str(getattr(_globals, "current_user", None) or "cli_user")
+        sql = (
+            f"SELECT {query_col} FROM search_analytics "
+            f"WHERE {query_col} IS NOT NULL AND {query_col} != '' "
+            f"AND user_id = ? ORDER BY id DESC LIMIT ?"
+        )
+        cursor.execute(sql, (user_id, max(1, int(limit)) * 3))
+        rows = [r[0] for r in cursor.fetchall()]
+
+        if not rows:
+            sql = (
+                f"SELECT {query_col} FROM search_analytics "
+                f"WHERE {query_col} IS NOT NULL AND {query_col} != '' "
+                f"ORDER BY id DESC LIMIT ?"
+            )
+            cursor.execute(sql, (max(1, int(limit)) * 3,))
+            rows = [r[0] for r in cursor.fetchall()]
+
+        conn.close()
+
+        seen = set()
+        result = []
+        for term in rows:
+            t = str(term).strip()
+            if not t or t in seen:
+                continue
+            seen.add(t)
+            result.append(t[:80])
+            if len(result) >= limit:
+                break
+        return result
+    except Exception:
+        return []
 
 
 @audit_log
@@ -109,7 +164,18 @@ def smart_suggestions():
         for i, (description, query) in enumerate(suggestions, 1):
             print(f"{i}. {description}")
 
-        choice = input("\nSelect suggestion (1-5) or press Enter to skip: ").strip()
+        # Append user's own recent searches from the search_analytics table.
+        recent_terms = _load_recent_search_terms(limit=5)
+        if recent_terms:
+            print("\n🕘 Your recent searches:")
+            print("-" * 50)
+            for j, term in enumerate(recent_terms, len(suggestions) + 1):
+                print(f"{j}. {term}  (re-run as text search)")
+        else:
+            print("\n🕘 Your recent searches: (none recorded yet)")
+
+        max_choice = len(suggestions) + len(recent_terms)
+        choice = input(f"\nSelect option (1-{max_choice}) or press Enter to skip: ").strip()
 
         if choice:
             try:
@@ -131,6 +197,22 @@ def smart_suggestions():
                             print(result)
                     else:
                         display_search_results(results)
+                elif len(suggestions) <= index < len(suggestions) + len(recent_terms):
+                    term = recent_terms[index - len(suggestions)]
+                    print(f"\nRe-running recent search: {term}")
+                    like = f"%{term}%"
+                    cursor.execute(
+                        "SELECT * FROM students WHERE "
+                        "LOWER(first_name || ' ' || last_name) LIKE LOWER(?) "
+                        "OR LOWER(email_address) LIKE LOWER(?) "
+                        "OR LOWER(student_id) LIKE LOWER(?)",
+                        (like, like, like),
+                    )
+                    results = cursor.fetchall()
+                    log_search("recent_search_rerun", {"term": term}, len(results))
+                    display_search_results(results)
+                else:
+                    print("Invalid selection.")
 
             except ValueError:
                 print("Invalid selection.")

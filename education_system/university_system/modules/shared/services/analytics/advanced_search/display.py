@@ -1,4 +1,5 @@
 """Result display, student detail view, academic history, and email simulation."""
+import csv
 import logging
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
@@ -6,8 +7,110 @@ from education_system.university_system.modules.shared.services.analytics.advanc
 from education_system.university_system.modules.shared.services.analytics.advanced_search.export import export_single_student
 
 
+def _parse_row_selection(raw, max_row):
+    """Parse a selection string like '1-3,5,8' into a sorted unique list of 0-based indices.
+
+    Returns [] on empty input and raises ValueError on malformed input.
+    """
+    raw = (raw or "").strip()
+    if not raw:
+        return []
+    if raw.lower() == "all":
+        return list(range(max_row))
+    picked = set()
+    for part in raw.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        if "-" in part:
+            lo_s, hi_s = part.split("-", 1)
+            lo, hi = int(lo_s), int(hi_s)
+            if lo > hi:
+                lo, hi = hi, lo
+            for i in range(lo, hi + 1):
+                if 1 <= i <= max_row:
+                    picked.add(i - 1)
+        else:
+            i = int(part)
+            if 1 <= i <= max_row:
+                picked.add(i - 1)
+    return sorted(picked)
+
+
+def _copy_column(rows, column_index, label):
+    """Print a column's values one-per-line and as a comma-joined list for easy terminal copy."""
+    values = []
+    for r in rows:
+        if column_index < len(r) and r[column_index] not in (None, ""):
+            values.append(str(r[column_index]))
+    if not values:
+        print(f"No {label} values found in the selected rows.")
+        return
+    print(f"\n📋 {label} ({len(values)} value(s)) — one per line:")
+    for v in values:
+        print(v)
+    print(f"\nComma-joined: {', '.join(values)}")
+
+
+def _export_rows_csv(rows):
+    """Export the provided rows to a user-supplied CSV path."""
+    if not rows:
+        print("No rows to export.")
+        return
+    path = input("CSV path [selected_results.csv]: ").strip() or "selected_results.csv"
+    try:
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                "student_id", "email", "title", "first_name", "middle_name",
+                "last_name", "gender", "dob", "age", "course", "registration",
+            ])
+            for r in rows:
+                writer.writerow(r[:11])
+        print(f"✅ Exported {len(rows)} row(s) to {path}")
+    except Exception as e:
+        print(f"❌ Export failed: {e}")
+
+
+def _bulk_actions_menu(results):
+    """Offer bulk actions over a user-selected subset of results."""
+    print(f"\nSelect rows (e.g. '1-3,5,8' or 'all') from 1..{len(results)}:")
+    raw = input("Rows: ").strip()
+    try:
+        indices = _parse_row_selection(raw, len(results))
+    except ValueError:
+        print("Invalid row selection.")
+        return
+    if not indices:
+        print("No valid rows selected.")
+        return
+    subset = [results[i] for i in indices]
+    print(f"Selected {len(subset)} row(s).")
+
+    print("\nBulk actions:")
+    print("  1. Copy IDs")
+    print("  2. Copy Emails")
+    print("  3. Copy Names")
+    print("  4. Export selected to CSV")
+    print("  Enter) Cancel")
+    action = input("Action: ").strip()
+    if action == "1":
+        _copy_column(subset, 0, "IDs")
+    elif action == "2":
+        _copy_column(subset, 1, "Emails")
+    elif action == "3":
+        for r in subset:
+            fn = r[3] if len(r) > 3 else ""
+            ln = r[5] if len(r) > 5 else ""
+            print(f"{fn} {ln}".strip())
+    elif action == "4":
+        _export_rows_csv(subset)
+    else:
+        print("Cancelled.")
+
+
 def display_search_results(results):
-    """Enhanced search results display with pagination and export options"""
+    """Enhanced search results display with pagination and bulk actions."""
     if not results:
         print("No matching records found.")
         _globals.last_search_results = []
@@ -30,11 +133,18 @@ def display_search_results(results):
 
         for i in range(start_idx, end_idx):
             student = results[i]
-            print(f"\n{i+1}. Student ID: {student[0]}")
-            print(f"   Name: {student[2]} {student[3]} {student[4] or ''} {student[5]}")
-            print(f"   Email: {student[1]}")
-            print(f"   Gender: {student[6]} | Age: {student[8]} | Course: {student[9]}")
-            print(f"   Registration: {student[10]}")
+            # Guard against rows from non-student entity searches (shorter tuples).
+            def _col(idx, default=""):
+                return student[idx] if idx < len(student) and student[idx] is not None else default
+            print(f"\n{i+1}. ID: {_col(0)}")
+            if len(student) >= 6:
+                print(f"   Name: {_col(2)} {_col(3)} {_col(4, '')} {_col(5)}")
+            if len(student) >= 2:
+                print(f"   Email: {_col(1)}")
+            if len(student) >= 10:
+                print(f"   Gender: {_col(6)} | Age: {_col(8)} | Course: {_col(9)}")
+            if len(student) >= 11:
+                print(f"   Registration: {_col(10)}")
 
         # Navigation options
         print(f"\nOptions:")
@@ -46,9 +156,10 @@ def display_search_results(results):
 
         options.extend([
             "d) View detailed info",
-            "e) Export results",
+            "e) Export all results",
+            "b) Bulk actions on selected rows",
             "s) Save search",
-            "Enter) Continue"
+            "Enter) Continue",
         ])
 
         print(" | ".join(options))
@@ -71,6 +182,8 @@ def display_search_results(results):
         elif choice == 'e':
             from education_system.university_system.modules.shared.services.analytics.advanced_search.bulk_ops import save_last_search_results
             save_last_search_results()
+        elif choice == 'b':
+            _bulk_actions_menu(results)
         elif choice == 's':
             from education_system.university_system.modules.shared.services.analytics.advanced_search.saved_searches import save_search_profile
             save_search_profile()

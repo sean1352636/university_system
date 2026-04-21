@@ -846,8 +846,33 @@ def interactive_charts():
     return "Chart data:\n- Student enrollment trends\n- Performance metrics visualization\n- Use Analytics Dashboard for visual charts"
 
 def view_search_audit_trail():
-    """View search audit trail"""
-    return "Audit trail:\n- Recent search activities logged\n- System access monitored"
+    """Return a text summary of recent search_analytics rows."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(search_analytics)")
+        cols = {row[1] for row in cursor.fetchall()}
+        if not cols:
+            conn.close()
+            return "Audit trail: search_analytics table not initialized."
+        ts_col = "timestamp" if "timestamp" in cols else ("search_datetime" if "search_datetime" in cols else "NULL")
+        q_col = "search_query" if "search_query" in cols else ("search_criteria" if "search_criteria" in cols else "NULL")
+        r_col = "results_count" if "results_count" in cols else ("result_count" if "result_count" in cols else "NULL")
+        cursor.execute(
+            f"SELECT COALESCE({ts_col}, ''), COALESCE(user_id, ''), COALESCE(search_type, ''), "
+            f"COALESCE({q_col}, ''), COALESCE({r_col}, 0) "
+            f"FROM search_analytics ORDER BY id DESC LIMIT 50"
+        )
+        rows = cursor.fetchall()
+        conn.close()
+        if not rows:
+            return "Audit trail: no search activity recorded yet."
+        lines = [f"Audit trail (most recent {len(rows)} entries):"]
+        for ts, user, stype, q, rcount in rows:
+            lines.append(f"  [{ts}] user={user or 'anon'} type={stype or '-'} results={rcount} query={(q or '')[:80]}")
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Audit trail error: {e}"
 
 def manage_user_permissions():
     """Manage user permissions"""
@@ -884,20 +909,112 @@ def get_connection():
 from education_system.university_system.modules.shared.gui.advanced_search.base import AdvancedSearchGUI
 
 def show_audit_trail(self):
-    """Show search audit trail"""
-    self.update_status("Loading audit trail...")
-    self.start_progress()
+    """Show search audit trail backed by the search_analytics table."""
+    dialog = tk.Toplevel(self.master)
+    dialog.title(f"📋 {_t('advanced_search.menus.audit_trail')}")
+    dialog.geometry("1100x650")
+    dialog.transient(self.master)
 
-    def run_audit_trail():
+    frame = ttk.Frame(dialog, padding=10)
+    frame.pack(fill=tk.BOTH, expand=True)
+
+    filter_frame = ttk.Frame(frame)
+    filter_frame.pack(fill=tk.X, pady=(0, 8))
+    ttk.Label(filter_frame, text="Limit:").pack(side=tk.LEFT)
+    limit_var = tk.StringVar(value="200")
+    ttk.Entry(filter_frame, textvariable=limit_var, width=6).pack(side=tk.LEFT, padx=(4, 12))
+    ttk.Label(filter_frame, text="User filter:").pack(side=tk.LEFT)
+    user_var = tk.StringVar()
+    ttk.Entry(filter_frame, textvariable=user_var, width=18).pack(side=tk.LEFT, padx=(4, 12))
+
+    columns = ("timestamp", "user", "type", "query", "results", "exec_ms")
+    tree = ttk.Treeview(frame, columns=columns, show="headings", height=22)
+    headings = {
+        "timestamp": "Timestamp", "user": "User", "type": "Type",
+        "query": "Query / Criteria", "results": "Results", "exec_ms": "Exec (ms)",
+    }
+    widths = {"timestamp": 160, "user": 120, "type": 140, "query": 430, "results": 80, "exec_ms": 90}
+    for col in columns:
+        tree.heading(col, text=headings[col])
+        tree.column(col, width=widths[col], anchor=tk.W)
+
+    vsb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+    tree.configure(yscroll=vsb.set)
+    tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    vsb.pack(side=tk.RIGHT, fill=tk.Y)
+
+    status_var = tk.StringVar(value="")
+    ttk.Label(dialog, textvariable=status_var, anchor=tk.W).pack(fill=tk.X, padx=10, pady=(0, 8))
+
+    def load():
+        for row in tree.get_children():
+            tree.delete(row)
         try:
-            result = self.capture_function_output(view_search_audit_trail)
-            self.output_queue.put(("analytics", result))
+            limit = max(1, min(5000, int(limit_var.get() or "200")))
+        except ValueError:
+            limit = 200
+        user_filter = user_var.get().strip()
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("PRAGMA table_info(search_analytics)")
+            cols = {row[1] for row in cursor.fetchall()}
+            if not cols:
+                status_var.set("search_analytics table is not initialized yet.")
+                conn.close()
+                return
+            ts_col = "timestamp" if "timestamp" in cols else ("search_datetime" if "search_datetime" in cols else "NULL")
+            query_col = "search_query" if "search_query" in cols else ("search_criteria" if "search_criteria" in cols else "NULL")
+            results_col = "results_count" if "results_count" in cols else ("result_count" if "result_count" in cols else "NULL")
+            sql = (
+                f"SELECT COALESCE({ts_col}, ''), COALESCE(user_id, ''), COALESCE(search_type, ''), "
+                f"COALESCE({query_col}, ''), COALESCE({results_col}, 0), COALESCE(execution_time, 0) "
+                f"FROM search_analytics"
+            )
+            params: list = []
+            if user_filter:
+                sql += " WHERE user_id LIKE ?"
+                params.append(f"%{user_filter}%")
+            sql += f" ORDER BY id DESC LIMIT ?"
+            params.append(limit)
+            cursor.execute(sql, params)
+            rows = cursor.fetchall()
+            conn.close()
+            for ts, user, stype, q, rcount, etime in rows:
+                try:
+                    exec_ms = f"{float(etime) * 1000:.1f}"
+                except (TypeError, ValueError):
+                    exec_ms = "0.0"
+                tree.insert("", tk.END, values=(ts, user, stype, (q or "")[:300], rcount, exec_ms))
+            status_var.set(f"Loaded {len(rows)} audit entries.")
         except Exception as e:
-            self.output_queue.put(("error", f"Error loading audit trail: {str(e)}"))
-        finally:
-            self.output_queue.put(("stop_progress", None))
+            status_var.set(f"Error loading audit trail: {e}")
 
-    threading.Thread(target=run_audit_trail, daemon=True).start()
+    def export_csv():
+        try:
+            path = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV", "*.csv")],
+                title="Export audit trail",
+            )
+            if not path:
+                return
+            with open(path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(headings[c] for c in columns)
+                for iid in tree.get_children():
+                    writer.writerow(tree.item(iid)["values"])
+            status_var.set(f"Exported to {path}")
+        except Exception as e:
+            status_var.set(f"Export failed: {e}")
+
+    btns = ttk.Frame(filter_frame)
+    btns.pack(side=tk.RIGHT)
+    ttk.Button(btns, text="🔄 Refresh", command=load).pack(side=tk.LEFT, padx=4)
+    ttk.Button(btns, text="💾 Export CSV", command=export_csv).pack(side=tk.LEFT, padx=4)
+    ttk.Button(btns, text="Close", command=dialog.destroy).pack(side=tk.LEFT, padx=4)
+
+    load()
 AdvancedSearchGUI.show_audit_trail = show_audit_trail
 
 def export_system_statistics():
@@ -949,8 +1066,33 @@ def run_cli():
         print_error("CLI functions not available. Please ensure advanced_search.py is properly imported.")
 
 def view_search_audit_trail():
-    """View search audit trail"""
-    return "Audit trail:\n- Recent search activities logged\n- System access monitored"
+    """Return a text summary of recent search_analytics rows."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(search_analytics)")
+        cols = {row[1] for row in cursor.fetchall()}
+        if not cols:
+            conn.close()
+            return "Audit trail: search_analytics table not initialized."
+        ts_col = "timestamp" if "timestamp" in cols else ("search_datetime" if "search_datetime" in cols else "NULL")
+        q_col = "search_query" if "search_query" in cols else ("search_criteria" if "search_criteria" in cols else "NULL")
+        r_col = "results_count" if "results_count" in cols else ("result_count" if "result_count" in cols else "NULL")
+        cursor.execute(
+            f"SELECT COALESCE({ts_col}, ''), COALESCE(user_id, ''), COALESCE(search_type, ''), "
+            f"COALESCE({q_col}, ''), COALESCE({r_col}, 0) "
+            f"FROM search_analytics ORDER BY id DESC LIMIT 50"
+        )
+        rows = cursor.fetchall()
+        conn.close()
+        if not rows:
+            return "Audit trail: no search activity recorded yet."
+        lines = [f"Audit trail (most recent {len(rows)} entries):"]
+        for ts, user, stype, q, rcount in rows:
+            lines.append(f"  [{ts}] user={user or 'anon'} type={stype or '-'} results={rcount} query={(q or '')[:80]}")
+        return "\n".join(lines)
+    except Exception as e:
+        return f"Audit trail error: {e}"
 
 def run_gui():
     """Launch the GUI version"""
