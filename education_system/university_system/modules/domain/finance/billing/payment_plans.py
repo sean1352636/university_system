@@ -37,7 +37,7 @@ from education_system.university_system.infrastructure.email import send_email
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.utils.logging.log_config import configure_logging, get_log_file
+from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
 from education_system.university_system.infrastructure.email.template_utils import render_template
 # Configure logging
 log_path = get_log_file("analytics.log")

@@ -69,7 +69,7 @@ class TestLogManagementModule:
     def test_log_management_imports(self):
         """Test that log_management module can be imported."""
         try:
-            from education_system.university_system.utils.logging import log_management
+            from education_system.university_system.infrastructure.logging import log_management
             assert log_management is not None
         except ImportError as e:
             pytest.skip(f"Log management module not available: {e}")
@@ -77,7 +77,7 @@ class TestLogManagementModule:
     def test_log_management_has_functions(self):
         """Test that log_management module has functions."""
         try:
-            from education_system.university_system.utils.logging import log_management
+            from education_system.university_system.infrastructure.logging import log_management
 
             module_contents = dir(log_management)
             public_items = [item for item in module_contents if not item.startswith('_')]

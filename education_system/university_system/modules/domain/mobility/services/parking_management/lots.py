@@ -2,7 +2,7 @@ import logging
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.infrastructure.database.data_backup import backup_before_operation
 from education_system.university_system.modules.shared.utils.i18n import get_text
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.modules.domain.mobility.services.parking_management.constants import PARKING_ZONES
 from education_system.university_system.modules.domain.mobility.services.parking_management import core
 

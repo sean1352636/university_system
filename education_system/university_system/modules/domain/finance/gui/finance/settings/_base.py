@@ -12,7 +12,7 @@ from education_system.university_system.infrastructure.database.db import get_co
 from cryptography.fernet import Fernet
 
 try:
-    from education_system.university_system.utils.logging.log_config import configure_logging, get_log_file
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
 except ImportError:
     def configure_logging(name=None):
         """Fallback logging configuration."""

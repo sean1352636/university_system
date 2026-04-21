@@ -2,7 +2,7 @@ import json
 import logging
 from datetime import datetime
 from typing import Dict, List, Tuple
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.modules.domain.academics.services.academic_calendar.config import ValidationUtils
 
 logger = configure_logging(name=__name__)

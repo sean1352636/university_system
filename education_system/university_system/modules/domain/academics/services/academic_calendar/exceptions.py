@@ -3,7 +3,7 @@ import traceback
 import logging
 from datetime import datetime
 from typing import Dict, List, Any
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
 logger = configure_logging(name=__name__)
 exception_logger = logging.getLogger(__name__ + '.exceptions')

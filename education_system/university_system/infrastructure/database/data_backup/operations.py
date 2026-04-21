@@ -13,7 +13,7 @@ from education_system.university_system.core.sql_safety import (
     validate_table_name as _sql_validate_table_name,
     SQLIdentifierError,
 )
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.infrastructure.database.data_backup.config import config, ensure_backup_directory
 from education_system.university_system.infrastructure.database.data_backup.metadata import metadata_manager
 from education_system.university_system.infrastructure.database.data_backup.security import (

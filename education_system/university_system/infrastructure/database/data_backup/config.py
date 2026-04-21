@@ -7,7 +7,7 @@ from pathlib import Path
 
 from education_system.university_system.core.paths import DATA_DIR, BACKUP_DATABASE_DIR
 from education_system.university_system.core.i18n import get_text as _t, init_i18n
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
 init_i18n()
 

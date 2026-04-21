@@ -9,7 +9,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.modules.shared.utils.i18n import get_text
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.modules.domain.mobility.services.parking_management.constants import PARKING_ZONES, PERMIT_TYPES
 from education_system.university_system.modules.domain.mobility.services.parking_management.permits import display_permit_details
 from education_system.university_system.modules.domain.mobility.services.parking_management.violations import display_violation_details

@@ -4,7 +4,7 @@ import datetime
 import os
 from pathlib import Path
 
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.infrastructure.database.data_backup.config import config
 from education_system.university_system.infrastructure.database.data_backup.metadata import metadata_manager
 from education_system.university_system.infrastructure.database.data_backup.security import secure_delete_file

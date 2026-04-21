@@ -9,7 +9,7 @@ import logging
 import calendar as cal
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.modules.shared.constants import paths
 from education_system.university_system.infrastructure.database.db import get_connection
 

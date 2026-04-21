@@ -38,7 +38,7 @@ from education_system.university_system.infrastructure.shared_context import get
 try:
     from education_system.university_system.infrastructure.email.email_service import send_email
     from education_system.university_system.infrastructure.database.db import get_connection
-    from education_system.university_system.utils.logging.log_config import configure_logging, get_log_file
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
 except ImportError:
     # Fallback for backward compatibility (non-security critical)
     def send_email(*args, **kwargs):

@@ -4,7 +4,7 @@ import json
 import os
 
 from education_system.university_system.core.paths import DATA_DIR
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
 logger = configure_logging(name=__name__)
 

@@ -3,7 +3,7 @@
 import boto3
 from botocore.exceptions import NoCredentialsError
 
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.infrastructure.database.data_backup.config import config
 
 logger = configure_logging(name=__name__)

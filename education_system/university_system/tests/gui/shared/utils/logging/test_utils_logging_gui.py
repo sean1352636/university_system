@@ -19,7 +19,7 @@ class TestLogManagementGUIModule:
     def test_log_management_gui_imports(self):
         """Test that log management GUI module can be imported."""
         try:
-            from education_system.university_system.utils.logging.gui import log_management_gui
+            from education_system.university_system.infrastructure.logging.gui import log_management_gui
             assert log_management_gui is not None
         except ImportError as e:
             pytest.skip(f"Log management GUI module not available: {e}")
@@ -30,7 +30,7 @@ class TestLogManagementGUIModule:
     def test_log_management_gui_has_components(self):
         """Test that log management GUI has expected components."""
         try:
-            from education_system.university_system.utils.logging.gui import log_management_gui
+            from education_system.university_system.infrastructure.logging.gui import log_management_gui
 
             # Module should have some public components
             module_contents = dir(log_management_gui)

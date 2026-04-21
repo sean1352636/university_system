@@ -46,7 +46,7 @@ except ImportError:
         return True
 
 try:
-    from education_system.university_system.utils.logging.log_config import configure_logging, get_log_file
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
 except ImportError:
     def configure_logging(name=None):
         """Fallback logging configuration."""

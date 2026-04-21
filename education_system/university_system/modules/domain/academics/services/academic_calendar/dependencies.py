@@ -3,7 +3,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Tuple
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import CalendarError, ValidationError, PermissionError
 from education_system.university_system.modules.domain.academics.services.academic_calendar.database import DatabaseManager
 from education_system.university_system.modules.domain.academics.services.academic_calendar.auth import AuthenticationManager

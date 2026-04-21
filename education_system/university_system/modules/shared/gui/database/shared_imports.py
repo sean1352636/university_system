@@ -80,7 +80,7 @@ except ImportError as e:
 
 # Logging setup
 try:
-    from education_system.university_system.utils.logging.log_config import configure_logging
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
     logger = configure_logging(name="backup_gui")
 except Exception:
     logging.basicConfig(level=logging.INFO)

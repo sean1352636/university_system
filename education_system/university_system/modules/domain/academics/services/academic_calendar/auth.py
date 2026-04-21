@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timedelta
 from functools import wraps
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import ValidationError, PermissionError
 from education_system.university_system.modules.domain.academics.services.academic_calendar.config import ValidationUtils, SecurityUtils
 

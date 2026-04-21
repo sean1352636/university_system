@@ -4,7 +4,7 @@ import datetime
 import os
 
 from education_system.university_system.core.i18n import get_text as _t, init_i18n
-from education_system.university_system.utils.logging.log_config import configure_logging, get_log_file
+from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
 from education_system.university_system.infrastructure.database.data_backup.config import (
     config,
     ensure_backup_directory,

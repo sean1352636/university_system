@@ -30,7 +30,7 @@ import seaborn as sns
 import shutil
 from typing import Any, List, Dict, Optional, Tuple
 import logging
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
 # CONSOLIDATED DATABASE FILE - Using the same database as main system
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH

@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from collections import defaultdict
 from typing import Dict, Tuple, Any
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import PermissionError
 from education_system.university_system.modules.domain.academics.services.academic_calendar.database import DatabaseManager
 from education_system.university_system.modules.domain.academics.services.academic_calendar.auth import AuthenticationManager

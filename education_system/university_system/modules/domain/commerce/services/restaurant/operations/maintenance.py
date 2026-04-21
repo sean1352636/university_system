@@ -11,7 +11,7 @@ from education_system.university_system.modules.domain.commerce.services.restaur
     get_db_connection,
 )
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations.audit import log_audit_action
-from education_system.university_system.utils.logging.log_config import get_log_file
+from education_system.university_system.infrastructure.logging.log_config import get_log_file
 from education_system.university_system.core.sql_safety import validate_identifier, validate_table_name  # nosec B608
 
 # Configure logging

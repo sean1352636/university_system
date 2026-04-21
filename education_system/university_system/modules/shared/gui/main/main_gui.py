@@ -14,7 +14,7 @@ HAS_AUTH = True
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
 # Patch messagebox so every showerror/showwarning is also logged to file + console
-from education_system.university_system.utils.logging.log_config import patch_messagebox_logging
+from education_system.university_system.infrastructure.logging.log_config import patch_messagebox_logging
 patch_messagebox_logging()
 
 logger = logging.getLogger(__name__)
@@ -321,6 +321,7 @@ from education_system.university_system.modules.shared.gui.main.features.academi
     show_student_timetable_gui,
     show_student_registration_gui,
     show_student_dashboard_gui,
+    show_lms_gui,
 )
 from education_system.university_system.modules.shared.gui.main.features.student_affairs_gui import (
     show_student_union_portal,
@@ -697,6 +698,7 @@ UnifiedManagementGUI.show_student_outcomes_gui = show_student_outcomes_gui
 UnifiedManagementGUI.show_student_timetable_gui = show_student_timetable_gui
 UnifiedManagementGUI.show_student_registration_gui = show_student_registration_gui
 UnifiedManagementGUI.show_student_dashboard_gui = show_student_dashboard_gui
+UnifiedManagementGUI.show_lms_gui = show_lms_gui
 UnifiedManagementGUI.compose_email = compose_email
 UnifiedManagementGUI.send_email_to_student = send_email_to_student
 UnifiedManagementGUI.show_email_manager = show_email_manager

@@ -3,7 +3,7 @@ import calendar as cal
 from datetime import datetime, timedelta
 from collections import defaultdict
 from typing import Dict, List, Tuple
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import PermissionError, ValidationError
 from education_system.university_system.modules.domain.academics.services.academic_calendar.config import ValidationUtils
 

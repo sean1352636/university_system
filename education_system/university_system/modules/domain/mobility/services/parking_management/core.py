@@ -1,7 +1,7 @@
 import logging
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
 from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.utils.logging.log_config import configure_logging, get_log_file
+from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
 from education_system.university_system.modules.shared.utils.i18n import get_text
 
 # Alias for convenience

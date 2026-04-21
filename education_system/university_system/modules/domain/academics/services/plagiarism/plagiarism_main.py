@@ -6,7 +6,7 @@ so that existing imports continue to work unchanged.
 """
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
 # Re-export the logger that external consumers import
 logger = configure_logging(name=__name__)

@@ -19,27 +19,27 @@ class TestLogConfigModule:
 
     def test_log_config_file_exists(self):
         """Test that log_config file exists."""
-        config_file = Path("university_system/utils/logging/log_config.py")
+        config_file = Path("university_system/infrastructure/logging/log_config.py")
         assert config_file.exists()
 
     def test_log_config_imports(self):
         """Test that log_config module can be imported."""
-        from education_system.university_system.utils.logging import log_config
+        from education_system.university_system.infrastructure.logging import log_config
         assert log_config is not None
 
     def test_get_log_dir_function_exists(self):
         """Test get_log_dir function exists."""
-        from education_system.university_system.utils.logging.log_config import get_log_dir
+        from education_system.university_system.infrastructure.logging.log_config import get_log_dir
         assert callable(get_log_dir)
 
     def test_get_log_file_function_exists(self):
         """Test get_log_file function exists."""
-        from education_system.university_system.utils.logging.log_config import get_log_file
+        from education_system.university_system.infrastructure.logging.log_config import get_log_file
         assert callable(get_log_file)
 
     def test_configure_logging_function_exists(self):
         """Test configure_logging function exists."""
-        from education_system.university_system.utils.logging.log_config import configure_logging
+        from education_system.university_system.infrastructure.logging.log_config import configure_logging
         assert callable(configure_logging)
 
 
@@ -48,13 +48,13 @@ class TestGetLogDir:
 
     def test_get_log_dir_returns_string(self):
         """Test that get_log_dir returns a string."""
-        from education_system.university_system.utils.logging.log_config import get_log_dir
+        from education_system.university_system.infrastructure.logging.log_config import get_log_dir
         log_dir = get_log_dir()
         assert isinstance(log_dir, str)
 
     def test_get_log_dir_is_absolute_path(self):
         """Test that get_log_dir returns absolute path."""
-        from education_system.university_system.utils.logging.log_config import get_log_dir
+        from education_system.university_system.infrastructure.logging.log_config import get_log_dir
         log_dir = get_log_dir()
         assert Path(log_dir).is_absolute()
 
@@ -64,19 +64,19 @@ class TestGetLogFile:
 
     def test_get_log_file_returns_string(self):
         """Test that get_log_file returns a string."""
-        from education_system.university_system.utils.logging.log_config import get_log_file
+        from education_system.university_system.infrastructure.logging.log_config import get_log_file
         log_file = get_log_file("test.log")
         assert isinstance(log_file, str)
 
     def test_get_log_file_with_filename(self):
         """Test get_log_file with filename."""
-        from education_system.university_system.utils.logging.log_config import get_log_file
+        from education_system.university_system.infrastructure.logging.log_config import get_log_file
         log_file = get_log_file("app.log")
         assert "app.log" in log_file
 
     def test_get_log_file_is_absolute_path(self):
         """Test that get_log_file returns absolute path."""
-        from education_system.university_system.utils.logging.log_config import get_log_file
+        from education_system.university_system.infrastructure.logging.log_config import get_log_file
         log_file = get_log_file("test.log")
         assert Path(log_file).is_absolute()
 
@@ -99,26 +99,26 @@ class TestConfigureLogging:
 
     def test_configure_logging_returns_logger(self):
         """Test that configure_logging returns a logger."""
-        from education_system.university_system.utils.logging.log_config import configure_logging
+        from education_system.university_system.infrastructure.logging.log_config import configure_logging
         logger = configure_logging()
         assert isinstance(logger, logging.Logger)
 
     def test_configure_logging_with_name(self):
         """Test configure_logging with custom name."""
-        from education_system.university_system.utils.logging.log_config import configure_logging
+        from education_system.university_system.infrastructure.logging.log_config import configure_logging
         logger = configure_logging(name="test_logger")
         assert logger.name == "test_logger"
 
     def test_configure_logging_with_level(self):
         """Test configure_logging with custom level."""
-        from education_system.university_system.utils.logging.log_config import configure_logging
+        from education_system.university_system.infrastructure.logging.log_config import configure_logging
         logger = configure_logging(level=logging.DEBUG)
         # Logger should be configured
         assert isinstance(logger, logging.Logger)
 
     def test_configure_logging_adds_handlers(self):
         """Test that configure_logging adds rotating file handler."""
-        from education_system.university_system.utils.logging.log_config import configure_logging
+        from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
         # Get root logger handler count before
         root_logger = logging.getLogger()
@@ -131,7 +131,7 @@ class TestConfigureLogging:
 
     def test_configure_logging_avoids_duplicate_handlers(self):
         """Test that configure_logging doesn't add duplicate handlers."""
-        from education_system.university_system.utils.logging.log_config import configure_logging
+        from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
         logger1 = configure_logging(name="dup_test1")
         root_logger = logging.getLogger()
@@ -145,7 +145,7 @@ class TestConfigureLogging:
 
     def test_configure_logging_creates_rotating_handler(self):
         """Test that rotating file handler is created."""
-        from education_system.university_system.utils.logging.log_config import configure_logging
+        from education_system.university_system.infrastructure.logging.log_config import configure_logging
         from logging.handlers import RotatingFileHandler
 
         logger = configure_logging()

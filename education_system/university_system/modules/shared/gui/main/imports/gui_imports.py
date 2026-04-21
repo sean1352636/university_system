@@ -623,14 +623,14 @@ except Exception as e:
     ACTIVITY_LOGGER_GUI_AVAILABLE = False
 
 try:
-    from education_system.university_system.utils.ai.gui.university_chatbot_gui import ChatbotGUI as UniversityChatbotGUI
+    from education_system.university_system.infrastructure.ai.gui.university_chatbot_gui import ChatbotGUI as UniversityChatbotGUI
     CHATBOT_GUI_AVAILABLE = True
 except Exception as e:
     UniversityChatbotGUI = None
     CHATBOT_GUI_AVAILABLE = False
 
 try:
-    from education_system.university_system.utils.logging.gui.log_management_gui import LogManagementGUI
+    from education_system.university_system.infrastructure.logging.gui.log_management_gui import LogManagementGUI
     LOG_MANAGEMENT_GUI_AVAILABLE = True
 except Exception as e:
     LogManagementGUI = None

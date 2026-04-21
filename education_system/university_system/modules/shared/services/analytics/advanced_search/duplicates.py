@@ -9,7 +9,7 @@ from education_system.university_system.modules.shared.utils.sql_safety import (
     validate_field_for_query,
     SQLIdentifierError,
 )
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.modules.shared.services.analytics.advanced_search.admin import audit_log
 
 logger = configure_logging(name=__name__)

@@ -5,7 +5,7 @@ import smtplib
 
 import requests
 
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.infrastructure.email.template_utils import render_template
 from education_system.university_system.infrastructure.database.data_backup.config import config
 

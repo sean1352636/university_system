@@ -28,7 +28,7 @@ from education_system.university_system.infrastructure.database.data_backup impo
 from education_system.university_system.infrastructure.auth import UserAuth
 
 # Project imports - core/utils
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.infrastructure.email import (
     send_appointment_confirmation,
     send_health_notification,

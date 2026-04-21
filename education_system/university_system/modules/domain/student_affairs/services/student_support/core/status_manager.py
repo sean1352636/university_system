@@ -20,7 +20,7 @@ from education_system.university_system.infrastructure.database.db import get_co
 from education_system.university_system.infrastructure.email.email_manager import send_email
 from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH, TICKET_TEMPLATES_DIR, UPLOAD_DIR
-from education_system.university_system.utils.logging.log_config import get_log_file
+from education_system.university_system.infrastructure.logging.log_config import get_log_file
 
 from education_system.university_system.modules.domain.student_affairs.services.student_support.config import (
     SUPPORT_DB, TICKET_STATUSES, TICKET_PRIORITIES, SUPPORT_CATEGORIES,

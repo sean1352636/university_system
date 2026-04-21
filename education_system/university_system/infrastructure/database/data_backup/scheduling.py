@@ -6,7 +6,7 @@ import time
 
 import schedule
 
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.infrastructure.database.data_backup.config import config
 import education_system.university_system.infrastructure.database.data_backup.config as _cfg
 from education_system.university_system.infrastructure.database.data_backup.operations import create_enhanced_backup

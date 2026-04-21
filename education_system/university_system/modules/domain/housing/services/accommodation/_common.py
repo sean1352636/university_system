@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # Configure logging first using centralized configuration
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
 # Setup logger using centralized configuration
 logger = configure_logging(name=__name__)

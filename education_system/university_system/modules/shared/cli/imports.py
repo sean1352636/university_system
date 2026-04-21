@@ -54,7 +54,7 @@ DB_PATH = str(paths.DEFAULT_DB_PATH)
 LOG_DIR = str(paths.LOG_DIR)
 
 # Configure logging
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 logger = configure_logging(name=__name__)
 
 # Activity logging
@@ -457,7 +457,7 @@ from education_system.university_system.modules.domain.housing.services.housing_
 )
 
 # AI Detector
-from education_system.university_system.utils.ai.ai_detector.detector import AIDetector
+from education_system.university_system.infrastructure.ai.ai_detector.detector import AIDetector
 
 # Academic Calendar
 from education_system.university_system.modules.domain.academics.services.academic_calendar.cli import (
@@ -470,7 +470,7 @@ from education_system.university_system.modules.domain.academics.services.academ
 from education_system.university_system.modules.domain.academics.services.course_management import display_course_management_menu
 
 # Log Management
-from education_system.university_system.utils.logging.log_management import display_log_management_menu
+from education_system.university_system.infrastructure.logging.log_management import display_log_management_menu
 
 # Parent Portal
 from education_system.university_system.modules.domain.academics.services.parent_portal import (

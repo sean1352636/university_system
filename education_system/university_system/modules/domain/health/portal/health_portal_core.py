@@ -31,7 +31,7 @@ from education_system.university_system.infrastructure.email import (
     send_health_notification,
 )
 from education_system.university_system.infrastructure.database.db import get_connection
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
 # Configure logging for audit trail
 audit_logger = configure_logging(name=__name__)

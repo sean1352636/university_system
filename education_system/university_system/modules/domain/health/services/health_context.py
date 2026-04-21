@@ -31,10 +31,10 @@ from education_system.university_system.infrastructure.email import (
     send_appointment_confirmation,
     send_health_notification,
 )
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 # Import get_log_file helper for audit logging.
 # Without this import a NameError would be raised when computing log_path below.
-from education_system.university_system.utils.logging.log_config import get_log_file
+from education_system.university_system.infrastructure.logging.log_config import get_log_file
 
 log_path = get_log_file("health_portal_audit.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)

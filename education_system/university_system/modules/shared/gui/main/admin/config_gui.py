@@ -458,11 +458,11 @@ def show_activity_log(self):
     """Open Log Management GUI (in a separate window)"""
     try:
         # Prefer the local file the user provided
-        from education_system.university_system.utils.logging.gui.log_management_gui import LogManagementGUI
+        from education_system.university_system.infrastructure.logging.gui.log_management_gui import LogManagementGUI
     except Exception:
         # Optional fallback to the refactored package if present
         try:
-            from education_system.university_system.utils.logging.gui.log_management_gui import LogManagementGUI
+            from education_system.university_system.infrastructure.logging.gui.log_management_gui import LogManagementGUI
         except Exception as e:
             messagebox.showerror(_t("config_gui.log_management.unavailable"), _t("config_gui.errors.log_management_not_found", error=str(e)))
             return

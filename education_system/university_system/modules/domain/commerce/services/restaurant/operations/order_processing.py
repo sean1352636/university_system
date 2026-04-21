@@ -32,7 +32,7 @@ from education_system.university_system.modules.shared.utils.finance_integration
 from collections import defaultdict
 from education_system.university_system.modules.domain.commerce.services.restaurant.operations.connection import get_db_connection
 import warnings
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
 # Configure logging
 logger = configure_logging(name=__name__)

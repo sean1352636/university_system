@@ -37,7 +37,7 @@ def _get_state():
 from education_system.university_system.core import paths
 
 try:
-    from education_system.university_system.utils.logging.log_config import (
+    from education_system.university_system.infrastructure.logging.log_config import (
         configure_logging as project_configure_logging,
         get_log_file as project_get_log_file,
     )
@@ -59,7 +59,7 @@ def _init_log_management():
         return
     _log_management_checked = True
     try:
-        from education_system.university_system.utils.logging.log_management import (
+        from education_system.university_system.infrastructure.logging.log_management import (
             get_log_manager as _get_log_manager,
             log_manager as _global_log_manager,
         )

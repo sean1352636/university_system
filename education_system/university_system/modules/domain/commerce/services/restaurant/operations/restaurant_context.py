@@ -36,9 +36,9 @@ from education_system.university_system.infrastructure.auth import UserAuth, dis
 from education_system.university_system.infrastructure.database.data_backup import backup_before_operation, display_backup_menu
 from education_system.university_system.infrastructure.database.db import DatabaseManager, get_connection as get_db_connection
 from education_system.university_system.infrastructure.email import send_confirmation_email
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 # Import get_log_file helper for audit logging.
-from education_system.university_system.utils.logging.log_config import get_log_file
+from education_system.university_system.infrastructure.logging.log_config import get_log_file
 
 log_path = get_log_file("restaurant_system.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)

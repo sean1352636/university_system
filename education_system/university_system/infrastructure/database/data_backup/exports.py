@@ -7,7 +7,7 @@ from xml.etree.ElementTree import Element, SubElement, ElementTree, ParseError  
 import pandas as pd
 
 from education_system.university_system.infrastructure.database.db import get_connection, sqlite3
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.infrastructure.database.data_backup.operations import (
     get_database_tables,
     validate_table_name,

@@ -3,7 +3,7 @@ import uuid
 import threading
 import logging
 from typing import List, Tuple
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import DatabaseError
 

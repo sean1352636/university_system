@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from education_system.university_system.core.sql_safety import escape_like
 from typing import Dict, List, Tuple
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.modules.domain.academics.services.academic_calendar.exceptions import CalendarError, ValidationError
 from education_system.university_system.modules.domain.academics.services.academic_calendar.config import ValidationUtils
 

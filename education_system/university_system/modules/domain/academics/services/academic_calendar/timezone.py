@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Tuple
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 
 logger = configure_logging(name=__name__)
 

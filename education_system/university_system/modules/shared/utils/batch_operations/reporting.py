@@ -3,7 +3,7 @@ import json
 import datetime
 from typing import Dict, List
 
-from education_system.university_system.utils.logging.log_config import configure_logging
+from education_system.university_system.infrastructure.logging.log_config import configure_logging
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
 logger = configure_logging(name=__name__)

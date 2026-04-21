@@ -54,7 +54,7 @@ from fuzzywuzzy import fuzz
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
 # Configure logging first, before other application imports
-from education_system.university_system.utils.logging.log_config import configure_logging, get_log_file
+from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
 
 # Setup logging
 log_path = get_log_file("modules_system.log")
