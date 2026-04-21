@@ -209,43 +209,38 @@ class GradeTrackingStudentPortal:
             for i in t.get_children():
                 t.delete(i)
 
-        module_rows = []
         try:
             with get_connection() as conn:
                 cur = conn.cursor()
+                # Per-module summary: for each enrolled module, compute the
+                # weighted percentage from the student's graded submissions
+                # (assignment_submissions.grade / assignments.max_marks).
                 cur.execute(
                     """
-                    SELECT m.module_code, m.module_name, m.credits,
-                           mg.final_score, mg.final_grade, sm.status
+                    SELECT m.module_code, m.module_name, m.credits, sm.status,
+                           SUM(CASE WHEN s.grade IS NOT NULL
+                                    THEN s.grade END)     AS sum_score,
+                           SUM(CASE WHEN s.grade IS NOT NULL
+                                    THEN a.max_marks END) AS sum_max,
+                           COUNT(DISTINCT a.id)           AS total_assignments,
+                           SUM(CASE WHEN s.grade IS NOT NULL
+                                    THEN 1 ELSE 0 END)    AS graded_count
                     FROM student_modules sm
                     JOIN modules m ON m.module_code = sm.module_code
-                    LEFT JOIN module_grades mg ON mg.student_id = sm.student_id
-                                              AND mg.module_code = sm.module_code
+                    LEFT JOIN assignments a
+                           ON a.module_code = m.module_code
+                          AND COALESCE(a.is_active, 1) = 1
+                    LEFT JOIN assignment_submissions s
+                           ON s.assignment_id = a.id
+                          AND s.student_id = sm.student_id
+                          AND COALESCE(s.is_final_submission, 1) = 1
                     WHERE sm.student_id = ?
+                    GROUP BY m.module_code, m.module_name, m.credits, sm.status
                     ORDER BY m.module_code
                     """,
                     (student_id,)
                 )
                 module_rows = cur.fetchall()
-
-                # For modules without a final grade in module_grades, compute
-                # a running weighted score from graded assessments.
-                computed = {}
-                cur.execute(
-                    """
-                    SELECT a.module_code,
-                           SUM(g.score / a.max_points * a.weight) AS weighted,
-                           SUM(a.weight) AS total_weight
-                    FROM grades g
-                    JOIN assessments a ON a.assessment_id = g.assessment_id
-                    WHERE g.student_id = ?
-                    GROUP BY a.module_code
-                    """,
-                    (student_id,)
-                )
-                for code, weighted, total_weight in cur.fetchall():
-                    if total_weight:
-                        computed[code] = (weighted / total_weight) * 100.0
         except Exception as e:
             messagebox.showerror("Database Error",
                                  f"Could not load your grades: {e}",
@@ -256,30 +251,31 @@ class GradeTrackingStudentPortal:
         weighted_gpa = 0.0
         gpa_credits = 0
 
-        for code, name, credits, final_score, final_grade, status in module_rows:
+        for (code, name, credits, status, sum_score, sum_max,
+             total_assignments, graded_count) in module_rows:
             credits = credits or 0
             total_credits += credits
 
-            letter = final_grade
-            score_display = '—'
-            pct_source = None
-            if final_score is not None:
-                pct_source = float(final_score)
-            elif code in computed:
-                pct_source = computed[code]
-
-            if pct_source is not None:
-                score_display = f"{pct_source:.1f}"
-                if not letter:
-                    letter = _percentage_to_letter(pct_source)
+            if sum_max and sum_max > 0 and sum_score is not None:
+                pct = (float(sum_score) / float(sum_max)) * 100.0
+                score_display = f"{pct:.1f}"
+                letter = _percentage_to_letter(pct)
+            else:
+                pct = None
+                score_display = '—'
+                letter = None
 
             if letter and letter in _GPA_MAP and credits:
                 weighted_gpa += _GPA_MAP[letter] * credits
                 gpa_credits += credits
 
+            status_text = status or 'Enrolled'
+            if total_assignments:
+                status_text = f"{status_text} ({graded_count}/{total_assignments} graded)"
+
             self.modules_tree.insert('', 'end', iid=code, values=(
                 code, name, credits, score_display,
-                letter or '—', status or 'Enrolled'
+                letter or '—', status_text,
             ))
 
         gpa = (weighted_gpa / gpa_credits) if gpa_credits else 0.0
@@ -310,13 +306,16 @@ class GradeTrackingStudentPortal:
                 cur = conn.cursor()
                 cur.execute(
                     """
-                    SELECT a.assessment_name, a.assessment_type, a.max_points,
-                           g.score, g.letter_grade, g.submission_date
-                    FROM assessments a
-                    LEFT JOIN grades g ON g.assessment_id = a.assessment_id
-                                      AND g.student_id = ?
+                    SELECT a.title, a.assignment_type, a.max_marks,
+                           s.grade, s.status, s.submission_date
+                    FROM assignments a
+                    LEFT JOIN assignment_submissions s
+                           ON s.assignment_id = a.id
+                          AND s.student_id = ?
+                          AND COALESCE(s.is_final_submission, 1) = 1
                     WHERE a.module_code = ?
-                    ORDER BY a.assessment_id
+                      AND COALESCE(a.is_active, 1) = 1
+                    ORDER BY a.due_date IS NULL, a.due_date, a.id
                     """,
                     (self.student['student_id'], module_code)
                 )
@@ -327,20 +326,26 @@ class GradeTrackingStudentPortal:
                                  parent=self.window)
             return
 
-        for name, atype, max_pts, score, letter, date in rows:
+        for title, atype, max_pts, score, sub_status, date in rows:
+            max_pts = max_pts or 0
+            max_display = f"{max_pts:g}" if max_pts else '—'
             if score is not None:
                 pct = (score / max_pts * 100.0) if max_pts else 0
+                letter = _percentage_to_letter(pct)
                 self.assess_tree.insert('', 'end', values=(
-                    name, atype or '',
-                    f"{score:g}", f"{max_pts:g}",
-                    f"{pct:.1f}%",
-                    letter or _percentage_to_letter(pct),
-                    date or ''
+                    title, atype or '',
+                    f"{score:g}", max_display,
+                    f"{pct:.1f}%", letter,
+                    (date or '')[:16],
                 ))
             else:
+                if sub_status:
+                    status_label = 'Submitted' if sub_status.lower() == 'submitted' else sub_status.capitalize()
+                else:
+                    status_label = 'Not submitted'
                 self.assess_tree.insert('', 'end', values=(
-                    name, atype or '', '—', f"{max_pts:g}",
-                    '—', 'Pending', ''
+                    title, atype or '', '—', max_display,
+                    '—', status_label, (date or '')[:16],
                 ))
 
     def _refresh(self):

@@ -180,12 +180,17 @@ class GradeTrackingStaffPortal:
             with get_connection() as conn:
                 cur = conn.cursor()
                 cur.execute(
-                    "SELECT assessment_id, assessment_name, max_points, weight "
-                    "FROM assessments WHERE module_code = ? ORDER BY assessment_id",
+                    """
+                    SELECT id, title, max_marks, assignment_type
+                    FROM assignments
+                    WHERE module_code = ?
+                      AND COALESCE(is_active, 1) = 1
+                    ORDER BY due_date IS NULL, due_date, id
+                    """,
                     (module_code,)
                 )
                 self._assessments = [
-                    (r[0], r[1], r[2], r[3]) for r in cur.fetchall()
+                    (r[0], r[1], r[2] or 100, r[3] or '') for r in cur.fetchall()
                 ]
         except Exception as e:
             messagebox.showerror("Database Error",
@@ -193,7 +198,8 @@ class GradeTrackingStaffPortal:
                                  parent=self.window)
             self._assessments = []
 
-        values = [f"{a[1]} (max {a[2]:g}, w{a[3]:g}%)" for a in self._assessments]
+        values = [f"{a[1]} (max {float(a[2]):g})" + (f" · {a[3]}" if a[3] else '')
+                  for a in self._assessments]
         self.assessment_combo['values'] = values
         self.assessment_var.set('')
         self._clear_table()
@@ -206,8 +212,8 @@ class GradeTrackingStaffPortal:
         idx = self.assessment_combo.current()
         if idx < 0:
             return
-        assessment_id, name, max_points, _weight = self._assessments[idx]
-        self._current_assessment_id = assessment_id
+        assignment_id, _title, max_points, _atype = self._assessments[idx]
+        self._current_assessment_id = assignment_id
         self._current_max_points = float(max_points) if max_points else 100.0
         self._edits.clear()
         self._load_grades()
@@ -225,11 +231,13 @@ class GradeTrackingStaffPortal:
                 cur.execute(
                     """
                     SELECT s.student_id, s.first_name, s.last_name, s.course,
-                           g.score, g.letter_grade
+                           sub.id AS submission_id, sub.grade, sub.status
                     FROM students s
                     JOIN student_modules sm ON sm.student_id = s.student_id
-                    LEFT JOIN grades g ON g.student_id = s.student_id
-                                      AND g.assessment_id = ?
+                    LEFT JOIN assignment_submissions sub
+                           ON sub.assignment_id = ?
+                          AND sub.student_id = s.student_id
+                          AND COALESCE(sub.is_final_submission, 1) = 1
                     WHERE sm.module_code = ?
                     ORDER BY s.last_name, s.first_name
                     """,
@@ -242,28 +250,39 @@ class GradeTrackingStaffPortal:
                                  parent=self.window)
             return
 
+        self._row_submission = {}
         total_score = 0.0
         scored = 0
-        for student_id, first, last, course, score, letter in rows:
+        not_submitted = 0
+        for student_id, first, last, course, submission_id, score, sub_status in rows:
             name = f"{first or ''} {last or ''}".strip()
-            if score is not None:
+            self._row_submission[student_id] = submission_id
+            if submission_id is None:
+                not_submitted += 1
+                self.tree.insert('', 'end', iid=student_id, values=(
+                    student_id, name, course or '',
+                    'Not submitted', '—', '—',
+                ))
+            elif score is not None:
                 pct = (score / self._current_max_points * 100.0) if self._current_max_points else 0
                 self.tree.insert('', 'end', iid=student_id, values=(
                     student_id, name, course or '',
-                    f"{score:g}", f"{pct:.1f}%", letter or _percentage_to_letter(pct)
+                    f"{score:g}", f"{pct:.1f}%", _percentage_to_letter(pct),
                 ))
                 total_score += pct
                 scored += 1
             else:
                 self.tree.insert('', 'end', iid=student_id, values=(
-                    student_id, name, course or '', '—', '—', '—'
+                    student_id, name, course or '',
+                    sub_status or 'Submitted', '—', '—',
                 ))
 
         avg = (total_score / scored) if scored else 0
         self.info_var.set(
             f"Max: {self._current_max_points:g}   |   "
-            f"Students enrolled: {len(rows)}   |   "
-            f"Graded: {scored}/{len(rows)}   |   "
+            f"Enrolled: {len(rows)}   |   "
+            f"Graded: {scored}   |   "
+            f"Not submitted: {not_submitted}   |   "
             f"Class avg (graded): {avg:.1f}%"
         )
         self.status_var.set("Double-click a row or press Edit Grade… to change a score.")
@@ -289,9 +308,17 @@ class GradeTrackingStaffPortal:
                                 parent=self.window)
             return
         student_id = sel[0]
+        if not self._row_submission.get(student_id):
+            messagebox.showinfo(
+                "No Submission",
+                f"{student_id} hasn't submitted for this assignment yet. "
+                "A grade can only be entered once the student submits a file.",
+                parent=self.window)
+            return
         current = self.tree.item(student_id, 'values')
+        score_seed = current[3] if current[3] not in ('—', 'Not submitted') else ''
         EditGradeDialog(self.window, student_id, current[1],
-                        self._current_max_points, current[3],
+                        self._current_max_points, score_seed,
                         on_save=lambda score, comment: self._apply_edit(
                             student_id, score, comment))
 
@@ -326,39 +353,66 @@ class GradeTrackingStaffPortal:
         if self._current_assessment_id is None:
             return
 
-        today = datetime.now().strftime('%Y-%m-%d')
+        grader_user_id = None
+        if self.auth and self.auth.current_user:
+            grader_user_id = (self.auth.current_user.get('user_id')
+                              or self.auth.current_user.get('id'))
+
+        now = datetime.now().isoformat(timespec='seconds')
+        saved_submission_ids = []
         try:
             with get_connection() as conn:
                 cur = conn.cursor()
                 for student_id, edit in self._edits.items():
+                    submission_id = self._row_submission.get(student_id)
+                    if not submission_id:
+                        continue
                     cur.execute(
-                        "SELECT grade_id FROM grades "
-                        "WHERE student_id = ? AND assessment_id = ?",
-                        (student_id, self._current_assessment_id)
+                        """
+                        UPDATE assignment_submissions
+                        SET grade = ?, feedback = ?, graded_by = ?,
+                            graded_date = ?, status = 'graded'
+                        WHERE id = ?
+                        """,
+                        (edit['score'], edit['comment'], grader_user_id,
+                         now, submission_id)
                     )
-                    row = cur.fetchone()
-                    if row:
-                        cur.execute(
-                            "UPDATE grades SET score = ?, letter_grade = ?, "
-                            "submission_date = ?, comments = ? "
-                            "WHERE grade_id = ?",
-                            (edit['score'], edit['letter'], today,
-                             edit['comment'], row[0])
-                        )
-                    else:
-                        cur.execute(
-                            "INSERT INTO grades (student_id, assessment_id, "
-                            "score, letter_grade, submission_date, comments) "
-                            "VALUES (?, ?, ?, ?, ?, ?)",
-                            (student_id, self._current_assessment_id,
-                             edit['score'], edit['letter'], today, edit['comment'])
-                        )
+                    saved_submission_ids.append(submission_id)
                 conn.commit()
         except Exception as e:
             messagebox.showerror("Save Failed",
                                  f"Could not save grades: {e}",
                                  parent=self.window)
             return
+
+        # Re-use the assignment portal's background email pipeline so
+        # students are notified and the grader gets a confirmation —
+        # same behaviour as grading via the assignment portal.
+        if saved_submission_ids:
+            try:
+                import threading
+                from education_system.university_system.modules.domain.academics.gui.assignment_system.staff_portal import (
+                    _send_grade_release_emails,
+                )
+                max_marks = self._current_max_points
+                for sid in saved_submission_ids:
+                    edit = next(
+                        (e for sid2, e in
+                         [(self._row_submission.get(k), v)
+                          for k, v in self._edits.items()]
+                         if sid2 == sid),
+                        None,
+                    )
+                    if not edit:
+                        continue
+                    threading.Thread(
+                        target=_send_grade_release_emails,
+                        args=(sid, edit['score'], edit['comment'],
+                              max_marks, grader_user_id),
+                        daemon=True,
+                    ).start()
+            except Exception:
+                pass
 
         count = len(self._edits)
         self._edits.clear()
