@@ -316,7 +316,11 @@ class GradeTrackingStaffPortal:
                 parent=self.window)
             return
         current = self.tree.item(student_id, 'values')
-        score_seed = current[3] if current[3] not in ('—', 'Not submitted') else ''
+        try:
+            float(current[3])
+            score_seed = current[3]
+        except (TypeError, ValueError):
+            score_seed = ''
         EditGradeDialog(self.window, student_id, current[1],
                         self._current_max_points, score_seed,
                         on_save=lambda score, comment: self._apply_edit(
