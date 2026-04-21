@@ -843,7 +843,7 @@ def run(db_path: str | None = None, user_info=None, role=None, shared_auth=None)
     seed_default_staff(db_path)
 
     if first_run:
-        from education_system.secondary_school.seed_subjects import seed_subjects
+        from education_system.secondary_school.scripts.seed_subjects import seed_subjects
         seed_subjects(db_path)
 
     if user_info and role:

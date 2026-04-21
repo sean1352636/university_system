@@ -14,7 +14,7 @@ from education_system.primary_school.core.paths import DB_FILE, ensure_directori
 from education_system.primary_school.infrastructure.auth.role_manager import RoleManager
 from education_system.primary_school.infrastructure.database.schema import initialise_database, seed_default_users, seed_default_staff
 from education_system.primary_school.infrastructure.auth.core import UserAuth
-from education_system.primary_school.seed_subjects import seed_subjects
+from education_system.primary_school.scripts.seed_subjects import seed_subjects
 
 logger = logging.getLogger(__name__)
 
