@@ -189,10 +189,17 @@ class LMSFrame(tk.Frame):
         if cid is None:
             messagebox.showwarning("LMS", "Enter a valid Course ID or code (e.g. 1 or CS)."); return
         self._content_tree.delete(*self._content_tree.get_children())
-        for m in self._content_svc.list_modules(cid):
+        modules = self._content_svc.list_modules(cid)
+        for m in modules:
             self._content_tree.insert("", "end", values=(m["id"], m["title"], "Module", "Yes" if m["published"] else "No", m["order_index"]))
             for ls in self._content_svc.list_lessons(m["id"]):
                 self._content_tree.insert("", "end", values=(ls["id"], f"   {ls['title']}", ls["content_type"], "", ls["order_index"]))
+        if not modules:
+            self._content_tree.insert("", "end", values=(
+                "—",
+                f"No modules yet for course {cid}. Use 'New Module' to start.",
+                "—", "—", "—",
+            ))
 
     def _new_module_dialog(self):
         if not self._content_svc: return
@@ -427,6 +434,13 @@ class LMSFrame(tk.Frame):
             messagebox.showwarning("LMS", "Enter a valid Course ID or code (e.g. 1 or CS)."); return
         for w in self._stats_frame.winfo_children(): w.destroy()
         stats = self._progress_svc.get_course_completion_stats(cid)
+        if not stats.get("total_lessons"):
+            tk.Label(self._stats_frame,
+                     text=f"No published LMS content for course {cid} yet — "
+                          "nothing to report on.",
+                     font=("Helvetica", 11), bg=MAIN_BG, fg="#7f8c8d",
+                     wraplength=640, justify="left").pack(anchor="w")
+            return
         for i, (lbl, val) in enumerate([("Total Lessons", str(stats["total_lessons"])), ("Students", str(stats["total_students"])), ("Avg Completion", f"{stats['avg_percentage']}%"), ("Fully Completed", str(stats["fully_completed"]))]):
             card = tk.Frame(self._stats_frame, bg="white", bd=1, relief="solid", padx=20, pady=15); card.grid(row=0, column=i, padx=8, pady=8)
             tk.Label(card, text=val, font=("Helvetica", 22, "bold"), bg="white", fg=ACCENT).pack()
@@ -449,6 +463,10 @@ class LMSFrame(tk.Frame):
         self._stu_mod_tree = ttk.Treeview(parent, columns=cols, show="headings", height=12)
         for c in cols: self._stu_mod_tree.heading(c, text=c); self._stu_mod_tree.column(c, width=120)
         self._stu_mod_tree.pack(fill="both", expand=True, padx=10, pady=5)
+        self._stu_empty_var = tk.StringVar(value="")
+        tk.Label(parent, textvariable=self._stu_empty_var, bg=MAIN_BG,
+                 fg="#7f8c8d", font=("Helvetica", 10, "italic"),
+                 wraplength=820, justify="left").pack(fill="x", padx=12, pady=(0, 10))
 
     def _load_student_modules(self):
         if not self._content_svc or not self._progress_svc: return
@@ -456,10 +474,22 @@ class LMSFrame(tk.Frame):
         if cid is None:
             messagebox.showwarning("LMS", "Enter a valid Course ID or code (e.g. 1 or CS)."); return
         sid = self._get_student_id(); self._stu_mod_tree.delete(*self._stu_mod_tree.get_children())
-        for m in self._content_svc.list_modules(cid):
-            if not m["published"]: continue
+        all_modules = self._content_svc.list_modules(cid)
+        published = [m for m in all_modules if m.get("published")]
+        for m in published:
             lessons = self._content_svc.list_lessons(m["id"]); prog = self._progress_svc.get_module_progress(sid, m["id"])
             self._stu_mod_tree.insert("", "end", values=(m["title"], len(lessons), prog["completed"], f"{prog['percentage']}%"))
+        if not all_modules:
+            self._stu_empty_var.set(
+                f"No LMS modules exist for course {cid} yet. Your "
+                "instructor creates them in the LMS 'Course Content' tab.")
+        elif not published:
+            self._stu_empty_var.set(
+                f"{len(all_modules)} module(s) exist for course {cid} but "
+                "none have been published yet. Ask your instructor to "
+                "publish them.")
+        else:
+            self._stu_empty_var.set("")
 
     # ==================================================================
     # Student: Current Lesson
@@ -481,7 +511,30 @@ class LMSFrame(tk.Frame):
             messagebox.showwarning("LMS", "Enter a valid Course ID or code (e.g. 1 or CS)."); return
         lesson = self._progress_svc.get_next_lesson(self._get_student_id(), cid)
         if not lesson:
-            tk.Label(self._lesson_display, text="All lessons completed!", font=("Helvetica", 14, "bold"), bg="white", fg=SUCCESS).pack(expand=True)
+            # Distinguish "all done" from "no content at all".
+            any_lessons = False
+            if self._content_svc:
+                for m in self._content_svc.list_modules(cid):
+                    if m.get("published") and self._content_svc.list_lessons(m["id"]):
+                        any_lessons = True
+                        break
+            if any_lessons:
+                tk.Label(self._lesson_display, text="All lessons completed!",
+                         font=("Helvetica", 14, "bold"), bg="white",
+                         fg=SUCCESS).pack(expand=True)
+            else:
+                tk.Label(self._lesson_display,
+                         text=f"No lessons have been published for course "
+                              f"{cid} yet.",
+                         font=("Helvetica", 12, "bold"), bg="white",
+                         fg="#7f8c8d").pack(pady=(40, 6))
+                tk.Label(self._lesson_display,
+                         text="Your instructor creates modules and lessons "
+                              "from the staff 'Course Content' and "
+                              "'Create Lesson' tabs.",
+                         bg="white", fg="#7f8c8d",
+                         wraplength=520, justify="center"
+                         ).pack()
             self._lesson_id_loaded = None; return
         self._lesson_id_loaded = lesson["id"]
         tk.Label(self._lesson_display, text=lesson["title"], font=("Helvetica", 14, "bold"), bg="white").pack(anchor="w")
@@ -563,6 +616,13 @@ class LMSFrame(tk.Frame):
         if cid is None:
             messagebox.showwarning("LMS", "Enter a valid Course ID or code (e.g. 1 or CS)."); return
         sid = self._get_student_id(); prog = self._progress_svc.get_student_progress(sid, cid)
+        if not prog.get("total"):
+            tk.Label(self._my_prog_frame,
+                     text=f"No lessons have been published for course {cid} "
+                          "yet — there's nothing to report progress on.",
+                     font=("Helvetica", 11), bg=MAIN_BG, fg="#7f8c8d",
+                     wraplength=640, justify="left").pack(anchor="w")
+            return
         tk.Label(self._my_prog_frame, text=f"Completed {prog['completed']} of {prog['total']} lessons", font=("Helvetica", 13, "bold"), bg=MAIN_BG).pack(anchor="w")
         ttk.Progressbar(self._my_prog_frame, length=400, mode="determinate", maximum=100, value=prog["percentage"]).pack(fill="x", pady=10)
         tk.Label(self._my_prog_frame, text=f"{prog['percentage']}% complete", font=("Helvetica", 11), bg=MAIN_BG, fg=ACCENT).pack(anchor="w")
