@@ -10,6 +10,7 @@ Management GUI and does not use this frame.
 """
 
 import json
+import sqlite3
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
@@ -83,6 +84,47 @@ class LMSFrame(tk.Frame):
         return ""
 
     # ------------------------------------------------------------------
+    # Course identifier resolution
+    # ------------------------------------------------------------------
+
+    def _resolve_course_id(self, raw):
+        """Accept a numeric course id, a course code (e.g. 'CS'), or a
+        course name (e.g. 'Computer Science'), and return the numeric
+        ``courses.id``. Returns ``None`` when nothing matches.
+        """
+        if raw is None:
+            return None
+        val = raw.strip() if isinstance(raw, str) else raw
+        if not val:
+            return None
+        try:
+            return int(val)
+        except (TypeError, ValueError):
+            pass
+        if not self._db_path:
+            return None
+        try:
+            conn = sqlite3.connect(self._db_path)
+            try:
+                row = conn.execute(
+                    """
+                    SELECT id FROM courses
+                    WHERE COALESCE(course_code, code) = ?
+                       OR COALESCE(course_name, name) = ?
+                    LIMIT 1
+                    """,
+                    (val, val),
+                ).fetchone()
+            finally:
+                conn.close()
+        except Exception as exc:
+            logger.debug("LMS course resolution failed for %r: %s", val, exc)
+            return None
+        return int(row[0]) if row else None
+
+    # ------------------------------------------------------------------
+
+    # ------------------------------------------------------------------
     # UI
     # ------------------------------------------------------------------
 
@@ -125,7 +167,7 @@ class LMSFrame(tk.Frame):
 
     def _build_content_tab(self, parent):
         top = tk.Frame(parent, bg=MAIN_BG); top.pack(fill="x", padx=10, pady=8)
-        tk.Label(top, text="Course ID:", bg=MAIN_BG).pack(side="left")
+        tk.Label(top, text="Course ID / Code:", bg=MAIN_BG).pack(side="left")
         self._content_course_var = tk.StringVar()
         tk.Entry(top, textvariable=self._content_course_var, width=10).pack(side="left", padx=5)
         tk.Button(top, text="Load Modules", bg=ACCENT, fg="white", command=self._load_modules).pack(side="left", padx=5)
@@ -143,8 +185,9 @@ class LMSFrame(tk.Frame):
 
     def _load_modules(self):
         if not self._content_svc: return
-        try: cid = int(self._content_course_var.get())
-        except (ValueError, TypeError): messagebox.showwarning("LMS", "Enter a valid Course ID"); return
+        cid = self._resolve_course_id(self._content_course_var.get())
+        if cid is None:
+            messagebox.showwarning("LMS", "Enter a valid Course ID or code (e.g. 1 or CS)."); return
         self._content_tree.delete(*self._content_tree.get_children())
         for m in self._content_svc.list_modules(cid):
             self._content_tree.insert("", "end", values=(m["id"], m["title"], "Module", "Yes" if m["published"] else "No", m["order_index"]))
@@ -153,8 +196,9 @@ class LMSFrame(tk.Frame):
 
     def _new_module_dialog(self):
         if not self._content_svc: return
-        try: cid = int(self._content_course_var.get())
-        except (ValueError, TypeError): messagebox.showwarning("LMS", "Enter a valid Course ID first"); return
+        cid = self._resolve_course_id(self._content_course_var.get())
+        if cid is None:
+            messagebox.showwarning("LMS", "Enter a valid Course ID or code first (e.g. 1 or CS)."); return
         dlg = tk.Toplevel(self); dlg.title("New Module"); dlg.geometry("380x200"); dlg.grab_set()
         frm = tk.Frame(dlg, padx=20, pady=15); frm.pack(fill="both", expand=True)
         tk.Label(frm, text="Title:").grid(row=0, column=0, sticky="w", pady=4)
@@ -371,15 +415,16 @@ class LMSFrame(tk.Frame):
 
     def _build_staff_progress_tab(self, parent):
         top = tk.Frame(parent, bg=MAIN_BG, padx=10, pady=8); top.pack(fill="x")
-        tk.Label(top, text="Course ID:", bg=MAIN_BG).pack(side="left")
+        tk.Label(top, text="Course ID / Code:", bg=MAIN_BG).pack(side="left")
         self._prog_course_var = tk.StringVar(); tk.Entry(top, textvariable=self._prog_course_var, width=10).pack(side="left", padx=5)
         tk.Button(top, text="Load Stats", bg=ACCENT, fg="white", command=self._load_course_stats).pack(side="left", padx=5)
         self._stats_frame = tk.Frame(parent, bg=MAIN_BG, padx=20, pady=15); self._stats_frame.pack(fill="both", expand=True)
 
     def _load_course_stats(self):
         if not self._progress_svc: return
-        try: cid = int(self._prog_course_var.get())
-        except (ValueError, TypeError): messagebox.showwarning("LMS", "Enter a valid Course ID"); return
+        cid = self._resolve_course_id(self._prog_course_var.get())
+        if cid is None:
+            messagebox.showwarning("LMS", "Enter a valid Course ID or code (e.g. 1 or CS)."); return
         for w in self._stats_frame.winfo_children(): w.destroy()
         stats = self._progress_svc.get_course_completion_stats(cid)
         for i, (lbl, val) in enumerate([("Total Lessons", str(stats["total_lessons"])), ("Students", str(stats["total_students"])), ("Avg Completion", f"{stats['avg_percentage']}%"), ("Fully Completed", str(stats["fully_completed"]))]):
@@ -397,7 +442,7 @@ class LMSFrame(tk.Frame):
 
     def _build_my_courses_tab(self, parent):
         top = tk.Frame(parent, bg=MAIN_BG, padx=10, pady=8); top.pack(fill="x")
-        tk.Label(top, text="Course ID:", bg=MAIN_BG).pack(side="left")
+        tk.Label(top, text="Course ID / Code:", bg=MAIN_BG).pack(side="left")
         self._stu_course_var = tk.StringVar(); tk.Entry(top, textvariable=self._stu_course_var, width=10).pack(side="left", padx=5)
         tk.Button(top, text="Load", bg=ACCENT, fg="white", command=self._load_student_modules).pack(side="left", padx=5)
         cols = ("Module", "Lessons", "Completed", "Progress")
@@ -407,8 +452,9 @@ class LMSFrame(tk.Frame):
 
     def _load_student_modules(self):
         if not self._content_svc or not self._progress_svc: return
-        try: cid = int(self._stu_course_var.get())
-        except (ValueError, TypeError): messagebox.showwarning("LMS", "Enter a valid Course ID"); return
+        cid = self._resolve_course_id(self._stu_course_var.get())
+        if cid is None:
+            messagebox.showwarning("LMS", "Enter a valid Course ID or code (e.g. 1 or CS)."); return
         sid = self._get_student_id(); self._stu_mod_tree.delete(*self._stu_mod_tree.get_children())
         for m in self._content_svc.list_modules(cid):
             if not m["published"]: continue
@@ -421,7 +467,7 @@ class LMSFrame(tk.Frame):
 
     def _build_current_lesson_tab(self, parent):
         top = tk.Frame(parent, bg=MAIN_BG, padx=10, pady=8); top.pack(fill="x")
-        tk.Label(top, text="Course ID:", bg=MAIN_BG).pack(side="left")
+        tk.Label(top, text="Course ID / Code:", bg=MAIN_BG).pack(side="left")
         self._cur_course_var = tk.StringVar(); tk.Entry(top, textvariable=self._cur_course_var, width=10).pack(side="left", padx=5)
         tk.Button(top, text="Load Next Lesson", bg=ACCENT, fg="white", command=self._load_next_lesson).pack(side="left", padx=5)
         self._lesson_display = tk.Frame(parent, bg="white", padx=20, pady=15); self._lesson_display.pack(fill="both", expand=True, padx=10, pady=5)
@@ -430,8 +476,9 @@ class LMSFrame(tk.Frame):
     def _load_next_lesson(self):
         if not self._progress_svc: return
         for w in self._lesson_display.winfo_children(): w.destroy()
-        try: cid = int(self._cur_course_var.get())
-        except (ValueError, TypeError): messagebox.showwarning("LMS", "Enter a valid Course ID"); return
+        cid = self._resolve_course_id(self._cur_course_var.get())
+        if cid is None:
+            messagebox.showwarning("LMS", "Enter a valid Course ID or code (e.g. 1 or CS)."); return
         lesson = self._progress_svc.get_next_lesson(self._get_student_id(), cid)
         if not lesson:
             tk.Label(self._lesson_display, text="All lessons completed!", font=("Helvetica", 14, "bold"), bg="white", fg=SUCCESS).pack(expand=True)
@@ -504,7 +551,7 @@ class LMSFrame(tk.Frame):
 
     def _build_student_progress_tab(self, parent):
         top = tk.Frame(parent, bg=MAIN_BG, padx=10, pady=8); top.pack(fill="x")
-        tk.Label(top, text="Course ID:", bg=MAIN_BG).pack(side="left")
+        tk.Label(top, text="Course ID / Code:", bg=MAIN_BG).pack(side="left")
         self._my_prog_course_var = tk.StringVar(); tk.Entry(top, textvariable=self._my_prog_course_var, width=10).pack(side="left", padx=5)
         tk.Button(top, text="View Progress", bg=ACCENT, fg="white", command=self._view_my_progress).pack(side="left", padx=5)
         self._my_prog_frame = tk.Frame(parent, bg=MAIN_BG, padx=20, pady=15); self._my_prog_frame.pack(fill="both", expand=True)
@@ -512,8 +559,9 @@ class LMSFrame(tk.Frame):
     def _view_my_progress(self):
         if not self._progress_svc: return
         for w in self._my_prog_frame.winfo_children(): w.destroy()
-        try: cid = int(self._my_prog_course_var.get())
-        except (ValueError, TypeError): messagebox.showwarning("LMS", "Enter a valid Course ID"); return
+        cid = self._resolve_course_id(self._my_prog_course_var.get())
+        if cid is None:
+            messagebox.showwarning("LMS", "Enter a valid Course ID or code (e.g. 1 or CS)."); return
         sid = self._get_student_id(); prog = self._progress_svc.get_student_progress(sid, cid)
         tk.Label(self._my_prog_frame, text=f"Completed {prog['completed']} of {prog['total']} lessons", font=("Helvetica", 13, "bold"), bg=MAIN_BG).pack(anchor="w")
         ttk.Progressbar(self._my_prog_frame, length=400, mode="determinate", maximum=100, value=prog["percentage"]).pack(fill="x", pady=10)
