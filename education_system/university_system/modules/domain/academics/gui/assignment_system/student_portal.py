@@ -53,6 +53,7 @@ class AssignmentStudentPortal:
         self.status_var = tk.StringVar(value="Loading your assignments…")
         self._current_assignment_id = None
         self._current_assignment = None
+        self._current_submission_path = None
 
         self._build_ui()
         if self.student_id is None:
@@ -178,6 +179,10 @@ class AssignmentStudentPortal:
                                      command=self._submit_file,
                                      state='disabled')
         self.submit_btn.pack(side='left')
+        self.view_btn = ttk.Button(actions, text="View My File",
+                                    command=self._view_my_submission,
+                                    state='disabled')
+        self.view_btn.pack(side='left', padx=(6, 0))
 
         # Status bar
         status = ttk.Frame(self.window, relief='sunken')
@@ -201,9 +206,11 @@ class AssignmentStudentPortal:
             self.tree.delete(i)
         self._current_assignment_id = None
         self._current_assignment = None
+        self._current_submission_path = None
         self.detail_var.set("Select an assignment on the left.")
         self.grade_var.set("No submission yet.")
         self.submit_btn.configure(state='disabled')
+        self.view_btn.configure(state='disabled')
 
         if self.student_id is None:
             return
@@ -284,7 +291,7 @@ class AssignmentStudentPortal:
                 cur.execute(
                     """
                     SELECT id, submission_date, file_name, grade, feedback,
-                           status, late_submission, late_days
+                           status, late_submission, late_days, file_path
                     FROM assignment_submissions
                     WHERE assignment_id = ? AND student_id = ?
                     ORDER BY submission_date DESC LIMIT 1
@@ -314,7 +321,10 @@ class AssignmentStudentPortal:
         self.detail_var.set('\n'.join(detail))
 
         if submission:
-            sid, sdate, fname, grade, feedback, status, late, late_days = submission
+            (sid, sdate, fname, grade, feedback, status, late, late_days,
+             fpath) = submission
+            self._current_submission_path = fpath
+            self.view_btn.configure(state='normal' if fpath else 'disabled')
             lines = [
                 f"Submitted: {sdate}",
                 f"File: {fname or '(none)'}",
@@ -327,6 +337,8 @@ class AssignmentStudentPortal:
                 lines += ["", f"Feedback:\n{feedback}"]
             self.grade_var.set('\n'.join(lines))
         else:
+            self._current_submission_path = None
+            self.view_btn.configure(state='disabled')
             self.grade_var.set("No submission yet.")
 
         today = datetime.now().date().isoformat()
@@ -340,6 +352,20 @@ class AssignmentStudentPortal:
     # ------------------------------------------------------------------
     # Submit
     # ------------------------------------------------------------------
+
+    def _view_my_submission(self):
+        if not self._current_submission_path:
+            messagebox.showinfo(
+                "No Submission",
+                "You haven't submitted a file for this assignment yet.",
+                parent=self.window)
+            return
+        from education_system.university_system.modules.domain.academics.gui.assignment_system._file_viewer import (
+            preview_file,
+        )
+        assignment_title = (self._current_assignment or (None, '',))[1] or 'Submission'
+        preview_file(self.window, self._current_submission_path,
+                     title=f"My Submission — {assignment_title}")
 
     def _submit_file(self):
         if not self._current_assignment or self.student_id is None:

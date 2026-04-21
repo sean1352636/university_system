@@ -171,6 +171,8 @@ class AssignmentStaffPortal:
         sub_actions.pack(fill='x', pady=(6, 0))
         ttk.Button(sub_actions, text="Grade / Feedback…",
                    command=self._grade_submission).pack(side='left', padx=2)
+        ttk.Button(sub_actions, text="View File",
+                   command=self._view_submission_file).pack(side='left', padx=2)
 
         # Status bar
         status = ttk.Frame(self.window, relief='sunken')
@@ -323,6 +325,37 @@ class AssignmentStaffPortal:
                 status_label,
             ))
         self.status_var.set(f"{len(rows)} submission(s) for this assignment.")
+
+    def _view_submission_file(self):
+        sel = self.sub_tree.selection()
+        if not sel:
+            messagebox.showinfo("No Selection",
+                                "Select a submission to view.",
+                                parent=self.window)
+            return
+        submission_id = int(sel[0])
+        try:
+            with _connect() as conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT file_path, file_name, student_id "
+                    "FROM assignment_submissions WHERE id = ?",
+                    (submission_id,)
+                )
+                row = cur.fetchone()
+        except Exception as e:
+            messagebox.showerror("Database Error",
+                                 f"Could not load submission: {e}",
+                                 parent=self.window)
+            return
+        if not row:
+            return
+        file_path, file_name, student_id = row
+        from education_system.university_system.modules.domain.academics.gui.assignment_system._file_viewer import (
+            preview_file,
+        )
+        preview_file(self.window, file_path or '',
+                     title=f"Submission #{submission_id} — {student_id}")
 
     def _grade_submission(self, _event=None):
         sel = self.sub_tree.selection()
