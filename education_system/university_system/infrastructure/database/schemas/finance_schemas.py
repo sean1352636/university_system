@@ -444,9 +444,7 @@ def init_finance_tables():
                     product_id TEXT NOT NULL,
                     quantity INTEGER NOT NULL,
                     price_per_item REAL NOT NULL,
-                    subtotal REAL NOT NULL,
-                    FOREIGN KEY (transaction_id) REFERENCES shop_transactions (transaction_id),
-                    FOREIGN KEY (product_id) REFERENCES shop_products (product_id)
+                    subtotal REAL NOT NULL
                 )
         ''')
 

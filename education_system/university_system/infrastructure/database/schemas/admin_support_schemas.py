@@ -1359,7 +1359,7 @@ def init_commerce_tables():
                     quantity INTEGER NOT NULL DEFAULT 1,
                     added_at TEXT NOT NULL,
                     FOREIGN KEY (user_id) REFERENCES users (id),
-                    FOREIGN KEY (product_id) REFERENCES shop_products (product_id),
+                    FOREIGN KEY (product_id) REFERENCES products (product_id),
                     UNIQUE(user_id, product_id)
                 )
         ''')
@@ -1388,8 +1388,7 @@ def init_commerce_tables():
                     product_id TEXT NOT NULL,
                     quantity INTEGER NOT NULL DEFAULT 0,
                     last_restock_date TEXT,
-                    restock_threshold INTEGER DEFAULT 5,
-                    FOREIGN KEY (product_id) REFERENCES shop_products (product_id)
+                    restock_threshold INTEGER DEFAULT 5
                 )
         ''')
 

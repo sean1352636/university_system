@@ -3,31 +3,123 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from education_system.university_system.modules.domain.commerce.services.shop_management.config import auth
 
 
+def _heal_legacy_shop_fk_targets(cursor) -> None:
+    """Rebuild shop_inventory / shop_transaction_items to drop their broken
+    FOREIGN KEY clauses.
+
+    The legacy DDL referenced tables that don't exist (``shop_products`` /
+    ``shop_transactions``). Pointing the FKs at the real tables
+    (``products`` / ``transactions``) doesn't work either: the columns
+    the shop actually writes (`item['product_id']`, the generated
+    string ``transaction_id``) don't match any PRIMARY KEY or UNIQUE
+    column — `transactions.transaction_id` is an INTEGER autoincrement,
+    and `transactions.source_transaction_id` (where the shop's string
+    lives) has no UNIQUE constraint. With FK enforcement ON, every
+    INSERT raised either ``no such table: main.shop_products`` or
+    ``foreign key mismatch`` and killed the checkout.
+
+    The cleanest fix is to drop the FK clauses entirely on these two
+    tables. They were never correct, and removing them lets the real
+    INSERTs / UPDATEs through without papering over the real data
+    relationships.
+
+    Idempotent — a no-op when the tables are already FK-free.
+    """
+    legacy_tables = {
+        'shop_inventory': (
+            """
+            CREATE TABLE shop_inventory (
+                inventory_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                product_id TEXT NOT NULL,
+                quantity INTEGER NOT NULL DEFAULT 0,
+                last_restock_date TEXT,
+                restock_threshold INTEGER DEFAULT 5
+            )
+            """,
+            (
+                'inventory_id', 'product_id', 'quantity',
+                'last_restock_date', 'restock_threshold',
+            ),
+        ),
+        'shop_transaction_items': (
+            """
+            CREATE TABLE shop_transaction_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transaction_id TEXT NOT NULL,
+                product_id TEXT NOT NULL,
+                quantity INTEGER NOT NULL,
+                price_per_item REAL NOT NULL,
+                subtotal REAL NOT NULL
+            )
+            """,
+            (
+                'id', 'transaction_id', 'product_id', 'quantity',
+                'price_per_item', 'subtotal',
+            ),
+        ),
+    }
+
+    for name, (new_sql, cols) in legacy_tables.items():
+        row = cursor.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
+            (name,),
+        ).fetchone()
+        if not row or not row[0]:
+            continue
+        if 'FOREIGN KEY' not in row[0].upper():
+            continue  # already FK-free
+
+        tmp = f"{name}__healed_tmp"
+        col_list = ', '.join(cols)
+        cursor.execute("PRAGMA foreign_keys = OFF")
+        try:
+            cursor.execute(f"DROP TABLE IF EXISTS {tmp}")
+            cursor.execute(new_sql.replace(name, tmp, 1))
+            cursor.execute(
+                f"INSERT INTO {tmp} ({col_list}) "
+                f"SELECT {col_list} FROM {name}"
+            )
+            cursor.execute(f"DROP TABLE {name}")
+            cursor.execute(f"ALTER TABLE {tmp} RENAME TO {name}")
+        finally:
+            cursor.execute("PRAGMA foreign_keys = ON")
+
+
 def init_shop_db() -> bool:
     """Initialize the shop database tables"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
+        # Heal the legacy FK targets on existing DBs before we let
+        # CREATE TABLE IF NOT EXISTS keep the broken rows in place.
+        _heal_legacy_shop_fk_targets(cursor)
+
         # Note: shop products now use the unified 'products' table
         # with source_type = 'shop'. No CREATE TABLE needed here.
 
-        # Create inventory table
+        # Create inventory table. No FK on product_id: enforcement moves
+        # to the service layer, because the historical FK target
+        # ``shop_products`` doesn't exist and the real products table
+        # can't be used without dragging other bad assumptions along.
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS shop_inventory (
             inventory_id INTEGER PRIMARY KEY AUTOINCREMENT,
             product_id TEXT NOT NULL,
             quantity INTEGER NOT NULL DEFAULT 0,
             last_restock_date TEXT,
-            restock_threshold INTEGER DEFAULT 5,
-            FOREIGN KEY (product_id) REFERENCES products (source_product_id)
+            restock_threshold INTEGER DEFAULT 5
         )
         ''')
 
         # Note: shop transactions now use the unified 'transactions' table
         # with source_type = 'shop'. No CREATE TABLE needed here.
 
-        # Create transaction items table
+        # Create transaction items table. No FKs: transaction_id is the
+        # generated string the shop stores in transactions.source_transaction_id
+        # (not transactions.transaction_id, which is an INTEGER PK), and
+        # source_transaction_id has no UNIQUE constraint so it can't be
+        # an FK target.
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS shop_transaction_items (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,9 +127,7 @@ def init_shop_db() -> bool:
             product_id TEXT NOT NULL,
             quantity INTEGER NOT NULL,
             price_per_item REAL NOT NULL,
-            subtotal REAL NOT NULL,
-            FOREIGN KEY (transaction_id) REFERENCES transactions (source_transaction_id),
-            FOREIGN KEY (product_id) REFERENCES products (source_product_id)
+            subtotal REAL NOT NULL
         )
         ''')
 
