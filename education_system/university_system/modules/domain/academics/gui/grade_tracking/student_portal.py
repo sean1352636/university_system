@@ -260,11 +260,20 @@ class GradeTrackingStudentPortal:
         total_credits = 0
         weighted_gpa = 0.0
         gpa_credits = 0
+        credits_populated = False
 
         for (code, name, credits, status, sum_score, sum_max,
              total_assignments, graded_count) in module_rows:
             credits = credits or 0
             total_credits += credits
+            # Modules that have at least one graded submission contribute
+            # to the GPA. If the modules.credits column isn't populated
+            # (the live DB currently has 0 for every row), fall back to
+            # equal weighting so the GPA is the unweighted mean of the
+            # graded modules instead of collapsing to 0.00.
+            gpa_weight = credits if credits > 0 else 1
+            if credits > 0:
+                credits_populated = True
 
             if sum_max and sum_max > 0 and sum_score is not None:
                 pct = (float(sum_score) / float(sum_max)) * 100.0
@@ -275,9 +284,9 @@ class GradeTrackingStudentPortal:
                 score_display = '—'
                 letter = None
 
-            if letter and letter in _GPA_MAP and credits:
-                weighted_gpa += _GPA_MAP[letter] * credits
-                gpa_credits += credits
+            if letter and letter in _GPA_MAP:
+                weighted_gpa += _GPA_MAP[letter] * gpa_weight
+                gpa_credits += gpa_weight
 
             status_text = status or 'Enrolled'
             if total_assignments:
@@ -289,12 +298,13 @@ class GradeTrackingStudentPortal:
             ))
 
         gpa = (weighted_gpa / gpa_credits) if gpa_credits else 0.0
+        gpa_qualifier = "credit-weighted" if credits_populated else "equal weight — credits not set"
         self.summary_var.set(
             f"Student: {student_id} — {full_name}   "
             f"({self.student['course'] or 'No course'})\n"
             f"Enrolled modules: {len(module_rows)}   |   "
             f"Credits: {total_credits}   |   "
-            f"GPA (graded, credit-weighted): {gpa:.2f}"
+            f"GPA (graded, {gpa_qualifier}): {gpa:.2f}"
         )
 
     def _on_module_select(self, _event=None):
