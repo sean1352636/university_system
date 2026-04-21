@@ -5,10 +5,10 @@ Email Scheduler Control Script
 This script provides a command-line interface to control the email scheduler.
 
 Usage:
-    python -m university_system.utils.email_scheduler_control start
-    python -m university_system.utils.email_scheduler_control stop
-    python -m university_system.utils.email_scheduler_control status
-    python -m university_system.utils.email_scheduler_control run
+    python -m university_system.scripts.email_scheduler_control start
+    python -m university_system.scripts.email_scheduler_control stop
+    python -m university_system.scripts.email_scheduler_control status
+    python -m university_system.scripts.email_scheduler_control run
 
 Commands:
     start   - Start the scheduler in the background

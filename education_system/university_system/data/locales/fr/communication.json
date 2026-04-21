@@ -214,7 +214,7 @@
     "inbox_fix_description": "Fix inbox display issues (recreate missing inbox messages from stored emails)",
     "update_scheduled_status": "Update Scheduled Email Status",
     "automated_scheduler": "Automated Email Scheduler",
-    "scheduler_info": "AUTOMATED EMAIL SCHEDULER\n=========================\n\nFor automated periodic email tasks (satisfaction surveys, book reminders,\noverdue notices, SLA alerts), use the dedicated Email Scheduler system:\n\nCommand Line:\n  python -m university_system.utils.email_scheduler_control start\n  python -m university_system.utils.email_scheduler_control status\n  python -m university_system.utils.email_scheduler_control stop\n\nFeatures:\n  - Satisfaction surveys (daily at 09:00)\n  - Book return reminders (daily at 08:00)\n  - Overdue book notices (daily at 10:00)\n  - SLA breach alerts (every 30 minutes)\n\nSee docs/EMAIL_SCHEDULER.md for complete documentation.",
+    "scheduler_info": "AUTOMATED EMAIL SCHEDULER\n=========================\n\nFor automated periodic email tasks (satisfaction surveys, book reminders,\noverdue notices, SLA alerts), use the dedicated Email Scheduler system:\n\nCommand Line:\n  python -m university_system.scripts.email_scheduler_control start\n  python -m university_system.scripts.email_scheduler_control status\n  python -m university_system.scripts.email_scheduler_control stop\n\nFeatures:\n  - Satisfaction surveys (daily at 09:00)\n  - Book return reminders (daily at 08:00)\n  - Overdue book notices (daily at 10:00)\n  - SLA breach alerts (every 30 minutes)\n\nSee docs/EMAIL_SCHEDULER.md for complete documentation.",
     "scheduled_emails": "Scheduled Emails",
     "waiting_for_queue": "Waiting for Queue",
     "waiting_message": "Waiting for email queue to empty...",

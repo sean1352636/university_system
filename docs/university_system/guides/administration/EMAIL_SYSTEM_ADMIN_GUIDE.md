@@ -346,13 +346,13 @@ The scheduler runs four automated tasks:
 **Background mode (production):**
 
 ```bash
-python -m university_system.utils.email_scheduler_control start
+python -m university_system.scripts.email_scheduler_control start
 ```
 
 **Foreground mode (debugging):**
 
 ```bash
-python -m university_system.utils.email_scheduler_control run
+python -m university_system.scripts.email_scheduler_control run
 ```
 
 **Programmatic start:**
@@ -367,10 +367,10 @@ start_scheduler()  # Runs in a daemon thread
 
 ```bash
 # Check status
-python -m university_system.utils.email_scheduler_control status
+python -m university_system.scripts.email_scheduler_control status
 
 # Stop scheduler
-python -m university_system.utils.email_scheduler_control stop
+python -m university_system.scripts.email_scheduler_control stop
 ```
 
 ```python
@@ -505,7 +505,7 @@ The `safe_log_email()` function handles schema mismatches gracefully by falling 
 
 ### Scheduler Not Running
 
-1. Check status: `python -m university_system.utils.email_scheduler_control status`
+1. Check status: `python -m university_system.scripts.email_scheduler_control status`
 2. Review logs for errors: `logs/app.log`
 3. Ensure the `schedule` library is installed
 4. Try running in foreground mode for debugging

@@ -38,25 +38,25 @@ The scheduler automatically handles the following tasks:
 #### Start the Scheduler (Background)
 
 ```bash
-python -m university_system.utils.email_scheduler_control start
+python -m university_system.scripts.email_scheduler_control start
 ```
 
 #### Check Scheduler Status
 
 ```bash
-python -m university_system.utils.email_scheduler_control status
+python -m university_system.scripts.email_scheduler_control status
 ```
 
 #### Stop the Scheduler
 
 ```bash
-python -m university_system.utils.email_scheduler_control stop
+python -m university_system.scripts.email_scheduler_control stop
 ```
 
 #### Run in Foreground (Testing)
 
 ```bash
-python -m university_system.utils.email_scheduler_control run
+python -m university_system.scripts.email_scheduler_control run
 ```
 
 Or directly:
@@ -233,7 +233,7 @@ LIMIT 10;
 
 1. Check if another instance is running:
    ```bash
-   python -m university_system.utils.email_scheduler_control status
+   python -m university_system.scripts.email_scheduler_control status
    ```
 
 2. Check for port conflicts or database locks
