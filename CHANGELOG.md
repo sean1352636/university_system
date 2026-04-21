@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.82.0 — 2026-04-21](#8820---2026-04-21)
 - [8.81.0 — 2026-04-21](#8810---2026-04-21)
 - [8.80.0 — 2026-04-21](#8800---2026-04-21)
 - [8.79.0 — 2026-04-19](#8790---2026-04-19)
@@ -186,6 +187,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.82.0] — 2026-04-21
+
+### Role-scoped Course Management portals, LMS UX, and a batch of data-layer fixes
+
+#### Added
+
+- **Course Management — role-scoped portals.** The "Course Management" sidebar button in the staff / instructor / student portals used to open the full admin `CourseManagementGUI` with no role filtering. Replaced with three focused portals under `modules/domain/academics/gui/course_management/`:
+  - `CourseManagementStudentPortal` — pivoted around the student's **degree course**. A prominent "My Degree Course" card at the top resolves `students.course` (`'CS'` / `'Computer Science'`) against `courses.course_code` or `courses.course_name` and shows code, name, department, standard credits and the full degree description. Two tabs below: **My Modules** (per-module details with instructor / enrolment status / grade if graded / description) and **Course Catalogue** (all degree programmes — CS, DS, … — with code / name / department / credits / student headcount and a description pane; the student's own course is pre-selected on first load).
+  - `CourseManagementInstructorPortal` — "Modules I teach" resolved via `UNION` of `modules.instructor LIKE '%<username>%'` and `DISTINCT assignments.module_code WHERE created_by = <my user id>` (the classic linkage is unpopulated in live data but the assignments signal isn't). Per-module details + student roster (student_id / name / email / enrolment status / final grade).
+  - `CourseManagementStaffPortal` — read-only browse across every active module, with a search box (code or name), a department filter dropdown, and a per-module roster drill-down. No create / edit / delete — staff who need those stay on the full `CourseManagementGUI`.
+- **LMS empty-state messaging.** `lms_modules` / `lms_lessons` / `lms_progress` are empty on a fresh install, so opening any course surfaced a blank tree with no explanation — users reported "nothing loads for either of the courses." Each tab now explains what's missing and who fixes it:
+  - Staff "Course Content" inserts a placeholder row: *"No modules yet for course N. Use 'New Module' to start."*
+  - Staff "Student Progress" replaces the card grid with *"No published LMS content for course N yet — nothing to report on."*
+  - Student "My Courses" distinguishes three states: no modules at all, some modules but none published, or content available.
+  - Student "Current Lesson" no longer shows a misleading *"All lessons completed!"* banner when there are literally zero lessons — it now shows *"No lessons have been published for course N yet"* with a pointer to the staff tabs.
+  - Student "My Progress" replaces the 0% progress bar with *"No lessons have been published for course N yet — there's nothing to report progress on."*
+
+#### Changed
+
+- **LMS "Course ID" inputs accept codes and names, not just integers.** The five `Course ID:` fields piped their raw text through `int(...)` with no fallback, so typing `CS`, `Computer Science`, or the module code `CIS0002` crashed with `ValueError`. New `_resolve_course_id(raw)` helper tries `int()` first, then falls back to a DB lookup against `COALESCE(course_code, code)` and `COALESCE(course_name, name)`. Every call site was updated to use it, the warning text became *"Enter a valid Course ID or code (e.g. 1 or CS)"*, and the five labels were relabelled *"Course ID / Code:"*. Verified against the live DB: `CS → 1`, `DS → 2`, `Computer Science → 1`, bad input returns `None`.
+- **Shop GUI — bind the checkout and email helpers, not just the top-level methods.** `UniversityShopGUI` uses a "module-level functions bound to the class" pattern — `main_gui.py` imports each manager module and does `UniversityShopGUI.method = manager.method`. The checkout block only bound the five public methods (`show_checkout` / `process_checkout` / `show_payment_methods_report` / `get_payment_methods_data` / `open_finance_gui_for_payment`) and skipped every private helper those methods dispatch to via `self`. Attaching the `email_notifications` module and explicitly binding `_process_student_account_payment`, `_send_shop_order_confirmation_email`, `_show_shop_email_fallback`, `add_finance_payment_option_to_checkout`, `add_shop_refund_to_student_account`, and `notify_shop_finance_gui`. Without this, a finance-account checkout raised *"'UniversityShopGUI' object has no attribute '_process_student_account_payment'"* and the post-checkout email would have failed next even if payment had succeeded.
+
+#### Fixed
+
+- **`log_activity` blew up on legacy kwargs.** `core.activity_logger.log_activity(action, entity_type, user, user_id, details)` had a fixed signature, but seven call sites in `scholarship_finder/services/scholarship_service.py` passed identifiers directly as keyword arguments — `profile_id=…`, `scholarship_id=…`, `student_id=…`, `application_id=…`, `document_id=…`. Every one raised `TypeError` and surfaced as *"Failed to save profile"* from the financial-aid student portal. Added `**extra` to the signature with a docstring note; legacy identifier kwargs are now folded silently the same way `details` was already being ignored by the underlying logger.
+- **Financial Aid: `scholarship_applications` has `application_date`, not `submitted_date`.** `_show_scholarship_applications` selected `sa.*` but rendered `app['submitted_date']`. `sqlite3.Row` raises `"No item with that key"` for missing columns, the try-block caught it, and the whole tab rendered a red *"Error loading applications"* label. One-character fix — `app['submitted_date']` → `app['application_date']`. The `SELECT ORDER BY` already used the correct column name, so the drift was only in the row-rendering code.
+- **Shop Management — "Switch to CLI" button.** The GUI's button spawned `python -m education_system.…shop_management` as a subprocess, but the package had no `__main__.py`, so Python rejected the invocation with *"package cannot be directly executed"* and the new CLI window never opened. Added a minimal `__main__.py` that delegates to `menus.display_main_menu_extended` — the existing CLI entry point — with a `KeyboardInterrupt` handler so Ctrl-C exits cleanly.
 
 ---
 
