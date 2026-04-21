@@ -5,10 +5,6 @@ Simple test to verify module functionality.
 """
 
 import sys
-import os
-
-# Add parent directory to path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../..')))
 
 from education_system.university_system.modules.domain.student_affairs.social_matching.services.social_matching_service import (
     SocialMatchingService,

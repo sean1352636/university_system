@@ -9,11 +9,6 @@ This script demonstrates the marketplace functionality including:
 """
 
 import sys
-from pathlib import Path
-
-# Add project root to path
-project_root = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(project_root))
 
 
 def test_marketplace_service():
