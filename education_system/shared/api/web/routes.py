@@ -16,6 +16,12 @@ logger = logging.getLogger(__name__)
 _DIR = Path(__file__).parent
 _TEMPLATE_DIR = _DIR / "templates"
 _STATIC_DIR = _DIR / "static"
+_PORTAL_DIR = _DIR / "portal"
+_PORTAL_ASSETS_DIR = _PORTAL_DIR / "assets"
+
+# Only HTML files in the portal directory are servable via the pretty-URL
+# route; assets are served from the /portal/assets/ path separately.
+_PORTAL_PAGES = {"index", "login", "dashboard", "students"}
 
 
 web_bp = Blueprint("web_frontend", __name__)
@@ -34,6 +40,28 @@ def serve_index():
 @web_bp.route("/web/static/<path:filename>")
 def serve_static(filename):
     return send_from_directory(str(_STATIC_DIR), filename)
+
+
+# ── Multi-page portal (new HTML site) ────────────────────────────────
+
+@web_bp.route("/portal/")
+@web_bp.route("/portal")
+def portal_home():
+    return send_from_directory(str(_PORTAL_DIR), "index.html")
+
+
+@web_bp.route("/portal/<page>.html")
+def portal_page(page):
+    # Allow only known pages — prevents path traversal and
+    # stops the route from serving unrelated files by accident.
+    if page not in _PORTAL_PAGES:
+        return jsonify({"error": "Not found"}), 404
+    return send_from_directory(str(_PORTAL_DIR), f"{page}.html")
+
+
+@web_bp.route("/portal/assets/<path:filename>")
+def portal_assets(filename):
+    return send_from_directory(str(_PORTAL_ASSETS_DIR), filename)
 
 
 # ── Database resolution ──────────────────────────────────────────────

@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Students | University System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #1a202c;
+            line-height: 1.5;
+        }
+        header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        header .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        header h1 { font-size: 1.75rem; }
+        header a {
+            color: white;
+            text-decoration: none;
+            opacity: 0.85;
+            font-size: 0.9rem;
+        }
+        header a:hover { opacity: 1; text-decoration: underline; }
+        main { max-width: 1300px; margin: 2rem auto; padding: 0 2rem; }
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .toolbar-left { display: flex; gap: 0.5rem; flex: 1; flex-wrap: wrap; }
+        .search {
+            flex: 1;
+            min-width: 250px;
+            padding: 0.6rem 1rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+        .search:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+        .btn-primary { background: #1e3a8a; color: white; }
+        .btn-primary:hover { background: #1e40af; }
+        .btn-secondary { background: #e2e8f0; color: #2d3748; }
+        .btn-secondary:hover { background: #cbd5e0; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-danger:hover { background: #b91c1c; }
+        .btn-sm { padding: 0.35rem 0.7rem; font-size: 0.8rem; }
+        table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        th, td {
+            padding: 0.75rem 0.85rem;
+            text-align: left;
+            border-bottom: 1px solid #edf2f7;
+        }
+        th {
+            background: #f7fafc;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #4a5568;
+        }
+        tbody tr:hover { background: #f7fafc; cursor: pointer; }
+        tbody tr:last-child td { border-bottom: none; }
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .badge-active { background: #d1fae5; color: #065f46; }
+        .badge-inactive { background: #fee2e2; color: #991b1b; }
+        .badge-graduated { background: #dbeafe; color: #1e40af; }
+        .badge-suspended { background: #fef3c7; color: #92400e; }
+        .badge-cs { background: #ede9fe; color: #5b21b6; }
+        .badge-ds { background: #ccfbf1; color: #115e59; }
+        .actions { display: flex; gap: 0.3rem; }
+        .empty {
+            text-align: center;
+            padding: 3rem;
+            color: #718096;
+            background: white;
+            border-radius: 8px;
+        }
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .modal-backdrop.show { display: flex; }
+        .modal {
+            background: white;
+            border-radius: 8px;
+            max-width: 700px;
+            width: 100%;
+            max-height: 92vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            padding: 1.1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 1;
+        }
+        .modal-header h2 { font-size: 1.25rem; color: #1e3a8a; }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #718096;
+            line-height: 1;
+        }
+        .modal-body { padding: 1.25rem 1.5rem; }
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            position: sticky;
+            bottom: 0;
+            background: white;
+        }
+        .fieldset {
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 1rem 1.25rem 1.25rem;
+            margin-bottom: 1rem;
+        }
+        .fieldset > legend {
+            padding: 0 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #1e3a8a;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.85rem;
+        }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group.full { grid-column: 1 / -1; }
+        .form-group label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.3rem;
+        }
+        .form-group .req { color: #dc2626; }
+        .form-group input,
+        .form-group select {
+            padding: 0.55rem 0.7rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
+        .form-group input:disabled,
+        .form-group input[readonly] {
+            background: #edf2f7;
+            color: #4a5568;
+        }
+        .checkbox-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .checkbox-row input { margin-top: 0.2rem; }
+        .checkbox-row label { font-size: 0.88rem; color: #2d3748; }
+        .note { color: #4a5568; font-size: 0.8rem; font-style: italic; margin-top: 0.3rem; }
+        .note.blue { color: #1e40af; }
+        .error-msg {
+            color: #dc2626;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+            display: none;
+            background: #fee2e2;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+        }
+        .error-msg.show { display: block; }
+        .module-list {
+            background: #f7fafc;
+            border-radius: 6px;
+            padding: 0.75rem;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 0.82rem;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .module-list .mod-row { padding: 0.2rem 0; }
+        .module-list .mod-type {
+            display: inline-block;
+            min-width: 110px;
+            color: #1e3a8a;
+            font-weight: 600;
+        }
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .detail-item .label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            color: #718096;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+        .detail-item .value {
+            font-size: 0.95rem;
+            color: #1a202c;
+            margin-top: 0.2rem;
+            font-family: 'SF Mono', Consolas, monospace;
+        }
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #1a202c;
+            color: white;
+            padding: 0.85rem 1.25rem;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 200;
+            max-width: 400px;
+        }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { background: #059669; }
+        .toast.error { background: #dc2626; }
+        .success-detail {
+            background: #ecfdf5;
+            border: 1px solid #6ee7b7;
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: 'SF Mono', Consolas, monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            color: #065f46;
+            line-height: 1.6;
+        }
+        kbd {
+            background: #edf2f7;
+            border: 1px solid #cbd5e0;
+            border-radius: 3px;
+            padding: 0.05rem 0.35rem;
+            font-size: 0.78rem;
+            font-family: 'SF Mono', Consolas, monospace;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div>
+                <h1>Student Records</h1>
+                <small><a href="university.html">&larr; Back to University System</a></small>
+            </div>
+            <div>
+                <span id="count-display" style="opacity:0.85; font-size:0.9rem;">0 students</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="toolbar">
+            <div class="toolbar-left">
+                <input type="text" class="search" id="search" placeholder="Search by ID, name, course, or email...">
+            </div>
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <button class="btn btn-secondary" id="seed-btn">Load Sample Data</button>
+                <button class="btn btn-secondary" id="search-dialog-btn">Advanced Search</button>
+                <button class="btn btn-primary" id="add-btn">+ Create Student</button>
+            </div>
+        </div>
+
+        <div id="table-wrap">
+            <table id="students-table">
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Title</th>
+                        <th>Name</th>
+                        <th>Course</th>
+                        <th>Age</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Registered</th>
+                        <th style="width: 230px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="students-tbody"></tbody>
+            </table>
+            <div id="empty-state" class="empty" style="display:none;"></div>
+        </div>
+    </main>
+
+    <!-- Create Modal -->
+    <div class="modal-backdrop" id="create-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Create Student</h2>
+                <button class="modal-close" data-close>&times;</button>
+            </div>
+            <form id="create-form">
+                <div class="modal-body">
+                    <p class="note blue" style="margin-bottom:1rem;">
+                        Student ID, email, course, and age are auto-generated (matching the GUI/CLI behaviour).
+                        Course is randomly assigned as <strong>CS</strong> or <strong>DS</strong>.
+                    </p>
+
+                    <fieldset class="fieldset">
+                        <legend>Personal Information</legend>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Title</label>
+                                <select name="title">
+                                    <option value="">— auto from gender —</option>
+                                    <option>Mr</option>
+                                    <option>Ms</option>
+                                    <option>Mrs</option>
+                                    <option>Miss</option>
+                                    <option>Dr</option>
+                                    <option>Prof</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Gender <span class="req">*</span></label>
+                                <select name="gender" required>
+                                    <option value="">— Select —</option>
+                                    <option value="male">male</option>
+                                    <option value="female">female</option>
+                                    <option value="other">other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>First Name <span class="req">*</span></label>
+                                <input type="text" name="first_name" required maxlength="50">
+                            </div>
+                            <div class="form-group">
+                                <label>Middle Name</label>
+                                <input type="text" name="middle_name" maxlength="50">
+                            </div>
+                            <div class="form-group full">
+                                <label>Last Name <span class="req">*</span></label>
+                                <input type="text" name="last_name" required maxlength="50">
+                            </div>
+                            <div class="form-group full">
+                                <label>Date of Birth <span class="req">*</span> <span class="note">(age 16–80)</span></label>
+                                <input type="date" name="dob" required>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="fieldset">
+                        <legend>Academic Information</legend>
+                        <p class="note blue">
+                            Course will be <strong>randomly assigned</strong> (CS or DS), 6 modules attached
+                            (2 compulsory, 2 optional, 2 course-specific), and a login password generated
+                            as <kbd>{firstname}123456</kbd>.
+                        </p>
+                    </fieldset>
+
+                    <div class="error-msg" id="create-error"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Student</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Update Modal -->
+    <div class="modal-backdrop" id="update-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Update Student</h2>
+                <button class="modal-close" data-close>&times;</button>
+            </div>
+            <form id="update-form">
+                <div class="modal-body">
+                    <fieldset class="fieldset">
+                        <legend>Current Record</legend>
+                        <div id="update-current" class="module-list" style="font-size:0.85rem;"></div>
+                    </fieldset>
+
+                    <fieldset class="fieldset">
+                        <legend>Personal Information</legend>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Title</label>
+                                <select name="title">
+                                    <option value=""></option>
+                                    <option>Mr</option>
+                                    <option>Ms</option>
+                                    <option>Mrs</option>
+                                    <option>Miss</option>
+                                    <option>Dr</option>
+                                    <option>Prof</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Gender</label>
+                                <select name="gender">
+                                    <option value=""></option>
+                                    <option value="male">male</option>
+                                    <option value="female">female</option>
+                                    <option value="other">other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>First Name <span class="req">*</span></label>
+                                <input type="text" name="first_name" required maxlength="50">
+                            </div>
+                            <div class="form-group">
+                                <label>Middle Name</label>
+                                <input type="text" name="middle_name" maxlength="50">
+                            </div>
+                            <div class="form-group full">
+                                <label>Last Name <span class="req">*</span></label>
+                                <input type="text" name="last_name" required maxlength="50">
+                            </div>
+                            <div class="form-group full">
+                                <label>Date of Birth <span class="note">(age 16–80)</span></label>
+                                <input type="date" name="dob">
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="fieldset">
+                        <legend>Academic Information</legend>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label>Current Course</label>
+                                <input type="text" name="course_display" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="text" name="email_display" readonly>
+                            </div>
+                            <div class="form-group full">
+                                <div class="checkbox-row">
+                                    <input type="checkbox" id="reassign-course" name="reassign_course">
+                                    <label for="reassign-course">Reassign course (toggle CS &harr; DS) and reshuffle course-specific modules</label>
+                                </div>
+                            </div>
+                        </div>
+                    </fieldset>
+
+                    <fieldset class="fieldset">
+                        <legend>Module Management</legend>
+                        <div id="update-modules" class="module-list"></div>
+                        <button type="button" class="btn btn-secondary btn-sm" id="reassign-optional-btn" style="margin-top:0.6rem;">
+                            Reassign Optional Modules
+                        </button>
+                    </fieldset>
+
+                    <fieldset class="fieldset">
+                        <legend>Password Management</legend>
+                        <div class="checkbox-row">
+                            <input type="checkbox" id="reset-password" name="reset_password">
+                            <label for="reset-password">Reset login password (regenerate as <kbd>{firstname}123456</kbd>)</label>
+                        </div>
+                    </fieldset>
+
+                    <div class="error-msg" id="update-error"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Modal: requires typing student ID, matches GUI -->
+    <div class="modal-backdrop" id="delete-modal">
+        <div class="modal" style="max-width:550px;">
+            <div class="modal-header">
+                <h2 style="color:#dc2626;">Delete Student</h2>
+                <button class="modal-close" data-close>&times;</button>
+            </div>
+            <form id="delete-form">
+                <div class="modal-body">
+                    <fieldset class="fieldset">
+                        <legend>Student to Delete</legend>
+                        <div id="delete-info" class="module-list"></div>
+                    </fieldset>
+
+                    <fieldset class="fieldset" style="border-color:#fecaca; background:#fef2f2;">
+                        <legend style="color:#991b1b;">Related Data Affected</legend>
+                        <div id="delete-related" class="module-list" style="background:white;"></div>
+                    </fieldset>
+
+                    <p style="color:#dc2626; font-weight:600; margin-bottom:0.75rem;">⚠ This action cannot be undone.</p>
+
+                    <div class="form-group">
+                        <label>Type the Student ID <strong id="confirm-id-display"></strong> to confirm:</label>
+                        <input type="text" id="confirm-id-input" name="confirm_id" required autocomplete="off">
+                    </div>
+
+                    <div class="error-msg" id="delete-error"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close>Cancel</button>
+                    <button type="submit" class="btn btn-danger">Delete Permanently</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Modal -->
+    <div class="modal-backdrop" id="view-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Student Details</h2>
+                <button class="modal-close" data-close>&times;</button>
+            </div>
+            <div class="modal-body">
+                <fieldset class="fieldset">
+                    <legend>Personal & Academic</legend>
+                    <div class="detail-grid" id="view-personal"></div>
+                </fieldset>
+                <fieldset class="fieldset">
+                    <legend>Enrolled Modules</legend>
+                    <div id="view-modules" class="module-list"></div>
+                </fieldset>
+                <fieldset class="fieldset">
+                    <legend>Login Credentials</legend>
+                    <div class="detail-grid" id="view-credentials"></div>
+                </fieldset>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-close>Close</button>
+                <button type="button" class="btn btn-primary" id="edit-from-view">Edit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal-backdrop" id="success-modal">
+        <div class="modal" style="max-width:550px;">
+            <div class="modal-header">
+                <h2 style="color:#059669;">✓ Student Created Successfully</h2>
+                <button class="modal-close" data-close>&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="success-detail" id="success-detail"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-close>Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Search Modal -->
+    <div class="modal-backdrop" id="search-modal">
+        <div class="modal" style="max-width:500px;">
+            <div class="modal-header">
+                <h2>Advanced Search</h2>
+                <button class="modal-close" data-close>&times;</button>
+            </div>
+            <form id="search-form">
+                <div class="modal-body">
+                    <div class="form-grid">
+                        <div class="form-group full">
+                            <label>Student ID</label>
+                            <input type="text" name="student_id">
+                        </div>
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" name="first_name">
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" name="last_name">
+                        </div>
+                        <div class="form-group">
+                            <label>Course</label>
+                            <select name="course">
+                                <option value="">Any</option>
+                                <option value="CS">CS</option>
+                                <option value="DS">DS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select name="status">
+                                <option value="">Any</option>
+                                <option>Active</option>
+                                <option>Inactive</option>
+                                <option>Graduated</option>
+                                <option>Suspended</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="search-clear">Clear</button>
+                    <button type="submit" class="btn btn-primary">Apply Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+    // Auth gate
+    (function() {
+        if (!sessionStorage.getItem('uni_session')) {
+            window.location.href = 'login.html';
+        }
+    })();
+    (function() {
+        // === Module catalogue (mirrors modules.py) ===
+        const MODULES = {
+            compulsory: [
+                { code: 'CIS0001', name: 'python programming' },
+                { code: 'CIS0002', name: 'data structures and algorithms' },
+            ],
+            optional: [
+                { code: 'CIS1001', name: 'Computational Thinking' },
+                { code: 'CIS1002', name: 'Design Patterns' },
+                { code: 'CIS1003', name: 'Test Driven Development' },
+                { code: 'CIS1004', name: 'SQL Relational Database' },
+            ],
+            CS: [
+                { code: 'CIS2001', name: 'software quality assurance principles' },
+                { code: 'CIS2002', name: 'software reliabilities' },
+                { code: 'CIS2003', name: 'formal methods for system verifications' },
+                { code: 'CIS2004', name: 'algorithm complexity' },
+            ],
+            DS: [
+                { code: 'CIS3001', name: 'data visualisation' },
+                { code: 'CIS3002', name: 'an introduction to artificial intelligence in data science' },
+                { code: 'CIS3003', name: 'an introduction to machine learning' },
+                { code: 'CIS3004', name: 'statistical methods' },
+            ],
+        };
+        const TITLE_BY_GENDER = { male: 'Mr', female: 'Miss', other: '' };
+        const STORAGE_KEY = 'university_students_v2';
+
+        const $ = sel => document.querySelector(sel);
+        const tbody = $('#students-tbody');
+        const emptyState = $('#empty-state');
+        const tableWrap = $('#students-table');
+        const countDisplay = $('#count-display');
+        const searchInput = $('#search');
+        const toast = $('#toast');
+
+        let students = [];
+        let editingId = null;
+        let viewingId = null;
+        let deletingId = null;
+        let activeSearch = null;
+
+        function load() {
+            try { students = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+            catch { students = []; }
+        }
+        function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(students)); }
+
+        const escapeHtml = s => s == null ? '' : String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+        const findById = id => students.find(s => s.student_id === id);
+        const fullName = s => [s.title, s.first_name, s.middle_name, s.last_name].filter(Boolean).join(' ');
+        const sample = (arr, n) => {
+            const copy = [...arr], out = [];
+            for (let i = 0; i < n && copy.length; i++) {
+                out.push(copy.splice(Math.floor(Math.random() * copy.length), 1)[0]);
+            }
+            return out;
+        };
+        const generateStudentId = () => String(Math.floor(Math.random() * 10000000)).padStart(7, '0');
+        const calcAge = dob => {
+            if (!dob) return null;
+            const d = new Date(dob), now = new Date();
+            let age = now.getFullYear() - d.getFullYear();
+            if (now.getMonth() < d.getMonth() || (now.getMonth() === d.getMonth() && now.getDate() < d.getDate())) age--;
+            return age;
+        };
+        const nowStamp = () => new Date().toISOString().replace('T',' ').slice(0,19);
+        const tempPassword = first => `${(first || '').toLowerCase()}123456`;
+
+        function buildModuleSet(course) {
+            const mods = MODULES.compulsory.map(m => ({...m, type: 'compulsory'}));
+            sample(MODULES.optional, 2).forEach(m => mods.push({...m, type: 'optional'}));
+            sample(MODULES[course] || [], 2).forEach(m => mods.push({...m, type: `${course}-specific`}));
+            return mods;
+        }
+
+        function statusBadge(s) {
+            const cls = ({Active:'badge-active',Inactive:'badge-inactive',Graduated:'badge-graduated',Suspended:'badge-suspended'})[s] || 'badge-active';
+            return `<span class="badge ${cls}">${escapeHtml(s)}</span>`;
+        }
+        function courseBadge(c) {
+            const cls = c === 'CS' ? 'badge-cs' : c === 'DS' ? 'badge-ds' : 'badge-active';
+            return `<span class="badge ${cls}">${escapeHtml(c)}</span>`;
+        }
+        function applyFilter(s) {
+            const q = searchInput.value.trim().toLowerCase();
+            if (q) {
+                const hay = [s.student_id, fullName(s), s.course, s.email_address].filter(Boolean).join(' ').toLowerCase();
+                if (!hay.includes(q)) return false;
+            }
+            if (activeSearch) {
+                for (const [k, v] of Object.entries(activeSearch)) {
+                    if (!v) continue;
+                    const fv = (s[k] || '').toString().toLowerCase();
+                    if (!fv.includes(v.toLowerCase())) return false;
+                }
+            }
+            return true;
+        }
+        function render() {
+            const filtered = students.filter(applyFilter);
+            countDisplay.textContent = `${students.length} student${students.length===1?'':'s'}${activeSearch?' · search active':''}`;
+            if (filtered.length === 0) {
+                tableWrap.style.display = 'none';
+                emptyState.style.display = 'block';
+                emptyState.innerHTML = students.length === 0
+                    ? '<p>No students yet. Click <strong>+ Create Student</strong> to get started, or load sample data.</p>'
+                    : '<p>No students match your filter.</p>';
+                return;
+            }
+            tableWrap.style.display = '';
+            emptyState.style.display = 'none';
+            tbody.innerHTML = filtered.map(s => `
+                <tr data-id="${escapeHtml(s.student_id)}">
+                    <td><strong>${escapeHtml(s.student_id)}</strong></td>
+                    <td>${escapeHtml(s.title || '—')}</td>
+                    <td>${escapeHtml([s.first_name, s.middle_name, s.last_name].filter(Boolean).join(' '))}</td>
+                    <td>${courseBadge(s.course)}</td>
+                    <td>${s.age ?? '—'}</td>
+                    <td>${escapeHtml(s.email_address || '—')}</td>
+                    <td>${statusBadge(s.status || 'Active')}</td>
+                    <td>${escapeHtml((s.registration_datetime || s.enrollment_date || '').slice(0,10))}</td>
+                    <td class="actions">
+                        <button class="btn btn-secondary btn-sm" data-action="view" data-id="${escapeHtml(s.student_id)}">View</button>
+                        <button class="btn btn-primary btn-sm" data-action="update" data-id="${escapeHtml(s.student_id)}">Update</button>
+                        <button class="btn btn-danger btn-sm" data-action="delete" data-id="${escapeHtml(s.student_id)}">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        let toastTimer;
+        function showToast(msg, type='') {
+            toast.textContent = msg;
+            toast.className = 'toast show ' + type;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+        function closeAll() {
+            document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('show'));
+            editingId = null; viewingId = null; deletingId = null;
+        }
+        function validatePerson(data, requireGenderDob=true) {
+            const errors = [];
+            if (!data.first_name) errors.push('First name is required.');
+            if (!data.last_name) errors.push('Last name is required.');
+            if (requireGenderDob && !data.gender) errors.push('Gender is required.');
+            if (data.dob || requireGenderDob) {
+                if (!data.dob) errors.push('Date of birth is required.');
+                else {
+                    const age = calcAge(data.dob);
+                    if (age === null || isNaN(age)) errors.push('Date format must be YYYY-MM-DD.');
+                    else if (age < 16 || age > 80) errors.push('Age must be between 16 and 80.');
+                }
+            }
+            return errors;
+        }
+
+        // CREATE
+        const createForm = $('#create-form');
+        $('#add-btn').addEventListener('click', () => {
+            createForm.reset();
+            $('#create-error').classList.remove('show');
+            $('#create-modal').classList.add('show');
+            setTimeout(() => createForm.elements.first_name.focus(), 50);
+        });
+        createForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(createForm).entries());
+            Object.keys(data).forEach(k => data[k] = (data[k]||'').trim());
+            const errors = validatePerson(data, true);
+            if (errors.length) {
+                $('#create-error').textContent = errors.join(' ');
+                $('#create-error').classList.add('show');
+                return;
+            }
+            const studentId = generateStudentId();
+            const email = `C${studentId}@tees.ac.uk`;
+            const course = Math.random() < 0.5 ? 'CS' : 'DS';
+            const age = calcAge(data.dob);
+            const title = data.title || TITLE_BY_GENDER[data.gender] || '';
+            const password = tempPassword(data.first_name);
+            const modules = buildModuleSet(course);
+            const stamp = nowStamp();
+            const newStudent = {
+                student_id: studentId,
+                email_address: email,
+                title,
+                first_name: data.first_name,
+                middle_name: data.middle_name || '',
+                last_name: data.last_name,
+                gender: data.gender,
+                dob: data.dob,
+                age,
+                course,
+                registration_datetime: stamp,
+                enrollment_date: stamp,
+                status: 'Active',
+                password,
+                modules,
+            };
+            students.push(newStudent);
+            save(); render(); closeAll();
+            const modText = modules.map(m => `    - ${m.code} (${m.type})`).join('\n');
+            $('#success-detail').textContent =
+`Student created successfully!
+
+Student Details:
+- Student ID:    ${studentId}
+- Name:          ${[title, data.first_name, data.middle_name, data.last_name].filter(Boolean).join(' ')}
+- Email:         ${email}
+- Course:        ${course} (randomly assigned)
+- Age:           ${age}
+- Status:        Active
+- Login Password: ${password}
+
+Modules assigned (${modules.length}):
+${modText}`;
+            $('#success-modal').classList.add('show');
+        });
+
+        // UPDATE
+        const updateForm = $('#update-form');
+        function openUpdate(id) {
+            const s = findById(id);
+            if (!s) return;
+            editingId = id;
+            $('#update-error').classList.remove('show');
+            const f = updateForm.elements;
+            f.title.value = s.title || '';
+            f.first_name.value = s.first_name || '';
+            f.middle_name.value = s.middle_name || '';
+            f.last_name.value = s.last_name || '';
+            f.gender.value = s.gender || '';
+            f.dob.value = s.dob || '';
+            f.course_display.value = s.course || '';
+            f.email_display.value = s.email_address || '';
+            f.reassign_course.checked = false;
+            f.reset_password.checked = false;
+            $('#update-current').innerHTML =
+                `Name: ${escapeHtml(fullName(s))} | Gender: ${escapeHtml(s.gender)} | Course: ${escapeHtml(s.course)} | Age: ${s.age ?? '—'}`;
+            renderModuleList($('#update-modules'), s.modules || []);
+            $('#update-modal').classList.add('show');
+            setTimeout(() => f.first_name.focus(), 50);
+        }
+        function renderModuleList(container, modules) {
+            if (!modules.length) {
+                container.innerHTML = '<div class="mod-row" style="color:#718096;">No modules enrolled.</div>';
+                return;
+            }
+            container.innerHTML = modules.map(m =>
+                `<div class="mod-row"><span class="mod-type">${escapeHtml(m.type)}:</span> ${escapeHtml(m.code)} - ${escapeHtml(m.name)}</div>`
+            ).join('');
+        }
+        $('#reassign-optional-btn').addEventListener('click', () => {
+            const s = findById(editingId);
+            if (!s) return;
+            const kept = (s.modules || []).filter(m => m.type !== 'optional');
+            sample(MODULES.optional, 2).forEach(m => kept.push({...m, type: 'optional'}));
+            s.modules = kept;
+            save();
+            renderModuleList($('#update-modules'), s.modules);
+            showToast('Optional modules reassigned', 'success');
+        });
+        updateForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const s = findById(editingId);
+            if (!s) return;
+            const data = Object.fromEntries(new FormData(updateForm).entries());
+            Object.keys(data).forEach(k => { if (typeof data[k] === 'string') data[k] = data[k].trim(); });
+            const errors = validatePerson(data, false);
+            if (errors.length) {
+                $('#update-error').textContent = errors.join(' ');
+                $('#update-error').classList.add('show');
+                return;
+            }
+            s.title = data.title || s.title;
+            s.first_name = data.first_name;
+            s.middle_name = data.middle_name || '';
+            s.last_name = data.last_name;
+            s.gender = data.gender || s.gender;
+            if (data.dob && data.dob !== s.dob) {
+                s.dob = data.dob;
+                s.age = calcAge(data.dob);
+            }
+            const updates = [];
+            if (data.reassign_course) {
+                const newCourse = s.course === 'CS' ? 'DS' : 'CS';
+                s.course = newCourse;
+                const kept = (s.modules || []).filter(m => m.type === 'compulsory' || m.type === 'optional');
+                sample(MODULES[newCourse], 2).forEach(m => kept.push({...m, type: `${newCourse}-specific`}));
+                s.modules = kept;
+                updates.push(`course → ${newCourse}`);
+            }
+            if (data.reset_password) {
+                s.password = tempPassword(s.first_name);
+                updates.push('password reset');
+            }
+            save(); render(); closeAll();
+            showToast(`Student updated${updates.length ? ' ('+updates.join(', ')+')' : ''}`, 'success');
+        });
+
+        // DELETE (typed-ID confirmation, like GUI)
+        const deleteForm = $('#delete-form');
+        function openDelete(id) {
+            const s = findById(id);
+            if (!s) return;
+            deletingId = id;
+            $('#delete-error').classList.remove('show');
+            $('#confirm-id-input').value = '';
+            $('#confirm-id-display').textContent = id;
+            $('#delete-info').innerHTML =
+                `Student ID: ${escapeHtml(s.student_id)}<br>Name:       ${escapeHtml(fullName(s))}<br>Course:     ${escapeHtml(s.course)}<br>Email:      ${escapeHtml(s.email_address)}`;
+            const modCount = (s.modules || []).length;
+            $('#delete-related').innerHTML =
+                `• ${modCount} module enrolment${modCount===1?'':'s'}<br>` +
+                `• 1 user/login account<br>` +
+                `• Any grades, attendance, and timetable entries (if linked)`;
+            $('#delete-modal').classList.add('show');
+            setTimeout(() => $('#confirm-id-input').focus(), 50);
+        }
+        deleteForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const typed = $('#confirm-id-input').value.trim();
+            if (typed !== deletingId) {
+                $('#delete-error').textContent = `Student ID does not match. Type "${deletingId}" to confirm.`;
+                $('#delete-error').classList.add('show');
+                return;
+            }
+            students = students.filter(s => s.student_id !== deletingId);
+            save(); render(); closeAll();
+            showToast('Student deleted permanently', 'success');
+        });
+
+        // VIEW
+        function openView(id) {
+            const s = findById(id);
+            if (!s) return;
+            viewingId = id;
+            const fields = [
+                ['Student ID', s.student_id],
+                ['Status', s.status || 'Active'],
+                ['Title', s.title || '—'],
+                ['Full Name', fullName(s)],
+                ['First Name', s.first_name],
+                ['Middle Name', s.middle_name || '—'],
+                ['Last Name', s.last_name],
+                ['Gender', s.gender || '—'],
+                ['Date of Birth', s.dob || '—'],
+                ['Age', s.age ?? '—'],
+                ['Course', s.course],
+                ['Email', s.email_address],
+                ['Registration', s.registration_datetime || '—'],
+                ['Enrollment', s.enrollment_date || '—'],
+            ];
+            $('#view-personal').innerHTML = fields.map(([l,v]) =>
+                `<div class="detail-item"><div class="label">${escapeHtml(l)}</div><div class="value">${escapeHtml(v)}</div></div>`
+            ).join('');
+            renderModuleList($('#view-modules'), s.modules || []);
+            $('#view-credentials').innerHTML = `
+                <div class="detail-item"><div class="label">Username</div><div class="value">${escapeHtml(s.student_id)}</div></div>
+                <div class="detail-item"><div class="label">Password</div><div class="value">${escapeHtml(s.password || '—')}</div></div>
+            `;
+            $('#view-modal').classList.add('show');
+        }
+
+        // SEARCH dialog
+        const searchForm = $('#search-form');
+        $('#search-dialog-btn').addEventListener('click', () => $('#search-modal').classList.add('show'));
+        searchForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(searchForm).entries());
+            Object.keys(data).forEach(k => { if (!data[k]) delete data[k]; });
+            activeSearch = Object.keys(data).length ? data : null;
+            closeAll(); render();
+            if (activeSearch) showToast(`Filtered by ${Object.keys(activeSearch).join(', ')}`, 'success');
+        });
+        $('#search-clear').addEventListener('click', () => {
+            searchForm.reset();
+            activeSearch = null;
+            closeAll(); render();
+            showToast('Search cleared', 'success');
+        });
+
+        // Event delegation
+        document.addEventListener('click', e => {
+            const t = e.target;
+            if (t.matches('[data-close]') || t.classList.contains('modal-backdrop')) {
+                closeAll(); return;
+            }
+            const action = t.dataset.action;
+            const id = t.dataset.id;
+            if (action === 'view') openView(id);
+            else if (action === 'update') openUpdate(id);
+            else if (action === 'delete') openDelete(id);
+            else if (t.id === 'edit-from-view') {
+                const id = viewingId;
+                closeAll();
+                if (id) openUpdate(id);
+            }
+        });
+        tbody.addEventListener('click', e => {
+            const tr = e.target.closest('tr');
+            if (tr && !e.target.closest('button')) openView(tr.dataset.id);
+        });
+        searchInput.addEventListener('input', render);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeAll(); });
+
+        // Sample data
+        $('#seed-btn').addEventListener('click', () => {
+            if (students.length && !confirm('Add 5 randomly-generated sample students?')) return;
+            const samples = [
+                { first_name: 'Alice', middle_name: 'M', last_name: 'Johnson', gender: 'female', dob: '2005-04-12' },
+                { first_name: 'Ben',   middle_name: '',  last_name: 'Patel',   gender: 'male',   dob: '2004-11-23' },
+                { first_name: 'Chloe', middle_name: 'R', last_name: 'Nguyen',  gender: 'female', dob: '2003-07-08' },
+                { first_name: 'David', middle_name: '',  last_name: "O'Brien", gender: 'male',   dob: '2002-02-19' },
+                { first_name: 'Emma',  middle_name: 'L', last_name: 'Wright',  gender: 'female', dob: '2005-09-30' },
+            ];
+            samples.forEach(d => {
+                const studentId = generateStudentId();
+                const course = Math.random() < 0.5 ? 'CS' : 'DS';
+                const stamp = nowStamp();
+                students.push({
+                    student_id: studentId,
+                    email_address: `C${studentId}@tees.ac.uk`,
+                    title: TITLE_BY_GENDER[d.gender] || '',
+                    first_name: d.first_name,
+                    middle_name: d.middle_name,
+                    last_name: d.last_name,
+                    gender: d.gender,
+                    dob: d.dob,
+                    age: calcAge(d.dob),
+                    course,
+                    registration_datetime: stamp,
+                    enrollment_date: stamp,
+                    status: 'Active',
+                    password: tempPassword(d.first_name),
+                    modules: buildModuleSet(course),
+                });
+            });
+            save(); render();
+            showToast('5 sample students loaded', 'success');
+        });
+
+        load(); render();
+    })();
+    </script>
+</body>
+</html>

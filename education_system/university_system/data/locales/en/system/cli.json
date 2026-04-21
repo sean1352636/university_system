@@ -1,4 +1,17 @@
 {
+  "startup": {
+    "initializing_db": "Initializing database...",
+    "db_warning": "Database initialization encountered issues. The application will continue, but some features may not work correctly.",
+    "starting_cli": "Starting University Management System CLI...",
+    "starting_gui": "Starting University Management System GUI...",
+    "starting_api": "Starting University Management System REST API...",
+    "api_available": "API will be available at: http://{host}:{port}",
+    "api_docs": "Documentation available at: http://{host}:{port}/docs",
+    "running_tests": "Running all tests...",
+    "unknown_argument": "Unknown argument: {arg}",
+    "use_help": "Use --help for usage information.",
+    "interrupted": "Application interrupted by user. Goodbye!"
+  },
   "cli": {
     "logged_in_as": "Logged in as: {user} ({role})",
     "returning_to_menu": "Returning to main menu...",

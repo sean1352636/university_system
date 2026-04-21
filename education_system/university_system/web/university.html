@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>University System | Education System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #1a202c;
+            line-height: 1.6;
+        }
+        header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        header .container { max-width: 1200px; margin: 0 auto; }
+        header h1 { font-size: 2.25rem; margin-bottom: 0.5rem; }
+        header p { font-size: 1.05rem; opacity: 0.9; }
+        nav {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        nav ul {
+            max-width: 1200px;
+            margin: 0 auto;
+            list-style: none;
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        nav a {
+            display: block;
+            padding: 0.85rem 0;
+            color: #4a5568;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.95rem;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        nav a:hover { color: #1e3a8a; border-bottom-color: #1e3a8a; }
+        main {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        section { margin-bottom: 2.5rem; }
+        section h2 {
+            font-size: 1.5rem;
+            color: #1e3a8a;
+            margin-bottom: 1rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+        .stat {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 8px;
+            text-align: center;
+            border-left: 4px solid #3b82f6;
+        }
+        .stat .value { font-size: 1.75rem; font-weight: 700; color: #1e3a8a; }
+        .stat .label {
+            color: #718096;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        /* Categories accordion */
+        .categories {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1rem;
+        }
+        details.category {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: box-shadow 0.2s;
+        }
+        details.category[open] { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        details.category summary {
+            padding: 1rem 1.25rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: #1e3a8a;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            list-style: none;
+            user-select: none;
+        }
+        details.category summary::-webkit-details-marker { display: none; }
+        details.category summary::after {
+            content: "▶";
+            margin-left: auto;
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+            color: #3b82f6;
+        }
+        details.category[open] summary::after { transform: rotate(90deg); }
+        details.category summary:hover { background: #f7fafc; }
+        .cat-icon { font-size: 1.4rem; }
+        .cat-count {
+            background: #e2e8f0;
+            color: #4a5568;
+            font-size: 0.75rem;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            font-weight: 500;
+        }
+        .button-list {
+            padding: 0.5rem 1rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            border-top: 1px solid #edf2f7;
+        }
+        .button-list a, .button-list button {
+            display: block;
+            text-align: left;
+            padding: 0.55rem 0.85rem;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            color: #2d3748;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-family: inherit;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .button-list a:hover, .button-list button:hover {
+            background: #1e3a8a;
+            color: white;
+            border-color: #1e3a8a;
+        }
+        .button-list a.linked { border-left: 3px solid #3b82f6; }
+        .access-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+        .access-btn {
+            display: block;
+            padding: 1rem 1.5rem;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            color: #1e3a8a;
+            text-decoration: none;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        .access-btn:hover { background: #1e3a8a; color: white; border-color: #1e3a8a; }
+        .toolbar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .toolbar button {
+            padding: 0.4rem 0.85rem;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: #4a5568;
+            font-family: inherit;
+        }
+        .toolbar button:hover { background: #1e3a8a; color: white; border-color: #1e3a8a; }
+        .toolbar input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.4rem 0.85rem;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        footer {
+            background: #1a202c;
+            color: #a0aec0;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 4rem;
+        }
+        footer code {
+            background: #2d3748;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            color: #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+            <div>
+                <h1>University System</h1>
+                <p>Enterprise higher-education management — full feature menu</p>
+            </div>
+            <div style="text-align:right;">
+                <div id="user-info" style="font-size:0.9rem; opacity:0.9;"></div>
+                <button id="logout-btn" style="margin-top:0.5rem; padding:0.4rem 1rem; background:rgba(255,255,255,0.2); color:white; border:1px solid rgba(255,255,255,0.4); border-radius:6px; cursor:pointer; font-weight:600; display:none;">Sign out</button>
+            </div>
+        </div>
+    </header>
+
+    <nav>
+        <ul>
+            <li><a href="#stats">Overview</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="students.html">Students</a></li>
+            <li><a href="email.html">Email</a></li>
+            <li><a href="#database">Database</a></li>
+            <li><a href="#access">Access</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#" id="back-to-dashboard" style="color:#c0392b; font-weight:600; display:none;">← My Dashboard</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="stats">
+            <h2>System Overview</h2>
+            <div class="stats">
+                <div class="stat"><div class="value">22</div><div class="label">Categories</div></div>
+                <div class="stat"><div class="value">120+</div><div class="label">Features</div></div>
+                <div class="stat"><div class="value">4</div><div class="label">Interfaces</div></div>
+                <div class="stat"><div class="value">SQLite WAL</div><div class="label">Database</div></div>
+            </div>
+        </section>
+
+        <section id="features">
+            <h2>Feature Menu</h2>
+            <p style="color:#4a5568; margin-bottom:1rem; font-size:0.95rem;">
+                Mirrors the categories and buttons from the main GUI navigation panel
+                (<code style="background:#edf2f7; padding:0.1rem 0.4rem; border-radius:4px;">main_gui.py</code>).
+                Click any category to expand its options.
+            </p>
+
+            <div class="toolbar">
+                <input type="text" id="feature-search" placeholder="Search features...">
+                <button id="expand-all">Expand all</button>
+                <button id="collapse-all">Collapse all</button>
+            </div>
+
+            <div class="categories" id="categories">
+
+                <details class="category">
+                    <summary><span class="cat-icon">🔐</span> Authentication <span class="cat-count">5</span></summary>
+                    <div class="button-list">
+                        <button>Logout</button>
+                        <button>Change Password</button>
+                        <button>MFA Setup</button>
+                        <button>Security Questions</button>
+                        <button>Toggle Login Verification</button>
+                    </div>
+                </details>
+
+                <details class="category" open>
+                    <summary><span class="cat-icon">🎓</span> Student Management <span class="cat-count">6</span></summary>
+                    <div class="button-list">
+                        <a class="linked" href="students.html">Student Records</a>
+                        <a class="linked" href="students.html">Create Student</a>
+                        <a class="linked" href="students.html">Search Students</a>
+                        <button>Advanced Search</button>
+                        <a class="linked" href="students.html">Delete Student</a>
+                        <button>Batch Operations</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">📚</span> Academic Management <span class="cat-count">11</span></summary>
+                    <div class="button-list">
+                        <button>Course Management</button>
+                        <button>Module Management</button>
+                        <button>Assignments</button>
+                        <button>Grade Tracking</button>
+                        <button>Student Registration</button>
+                        <button>Library</button>
+                        <button>AI Study</button>
+                        <button>Study Matching</button>
+                        <button>Office Hours</button>
+                        <button>Study Recommendations</button>
+                        <button>Virtual Classroom</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">📅</span> Scheduling &amp; Attendance <span class="cat-count">5</span></summary>
+                    <div class="button-list">
+                        <button>Academic Calendar</button>
+                        <button>Module Scheduling</button>
+                        <button>My Timetable</button>
+                        <button>Attendance</button>
+                        <button>Exam Management</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">💰</span> Finance <span class="cat-count">2</span></summary>
+                    <div class="button-list">
+                        <button>Finance Management</button>
+                        <button>My Finance Account</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">🏥</span> Health &amp; Wellness <span class="cat-count">2</span></summary>
+                    <div class="button-list">
+                        <button>Health Portal</button>
+                        <button>Gym</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">🏠</span> Accommodation <span class="cat-count">1</span></summary>
+                    <div class="button-list">
+                        <button>Housing &amp; Accommodation</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">🏫</span> Campus Life <span class="cat-count">5</span></summary>
+                    <div class="button-list">
+                        <button>Student Union Portal</button>
+                        <button>Campus Events</button>
+                        <button>Events Discovery</button>
+                        <button>Facilities Management</button>
+                        <button>Equipment</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">🍽️</span> Dining &amp; Food <span class="cat-count">5</span></summary>
+                    <div class="button-list">
+                        <button>Restaurant Management</button>
+                        <button>Café System</button>
+                        <button>Takeaway System</button>
+                        <button>Bar</button>
+                        <button>Butcher</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">🛒</span> Shops &amp; Retail <span class="cat-count">5</span></summary>
+                    <div class="button-list">
+                        <button>University Shop</button>
+                        <button>Charity Shop</button>
+                        <button>Phone Shop</button>
+                        <button>Music Shop</button>
+                        <button>Grocery Shop</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">💇</span> Personal Services <span class="cat-count">2</span></summary>
+                    <div class="button-list">
+                        <button>Barber</button>
+                        <button>Nail Bar</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">🚗</span> Transportation <span class="cat-count">5</span></summary>
+                    <div class="button-list">
+                        <button>Taxi Booking</button>
+                        <button>Train Station</button>
+                        <button>Car Rental</button>
+                        <button>Parking Management</button>
+                        <button>Trip Management</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">🤝</span> Student Services <span class="cat-count">7</span></summary>
+                    <div class="button-list">
+                        <button>Student Dashboard</button>
+                        <button>Student Support</button>
+                        <button>Helpdesk</button>
+                        <button>Early Warning System</button>
+                        <button>Accessibility</button>
+                        <button>Portfolio</button>
+                        <button>Advising Portal</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">💼</span> Career &amp; Alumni <span class="cat-count">4</span></summary>
+                    <div class="button-list">
+                        <button>Career Services</button>
+                        <button>Internship Portal</button>
+                        <button>Student Jobs</button>
+                        <button>Alumni Management</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">⚖️</span> Family &amp; Legal <span class="cat-count">2</span></summary>
+                    <div class="button-list">
+                        <button>Parent Portal</button>
+                        <button>Legal Services</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">🎬</span> Entertainment <span class="cat-count">2</span></summary>
+                    <div class="button-list">
+                        <button>Cinema</button>
+                        <button>Betting Shop</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">📧</span> Communication <span class="cat-count">2</span></summary>
+                    <div class="button-list">
+                        <button>Communication Hub (Email/SMS)</button>
+                        <button>Feedback System</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">📊</span> Analytics &amp; Reporting <span class="cat-count">2</span></summary>
+                    <div class="button-list">
+                        <button>Integrated Dashboard</button>
+                        <button>Analytics</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">📄</span> Documents &amp; Export <span class="cat-count">4</span></summary>
+                    <div class="button-list">
+                        <button>Document Manager</button>
+                        <button>Export Options</button>
+                        <button>Data Backup</button>
+                        <button>PDF Export</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">🤖</span> AI &amp; Advanced Tools <span class="cat-count">5</span></summary>
+                    <div class="button-list">
+                        <button>AI Features</button>
+                        <button>Mobile App / PWA</button>
+                        <button>Blockchain Credentials</button>
+                        <button>Extras Launcher</button>
+                        <button>Todo App</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">🛡️</span> Security &amp; Safety <span class="cat-count">2</span></summary>
+                    <div class="button-list">
+                        <button>Security Desk</button>
+                        <button>Police Station</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">⛪</span> Community Services <span class="cat-count">1</span></summary>
+                    <div class="button-list">
+                        <button>Church Management</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">👥</span> Human Resources <span class="cat-count">5</span></summary>
+                    <div class="button-list">
+                        <button>View Staff</button>
+                        <button>Create Staff</button>
+                        <button>Search Staff</button>
+                        <button>Delete Staff</button>
+                        <button>Staff HR</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">⚙️</span> Administration <span class="cat-count">9</span></summary>
+                    <div class="button-list">
+                        <button>User Management</button>
+                        <button>System Administration</button>
+                        <button>Security Dashboard</button>
+                        <button>Integration Marketplace</button>
+                        <button>Admissions CRM</button>
+                        <button>Usage &amp; Adoption Reports</button>
+                        <button>Custom Report Builder</button>
+                        <button>HESA Data Export</button>
+                        <button>Clearing &amp; Adjustment</button>
+                    </div>
+                </details>
+
+                <details class="category">
+                    <summary><span class="cat-icon">🔄</span> Cross-System <span class="cat-count">15</span></summary>
+                    <div class="button-list">
+                        <button>Student Journey</button>
+                        <button>Analytics Dashboard</button>
+                        <button>Outcome Tracking</button>
+                        <button>Predictive Alerts</button>
+                        <button>Bulk Transfer</button>
+                        <button>Transfer Documents</button>
+                        <button>Reverse Lookup</button>
+                        <button>Parent Continuity</button>
+                        <button>Cross-System Calendar</button>
+                        <button>Central Admin Portal</button>
+                        <button>GDPR Compliance</button>
+                        <button>Shared Documents</button>
+                        <button>Student Self-Service</button>
+                        <button>Digital Transcript</button>
+                        <button>Certificates</button>
+                    </div>
+                </details>
+
+            </div>
+        </section>
+
+        <section id="database">
+            <h2>SQLite Database</h2>
+            <div style="background:white; padding:1.25rem; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                <p style="margin-bottom:0.75rem; color:#4a5568;">
+                    The University System uses SQLite (WAL mode). The primary records DB is located at:
+                </p>
+                <div style="background:#f7fafc; border-left:3px solid #3b82f6; padding:0.75rem 1rem; border-radius:4px; font-family:'SF Mono',Consolas,monospace; font-size:0.85rem; margin-bottom:1rem;">
+                    /home/seancatchpole989/education_system/university_system/data/db_files/student_records.db
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.5rem;">
+                    <a class="access-btn" href="../data/db_files/student_records.db" download="student_records.db">📥 Download records DB</a>
+                    <a class="access-btn" href="../../shared/data/db_files/auth.db" download="auth.db">🔐 Download auth.db</a>
+                    <a class="access-btn" href="../../shared/data/db_files/audit.db" download="audit.db">📋 Download audit.db</a>
+                    <button class="access-btn" type="button" onclick="copyDbPath()" style="border:2px solid #e2e8f0; background:white; cursor:pointer; font-family:inherit; font-size:1rem;">📋 Copy DB path</button>
+                </div>
+                <p style="margin-top:0.85rem; color:#718096; font-size:0.8rem;">
+                    <strong>Note:</strong> Browsers block <code>file://</code> navigation from local pages for security.
+                    Use the download buttons above, or paste the path into your terminal / DB Browser for SQLite:
+                    <br><code>sqlite3 /home/seancatchpole989/education_system/university_system/data/db_files/student_records.db</code>
+                </p>
+                <script>
+                function copyDbPath() {
+                    const path = '/home/seancatchpole989/education_system/university_system/data/db_files/student_records.db';
+                    navigator.clipboard.writeText(path).then(
+                        () => alert('Copied to clipboard:\n' + path),
+                        () => prompt('Copy this path:', path)
+                    );
+                }
+                </script>
+            </div>
+        </section>
+
+        <section id="access">
+            <h2>Access Methods</h2>
+            <div class="access-grid">
+                <a class="access-btn" href="login.html">🔐 Login</a>
+                <a class="access-btn" href="students.html">🎓 Student Records</a>
+                <a class="access-btn" href="email.html">📧 Email Manager</a>
+                <a class="access-btn" href="http://localhost:5000/api/university/" target="_blank">⚡ REST API (localhost:5000)</a>
+            </div>
+        </section>
+
+        <section id="about">
+            <h2>About</h2>
+            <div style="background:white; padding:1.25rem; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+                <p>The University System mirrors the desktop GUI's full navigation panel — 24 categories
+                covering authentication, academics, finance, campus life, commerce, transportation,
+                analytics, administration, and cross-system tooling. Buttons here are placeholders;
+                only the Student Management entries are wired to a working CRUD page.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Education System &mdash; Launch with <code>python run.py --university --gui</code></p>
+    </footer>
+
+    <script src="auth_client.js"></script>
+    <script>
+    // Auth gate
+    (function() {
+        const session = AuthClient.getSession();
+        if (!session) {
+            window.location.href = 'login.html';
+            return;
+        }
+        // Non-admin roles get routed straight to their dashboard.
+        const DASHBOARDS = {
+            superadmin: 'dashboard_superadmin.html',
+            admin:      'dashboard_admin.html',
+            staff:      'dashboard_staff.html',
+            teacher:    'dashboard_staff.html',
+            instructor: 'dashboard_staff.html',
+            student:    'dashboard_student.html',
+            parent:     'dashboard_student.html',
+        };
+        const nonAdmin = ['student', 'parent', 'staff', 'teacher', 'instructor'];
+        if (nonAdmin.includes(session.role)) {
+            window.location.href = DASHBOARDS[session.role];
+            return;
+        }
+        document.getElementById('user-info').innerHTML =
+            `Signed in as <strong>${session.name || session.username}</strong> (${session.role})`;
+        const logoutBtn = document.getElementById('logout-btn');
+        logoutBtn.style.display = 'inline-block';
+        logoutBtn.addEventListener('click', () => {
+            AuthClient.clearSession();
+            window.location.href = 'login.html';
+        });
+        // Back-to-dashboard nav link for admins/superadmins.
+        const backLink = document.getElementById('back-to-dashboard');
+        if (backLink && DASHBOARDS[session.role]) {
+            backLink.href = DASHBOARDS[session.role];
+            backLink.style.display = 'block';
+        }
+    })();
+    (function() {
+        const search = document.getElementById('feature-search');
+        const categories = document.querySelectorAll('details.category');
+        document.getElementById('expand-all').addEventListener('click', () => {
+            categories.forEach(d => d.open = true);
+        });
+        document.getElementById('collapse-all').addEventListener('click', () => {
+            categories.forEach(d => d.open = false);
+        });
+        search.addEventListener('input', () => {
+            const q = search.value.trim().toLowerCase();
+            categories.forEach(d => {
+                if (!q) { d.style.display = ''; d.open = false; return; }
+                const items = d.querySelectorAll('.button-list a, .button-list button');
+                let anyMatch = false;
+                items.forEach(it => {
+                    const match = it.textContent.toLowerCase().includes(q);
+                    it.style.display = match ? '' : 'none';
+                    if (match) anyMatch = true;
+                });
+                const catName = d.querySelector('summary').textContent.toLowerCase();
+                if (catName.includes(q)) {
+                    anyMatch = true;
+                    items.forEach(it => it.style.display = '');
+                }
+                d.style.display = anyMatch ? '' : 'none';
+                d.open = anyMatch;
+            });
+        });
+    })();
+    </script>
+</body>
+</html>

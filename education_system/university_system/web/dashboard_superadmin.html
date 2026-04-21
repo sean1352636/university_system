@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superadmin Dashboard | University System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --accent: #c0392b;
+            --accent-dark: #922b21;
+            --accent-light: #fdecea;
+            --gold: #d4a017;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f7fa;
+            color: #1a202c;
+            line-height: 1.6;
+        }
+        header {
+            background: linear-gradient(135deg, #1a202c 0%, var(--accent) 100%);
+            color: white;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .header-bar {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .brand h1 { font-size: 1.6rem; margin-bottom: 0.2rem; }
+        .brand p { opacity: 0.85; font-size: 0.9rem; }
+        .role-badge {
+            display: inline-block;
+            background: var(--gold);
+            color: #1a202c;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 0.2rem 0.65rem;
+            border-radius: 999px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+        .user-box { text-align: right; }
+        .user-box .name { font-weight: 600; }
+        .user-box .email { opacity: 0.8; font-size: 0.85rem; }
+        .logout-btn {
+            margin-top: 0.5rem;
+            padding: 0.4rem 1rem;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: inherit;
+        }
+        .logout-btn:hover { background: rgba(255,255,255,0.25); }
+
+        main {
+            max-width: 1280px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        section { margin-bottom: 2.5rem; }
+        section h2 {
+            font-size: 1.35rem;
+            color: #1a202c;
+            margin-bottom: 1rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 1rem;
+        }
+        .stat {
+            background: white;
+            padding: 1.25rem;
+            border-radius: 10px;
+            border-left: 4px solid var(--accent);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .stat .value { font-size: 1.75rem; font-weight: 700; color: var(--accent); }
+        .stat .label {
+            color: #718096;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 0.2rem;
+        }
+        .stat .delta {
+            font-size: 0.8rem;
+            margin-top: 0.35rem;
+            color: #38a169;
+        }
+        .stat .delta.down { color: #e53e3e; }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 1.25rem;
+        }
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.25rem 1.4rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .card h3 {
+            font-size: 1rem;
+            color: #1a202c;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 0.5rem;
+        }
+        .action {
+            display: block;
+            text-align: left;
+            padding: 0.65rem 0.85rem;
+            background: #fafbfc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            color: #2d3748;
+            text-decoration: none;
+            font-size: 0.88rem;
+            font-family: inherit;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .action:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .action.primary {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .action.primary:hover {
+            background: var(--accent-dark);
+            border-color: var(--accent-dark);
+        }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { padding: 0.55rem 0.6rem; text-align: left; border-bottom: 1px solid #edf2f7; }
+        th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: #718096; font-weight: 600; }
+        .pill {
+            display: inline-block;
+            padding: 0.15rem 0.55rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        .pill.ok   { background: #c6f6d5; color: #22543d; }
+        .pill.warn { background: #feebc8; color: #7b341e; }
+        .pill.err  { background: #fed7d7; color: #742a2a; }
+
+        .system-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+        .system-card {
+            padding: 1.2rem;
+            background: white;
+            border-radius: 10px;
+            border-top: 4px solid var(--accent);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .system-card h4 {
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            color: #1a202c;
+        }
+        .system-card .count {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .system-card a {
+            display: inline-block;
+            margin-top: 0.6rem;
+            font-size: 0.82rem;
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .system-card a:hover { text-decoration: underline; }
+
+        footer {
+            text-align: center;
+            color: #a0aec0;
+            padding: 2rem 1rem;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-bar">
+            <div class="brand">
+                <h1>Superadmin Console <span class="role-badge">Superadmin</span></h1>
+                <p>Full control across all 4 education systems</p>
+            </div>
+            <div class="user-box">
+                <div class="name" id="user-name">—</div>
+                <div class="email" id="user-email">—</div>
+                <button class="logout-btn" id="logout-btn">Sign out</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section>
+            <h2>🌐 System-wide overview</h2>
+            <div class="stats">
+                <div class="stat"><div class="value">4</div><div class="label">Active Systems</div><div class="delta">All online</div></div>
+                <div class="stat"><div class="value">14,238</div><div class="label">Total Users</div><div class="delta">+124 this week</div></div>
+                <div class="stat"><div class="value">9,812</div><div class="label">Students</div><div class="delta">+42 today</div></div>
+                <div class="stat"><div class="value">3,104</div><div class="label">Staff</div><div class="delta">+3 this month</div></div>
+                <div class="stat"><div class="value">99.98%</div><div class="label">Uptime (30d)</div></div>
+                <div class="stat"><div class="value">0</div><div class="label">Critical Alerts</div></div>
+            </div>
+        </section>
+
+        <section>
+            <h2>🏛️ Sub-systems</h2>
+            <div class="system-grid">
+                <div class="system-card">
+                    <h4>🎓 University</h4>
+                    <div class="count">4,512 users</div>
+                    <a href="university.html">Open full menu →</a>
+                </div>
+                <div class="system-card">
+                    <h4>🏫 Sixth Form College</h4>
+                    <div class="count">2,870 users</div>
+                    <a href="#">Open console →</a>
+                </div>
+                <div class="system-card">
+                    <h4>📚 Secondary School</h4>
+                    <div class="count">4,104 users</div>
+                    <a href="#">Open console →</a>
+                </div>
+                <div class="system-card">
+                    <h4>✏️ Primary School</h4>
+                    <div class="count">2,752 users</div>
+                    <a href="#">Open console →</a>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid-2">
+            <div class="card">
+                <h3>⚡ Quick actions</h3>
+                <div class="action-grid">
+                    <a class="action primary" href="#">Add User</a>
+                    <a class="action" href="#">User Management</a>
+                    <a class="action" href="#">Role Matrix</a>
+                    <a class="action" href="#">Audit Logs</a>
+                    <a class="action" href="#">Security Dashboard</a>
+                    <a class="action" href="#">GDPR Compliance</a>
+                    <a class="action" href="#">System Settings</a>
+                    <a class="action" href="#">Backup / Restore</a>
+                    <a class="action" href="#">API Keys & Webhooks</a>
+                    <a class="action" href="#">Integration Marketplace</a>
+                    <a class="action" href="university.html">Full Feature Menu</a>
+                    <a class="action" href="students.html">Student Records</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📋 Recent audit events</h3>
+                <table>
+                    <thead>
+                        <tr><th>Time</th><th>Actor</th><th>Action</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>09:42</td><td>admin</td><td>Role change: s.patel → student</td><td><span class="pill ok">ok</span></td></tr>
+                        <tr><td>09:18</td><td>j.harding</td><td>Grade override on MOD-204</td><td><span class="pill ok">ok</span></td></tr>
+                        <tr><td>08:55</td><td>system</td><td>Backup completed (auth.db)</td><td><span class="pill ok">ok</span></td></tr>
+                        <tr><td>08:20</td><td>unknown</td><td>Failed login attempt (×5)</td><td><span class="pill warn">warn</span></td></tr>
+                        <tr><td>07:40</td><td>system</td><td>Nightly report generated</td><td><span class="pill ok">ok</span></td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>🔐 Security & access</h3>
+                <div class="action-grid">
+                    <a class="action" href="#">Session Manager</a>
+                    <a class="action" href="#">MFA Enforcement</a>
+                    <a class="action" href="#">Password Policy</a>
+                    <a class="action" href="#">Device Registry</a>
+                    <a class="action" href="#">Failed Logins</a>
+                    <a class="action" href="#">Rate-limit Config</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📊 Reporting</h3>
+                <div class="action-grid">
+                    <a class="action" href="#">HESA Export</a>
+                    <a class="action" href="#">Usage & Adoption</a>
+                    <a class="action" href="#">Custom Report Builder</a>
+                    <a class="action" href="#">Cross-system Analytics</a>
+                    <a class="action" href="#">Outcome Tracking</a>
+                    <a class="action" href="#">Predictive Alerts</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>Education System — Superadmin Console</footer>
+
+    <script src="auth_client.js"></script>
+    <script>
+    (function() {
+        const session = AuthClient.getSession();
+        if (!session) { window.location.href = 'login.html'; return; }
+        if (session.role !== 'superadmin') {
+            // Not allowed — bounce to their own dashboard
+            const dash = {
+                admin:      'dashboard_admin.html',
+                staff:      'dashboard_staff.html',
+                teacher:    'dashboard_staff.html',
+                instructor: 'dashboard_staff.html',
+                student:    'dashboard_student.html',
+                parent:     'dashboard_student.html',
+            }[session.role] || 'login.html';
+            window.location.href = dash;
+            return;
+        }
+        document.getElementById('user-name').textContent = session.name || session.username;
+        document.getElementById('user-email').textContent = session.email || '';
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            AuthClient.clearSession();
+            window.location.href = 'login.html';
+        });
+    })();
+    </script>
+</body>
+</html>

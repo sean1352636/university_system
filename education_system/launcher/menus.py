@@ -15,7 +15,7 @@ def _flush_stdin():
 
 def cli_select_mode() -> str | None:
     """CLI menu: pick a run mode. Returns mode string or None to exit."""
-    mapping = {"1": "cli", "2": "gui", "3": "api", "4": "test", "5": "test-all"}
+    mapping = {"1": "cli", "2": "gui", "3": "api", "4": "web", "5": "test", "6": "test-all"}
     _flush_stdin()
 
     while True:
@@ -27,8 +27,9 @@ def cli_select_mode() -> str | None:
         print("  [1] CLI    - Command-line interface")
         print("  [2] GUI    - Graphical interface")
         print("  [3] API    - REST API server (includes web dashboard)")
-        print("  [4] Test   - Run test suite (single system)")
-        print("  [5] Test   - Run ALL tests (all systems)")
+        print("  [4] Web    - Static HTML UI (login, students, email)")
+        print("  [5] Test   - Run test suite (single system)")
+        print("  [6] Test   - Run ALL tests (all systems)")
         print("  [0] Exit")
         print()
 

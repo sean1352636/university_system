@@ -117,9 +117,124 @@ def run_gui_mode():
         return run_cli_mode()
 
 
+def _api_is_running(host: str = "localhost", port: int = 5000) -> bool:
+    """Quick TCP check — is the unified API already listening?"""
+    import socket
+    try:
+        with socket.create_connection((host, port), timeout=0.5):
+            return True
+    except OSError:
+        return False
+
+
+def _start_api_in_background(port: int = 5000):
+    """Spawn the unified API server in a daemon thread.
+
+    The login page fetches /api/v1/auth/login from this server. Having --web
+    launch it automatically means the user only needs one command.
+    Allow all origins so the static server on a different port can talk to it.
+    """
+    import threading
+    os.environ.setdefault("API_CORS_ORIGINS", "*")
+    os.environ.setdefault("API_PORT", str(port))
+
+    def _runner():
+        try:
+            from education_system.shared.api.unified_server import run_unified_api
+            run_unified_api(port=port)
+        except Exception as exc:
+            logger.error("Unified API server crashed: %s", exc, exc_info=True)
+
+    t = threading.Thread(target=_runner, name="unified-api", daemon=True)
+    t.start()
+    return t
+
+
+def run_web_server(system="university", port=8000, open_browser=True,
+                   api_port: int = 5000, start_api: bool = True):
+    """Serve the static HTML UI from <system>_system/web/ over HTTP and open a browser.
+
+    Using a real HTTP server avoids the file:// security restrictions
+    (cross-origin file links, blocked downloads, etc.).
+
+    The login page talks to the unified Flask API (/api/v1/auth/*) for real
+    authentication against auth.db. If that API isn't already running on
+    ``api_port``, this function starts it in a background thread so the
+    single --web flag gives you a working login out of the box.
+    """
+    import http.server
+    import socketserver
+    import webbrowser
+    from functools import partial
+    from pathlib import Path
+
+    project_root = Path(__file__).resolve().parent
+    web_dir = project_root / "education_system" / f"{system}_system" / "web"
+
+    if not web_dir.is_dir():
+        print(f"  ✗ Web directory not found: {web_dir}")
+        sys.exit(1)
+
+    # Serve from project root so relative DB paths like ../data/db_files/... resolve.
+    serve_root = project_root
+    rel_url = web_dir.relative_to(serve_root).as_posix() + "/login.html"
+    url = f"http://localhost:{port}/{rel_url}"
+
+    handler = partial(http.server.SimpleHTTPRequestHandler, directory=str(serve_root))
+
+    # ── Auto-start the unified API if it isn't already running ─────────
+    api_url = f"http://localhost:{api_port}/api/v1/auth/login"
+    api_status = "already running"
+    if start_api and not _api_is_running(port=api_port):
+        _start_api_in_background(port=api_port)
+        api_status = "starting (may take ~30s)"
+
+    print()
+    print("  " + "=" * 56)
+    print(f"   {system.title()} System — Web UI")
+    print("  " + "=" * 56)
+    print(f"  Serving:  {serve_root}")
+    print(f"  URL:      {url}")
+    print(f"  Auth API: {api_url}  ({api_status})")
+    print(f"  Press Ctrl+C to stop the server.")
+    print()
+
+    try:
+        with socketserver.TCPServer(("", port), handler) as httpd:
+            if open_browser:
+                try:
+                    webbrowser.open(url)
+                except Exception as exc:
+                    logger.debug("Could not auto-open browser: %s", exc)
+            httpd.serve_forever()
+    except OSError as exc:
+        print(f"  ✗ Could not start server on port {port}: {exc}")
+        print(f"    Try a different port: python run.py --web --web-port 8080")
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\n  Server stopped.")
+
+
 # ── Main entry ────────────────────────────────────────────────────────────────
 
+def _apply_quiet_mode():
+    """Configure env before any education_system imports so startup is quiet.
+
+    Must run before the unified server's setup_structured_logging is called,
+    otherwise its _configured sentinel locks in the default INFO/JSON output.
+    """
+    if "--quiet" not in sys.argv and "-q" not in sys.argv:
+        return
+    os.environ.setdefault("LOG_LEVEL", "WARNING")
+    os.environ.setdefault("LOG_FORMAT", "text")
+    os.environ.setdefault("API_CORS_ORIGINS", "*")
+    # Override the INFO level set by logging.basicConfig at module import.
+    logging.getLogger().setLevel(logging.WARNING)
+
+
 def main():
+    _apply_quiet_mode()
+
     from education_system.launcher.auth import gui_universal_login, cli_universal_login
     from education_system.launcher.systems import (
         LAUNCHERS, AUTH_GUI_SYSTEMS, AUTH_CLI_SYSTEMS,
@@ -136,8 +251,14 @@ def main():
     mode_group.add_argument("--cli", action="store_true", help="Command-line interface")
     mode_group.add_argument("--gui", action="store_true", help="Graphical interface")
     mode_group.add_argument("--api", action="store_true", help="REST API server")
+    mode_group.add_argument("--web", action="store_true", help="Open the static HTML web UI in a browser")
     mode_group.add_argument("--test", action="store_true", help="Run test suite")
     mode_group.add_argument("--test-all", action="store_true", help="Run tests for all systems")
+
+    parser.add_argument("--web-port", type=int, default=8000, help="Port for --web mode (default: 8000)")
+    parser.add_argument("--web-no-browser", action="store_true", help="Don't auto-open browser in --web mode")
+    parser.add_argument("-q", "--quiet", action="store_true",
+                        help="Suppress INFO startup logs (WARNING+ only, human-readable text format)")
 
     parser.add_argument("--seed", type=int, metavar="N", help="Seed database with N demo students")
 
@@ -157,6 +278,8 @@ def main():
         mode = "gui"
     elif args.api:
         mode = "api"
+    elif args.web:
+        mode = "web"
     elif args.test:
         mode = "test"
     elif args.test_all:
@@ -172,6 +295,15 @@ def main():
         system = "school"
     elif args.primary:
         system = "primary"
+
+    # ── Web mode ───────────────────────────────────────────────────────
+    if mode == "web":
+        run_web_server(
+            system=system or "university",
+            port=args.web_port,
+            open_browser=not args.web_no_browser,
+        )
+        return
 
     # ── Seed mode ──────────────────────────────────────────────────────
     if args.seed:
@@ -209,6 +341,14 @@ def main():
         mode = cli_select_mode()
         if mode is None:
             return
+
+    if mode == "web":
+        if system is None:
+            system = cli_select_system()
+            if system is None:
+                return
+        run_web_server(system=system, port=args.web_port, open_browser=not args.web_no_browser)
+        return
 
     if mode == "test-all":
         success = run_all_system_tests()

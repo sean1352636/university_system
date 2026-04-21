@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Students · Education System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/assets/portal.css">
+</head>
+<body>
+  <div id="topbar"></div>
+
+  <main class="container">
+    <section class="page-header">
+      <div>
+        <h1 id="title">Students</h1>
+        <p id="subtitle" class="muted">Loading…</p>
+      </div>
+      <div class="row">
+        <input id="search" class="field" placeholder="Filter rows…"
+               style="padding:.5rem .7rem; min-width:240px;">
+        <label for="system-select" class="muted" style="font-size:.85rem;">System:</label>
+        <select id="system-select" class="field" style="width:auto; padding:.45rem .6rem;"></select>
+      </div>
+    </section>
+
+    <section>
+      <div id="table-host">
+        <div class="card empty-state">
+          <div class="spinner" style="margin: 0 auto .5rem;"></div>
+          Loading students…
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">Education System · Students</footer>
+
+  <script src="/portal/assets/portal.js"></script>
+  <script>
+    (function () {
+      if (!EduPortal.requireAuth()) return;
+
+      const user = EduPortal.getUser();
+      const accessible = (user.systems || []).map(s => s.system_key);
+
+      let currentSystem = EduPortal.qs("system") || EduPortal.getActiveSystem();
+      if (!currentSystem || !accessible.includes(currentSystem)) {
+        currentSystem = accessible[0];
+      }
+
+      if (!currentSystem) {
+        document.querySelector("main").innerHTML = `
+          <div class="card empty-state">
+            <div class="emoji">\uD83D\uDEAB</div>
+            <h2>No system access</h2>
+            <p class="muted">Your account has no system access yet.</p>
+          </div>`;
+        EduPortal.renderTopbar("students");
+        return;
+      }
+
+      EduPortal.setActiveSystem(currentSystem);
+      EduPortal.renderTopbar("students");
+
+      // System selector
+      const select = document.getElementById("system-select");
+      select.innerHTML = accessible.map(k => {
+        const meta = EduPortal.getSystemMeta(k);
+        return `<option value="${k}" ${k === currentSystem ? "selected" : ""}>${meta.label}</option>`;
+      }).join("");
+      select.addEventListener("change", () => {
+        const v = select.value;
+        EduPortal.setActiveSystem(v);
+        location.href = "/portal/students.html?system=" + v;
+      });
+
+      const meta = EduPortal.getSystemMeta(currentSystem);
+      document.getElementById("title").innerHTML = `${meta.emoji} ${meta.label} · Students`;
+      document.getElementById("subtitle").textContent = "Most recent 200 records (requires staff role).";
+
+      const host = document.getElementById("table-host");
+
+      EduPortal.apiFetch("/web/students/" + currentSystem)
+        .then(data => renderTable(data.students || []))
+        .catch(err => {
+          let msg = err.message || "Could not load students";
+          if (err.status === 403) msg = "Staff or admin role required for this system.";
+          host.innerHTML = `
+            <div class="card empty-state">
+              <div class="emoji">\u26A0\uFE0F</div>
+              <h2>Unable to load students</h2>
+              <p class="muted">${EduPortal.escapeHtml(msg)}</p>
+            </div>`;
+        });
+
+      let allRows = [];
+      let displayedKeys = [];
+
+      function renderTable(rows) {
+        allRows = rows;
+        if (!rows.length) {
+          host.innerHTML = `
+            <div class="card empty-state">
+              <div class="emoji">\uD83D\uDC65</div>
+              <p>No student records in this system yet.</p>
+            </div>`;
+          return;
+        }
+        // Prefer a friendly set of columns if present
+        const first = rows[0];
+        const preferred = ["id", "student_id", "pupil_id", "first_name", "last_name", "name",
+                           "email", "year_group", "course", "programme", "status"];
+        const present = preferred.filter(k => k in first);
+        displayedKeys = present.length ? present : Object.keys(first).slice(0, 8);
+        paint(rows);
+      }
+
+      function paint(rows) {
+        host.innerHTML = `
+          <div class="table-wrap">
+            <table>
+              <thead><tr>${displayedKeys.map(k => `<th>${EduPortal.escapeHtml(k)}</th>`).join("")}</tr></thead>
+              <tbody>
+                ${rows.map(r => `
+                  <tr>${displayedKeys.map(k => `<td>${EduPortal.escapeHtml(String(r[k] ?? ""))}</td>`).join("")}</tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+          <p class="muted" style="margin-top:.5rem; font-size:.85rem;">
+            Showing ${rows.length} of ${allRows.length} record${allRows.length === 1 ? "" : "s"}.
+          </p>`;
+      }
+
+      // Client-side filter
+      document.getElementById("search").addEventListener("input", (e) => {
+        const q = e.target.value.trim().toLowerCase();
+        if (!q) return paint(allRows);
+        const filtered = allRows.filter(r =>
+          displayedKeys.some(k => String(r[k] ?? "").toLowerCase().includes(q))
+        );
+        paint(filtered);
+      });
+    })();
+  </script>
+</body>
+</html>

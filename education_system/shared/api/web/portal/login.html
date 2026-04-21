@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · Education System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/portal/assets/portal.css">
+</head>
+<body class="auth-shell">
+  <div class="auth-card">
+    <div class="logo">
+      <div class="icon">E</div>
+      <h1>Sign in</h1>
+      <p class="sub">One account, four systems.</p>
+    </div>
+
+    <div id="alert" class="alert alert-error hidden"></div>
+
+    <!-- Credentials form -->
+    <form id="login-form" autocomplete="on">
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" autocomplete="username" required>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="pw-wrap">
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+          <button type="button" class="pw-toggle" id="pw-toggle" aria-label="Show password">Show</button>
+        </div>
+      </div>
+      <button type="submit" id="submit-btn">Sign in</button>
+    </form>
+
+    <!-- MFA form (hidden until the server demands a code) -->
+    <form id="mfa-form" class="hidden" autocomplete="off">
+      <div class="alert alert-info">Enter the 6-digit code from your authenticator app.</div>
+      <div class="field">
+        <label for="mfa-code">MFA code</label>
+        <input id="mfa-code" name="code" type="text" inputmode="numeric" pattern="[0-9]{6}"
+               maxlength="6" autocomplete="one-time-code" required>
+      </div>
+      <button type="submit" id="mfa-submit">Verify</button>
+    </form>
+
+    <div class="hint">
+      Default dev creds: <code>superadmin</code> / <code>SuperAdmin@123</code><br>
+      <a href="/portal/">← Back to portal home</a>
+    </div>
+  </div>
+
+  <script src="/portal/assets/portal.js"></script>
+  <script>
+    (function () {
+      const form = document.getElementById("login-form");
+      const mfaForm = document.getElementById("mfa-form");
+      const btn = document.getElementById("submit-btn");
+      const alertBox = document.getElementById("alert");
+      let mfaToken = null;
+
+      function showError(msg) {
+        alertBox.textContent = msg;
+        alertBox.classList.remove("hidden");
+      }
+      function clearError() { alertBox.classList.add("hidden"); alertBox.textContent = ""; }
+
+      function redirectAfterLogin() {
+        const next = EduPortal.qs("next");
+        const sysHint = EduPortal.qs("system");
+        if (sysHint && EduPortal.userHasSystem(sysHint)) {
+          EduPortal.setActiveSystem(sysHint);
+        }
+        if (next && next.startsWith("/portal/")) {
+          location.href = next;
+        } else {
+          const active = EduPortal.getActiveSystem();
+          location.href = "/portal/dashboard.html" + (active ? "?system=" + active : "");
+        }
+      }
+
+      // Password visibility toggle
+      const pwToggle = document.getElementById("pw-toggle");
+      pwToggle.addEventListener("click", () => {
+        const input = document.getElementById("password");
+        if (input.type === "password") { input.type = "text"; pwToggle.textContent = "Hide"; }
+        else { input.type = "password"; pwToggle.textContent = "Show"; }
+      });
+
+      form.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        clearError();
+        btn.disabled = true;
+        btn.textContent = "Signing in...";
+        try {
+          const data = await EduPortal.apiFetch("/auth/login", {
+            method: "POST",
+            skipAuth: true,
+            body: {
+              username: document.getElementById("username").value.trim(),
+              password: document.getElementById("password").value,
+            },
+          });
+
+          if (data.mfa_required) {
+            mfaToken = data.mfa_token;
+            form.classList.add("hidden");
+            mfaForm.classList.remove("hidden");
+            document.getElementById("mfa-code").focus();
+            return;
+          }
+
+          EduPortal.saveAuth(data.token, data.refresh_token, data.user);
+          redirectAfterLogin();
+        } catch (e) {
+          showError(e.message || "Login failed");
+          btn.disabled = false;
+          btn.textContent = "Sign in";
+        }
+      });
+
+      mfaForm.addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        clearError();
+        const submitBtn = document.getElementById("mfa-submit");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Verifying...";
+        try {
+          const res = await fetch(EduPortal.API_BASE + "/auth/mfa/verify", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": "Bearer " + mfaToken,
+            },
+            body: JSON.stringify({ code: document.getElementById("mfa-code").value.trim() }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || "MFA failed");
+          EduPortal.saveAuth(data.token, data.refresh_token, data.user);
+          redirectAfterLogin();
+        } catch (e) {
+          showError(e.message || "MFA failed");
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Verify";
+        }
+      });
+
+      // If already signed in, jump to dashboard
+      if (EduPortal.getToken() && EduPortal.getUser()) {
+        redirectAfterLogin();
+      }
+    })();
+  </script>
+</body>
+</html>
