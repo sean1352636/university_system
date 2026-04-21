@@ -139,7 +139,7 @@ class StudentPortalGUI:
         self._add_heading("Academic")
         self._add_button("Assignments", self._open_assignments_portal)
         self._add_button("Grade Tracking", self._open_grade_tracking_portal)
-        self._add_button("Course Management", self._launch('show_course_management'))
+        self._add_button("Course Management", self._open_course_management_portal)
         self._add_button("AI Study Tools", self._launch('show_ai_study_gui'))
         self._add_button("Study Matching", self._launch('show_study_matching_gui'))
         self._add_button("Study Recommendations", self._launch('show_study_recommendations_gui'))
@@ -230,6 +230,18 @@ class StudentPortalGUI:
         except Exception as e:
             logger.error(f"Error opening assignments student portal: {e}")
             messagebox.showerror("Error", f"Failed to open Assignments: {e}")
+
+    def _open_course_management_portal(self):
+        """Open the student-facing Course Management portal directly."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.course_management import (
+                CourseManagementStudentPortal,
+            )
+            CourseManagementStudentPortal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening course management student portal: {e}")
+            messagebox.showerror("Error",
+                                 f"Failed to open Course Management: {e}")
 
     def _open_library_portal(self):
         """Open the student-facing Library portal directly."""

@@ -137,7 +137,7 @@ class InstructorPortalGUI:
 
         # Teaching
         self._add_heading("Teaching")
-        self._add_button("Course Management", self._launch('show_course_management'))
+        self._add_button("Course Management", self._open_course_management_portal)
         self._add_button("Module Management", self._launch('show_module_management'))
         self._add_button("Assignments", self._open_assignments_portal)
         self._add_button("Grade Tracking", self._open_grade_tracking_portal)
@@ -231,6 +231,18 @@ class InstructorPortalGUI:
         except Exception as e:
             logger.error(f"Error opening AI auto-grading portal: {e}")
             messagebox.showerror("Error", f"Failed to open AI Auto-Grading: {e}")
+
+    def _open_course_management_portal(self):
+        """Open the instructor-scoped Course Management portal directly."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.course_management import (
+                CourseManagementInstructorPortal,
+            )
+            CourseManagementInstructorPortal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening course management instructor portal: {e}")
+            messagebox.showerror("Error",
+                                 f"Failed to open Course Management: {e}")
 
     def _open_library_portal(self):
         """Open the instructor/staff Library portal directly."""
