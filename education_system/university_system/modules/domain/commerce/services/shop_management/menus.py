@@ -4,6 +4,20 @@ from education_system.university_system.modules.domain.commerce.services.shop_ma
 from education_system.university_system.modules.domain.commerce.services.shop_management.database import init_shop_db, setup_shop_permissions
 
 
+def _cli_db_helpers():
+    """Lazy import for init_all_databases / init_auth_for_modules.
+
+    ``modules.shared.cli.database_manager`` imports the shop_management
+    package at module load time, so importing it at the top of this
+    file produces a circular import. Import on demand inside the three
+    menu functions that need it.
+    """
+    from education_system.university_system.modules.shared.cli.database_manager import (
+        init_all_databases, init_auth_for_modules,
+    )
+    return init_all_databases, init_auth_for_modules
+
+
 @log_menu_navigation(description="Displaying shop main menu")
 def display_shop_menu():
     """Display the main menu for the university shop"""
@@ -341,6 +355,7 @@ def display_textbook_menu():
 # Main entry point - add to main.py
 def display_main_menu_extended():
     """Extended display_menu function for the main module to include shop"""
+    init_all_databases, init_auth_for_modules = _cli_db_helpers()
     # Initialize all databases first
     if not init_all_databases():
         print("Failed to initialize databases. Exiting.")
@@ -439,6 +454,7 @@ def add_shop_system_to_main_menu(main_display_menu):
 
     def extended_display_menu():
         """Extended version of display_menu that includes shop system"""
+        init_all_databases, init_auth_for_modules = _cli_db_helpers()
         # Initialize all databases first
         if not init_all_databases():
             print("Failed to initialize databases. Exiting.")
@@ -534,6 +550,7 @@ def setup_shop_system():
 
     print("Setting up University Shop System...")
 
+    init_all_databases, init_auth_for_modules = _cli_db_helpers()
     # Initialize databases
     if not init_all_databases():
         print("❌ Failed to initialize databases")
