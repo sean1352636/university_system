@@ -74,7 +74,7 @@ class CafeInventoryMixin:
 
             cursor = conn.cursor()
             cursor.execute('''
-                SELECT id, name, category, stock_quantity
+                SELECT product_id, name, category, stock_quantity
                 FROM products
                 WHERE source_type = 'cafe'
                 ORDER BY stock_quantity ASC, name
@@ -127,7 +127,7 @@ class CafeInventoryMixin:
             cursor.execute('''
                 UPDATE products
                 SET stock_quantity = stock_quantity + ?
-                WHERE id = ? AND source_type = 'cafe'
+                WHERE product_id = ? AND source_type = 'cafe'
             ''', (quantity, item_id))
 
             cursor.execute('''
@@ -175,7 +175,7 @@ class CafeInventoryMixin:
             cursor.execute('''
                 UPDATE products
                 SET stock_quantity = stock_quantity - ?
-                WHERE id = ? AND source_type = 'cafe'
+                WHERE product_id = ? AND source_type = 'cafe'
             ''', (quantity, item_id))
 
             cursor.execute('''

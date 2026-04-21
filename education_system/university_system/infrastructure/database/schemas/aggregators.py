@@ -1315,6 +1315,11 @@ def init_additional_missing_tables():
         ''')
 
         # scholarship_applications
+        # Note: the canonical column is `essay_text` (matches
+        # modules/domain/finance/services/financial_aid/schema.py and the
+        # ScholarshipManager.submit_application insert). This aggregator
+        # previously declared the column as `essay`, so existing databases
+        # need a migration — handled immediately after the CREATE below.
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS scholarship_applications (
             application_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1323,7 +1328,7 @@ def init_additional_missing_tables():
             academic_year TEXT NOT NULL,
             application_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             status TEXT DEFAULT 'pending',
-            essay TEXT,
+            essay_text TEXT,
             gpa REAL,
             financial_need_statement TEXT,
             reviewed_by INTEGER,
@@ -1333,6 +1338,34 @@ def init_additional_missing_tables():
             FOREIGN KEY (scholarship_id) REFERENCES scholarships(scholarship_id)
         )
         ''')
+
+        # Migrate legacy scholarship_applications schemas: historical DBs may
+        # (a) have the column as `essay` instead of `essay_text`, and/or
+        # (b) be missing `gpa` / `transcript_url` / `resume_url`, which the
+        # ScholarshipManager.submit_application INSERT writes to.
+        cursor.execute("PRAGMA table_info(scholarship_applications)")
+        _sa_cols = {row[1] for row in cursor.fetchall()}
+        if 'essay_text' not in _sa_cols:
+            cursor.execute(
+                "ALTER TABLE scholarship_applications "
+                "ADD COLUMN essay_text TEXT"
+            )
+            if 'essay' in _sa_cols:
+                cursor.execute(
+                    "UPDATE scholarship_applications "
+                    "SET essay_text = essay "
+                    "WHERE essay_text IS NULL AND essay IS NOT NULL"
+                )
+        for _col, _type in (
+            ('gpa', 'REAL'),
+            ('transcript_url', 'TEXT'),
+            ('resume_url', 'TEXT'),
+        ):
+            if _col not in _sa_cols:
+                cursor.execute(
+                    f"ALTER TABLE scholarship_applications "
+                    f"ADD COLUMN {_col} {_type}"
+                )
 
         # scholarship_awards
         cursor.execute('''

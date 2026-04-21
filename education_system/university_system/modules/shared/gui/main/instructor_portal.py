@@ -139,8 +139,8 @@ class InstructorPortalGUI:
         self._add_heading("Teaching")
         self._add_button("Course Management", self._launch('show_course_management'))
         self._add_button("Module Management", self._launch('show_module_management'))
-        self._add_button("Assignments", self._launch('show_assignments'))
-        self._add_button("Grade Tracking", self._launch('show_grade_tracking_gui'))
+        self._add_button("Assignments", self._open_assignments_portal)
+        self._add_button("Grade Tracking", self._open_grade_tracking_portal)
         self._add_button("AI Auto-Grading", self._launch('show_auto_grading'))
         self._add_button("Virtual Classroom", self._launch('show_virtual_classroom_gui'))
         self._add_button("Office Hours", self._launch('show_office_hours_gui'))
@@ -154,7 +154,7 @@ class InstructorPortalGUI:
 
         # Schedule & Attendance
         self._add_heading("Schedule & Attendance")
-        self._add_button("Academic Calendar", self._launch('show_academic_calendar'))
+        self._add_button("Academic Calendar", self._open_calendar_portal)
         self._add_button("My Timetable", self._launch('show_student_timetable_gui'))
         self._add_button("Scheduling", self._launch('show_module_scheduling'))
         self._add_button("Attendance", self._launch('open_attendance_gui'))
@@ -165,6 +165,13 @@ class InstructorPortalGUI:
         self._add_button("Analytics", self._launch('show_analytics_dashboard_gui'))
         self._add_button("Export Data", self._launch('show_export_gui'))
 
+        # Student Life
+        self._add_heading("Student Life")
+        self._add_button("Student Union", self._open_student_union_portal)
+        self._add_button("Campus Events", self._open_campus_events_portal)
+        self._add_button("Clubs & Societies", self._open_clubs_portal)
+        self._add_button("Student Jobs", self._open_student_jobs_portal)
+
         # Communication
         self._add_heading("Communication")
         self._add_button("Communication Hub", self._launch('show_communication_hub_gui'))
@@ -172,10 +179,14 @@ class InstructorPortalGUI:
 
         # Resources
         self._add_heading("Resources")
-        self._add_button("Library", self._launch('show_library_management'))
+        self._add_button("Library", self._open_library_portal)
         self._add_button("University Shop", self._launch('show_university_shop'))
-        self._add_button("Cafe", self._launch('show_cafe_system'))
-        self._add_button("Health Portal", self._launch('open_health_portal_gui'))
+        self._add_button("Cafe", self._open_cafe_portal)
+        self._add_button("Bar", self._open_bar_portal)
+        self._add_button("Takeaway", self._open_takeaway_portal)
+        self._add_button("Cinema", self._open_cinema_portal)
+        self._add_button("Barber", self._open_barber_portal)
+        self._add_button("Health Portal", self._open_health_portal)
 
         # Account
         self._add_heading("Account")
@@ -187,6 +198,151 @@ class InstructorPortalGUI:
     # ------------------------------------------------------------------
     # Launcher helper
     # ------------------------------------------------------------------
+
+    def _open_grade_tracking_portal(self):
+        """Open the instructor/staff Grade Tracking portal directly."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.grade_tracking.staff_portal import (
+                GradeTrackingStaffPortal,
+            )
+            GradeTrackingStaffPortal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening grade tracking staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Grade Tracking: {e}")
+
+    def _open_assignments_portal(self):
+        """Open the instructor/staff Assignments portal directly."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.assignment_system.staff_portal import (
+                AssignmentStaffPortal,
+            )
+            AssignmentStaffPortal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening assignments staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Assignments: {e}")
+
+    def _open_library_portal(self):
+        """Open the instructor/staff Library portal directly."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.library.staff_portal import (
+                LibraryStaffPortal,
+            )
+            LibraryStaffPortal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening library staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Library: {e}")
+
+    def _open_calendar_portal(self):
+        """Open the instructor/staff Academic Calendar portal directly."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.academic_calendar.staff_portal import (
+                CalendarStaffPortal,
+            )
+            CalendarStaffPortal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening calendar staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Academic Calendar: {e}")
+
+    def _open_health_portal(self):
+        """Open the instructor/staff Health Portal directly."""
+        try:
+            from education_system.university_system.modules.domain.health.gui.health_portal.staff_portal import (
+                HealthStaffPortal,
+            )
+            HealthStaffPortal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening health staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Health Portal: {e}")
+
+    def _open_student_union_portal(self):
+        try:
+            from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.staff_portal import (
+                StudentUnionStaffPortal,
+            )
+            StudentUnionStaffPortal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening student union staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Student Union: {e}")
+
+    def _open_campus_events_portal(self):
+        try:
+            from education_system.university_system.modules.domain.campus.services.campus_events_staff_portal import (
+                CampusEventsStaffPortal,
+            )
+            CampusEventsStaffPortal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening campus events staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Campus Events: {e}")
+
+    def _open_clubs_portal(self):
+        try:
+            from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.clubs.staff_portal import (
+                ClubsStaffPortal,
+            )
+            ClubsStaffPortal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening clubs staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Clubs & Societies: {e}")
+
+    def _open_student_jobs_portal(self):
+        try:
+            from education_system.university_system.modules.domain.career.student_jobs.gui.staff_portal import (
+                StudentJobsStaffPortal,
+            )
+            StudentJobsStaffPortal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening student jobs staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Student Jobs: {e}")
+
+    def _open_cafe_portal(self):
+        try:
+            from education_system.university_system.modules.domain.commerce.services.commerce_portals import (
+                launch_cafe_staff_portal,
+            )
+            launch_cafe_staff_portal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening cafe staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Cafe: {e}")
+
+    def _open_bar_portal(self):
+        try:
+            from education_system.university_system.modules.domain.commerce.services.commerce_portals import (
+                launch_bar_staff_portal,
+            )
+            launch_bar_staff_portal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening bar staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Bar: {e}")
+
+    def _open_takeaway_portal(self):
+        try:
+            from education_system.university_system.modules.domain.commerce.services.commerce_portals import (
+                launch_takeaway_staff_portal,
+            )
+            launch_takeaway_staff_portal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening takeaway staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Takeaway: {e}")
+
+    def _open_cinema_portal(self):
+        try:
+            from education_system.university_system.modules.domain.commerce.cinema.cinema_portals import (
+                launch_cinema_staff_portal,
+            )
+            launch_cinema_staff_portal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening cinema staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Cinema: {e}")
+
+    def _open_barber_portal(self):
+        try:
+            from education_system.university_system.modules.domain.commerce.barber.barber_portals import (
+                launch_barber_staff_portal,
+            )
+            launch_barber_staff_portal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening barber staff portal: {e}")
+            messagebox.showerror("Error", f"Failed to open Barber: {e}")
 
     def _launch(self, method_name):
         """Return a callback that calls the named method on the UnifiedManagementGUI.
@@ -219,13 +375,22 @@ class InstructorPortalGUI:
             gui.style = self.style
             gui.current_user_var = tk.StringVar()
             gui.status_var = tk.StringVar()
-            gui.finance_gui = None
-            gui.student_union_gui = None
-            gui.health_portal_gui = None
-            gui.grade_tracking_gui = None
-            gui.restaurant_gui = None
-            gui.cafe_gui = None
-            gui.email_manager_gui = None
+            from education_system.university_system.modules.shared.gui.main.imports.gui_imports import _lazy_import
+            for attr, cls_name in [
+                ("finance_gui", "FinanceManagementGUI"),
+                ("student_union_gui", "StudentUnionManagementGUI"),
+                ("health_portal_gui", "HealthPortalManagementGUI"),
+                ("grade_tracking_gui", "GradeTrackingManagementGUI"),
+                ("restaurant_gui", "RestaurantManagementGUI"),
+                ("cafe_gui", "CafeSystemGUI"),
+                ("email_manager_gui", "EmailManagerManagementGUI"),
+            ]:
+                try:
+                    cls = _lazy_import(cls_name)
+                    setattr(gui, attr, cls(self.root, self.auth) if cls else None)
+                except Exception as exc:
+                    logger.warning("Could not initialise %s: %s", cls_name, exc)
+                    setattr(gui, attr, None)
             gui.student_tree = None
             gui._session_timer_id = None
             gui.nav_frame = None

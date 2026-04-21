@@ -389,8 +389,22 @@ def show_financial_aid(self):
         aid_window.title(_t("finance_gui.aid.title"))
         aid_window.geometry("1200x800")
 
-        # Initialize Financial Aid GUI
-        aid_gui = FinancialAidGUI(auth_instance=self.auth, parent=aid_window)
+        # FinancialAidGUI is a lazy-loaded import — the module-level binding in
+        # gui_imports.py starts as None and is only populated when
+        # _lazy_import('FinancialAidGUI') is called, so `from ... import
+        # FinancialAidGUI` at the top of this file captures None. Resolve the
+        # class via the lazy loader at call time instead.
+        from education_system.university_system.modules.shared.gui.main.imports.gui_imports import _lazy_import
+        AidCls = _lazy_import('FinancialAidGUI')
+        if AidCls is None:
+            messagebox.showerror(
+                _t("finance_gui.errors.title"),
+                _t("finance_gui.errors.failed_to_open_aid",
+                   error="FinancialAidGUI module is not available"),
+            )
+            return
+
+        aid_gui = AidCls(auth_instance=self.auth, parent=aid_window)
         aid_gui.create_embedded_interface()
         print("✅ Financial Aid GUI opened successfully")
 

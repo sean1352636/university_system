@@ -80,37 +80,114 @@ def _launch_documents(parent, auth):
 
 
 def _launch_feature(root, auth, feature_name):
-    """Launch a student feature GUI in a Toplevel window."""
+    """Launch a student feature GUI.
+
+    Each feature_map entry is (title, module_path, class_name, auth_style,
+    creates_window):
+      - `auth_style` — how the class accepts auth:
+        'kwarg'      : cls(parent, auth=auth)
+        'positional' : cls(parent, auth)   — required positional auth
+        'none'       : cls(parent)         — class calls get_auth() itself
+      - `creates_window` — True if the class builds its own Toplevel/Tk
+        internally (pass `root` as parent, don't wrap in a Toplevel).
+        False if the class expects to be handed a pre-made container
+        window to populate (wrap in a Toplevel ourselves).
+
+    Module paths reflect the 8.77.0 domain reorganisation (there is no
+    `modules.domain.student_services` — those modules live under
+    `student_affairs/`, `campus/`, `commerce/`, or `communications/`).
+    """
     import tkinter as tk
     from tkinter import messagebox
 
     feature_map = {
-        'roommate_finder': ('Roommate Finder', 'education_system.university_system.modules.domain.student_services.gui.roommate_finder_gui', 'RoomateFinderGUI'),
-        'marketplace': ('Marketplace', 'education_system.university_system.modules.domain.student_services.gui.marketplace_gui', 'MarketplaceGUI'),
-        'lost_found': ('Lost & Found', 'education_system.university_system.modules.domain.student_services.gui.lost_found_gui', 'LostFoundGUI'),
-        'campus_navigation': ('Campus Navigation', 'education_system.university_system.modules.domain.student_services.gui.campus_navigation_gui', 'CampusNavigationGUI'),
-        'social_matching': ('Social Matching', 'education_system.university_system.modules.domain.student_services.gui.social_matching_gui', 'SocialMatchingGUI'),
-        'mail_post': ('Mail & Post', 'education_system.university_system.modules.domain.student_services.gui.mail_post_gui', 'MailPostGUI'),
-        'printing_services': ('Printing Services', 'education_system.university_system.modules.domain.student_services.gui.printing_services_gui', 'PrintingServicesGUI'),
-        'study_room_booking': ('Study Room Booking', 'education_system.university_system.modules.domain.student_services.gui.study_room_booking_gui', 'StudyRoomBookingGUI'),
-        'student_id': ('Student ID Card', 'education_system.university_system.modules.domain.student_services.gui.student_id_gui', 'StudentIDGUI'),
-        'achievement_badges': ('Achievement Badges', 'education_system.university_system.modules.domain.student_services.gui.achievement_badge_gui', 'AchievementBadgeGUI'),
-        'wellness_hub': ('Wellness Hub', 'education_system.university_system.modules.domain.health.gui.wellness_hub_gui', 'WellnessHubGUI'),
-        'todo_app': ('Todo App', 'education_system.university_system.modules.shared.gui.tools.todo_app_gui', 'TodoApp'),
+        'roommate_finder': (
+            'Roommate Finder',
+            'education_system.university_system.modules.domain.student_affairs.roommate_finder.gui.roommate_gui',
+            'RoommateFinderGUI', 'kwarg', True,
+        ),
+        'marketplace': (
+            'Marketplace',
+            'education_system.university_system.modules.domain.commerce.marketplace.gui.marketplace_gui',
+            'MarketplaceGUI', 'kwarg', True,
+        ),
+        'lost_found': (
+            'Lost & Found',
+            'education_system.university_system.modules.domain.campus.lost_found.gui.lost_found_gui',
+            'LostFoundGUI', 'kwarg', True,
+        ),
+        'campus_navigation': (
+            'Campus Navigation',
+            'education_system.university_system.modules.domain.campus.campus_navigation.gui.navigation_gui',
+            'NavigationGUI', 'none', True,
+        ),
+        'social_matching': (
+            'Social Matching',
+            'education_system.university_system.modules.domain.student_affairs.social_matching.gui.social_matching_gui',
+            'SocialMatchingGUI', 'none', True,
+        ),
+        'mail_post': (
+            'Mail & Post',
+            'education_system.university_system.modules.domain.communications.mail.gui.mail_post_gui',
+            'MailPostGUI', 'positional', True,
+        ),
+        'printing_services': (
+            'Printing Services',
+            'education_system.university_system.modules.domain.campus.printing.gui.printing_gui',
+            'PrintingServicesGUI', 'none', True,
+        ),
+        'study_room_booking': (
+            'Study Room Booking',
+            'education_system.university_system.modules.domain.campus.study_rooms.gui.study_room_gui',
+            'StudyRoomBookingGUI', 'none', True,
+        ),
+        'student_id': (
+            'Student ID Card',
+            'education_system.university_system.modules.domain.student_affairs.student_id.gui.student_id_gui',
+            'StudentIDGUI', 'none', True,
+        ),
+        'achievement_badges': (
+            'Achievement Badges',
+            'education_system.university_system.modules.domain.student_affairs.achievement_badges.gui.achievement_badge_gui',
+            'AchievementBadgeGUI', 'kwarg', True,
+        ),
+        'wellness_hub': (
+            'Wellness Hub',
+            'education_system.university_system.modules.domain.student_affairs.wellness.gui.wellness_gui',
+            'WellnessGUI', 'kwarg', True,
+        ),
+        'todo_app': (
+            'Todo App',
+            'education_system.university_system.modules.shared.gui.tools.todo_app_gui',
+            'TodoApp', 'none', False,
+        ),
     }
 
     if feature_name not in feature_map:
         messagebox.showerror("Error", f"Unknown feature: {feature_name}")
         return
 
-    title, module_path, class_name = feature_map[feature_name]
+    title, module_path, class_name, auth_style, creates_window = feature_map[feature_name]
     try:
         module = __import__(module_path, fromlist=[class_name])
         gui_class = getattr(module, class_name)
-        window = tk.Toplevel(root)
-        window.title(title)
-        window.geometry("1000x700")
-        gui_class(window, auth=auth)
+
+        if creates_window:
+            # Class builds its own Toplevel/Tk from the parent — pass root
+            # directly so we don't end up with an extra empty window.
+            target = root
+        else:
+            # Class expects a pre-made container window to populate.
+            target = tk.Toplevel(root)
+            target.title(title)
+            target.geometry("1000x700")
+
+        if auth_style == 'kwarg':
+            gui_class(target, auth=auth)
+        elif auth_style == 'positional':
+            gui_class(target, auth)
+        else:
+            gui_class(target)
     except Exception as e:
         messagebox.showerror("Error", f"Failed to open {title}: {e}")
 

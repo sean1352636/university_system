@@ -260,7 +260,7 @@ Status: {values[6]}
                 cursor.execute('''
                     UPDATE orders
                     SET order_status = 'refunded'
-                    WHERE id = ? AND source_type = 'cafe'
+                    WHERE order_id = ? AND source_type = 'cafe'
                 ''', (order_id,))
 
                 # Generate refund reference

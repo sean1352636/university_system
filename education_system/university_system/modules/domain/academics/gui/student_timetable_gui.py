@@ -192,9 +192,11 @@ class StudentTimetableGUI:
             cursor = conn.cursor()
 
             # Enrolled modules for the student
+            # Status values in student_modules are inconsistent across rows
+            # (mix of 'Enrolled' and 'enrolled') — match both.
             cursor.execute(
                 "SELECT module_code FROM student_modules "
-                "WHERE student_id = ? AND status = 'Enrolled'",
+                "WHERE student_id = ? AND LOWER(status) = 'enrolled'",
                 (self.student_id,),
             )
             enrolled = [row[0] for row in cursor.fetchall()]
