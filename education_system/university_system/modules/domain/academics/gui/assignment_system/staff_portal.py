@@ -7,6 +7,7 @@ maintenance). For those, admins use the full AssignmentGUI.
 """
 
 import logging
+import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -617,6 +618,8 @@ class AssignmentEditorDialog:
             return
 
         now = datetime.now().isoformat(timespec='seconds')
+        is_new = self.assignment is None
+        new_assignment_id = None
         try:
             with _connect() as conn:
                 cur = conn.cursor()
@@ -648,15 +651,110 @@ class AssignmentEditorDialog:
                          1 if self.late_ok_var.get() else 0, penalty,
                          self.created_by, now, now)
                     )
+                    new_assignment_id = cur.lastrowid
                 conn.commit()
         except Exception as e:
             messagebox.showerror("Database Error",
                                  f"Save failed: {e}", parent=self.dialog)
             return
 
+        if is_new and new_assignment_id:
+            threading.Thread(
+                target=_notify_enrolled_students_of_new_assignment,
+                args=(new_assignment_id, module, title, due, max_marks,
+                      atype, self.late_ok_var.get(), penalty, desc),
+                daemon=True,
+            ).start()
+
         self.dialog.destroy()
         if self.on_save:
             self.on_save()
+
+
+def _notify_enrolled_students_of_new_assignment(assignment_id, module_code,
+                                                 title, due, max_marks,
+                                                 assignment_type, late_ok,
+                                                 penalty, description):
+    """Background: email every student enrolled in *module_code* about the
+    new assignment. Failures are logged; the assignment is already
+    committed so we never roll back on a mail problem.
+    """
+    try:
+        with _connect() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT m.module_name FROM modules WHERE module_code = ?
+                """,
+                (module_code,)
+            )
+            row = cur.fetchone()
+            module_name = (row[0] if row else module_code) or module_code
+            cur.execute(
+                """
+                SELECT sm.student_id,
+                       COALESCE(u.email, st.email_address) AS email,
+                       st.first_name
+                FROM student_modules sm
+                LEFT JOIN students st ON st.student_id = sm.student_id
+                LEFT JOIN users u ON u.student_id = sm.student_id
+                WHERE sm.module_code = ?
+                  AND LOWER(COALESCE(sm.status, 'enrolled')) = 'enrolled'
+                """,
+                (module_code,)
+            )
+            students = cur.fetchall()
+    except Exception as e:
+        logger.warning("Assignment-notify: student lookup failed: %s", e)
+        return
+
+    if not students:
+        logger.info("Assignment-notify: no enrolled students for %s",
+                    module_code)
+        return
+
+    try:
+        from education_system.university_system.infrastructure.email import queue_template_email
+    except Exception as e:
+        logger.warning("Assignment-notify: email service unavailable: %s", e)
+        return
+
+    if late_ok:
+        late_policy = f"allowed (penalty {float(penalty or 0):g} / day)"
+    else:
+        late_policy = "not allowed"
+
+    due_str = (due or '')[:10]
+    description_text = (description or '(no description)').strip()
+    sent = 0
+    skipped = 0
+    for student_id, email, first_name in students:
+        if not email:
+            skipped += 1
+            continue
+        try:
+            queue_template_email(
+                template_name='academics/assignment_created_student',
+                recipient=email,
+                template_vars={
+                    'first_name': first_name or student_id or 'Student',
+                    'module_code': module_code,
+                    'module_name': module_name,
+                    'assignment_title': title,
+                    'due_date': due_str,
+                    'max_marks': f"{float(max_marks):g}",
+                    'assignment_type': assignment_type or 'individual',
+                    'late_submission_policy': late_policy,
+                    'description': description_text,
+                },
+            )
+            sent += 1
+        except Exception as e:
+            logger.warning("Assignment-notify: send failed for %s: %s",
+                           student_id, e)
+    logger.info("Assignment-notify: assignment %s (%s) — queued %d, "
+                "skipped %d (no email on file)",
+                assignment_id, module_code, sent, skipped)
 
 
 def launch_assignment_staff_portal(parent, auth):
