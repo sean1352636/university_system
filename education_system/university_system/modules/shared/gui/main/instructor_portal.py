@@ -530,7 +530,7 @@ class InstructorPortalGUI:
             login = UniversalLoginWindow()
             login.mainloop()
             if login.user_info and login.system_key:
-                from run import run_university_gui
+                from education_system.launcher.systems import run_university_gui
                 run_university_gui(
                     user_info=login.user_info,
                     role=login.system_role,

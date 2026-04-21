@@ -509,7 +509,7 @@ def run_staff_portal():
             if result:
                 user_info, sys_key, role, shared_auth = result
                 if sys_key == 'university':
-                    from run import run_university_cli
+                    from education_system.launcher.systems import run_university_cli
                     run_university_cli(user_info=user_info, role=role, shared_auth=shared_auth)
         except Exception as e:
             print(f"Error returning to login: {e}")
