@@ -75,11 +75,11 @@ class AssignmentStudentPortal:
                 with _connect() as conn:
                     cur = conn.cursor()
                     cur.execute(
-                        "SELECT student_id FROM students WHERE user_id = ?",
+                        "SELECT student_id FROM users WHERE id = ?",
                         (user_id,)
                     )
                     row = cur.fetchone()
-                    if row:
+                    if row and row[0]:
                         return row[0]
             except Exception:
                 pass
@@ -549,7 +549,13 @@ class AssignmentStudentPortal:
             with _connect() as conn:
                 cur = conn.cursor()
                 cur.execute(
-                    "SELECT email, first_name FROM students WHERE student_id = ?",
+                    """
+                    SELECT COALESCE(u.email, st.email_address) AS email,
+                           st.first_name
+                    FROM students st
+                    LEFT JOIN users u ON u.student_id = st.student_id
+                    WHERE st.student_id = ?
+                    """,
                     (self.student_id,)
                 )
                 row = cur.fetchone()
@@ -677,10 +683,10 @@ class AssignmentStudentPortal:
                 cur.execute(
                     """
                     SELECT s.id, s.file_path, s.file_name, s.student_id,
-                           a.title, a.module_code, st.user_id
+                           a.title, a.module_code, u.id AS author_user_id
                     FROM assignment_submissions s
                     JOIN assignments a ON a.id = s.assignment_id
-                    LEFT JOIN students st ON st.student_id = s.student_id
+                    LEFT JOIN users u ON u.student_id = s.student_id
                     WHERE s.assignment_id = ?
                       AND s.id != ?
                       AND COALESCE(s.is_final_submission, 1) = 1
@@ -724,7 +730,7 @@ class AssignmentStudentPortal:
             with _connect() as conn:
                 cur = conn.cursor()
                 cur.execute(
-                    "SELECT user_id FROM students WHERE student_id = ?",
+                    "SELECT id FROM users WHERE student_id = ?",
                     (self.student_id,)
                 )
                 row = cur.fetchone()

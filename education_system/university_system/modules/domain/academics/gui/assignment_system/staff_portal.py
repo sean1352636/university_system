@@ -712,12 +712,14 @@ def _send_grade_release_emails(submission_id, grade, feedback, max_marks,
             cur.execute(
                 """
                 SELECT s.student_id,
-                       st.email, st.first_name,
+                       COALESCE(us.email, st.email_address) AS student_email,
+                       st.first_name,
                        a.title, a.module_code,
                        u.email, u.username
                 FROM assignment_submissions s
                 JOIN assignments a ON a.id = s.assignment_id
                 LEFT JOIN students st ON st.student_id = s.student_id
+                LEFT JOIN users us ON us.student_id = s.student_id
                 LEFT JOIN users u ON u.id = ?
                 WHERE s.id = ?
                 """,
