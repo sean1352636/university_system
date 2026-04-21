@@ -1,9 +1,11 @@
 """Course Management — Student portal.
 
-Read-only view of the student's enrolled modules plus a browsable
-catalogue of every other active module in the system. No enrolment /
-drop actions — those belong to the registration workflow (or an
-admin), not to a read-only course viewer.
+Primary view: the student's degree course (e.g. Computer Science,
+Data Science) resolved from ``students.course`` joined against the
+``courses`` table. Below that, two tabs — the modules the student is
+enrolled in, and a catalogue of every degree course the university
+offers. No enrolment / drop actions; those belong to the registration
+workflow, not to a read-only course viewer.
 """
 
 from __future__ import annotations
@@ -39,6 +41,8 @@ class CourseManagementStudentPortal:
             pass
 
         self.status_var = tk.StringVar(value="Loading your courses…")
+        self.course_title_var = tk.StringVar(value="")
+        self.course_desc_var = tk.StringVar(value="")
         self.summary_var = tk.StringVar(value="")
         self.detail_var = tk.StringVar(
             value="Select a module on the left to see its details.")
@@ -49,6 +53,7 @@ class CourseManagementStudentPortal:
                 "No student record matched your account — contact an "
                 "administrator to have your student_id linked.")
         else:
+            self._load_my_course()
             self._load_my_modules()
             self._load_catalogue()
 
@@ -108,11 +113,17 @@ class CourseManagementStudentPortal:
                   font=('Arial', 10, 'bold'), bd=0, padx=12, pady=4,
                   command=self.window.destroy).pack(side='right', padx=8, pady=12)
 
-        summary = ttk.LabelFrame(self.window, text="Enrolment summary",
-                                 padding=10)
-        summary.pack(fill='x', padx=12, pady=(10, 6))
-        ttk.Label(summary, textvariable=self.summary_var,
-                  font=('Arial', 11)).pack(anchor='w')
+        degree = ttk.LabelFrame(self.window, text="My Degree Course",
+                                 padding=12)
+        degree.pack(fill='x', padx=12, pady=(10, 6))
+        ttk.Label(degree, textvariable=self.course_title_var,
+                  font=('Arial', 14, 'bold'),
+                  foreground='#2c3e50').pack(anchor='w')
+        ttk.Label(degree, textvariable=self.course_desc_var,
+                  wraplength=960, justify='left',
+                  foreground='#444').pack(anchor='w', pady=(4, 6))
+        ttk.Label(degree, textvariable=self.summary_var,
+                  font=('Arial', 10)).pack(anchor='w')
 
         notebook = ttk.Notebook(self.window)
         notebook.pack(fill='both', expand=True, padx=12, pady=6)
@@ -156,33 +167,44 @@ class CourseManagementStudentPortal:
                   justify='left').pack(anchor='w', pady=(4, 0), fill='both',
                                         expand=True)
 
-        # Catalogue tab ----------------------------------------------------
+        # Course catalogue tab --------------------------------------------
         cat_tab = ttk.Frame(notebook, padding=8)
         notebook.add(cat_tab, text="Course Catalogue")
 
         ttk.Label(cat_tab,
-                  text="Every active module in the system — read-only.",
+                  text="Every degree course the university offers.",
                   foreground='#555').pack(anchor='w', pady=(0, 6))
 
-        cat_cols = ('code', 'name', 'credits', 'department', 'enrolled')
-        self.cat_tree = ttk.Treeview(cat_tab, columns=cat_cols,
-                                      show='headings', selectmode='browse')
+        body = ttk.Frame(cat_tab)
+        body.pack(fill='both', expand=True)
+
+        cat_cols = ('code', 'name', 'department', 'credits', 'enrolled')
+        self.cat_tree = ttk.Treeview(body, columns=cat_cols,
+                                      show='headings', selectmode='browse',
+                                      height=6)
         for key, title, width, anchor in [
-            ('code', 'Code', 100, 'center'),
-            ('name', 'Module', 300, 'w'),
-            ('credits', 'Credits', 70, 'center'),
+            ('code', 'Code', 80, 'center'),
+            ('name', 'Course', 240, 'w'),
             ('department', 'Department', 160, 'w'),
-            ('enrolled', 'Enrolled', 90, 'center'),
+            ('credits', 'Credits', 80, 'center'),
+            ('enrolled', 'Students', 90, 'center'),
         ]:
             self.cat_tree.heading(key, text=title)
             self.cat_tree.column(key, width=width, anchor=anchor)
-        cat_scroll = ttk.Scrollbar(cat_tab, orient='vertical',
+        cat_scroll = ttk.Scrollbar(body, orient='vertical',
                                     command=self.cat_tree.yview)
         self.cat_tree.configure(yscrollcommand=cat_scroll.set)
-        self.cat_tree.pack(side='left', fill='both', expand=True)
+        self.cat_tree.pack(side='left', fill='x', expand=True)
         cat_scroll.pack(side='right', fill='y')
         self.cat_tree.bind('<<TreeviewSelect>>',
-                           lambda _e: self._show_detail('catalogue'))
+                           lambda _e: self._show_course_detail())
+
+        self.course_detail_var = tk.StringVar(
+            value="Select a course above to see its description.")
+        ttk.Label(cat_tab, textvariable=self.course_detail_var,
+                  wraplength=980, justify='left',
+                  foreground='#333').pack(anchor='w', pady=(10, 0),
+                                           fill='both', expand=True)
 
         # Status bar
         status_bar = ttk.Frame(self.window, relief='sunken')
@@ -191,7 +213,8 @@ class CourseManagementStudentPortal:
                   padding=(8, 2)).pack(fill='x')
 
         self._my_modules_by_code = {}
-        self._cat_modules_by_code = {}
+        self._courses_by_code = {}
+        self._my_course = None
 
     # ------------------------------------------------------------------
     # Data
@@ -200,8 +223,76 @@ class CourseManagementStudentPortal:
     def _refresh(self):
         if self.student_id is None:
             return
+        self._load_my_course()
         self._load_my_modules()
         self._load_catalogue()
+
+    def _load_my_course(self):
+        """Resolve the student's degree course and render the header card."""
+        self._my_course = None
+        self.course_title_var.set("")
+        self.course_desc_var.set("")
+
+        student_course = None
+        first_name = last_name = ''
+        try:
+            with _connect() as conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT course, first_name, last_name "
+                    "FROM students WHERE student_id = ?",
+                    (self.student_id,)
+                )
+                row = cur.fetchone()
+                if row:
+                    student_course, first_name, last_name = row
+                if student_course:
+                    # students.course can hold the code ('CS') OR the full
+                    # name ('Computer Science') — match either.
+                    cur.execute(
+                        """
+                        SELECT id, COALESCE(course_code, code),
+                               COALESCE(course_name, name),
+                               description, credits, department
+                        FROM courses
+                        WHERE COALESCE(course_code, code) = ?
+                           OR COALESCE(course_name, name) = ?
+                        LIMIT 1
+                        """,
+                        (student_course, student_course)
+                    )
+                    self._my_course = cur.fetchone()
+        except Exception as e:
+            messagebox.showerror("Database Error",
+                                 f"Could not load your degree course: {e}",
+                                 parent=self.window)
+            return
+
+        if self._my_course:
+            _id, code, name, desc, credits, dept = self._my_course
+            self.course_title_var.set(f"{code} — {name}")
+            bits = []
+            if dept:
+                bits.append(f"Department: {dept}")
+            if credits:
+                bits.append(f"Standard credits: {credits}")
+            desc_line = (desc or '').strip() or 'No description on file.'
+            if bits:
+                desc_line = ' · '.join(bits) + "\n\n" + desc_line
+            self.course_desc_var.set(desc_line)
+        elif student_course:
+            self.course_title_var.set(f"{student_course}")
+            self.course_desc_var.set(
+                "(This course is on your record but doesn't match any entry "
+                "in the courses catalogue — an administrator can fix this "
+                "mapping.)"
+            )
+        else:
+            self.course_title_var.set("Degree course not set")
+            self.course_desc_var.set(
+                "Your student record doesn't have a degree course assigned. "
+                "Contact an administrator to be placed on a programme."
+            )
 
     def _load_my_modules(self):
         for i in self.my_tree.get_children():
@@ -263,52 +354,77 @@ class CourseManagementStudentPortal:
     def _load_catalogue(self):
         for i in self.cat_tree.get_children():
             self.cat_tree.delete(i)
-        self._cat_modules_by_code = {}
+        self._courses_by_code = {}
         try:
             with _connect() as conn:
                 cur = conn.cursor()
                 cur.execute(
                     """
-                    SELECT m.module_code, m.module_name, m.credits,
-                           m.description, m.department, m.instructor,
-                           (SELECT COUNT(*) FROM student_modules sm
-                            WHERE sm.module_code = m.module_code)
+                    SELECT COALESCE(course_code, code) AS code,
+                           COALESCE(course_name, name) AS name,
+                           department, credits, description,
+                           (SELECT COUNT(*) FROM students st
+                            WHERE st.course = COALESCE(c.course_code, c.code)
+                               OR st.course = COALESCE(c.course_name, c.name))
                            AS enrolled_count
-                    FROM modules m
-                    WHERE COALESCE(m.is_active, 1) = 1
-                    ORDER BY m.module_code
+                    FROM courses c
+                    WHERE COALESCE(status, 'active') != 'inactive'
+                    ORDER BY code
                     """
                 )
                 rows = cur.fetchall()
         except Exception as e:
             messagebox.showerror("Database Error",
-                                 f"Could not load catalogue: {e}",
+                                 f"Could not load course catalogue: {e}",
                                  parent=self.window)
             return
 
-        for code, name, credits, desc, dept, instr, enrolled in rows:
-            self.cat_tree.insert('', 'end', iid=code, values=(
-                code, name, credits or '—',
-                dept or '—', enrolled,
+        for code, name, dept, credits, desc, enrolled in rows:
+            self.cat_tree.insert('', 'end', iid=code or name, values=(
+                code or '—', name, dept or '—', credits or '—', enrolled,
             ))
-            self._cat_modules_by_code[code] = {
-                'code': code, 'name': name, 'credits': credits,
-                'description': desc, 'department': dept, 'instructor': instr,
+            self._courses_by_code[code or name] = {
+                'code': code, 'name': name, 'department': dept,
+                'credits': credits, 'description': desc,
                 'enrolled_count': enrolled,
             }
+        # Highlight the student's own course if it's in the catalogue.
+        if self._my_course:
+            my_code = self._my_course[1]
+            if self.cat_tree.exists(my_code):
+                self.cat_tree.selection_set(my_code)
+                self.cat_tree.see(my_code)
+                self._show_course_detail()
+
+    def _show_course_detail(self):
+        sel = self.cat_tree.selection()
+        if not sel:
+            return
+        data = self._courses_by_code.get(sel[0])
+        if not data:
+            return
+        lines = [
+            f"{data.get('code') or ''} — {data['name']}",
+            "",
+            f"Department: {data.get('department') or 'not set'}",
+            f"Credits: {data.get('credits') or 'not set'}",
+            f"Students on this course: {data.get('enrolled_count', 0)}",
+        ]
+        desc = (data.get('description') or '').strip()
+        if desc:
+            lines += ["", desc]
+        self.course_detail_var.set('\n'.join(lines))
 
     # ------------------------------------------------------------------
     # Detail rendering
     # ------------------------------------------------------------------
 
-    def _show_detail(self, source):
-        tree = self.my_tree if source == 'my' else self.cat_tree
-        lookup = (self._my_modules_by_code if source == 'my'
-                  else self._cat_modules_by_code)
-        sel = tree.selection()
+    def _show_detail(self, _source='my'):
+        """Populate the right-hand detail pane for the selected module."""
+        sel = self.my_tree.selection()
         if not sel:
             return
-        data = lookup.get(sel[0])
+        data = self._my_modules_by_code.get(sel[0])
         if not data:
             return
 
@@ -318,21 +434,14 @@ class CourseManagementStudentPortal:
             f"Credits: {data.get('credits') or 'not set'}",
             f"Department: {data.get('department') or 'not set'}",
             f"Instructor: {data.get('instructor') or 'not assigned'}",
+            f"Enrolment status: {(data.get('status') or 'enrolled').capitalize()}",
         ]
-        if source == 'my':
-            lines.append(
-                f"Enrolment status: {(data.get('status') or 'enrolled').capitalize()}"
-            )
-            if data.get('enrolled'):
-                lines.append(f"Enrolled since: {data['enrolled']}")
-            if data.get('grade'):
-                lines.append(f"Final grade on record: {data['grade']}")
-            if data.get('completed'):
-                lines.append(f"Completed: {data['completed']}")
-        else:
-            lines.append(
-                f"Total enrolled: {data.get('enrolled_count', 0)} student(s)"
-            )
+        if data.get('enrolled'):
+            lines.append(f"Enrolled since: {data['enrolled']}")
+        if data.get('grade'):
+            lines.append(f"Final grade on record: {data['grade']}")
+        if data.get('completed'):
+            lines.append(f"Completed: {data['completed']}")
 
         description = (data.get('description') or '').strip()
         lines += ["", "Description:", description or '(no description on file)']
