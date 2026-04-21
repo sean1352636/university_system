@@ -5,8 +5,11 @@ see submission status, submit a file, and view grade/feedback once
 graded. No admin controls.
 """
 
+import hashlib
+import logging
 import os
 import shutil
+import threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from datetime import datetime
@@ -16,6 +19,8 @@ from education_system.university_system.infrastructure.database.db import (
     sqlite3,
     DEFAULT_DB_PATH,
 )
+
+logger = logging.getLogger(__name__)
 
 try:
     from education_system.university_system.modules.shared.constants import paths
@@ -339,7 +344,7 @@ class AssignmentStudentPortal:
     def _submit_file(self):
         if not self._current_assignment or self.student_id is None:
             return
-        (aid, title, _module, due, _max, _desc, _instr,
+        (aid, title, module_code, due, _max, _desc, _instr,
          late_ok, _penalty, _fs_mb, types_allowed) = self._current_assignment
 
         file_path = filedialog.askopenfilename(
@@ -359,6 +364,38 @@ class AssignmentStudentPortal:
                     f"Accepted types: {types_allowed}\nYou chose: .{ext}",
                     parent=self.window)
                 return
+
+        try:
+            with open(file_path, 'rb') as fh:
+                file_hash = hashlib.sha256(fh.read()).hexdigest()
+        except Exception as e:
+            messagebox.showerror("Read Failed",
+                                 f"Could not read file: {e}",
+                                 parent=self.window)
+            return
+
+        try:
+            with _connect() as conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT id, file_name, submission_date "
+                    "FROM assignment_submissions "
+                    "WHERE assignment_id = ? AND student_id = ? AND file_hash = ?",
+                    (aid, self.student_id, file_hash)
+                )
+                duplicate = cur.fetchone()
+        except Exception:
+            duplicate = None
+
+        if duplicate:
+            _, prev_name, prev_date = duplicate
+            messagebox.showwarning(
+                "Already Submitted",
+                f"You've already submitted this exact file for this assignment.\n\n"
+                f"Previous submission: {prev_name} at {(prev_date or '')[:16]}\n\n"
+                f"To resubmit, make changes to the file first.",
+                parent=self.window)
+            return
 
         dest_dir = _SUBMISSIONS_DIR / 'submitted' / str(self.student_id) / f"assignment_{aid}"
         try:
@@ -399,6 +436,8 @@ class AssignmentStudentPortal:
                 late_days = 0
 
         now = datetime.now().isoformat(timespec='seconds')
+        submission_id = None
+        version_number = 1
         try:
             with _connect() as conn:
                 cur = conn.cursor()
@@ -413,18 +452,27 @@ class AssignmentStudentPortal:
                     """
                     INSERT INTO assignment_submissions
                         (assignment_id, student_id, submission_date,
-                         file_path, file_name, file_size, status,
+                         file_path, file_name, file_size, file_hash, status,
                          late_submission, late_days, version_number,
                          is_final_submission)
-                    VALUES (?, ?, ?, ?, ?, ?, 'submitted', ?, ?,
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'submitted', ?, ?,
                             COALESCE((SELECT MAX(version_number) + 1
                                       FROM assignment_submissions
                                       WHERE assignment_id = ? AND student_id = ?), 1),
                             1)
                     """,
-                    (aid, self.student_id, now, str(dest), orig_name, file_size,
-                     1 if is_late else 0, late_days, aid, self.student_id)
+                    (aid, self.student_id, now, str(dest), orig_name,
+                     file_size, file_hash, 1 if is_late else 0, late_days,
+                     aid, self.student_id)
                 )
+                submission_id = cur.lastrowid
+                cur.execute(
+                    "SELECT version_number FROM assignment_submissions WHERE id = ?",
+                    (submission_id,)
+                )
+                row = cur.fetchone()
+                if row:
+                    version_number = row[0]
                 conn.commit()
         except Exception as e:
             messagebox.showerror("Submission Failed",
@@ -432,10 +480,19 @@ class AssignmentStudentPortal:
                                  parent=self.window)
             return
 
+        threading.Thread(
+            target=self._post_submit_tasks,
+            args=(submission_id, aid, str(dest), orig_name, title,
+                  module_code, version_number, is_late, late_days, now),
+            daemon=True,
+        ).start()
+
         messagebox.showinfo(
             "Submitted",
             f"Submitted '{orig_name}' for {title}."
-            + (f"\n(Late by {late_days} day(s).)" if is_late else ''),
+            + (f"\n(Late by {late_days} day(s).)" if is_late else '')
+            + "\n\nA confirmation email and plagiarism report will be sent to"
+              " your registered email address shortly.",
             parent=self.window)
         self._load_assignments()
         # Re-select the same assignment if still in the list
@@ -444,6 +501,222 @@ class AssignmentStudentPortal:
             self.tree.selection_set(iid)
             self.tree.see(iid)
             self._on_selected()
+
+    def _post_submit_tasks(self, submission_id, aid, file_path, orig_name,
+                           assignment_title, module_code, version_number,
+                           is_late, late_days, submission_time):
+        """Background: plagiarism check + confirmation/report emails.
+
+        Runs off the UI thread. Any failure here is logged but does not
+        roll back the submission — the student's file is already stored.
+        """
+        student_email, first_name, module_name = self._lookup_student_and_module(module_code)
+        if not student_email:
+            logger.warning("Submission %s: no email on file for student %s",
+                           submission_id, self.student_id)
+            return
+
+        self._send_submission_confirmation(
+            student_email, first_name, assignment_title, module_code,
+            module_name, version_number, is_late, late_days, submission_time,
+        )
+
+        plagiarism_summary = self._run_plagiarism_check(
+            file_path, orig_name, assignment_title, module_code, submission_id,
+        )
+        if plagiarism_summary:
+            self._send_plagiarism_email(
+                student_email, first_name, assignment_title,
+                module_code, plagiarism_summary,
+            )
+
+    def _lookup_student_and_module(self, module_code):
+        email = first_name = module_name = None
+        try:
+            with _connect() as conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT email, first_name FROM students WHERE student_id = ?",
+                    (self.student_id,)
+                )
+                row = cur.fetchone()
+                if row:
+                    email, first_name = row
+                if module_code:
+                    cur.execute(
+                        "SELECT module_name FROM modules WHERE module_code = ?",
+                        (module_code,)
+                    )
+                    row = cur.fetchone()
+                    if row:
+                        module_name = row[0]
+        except Exception as e:
+            logger.warning("Could not resolve student/module for submission: %s", e)
+        user = (self.auth.current_user if self.auth else None) or {}
+        email = email or user.get('email')
+        first_name = first_name or user.get('first_name') or user.get('display_name') or 'Student'
+        module_name = module_name or module_code or ''
+        return email, first_name, module_name
+
+    def _send_submission_confirmation(self, email, first_name, assignment_title,
+                                      module_code, module_name, version_number,
+                                      is_late, late_days, submission_time):
+        try:
+            from education_system.university_system.infrastructure.email import queue_template_email
+            late_text = f" (late by {late_days} day(s))" if is_late else ""
+            queue_template_email(
+                template_name='academics/assignment_submission_student',
+                recipient=email,
+                template_vars={
+                    'first_name': first_name,
+                    'module_code': module_code or '',
+                    'module_name': module_name,
+                    'assignment_title': assignment_title,
+                    'version_number': str(version_number),
+                    'submission_status': 'Late Submission' if is_late else 'On Time',
+                    'late_text': late_text,
+                    'submission_time': submission_time,
+                },
+            )
+        except Exception as e:
+            logger.warning("Submission confirmation email failed: %s", e)
+
+    def _run_plagiarism_check(self, file_path, orig_name, assignment_title,
+                              module_code, submission_id):
+        """Run a plagiarism scan and return a summary dict, or None on failure."""
+        try:
+            from education_system.university_system.modules.domain.academics.services.plagiarism.checker import (
+                PlagiarismChecker,
+            )
+        except Exception as e:
+            logger.info("Plagiarism checker unavailable: %s", e)
+            return None
+
+        try:
+            checker = PlagiarismChecker()
+        except Exception as e:
+            logger.warning("Could not initialise plagiarism checker: %s", e)
+            return None
+
+        try:
+            content, file_type = checker.extract_text_from_file(file_path)
+        except Exception as e:
+            logger.info("Plagiarism: text extraction failed for %s: %s", orig_name, e)
+            return {'status': 'SKIPPED', 'reason': str(e), 'highest_similarity': 0.0}
+
+        author_id = self._resolve_numeric_user_id()
+        if not author_id:
+            logger.info("Plagiarism: could not resolve numeric user id for %s",
+                        self.student_id)
+            return None
+
+        try:
+            doc_id = checker.add_document_to_repository(
+                title=f"{assignment_title} — {orig_name}",
+                content=content,
+                author_id=author_id,
+                module_code=module_code or '',
+                file_type=file_type,
+            )
+        except Exception as e:
+            logger.warning("Plagiarism: add_document_to_repository failed: %s", e)
+            return None
+
+        try:
+            result = checker.check_plagiarism(
+                document_id=doc_id,
+                checker_id=author_id,
+                threshold=0.3,
+            )
+        except Exception as e:
+            logger.warning("Plagiarism: check_plagiarism failed: %s", e)
+            return None
+
+        return result
+
+    def _resolve_numeric_user_id(self):
+        user = (self.auth.current_user if self.auth else None) or {}
+        uid = user.get('id') or user.get('user_id')
+        if isinstance(uid, int) and uid > 0:
+            return uid
+        try:
+            with _connect() as conn:
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT user_id FROM students WHERE student_id = ?",
+                    (self.student_id,)
+                )
+                row = cur.fetchone()
+                if row and isinstance(row[0], int) and row[0] > 0:
+                    return row[0]
+        except Exception:
+            pass
+        return None
+
+    def _send_plagiarism_email(self, email, first_name, assignment_title,
+                                module_code, summary):
+        try:
+            from education_system.university_system.infrastructure.email import send_email
+        except Exception as e:
+            logger.warning("send_email unavailable for plagiarism report: %s", e)
+            return
+
+        status = summary.get('status', 'UNKNOWN')
+        score = summary.get('highest_similarity') or 0.0
+        score_pct = f"{score * 100:.1f}%"
+        matches = summary.get('matches') or []
+
+        if status == 'SKIPPED':
+            body = (
+                f"Dear {first_name},\n\n"
+                f"Your submission for '{assignment_title}' ({module_code or 'n/a'}) "
+                f"was received, but an automatic plagiarism scan could not be run:\n"
+                f"  {summary.get('reason', 'unsupported file type')}\n\n"
+                f"Your instructor may still run a manual check. No action is "
+                f"required from you.\n\n"
+                f"Regards,\nAcademic Administration Team"
+            )
+        else:
+            verdict = {
+                'EXACT_MATCH': 'An exact match was found — your submission is '
+                               'identical to existing material in the repository.',
+                'HIGH_SIMILARITY': 'A high similarity score was detected.',
+                'MODERATE_SIMILARITY': 'A moderate similarity score was detected.',
+                'LOW_SIMILARITY': 'A low similarity score was detected.',
+                'NO_MATCH': 'No significant matches were found.',
+            }.get(status, f'Scan completed with status: {status}.')
+
+            lines = [
+                f"Dear {first_name},",
+                "",
+                f"Automatic plagiarism scan for your submission to "
+                f"'{assignment_title}' ({module_code or 'n/a'}):",
+                "",
+                f"  Result: {status}",
+                f"  Highest similarity: {score_pct}",
+                f"  {verdict}",
+            ]
+            if matches:
+                lines += ["", f"  {len(matches)} matching document(s) identified."]
+            lines += [
+                "",
+                "If you believe this result is incorrect, contact your "
+                "instructor — every scan is also reviewed manually before "
+                "any academic-misconduct action is taken.",
+                "",
+                "Regards,",
+                "Academic Administration Team",
+            ]
+            body = "\n".join(lines)
+
+        try:
+            send_email(
+                recipient_email=email,
+                subject=f"Plagiarism Scan: {assignment_title}",
+                body=body,
+            )
+        except Exception as e:
+            logger.warning("Plagiarism email send failed: %s", e)
 
 
 def launch_assignment_student_portal(parent, auth):

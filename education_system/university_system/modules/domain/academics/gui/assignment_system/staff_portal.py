@@ -6,6 +6,8 @@ admin-only features (peer review config, rubric authoring, analytics,
 maintenance). For those, admins use the full AssignmentGUI.
 """
 
+import logging
+import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -14,6 +16,8 @@ from education_system.university_system.infrastructure.database.db import (
     sqlite3,
     DEFAULT_DB_PATH,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _connect():
@@ -274,6 +278,7 @@ class AssignmentStaffPortal:
     def _load_submissions(self):
         self._clear_submissions()
         if self._current_assignment_id is None:
+            self.status_var.set("Select an assignment to view its submissions.")
             return
         try:
             with _connect() as conn:
@@ -281,12 +286,15 @@ class AssignmentStaffPortal:
                 cur.execute(
                     """
                     SELECT s.id, s.student_id,
-                           COALESCE(st.first_name || ' ' || st.last_name, s.student_id),
+                           COALESCE(NULLIF(TRIM(COALESCE(st.first_name, '') || ' '
+                                                || COALESCE(st.last_name, '')), ''),
+                                    s.student_id),
                            s.submission_date, s.file_name, s.grade, s.status,
                            s.late_submission
                     FROM assignment_submissions s
                     LEFT JOIN students st ON st.student_id = s.student_id
                     WHERE s.assignment_id = ?
+                      AND COALESCE(s.is_final_submission, 1) = 1
                     ORDER BY s.submission_date DESC
                     """,
                     (self._current_assignment_id,)
@@ -296,6 +304,10 @@ class AssignmentStaffPortal:
             messagebox.showerror("Database Error",
                                  f"Could not load submissions: {e}",
                                  parent=self.window)
+            return
+
+        if not rows:
+            self.status_var.set("No submissions yet for this assignment.")
             return
 
         for sid, student_id, name, submitted, file_name, grade, status, late in rows:
@@ -310,6 +322,7 @@ class AssignmentStaffPortal:
                 '—' if grade is None else f"{grade:g}",
                 status_label,
             ))
+        self.status_var.set(f"{len(rows)} submission(s) for this assignment.")
 
     def _grade_submission(self, _event=None):
         sel = self.sub_tree.selection()
@@ -667,9 +680,107 @@ class GradeSubmissionDialog:
                                  f"Grade save failed: {e}",
                                  parent=self.dialog)
             return
+
+        threading.Thread(
+            target=_send_grade_release_emails,
+            args=(self.submission_id, grade, feedback, self.max_marks,
+                  self.grader_user_id),
+            daemon=True,
+        ).start()
+
+        messagebox.showinfo(
+            "Grade Saved",
+            f"Grade saved for submission #{self.submission_id}.\n\n"
+            "The student will be notified by email that their result is "
+            "available, and a confirmation will be sent to your inbox.",
+            parent=self.dialog,
+        )
         self.dialog.destroy()
         if self.on_save:
             self.on_save()
+
+
+def _send_grade_release_emails(submission_id, grade, feedback, max_marks,
+                               grader_user_id):
+    """Background: email student with grade + staff with confirmation.
+
+    Runs off the UI thread. Failures are logged; the grade is already saved.
+    """
+    try:
+        with _connect() as conn:
+            cur = conn.cursor()
+            cur.execute(
+                """
+                SELECT s.student_id,
+                       st.email, st.first_name,
+                       a.title, a.module_code,
+                       u.email, u.username
+                FROM assignment_submissions s
+                JOIN assignments a ON a.id = s.assignment_id
+                LEFT JOIN students st ON st.student_id = s.student_id
+                LEFT JOIN users u ON u.id = ?
+                WHERE s.id = ?
+                """,
+                (grader_user_id, submission_id)
+            )
+            row = cur.fetchone()
+    except Exception as e:
+        logger.warning("Grade email: lookup failed: %s", e)
+        return
+    if not row:
+        logger.warning("Grade email: submission %s not found", submission_id)
+        return
+
+    (student_id, student_email, first_name, assignment_title, module_code,
+     staff_email, staff_username) = row
+    student_display = first_name or student_id or 'Student'
+
+    try:
+        from education_system.university_system.infrastructure.email import (
+            queue_template_email,
+            send_email,
+        )
+    except Exception as e:
+        logger.warning("Grade email: email service unavailable: %s", e)
+        return
+
+    if student_email:
+        try:
+            queue_template_email(
+                template_name='academics/assignment_grade_released',
+                recipient=student_email,
+                template_vars={
+                    'student_name': student_display,
+                    'assignment_title': assignment_title,
+                    'module_code': module_code or '',
+                    'grade': f"{grade:g} / {max_marks:g}",
+                    'feedback': feedback or '(no written feedback)',
+                    'signature': 'Academic Administration Team',
+                },
+            )
+        except Exception as e:
+            logger.warning("Grade email to student failed: %s", e)
+    else:
+        logger.info("Grade email: no email on file for student %s", student_id)
+
+    if staff_email:
+        body = (
+            f"Hi {staff_username or 'there'},\n\n"
+            f"You have successfully released a grade for:\n\n"
+            f"  Student: {student_id} ({student_display})\n"
+            f"  Assignment: {assignment_title} ({module_code or 'n/a'})\n"
+            f"  Grade: {grade:g} / {max_marks:g}\n\n"
+            f"The student has been notified by email.\n\n"
+            f"Regards,\nAcademic Administration Team"
+        )
+        try:
+            send_email(
+                recipient_email=staff_email,
+                subject=f"Grade Sent: {assignment_title} — {student_id}",
+                body=body,
+            )
+        except Exception as e:
+            logger.warning("Grade confirmation to staff failed: %s", e)
 
 
 def launch_assignment_staff_portal(parent, auth):
