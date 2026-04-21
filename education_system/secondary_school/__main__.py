@@ -19,7 +19,7 @@ def main():
         from education_system.shared.api.secondary.api_server import run_server
         run_server()
     else:
-        from education_system.secondary_school.main_gui import run
+        from education_system.secondary_school.modules.shared.gui.main_gui import run
         run()
 
 

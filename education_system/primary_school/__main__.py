@@ -13,7 +13,7 @@ def main():
     mode = sys.argv[1] if len(sys.argv) > 1 else "--gui"
 
     if mode == "--gui":
-        from education_system.primary_school.main_gui import run
+        from education_system.primary_school.modules.shared.gui.main_gui import run
         run()
     elif mode == "--cli":
         from education_system.primary_school.cli.cli_main import main as cli_main

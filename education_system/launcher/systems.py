@@ -167,7 +167,7 @@ def run_school_cli(user_info=None, role=None, shared_auth=None):
 
 
 def run_school_gui(user_info=None, role=None, shared_auth=None):
-    from education_system.secondary_school.main_gui import run
+    from education_system.secondary_school.modules.shared.gui.main_gui import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
@@ -179,7 +179,7 @@ def run_primary_cli(user_info=None, role=None, shared_auth=None):
 
 
 def run_primary_gui(user_info=None, role=None, shared_auth=None):
-    from education_system.primary_school.main_gui import run
+    from education_system.primary_school.modules.shared.gui.main_gui import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
