@@ -202,7 +202,7 @@ def get_user() -> str:
     return _activity_logger.get_user()
 
 
-def log_activity(action: str, entity_type: str = None, user: Optional[str] = None, user_id: Optional[int] = None, details: dict = None):
+def log_activity(action: str, entity_type: str = None, user: Optional[str] = None, user_id: Optional[int] = None, details: dict = None, **extra):
     """
     Log a general activity.
 
@@ -212,6 +212,10 @@ def log_activity(action: str, entity_type: str = None, user: Optional[str] = Non
         user: Username (optional)
         user_id: User ID (optional, will be ignored - for backwards compatibility)
         details: Additional details (optional, will be ignored - for backwards compatibility)
+        **extra: Any additional keyword arguments are folded into ``details`` so
+            legacy call sites that pass things like ``profile_id=…`` or
+            ``scholarship_id=…`` directly don't TypeError. Ignored by the
+            underlying logger in the same way ``details`` is.
     """
     # Build action message
     if entity_type:
