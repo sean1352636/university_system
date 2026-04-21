@@ -413,7 +413,36 @@ def _resolve_file_path(stored_path: str) -> Optional[str]:
         return stored_path if stored_path and os.path.exists(stored_path) else None
 
 
+_PLAIN_TEXT_EXTENSIONS = {
+    '.txt', '.md', '.rst', '.log', '.csv', '.tsv',
+    '.json', '.xml', '.html', '.htm', '.yml', '.yaml',
+    '.py', '.js', '.ts', '.java', '.c', '.h', '.cpp', '.hpp',
+    '.cs', '.go', '.rb', '.rs', '.sh', '.sql', '.ini', '.cfg',
+}
+
+
 def _extract_submission_text(path: str) -> Optional[str]:
+    """Return the submission's text, or None on failure.
+
+    For plain-text formats we read the file directly with an encoding
+    fallback (utf-8 → utf-8-sig → latin-1 → cp1252). For everything
+    else we delegate to PlagiarismChecker.extract_text_from_file, which
+    uses textract for .pdf / .docx / .odt / … when available.
+    """
+    ext = os.path.splitext(path)[1].lower()
+    if ext in _PLAIN_TEXT_EXTENSIONS or ext == '':
+        for enc in ('utf-8', 'utf-8-sig', 'latin-1', 'cp1252'):
+            try:
+                with open(path, 'r', encoding=enc) as fh:
+                    return fh.read()
+            except UnicodeDecodeError:
+                continue
+            except OSError as e:
+                logger.info("AI grader: cannot read %s: %s", path, e)
+                return None
+        logger.info("AI grader: could not decode %s as text", path)
+        return None
+
     try:
         from education_system.university_system.modules.domain.academics.services.plagiarism.checker import (
             PlagiarismChecker,
@@ -444,10 +473,10 @@ def _run_plagiarism_for_submission(submission_id: int, assignment_id: int,
         checker = PlagiarismChecker()
     except Exception:
         return {}
-    try:
-        text, file_type = checker.extract_text_from_file(file_path)
-    except Exception:
+    text = _extract_submission_text(file_path)
+    if text is None:
         return {}
+    file_type = os.path.splitext(file_path)[1].lstrip('.') or 'txt'
 
     # Seed repo with other final submissions for this assignment.
     seeded_count = 0
@@ -477,10 +506,10 @@ def _run_plagiarism_for_submission(submission_id: int, assignment_id: int,
         resolved = _resolve_file_path(fpath) or fpath
         if not resolved or not os.path.exists(resolved):
             continue
-        try:
-            other_text, other_type = checker.extract_text_from_file(resolved)
-        except Exception:
+        other_text = _extract_submission_text(resolved)
+        if other_text is None:
             continue
+        other_type = os.path.splitext(resolved)[1].lstrip('.') or 'txt'
         try:
             checker.add_document_to_repository(
                 title=f"{t} — {fname}",
