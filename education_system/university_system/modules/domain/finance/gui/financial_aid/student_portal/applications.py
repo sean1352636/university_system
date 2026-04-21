@@ -75,7 +75,7 @@ class ApplicationsMixin:
                             app['application_id'],
                             app['scholarship_name'],
                             format_currency(app['amount']),
-                            format_date(app['submitted_date']),
+                            format_date(app['application_date']),
                             app['status'].title()
                         ), tags=(app['status'],))
 
