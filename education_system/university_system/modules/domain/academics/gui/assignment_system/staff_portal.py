@@ -7,7 +7,6 @@ maintenance). For those, admins use the full AssignmentGUI.
 """
 
 import logging
-import threading
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
@@ -15,6 +14,11 @@ from datetime import datetime
 from education_system.university_system.infrastructure.database.db import (
     sqlite3,
     DEFAULT_DB_PATH,
+)
+from education_system.university_system.modules.domain.academics.gui.assignment_system._grading import (
+    GradeSubmissionDialog,
+    save_submission_grade,
+    send_grade_release_emails_async,
 )
 
 logger = logging.getLogger(__name__)
@@ -387,8 +391,38 @@ class AssignmentStaffPortal:
         if not row:
             return
 
-        GradeSubmissionDialog(self.window, row, self.user_id,
-                              on_save=self._load_submissions)
+        (sub_id, student_id, file_name, current_grade, current_feedback,
+         assignment_title, max_marks) = row
+        max_marks = max_marks or 100.0
+
+        def _on_save(score, feedback):
+            if not save_submission_grade(sub_id, score, feedback, self.user_id):
+                messagebox.showerror(
+                    "Database Error",
+                    "Grade save failed. See application log for details.",
+                    parent=self.window)
+                return
+            send_grade_release_emails_async(
+                sub_id, score, feedback, max_marks, self.user_id)
+            messagebox.showinfo(
+                "Grade Saved",
+                f"Grade saved for submission #{sub_id}.\n\n"
+                "The student will be notified by email that their result is "
+                "available, and a confirmation will be sent to your inbox.",
+                parent=self.window,
+            )
+            self._load_submissions()
+
+        GradeSubmissionDialog(
+            self.window,
+            student_label=str(student_id),
+            assignment_label=assignment_title,
+            file_label=file_name or '(none)',
+            max_marks=max_marks,
+            current_score=current_grade,
+            current_feedback=current_feedback or '',
+            on_save=_on_save,
+        )
 
     # ------------------------------------------------------------------
     # Create / edit / delete
@@ -623,196 +657,6 @@ class AssignmentEditorDialog:
         self.dialog.destroy()
         if self.on_save:
             self.on_save()
-
-
-class GradeSubmissionDialog:
-    """Enter grade + feedback for a submission."""
-
-    def __init__(self, parent, submission_row, grader_user_id, on_save):
-        # submission_row: (id, student_id, file_name, grade, feedback, a_title, max_marks)
-        self.submission_id = submission_row[0]
-        self.grader_user_id = grader_user_id
-        self.on_save = on_save
-        self.max_marks = submission_row[6] or 100
-
-        self.dialog = tk.Toplevel(parent)
-        self.dialog.title("Grade Submission")
-        self.dialog.geometry("500x440")
-        self.dialog.transient(parent)
-        try:
-            self.dialog.grab_set()
-        except tk.TclError:
-            pass
-
-        frame = ttk.Frame(self.dialog, padding=14)
-        frame.pack(fill='both', expand=True)
-
-        ttk.Label(frame,
-                  text=f"Assignment: {submission_row[5]}",
-                  font=('Arial', 10, 'bold')).pack(anchor='w', pady=(0, 2))
-        ttk.Label(frame,
-                  text=f"Student: {submission_row[1]}   |   "
-                       f"File: {submission_row[2] or '(none)'}   |   "
-                       f"Max: {self.max_marks}"
-                  ).pack(anchor='w', pady=(0, 10))
-
-        ttk.Label(frame, text="Grade:").pack(anchor='w')
-        self.grade_var = tk.StringVar(
-            value='' if submission_row[3] is None else str(submission_row[3])
-        )
-        ttk.Entry(frame, textvariable=self.grade_var, width=18).pack(anchor='w')
-
-        ttk.Label(frame, text="Feedback:").pack(anchor='w', pady=(10, 2))
-        self.fb_text = tk.Text(frame, width=54, height=9, wrap='word')
-        self.fb_text.pack(fill='both', expand=True)
-        if submission_row[4]:
-            self.fb_text.insert('1.0', submission_row[4])
-
-        btns = ttk.Frame(frame)
-        btns.pack(fill='x', pady=(10, 0))
-        ttk.Button(btns, text="Save Grade",
-                   command=self._save).pack(side='right', padx=4)
-        ttk.Button(btns, text="Cancel",
-                   command=self.dialog.destroy).pack(side='right', padx=4)
-
-    def _save(self):
-        raw = self.grade_var.get().strip()
-        try:
-            grade = float(raw)
-        except ValueError:
-            messagebox.showerror("Invalid Grade",
-                                 "Grade must be a number.",
-                                 parent=self.dialog)
-            return
-        if grade < 0 or grade > self.max_marks:
-            if not messagebox.askyesno(
-                    "Out of Range",
-                    f"Grade {grade:g} is outside 0–{self.max_marks:g}. "
-                    "Save anyway?", parent=self.dialog):
-                return
-
-        feedback = self.fb_text.get('1.0', 'end').strip()
-        now = datetime.now().isoformat(timespec='seconds')
-
-        try:
-            with _connect() as conn:
-                cur = conn.cursor()
-                cur.execute(
-                    """
-                    UPDATE assignment_submissions
-                    SET grade = ?, feedback = ?, graded_by = ?, graded_date = ?,
-                        status = 'graded'
-                    WHERE id = ?
-                    """,
-                    (grade, feedback, self.grader_user_id, now,
-                     self.submission_id)
-                )
-                conn.commit()
-        except Exception as e:
-            messagebox.showerror("Database Error",
-                                 f"Grade save failed: {e}",
-                                 parent=self.dialog)
-            return
-
-        threading.Thread(
-            target=_send_grade_release_emails,
-            args=(self.submission_id, grade, feedback, self.max_marks,
-                  self.grader_user_id),
-            daemon=True,
-        ).start()
-
-        messagebox.showinfo(
-            "Grade Saved",
-            f"Grade saved for submission #{self.submission_id}.\n\n"
-            "The student will be notified by email that their result is "
-            "available, and a confirmation will be sent to your inbox.",
-            parent=self.dialog,
-        )
-        self.dialog.destroy()
-        if self.on_save:
-            self.on_save()
-
-
-def _send_grade_release_emails(submission_id, grade, feedback, max_marks,
-                               grader_user_id):
-    """Background: email student with grade + staff with confirmation.
-
-    Runs off the UI thread. Failures are logged; the grade is already saved.
-    """
-    try:
-        with _connect() as conn:
-            cur = conn.cursor()
-            cur.execute(
-                """
-                SELECT s.student_id,
-                       COALESCE(us.email, st.email_address) AS student_email,
-                       st.first_name,
-                       a.title, a.module_code,
-                       u.email, u.username
-                FROM assignment_submissions s
-                JOIN assignments a ON a.id = s.assignment_id
-                LEFT JOIN students st ON st.student_id = s.student_id
-                LEFT JOIN users us ON us.student_id = s.student_id
-                LEFT JOIN users u ON u.id = ?
-                WHERE s.id = ?
-                """,
-                (grader_user_id, submission_id)
-            )
-            row = cur.fetchone()
-    except Exception as e:
-        logger.warning("Grade email: lookup failed: %s", e)
-        return
-    if not row:
-        logger.warning("Grade email: submission %s not found", submission_id)
-        return
-
-    (student_id, student_email, first_name, assignment_title, module_code,
-     staff_email, staff_username) = row
-    student_display = first_name or student_id or 'Student'
-
-    try:
-        from education_system.university_system.infrastructure.email import queue_template_email
-    except Exception as e:
-        logger.warning("Grade email: email service unavailable: %s", e)
-        return
-
-    grade_display = f"{grade:g} / {max_marks:g}"
-
-    if student_email:
-        try:
-            queue_template_email(
-                template_name='academics/assignment_grade_released',
-                recipient=student_email,
-                template_vars={
-                    'student_name': student_display,
-                    'assignment_title': assignment_title,
-                    'module_code': module_code or 'n/a',
-                    'grade': grade_display,
-                    'feedback': feedback or '(no written feedback)',
-                },
-            )
-        except Exception as e:
-            logger.warning("Grade email to student failed: %s", e)
-    else:
-        logger.info("Grade email: no email on file for student %s", student_id)
-
-    if staff_email:
-        try:
-            queue_template_email(
-                template_name='academics/grade_release_confirmation_staff',
-                recipient=staff_email,
-                template_vars={
-                    'staff_name': staff_username or 'there',
-                    'student_id': student_id or '',
-                    'student_name': student_display,
-                    'student_email': student_email or '(not on file)',
-                    'assignment_title': assignment_title,
-                    'module_code': module_code or 'n/a',
-                    'grade_display': grade_display,
-                },
-            )
-        except Exception as e:
-            logger.warning("Grade confirmation to staff failed: %s", e)
 
 
 def launch_assignment_staff_portal(parent, auth):

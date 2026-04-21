@@ -9,9 +9,13 @@ database tooling.
 
 import tkinter as tk
 from tkinter import ttk, messagebox
-from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import get_connection
+from education_system.university_system.modules.domain.academics.gui.assignment_system._grading import (
+    GradeSubmissionDialog,
+    save_submission_grade,
+    send_grade_release_emails_async,
+)
 
 
 _LETTER_CUTOFFS = [
@@ -317,14 +321,33 @@ class GradeTrackingStaffPortal:
             return
         current = self.tree.item(student_id, 'values')
         try:
-            float(current[3])
-            score_seed = current[3]
+            score_seed = float(current[3])
         except (TypeError, ValueError):
-            score_seed = ''
-        EditGradeDialog(self.window, student_id, current[1],
-                        self._current_max_points, score_seed,
-                        on_save=lambda score, comment: self._apply_edit(
-                            student_id, score, comment))
+            score_seed = None
+
+        assessment_title = ''
+        a_idx = self.assessment_combo.current()
+        if 0 <= a_idx < len(self._assessments):
+            assessment_title = self._assessments[a_idx][1]
+
+        pending = self._edits.get(student_id)
+        if pending:
+            # Prefer the student's unsaved edit over the table value.
+            score_seed = pending['score']
+            feedback_seed = pending['comment']
+        else:
+            feedback_seed = ''
+
+        GradeSubmissionDialog(
+            self.window,
+            student_label=f"{student_id} — {current[1]}",
+            assignment_label=assessment_title,
+            max_marks=self._current_max_points,
+            current_score=score_seed,
+            current_feedback=feedback_seed,
+            on_save=lambda score, feedback: self._apply_edit(
+                student_id, score, feedback),
+        )
 
     def _apply_edit(self, student_id, score, comment):
         pct = (score / self._current_max_points * 100.0) if self._current_max_points else 0
@@ -362,66 +385,34 @@ class GradeTrackingStaffPortal:
             grader_user_id = (self.auth.current_user.get('user_id')
                               or self.auth.current_user.get('id'))
 
-        now = datetime.now().isoformat(timespec='seconds')
-        saved_submission_ids = []
-        try:
-            with get_connection() as conn:
-                cur = conn.cursor()
-                for student_id, edit in self._edits.items():
-                    submission_id = self._row_submission.get(student_id)
-                    if not submission_id:
-                        continue
-                    cur.execute(
-                        """
-                        UPDATE assignment_submissions
-                        SET grade = ?, feedback = ?, graded_by = ?,
-                            graded_date = ?, status = 'graded'
-                        WHERE id = ?
-                        """,
-                        (edit['score'], edit['comment'], grader_user_id,
-                         now, submission_id)
-                    )
-                    saved_submission_ids.append(submission_id)
-                conn.commit()
-        except Exception as e:
-            messagebox.showerror("Save Failed",
-                                 f"Could not save grades: {e}",
-                                 parent=self.window)
-            return
+        max_marks = self._current_max_points
+        saved = 0
+        failed = []
+        for student_id, edit in self._edits.items():
+            submission_id = self._row_submission.get(student_id)
+            if not submission_id:
+                continue
+            if save_submission_grade(submission_id, edit['score'],
+                                      edit['comment'], grader_user_id):
+                send_grade_release_emails_async(
+                    submission_id, edit['score'], edit['comment'],
+                    max_marks, grader_user_id)
+                saved += 1
+            else:
+                failed.append(student_id)
 
-        # Re-use the assignment portal's background email pipeline so
-        # students are notified and the grader gets a confirmation —
-        # same behaviour as grading via the assignment portal.
-        if saved_submission_ids:
-            try:
-                import threading
-                from education_system.university_system.modules.domain.academics.gui.assignment_system.staff_portal import (
-                    _send_grade_release_emails,
-                )
-                max_marks = self._current_max_points
-                for sid in saved_submission_ids:
-                    edit = next(
-                        (e for sid2, e in
-                         [(self._row_submission.get(k), v)
-                          for k, v in self._edits.items()]
-                         if sid2 == sid),
-                        None,
-                    )
-                    if not edit:
-                        continue
-                    threading.Thread(
-                        target=_send_grade_release_emails,
-                        args=(sid, edit['score'], edit['comment'],
-                              max_marks, grader_user_id),
-                        daemon=True,
-                    ).start()
-            except Exception:
-                pass
-
-        count = len(self._edits)
         self._edits.clear()
         self._load_grades()
-        self.status_var.set(f"Saved {count} grade change(s).")
+        if failed:
+            messagebox.showerror(
+                "Some Saves Failed",
+                f"Saved {saved} grade(s). Could not save for: "
+                f"{', '.join(failed)}\nSee application log for details.",
+                parent=self.window)
+            self.status_var.set(
+                f"Saved {saved} grade change(s); {len(failed)} failed.")
+        else:
+            self.status_var.set(f"Saved {saved} grade change(s).")
 
     def _refresh(self):
         if self._current_assessment_id is not None:
@@ -429,70 +420,6 @@ class GradeTrackingStaffPortal:
             self._load_grades()
         else:
             self._load_modules()
-
-
-class EditGradeDialog:
-    """Modal dialog for editing a single student's score + comment."""
-
-    def __init__(self, parent, student_id, student_name, max_points,
-                 current_score, on_save):
-        self.on_save = on_save
-        self.max_points = max_points
-
-        self.dialog = tk.Toplevel(parent)
-        self.dialog.title(f"Edit Grade — {student_name}")
-        self.dialog.geometry("420x240")
-        self.dialog.transient(parent)
-        try:
-            self.dialog.grab_set()
-        except tk.TclError:
-            pass
-
-        frame = ttk.Frame(self.dialog, padding=14)
-        frame.pack(fill='both', expand=True)
-
-        ttk.Label(frame, text=f"Student: {student_id} — {student_name}",
-                  font=('Arial', 10, 'bold')).grid(row=0, column=0, columnspan=2,
-                                                    sticky='w', pady=(0, 8))
-        ttk.Label(frame, text=f"Max points: {max_points:g}").grid(
-            row=1, column=0, columnspan=2, sticky='w', pady=(0, 8))
-
-        ttk.Label(frame, text="Score:").grid(row=2, column=0, sticky='w', pady=4)
-        self.score_var = tk.StringVar(
-            value='' if current_score in ('—', '', None) else str(current_score)
-        )
-        ttk.Entry(frame, textvariable=self.score_var, width=18).grid(
-            row=2, column=1, sticky='w', pady=4)
-
-        ttk.Label(frame, text="Comment:").grid(row=3, column=0, sticky='nw', pady=4)
-        self.comment_text = tk.Text(frame, width=34, height=4, wrap='word')
-        self.comment_text.grid(row=3, column=1, sticky='w', pady=4)
-
-        btns = ttk.Frame(frame)
-        btns.grid(row=4, column=0, columnspan=2, pady=(10, 0), sticky='e')
-        ttk.Button(btns, text="Save",
-                   command=self._save).pack(side='left', padx=4)
-        ttk.Button(btns, text="Cancel",
-                   command=self.dialog.destroy).pack(side='left', padx=4)
-
-    def _save(self):
-        raw = self.score_var.get().strip()
-        try:
-            score = float(raw)
-        except ValueError:
-            messagebox.showerror("Invalid Score",
-                                 "Score must be a number.",
-                                 parent=self.dialog)
-            return
-        if score < 0 or score > self.max_points:
-            if not messagebox.askyesno(
-                    "Score Out of Range",
-                    f"Score {score:g} is outside 0–{self.max_points:g}. Save anyway?",
-                    parent=self.dialog):
-                return
-        comment = self.comment_text.get('1.0', 'end').strip()
-        self.on_save(score, comment)
-        self.dialog.destroy()
 
 
 def launch_grade_tracking_staff_portal(parent, auth):
