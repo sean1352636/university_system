@@ -549,26 +549,18 @@ class StaffPortalGUI:
     # ------------------------------------------------------------------
 
     def _return_to_login(self):
-        """Log out and return to the universal login window."""
+        """Log out and mark for relaunch. The actual re-login / relaunch
+        runs after ``mainloop()`` returns — doing it inside this
+        callback would nest mainloops and create a second ``Tk()``
+        instance while the first is still unwinding, which hangs the UI.
+        """
         if self.auth:
             try:
                 self.auth.logout()
             except Exception:
                 pass
+        self._relaunch_after_logout = True
         self.root.destroy()
-        try:
-            from education_system.shared.gui.login_gui import UniversalLoginWindow
-            login = UniversalLoginWindow()
-            login.mainloop()
-            if login.user_info and login.system_key:
-                from education_system.launcher.systems import run_university_gui
-                run_university_gui(
-                    user_info=login.user_info,
-                    role=login.system_role,
-                    shared_auth=login.auth,
-                )
-        except Exception as e:
-            logger.error(f"Error returning to login: {e}")
 
     def _shutdown(self):
         """Shut down the application entirely."""
@@ -584,4 +576,19 @@ class StaffPortalGUI:
         self._shutdown()
 
     def run(self):
+        self._relaunch_after_logout = False
         self.root.mainloop()
+        if getattr(self, '_relaunch_after_logout', False):
+            try:
+                from education_system.shared.gui.login_gui import UniversalLoginWindow
+                login = UniversalLoginWindow()
+                login.mainloop()
+                if login.user_info and login.system_key:
+                    from education_system.launcher.systems import run_university_gui
+                    run_university_gui(
+                        user_info=login.user_info,
+                        role=login.system_role,
+                        shared_auth=login.auth,
+                    )
+            except Exception as e:
+                logger.error(f"Error returning to login: {e}")

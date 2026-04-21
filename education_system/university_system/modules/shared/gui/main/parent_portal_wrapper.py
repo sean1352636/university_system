@@ -73,20 +73,8 @@ class ParentPortalWrapper:
                 self.auth.logout()
             except Exception:
                 pass
+        self._relaunch_after_logout = True
         self.root.destroy()
-        try:
-            from education_system.shared.gui.login_gui import UniversalLoginWindow
-            login = UniversalLoginWindow()
-            login.mainloop()
-            if login.user_info and login.system_key:
-                from education_system.launcher.systems import run_university_gui
-                run_university_gui(
-                    user_info=login.user_info,
-                    role=login.system_role,
-                    shared_auth=login.auth,
-                )
-        except Exception as e:
-            logger.error(f"Error returning to login: {e}")
 
     def _shutdown(self):
         if self.auth:
@@ -98,4 +86,19 @@ class ParentPortalWrapper:
         raise SystemExit(0)
 
     def run(self):
+        self._relaunch_after_logout = False
         self.root.mainloop()
+        if getattr(self, '_relaunch_after_logout', False):
+            try:
+                from education_system.shared.gui.login_gui import UniversalLoginWindow
+                login = UniversalLoginWindow()
+                login.mainloop()
+                if login.user_info and login.system_key:
+                    from education_system.launcher.systems import run_university_gui
+                    run_university_gui(
+                        user_info=login.user_info,
+                        role=login.system_role,
+                        shared_auth=login.auth,
+                    )
+            except Exception as e:
+                logger.error(f"Error returning to login: {e}")
