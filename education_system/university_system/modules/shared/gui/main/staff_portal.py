@@ -449,16 +449,11 @@ class StaffPortalGUI:
             w.destroy()
 
         try:
-            from education_system.university_system.infrastructure.database.db import connect
-            import os
-
-            db_path = os.path.join(
-                os.path.dirname(os.path.dirname(os.path.dirname(
-                    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))),
-                'data', 'db_files', 'student_records.db'
+            from education_system.university_system.infrastructure.database.db import (
+                connect, DEFAULT_DB_PATH,
             )
 
-            conn = connect(db_path)
+            conn = connect(str(DEFAULT_DB_PATH))
             try:
                 cursor = conn.cursor()
 

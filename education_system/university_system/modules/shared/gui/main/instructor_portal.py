@@ -439,12 +439,10 @@ class InstructorPortalGUI:
 
         # Attempt to show basic instructor info
         try:
-            from education_system.university_system.infrastructure.database.db import connect
-            import os
-            db_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..',
-                                   'data', 'db_files', 'student_records.db')
-            db_path = os.path.normpath(db_path)
-            conn = connect(db_path)
+            from education_system.university_system.infrastructure.database.db import (
+                connect, DEFAULT_DB_PATH,
+            )
+            conn = connect(str(DEFAULT_DB_PATH))
             try:
                 cursor = conn.cursor()
                 user_id = self.auth.current_user.get('user_id') or self.auth.current_user.get('id', '')
