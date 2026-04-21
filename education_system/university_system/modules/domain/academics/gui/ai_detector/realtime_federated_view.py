@@ -13,7 +13,7 @@ from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.shared_context import get_auth
 
 try:
-    from education_system.university_system.utils.ai.ai_detector.detector import AIDetector
+    from education_system.university_system.infrastructure.ai.ai_detector.detector import AIDetector
     _AI_DETECTOR_IMPORT_ERROR = None
 except Exception as import_error:
     AIDetector = None

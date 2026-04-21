@@ -30,7 +30,7 @@ def initialize_chatbot_integration() -> bool:
     global chatbot_instance
     try:
         # Import the chatbot from the ai module
-        from education_system.university_system.utils.ai.university_chatbot import UniversityChatbot
+        from education_system.university_system.infrastructure.ai.university_chatbot import UniversityChatbot
 
         # Initialize chatbot with database path
         chatbot_instance = UniversityChatbot(db_path=DB_PATH)
@@ -471,7 +471,7 @@ def setup_chatbot_permissions():
         logging.error(f"Error setting up chatbot permissions: {e}")
 
 def launch_chatbot():
-    from education_system.university_system.utils.ai.university_chatbot import UniversityChatbot
+    from education_system.university_system.infrastructure.ai.university_chatbot import UniversityChatbot
     chatbot = UniversityChatbot()
     chatbot.run()
 

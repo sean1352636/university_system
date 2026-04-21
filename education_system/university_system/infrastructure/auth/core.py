@@ -294,7 +294,7 @@ class UserAuth:
             try:
                 if CHATBOT_AVAILABLE:
                     # Try to import the real VoiceInterface
-                    from education_system.university_system.utils.ai.university_chatbot import VoiceInterface
+                    from education_system.university_system.infrastructure.ai.university_chatbot import VoiceInterface
                     self.voice_interface = VoiceInterface()
                     if hasattr(self.voice_interface, 'initialize'):
                         self.voice_interface.initialize()

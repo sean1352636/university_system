@@ -24,8 +24,8 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 
 # Import chatbot components
 try:
-    from education_system.university_system.utils.ai.university_chatbot import UniversityChatbot
-    from education_system.university_system.utils.ai.gui.university_chatbot_gui import ChatbotGUI
+    from education_system.university_system.infrastructure.ai.university_chatbot import UniversityChatbot
+    from education_system.university_system.infrastructure.ai.gui.university_chatbot_gui import ChatbotGUI
     CHATBOT_AVAILABLE = True
 except ImportError:
     UniversityChatbot = None
@@ -995,8 +995,8 @@ Context Data:
         """Launch the full University Chatbot GUI"""
         try:
             try:
-                from education_system.university_system.utils.ai.gui.university_chatbot_gui import ChatbotGUI
-                from education_system.university_system.utils.ai.university_chatbot import UniversityChatbot
+                from education_system.university_system.infrastructure.ai.gui.university_chatbot_gui import ChatbotGUI
+                from education_system.university_system.infrastructure.ai.university_chatbot import UniversityChatbot
             except ImportError as e:
                 messagebox.showerror(
                     _t("common.error"),

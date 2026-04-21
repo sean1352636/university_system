@@ -116,8 +116,8 @@ class TestChatbotTab:
         # The GUI creates 8 tabs; verify the notebook exists and was configured
         assert hasattr(ai_gui, 'notebook')
 
-    @patch('education_system.university_system.utils.ai.gui.university_chatbot_gui.ChatbotGUI', create=True)
-    @patch('education_system.university_system.utils.ai.university_chatbot.UniversityChatbot', create=True)
+    @patch('education_system.university_system.infrastructure.ai.gui.university_chatbot_gui.ChatbotGUI', create=True)
+    @patch('education_system.university_system.infrastructure.ai.university_chatbot.UniversityChatbot', create=True)
     def test_launch_full_chatbot_gui(self, mock_chatbot_cls, mock_gui_cls, ai_gui):
         """Test launching full chatbot GUI"""
         chatbot_instance = Mock()
@@ -129,7 +129,7 @@ class TestChatbotTab:
         mock_gui_cls.assert_called_once()
 
     @patch('tkinter.messagebox.showerror')
-    @patch('education_system.university_system.utils.ai.university_chatbot.UniversityChatbot', create=True)
+    @patch('education_system.university_system.infrastructure.ai.university_chatbot.UniversityChatbot', create=True)
     def test_launch_chatbot_handles_error(self, mock_chatbot_cls, mock_error, ai_gui):
         """Test error handling when launching chatbot fails"""
         mock_chatbot_cls.side_effect = Exception("Chatbot init failed")

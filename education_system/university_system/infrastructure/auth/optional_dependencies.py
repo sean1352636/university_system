@@ -163,7 +163,7 @@ def _load_chatbot_class() -> Optional[type]:
     _chatbot_load_attempted = True
 
     try:
-        from education_system.university_system.utils.ai.university_chatbot import UniversityChatbot
+        from education_system.university_system.infrastructure.ai.university_chatbot import UniversityChatbot
         _chatbot_class = UniversityChatbot
         logger.info("Chatbot module loaded successfully")
         return _chatbot_class
@@ -234,7 +234,7 @@ def get_chatbot(
         if required:
             raise OptionalDependencyError(
                 feature="Chatbot",
-                dependency="university_system.utils.ai.university_chatbot",
+                dependency="university_system.infrastructure.ai.university_chatbot",
                 install_hint=f"Import failed: {_chatbot_load_error}",
             )
         logger.debug("Chatbot requested but not available")
@@ -293,7 +293,7 @@ def _load_voice_class() -> Optional[type]:
 
     try:
         # Try to import the voice interface module
-        from education_system.university_system.utils.ai.voice_interface import VoiceInterface as VoiceImpl
+        from education_system.university_system.infrastructure.ai.voice_interface import VoiceInterface as VoiceImpl
         _voice_class = VoiceImpl
         logger.info("Voice interface module loaded successfully")
         return _voice_class
@@ -347,7 +347,7 @@ def get_voice_interface(
         if required:
             raise OptionalDependencyError(
                 feature="Voice Interface",
-                dependency="university_system.utils.ai.voice_interface",
+                dependency="university_system.infrastructure.ai.voice_interface",
                 install_hint=f"Import failed: {_voice_load_error}",
             )
         logger.debug("Voice interface requested but not available")

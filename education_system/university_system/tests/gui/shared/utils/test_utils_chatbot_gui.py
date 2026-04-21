@@ -19,7 +19,7 @@ class TestChatbotGUIModule:
     def test_chatbot_gui_imports(self):
         """Test that chatbot GUI module can be imported."""
         try:
-            from education_system.university_system.utils.ai.gui import university_chatbot_gui
+            from education_system.university_system.infrastructure.ai.gui import university_chatbot_gui
             assert university_chatbot_gui is not None
         except ImportError as e:
             pytest.skip(f"Chatbot GUI module not available: {e}")
@@ -29,7 +29,7 @@ class TestChatbotGUIModule:
     def test_chatbot_gui_has_components(self):
         """Test that chatbot GUI has expected components."""
         try:
-            from education_system.university_system.utils.ai.gui import university_chatbot_gui
+            from education_system.university_system.infrastructure.ai.gui import university_chatbot_gui
 
             module_contents = dir(university_chatbot_gui)
             public_items = [item for item in module_contents if not item.startswith('_')]
