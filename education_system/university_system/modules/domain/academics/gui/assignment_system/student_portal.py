@@ -378,22 +378,33 @@ class AssignmentStudentPortal:
             with _connect() as conn:
                 cur = conn.cursor()
                 cur.execute(
-                    "SELECT id, file_name, submission_date "
-                    "FROM assignment_submissions "
-                    "WHERE assignment_id = ? AND student_id = ? AND file_hash = ?",
-                    (aid, self.student_id, file_hash)
+                    """
+                    SELECT s.assignment_id, s.file_name, s.submission_date,
+                           a.title
+                    FROM assignment_submissions s
+                    LEFT JOIN assignments a ON a.id = s.assignment_id
+                    WHERE s.student_id = ? AND s.file_hash = ?
+                    ORDER BY s.submission_date DESC
+                    LIMIT 1
+                    """,
+                    (self.student_id, file_hash)
                 )
                 duplicate = cur.fetchone()
         except Exception:
             duplicate = None
 
         if duplicate:
-            _, prev_name, prev_date = duplicate
+            prev_aid, prev_name, prev_date, prev_title = duplicate
+            if prev_aid == aid:
+                where = "for this assignment"
+            else:
+                where = f"for '{prev_title or f'assignment #{prev_aid}'}'"
             messagebox.showwarning(
                 "Already Submitted",
-                f"You've already submitted this exact file for this assignment.\n\n"
+                f"You've already submitted this exact file {where}.\n\n"
                 f"Previous submission: {prev_name} at {(prev_date or '')[:16]}\n\n"
-                f"To resubmit, make changes to the file first.",
+                f"Each submission must be a distinct file. Edit the file "
+                f"(or submit a different one) and try again.",
                 parent=self.window)
             return
 
