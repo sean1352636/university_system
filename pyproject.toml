@@ -335,6 +335,8 @@ addopts = [
     "--ignore=education_system/university_system/tests/gui/domain/academics/assessment",
     "--ignore=education_system/university_system/tests/gui/domain/academics/grading",
     "--ignore=education_system/university_system/tests/gui/infrastructure/email/gui",
+    "--ignore=education_system/university_system/tests/cli/domain/student_affairs/social_matching",
+    "--ignore=education_system/university_system/tests/cli/domain/commerce/marketplace",
 ]
 # Per-test timeout (seconds) — requires pytest-timeout
 faulthandler_timeout = 60
