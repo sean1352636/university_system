@@ -186,6 +186,16 @@ class GradeTrackingStudentPortal:
         self.assess_tree.configure(yscrollcommand=a_scroll.set)
         self.assess_tree.pack(side='left', fill='both', expand=True)
         a_scroll.pack(side='right', fill='y')
+        self.assess_tree.bind('<Double-1>', self._show_assessment_details)
+        self.assess_tree.bind('<Return>', self._show_assessment_details)
+        self._assess_details = {}
+
+        hint = ttk.Label(
+            assess_frame,
+            text="Double-click an assessment to see feedback and details.",
+            foreground='#666',
+        )
+        hint.pack(side='bottom', fill='x', pady=(4, 0))
 
     # ------------------------------------------------------------------
     # Data
@@ -301,13 +311,18 @@ class GradeTrackingStudentPortal:
         for i in self.assess_tree.get_children():
             self.assess_tree.delete(i)
 
+        self._assess_details = {}
         try:
             with get_connection() as conn:
                 cur = conn.cursor()
                 cur.execute(
                     """
-                    SELECT a.title, a.assignment_type, a.max_marks,
-                           s.grade, s.status, s.submission_date
+                    SELECT a.id, a.title, a.assignment_type, a.max_marks,
+                           a.due_date, a.description,
+                           s.id AS submission_id, s.grade, s.status,
+                           s.submission_date, s.feedback, s.graded_date,
+                           s.file_name, s.file_path, s.late_submission,
+                           s.late_days
                     FROM assignments a
                     LEFT JOIN assignment_submissions s
                            ON s.assignment_id = a.id
@@ -326,13 +341,17 @@ class GradeTrackingStudentPortal:
                                  parent=self.window)
             return
 
-        for title, atype, max_pts, score, sub_status, date in rows:
+        for row in rows:
+            (a_id, title, atype, max_pts, due_date, description,
+             submission_id, score, sub_status, date, feedback,
+             graded_date, file_name, file_path, late, late_days) = row
             max_pts = max_pts or 0
             max_display = f"{max_pts:g}" if max_pts else '—'
+            iid = str(a_id)
             if score is not None:
                 pct = (score / max_pts * 100.0) if max_pts else 0
                 letter = _percentage_to_letter(pct)
-                self.assess_tree.insert('', 'end', values=(
+                self.assess_tree.insert('', 'end', iid=iid, values=(
                     title, atype or '',
                     f"{score:g}", max_display,
                     f"{pct:.1f}%", letter,
@@ -343,10 +362,37 @@ class GradeTrackingStudentPortal:
                     status_label = 'Submitted' if sub_status.lower() == 'submitted' else sub_status.capitalize()
                 else:
                     status_label = 'Not submitted'
-                self.assess_tree.insert('', 'end', values=(
+                self.assess_tree.insert('', 'end', iid=iid, values=(
                     title, atype or '', '—', max_display,
                     '—', status_label, (date or '')[:16],
                 ))
+            self._assess_details[iid] = {
+                'assignment_id': a_id,
+                'title': title,
+                'type': atype,
+                'max_pts': max_pts,
+                'due_date': due_date,
+                'description': description,
+                'submission_id': submission_id,
+                'score': score,
+                'status': sub_status,
+                'submitted': date,
+                'feedback': feedback,
+                'graded_date': graded_date,
+                'file_name': file_name,
+                'file_path': file_path,
+                'late': bool(late),
+                'late_days': late_days or 0,
+            }
+
+    def _show_assessment_details(self, _event=None):
+        sel = self.assess_tree.selection()
+        if not sel:
+            return
+        details = self._assess_details.get(sel[0])
+        if not details:
+            return
+        AssessmentDetailsDialog(self.window, details)
 
     def _refresh(self):
         self.student = self._resolve_student()
@@ -354,6 +400,123 @@ class GradeTrackingStudentPortal:
             self._show_not_found()
         else:
             self._load_summary()
+
+
+class AssessmentDetailsDialog:
+    """Read-only pop-up showing a student's grade + feedback for one assessment."""
+
+    def __init__(self, parent, details):
+        self.details = details
+        self.dialog = tk.Toplevel(parent)
+        self.dialog.title(f"Assessment — {details.get('title') or 'Details'}")
+        self.dialog.geometry("640x560")
+        self.dialog.minsize(480, 400)
+        try:
+            self.dialog.transient(parent)
+        except Exception:
+            pass
+
+        pad = {'padx': 14, 'pady': 4}
+        frame = ttk.Frame(self.dialog, padding=14)
+        frame.pack(fill='both', expand=True)
+
+        title = details.get('title') or 'Assessment'
+        atype = details.get('type') or ''
+        ttk.Label(frame, text=title, font=('Arial', 13, 'bold')
+                  ).pack(anchor='w')
+        subtitle_bits = []
+        if atype:
+            subtitle_bits.append(atype.capitalize())
+        if details.get('due_date'):
+            subtitle_bits.append(f"Due {str(details['due_date'])[:10]}")
+        if subtitle_bits:
+            ttk.Label(frame, text=' · '.join(subtitle_bits),
+                      foreground='#555').pack(anchor='w', pady=(0, 8))
+
+        score = details.get('score')
+        max_pts = details.get('max_pts') or 0
+        if score is not None and max_pts:
+            pct = (score / max_pts * 100.0)
+            letter = _percentage_to_letter(pct)
+            grade_text = f"{score:g} / {max_pts:g}   —   {pct:.1f}%   ·   {letter}"
+            grade_color = '#1e7e34'
+        elif details.get('submission_id'):
+            grade_text = f"Submitted — not yet graded"
+            grade_color = '#7a5d00'
+        else:
+            grade_text = "Not submitted"
+            grade_color = '#856404'
+
+        grade_frame = ttk.LabelFrame(frame, text="Grade", padding=10)
+        grade_frame.pack(fill='x', pady=(4, 8))
+        ttk.Label(grade_frame, text=grade_text, font=('Arial', 12, 'bold'),
+                  foreground=grade_color).pack(anchor='w')
+
+        # Key/value rows
+        meta_frame = ttk.Frame(frame)
+        meta_frame.pack(fill='x', pady=(0, 6))
+        row = 0
+        meta_rows = []
+        if details.get('submitted'):
+            meta_rows.append(("Submitted:", str(details['submitted'])[:19]))
+        if details.get('file_name'):
+            meta_rows.append(("File:", details['file_name']))
+        if details.get('late'):
+            meta_rows.append(("Late:", f"yes ({details.get('late_days', 0)} day(s))"))
+        if details.get('status'):
+            meta_rows.append(("Status:", str(details['status']).capitalize()))
+        if details.get('graded_date'):
+            meta_rows.append(("Graded:", str(details['graded_date'])[:19]))
+        for label_text, value in meta_rows:
+            ttk.Label(meta_frame, text=label_text,
+                      font=('Arial', 10, 'bold')).grid(
+                row=row, column=0, sticky='w', padx=(0, 8), pady=2)
+            ttk.Label(meta_frame, text=value).grid(
+                row=row, column=1, sticky='w', pady=2)
+            row += 1
+
+        # Feedback pane
+        fb_frame = ttk.LabelFrame(frame, text="Instructor feedback", padding=8)
+        fb_frame.pack(fill='both', expand=True, pady=(6, 0))
+        fb_text = tk.Text(fb_frame, wrap='word', height=8,
+                          font=('Arial', 10), padx=4, pady=4)
+        fb_scroll = ttk.Scrollbar(fb_frame, orient='vertical',
+                                   command=fb_text.yview)
+        fb_text.configure(yscrollcommand=fb_scroll.set)
+        fb_text.pack(side='left', fill='both', expand=True)
+        fb_scroll.pack(side='right', fill='y')
+
+        feedback = details.get('feedback')
+        if feedback:
+            fb_text.insert('1.0', feedback)
+        elif score is not None:
+            fb_text.insert('1.0', "(your instructor did not leave written "
+                                    "feedback for this assessment)")
+        else:
+            fb_text.insert('1.0', "(feedback will appear here once this "
+                                    "assessment is graded)")
+        fb_text.configure(state='disabled')
+
+        btns = ttk.Frame(frame)
+        btns.pack(fill='x', pady=(10, 0))
+        if details.get('file_path'):
+            ttk.Button(btns, text="View My Submission",
+                       command=self._view_file).pack(side='left')
+        ttk.Button(btns, text="Close",
+                   command=self.dialog.destroy).pack(side='right')
+
+    def _view_file(self):
+        try:
+            from education_system.university_system.modules.domain.academics.gui.assignment_system._file_viewer import (
+                preview_file,
+            )
+        except Exception as e:
+            messagebox.showerror("Unavailable",
+                                 f"Could not open file viewer: {e}",
+                                 parent=self.dialog)
+            return
+        preview_file(self.dialog, self.details.get('file_path') or '',
+                     title=f"My submission — {self.details.get('title') or ''}")
 
 
 def launch_grade_tracking_student_portal(parent, auth):
