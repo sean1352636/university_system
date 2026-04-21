@@ -439,7 +439,7 @@ class InstructorPortalGUI:
 
         # Attempt to show basic instructor info
         try:
-            from education_system.university_system.modules.shared.services.database import connect
+            from education_system.university_system.infrastructure.database.db import connect
             import os
             db_path = os.path.join(os.path.dirname(__file__), '..', '..', '..', '..',
                                    'data', 'db_files', 'student_records.db')

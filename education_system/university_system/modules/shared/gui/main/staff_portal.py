@@ -449,7 +449,7 @@ class StaffPortalGUI:
             w.destroy()
 
         try:
-            from education_system.university_system.modules.shared.services.database import connect
+            from education_system.university_system.infrastructure.database.db import connect
             import os
 
             db_path = os.path.join(
