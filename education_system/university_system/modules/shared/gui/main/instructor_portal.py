@@ -141,7 +141,7 @@ class InstructorPortalGUI:
         self._add_button("Module Management", self._launch('show_module_management'))
         self._add_button("Assignments", self._open_assignments_portal)
         self._add_button("Grade Tracking", self._open_grade_tracking_portal)
-        self._add_button("AI Auto-Grading", self._launch('show_auto_grading'))
+        self._add_button("AI Auto-Grading", self._open_auto_grading_portal)
         self._add_button("Virtual Classroom", self._launch('show_virtual_classroom_gui'))
         self._add_button("Office Hours", self._launch('show_office_hours_gui'))
 
@@ -220,6 +220,17 @@ class InstructorPortalGUI:
         except Exception as e:
             logger.error(f"Error opening assignments staff portal: {e}")
             messagebox.showerror("Error", f"Failed to open Assignments: {e}")
+
+    def _open_auto_grading_portal(self):
+        """Open the instructor/staff AI Auto-Grading portal directly."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.assignment_system.auto_grading_portal import (
+                AutoGradingStaffPortal,
+            )
+            AutoGradingStaffPortal(self.root, self.auth)
+        except Exception as e:
+            logger.error(f"Error opening AI auto-grading portal: {e}")
+            messagebox.showerror("Error", f"Failed to open AI Auto-Grading: {e}")
 
     def _open_library_portal(self):
         """Open the instructor/staff Library portal directly."""
