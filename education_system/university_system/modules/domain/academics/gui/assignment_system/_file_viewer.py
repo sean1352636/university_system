@@ -42,15 +42,82 @@ def open_externally(file_path: str, parent=None) -> None:
                              parent=parent)
 
 
+def resolve_submission_path(stored_path: str) -> str | None:
+    """Return a live filesystem path for a submission, healing legacy paths.
+
+    1. If the stored path exists, use it as-is.
+    2. Older submissions were saved with absolute paths that predate the
+       education_system/ move (e.g.
+       ``/home/.../university_system/data/submissions/submitted/...``).
+       Re-root any ``submissions/submitted/...`` suffix onto the current
+       SUBMISSIONS_DIR and use that if it exists.
+    3. If the filename drifted too (stored name != on-disk name) but the
+       submission directory exists, look inside for a file whose name
+       shares the timestamp prefix (``v1_YYYYMMDD_HHMMSS_`` or
+       ``YYYYMMDD_HHMMSS_``). Fall back to the most-recent file in the
+       directory so the preview still succeeds on best-effort terms.
+    """
+    if not stored_path:
+        return None
+    if os.path.exists(stored_path):
+        return stored_path
+
+    p = stored_path.replace('\\', '/')
+    marker = 'submissions/submitted/'
+    idx = p.find(marker)
+    if idx == -1:
+        return None
+    suffix = p[idx + len('submissions/'):]
+    try:
+        from education_system.university_system.modules.shared.constants import paths
+        submissions_dir = str(paths.SUBMISSIONS_DIR)
+    except Exception:
+        return None
+
+    candidate = os.path.join(submissions_dir, suffix)
+    if os.path.exists(candidate):
+        return candidate
+
+    parent = os.path.dirname(candidate)
+    if not os.path.isdir(parent):
+        return None
+
+    stored_name = os.path.basename(p)
+    import re
+    m = re.match(r'^(v\d+_)?(\d{8}_\d{6})_', stored_name)
+    prefix = (m.group(0) if m else '') if m else ''
+
+    try:
+        entries = [e for e in os.listdir(parent)
+                   if os.path.isfile(os.path.join(parent, e))]
+    except OSError:
+        return None
+    if not entries:
+        return None
+
+    if prefix:
+        prefixed = [e for e in entries if e.startswith(prefix)]
+        if prefixed:
+            entries = prefixed
+
+    entries.sort(
+        key=lambda e: os.path.getmtime(os.path.join(parent, e)),
+        reverse=True,
+    )
+    return os.path.join(parent, entries[0])
+
+
 def preview_file(parent, file_path: str, title: str = "Submitted File") -> None:
     """Show file contents in a Toplevel preview, or offer to open externally."""
-    if not file_path or not os.path.exists(file_path):
+    resolved = resolve_submission_path(file_path)
+    if not resolved:
         messagebox.showerror(
             "File Not Found",
             f"The submitted file is no longer on disk:\n{file_path}",
             parent=parent,
         )
         return
+    file_path = resolved
 
     text, err = _extract_text(file_path)
     if text is None:
