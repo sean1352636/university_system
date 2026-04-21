@@ -736,13 +736,12 @@ def _send_grade_release_emails(submission_id, grade, feedback, max_marks,
     student_display = first_name or student_id or 'Student'
 
     try:
-        from education_system.university_system.infrastructure.email import (
-            queue_template_email,
-            send_email,
-        )
+        from education_system.university_system.infrastructure.email import queue_template_email
     except Exception as e:
         logger.warning("Grade email: email service unavailable: %s", e)
         return
+
+    grade_display = f"{grade:g} / {max_marks:g}"
 
     if student_email:
         try:
@@ -752,10 +751,9 @@ def _send_grade_release_emails(submission_id, grade, feedback, max_marks,
                 template_vars={
                     'student_name': student_display,
                     'assignment_title': assignment_title,
-                    'module_code': module_code or '',
-                    'grade': f"{grade:g} / {max_marks:g}",
+                    'module_code': module_code or 'n/a',
+                    'grade': grade_display,
                     'feedback': feedback or '(no written feedback)',
-                    'signature': 'Academic Administration Team',
                 },
             )
         except Exception as e:
@@ -764,20 +762,19 @@ def _send_grade_release_emails(submission_id, grade, feedback, max_marks,
         logger.info("Grade email: no email on file for student %s", student_id)
 
     if staff_email:
-        body = (
-            f"Hi {staff_username or 'there'},\n\n"
-            f"You have successfully released a grade for:\n\n"
-            f"  Student: {student_id} ({student_display})\n"
-            f"  Assignment: {assignment_title} ({module_code or 'n/a'})\n"
-            f"  Grade: {grade:g} / {max_marks:g}\n\n"
-            f"The student has been notified by email.\n\n"
-            f"Regards,\nAcademic Administration Team"
-        )
         try:
-            send_email(
-                recipient_email=staff_email,
-                subject=f"Grade Sent: {assignment_title} — {student_id}",
-                body=body,
+            queue_template_email(
+                template_name='academics/grade_release_confirmation_staff',
+                recipient=staff_email,
+                template_vars={
+                    'staff_name': staff_username or 'there',
+                    'student_id': student_id or '',
+                    'student_name': student_display,
+                    'student_email': student_email or '(not on file)',
+                    'assignment_title': assignment_title,
+                    'module_code': module_code or 'n/a',
+                    'grade_display': grade_display,
+                },
             )
         except Exception as e:
             logger.warning("Grade confirmation to staff failed: %s", e)

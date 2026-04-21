@@ -483,7 +483,8 @@ class AssignmentStudentPortal:
         threading.Thread(
             target=self._post_submit_tasks,
             args=(submission_id, aid, str(dest), orig_name, title,
-                  module_code, version_number, is_late, late_days, now),
+                  module_code, version_number, is_late, late_days, now,
+                  file_hash),
             daemon=True,
         ).start()
 
@@ -504,7 +505,7 @@ class AssignmentStudentPortal:
 
     def _post_submit_tasks(self, submission_id, aid, file_path, orig_name,
                            assignment_title, module_code, version_number,
-                           is_late, late_days, submission_time):
+                           is_late, late_days, submission_time, file_hash):
         """Background: plagiarism check + confirmation/report emails.
 
         Runs off the UI thread. Any failure here is logged but does not
@@ -522,7 +523,8 @@ class AssignmentStudentPortal:
         )
 
         plagiarism_summary = self._run_plagiarism_check(
-            file_path, orig_name, assignment_title, module_code, submission_id,
+            aid, file_path, orig_name, assignment_title, module_code,
+            submission_id,
         )
         if plagiarism_summary:
             self._send_plagiarism_email(
@@ -581,9 +583,15 @@ class AssignmentStudentPortal:
         except Exception as e:
             logger.warning("Submission confirmation email failed: %s", e)
 
-    def _run_plagiarism_check(self, file_path, orig_name, assignment_title,
-                              module_code, submission_id):
-        """Run a plagiarism scan and return a summary dict, or None on failure."""
+    def _run_plagiarism_check(self, aid, file_path, orig_name,
+                              assignment_title, module_code, submission_id):
+        """Scan the new submission against every prior submission for the
+        same assignment and return a summary dict, or None on failure.
+
+        Before running the scan we ingest any existing submission that
+        isn't yet in the plagiarism repository, so every submission is a
+        comparison target even if it predates the plagiarism wiring.
+        """
         try:
             from education_system.university_system.modules.domain.academics.services.plagiarism.checker import (
                 PlagiarismChecker,
@@ -602,13 +610,19 @@ class AssignmentStudentPortal:
             content, file_type = checker.extract_text_from_file(file_path)
         except Exception as e:
             logger.info("Plagiarism: text extraction failed for %s: %s", orig_name, e)
-            return {'status': 'SKIPPED', 'reason': str(e), 'highest_similarity': 0.0}
+            return {'status': 'SKIPPED', 'reason': str(e),
+                    'highest_similarity': 0.0, 'compared_count': 0,
+                    'matches': []}
 
         author_id = self._resolve_numeric_user_id()
         if not author_id:
             logger.info("Plagiarism: could not resolve numeric user id for %s",
                         self.student_id)
             return None
+
+        compared_count = self._seed_repo_with_assignment_submissions(
+            checker, aid, exclude_submission_id=submission_id,
+        )
 
         try:
             doc_id = checker.add_document_to_repository(
@@ -632,7 +646,63 @@ class AssignmentStudentPortal:
             logger.warning("Plagiarism: check_plagiarism failed: %s", e)
             return None
 
+        if isinstance(result, dict):
+            result['compared_count'] = compared_count
         return result
+
+    def _seed_repo_with_assignment_submissions(self, checker, aid,
+                                                exclude_submission_id):
+        """Ingest every other final submission for this assignment into
+        the plagiarism repository, so the subsequent scan has something
+        to compare against.
+
+        Returns the number of other submissions that were considered
+        (including ones already in the repo). Silently skips files that
+        can't be read or whose author has no users.id.
+        """
+        try:
+            with _connect() as conn:
+                cur = conn.cursor()
+                cur.execute(
+                    """
+                    SELECT s.id, s.file_path, s.file_name, s.student_id,
+                           a.title, a.module_code, st.user_id
+                    FROM assignment_submissions s
+                    JOIN assignments a ON a.id = s.assignment_id
+                    LEFT JOIN students st ON st.student_id = s.student_id
+                    WHERE s.assignment_id = ?
+                      AND s.id != ?
+                      AND COALESCE(s.is_final_submission, 1) = 1
+                    """,
+                    (aid, exclude_submission_id)
+                )
+                rows = cur.fetchall()
+        except Exception as e:
+            logger.warning("Plagiarism: could not list prior submissions: %s", e)
+            return 0
+
+        seeded = 0
+        for (_sid, fpath, fname, _student_id, title, mod_code,
+             author_uid) in rows:
+            if not fpath or not author_uid:
+                continue
+            try:
+                text, ftype = checker.extract_text_from_file(fpath)
+            except Exception as e:
+                logger.debug("Plagiarism seed: skipping %s (%s)", fname, e)
+                continue
+            try:
+                checker.add_document_to_repository(
+                    title=f"{title} — {fname}",
+                    content=text,
+                    author_id=author_uid,
+                    module_code=mod_code or '',
+                    file_type=ftype,
+                )
+                seeded += 1
+            except Exception as e:
+                logger.debug("Plagiarism seed: add failed for %s: %s", fname, e)
+        return len(rows)
 
     def _resolve_numeric_user_id(self):
         user = (self.auth.current_user if self.auth else None) or {}
@@ -656,64 +726,62 @@ class AssignmentStudentPortal:
     def _send_plagiarism_email(self, email, first_name, assignment_title,
                                 module_code, summary):
         try:
-            from education_system.university_system.infrastructure.email import send_email
+            from education_system.university_system.infrastructure.email import queue_template_email
         except Exception as e:
-            logger.warning("send_email unavailable for plagiarism report: %s", e)
+            logger.warning("queue_template_email unavailable for plagiarism report: %s", e)
             return
 
         status = summary.get('status', 'UNKNOWN')
         score = summary.get('highest_similarity') or 0.0
-        score_pct = f"{score * 100:.1f}%"
+        compared_count = summary.get('compared_count', 0)
         matches = summary.get('matches') or []
 
+        verdicts = {
+            'SKIPPED': "The file you submitted could not be scanned "
+                       "automatically ({reason}). Your instructor may still "
+                       "run a manual check — no action is required from you.",
+            'EXACT_MATCH': "An exact match was found: your submission is "
+                           "byte-for-byte identical to existing material in "
+                           "the repository.",
+            'HIGH_SIMILARITY': "A high similarity score was detected against "
+                               "existing submissions.",
+            'MODERATE_SIMILARITY': "A moderate similarity score was detected "
+                                   "against existing submissions.",
+            'LOW_SIMILARITY': "A low similarity score was detected against "
+                              "existing submissions.",
+            'NO_MATCH': "No significant matches were found against existing "
+                        "submissions.",
+        }
+        verdict = verdicts.get(status, f"Scan completed with status: {status}.")
         if status == 'SKIPPED':
-            body = (
-                f"Dear {first_name},\n\n"
-                f"Your submission for '{assignment_title}' ({module_code or 'n/a'}) "
-                f"was received, but an automatic plagiarism scan could not be run:\n"
-                f"  {summary.get('reason', 'unsupported file type')}\n\n"
-                f"Your instructor may still run a manual check. No action is "
-                f"required from you.\n\n"
-                f"Regards,\nAcademic Administration Team"
-            )
-        else:
-            verdict = {
-                'EXACT_MATCH': 'An exact match was found — your submission is '
-                               'identical to existing material in the repository.',
-                'HIGH_SIMILARITY': 'A high similarity score was detected.',
-                'MODERATE_SIMILARITY': 'A moderate similarity score was detected.',
-                'LOW_SIMILARITY': 'A low similarity score was detected.',
-                'NO_MATCH': 'No significant matches were found.',
-            }.get(status, f'Scan completed with status: {status}.')
+            verdict = verdict.format(reason=summary.get('reason',
+                                                         'unsupported file type'))
 
-            lines = [
-                f"Dear {first_name},",
-                "",
-                f"Automatic plagiarism scan for your submission to "
-                f"'{assignment_title}' ({module_code or 'n/a'}):",
-                "",
-                f"  Result: {status}",
-                f"  Highest similarity: {score_pct}",
-                f"  {verdict}",
-            ]
-            if matches:
-                lines += ["", f"  {len(matches)} matching document(s) identified."]
-            lines += [
-                "",
-                "If you believe this result is incorrect, contact your "
-                "instructor — every scan is also reviewed manually before "
-                "any academic-misconduct action is taken.",
-                "",
-                "Regards,",
-                "Academic Administration Team",
-            ]
-            body = "\n".join(lines)
+        matches_info = ''
+        matches_info_html = ''
+        if matches:
+            n = len(matches)
+            matches_info = f"- {n} matching document(s) identified in the repository."
+            matches_info_html = (
+                f"<li><strong>Matches:</strong> {n} matching document(s) "
+                "identified in the repository.</li>"
+            )
 
         try:
-            send_email(
-                recipient_email=email,
-                subject=f"Plagiarism Scan: {assignment_title}",
-                body=body,
+            queue_template_email(
+                template_name='academics/plagiarism_report_student',
+                recipient=email,
+                template_vars={
+                    'first_name': first_name,
+                    'assignment_title': assignment_title,
+                    'module_code': module_code or 'n/a',
+                    'status': status,
+                    'similarity_pct': f"{score * 100:.1f}%",
+                    'compared_count': str(compared_count),
+                    'verdict': verdict,
+                    'matches_info': matches_info,
+                    'matches_info_html': matches_info_html,
+                },
             )
         except Exception as e:
             logger.warning("Plagiarism email send failed: %s", e)
