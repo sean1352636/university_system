@@ -38,6 +38,7 @@ class GradeTrackingStaffPortal:
 
     def __init__(self, parent, auth):
         self.auth = auth
+        self.user_id = self._resolve_user_id()
 
         self.window = tk.Toplevel(parent)
         self.window.title("Grade Tracking — Staff Portal")
@@ -60,7 +61,34 @@ class GradeTrackingStaffPortal:
         self._edits = {}
 
         self._build_ui()
-        self._load_modules()
+        if self.user_id is None:
+            self.status_var.set(
+                "Your user account is not linked to the assignments database."
+            )
+        else:
+            self._load_modules()
+
+    # ------------------------------------------------------------------
+    # User identity
+    # ------------------------------------------------------------------
+
+    def _resolve_user_id(self):
+        user = (self.auth.current_user if self.auth else None) or {}
+        uid = user.get('id') or user.get('user_id')
+        if uid:
+            return uid
+        username = user.get('username')
+        if not username:
+            return None
+        try:
+            with get_connection() as conn:
+                cur = conn.cursor()
+                cur.execute("SELECT id FROM users WHERE username = ?",
+                            (username,))
+                row = cur.fetchone()
+                return row[0] if row else None
+        except Exception:
+            return None
 
     # ------------------------------------------------------------------
     # UI
@@ -154,12 +182,26 @@ class GradeTrackingStaffPortal:
     # ------------------------------------------------------------------
 
     def _load_modules(self):
+        if self.user_id is None:
+            self._modules = []
+            self.module_combo['values'] = []
+            return
         try:
             with get_connection() as conn:
                 cur = conn.cursor()
+                # Only show modules where this staff user has created at
+                # least one active assignment — otherwise they have
+                # nothing to grade in that module anyway.
                 cur.execute(
-                    "SELECT module_code, module_name FROM modules "
-                    "ORDER BY module_code"
+                    """
+                    SELECT DISTINCT m.module_code, m.module_name
+                    FROM modules m
+                    JOIN assignments a ON a.module_code = m.module_code
+                    WHERE a.created_by = ?
+                      AND COALESCE(a.is_active, 1) = 1
+                    ORDER BY m.module_code
+                    """,
+                    (self.user_id,)
                 )
                 self._modules = [(r[0], r[1]) for r in cur.fetchall()]
         except Exception as e:
@@ -171,9 +213,12 @@ class GradeTrackingStaffPortal:
         values = [f"{code} — {name}" for code, name in self._modules]
         self.module_combo['values'] = values
         if values:
-            self.status_var.set(f"{len(values)} module(s) available.")
+            self.status_var.set(
+                f"{len(values)} module(s) with assignments you created.")
         else:
-            self.status_var.set("No modules found.")
+            self.status_var.set(
+                "You haven't created any assignments yet. "
+                "Create one in the Assignment portal before grading.")
 
     def _on_module_selected(self, _event=None):
         idx = self.module_combo.current()
@@ -188,10 +233,11 @@ class GradeTrackingStaffPortal:
                     SELECT id, title, max_marks, assignment_type
                     FROM assignments
                     WHERE module_code = ?
+                      AND created_by = ?
                       AND COALESCE(is_active, 1) = 1
                     ORDER BY due_date IS NULL, due_date, id
                     """,
-                    (module_code,)
+                    (module_code, self.user_id)
                 )
                 self._assessments = [
                     (r[0], r[1], r[2] or 100, r[3] or '') for r in cur.fetchall()
