@@ -697,6 +697,7 @@ try:
     from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import bulk_operations
     from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import utils
     from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import ui_components
+    from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import email_notifications
     from education_system.university_system.modules.domain.commerce.gui.shop_management_gui import textbook_manager
 
     # Bind dashboard methods
@@ -790,6 +791,24 @@ try:
         UniversityShopGUI.get_payment_methods_data = checkout_manager.get_payment_methods_data
     if hasattr(checkout_manager, 'open_finance_gui_for_payment'):
         UniversityShopGUI.open_finance_gui_for_payment = checkout_manager.open_finance_gui_for_payment
+    # Private helpers that the bound methods above call internally; they
+    # must be attached too or process_checkout hits AttributeError when
+    # it dispatches to self._process_student_account_payment etc.
+    if hasattr(checkout_manager, '_process_student_account_payment'):
+        UniversityShopGUI._process_student_account_payment = checkout_manager._process_student_account_payment
+    if hasattr(checkout_manager, 'add_finance_payment_option_to_checkout'):
+        UniversityShopGUI.add_finance_payment_option_to_checkout = checkout_manager.add_finance_payment_option_to_checkout
+    if hasattr(checkout_manager, 'add_shop_refund_to_student_account'):
+        UniversityShopGUI.add_shop_refund_to_student_account = checkout_manager.add_shop_refund_to_student_account
+    if hasattr(checkout_manager, 'notify_shop_finance_gui'):
+        UniversityShopGUI.notify_shop_finance_gui = checkout_manager.notify_shop_finance_gui
+
+    # Bind email-notification methods (called from checkout_manager on
+    # successful checkout + from the fallback dialog path)
+    if hasattr(email_notifications, '_send_shop_order_confirmation_email'):
+        UniversityShopGUI._send_shop_order_confirmation_email = email_notifications._send_shop_order_confirmation_email
+    if hasattr(email_notifications, '_show_shop_email_fallback'):
+        UniversityShopGUI._show_shop_email_fallback = email_notifications._show_shop_email_fallback
 
     # Bind order methods
     if hasattr(order_manager, 'show_order_history'):
