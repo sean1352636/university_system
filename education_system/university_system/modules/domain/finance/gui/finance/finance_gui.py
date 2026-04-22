@@ -249,19 +249,6 @@ class FinanceGUI:
                 _("finance.errors.auth_not_available")
             )
 
-        # Students see a self-contained read-only dashboard instead of the
-        # full admin UI; the class short-circuits before manager init.
-        user = getattr(self.auth, 'current_user', None) or {}
-        role = (user.get('role') if isinstance(user, dict) else getattr(user, 'role', '')) or ''
-        if role.lower() == 'student':
-            from education_system.university_system.modules.domain.finance.gui.finance.student_finance_view import (
-                StudentFinanceView,
-            )
-            StudentFinanceView(self.root, auth=self.auth)
-            self._student_mode = True
-            return
-        self._student_mode = False
-
         # Initialize all manager classes
         self.db = DatabaseManager(self)
         self.layout = LayoutManager(self)
