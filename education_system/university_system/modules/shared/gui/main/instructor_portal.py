@@ -546,21 +546,29 @@ class InstructorPortalGUI:
         self.root.destroy()
 
     def _shutdown(self):
-        """Shut down the application entirely."""
+        """Mark for exit and let mainloop unwind first.
+
+        See staff_portal.py for rationale — raising SystemExit from inside
+        a Tk callback during teardown can crash the process.
+        """
         if self.auth:
             try:
                 self.auth.logout()
             except Exception:
                 pass
+        self._exit_after_mainloop = True
         self.root.destroy()
-        raise SystemExit(0)
 
     def _on_close(self):
         self._shutdown()
 
     def run(self):
         self._relaunch_after_logout = False
+        self._exit_after_mainloop = False
         self.root.mainloop()
+        if getattr(self, '_exit_after_mainloop', False):
+            import sys
+            sys.exit(0)
         if getattr(self, '_relaunch_after_logout', False):
             try:
                 from education_system.shared.gui.login_gui import UniversalLoginWindow
