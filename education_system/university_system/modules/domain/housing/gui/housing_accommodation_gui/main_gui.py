@@ -305,11 +305,206 @@ class HousingGUI:
     # ========== Student Portal Functions ==========
 
     def show_student_dashboard(self):
-        """Show student dashboard (delegates to student_portal)."""
+        """Show the student-facing housing dashboard.
+
+        Panels:
+          - Current Assignment (building, room, rent, contract dates)
+          - Application Status (latest housing_applications row)
+          - Open Maintenance Requests
+          - Quick Actions (submit maintenance, find roommate, apply)
+        """
         self.clear_content()
-        ttk.Label(self.content_frame, text="Student Dashboard",
-                 font=('Arial', 16, 'bold')).pack(pady=20)
-        ttk.Label(self.content_frame, text="Student dashboard functionality coming soon...").pack()
+
+        username = self.auth.current_user.get('username', '') if self.auth and self.auth.current_user else ''
+        if not username:
+            ttk.Label(self.content_frame,
+                      text="No student logged in.",
+                      foreground='red').pack(pady=20)
+            return
+
+        # Scrollable container so everything fits on smaller screens
+        outer = ttk.Frame(self.content_frame)
+        outer.pack(fill=tk.BOTH, expand=True)
+        canvas = tk.Canvas(outer, highlightthickness=0)
+        vscroll = ttk.Scrollbar(outer, orient='vertical', command=canvas.yview)
+        canvas.configure(yscrollcommand=vscroll.set)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vscroll.pack(side=tk.RIGHT, fill='y')
+        inner = ttk.Frame(canvas)
+        canvas_window = canvas.create_window((0, 0), window=inner, anchor='nw')
+        inner.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+        canvas.bind('<Configure>', lambda e: canvas.itemconfig(canvas_window, width=e.width))
+
+        ttk.Label(inner, text="My Housing",
+                  font=('Arial', 18, 'bold')).pack(pady=(15, 10), padx=15, anchor='w')
+
+        conn = get_connection()
+        try:
+            self._render_student_assignment_card(inner, conn, username)
+            self._render_student_application_card(inner, conn, username)
+            self._render_student_maintenance_card(inner, conn, username)
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+        self._render_student_quick_actions(inner)
+
+    def _render_student_assignment_card(self, parent, conn, student_id):
+        card = ttk.LabelFrame(parent, text="Current Assignment", padding=12)
+        card.pack(fill=tk.X, padx=15, pady=8)
+
+        row = conn.execute(
+            "SELECT a.assignment_id, a.room_id, a.move_in_date, "
+            "a.planned_move_out_date, a.actual_move_out_date, a.contract_number, "
+            "a.monthly_rent, a.status, "
+            "r.room_number, r.floor_number, r.room_type, "
+            "b.building_name, b.address, b.campus_location "
+            "FROM housing_assignments a "
+            "LEFT JOIN housing_rooms r ON a.room_id = r.room_id "
+            "LEFT JOIN housing_buildings b ON r.building_id = b.building_id "
+            "WHERE a.student_id = ? "
+            "ORDER BY CASE WHEN a.status = 'Active' THEN 0 ELSE 1 END, "
+            "a.move_in_date DESC LIMIT 1",
+            (student_id,),
+        ).fetchone()
+
+        if row is None:
+            ttk.Label(card, text="You have no current housing assignment.",
+                      foreground='#888').pack(anchor='w')
+            return
+
+        building = row['building_name'] or '—'
+        room = f"Room {row['room_number']}" if row['room_number'] else '—'
+        floor = f"Floor {row['floor_number']}" if row['floor_number'] is not None else '—'
+        rent = f"£{row['monthly_rent']:,.2f}/mo" if row['monthly_rent'] else '—'
+        rows = [
+            ("Building", building),
+            ("Room", room),
+            ("Floor", floor),
+            ("Room type", row['room_type'] or '—'),
+            ("Address", row['address'] or '—'),
+            ("Move-in", row['move_in_date'] or '—'),
+            ("Planned move-out", row['planned_move_out_date'] or '—'),
+            ("Actual move-out", row['actual_move_out_date'] or '—'),
+            ("Monthly rent", rent),
+            ("Contract #", row['contract_number'] or '—'),
+            ("Status", row['status'] or '—'),
+        ]
+        grid = ttk.Frame(card)
+        grid.pack(fill=tk.X)
+        for i, (label, value) in enumerate(rows):
+            ttk.Label(grid, text=f"{label}:", font=('Arial', 10, 'bold')).grid(
+                row=i // 2, column=(i % 2) * 2, sticky='w', padx=(0, 8), pady=2)
+            ttk.Label(grid, text=str(value)).grid(
+                row=i // 2, column=(i % 2) * 2 + 1, sticky='w', padx=(0, 20), pady=2)
+
+    def _render_student_application_card(self, parent, conn, student_id):
+        card = ttk.LabelFrame(parent, text="Application Status", padding=12)
+        card.pack(fill=tk.X, padx=15, pady=8)
+
+        row = conn.execute(
+            "SELECT application_id, application_date, preferred_building_id, "
+            "preferred_room_type, requested_move_in_date, "
+            "requested_duration_months, status, notes, review_date "
+            "FROM housing_applications "
+            "WHERE student_id = ? "
+            "ORDER BY application_date DESC LIMIT 1",
+            (student_id,),
+        ).fetchone()
+
+        if row is None:
+            ttk.Label(card, text="You have no housing application on file.",
+                      foreground='#888').pack(anchor='w')
+            ttk.Button(card, text="Apply for Housing",
+                       command=self.show_student_application).pack(anchor='w', pady=(8, 0))
+            return
+
+        status = (row['status'] or '').lower()
+        status_colors = {'approved': '#27ae60', 'pending': '#f39c12',
+                         'rejected': '#c0392b', 'cancelled': '#7f8c8d'}
+        status_color = status_colors.get(status, '#2c3e50')
+
+        ttk.Label(card, text=f"Application {row['application_id']}",
+                  font=('Arial', 10, 'bold')).grid(row=0, column=0, columnspan=2, sticky='w')
+        tk.Label(card, text=f"Status: {row['status'] or '—'}",
+                 fg=status_color, bg=card.cget('background'),
+                 font=('Arial', 11, 'bold')).grid(row=1, column=0, columnspan=2, sticky='w', pady=(2, 8))
+
+        fields = [
+            ("Applied", row['application_date']),
+            ("Preferred building", row['preferred_building_id'] or '—'),
+            ("Preferred room type", row['preferred_room_type'] or '—'),
+            ("Requested move-in", row['requested_move_in_date'] or '—'),
+            ("Duration (months)", row['requested_duration_months'] or '—'),
+            ("Reviewed", row['review_date'] or '—'),
+        ]
+        for i, (label, value) in enumerate(fields):
+            ttk.Label(card, text=f"{label}:", font=('Arial', 10, 'bold')).grid(
+                row=2 + i // 2, column=(i % 2) * 2, sticky='w', padx=(0, 8), pady=2)
+            ttk.Label(card, text=str(value)).grid(
+                row=2 + i // 2, column=(i % 2) * 2 + 1, sticky='w', padx=(0, 20), pady=2)
+
+        if row['notes']:
+            ttk.Label(card, text="Notes:", font=('Arial', 10, 'bold')).grid(
+                row=10, column=0, sticky='nw', pady=(6, 0))
+            ttk.Label(card, text=row['notes'], wraplength=500).grid(
+                row=10, column=1, columnspan=3, sticky='w', pady=(6, 0))
+
+    def _render_student_maintenance_card(self, parent, conn, student_id):
+        card = ttk.LabelFrame(parent, text="Maintenance Requests", padding=12)
+        card.pack(fill=tk.X, padx=15, pady=8)
+
+        rows = conn.execute(
+            "SELECT request_id, request_date, issue_type, priority, status, "
+            "description, scheduled_date "
+            "FROM housing_maintenance_requests "
+            "WHERE student_id = ? "
+            "ORDER BY CASE WHEN status IN ('Open','In Progress') THEN 0 ELSE 1 END, "
+            "request_date DESC LIMIT 10",
+            (student_id,),
+        ).fetchall()
+
+        if not rows:
+            ttk.Label(card, text="No maintenance requests submitted.",
+                      foreground='#888').pack(anchor='w')
+            ttk.Button(card, text="Submit a Request",
+                       command=self.show_student_maintenance).pack(anchor='w', pady=(8, 0))
+            return
+
+        cols = ('date', 'issue', 'priority', 'status')
+        tree = ttk.Treeview(card, columns=cols, show='headings', height=min(len(rows), 6))
+        tree.heading('date', text='Submitted')
+        tree.heading('issue', text='Issue')
+        tree.heading('priority', text='Priority')
+        tree.heading('status', text='Status')
+        tree.column('date', width=140)
+        tree.column('issue', width=200)
+        tree.column('priority', width=90, anchor='center')
+        tree.column('status', width=110, anchor='center')
+        for r in rows:
+            tree.insert('', tk.END, values=(
+                r['request_date'] or '', r['issue_type'] or '',
+                r['priority'] or '', r['status'] or '',
+            ))
+        tree.pack(fill=tk.X, pady=(0, 6))
+        ttk.Button(card, text="Submit a New Request",
+                   command=self.show_student_maintenance).pack(anchor='w')
+
+    def _render_student_quick_actions(self, parent):
+        card = ttk.LabelFrame(parent, text="Quick Actions", padding=12)
+        card.pack(fill=tk.X, padx=15, pady=(8, 15))
+        row = ttk.Frame(card)
+        row.pack(fill=tk.X)
+        ttk.Button(row, text="Apply / Update Application",
+                   command=self.show_student_application).pack(side=tk.LEFT, padx=4)
+        ttk.Button(row, text="View Assignment",
+                   command=self.show_student_assignment).pack(side=tk.LEFT, padx=4)
+        ttk.Button(row, text="Maintenance",
+                   command=self.show_student_maintenance).pack(side=tk.LEFT, padx=4)
+        ttk.Button(row, text="Find a Roommate",
+                   command=self.show_find_roommate).pack(side=tk.LEFT, padx=4)
 
     def show_student_application(self):
         """Show student application interface."""
