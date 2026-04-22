@@ -68,6 +68,15 @@ class ModuleSchedulingGUI:
         self.root.geometry("1400x900")
         self.root.minsize(1200, 800)
 
+        # Bind the close handler early — if any later init step errors and
+        # the window survives, we still want the X button to behave. Guard
+        # against the Toplevel already being gone (see logout race).
+        try:
+            if self.root.winfo_exists():
+                self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        except tk.TclError:
+            pass
+
         # Initialize the backend scheduler
         self.scheduler = ModuleScheduler()
 
@@ -85,9 +94,6 @@ class ModuleSchedulingGUI:
 
         # Load initial data
         self.refresh_all_data()
-
-        # Bind close event
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def set_auth(self, auth):
         """Optional; accept auth context from main app."""
