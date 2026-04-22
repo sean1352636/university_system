@@ -192,7 +192,7 @@ class StaffPortalGUI:
         # Institutional
         self._add_heading("Institutional")
         self._add_button("Admissions CRM", self._launch('show_admissions_crm_gui'))
-        self._add_button("Alumni Management", self._launch('show_alumni_relations_gui'))
+        self._add_button("Alumni Management", self._open_alumni)
         self._add_button("Library", self._open_library_portal)
 
         # Student Life
@@ -226,7 +226,7 @@ class StaffPortalGUI:
         self._add_button("Change Password", self._launch('show_change_password'))
         self._add_button("MFA Setup", self._launch('show_mfa_setup'))
         self._add_button("Security Questions", self._launch('show_security_questions'))
-        self._add_button("Extras & Tools", self._launch('show_extras_launcher_gui'))
+        self._add_button("Extras & Tools", self._launch('show_extras_launcher'))
 
     # ------------------------------------------------------------------
     # Launcher helper
@@ -392,6 +392,16 @@ class StaffPortalGUI:
         except Exception as e:
             logger.error(f"Error opening barber: {e}")
             messagebox.showerror("Error", f"Failed to open Barber: {e}")
+
+    def _open_alumni(self):
+        try:
+            from education_system.university_system.modules.domain.student_affairs.gui.alumni.main_gui import (
+                AlumniGUIApp,
+            )
+            AlumniGUIApp(tk.Toplevel(self.root), auth=self.auth)
+        except Exception as e:
+            logger.error(f"Error opening alumni: {e}")
+            messagebox.showerror("Error", f"Failed to open Alumni Management: {e}")
 
     def _launch(self, method_name):
         """Return a callback that calls the named method on the UnifiedManagementGUI.

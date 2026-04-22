@@ -485,9 +485,11 @@ class StudentUnionGUI:
         # Mark as successfully initialized
         self.initialized = True
 
-        # Show dashboard only if standalone
-        if not parent:
-            self.show_main_dashboard()
+        # Always populate the dashboard. The old `if not parent` guard left
+        # every embedded caller (e.g. the role shells opening via a fresh
+        # Toplevel) with a blank window because nothing downstream called
+        # show_main_dashboard().
+        self.show_main_dashboard()
 
     # ------------------------------------------------------------------ helpers
     def _safe_db_call(self, operation_func, *args, **kwargs):
