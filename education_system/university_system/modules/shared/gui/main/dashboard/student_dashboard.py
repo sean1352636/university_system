@@ -63,9 +63,10 @@ def _launch_forums(parent, auth):
 
 
 def _launch_finance(parent, auth):
-    """Launch Finance (student view auto-selects inside FinanceGUI)."""
+    """Launch the main Finance GUI in a new window."""
+    import tkinter as tk
     from education_system.university_system.modules.domain.finance.gui.finance.finance_gui import FinanceGUI
-    FinanceGUI(parent, auth=auth)
+    FinanceGUI(tk.Toplevel(parent), auth=auth)
 
 
 def _launch_help_center(parent, auth):
