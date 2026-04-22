@@ -53,7 +53,6 @@ from education_system.university_system.modules.domain.housing.gui.housing_accom
     report_manager,
     export_manager,
     scheduled_reports,
-    student_portal,
     finance_integration,
 )
 

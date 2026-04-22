@@ -174,7 +174,7 @@ class InstructorPortalGUI:
 
         # Communication
         self._add_heading("Communication")
-        self._add_button("Communication Hub", self._launch('show_communication_hub_gui'))
+        self._add_button("Communication Hub", self._launch('show_communication_dashboard_gui'))
         self._add_button("Cross-System Calendar", self._launch('show_cross_system_calendar_gui'))
 
         # Resources

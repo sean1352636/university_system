@@ -176,12 +176,12 @@ class StaffPortalGUI:
         self._add_button("Health Portal", self._open_health_portal)
         self._add_button("Housing", self._launch('show_housing_accommodations'))
         self._add_button("Facilities", self._launch('show_facilities_management_gui'))
-        self._add_button("Parking", self._launch('show_parking_management_gui'))
+        self._add_button("Parking", self._launch('show_parking_management'))
 
         # Communication
         self._add_heading("Communication")
-        self._add_button("Communication Hub", self._launch('show_communication_hub_gui'))
-        self._add_button("Email Manager", self._launch('show_email_manager_gui'))
+        self._add_button("Communication Hub", self._launch('show_communication_dashboard_gui'))
+        self._add_button("Email Manager", self._launch('show_email_manager'))
 
         # Analytics & Reports
         self._add_heading("Analytics & Reports")
