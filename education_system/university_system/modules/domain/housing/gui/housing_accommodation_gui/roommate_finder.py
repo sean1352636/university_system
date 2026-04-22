@@ -10,15 +10,29 @@ from datetime import datetime
 from typing import Optional, List, Dict
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.infrastructure.shared_context import get_auth
-from education_system.university_system.modules.domain.student_affairs.roommate_finder.services.roommate_service import RoommateService
+from education_system.university_system.modules.domain.housing.services.roommate_finder.roommate_service import RoommateService
 
 class RoommateFinderGUI:
-    """Main GUI for Roommate Finder System"""
+    """Main GUI for Roommate Finder System.
 
-    def __init__(self, parent, auth=None):
-        self.root = tk.Toplevel(parent)
-        self.root.title("Roommate Finder")
-        self.root.geometry("1200x800")
+    Two construction modes:
+      - RoommateFinderGUI(parent, auth=...)                — opens a Toplevel
+      - RoommateFinderGUI(parent, auth=..., container=frame) — embeds into
+        ``frame``, used by HousingGUI to host this as a student sub-view
+    """
+
+    def __init__(self, parent, auth=None, container=None):
+        if container is not None:
+            self._embed_parent = container
+            self._is_embedded = True
+            # self.root is only used for Toplevel dialogs spawned later
+            self.root = container.winfo_toplevel()
+        else:
+            self.root = tk.Toplevel(parent)
+            self.root.title("Roommate Finder")
+            self.root.geometry("1200x800")
+            self._embed_parent = self.root
+            self._is_embedded = False
 
         self.auth = auth or get_auth()
         self.service = RoommateService()
@@ -34,8 +48,8 @@ class RoommateFinderGUI:
 
     def create_widgets(self):
         """Create all GUI widgets"""
-        # Main container
-        main_frame = ttk.Frame(self.root, padding="10")
+        # Main container — lives inside the Toplevel or the embed frame
+        main_frame = ttk.Frame(self._embed_parent, padding="10")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Title

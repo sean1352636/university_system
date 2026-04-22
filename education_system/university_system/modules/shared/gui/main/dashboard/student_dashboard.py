@@ -69,6 +69,16 @@ def _launch_finance(parent, auth):
     FinanceGUI(tk.Toplevel(parent), auth=auth)
 
 
+def _launch_roommate_finder(parent, auth):
+    """Roommate Finder now lives inside Housing — open the Housing GUI.
+
+    The user clicks "Find a Roommate" on the housing sidebar to reach it.
+    """
+    import tkinter as tk
+    from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui import HousingGUI
+    HousingGUI(parent=tk.Toplevel(parent), auth_instance=auth)
+
+
 def _launch_help_center(parent, auth):
     """Launch Student Support (formerly Help Center)."""
     import tkinter as tk
@@ -104,11 +114,6 @@ def _launch_feature(root, auth, feature_name):
     from tkinter import messagebox
 
     feature_map = {
-        'roommate_finder': (
-            'Roommate Finder',
-            'education_system.university_system.modules.domain.student_affairs.roommate_finder.gui.roommate_gui',
-            'RoommateFinderGUI', 'kwarg', True,
-        ),
         'marketplace': (
             'Marketplace',
             'education_system.university_system.modules.domain.commerce.marketplace.gui.marketplace_gui',
@@ -248,7 +253,7 @@ def create_student_dashboard(parent_frame, auth, service):
         ("Finances", lambda: _launch_finance(root, auth)),
         ("Student Support", lambda: _launch_help_center(root, auth)),
         ("Documents", lambda: _launch_documents(root, auth)),
-        ("Roommate Finder", lambda: _launch_feature(root, auth, 'roommate_finder')),
+        ("Roommate Finder", lambda: _launch_roommate_finder(root, auth)),
         ("Marketplace", lambda: _launch_feature(root, auth, 'marketplace')),
         ("Lost & Found", lambda: _launch_feature(root, auth, 'lost_found')),
         ("Campus Navigation", lambda: _launch_feature(root, auth, 'campus_navigation')),

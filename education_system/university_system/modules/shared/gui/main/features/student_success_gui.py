@@ -114,15 +114,16 @@ def show_course_planning_gui(self):
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Course Planning", error=str(e)))
 
 def show_roommate_finder_gui(self):
-    """Launch Roommate Finder GUI"""
+    """Launch Roommate Finder — now a sub-view inside the Housing GUI."""
     try:
-        from education_system.university_system.modules.domain.student_affairs.roommate_finder.gui.roommate_gui import RoommateFinderGUI
-        gui = RoommateFinderGUI(parent=self.root, auth=self.auth)
+        import tkinter as tk
+        from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.main_gui import HousingGUI
+        HousingGUI(parent=tk.Toplevel(self.root), auth_instance=self.auth)
     except ImportError as e:
-        logger.error(f"Failed to import Roommate Finder GUI: {e}")
+        logger.error(f"Failed to import Housing GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Roommate Finder", error=str(e)))
     except Exception as e:
-        logger.error(f"Error launching Roommate Finder GUI: {e}")
+        logger.error(f"Error launching Housing GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Roommate Finder", error=str(e)))
 
 def show_campus_navigation_gui(self):

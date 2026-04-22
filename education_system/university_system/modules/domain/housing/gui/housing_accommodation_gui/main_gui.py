@@ -66,10 +66,16 @@ from education_system.university_system.modules.domain.housing.services.housing_
 class HousingGUI:
     """Main GUI class for Housing Accommodation Management System."""
 
-    def __init__(self, auth_instance=None):
-        """Initialize the Housing GUI."""
+    def __init__(self, parent=None, auth_instance=None):
+        """Initialize the Housing GUI.
+
+        Args:
+            parent: Optional existing Toplevel/Tk to render into. If omitted,
+                a new ``tk.Tk()`` is created (standalone mode).
+            auth_instance: Authentication instance.
+        """
         self.auth = auth_instance
-        self.root = tk.Tk()
+        self.root = parent if parent is not None else tk.Tk()
 
         # Initialize i18n for multi-language support
         init_i18n()
@@ -216,6 +222,8 @@ class HousingGUI:
                       command=self.show_student_assignment).pack(pady=2)
             ttk.Button(parent, text=_t("housing.menu_maintenance"), width=20,
                       command=self.show_student_maintenance).pack(pady=2)
+            ttk.Button(parent, text="Find a Roommate", width=20,
+                      command=self.show_find_roommate).pack(pady=2)
         else:
             ttk.Label(parent, text=_t("housing.no_permissions"),
                      foreground='red').pack(pady=10)
@@ -314,6 +322,23 @@ class HousingGUI:
     def show_student_maintenance(self):
         """Show student maintenance interface."""
         self.show_maintenance()
+
+    def show_find_roommate(self):
+        """Embed the Roommate Finder inside housing's content area."""
+        self.clear_content()
+        try:
+            from education_system.university_system.modules.domain.housing.gui.housing_accommodation_gui.roommate_finder import (
+                RoommateFinderGUI,
+            )
+            RoommateFinderGUI(
+                self.root, auth=self.auth, container=self.content_frame
+            )
+        except Exception as e:
+            ttk.Label(
+                self.content_frame,
+                text=f"Roommate Finder unavailable: {e}",
+                foreground='red',
+            ).pack(pady=20)
 
     # ========== Backward Compatibility ==========
 
