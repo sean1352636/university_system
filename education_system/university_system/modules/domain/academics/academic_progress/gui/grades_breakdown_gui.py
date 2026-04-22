@@ -117,7 +117,7 @@ class GradesBreakdownGUI:
                     "SELECT m.module_code, m.module_name "
                     "FROM student_modules sm "
                     "INNER JOIN modules m ON sm.module_code = m.module_code "
-                    "WHERE sm.student_id = ? AND sm.status = 'Enrolled' "
+                    "WHERE sm.student_id = ? AND LOWER(sm.status) = 'enrolled' "
                     "ORDER BY m.module_code",
                     (self.student_id,),
                 ).fetchall()

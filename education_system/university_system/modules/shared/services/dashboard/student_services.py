@@ -23,7 +23,7 @@ class StudentDashboardService:
                     "SELECT m.module_code, m.module_name "
                     "FROM modules m "
                     "INNER JOIN student_modules sm ON m.module_code = sm.module_code "
-                    "WHERE sm.student_id = ? AND sm.status = 'Enrolled' "
+                    "WHERE sm.student_id = ? AND LOWER(sm.status) = 'enrolled' "
                     "ORDER BY m.module_code",
                     (student_id,),
                 ).fetchall()
@@ -77,7 +77,7 @@ class StudentDashboardService:
                     "SELECT COALESCE(SUM(m.credits), 0) as earned "
                     "FROM modules m "
                     "INNER JOIN student_modules sm ON m.module_code = sm.module_code "
-                    "WHERE sm.student_id = ? AND sm.status IN ('Enrolled', 'Completed')",
+                    "WHERE sm.student_id = ? AND LOWER(sm.status) IN ('enrolled', 'completed')",
                     (student_id,),
                 ).fetchone()
                 data["credits_earned"] = row["earned"] if row else 0

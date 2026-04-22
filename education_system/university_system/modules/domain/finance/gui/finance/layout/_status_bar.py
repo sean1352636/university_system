@@ -35,8 +35,22 @@ class StatusBarMixin:
                              bg='#34495e', fg='white', font=('Arial', 10))
         time_label.pack(side='right', padx=10, pady=5)
 
+        self._time_after_id = None
+        self.status_bar.bind("<Destroy>", self._cancel_time_updates)
         self.update_time()
 
+    def _cancel_time_updates(self, _event=None):
+        """Stop the recurring after() when the status bar is destroyed.
+
+        Without this the 1-second tick can fire after the Toplevel has
+        been torn down and Tk logs `invalid command name ...update_time`.
+        """
+        if getattr(self, '_time_after_id', None) is not None:
+            try:
+                self.root.after_cancel(self._time_after_id)
+            except Exception:
+                pass
+            self._time_after_id = None
 
     def update_status(self, message):
         """Update status bar message"""
@@ -61,7 +75,7 @@ class StatusBarMixin:
 
                 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 self.time_var.set(current_time)
-                self.root.after(1000, self.update_time)
+                self._time_after_id = self.root.after(1000, self.update_time)
             except Exception:
                 # Time display unavailable or window destroyed, silently ignore
                 pass

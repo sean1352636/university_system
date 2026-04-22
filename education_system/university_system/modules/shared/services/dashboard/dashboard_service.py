@@ -35,7 +35,7 @@ class DashboardService:
                     "SELECT m.module_code, m.module_name, m.module_type, m.credits "
                     "FROM modules m "
                     "INNER JOIN student_modules sm ON m.module_code = sm.module_code "
-                    "WHERE sm.student_id = ? AND sm.status = 'Enrolled'",
+                    "WHERE sm.student_id = ? AND LOWER(sm.status) = 'enrolled'",
                     (student_id,)
                 ).fetchall()
                 data['enrolled_courses'] = [dict(r) for r in rows] if rows else []
@@ -64,7 +64,7 @@ class DashboardService:
                     assignment_rows = conn.execute(
                         "SELECT title, due_date, module_code FROM assignments "
                         "WHERE module_code IN "
-                        "(SELECT module_code FROM student_modules WHERE student_id = ? AND status = 'Enrolled') "
+                        "(SELECT module_code FROM student_modules WHERE student_id = ? AND LOWER(status) = 'enrolled') "
                         "AND due_date >= ? ORDER BY due_date LIMIT 10",
                         (student_id, datetime.now().strftime('%Y-%m-%d'))
                     ).fetchall()
@@ -214,7 +214,7 @@ class DashboardService:
                         "JOIN modules m ON sm.module_code = m.module_code "
                         "WHERE (m.instructor = ? OR m.module_code IN "
                         "(SELECT module_code FROM instructor_modules WHERE instructor_id = ?)) "
-                        "AND sm.status = 'Enrolled' "
+                        "AND LOWER(sm.status) = 'enrolled' "
                         "AND ewp.risk_level IN ('critical', 'high', 'medium') "
                         "ORDER BY ewp.overall_risk_score DESC LIMIT 20",
                         (instructor_id, instructor_id)
@@ -275,7 +275,7 @@ class DashboardService:
                     "JOIN modules m ON sm.module_code = m.module_code "
                     "WHERE (m.instructor = ? OR m.module_code IN "
                     "(SELECT module_code FROM instructor_modules WHERE instructor_id = ?)) "
-                    "AND sm.status = 'Enrolled' "
+                    "AND LOWER(sm.status) = 'enrolled' "
                     "AND ewp.risk_level IN ('critical', 'high', 'medium') "
                     "ORDER BY ewp.overall_risk_score DESC",
                     (instructor_id, instructor_id)
@@ -363,7 +363,7 @@ class DashboardService:
                     try:
                         row = conn.execute(
                             "SELECT COUNT(*) as cnt FROM student_modules "
-                            "WHERE module_code = ? AND status = 'Enrolled'", (mc,)
+                            "WHERE module_code = ? AND LOWER(status) = 'enrolled'", (mc,)
                         ).fetchone()
                         info['enrolled'] = row['cnt'] if row else 0
                     except Exception:
@@ -394,7 +394,7 @@ class DashboardService:
                             "SELECT COUNT(DISTINCT sm.student_id) as total "
                             "FROM student_modules sm "
                             "JOIN assignments a ON a.module_code = sm.module_code "
-                            "WHERE sm.module_code = ? AND sm.status = 'Enrolled'", (mc,)
+                            "WHERE sm.module_code = ? AND LOWER(sm.status) = 'enrolled'", (mc,)
                         ).fetchone()
                         sub_row = conn.execute(
                             "SELECT COUNT(DISTINCT sub.student_id) as submitted "
@@ -412,7 +412,7 @@ class DashboardService:
                         row = conn.execute(
                             "SELECT COUNT(*) as cnt FROM early_warning_profiles ewp "
                             "JOIN student_modules sm ON ewp.student_id = sm.student_id "
-                            "WHERE sm.module_code = ? AND sm.status = 'Enrolled' "
+                            "WHERE sm.module_code = ? AND LOWER(sm.status) = 'enrolled' "
                             "AND ewp.risk_level IN ('critical', 'high')", (mc,)
                         ).fetchone()
                         info['at_risk_count'] = row['cnt'] if row else 0
@@ -458,7 +458,7 @@ class DashboardService:
                             "JOIN modules m ON sm.module_code = m.module_code "
                             "WHERE (m.instructor = ? OR m.module_code IN "
                             "(SELECT module_code FROM instructor_modules WHERE instructor_id = ?)) "
-                            "AND sm.status = 'Enrolled'",
+                            "AND LOWER(sm.status) = 'enrolled'",
                             (instructor_id, instructor_id)
                         ).fetchone()
                         semester['enrollment_count'] = row['cnt'] if row else 0
