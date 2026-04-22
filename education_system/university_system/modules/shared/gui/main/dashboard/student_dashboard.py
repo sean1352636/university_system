@@ -50,9 +50,10 @@ def _launch_gpa_calculator(parent, auth):
 
 
 def _launch_messaging(parent, auth):
-    """Launch Student Messaging Hub."""
-    from education_system.university_system.modules.domain.student_affairs.gui.messaging_hub.messaging_hub_gui import MessagingHubGUI
-    MessagingHubGUI(parent, auth=auth)
+    """Launch the unified Email & Communications GUI."""
+    import tkinter as tk
+    from education_system.university_system.modules.shared.gui.email.email_gui.email_manager_main import EmailManagerGUI
+    EmailManagerGUI(tk.Toplevel(parent), auth=auth)
 
 
 def _launch_forums(parent, auth):
@@ -62,15 +63,16 @@ def _launch_forums(parent, auth):
 
 
 def _launch_finance(parent, auth):
-    """Launch Student Financial Dashboard."""
-    from education_system.university_system.modules.domain.finance.gui.student_finance.student_finance_gui import StudentFinanceGUI
-    StudentFinanceGUI(parent, auth=auth)
+    """Launch Finance (student view auto-selects inside FinanceGUI)."""
+    from education_system.university_system.modules.domain.finance.gui.finance.finance_gui import FinanceGUI
+    FinanceGUI(parent, auth=auth)
 
 
 def _launch_help_center(parent, auth):
-    """Launch Integrated Help Center."""
-    from education_system.university_system.modules.domain.student_affairs.gui.help_center.help_center_gui import HelpCenterGUI
-    HelpCenterGUI(parent, auth=auth)
+    """Launch Student Support (formerly Help Center)."""
+    import tkinter as tk
+    from education_system.university_system.modules.domain.student_affairs.gui.student_support import StudentSupportGUI
+    StudentSupportGUI(tk.Toplevel(parent), auth_system=auth)
 
 
 def _launch_documents(parent, auth):
@@ -240,10 +242,10 @@ def create_student_dashboard(parent_frame, auth, service):
         ("Degree Progress", lambda: _launch_degree_progress(root, auth)),
         ("Course Catalog", lambda: _launch_course_catalog(root, auth)),
         ("GPA Calculator", lambda: _launch_gpa_calculator(root, auth)),
-        ("Messages", lambda: _launch_messaging(root, auth)),
+        ("Email", lambda: _launch_messaging(root, auth)),
         ("Discussion Forums", lambda: _launch_forums(root, auth)),
         ("Finances", lambda: _launch_finance(root, auth)),
-        ("Help Center", lambda: _launch_help_center(root, auth)),
+        ("Student Support", lambda: _launch_help_center(root, auth)),
         ("Documents", lambda: _launch_documents(root, auth)),
         ("Roommate Finder", lambda: _launch_feature(root, auth, 'roommate_finder')),
         ("Marketplace", lambda: _launch_feature(root, auth, 'marketplace')),

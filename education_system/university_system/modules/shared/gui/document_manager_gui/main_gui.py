@@ -71,7 +71,6 @@ from education_system.university_system.modules.shared.gui.document_manager_gui.
 from education_system.university_system.modules.shared.gui.document_manager_gui.imports import ImportManager
 from education_system.university_system.modules.shared.gui.document_manager_gui.api_web import APIWebManager
 from education_system.university_system.modules.shared.gui.document_manager_gui.expiry import ExpiryManager
-from education_system.university_system.modules.shared.gui.document_manager_gui.student_portal import StudentPortalManager
 from education_system.university_system.modules.shared.gui.document_manager_gui.menus import MenuManager
 
 
@@ -115,7 +114,6 @@ class DocumentManagerGUI:
         self.imports = ImportManager(self)
         self.api_web = APIWebManager(self)
         self.expiry = ExpiryManager(self)
-        self.student_portal = StudentPortalManager(self)
         self.menus = MenuManager(self)
 
         # Register all managers for __getattr__ delegation
@@ -125,7 +123,7 @@ class DocumentManagerGUI:
             self.document_types, self.notifications_mgr, self.reports,
             self.search, self.bulk_operations, self.versions, self.ocr,
             self.settings_mgr, self.users, self.backup, self.exports,
-            self.imports, self.api_web, self.expiry, self.student_portal,
+            self.imports, self.api_web, self.expiry,
             self.menus,
         ]
 

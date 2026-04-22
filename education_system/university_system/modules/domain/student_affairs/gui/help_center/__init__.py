@@ -1,1 +1,0 @@
-"""Integrated Help Center package."""

@@ -200,29 +200,26 @@ class InstructorPortalGUI:
     # ------------------------------------------------------------------
 
     def _open_grade_tracking_portal(self):
-        """Open the instructor/staff Grade Tracking portal directly."""
         try:
-            from education_system.university_system.modules.domain.academics.gui.grade_tracking.staff_portal import (
-                GradeTrackingStaffPortal,
+            from education_system.university_system.modules.domain.academics.gui.grade_tracking.grade_tracking_app import (
+                GradeTrackingApp,
             )
-            GradeTrackingStaffPortal(self.root, self.auth)
+            GradeTrackingApp(tk.Toplevel(self.root), self.auth)
         except Exception as e:
-            logger.error(f"Error opening grade tracking staff portal: {e}")
+            logger.error(f"Error opening grade tracking: {e}")
             messagebox.showerror("Error", f"Failed to open Grade Tracking: {e}")
 
     def _open_assignments_portal(self):
-        """Open the instructor/staff Assignments portal directly."""
         try:
-            from education_system.university_system.modules.domain.academics.gui.assignment_system.staff_portal import (
-                AssignmentStaffPortal,
+            from education_system.university_system.modules.domain.academics.gui.assignment_system.assignment_gui import (
+                display_assignment_menu_gui,
             )
-            AssignmentStaffPortal(self.root, self.auth)
+            display_assignment_menu_gui(self.auth)
         except Exception as e:
-            logger.error(f"Error opening assignments staff portal: {e}")
+            logger.error(f"Error opening assignments: {e}")
             messagebox.showerror("Error", f"Failed to open Assignments: {e}")
 
     def _open_auto_grading_portal(self):
-        """Open the instructor/staff AI Auto-Grading portal directly."""
         try:
             from education_system.university_system.modules.domain.academics.gui.assignment_system.auto_grading_portal import (
                 AutoGradingStaffPortal,
@@ -233,138 +230,134 @@ class InstructorPortalGUI:
             messagebox.showerror("Error", f"Failed to open AI Auto-Grading: {e}")
 
     def _open_course_management_portal(self):
-        """Open the instructor-scoped Course Management portal directly."""
         try:
-            from education_system.university_system.modules.domain.academics.gui.course_management import (
-                CourseManagementInstructorPortal,
+            from education_system.university_system.modules.domain.academics.gui.course_management_gui.core.main_gui import (
+                CourseManagementGUI,
             )
-            CourseManagementInstructorPortal(self.root, self.auth)
+            CourseManagementGUI(tk.Toplevel(self.root), auth_system=self.auth)
         except Exception as e:
-            logger.error(f"Error opening course management instructor portal: {e}")
+            logger.error(f"Error opening course management: {e}")
             messagebox.showerror("Error",
                                  f"Failed to open Course Management: {e}")
 
     def _open_library_portal(self):
-        """Open the instructor/staff Library portal directly."""
         try:
-            from education_system.university_system.modules.domain.academics.gui.library.staff_portal import (
-                LibraryStaffPortal,
+            from education_system.university_system.modules.domain.academics.gui.library.base import (
+                LibraryGUI,
             )
-            LibraryStaffPortal(self.root, self.auth)
+            LibraryGUI(tk.Toplevel(self.root), self.auth)
         except Exception as e:
-            logger.error(f"Error opening library staff portal: {e}")
+            logger.error(f"Error opening library: {e}")
             messagebox.showerror("Error", f"Failed to open Library: {e}")
 
     def _open_calendar_portal(self):
-        """Open the instructor/staff Academic Calendar portal directly."""
         try:
-            from education_system.university_system.modules.domain.academics.gui.academic_calendar.staff_portal import (
-                CalendarStaffPortal,
+            from education_system.university_system.modules.domain.academics.gui.academic_calendar.main_gui import (
+                CalendarGUI,
             )
-            CalendarStaffPortal(self.root, self.auth)
+            CalendarGUI(auth_manager=self.auth, parent_window=tk.Toplevel(self.root))
         except Exception as e:
-            logger.error(f"Error opening calendar staff portal: {e}")
+            logger.error(f"Error opening calendar: {e}")
             messagebox.showerror("Error", f"Failed to open Academic Calendar: {e}")
 
     def _open_health_portal(self):
-        """Open the instructor/staff Health Portal directly."""
         try:
-            from education_system.university_system.modules.domain.health.gui.health_portal.staff_portal import (
-                HealthStaffPortal,
+            from education_system.university_system.modules.domain.health.gui.health_portal.main import (
+                HealthPortalGUI,
             )
-            HealthStaffPortal(self.root, self.auth)
+            HealthPortalGUI(tk.Toplevel(self.root), auth_system=self.auth)
         except Exception as e:
-            logger.error(f"Error opening health staff portal: {e}")
+            logger.error(f"Error opening health portal: {e}")
             messagebox.showerror("Error", f"Failed to open Health Portal: {e}")
 
     def _open_student_union_portal(self):
         try:
-            from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.staff_portal import (
-                StudentUnionStaffPortal,
+            from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui import (
+                StudentUnionGUI,
             )
-            StudentUnionStaffPortal(self.root, self.auth)
+            StudentUnionGUI(parent=tk.Toplevel(self.root))
         except Exception as e:
-            logger.error(f"Error opening student union staff portal: {e}")
+            logger.error(f"Error opening student union: {e}")
             messagebox.showerror("Error", f"Failed to open Student Union: {e}")
 
     def _open_campus_events_portal(self):
         try:
-            from education_system.university_system.modules.domain.campus.services.campus_events_staff_portal import (
-                CampusEventsStaffPortal,
+            from education_system.university_system.modules.domain.campus.services.campus_events_gui import (
+                CampusEventsGUI,
             )
-            CampusEventsStaffPortal(self.root, self.auth)
+            CampusEventsGUI(self.root, self.auth)
         except Exception as e:
-            logger.error(f"Error opening campus events staff portal: {e}")
+            logger.error(f"Error opening campus events: {e}")
             messagebox.showerror("Error", f"Failed to open Campus Events: {e}")
 
     def _open_clubs_portal(self):
         try:
-            from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.clubs.staff_portal import (
-                ClubsStaffPortal,
+            from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui import (
+                StudentUnionGUI,
             )
-            ClubsStaffPortal(self.root, self.auth)
+            StudentUnionGUI(parent=tk.Toplevel(self.root))
         except Exception as e:
-            logger.error(f"Error opening clubs staff portal: {e}")
+            logger.error(f"Error opening clubs: {e}")
             messagebox.showerror("Error", f"Failed to open Clubs & Societies: {e}")
 
     def _open_student_jobs_portal(self):
         try:
-            from education_system.university_system.modules.domain.career.student_jobs.gui.staff_portal import (
-                StudentJobsStaffPortal,
+            from education_system.university_system.modules.domain.career.student_jobs.gui.jobs_gui import (
+                StudentJobsGUI,
             )
-            StudentJobsStaffPortal(self.root, self.auth)
+            StudentJobsGUI(parent=self.root, auth=self.auth)
         except Exception as e:
-            logger.error(f"Error opening student jobs staff portal: {e}")
+            logger.error(f"Error opening student jobs: {e}")
             messagebox.showerror("Error", f"Failed to open Student Jobs: {e}")
 
     def _open_cafe_portal(self):
         try:
-            from education_system.university_system.modules.domain.commerce.services.commerce_portals import (
-                launch_cafe_staff_portal,
+            from education_system.university_system.modules.domain.commerce.gui.cafe_system_gui import (
+                CafeSystemGUI,
             )
-            launch_cafe_staff_portal(self.root, self.auth)
+            CafeSystemGUI(self.root, auth=self.auth).show_cafe_system()
         except Exception as e:
-            logger.error(f"Error opening cafe staff portal: {e}")
+            logger.error(f"Error opening cafe: {e}")
             messagebox.showerror("Error", f"Failed to open Cafe: {e}")
 
     def _open_bar_portal(self):
         try:
-            from education_system.university_system.modules.domain.commerce.services.commerce_portals import (
-                launch_bar_staff_portal,
+            from education_system.university_system.modules.domain.commerce.gui.bar_gui import (
+                BarGUI,
             )
-            launch_bar_staff_portal(self.root, self.auth)
+            BarGUI(self.root, self.auth).show_bar()
         except Exception as e:
-            logger.error(f"Error opening bar staff portal: {e}")
+            logger.error(f"Error opening bar: {e}")
             messagebox.showerror("Error", f"Failed to open Bar: {e}")
 
     def _open_takeaway_portal(self):
         try:
-            from education_system.university_system.modules.domain.commerce.services.commerce_portals import (
-                launch_takeaway_staff_portal,
+            from education_system.university_system.modules.domain.commerce.gui.takeaway_gui import (
+                TakeawayGUI,
             )
-            launch_takeaway_staff_portal(self.root, self.auth)
+            TakeawayGUI(self.root, auth=self.auth).open_takeaway_gui()
         except Exception as e:
-            logger.error(f"Error opening takeaway staff portal: {e}")
+            logger.error(f"Error opening takeaway: {e}")
             messagebox.showerror("Error", f"Failed to open Takeaway: {e}")
 
     def _open_cinema_portal(self):
         try:
-            from education_system.university_system.modules.domain.commerce.cinema.cinema_portals import (
-                launch_cinema_staff_portal,
+            from education_system.university_system.modules.domain.commerce.cinema.gui.cinema_gui import (
+                CinemaApp,
             )
-            launch_cinema_staff_portal(self.root, self.auth)
+            CinemaApp(tk.Toplevel(self.root))
         except Exception as e:
-            logger.error(f"Error opening cinema staff portal: {e}")
+            logger.error(f"Error opening cinema: {e}")
             messagebox.showerror("Error", f"Failed to open Cinema: {e}")
 
     def _open_barber_portal(self):
         try:
-            from education_system.university_system.modules.domain.commerce.barber.barber_portals import (
-                launch_barber_staff_portal,
+            from education_system.university_system.modules.domain.commerce.barber.gui.barber_gui import (
+                BarberGUI,
             )
-            launch_barber_staff_portal(self.root, self.auth)
+            BarberGUI(tk.Toplevel(self.root), auth=self.auth)
         except Exception as e:
-            logger.error(f"Error opening barber staff portal: {e}")
+            logger.error(f"Error opening barber: {e}")
             messagebox.showerror("Error", f"Failed to open Barber: {e}")
 
     def _launch(self, method_name):

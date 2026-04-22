@@ -525,6 +525,7 @@ class StudentSupportGUIBase:
         ttk.Separator(self.nav_frame, orient='horizontal').pack(fill="x", pady=10)
         self.create_nav_button(_t("student_support.nav.preferences"), self.show_preferences)
         self.create_nav_button(_t("student_support.nav.notifications"), self.show_notifications)
+        self.create_nav_button("💬 Feedback", self.show_general_feedback)
 
         # Link to Helpdesk GUI
         ttk.Separator(self.nav_frame, orient='horizontal').pack(fill="x", pady=10)

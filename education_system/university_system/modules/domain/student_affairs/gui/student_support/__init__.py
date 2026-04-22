@@ -10,6 +10,7 @@ from education_system.university_system.modules.domain.student_affairs.gui.stude
 from education_system.university_system.modules.domain.student_affairs.gui.student_support.reports_export import ReportsExportMixin
 from education_system.university_system.modules.domain.student_affairs.gui.student_support.launcher import launch_student_support_gui, SupportPortalLauncher
 from education_system.university_system.modules.domain.student_affairs.gui.student_support.misc import MiscMixin
+from education_system.university_system.modules.domain.student_affairs.gui.student_support.feedback import FeedbackMixin
 
 
 class StudentSupportGUI(
@@ -22,7 +23,8 @@ class StudentSupportGUI(
     ContentMixin,
     AdminMixin,
     ReportsExportMixin,
-    MiscMixin
+    MiscMixin,
+    FeedbackMixin,
 ):
     """Complete Student Support GUI combining all mixins."""
     pass

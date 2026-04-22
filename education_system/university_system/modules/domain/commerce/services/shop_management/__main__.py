@@ -7,12 +7,14 @@ Without a ``__main__.py`` Python rejects the invocation with
 menu loop (handles login prompt, db init, main menu).
 """
 
+from education_system.university_system.infrastructure.shared_context import initialize_auth
 from education_system.university_system.modules.domain.commerce.services.shop_management.menus import (
     display_main_menu_extended,
 )
 
 
 if __name__ == "__main__":
+    initialize_auth()
     try:
         display_main_menu_extended()
     except KeyboardInterrupt:

@@ -28,6 +28,7 @@ from education_system.university_system.modules.domain.student_affairs.services.
 )
 from education_system.university_system.modules.domain.student_affairs.services.student_support import auth as _auth_mod
 from education_system.university_system.modules.domain.student_affairs.services.student_support.auth import get_current_user_safe, require_auth, has_staff_permissions
+from education_system.university_system.modules.domain.student_affairs.services.student_support.automation.escalations import _process_escalations
 
 logger = logging.getLogger(__name__)
 

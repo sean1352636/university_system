@@ -20,7 +20,6 @@ from education_system.university_system.modules.shared.utils.document_manager.se
 from education_system.university_system.modules.shared.utils.document_manager.dashboard import DashboardMixin
 from education_system.university_system.modules.shared.utils.document_manager.bulk_operations import BulkOperationsMixin
 from education_system.university_system.modules.shared.utils.document_manager.reports import ReportsMixin
-from education_system.university_system.modules.shared.utils.document_manager.student_portal import StudentPortalMixin
 from education_system.university_system.modules.shared.utils.document_manager.notifications import NotificationsMixin
 from education_system.university_system.modules.shared.utils.document_manager.versioning import VersioningMixin
 from education_system.university_system.modules.shared.utils.document_manager.workflows import WorkflowMixin
@@ -42,7 +41,6 @@ class DocumentManager(
     DashboardMixin,
     BulkOperationsMixin,
     ReportsMixin,
-    StudentPortalMixin,
     NotificationsMixin,
     VersioningMixin,
     WorkflowMixin,

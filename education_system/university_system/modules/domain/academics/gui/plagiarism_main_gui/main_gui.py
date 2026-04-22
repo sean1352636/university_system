@@ -17,6 +17,7 @@ from education_system.university_system.modules.shared.utils.gui_language_select
     show_gui_language_selector,
 )
 
+from education_system.university_system.modules.shared.constants import paths as _paths
 from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.config import GuiConfig
 from education_system.university_system.modules.domain.academics.gui.plagiarism_main_gui.common import (
     logger,
@@ -1335,8 +1336,8 @@ Components:
 \u2022 File Support: textract (if available)
 \u2022 Similarity Algorithm: N-gram Jaccard Similarity
 
-Database Location: student_records.db
-Log Directory: logs/
+Database Location: {_paths.DEFAULT_DB_PATH}
+Log Directory: {_paths.LOG_DIR}
 
 System Status: {"Ready" if self.checker else "Not Initialized"}
 Authentication: Mock Auth (GUI Mode)

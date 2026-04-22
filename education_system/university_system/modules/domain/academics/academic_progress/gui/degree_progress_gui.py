@@ -71,13 +71,13 @@ class DegreeProgressGUI:
         cards_frame = ttk.Frame(self.window)
         cards_frame.pack(fill=tk.X, padx=20, pady=5)
 
-        self.credits_var = tk.StringVar(value="Credits: --/--")
-        self.gpa_var = tk.StringVar(value="GPA: --")
-        self.grad_var = tk.StringVar(value="Est. Graduation: --")
+        self.credits_var = tk.StringVar(value="--/--")
+        self.gpa_var = tk.StringVar(value="--")
+        self.grad_var = tk.StringVar(value="--")
 
-        self._create_stat_card(cards_frame, self.credits_var, 0)
-        self._create_stat_card(cards_frame, self.gpa_var, 1)
-        self._create_stat_card(cards_frame, self.grad_var, 2)
+        self._create_stat_card(cards_frame, "Credits", self.credits_var, 0)
+        self._create_stat_card(cards_frame, "GPA", self.gpa_var, 1)
+        self._create_stat_card(cards_frame, "Est. Graduation", self.grad_var, 2)
 
         cards_frame.columnconfigure(0, weight=1)
         cards_frame.columnconfigure(1, weight=1)
@@ -118,11 +118,16 @@ class DegreeProgressGUI:
         self.status_var = tk.StringVar(value="Loading...")
         ttk.Label(self.window, textvariable=self.status_var).pack(anchor='w', padx=20, pady=(0, 5))
 
-    def _create_stat_card(self, parent, text_var, column):
-        """Create a small stat card widget inside a grid."""
-        card = ttk.LabelFrame(parent, text="", padding="10")
+    def _create_stat_card(self, parent, title, text_var, column):
+        """Create a small titled stat card widget inside a grid."""
+        card = ttk.LabelFrame(parent, text=title, padding=10)
         card.grid(row=0, column=column, padx=10, pady=5, sticky='nsew')
-        ttk.Label(card, textvariable=text_var, font=('Arial', 12, 'bold')).pack()
+        ttk.Label(
+            card,
+            textvariable=text_var,
+            font=('TkDefaultFont', 14, 'bold'),
+            anchor='center',
+        ).pack(fill=tk.X, expand=True)
 
     # ------------------------------------------------------------------
     # Data Loading
@@ -149,13 +154,13 @@ class DegreeProgressGUI:
             # Populate stat cards
             earned = summary.get('credits_earned', 0)
             required = summary.get('credits_required', 120)
-            self.credits_var.set(f"Credits: {earned}/{required}")
+            self.credits_var.set(f"{earned} / {required}")
 
             gpa = summary.get('gpa')
-            self.gpa_var.set(f"GPA: {gpa:.2f}" if gpa is not None else "GPA: N/A")
+            self.gpa_var.set(f"{gpa:.2f}" if isinstance(gpa, (int, float)) else "N/A")
 
             grad = summary.get('estimated_graduation')
-            self.grad_var.set(f"Est. Graduation: {grad}" if grad else "Est. Graduation: --")
+            self.grad_var.set(str(grad) if grad else "--")
 
             # Populate requirements tree
             for item in self.tree.get_children():

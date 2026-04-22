@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.83.0 — 2026-04-22](#8830---2026-04-22)
 - [8.82.0 — 2026-04-21](#8820---2026-04-21)
 - [8.81.0 — 2026-04-21](#8810---2026-04-21)
 - [8.80.0 — 2026-04-21](#8800---2026-04-21)
@@ -187,6 +188,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.83.0] — 2026-04-22
+
+### De-duplicate role portals, consolidate login-shell launchers, and unwind three duplicate GUIs
+
+#### Removed
+
+- **Per-domain role-based portals.** 24 files across the university system duplicated each other as `student_portal.py` / `staff_portal.py` / `instructor_portal.py` — one role-scoped trim of the same underlying feature, sitting next to a full admin GUI that already existed. Deleted them all and pointed the four top-level login shells (`modules/shared/gui/main/{student,staff,instructor}_portal.py` + `parent_portal_wrapper.py`) straight at the main GUIs instead. Files removed:
+  - `academics/gui/{academic_calendar,assignment_system,grade_tracking,library}/{student,staff}_portal.py`
+  - `academics/gui/course_management/{student,staff,instructor}_portal.py`
+  - `campus/services/campus_events_{student,staff}_portal.py`
+  - `career/student_jobs/gui/{student,staff}_portal.py`
+  - `health/gui/health_portal/{student,staff}_portal.py`
+  - `student_affairs/gui/student_union_gui/{student,staff}_portal.py` + `clubs/{student,staff}_portal.py`
+  - `housing/gui/housing_accommodation_gui/student_portal.py`
+  - `shared/gui/document_manager_gui/student_portal.py` + `shared/utils/document_manager/student_portal.py`
+- **Retired three duplicate GUIs** whose functionality had drifted into larger siblings:
+  - `student_affairs/gui/help_center/` — a 544-line single-file ticket/KB/FAQ/feedback window. Ported the Feedback tab (the one feature the bigger `StudentSupportGUI` didn't already have) into `student_support/feedback.py` as `FeedbackMixin.show_general_feedback`, added it to the mixin chain, and gave it a "💬 Feedback" sidebar button. Dashboard "Help Center" quick action now launches `StudentSupportGUI` (and the button was renamed "Student Support").
+  - `student_affairs/gui/messaging_hub/` — a two-pane student chat. `EmailManagerGUI` already covers the same ground (Messages tab with compose/reply/delete, Chat Rooms with create/join, Announcements, Cross-System panel) and uses the same `chat_rooms` table. Dashboard "Messages" button renamed "Email" and now launches `EmailManagerGUI(tk.Toplevel(root), auth=auth)`.
+  - `finance/gui/student_finance/` and `finance/student_finance/` — two separate packages, neither fully wired. The first duplicated the student view; the second held a thin `StudentFinanceFrame` stub, a CRUD service against `student_fees`, and a CLI. Ported the student-facing content into `finance/gui/finance/student_finance_view.py` and had `FinanceGUI.__init__` delegate to it when `role == 'student'` (early-return before the admin manager init). Dashboard "Finances" button and `menu_router.py`'s `student_finance` CLI branch both now open `FinanceGUI` directly.
+
+#### Changed
+
+- **Login-shell buttons now construct their targets through a fresh `tk.Toplevel(self.root)`** wherever the target GUI hijacks its parent (`CourseManagementGUI`, `GradeTrackingApp`, `LibraryGUI`, `CalendarGUI`, `HealthPortalGUI`, `StudentUnionGUI`, Helpdesk, Internship, Student Support). Previously the target set `self.root = parent` and rendered on top of the role-shell's sidebar. `CampusEventsGUI`, `StudentJobsGUI`, `AccessibilityToolsGUI`, `CafeSystemGUI`, `BarGUI`, `TakeawayGUI` are *not* wrapped — they each create their own Toplevel internally and the outer wrap would have been a blank grey window next to the real one.
+- **Commerce buttons redirected to main GUIs.** The "Cafe / Bar / Takeaway / Cinema / Barber" buttons in all three role shells used `launch_cafe_{student,staff}_portal`-style role-based entry points inside `commerce_portals.py` / `barber_portals.py` / `cinema_portals.py`. Now call `CafeSystemGUI(root, auth).show_cafe_system()`, `BarGUI(root, auth).show_bar()`, `TakeawayGUI(root, auth).open_takeaway_gui()`, `CinemaApp(Toplevel)`, `BarberGUI(Toplevel, auth)`. Cafe/Bar/Takeaway additionally need the explicit `.show_*()` call because their constructors deliberately defer the Toplevel build — without it the button just opened an empty grey window.
+- **"Course Management" / forums UI says "module".** The student-facing `CourseForumsGUI` (opened via the "Discussion Forums" dashboard button) referred to enrolled modules as "courses" throughout — window title, header, combo label, warnings, method names, and state vars (`selected_course_id`, `course_combo`, `_load_courses`). Renamed the visible strings plus the corresponding `_load_modules` / `_on_module_selected` / `module_combo` / `selected_module_code` attributes so the code reads the same way the UI does.
+- **Dashboard student-support sidebar launchers** (Helpdesk, Internship Portal, Student Support, Accessibility) were stubs through `_launch('show_X_gui')` which called a method on a lazy `UnifiedManagementGUI` — those methods don't exist, so the fallback path printed "not yet available". Replaced with four direct launchers: `HelpdeskGUI`, `InternshipGUI`, `StudentSupportGUI`, `AccessibilityToolsGUI`.
+
+#### Fixed
+
+- **Plagiarism GUI — system info showed fake paths.** `plagiarism_main_gui/main_gui.py:1338-1339` hard-coded *"Database Location: student_records.db"* and *"Log Directory: logs/"* — relative placeholders, not the real locations. Now imports `modules.shared.constants.paths` and interpolates `_paths.DEFAULT_DB_PATH` / `_paths.LOG_DIR`, so the dialog shows the actual absolute paths (`.../university_system/data/db_files/student_records.db` and `.../university_system/logs`).
+- **`course_forums_gui._new_topic` hit `FOREIGN KEY constraint failed`.** The GUI's `_ensure_tables` declared `lms_course_id TEXT` with no FK, but the real schema (already applied via migration) is `lms_course_id INTEGER NOT NULL REFERENCES lms_courses(lms_course_id)`. `CREATE TABLE IF NOT EXISTS` silently accepted the drift. The insert was passing `module_code` (string) into an integer FK column, which matched no row. Added `_resolve_lms_course_id(module_code)` which looks up the integer PK and auto-creates a minimal `lms_courses` row on first use, stored the result in `self.selected_lms_course_id`, and routed both the insert and the `_load_forums` query through it. Also realigned `_ensure_tables` with the real migration-applied schema so fresh DBs don't diverge.
+- **Degree Progress Tracker — three stat cards rendered blank.** `_create_stat_card` built `ttk.LabelFrame(parent, text="", padding="10")` with an empty title and an inner Label that was packed without `fill=X`, so with certain ttk themes the frame collapsed to a border and the value never appeared. The card now carries the category as its `LabelFrame` text ("Credits" / "GPA" / "Est. Graduation"); the value Label is centered and filled; and the font is `TkDefaultFont` so it renders on Linux where `Arial` isn't installed. GPA formatting also guards with `isinstance(gpa, (int, float))` so a non-numeric GPA can't crash the whole `_load_data`.
+- **Shop Management `python -m … shop_management` aborted on start.** The new `__main__.py` called `display_main_menu_extended`, which in turn calls `init_all_databases()`, which calls `get_auth()` — but `shared_context.get_auth()` was hardened to *raise* `AuthenticationNotInitializedError` instead of returning `None`, making the existing `if auth is None: UserAuth()` fallback unreachable. Added `initialize_auth()` at the top of `__main__.py` so auth is bootstrapped before database init.
+- **Student Support background worker crashed with `NameError: _process_escalations`.** `services/student_support/automation/background_tasks.py:39` called `_process_escalations()` inside the worker loop but never imported it. Added `from … automation.escalations import _process_escalations`.
+- **Internship "My Eligibility" crashed with `NameError: ttk`.** `gui/internship_management/eligibility.py:254` uses `ttk.Combobox` but the module only imported `tk, messagebox, scrolledtext, get_connection` from `_imports`. Added `ttk` to the import list (`_imports.py` already re-exported it).
+- **Document Manager GUIs lost a missing-mixin cascade from the portal sweep.** Removing `shared/gui/document_manager_gui/student_portal.py` and `shared/utils/document_manager/student_portal.py` required dropping their callers — `main_gui.py`'s `StudentPortalManager` import + instantiation + registration in `self._managers`, and `manager.py`'s `StudentPortalMixin` in the `DocumentManager` class bases.
 
 ---
 

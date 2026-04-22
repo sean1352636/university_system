@@ -970,11 +970,13 @@ def display_menu():
                     print(f"\n  Student Wellbeing CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "student_finance":
+                # Student Finance merged into the main Finance CLI/GUI.
                 try:
-                    from education_system.university_system.modules.domain.finance.student_finance.cli.student_finance_cli import main as student_finance_main
-                    student_finance_main()
-                except ImportError as e:
-                    print(f"\n  Student Finance CLI is not available: {e}")
+                    from education_system.university_system.modules.domain.finance.gui.finance.finance_gui import FinanceGUI
+                    import tkinter as tk
+                    FinanceGUI(tk.Tk())
+                except Exception as e:
+                    print(f"\n  Finance GUI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "notifications":
                 try:

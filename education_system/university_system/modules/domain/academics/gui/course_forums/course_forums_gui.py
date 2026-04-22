@@ -1,7 +1,7 @@
-"""Course Discussion Forums GUI (Feature 39).
+"""Module Discussion Forums GUI (Feature 39).
 
-Provides a forum interface for course discussions, including threaded posts,
-topic creation, replies, and likes. Organized by enrolled courses.
+Provides a forum interface for module discussions, including threaded posts,
+topic creation, replies, and likes. Organised by enrolled modules.
 """
 
 import logging
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class CourseForumsGUI:
-    """Toplevel window for course discussion forums."""
+    """Toplevel window for module discussion forums."""
 
     def __init__(self, parent, auth=None):
         self.parent = parent
@@ -24,18 +24,19 @@ class CourseForumsGUI:
         self.student_id = (
             auth.current_user.get('username', '') if auth and auth.current_user else ''
         )
-        self.selected_course_id = None
+        self.selected_module_code = None
+        self.selected_lms_course_id = None
         self.selected_forum_id = None
         self.selected_post_id = None
 
         self.window = tk.Toplevel(parent)
-        self.window.title("Course Discussion Forums")
+        self.window.title("Module Discussion Forums")
         self.window.geometry("1000x700")
         self.window.transient(parent)
 
         self._ensure_tables()
         self._setup_ui()
-        self._load_courses()
+        self._load_modules()
 
     # ------------------------------------------------------------------
     # Database setup
@@ -48,13 +49,14 @@ class CourseForumsGUI:
                 conn.execute(
                     """CREATE TABLE IF NOT EXISTS lms_discussion_forums (
                         forum_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        lms_course_id TEXT,
+                        lms_course_id INTEGER NOT NULL,
                         topic TEXT NOT NULL,
                         description TEXT,
-                        created_by TEXT,
+                        created_by TEXT NOT NULL,
                         is_pinned INTEGER DEFAULT 0,
                         is_locked INTEGER DEFAULT 0,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                        FOREIGN KEY (lms_course_id) REFERENCES lms_courses(lms_course_id) ON DELETE CASCADE
                     )"""
                 )
                 conn.execute(
@@ -81,24 +83,24 @@ class CourseForumsGUI:
         """Build the forum interface."""
         ttk.Label(
             self.window,
-            text="Course Discussion Forums",
+            text="Module Discussion Forums",
             font=('Arial', 16, 'bold'),
         ).pack(pady=(10, 5))
 
-        # ---- Top: Course selector ----
+        # ---- Top: Module selector ----
         top_frame = ttk.Frame(self.window)
         top_frame.pack(fill=tk.X, padx=15, pady=5)
 
-        ttk.Label(top_frame, text="Course:").pack(side=tk.LEFT, padx=(0, 5))
-        self.course_var = tk.StringVar()
-        self.course_combo = ttk.Combobox(
-            top_frame, textvariable=self.course_var, state='readonly', width=50
+        ttk.Label(top_frame, text="Module:").pack(side=tk.LEFT, padx=(0, 5))
+        self.module_var = tk.StringVar()
+        self.module_combo = ttk.Combobox(
+            top_frame, textvariable=self.module_var, state='readonly', width=50
         )
-        self.course_combo.pack(side=tk.LEFT, padx=(0, 10))
-        self.course_combo.bind('<<ComboboxSelected>>', lambda e: self._on_course_selected())
+        self.module_combo.pack(side=tk.LEFT, padx=(0, 10))
+        self.module_combo.bind('<<ComboboxSelected>>', lambda e: self._on_module_selected())
 
-        # Internal mapping: combo index -> course_id
-        self._course_ids = []
+        # Internal mapping: combo index -> module_code
+        self._module_codes = []
 
         # ---- Middle section: forums list (left) + posts view (right) ----
         middle_paned = ttk.PanedWindow(self.window, orient=tk.HORIZONTAL)
@@ -187,10 +189,10 @@ class CourseForumsGUI:
     # Data loading
     # ------------------------------------------------------------------
 
-    def _load_courses(self):
-        """Load enrolled courses into the combo box."""
-        self.course_combo.set('')
-        self._course_ids.clear()
+    def _load_modules(self):
+        """Load enrolled modules into the combo box."""
+        self.module_combo.set('')
+        self._module_codes.clear()
         values = []
 
         try:
@@ -205,30 +207,56 @@ class CourseForumsGUI:
                 ).fetchall()
 
             for module_code, module_name in rows:
-                self._course_ids.append(module_code)
+                self._module_codes.append(module_code)
                 values.append(f"{module_code} - {module_name}")
         except Exception as exc:
-            logger.error("Failed to load courses: %s", exc)
+            logger.error("Failed to load modules: %s", exc)
 
-        self.course_combo['values'] = values
+        self.module_combo['values'] = values
 
-    def _on_course_selected(self):
-        """Handle course selection from the combo box."""
-        idx = self.course_combo.current()
-        if idx < 0 or idx >= len(self._course_ids):
+    def _on_module_selected(self):
+        """Handle module selection from the combo box."""
+        idx = self.module_combo.current()
+        if idx < 0 or idx >= len(self._module_codes):
             return
-        self.selected_course_id = self._course_ids[idx]
+        self.selected_module_code = self._module_codes[idx]
+        self.selected_lms_course_id = self._resolve_lms_course_id(self.selected_module_code)
         self.selected_forum_id = None
         self.selected_post_id = None
         self._load_forums()
         self._clear_posts()
 
+    def _resolve_lms_course_id(self, module_code):
+        """Return the integer lms_course_id for a module, creating a row if needed.
+
+        The lms_discussion_forums FK points at lms_courses(lms_course_id), not
+        modules. If this module has no lms_courses row yet, create a minimal one
+        so forums can attach.
+        """
+        try:
+            with transaction() as conn:
+                row = conn.execute(
+                    "SELECT lms_course_id FROM lms_courses WHERE module_code = ?",
+                    (module_code,),
+                ).fetchone()
+                if row:
+                    return row[0]
+                cursor = conn.execute(
+                    "INSERT INTO lms_courses (module_code, instructor_id, course_description) "
+                    "VALUES (?, ?, ?)",
+                    (module_code, self.student_id or 'system', ''),
+                )
+                return cursor.lastrowid
+        except Exception as exc:
+            logger.error("Failed to resolve lms_course_id for %s: %s", module_code, exc)
+            return None
+
     def _load_forums(self):
-        """Load forums for the selected course."""
+        """Load forums for the selected module."""
         self.forum_tree.delete(*self.forum_tree.get_children())
         self._forum_map.clear()
 
-        if not self.selected_course_id:
+        if not self.selected_lms_course_id:
             return
 
         try:
@@ -241,7 +269,7 @@ class CourseForumsGUI:
                        LEFT JOIN lms_discussion_posts p ON f.forum_id = p.forum_id
                        WHERE f.lms_course_id = ? AND f.is_locked = 0
                        GROUP BY f.forum_id""",
-                    (self.selected_course_id,),
+                    (self.selected_lms_course_id,),
                 ).fetchall()
 
             for forum_id, title, posts_count, last_activity in rows:
@@ -354,10 +382,10 @@ class CourseForumsGUI:
     # ------------------------------------------------------------------
 
     def _new_topic(self):
-        """Create a new forum topic for the selected course."""
-        if not self.selected_course_id:
+        """Create a new forum topic for the selected module."""
+        if not self.selected_lms_course_id:
             messagebox.showwarning(
-                "No Course", "Please select a course first.", parent=self.window
+                "No Module", "Please select a module first.", parent=self.window
             )
             return
 
@@ -389,16 +417,16 @@ class CourseForumsGUI:
                         """INSERT INTO lms_discussion_forums
                               (lms_course_id, topic, description, created_by)
                            VALUES (?, ?, ?, ?)""",
-                        (self.selected_course_id, title, description, self.student_id),
+                        (self.selected_lms_course_id, title, description, self.student_id),
                     )
                 log_activity(
                     self.student_id, self.student_id, 'student',
                     'create_forum_topic', 'course_forums',
-                    details=f"Created topic '{title}' in {self.selected_course_id}",
+                    details=f"Created topic '{title}' in {self.selected_module_code}",
                 )
                 logger.info(
                     "Forum topic '%s' created by %s in %s",
-                    title, self.student_id, self.selected_course_id,
+                    title, self.student_id, self.selected_module_code,
                 )
                 dialog.destroy()
                 self._load_forums()
@@ -493,7 +521,7 @@ class CourseForumsGUI:
 
     def _refresh_current(self):
         """Refresh the current forum and posts view."""
-        if self.selected_course_id:
+        if self.selected_lms_course_id:
             self._load_forums()
         if self.selected_forum_id:
             self._load_posts()

@@ -1,5 +1,5 @@
 from education_system.university_system.core.sql_safety import escape_like
-from education_system.university_system.modules.domain.student_affairs.gui.internship_management._imports import tk, messagebox, scrolledtext, get_connection
+from education_system.university_system.modules.domain.student_affairs.gui.internship_management._imports import tk, ttk, messagebox, scrolledtext, get_connection
 
 
 class EligibilityMixin:
