@@ -10,7 +10,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 
 from education_system.university_system.core.sql_safety import escape_like
-from education_system.university_system.infrastructure.database.db import get_connection, transaction
+from education_system.university_system.infrastructure.database.db import get_connection, sqlite3, transaction
 from education_system.university_system.modules.shared.utils.simple_activity_logger import log_activity
 
 logger = logging.getLogger(__name__)
@@ -216,12 +216,17 @@ class CourseCatalogGUI:
                     )
                     return
 
-                # Fetch capacity and current enrollment
-                mod = conn.execute(
-                    "SELECT capacity FROM modules WHERE module_code = ?",
-                    (module_code,),
-                ).fetchone()
-                capacity = (mod['capacity'] or 0) if mod else 0
+                # Fetch capacity and current enrollment. `modules` doesn't
+                # always have a capacity column — treat missing as uncapped.
+                capacity = 0
+                try:
+                    mod = conn.execute(
+                        "SELECT capacity FROM modules WHERE module_code = ?",
+                        (module_code,),
+                    ).fetchone()
+                    capacity = (mod['capacity'] or 0) if mod else 0
+                except sqlite3.OperationalError:
+                    capacity = 0
 
                 enrolled_count = conn.execute(
                     "SELECT COUNT(*) as cnt FROM student_modules "
