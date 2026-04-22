@@ -613,7 +613,6 @@ def create_navigation_panel(self, parent):
         ('gdpr_compliance', 'GDPR Compliance', self.show_gdpr_compliance_gui),
         ('shared_documents', 'Shared Documents', self.show_shared_documents_gui),
         ('student_self_service', 'Student Self-Service', self.show_student_self_service_gui),
-        ('digital_transcript', 'Digital Transcript', self.show_digital_transcript_gui),
         ('certificates', 'Certificates', self.show_certificates_gui),
     ]
 

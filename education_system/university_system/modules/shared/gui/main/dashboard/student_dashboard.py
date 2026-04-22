@@ -66,7 +66,11 @@ def _launch_finance(parent, auth):
     """Launch the main Finance GUI in a new window."""
     import tkinter as tk
     from education_system.university_system.modules.domain.finance.gui.finance.finance_gui import FinanceGUI
-    FinanceGUI(tk.Toplevel(parent), auth=auth)
+    window = tk.Toplevel(parent)
+    window.title("Finance")
+    window.geometry("1280x800")
+    window.minsize(1024, 640)
+    FinanceGUI(window, auth=auth)
 
 
 def _launch_roommate_finder(parent, auth):

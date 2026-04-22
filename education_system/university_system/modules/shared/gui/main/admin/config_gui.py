@@ -12,6 +12,8 @@ from education_system.university_system.modules.shared.gui.main.imports.gui_impo
     SecurityDashboard,
     ACTIVITY_LOGGER_GUI_AVAILABLE,
     ActivityLoggerGUI,
+    AUDIT_LOG_VIEWER_AVAILABLE,
+    show_audit_log_viewer as _open_audit_log_viewer,
 )
 
 logger = logging.getLogger(__name__)
@@ -408,7 +410,7 @@ def show_audit_log_viewer(self):
 
     try:
         user_id = self.auth.current_user.get('id', 1)
-        viewer = show_audit_log_viewer(self.root, user_id)
+        viewer = _open_audit_log_viewer(self.root, user_id)
         print(_t("config_gui.messages.audit_log_viewer_opened"))
     except Exception as e:
         messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.errors.failed_to_open_audit_log_viewer", error=str(e)))

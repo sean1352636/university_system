@@ -1,7 +1,12 @@
 """Digital Transcript — tkinter GUI frame.
 
-Provides a search bar, results Treeview, transcript generation with a
-scrollable Text widget, and Save / Print / Summary View controls.
+Embeddable cross-system transcript browser. Searches students across all
+education subsystems via TranscriptService, renders the selected student's
+transcript, and supports save / clipboard / summary view.
+
+Originally lived at education_system.shared.transcript.transcript_gui;
+moved here when the standalone Digital Transcript window was folded into
+the Certificates GUI's Transcripts tab.
 """
 
 import tkinter as tk
@@ -18,85 +23,102 @@ HEADER_BG = "#1a5276"
 class DigitalTranscriptFrame(tk.Frame):
     """Digital transcript GUI — embeddable tk.Frame."""
 
-    def __init__(self, parent, db_path=None, auth=None, **kwargs):
+    def __init__(self, parent, db_path=None, auth=None, restrict_to_student=None, **kwargs):
+        """
+        Args:
+            restrict_to_student: when set, hide the search/results UI and
+                auto-generate the transcript for that student name. Used by
+                the student-facing Certificates GUI to lock the view to the
+                logged-in user.
+        """
         super().__init__(parent, **kwargs)
         self._service = TranscriptService()
         self._auth = auth or {}
+        self._restrict_to_student = restrict_to_student
         self._search_results = []
         self._current_text = ""
         self._summary_mode = False
         self._current_transcript = None
         self._build_ui()
 
-    # ------------------------------------------------------------------
-    # UI construction
-    # ------------------------------------------------------------------
+        if self._restrict_to_student:
+            self.after(0, lambda: self._auto_generate(self._restrict_to_student))
 
     def _build_ui(self):
         self.configure(bg="#ecf0f1")
 
-        # Header
+        restricted = bool(self._restrict_to_student)
+        title = ("My Transcript" if restricted else "Digital Transcript")
+
         header = tk.Frame(self, bg=HEADER_BG, height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
         tk.Label(
             header,
-            text="Digital Transcript",
+            text=title,
             font=("Helvetica", 15, "bold"),
             bg=HEADER_BG,
             fg="white",
         ).pack(side="left", padx=20, pady=10)
 
-        # Search bar
-        search_frame = tk.Frame(self, bg="#ecf0f1", pady=8)
-        search_frame.pack(fill="x", padx=15)
-
-        tk.Label(search_frame, text="Student name:", bg="#ecf0f1",
-                 font=("Helvetica", 10)).pack(side="left", padx=(0, 5))
-        self._search_var = tk.StringVar()
-        entry = ttk.Entry(search_frame, textvariable=self._search_var, width=30)
-        entry.pack(side="left", padx=(0, 5))
-        entry.bind("<Return>", lambda e: self._search())
-
-        ttk.Button(search_frame, text="Search", command=self._search).pack(side="left", padx=4)
-        ttk.Button(search_frame, text="Clear", command=self._clear).pack(side="left", padx=4)
-
         self._status_var = tk.StringVar(value="")
-        tk.Label(search_frame, textvariable=self._status_var, bg="#ecf0f1",
-                 font=("Helvetica", 9, "italic"), fg="#7f8c8d").pack(side="right", padx=10)
 
-        # Results treeview
-        tk.Label(self, text="Search Results", bg="#ecf0f1",
-                 font=("Helvetica", 10, "bold"), anchor="w").pack(fill="x", padx=15, pady=(5, 0))
+        if not restricted:
+            search_frame = tk.Frame(self, bg="#ecf0f1", pady=8)
+            search_frame.pack(fill="x", padx=15)
 
-        tree_frame = tk.Frame(self)
-        tree_frame.pack(fill="x", padx=15, pady=(0, 5))
+            tk.Label(search_frame, text="Student name:", bg="#ecf0f1",
+                     font=("Helvetica", 10)).pack(side="left", padx=(0, 5))
+            self._search_var = tk.StringVar()
+            entry = ttk.Entry(search_frame, textvariable=self._search_var, width=30)
+            entry.pack(side="left", padx=(0, 5))
+            entry.bind("<Return>", lambda e: self._search())
 
-        cols = ("system", "student_id", "name", "year_group", "status")
-        self._tree = ttk.Treeview(
-            tree_frame, columns=cols, show="headings", selectmode="browse", height=5,
-        )
-        for col, heading, width in [
-            ("system", "System", 130),
-            ("student_id", "Student ID", 100),
-            ("name", "Name", 200),
-            ("year_group", "Year/Group", 100),
-            ("status", "Status", 90),
-        ]:
-            self._tree.heading(col, text=heading)
-            self._tree.column(col, width=width, anchor="center" if col in ("status", "year_group") else "w")
+            ttk.Button(search_frame, text="Search", command=self._search).pack(side="left", padx=4)
+            ttk.Button(search_frame, text="Clear", command=self._clear).pack(side="left", padx=4)
 
-        t_vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self._tree.yview)
-        self._tree.configure(yscrollcommand=t_vsb.set)
-        self._tree.pack(side="left", fill="x", expand=True)
-        t_vsb.pack(side="right", fill="y")
+            tk.Label(search_frame, textvariable=self._status_var, bg="#ecf0f1",
+                     font=("Helvetica", 9, "italic"), fg="#7f8c8d").pack(side="right", padx=10)
 
-        # Action buttons
+            tk.Label(self, text="Search Results", bg="#ecf0f1",
+                     font=("Helvetica", 10, "bold"), anchor="w").pack(fill="x", padx=15, pady=(5, 0))
+
+            tree_frame = tk.Frame(self)
+            tree_frame.pack(fill="x", padx=15, pady=(0, 5))
+
+            cols = ("system", "student_id", "name", "year_group", "status")
+            self._tree = ttk.Treeview(
+                tree_frame, columns=cols, show="headings", selectmode="browse", height=5,
+            )
+            for col, heading, width in [
+                ("system", "System", 130),
+                ("student_id", "Student ID", 100),
+                ("name", "Name", 200),
+                ("year_group", "Year/Group", 100),
+                ("status", "Status", 90),
+            ]:
+                self._tree.heading(col, text=heading)
+                self._tree.column(col, width=width, anchor="center" if col in ("status", "year_group") else "w")
+
+            t_vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self._tree.yview)
+            self._tree.configure(yscrollcommand=t_vsb.set)
+            self._tree.pack(side="left", fill="x", expand=True)
+            t_vsb.pack(side="right", fill="y")
+        else:
+            self._search_var = None
+            self._tree = None
+            # Status row at the top so the student sees "Generating…" / errors.
+            status_row = tk.Frame(self, bg="#ecf0f1", pady=8)
+            status_row.pack(fill="x", padx=15)
+            tk.Label(status_row, textvariable=self._status_var, bg="#ecf0f1",
+                     font=("Helvetica", 10, "italic"), fg="#7f8c8d").pack(side="left")
+
         action_frame = tk.Frame(self, bg="#ecf0f1")
         action_frame.pack(fill="x", padx=15, pady=5)
 
-        ttk.Button(action_frame, text="Generate Transcript",
-                   command=self._generate).pack(side="left", padx=4)
+        if not restricted:
+            ttk.Button(action_frame, text="Generate Transcript",
+                       command=self._generate).pack(side="left", padx=4)
         ttk.Button(action_frame, text="Save to File",
                    command=self._save_to_file).pack(side="left", padx=4)
         ttk.Button(action_frame, text="Print (Copy)",
@@ -106,7 +128,6 @@ class DigitalTranscriptFrame(tk.Frame):
         )
         self._summary_btn.pack(side="left", padx=4)
 
-        # Transcript text area (scrollable)
         text_frame = tk.Frame(self)
         text_frame.pack(fill="both", expand=True, padx=15, pady=(0, 10))
 
@@ -119,9 +140,22 @@ class DigitalTranscriptFrame(tk.Frame):
         self._text_widget.pack(side="left", fill="both", expand=True)
         txt_vsb.pack(side="right", fill="y")
 
-    # ------------------------------------------------------------------
-    # Search
-    # ------------------------------------------------------------------
+    def _auto_generate(self, student_name):
+        """Generate transcript for a fixed student (student-portal mode)."""
+        self._status_var.set("Generating transcript...")
+        self.update_idletasks()
+        try:
+            transcript = self._service.generate_transcript(student_name)
+            self._current_transcript = transcript
+            self._summary_mode = False
+            self._summary_btn.config(text="Summary View")
+            text = self._service.format_transcript(transcript)
+            self._current_text = text
+            self._set_text(text)
+            self._status_var.set("Transcript generated.")
+        except Exception as exc:
+            self._status_var.set(f"Error: {exc}")
+            self._set_text(f"Could not generate transcript: {exc}")
 
     def _search(self):
         query = self._search_var.get().strip()
@@ -163,10 +197,6 @@ class DigitalTranscriptFrame(tk.Frame):
         self._set_text("")
         self._current_transcript = None
 
-    # ------------------------------------------------------------------
-    # Transcript generation
-    # ------------------------------------------------------------------
-
     def _generate(self):
         sel = self._tree.selection()
         if not sel:
@@ -201,12 +231,10 @@ class DigitalTranscriptFrame(tk.Frame):
             return
 
         if self._summary_mode:
-            # Switch back to full
             self._set_text(self._current_text)
             self._summary_mode = False
             self._summary_btn.config(text="Summary View")
         else:
-            # Switch to summary
             try:
                 student_name = self._current_transcript.get("student_name", "")
                 summary = self._service.get_transcript_summary(student_name)
@@ -215,10 +243,6 @@ class DigitalTranscriptFrame(tk.Frame):
                 self._summary_btn.config(text="Full View")
             except Exception as exc:
                 self._status_var.set(f"Error: {exc}")
-
-    # ------------------------------------------------------------------
-    # Save / print
-    # ------------------------------------------------------------------
 
     def _save_to_file(self):
         text = self._get_text()
@@ -247,10 +271,6 @@ class DigitalTranscriptFrame(tk.Frame):
         self.clipboard_append(text)
         self._status_var.set("Copied to clipboard.")
 
-    # ------------------------------------------------------------------
-    # Text helpers
-    # ------------------------------------------------------------------
-
     def _set_text(self, text):
         self._text_widget.configure(state="normal")
         self._text_widget.delete("1.0", "end")
@@ -259,10 +279,6 @@ class DigitalTranscriptFrame(tk.Frame):
 
     def _get_text(self):
         return self._text_widget.get("1.0", "end").strip()
-
-    # ------------------------------------------------------------------
-    # Public interface
-    # ------------------------------------------------------------------
 
     def refresh(self):
         """Called when the module is shown in the sidebar."""

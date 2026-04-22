@@ -1060,8 +1060,12 @@ class FinanceGUI:
         method_combo.pack(pady=5)
 
         def process_top_up():
+            raw_amount = amount_entry.get().strip()
+            if not raw_amount:
+                messagebox.showerror(_("common.error"), _("finance.errors.enter_valid_amount"), parent=top_up_dialog)
+                return
             try:
-                amount = float(amount_entry.get())
+                amount = float(raw_amount)
                 if amount <= 0:
                     messagebox.showerror(_("common.error"), _("finance.errors.amount_must_be_positive"), parent=top_up_dialog)
                     return
@@ -1175,8 +1179,12 @@ class FinanceGUI:
         desc_entry.pack(pady=5)
 
         def process_use():
+            raw_amount = amount_entry.get().strip()
+            if not raw_amount:
+                messagebox.showerror(_("common.error"), _("finance.errors.enter_valid_amount"), parent=use_dialog)
+                return
             try:
-                amount = float(amount_entry.get())
+                amount = float(raw_amount)
                 if amount <= 0:
                     messagebox.showerror(_("common.error"), _("finance.errors.amount_must_be_positive"), parent=use_dialog)
                     return
@@ -1265,8 +1273,12 @@ class FinanceGUI:
         reason_entry.pack(pady=5)
 
         def process_withdrawal():
+            raw_amount = amount_entry.get().strip()
+            if not raw_amount:
+                messagebox.showerror(_("common.error"), _("finance.errors.enter_valid_amount"), parent=withdraw_dialog)
+                return
             try:
-                amount = float(amount_entry.get())
+                amount = float(raw_amount)
                 if amount <= 0:
                     messagebox.showerror(_("common.error"), _("finance.errors.amount_must_be_positive"), parent=withdraw_dialog)
                     return

@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import logging
+import re
 from datetime import datetime
 
 logger = logging.getLogger(__name__)
@@ -381,21 +382,247 @@ class PrintingServicesGUI:
             messagebox.showerror("Error", f"Failed: {e}")
 
     def _purchase_credits(self, pages, price):
-        if messagebox.askyesno("Confirm Purchase", f"Purchase {pages} print credits for \u00a3{price}?"):
+        """Open a payment dialog to buy print credits via cash, card, or student finance account."""
+        dlg = tk.Toplevel(self.window)
+        dlg.title("Purchase Print Credits")
+        dlg.geometry("500x540")
+        dlg.transient(self.window)
+        dlg.grab_set()
+
+        ttk.Label(
+            dlg,
+            text=f"Purchase {pages} print credits for \u00a3{price}",
+            font=("", 12, "bold"),
+        ).pack(pady=(15, 10))
+
+        method_frame = ttk.LabelFrame(dlg, text="Payment Method", padding=10)
+        method_frame.pack(fill=tk.X, padx=15, pady=5)
+
+        method_var = tk.StringVar(value="cash")
+        for label, value in (
+            ("Cash", "cash"),
+            ("Card", "card"),
+            ("Student Finance Account", "student_finance"),
+        ):
+            ttk.Radiobutton(method_frame, text=label, variable=method_var, value=value).pack(anchor=tk.W, pady=2)
+
+        details_container = ttk.Frame(dlg)
+        details_container.pack(fill=tk.X, padx=15, pady=5)
+
+        card_frame = ttk.LabelFrame(details_container, text="Card Details", padding=10)
+        ttk.Label(card_frame, text="Card Number:").grid(row=0, column=0, sticky=tk.W, pady=2)
+        card_number = ttk.Entry(card_frame, width=25)
+        card_number.grid(row=0, column=1, pady=2, padx=5, sticky=tk.W)
+        ttk.Label(card_frame, text="Expiry (MM/YY):").grid(row=1, column=0, sticky=tk.W, pady=2)
+        card_expiry = ttk.Entry(card_frame, width=10)
+        card_expiry.grid(row=1, column=1, pady=2, padx=5, sticky=tk.W)
+        ttk.Label(card_frame, text="CVV:").grid(row=2, column=0, sticky=tk.W, pady=2)
+        card_cvv = ttk.Entry(card_frame, width=6, show="*")
+        card_cvv.grid(row=2, column=1, pady=2, padx=5, sticky=tk.W)
+        ttk.Label(card_frame, text="Name on Card:").grid(row=3, column=0, sticky=tk.W, pady=2)
+        card_name = ttk.Entry(card_frame, width=25)
+        card_name.grid(row=3, column=1, pady=2, padx=5, sticky=tk.W)
+
+        balance_frame = ttk.LabelFrame(details_container, text="Student Finance Account", padding=10)
+        balance_label = ttk.Label(balance_frame, text="")
+        balance_label.pack(anchor=tk.W)
+
+        def _refresh_balance():
             try:
-                from education_system.university_system.infrastructure.database.db import get_connection
+                from education_system.university_system.modules.shared.utils.finance_integration import (
+                    get_student_finance_account_balance,
+                    ensure_student_finance_account_exists,
+                )
                 student_id = self._get_user_id()
-                with get_connection() as conn:
-                    self._ensure_quota(conn, student_id)
-                    conn.execute("UPDATE print_quotas SET total_pages = total_pages + ? WHERE student_id = ?",
-                        (pages, student_id))
-                    conn.execute("INSERT INTO print_credit_transactions (student_id, amount, transaction_type, description) VALUES (?, ?, 'credit', ?)",
-                        (student_id, pages, f"Purchased {pages} pages (\u00a3{price})"))
-                    conn.commit()
-                messagebox.showinfo("Success", f"{pages} credits added to your account!")
-                self._load_data()
+                ensure_student_finance_account_exists(student_id)
+                bal = get_student_finance_account_balance(student_id) or 0.0
+                msg = f"Current balance: \u00a3{bal:.2f}"
+                if bal < float(price):
+                    msg += f"\nInsufficient funds (need \u00a3{price}). Top up before purchasing."
+                balance_label.configure(text=msg)
             except Exception as e:
-                messagebox.showerror("Error", f"Failed: {e}")
+                balance_label.configure(text=f"Balance unavailable: {e}")
+
+        def _on_method_change(*_):
+            card_frame.pack_forget()
+            balance_frame.pack_forget()
+            if method_var.get() == "card":
+                card_frame.pack(fill=tk.X)
+            elif method_var.get() == "student_finance":
+                balance_frame.pack(fill=tk.X)
+                _refresh_balance()
+
+        method_var.trace_add("write", _on_method_change)
+
+        btn_frame = ttk.Frame(dlg)
+        btn_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=15, pady=15)
+
+        def _confirm():
+            method = method_var.get()
+            if method == "card":
+                num = card_number.get().strip().replace(" ", "")
+                exp = card_expiry.get().strip()
+                cvv = card_cvv.get().strip()
+                name = card_name.get().strip()
+                if not num.isdigit() or not (12 <= len(num) <= 19):
+                    messagebox.showerror("Invalid Card", "Enter a valid card number (12-19 digits).", parent=dlg)
+                    return
+                if not re.match(r"^(0[1-9]|1[0-2])/\d{2}$", exp):
+                    messagebox.showerror("Invalid Card", "Expiry must be in MM/YY format.", parent=dlg)
+                    return
+                if not cvv.isdigit() or len(cvv) not in (3, 4):
+                    messagebox.showerror("Invalid Card", "CVV must be 3 or 4 digits.", parent=dlg)
+                    return
+                if not name:
+                    messagebox.showerror("Invalid Card", "Enter the name on the card.", parent=dlg)
+                    return
+            if self._process_credit_purchase(pages, price, method, dlg):
+                dlg.destroy()
+
+        ttk.Button(btn_frame, text="Cancel", command=dlg.destroy).pack(side=tk.RIGHT, padx=5)
+        ttk.Button(btn_frame, text="Pay Now", command=_confirm).pack(side=tk.RIGHT)
+
+    def _process_credit_purchase(self, pages, price, method, parent):
+        """Run the payment, credit the quota, and send a receipt email."""
+        try:
+            price_f = float(price)
+        except (TypeError, ValueError):
+            messagebox.showerror("Error", f"Invalid price: {price}", parent=parent)
+            return False
+
+        student_id = self._get_user_id()
+        transaction_id = None
+        new_balance = None
+
+        try:
+            if method == "student_finance":
+                from education_system.university_system.modules.shared.utils.finance_integration import (
+                    process_student_finance_account_payment,
+                )
+                result = process_student_finance_account_payment(
+                    student_id=student_id,
+                    amount=price_f,
+                    description=f"Print credits top-up ({pages} pages)",
+                    transaction_source="Printing",
+                    transaction_ref=f"CREDITS-{pages}",
+                    processed_by=student_id,
+                )
+                if not result.get("success"):
+                    messagebox.showerror(
+                        "Payment Failed",
+                        result.get("message", "Payment could not be processed."),
+                        parent=parent,
+                    )
+                    return False
+                transaction_id = result.get("transaction_id")
+                new_balance = result.get("new_balance")
+                method_label = "Student Finance Account"
+            else:
+                from education_system.university_system.modules.shared.utils.finance_integration import (
+                    record_payment_to_finance,
+                )
+                ref = f"CREDITS-{pages}-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+                method_label = "Cash" if method == "cash" else "Card"
+                payment_id = record_payment_to_finance(
+                    student_id=student_id,
+                    amount=price_f,
+                    payment_method=method_label,
+                    transaction_source="Printing",
+                    transaction_ref=ref,
+                    notes=f"Print credits top-up ({pages} pages)",
+                    created_by=student_id,
+                )
+                if not payment_id:
+                    messagebox.showerror(
+                        "Payment Failed",
+                        "Could not record payment in the finance system.",
+                        parent=parent,
+                    )
+                    return False
+                transaction_id = f"Printing-{ref}"
+
+            from education_system.university_system.infrastructure.database.db import get_connection
+            with get_connection() as conn:
+                self._ensure_quota(conn, student_id)
+                conn.execute(
+                    "UPDATE print_quotas SET total_pages = total_pages + ? WHERE student_id = ?",
+                    (pages, student_id),
+                )
+                conn.execute(
+                    """INSERT INTO print_credit_transactions
+                       (student_id, amount, transaction_type, description)
+                       VALUES (?, ?, 'credit', ?)""",
+                    (
+                        student_id,
+                        pages,
+                        f"Purchased {pages} pages (\u00a3{price}) via {method_label} [{transaction_id}]",
+                    ),
+                )
+                row = conn.execute(
+                    "SELECT total_pages FROM print_quotas WHERE student_id = ?",
+                    (student_id,),
+                ).fetchone()
+                new_total = row["total_pages"] if row else pages
+                conn.commit()
+
+            email_sent = self._send_credits_receipt_email(
+                student_id=student_id,
+                pages=pages,
+                price=price,
+                payment_method=method_label,
+                transaction_id=transaction_id,
+                new_total=new_total,
+                balance_after=new_balance,
+            )
+
+            summary = (
+                f"{pages} print credits added to your account.\n"
+                f"Transaction: {transaction_id}\n"
+                f"New quota total: {new_total} pages"
+            )
+            summary += "\nReceipt emailed." if email_sent else "\n(Receipt email could not be sent.)"
+            messagebox.showinfo("Purchase Successful", summary, parent=parent)
+            self._load_data()
+            return True
+
+        except Exception as e:
+            logger.exception("Print credit purchase failed")
+            messagebox.showerror("Error", f"Purchase failed: {e}", parent=parent)
+            return False
+
+    def _send_credits_receipt_email(self, student_id, pages, price, payment_method,
+                                    transaction_id, new_total, balance_after):
+        """Render the receipt JSON template and send it via the university email service."""
+        try:
+            from education_system.university_system.modules.shared.utils.finance_integration import get_student_info
+            from education_system.university_system.infrastructure.email.email_service import send_template_email
+
+            info = get_student_info(student_id) or {}
+            recipient = info.get("email")
+            if not recipient:
+                logger.info(f"No email on file for {student_id}; skipping receipt email.")
+                return False
+
+            balance_line = (
+                f"- Remaining Finance Account Balance: \u00a3{balance_after:.2f}"
+                if balance_after is not None
+                else ""
+            )
+            template_vars = {
+                "first_name": info.get("first_name") or "Student",
+                "last_name": info.get("last_name") or "",
+                "pages": str(pages),
+                "price": str(price),
+                "payment_method": payment_method,
+                "transaction_id": transaction_id or "N/A",
+                "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "new_total": str(new_total),
+                "balance_line": balance_line,
+            }
+            return bool(send_template_email("finance/print_credits_receipt", recipient, template_vars))
+        except Exception as e:
+            logger.warning(f"Failed to send print credits receipt email: {e}")
+            return False
 
 
 def launch_printing_gui(parent=None):

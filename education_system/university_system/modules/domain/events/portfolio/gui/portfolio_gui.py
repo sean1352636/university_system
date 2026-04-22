@@ -340,10 +340,40 @@ class PortfolioGUI:
         """Create public profile settings tab."""
         tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text="Settings")
+        tab.columnconfigure(0, weight=1)
+        tab.rowconfigure(0, weight=1)
+
+        # Scrollable container so the long settings form is reachable on small windows.
+        canvas = tk.Canvas(tab, borderwidth=0, highlightthickness=0)
+        vbar = ttk.Scrollbar(tab, orient="vertical", command=canvas.yview)
+        canvas.configure(yscrollcommand=vbar.set)
+        canvas.grid(row=0, column=0, sticky=(tk.N, tk.S, tk.E, tk.W))
+        vbar.grid(row=0, column=1, sticky=(tk.N, tk.S))
+
+        scroll_inner = ttk.Frame(canvas)
+        inner_window = canvas.create_window((0, 0), window=scroll_inner, anchor="nw")
+
+        def _on_inner_configure(_event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        def _on_canvas_configure(event):
+            canvas.itemconfigure(inner_window, width=event.width)
+
+        scroll_inner.bind("<Configure>", _on_inner_configure)
+        canvas.bind("<Configure>", _on_canvas_configure)
+
+        def _on_mousewheel(event):
+            delta = -1 if getattr(event, "num", None) == 5 or event.delta < 0 else 1
+            canvas.yview_scroll(-delta, "units")
+
+        # Bind mousewheel only while the cursor is over the settings tab.
+        for seq in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            canvas.bind_all(seq, lambda e, c=canvas: _on_mousewheel(e) if str(c.winfo_containing(e.x_root, e.y_root)).startswith(str(c)) else None)
 
         # Profile settings
-        settings_frame = ttk.LabelFrame(tab, text="Public Profile Settings", padding="10")
+        settings_frame = ttk.LabelFrame(scroll_inner, text="Public Profile Settings", padding="10")
         settings_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N), padx=10, pady=10)
+        scroll_inner.columnconfigure(0, weight=1)
 
         # Portfolio info
         ttk.Label(settings_frame, text="Portfolio Title:").grid(row=0, column=0, sticky=tk.W, pady=5)
@@ -574,23 +604,25 @@ class PortfolioGUI:
     def load_settings(self):
         """Load profile settings."""
         if self.portfolio:
+            # dict.get returns stored None when the DB column is NULL, so
+            # coerce with `or ''` before feeding Tk widgets (they reject None).
             self.title_entry.delete(0, tk.END)
-            self.title_entry.insert(0, self.portfolio.get('title', ''))
+            self.title_entry.insert(0, self.portfolio.get('title') or '')
 
             self.headline_entry.delete(0, tk.END)
-            self.headline_entry.insert(0, self.portfolio.get('headline', ''))
+            self.headline_entry.insert(0, self.portfolio.get('headline') or '')
 
             self.bio_text.delete('1.0', tk.END)
-            self.bio_text.insert('1.0', self.portfolio.get('bio', ''))
+            self.bio_text.insert('1.0', self.portfolio.get('bio') or '')
 
             self.linkedin_entry.delete(0, tk.END)
-            self.linkedin_entry.insert(0, self.portfolio.get('linkedin_url', ''))
+            self.linkedin_entry.insert(0, self.portfolio.get('linkedin_url') or '')
 
             self.github_entry.delete(0, tk.END)
-            self.github_entry.insert(0, self.portfolio.get('github_url', ''))
+            self.github_entry.insert(0, self.portfolio.get('github_url') or '')
 
             self.website_entry.delete(0, tk.END)
-            self.website_entry.insert(0, self.portfolio.get('personal_website', ''))
+            self.website_entry.insert(0, self.portfolio.get('personal_website') or '')
 
         # Load public profile settings
         profile = self.service.get_public_profile(self.student_id)
@@ -897,8 +929,102 @@ class PortfolioGUI:
         messagebox.showinfo("Info", "Badge details would be displayed here")
 
     def request_endorsement(self):
-        """Request skill endorsement."""
-        messagebox.showinfo("Info", "Endorsement request dialog would open here")
+        """Request skill endorsement from another user."""
+        skills = self.service.get_student_skills(self.student_id)
+        if not skills:
+            messagebox.showwarning(
+                "No Skills",
+                "Add at least one skill on the Skills tab before requesting an endorsement.",
+            )
+            return
+
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Request Endorsement")
+        dialog.geometry("500x380")
+        dialog.transient(self.root)
+        dialog.grab_set()
+
+        frame = ttk.Frame(dialog, padding="20")
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text="Skill:").grid(row=0, column=0, sticky=tk.W, pady=5)
+        skill_combo = ttk.Combobox(
+            frame,
+            values=[f"{s['skill_name']} ({(s.get('proficiency_level') or '').title()})" for s in skills],
+            state="readonly",
+            width=40,
+        )
+        skill_combo.grid(row=0, column=1, pady=5, sticky=tk.W)
+        skill_combo.current(0)
+
+        ttk.Label(frame, text="Endorser username:").grid(row=1, column=0, sticky=tk.W, pady=5)
+        endorser_entry = ttk.Entry(frame, width=42)
+        endorser_entry.grid(row=1, column=1, pady=5, sticky=tk.W)
+
+        ttk.Label(frame, text="Endorser role:").grid(row=2, column=0, sticky=tk.W, pady=5)
+        role_combo = ttk.Combobox(
+            frame,
+            values=["Faculty", "Peer", "Employer", "Mentor"],
+            state="readonly",
+            width=40,
+        )
+        role_combo.set("Faculty")
+        role_combo.grid(row=2, column=1, pady=5, sticky=tk.W)
+
+        ttk.Label(frame, text="Message (optional):").grid(row=3, column=0, sticky=(tk.W, tk.N), pady=5)
+        message_text = scrolledtext.ScrolledText(frame, width=42, height=6)
+        message_text.grid(row=3, column=1, pady=5, sticky=tk.W)
+
+        def submit():
+            idx = skill_combo.current()
+            if idx < 0:
+                messagebox.showerror("Error", "Please select a skill", parent=dialog)
+                return
+            endorser = endorser_entry.get().strip()
+            if not endorser:
+                messagebox.showerror("Error", "Endorser username is required", parent=dialog)
+                return
+
+            skill = skills[idx]
+            role = role_combo.get().lower()
+            note = message_text.get('1.0', tk.END).strip() or None
+
+            success, message = self.service.request_endorsement(
+                skill_id=skill['skill_id'],
+                endorser_id=endorser,
+                message=note,
+            )
+            if not success:
+                messagebox.showerror("Error", message, parent=dialog)
+                return
+
+            # Best-effort: notify the endorser through the email service.
+            try:
+                from education_system.university_system.infrastructure.email.email_service import send_email
+                user = self.auth.get_current_user() or {}
+                requester = user.get('name') or user.get('username') or self.student_id
+                subject = f"Endorsement request: {skill['skill_name']}"
+                body = (
+                    f"Hi {endorser},\n\n"
+                    f"{requester} has requested that you endorse their skill "
+                    f"\"{skill['skill_name']}\" ({role}).\n\n"
+                    + (f"Message:\n{note}\n\n" if note else "")
+                    + "Open the Portfolio system to respond.\n"
+                )
+                # Treat the username as a deliverable address only when it looks like one.
+                if "@" in endorser:
+                    send_email(endorser, subject, body)
+            except Exception:
+                pass
+
+            messagebox.showinfo("Sent", message, parent=dialog)
+            dialog.destroy()
+            self.load_endorsements()
+
+        btn_frame = ttk.Frame(frame)
+        btn_frame.grid(row=4, column=0, columnspan=2, pady=20)
+        ttk.Button(btn_frame, text="Send Request", command=submit).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side=tk.LEFT, padx=5)
 
     def view_endorsement_details(self):
         """View endorsement details."""
@@ -907,7 +1033,15 @@ class PortfolioGUI:
             messagebox.showwarning("Warning", "Please select an endorsement")
             return
 
-        messagebox.showinfo("Info", "Endorsement details would be displayed here")
+        item = self.endorsements_tree.item(selection[0])
+        skill, endorser, role, date = item['values']
+        details = (
+            f"Skill: {skill}\n"
+            f"Endorsed by: {endorser}\n"
+            f"Role: {role}\n"
+            f"Date: {date}"
+        )
+        messagebox.showinfo("Endorsement Details", details)
 
     def generate_resume(self):
         """Generate new resume."""

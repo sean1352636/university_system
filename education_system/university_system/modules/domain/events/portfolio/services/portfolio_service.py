@@ -365,8 +365,10 @@ class PortfolioService:
                 conn.execute("DROP TABLE student_skills")
                 conn.execute("ALTER TABLE student_skills_new RENAME TO student_skills")
 
-            # Similar for other tables - badges, public_profiles, resumes
-            for table_name in ['badges', 'public_profiles', 'resumes']:
+            # Rebuild other tables that still carry a REFERENCES students(...) FK.
+            # SQLite can't drop an FK in place, so we copy data into a new
+            # FK-free table and swap it in.
+            for table_name in ['badges', 'public_profiles', 'user_resumes']:
                 safe_table = validate_table_name(table_name)
                 cursor = conn.execute(
                     "SELECT sql FROM sqlite_master"
@@ -374,10 +376,83 @@ class PortfolioService:
                     (safe_table,))
                 result = cursor.fetchone()
 
-                if result and 'REFERENCES students' in result[0]:
-                    # For simplicity, we'll recreate these tables as they're created
-                    # The FK constraints will be removed in future table creation
-                    pass
+                if not result or 'REFERENCES students' not in result[0]:
+                    continue
+
+                # Discover columns present on the legacy table so INSERT ... SELECT
+                # matches regardless of schema drift.
+                cols = [row[1] for row in conn.execute(
+                    "PRAGMA table_info(" + safe_table + ")").fetchall()]
+                col_list = ", ".join(cols)
+
+                if table_name == 'badges':
+                    conn.execute("""
+                        CREATE TABLE badges_new (
+                            badge_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            student_id TEXT NOT NULL,
+                            badge_type TEXT NOT NULL CHECK(badge_type IN (
+                                'deans_list', 'club_officer', 'volunteer_hours',
+                                'certification', 'competition_winner', 'scholarship',
+                                'research_publication', 'leadership', 'academic_excellence',
+                                'community_service', 'skill_mastery', 'innovation'
+                            )),
+                            badge_name TEXT NOT NULL,
+                            description TEXT,
+                            issuer TEXT NOT NULL,
+                            issue_date DATE NOT NULL,
+                            expiry_date DATE,
+                            verification_status TEXT DEFAULT 'verified' CHECK(verification_status IN (
+                                'pending', 'verified', 'expired', 'revoked'
+                            )),
+                            verification_code TEXT,
+                            metadata TEXT,
+                            icon_url TEXT,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    """)
+                elif table_name == 'public_profiles':
+                    conn.execute("""
+                        CREATE TABLE public_profiles_new (
+                            profile_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            student_id TEXT NOT NULL UNIQUE,
+                            public_url TEXT NOT NULL UNIQUE,
+                            visibility TEXT DEFAULT 'private' CHECK(visibility IN (
+                                'public', 'private', 'unlisted'
+                            )),
+                            show_contact BOOLEAN DEFAULT 0,
+                            show_gpa BOOLEAN DEFAULT 0,
+                            show_courses BOOLEAN DEFAULT 1,
+                            show_projects BOOLEAN DEFAULT 1,
+                            show_skills BOOLEAN DEFAULT 1,
+                            show_endorsements BOOLEAN DEFAULT 1,
+                            custom_sections TEXT,
+                            theme TEXT DEFAULT 'professional',
+                            view_count INTEGER DEFAULT 0,
+                            last_viewed TIMESTAMP,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        )
+                    """)
+                else:  # user_resumes
+                    conn.execute("""
+                        CREATE TABLE user_resumes_new (
+                            resume_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            student_id TEXT NOT NULL,
+                            resume_name TEXT NOT NULL,
+                            template_id INTEGER,
+                            content TEXT NOT NULL,
+                            last_generated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            format TEXT DEFAULT 'pdf' CHECK(format IN ('pdf', 'docx', 'html')),
+                            FOREIGN KEY (template_id) REFERENCES resume_templates(template_id)
+                        )
+                    """)
+
+                conn.execute(
+                    "INSERT INTO " + safe_table + "_new (" + col_list + ") "
+                    "SELECT " + col_list + " FROM " + safe_table
+                )
+                conn.execute("DROP TABLE " + safe_table)
+                conn.execute("ALTER TABLE " + safe_table + "_new RENAME TO " + safe_table)
 
             log_activity('update', 'portfolio_tables',
                        details={'migration': 'Removed foreign key constraints'})
@@ -1243,15 +1318,32 @@ class PortfolioService:
             }
 
             with get_connection() as conn:
-                # Get student basic info
-                student = conn.execute("""
-                    SELECT * FROM students WHERE student_id = ?
-                """, (student_id,)).fetchone()
-
-                if not student:
-                    return False, "Student not found", None
-
-                resume_data['student_info'] = dict(student)
+                # Try the students table first; fall back to users so portfolios
+                # work for any logged-in account (admin, staff, alumni, etc.).
+                student = conn.execute(
+                    "SELECT * FROM students WHERE student_id = ?",
+                    (student_id,),
+                ).fetchone()
+                if student:
+                    resume_data['student_info'] = dict(student)
+                else:
+                    user = conn.execute(
+                        "SELECT username, first_name, last_name, email, role"
+                        " FROM users WHERE username = ? OR student_id = ?",
+                        (student_id, student_id),
+                    ).fetchone()
+                    if user:
+                        resume_data['student_info'] = dict(user)
+                    else:
+                        # Last resort: synthesise a minimal info block so resume
+                        # generation never fails purely because the user record
+                        # lives in a different table.
+                        resume_data['student_info'] = {
+                            'student_id': student_id,
+                            'first_name': '',
+                            'last_name': '',
+                            'email': '',
+                        }
 
                 # Get portfolio
                 portfolio = self.get_portfolio(student_id)

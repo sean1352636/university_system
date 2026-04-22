@@ -191,12 +191,7 @@ class StudentPortalGUI:
         # Portfolio & Achievements
         self._add_heading("Portfolio")
         self._add_button("My Portfolio", self._launch('show_portfolio_system_gui'))
-        self._add_button("Digital Transcript", self._launch('show_digital_transcript_gui'))
         self._add_button("Certificates", self._launch('show_certificates_gui'))
-
-        # Communication
-        self._add_heading("Communication")
-        self._add_button("Cross-System Calendar", self._launch('show_cross_system_calendar_gui'))
 
         # Account
         self._add_heading("Account")

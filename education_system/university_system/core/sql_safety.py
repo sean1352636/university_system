@@ -209,6 +209,7 @@ KNOWN_TABLES: FrozenSet[str] = frozenset({
     'badges',
     'public_profiles',
     'resumes',
+    'user_resumes',
 
     # Credential tables
     'blockchain_credentials',

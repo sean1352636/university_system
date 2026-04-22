@@ -91,11 +91,16 @@ def run_university_gui(user_info=None, role=None, shared_auth=None):
             return
         user_info, _sys, role, shared_auth = result
 
-    uni_role = role or "student"
-    for s in user_info.get("systems", []):
-        if s["system_key"] == "university":
-            uni_role = s["role"]
-            break
+    # Honour an explicit role argument (set by the superadmin role picker);
+    # otherwise resolve from the user's stored systems list.
+    if role:
+        uni_role = role
+    else:
+        uni_role = "student"
+        for s in user_info.get("systems", []):
+            if s["system_key"] == "university":
+                uni_role = s["role"]
+                break
 
     from education_system.university_system.infrastructure.auth.core_utils.constants import PERMISSIONS
     uni_permissions = list(PERMISSIONS.get(uni_role, []))

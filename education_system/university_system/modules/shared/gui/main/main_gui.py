@@ -846,14 +846,6 @@ def show_student_self_service_gui(self):
     frame.pack(fill='both', expand=True)
 
 
-def show_digital_transcript_gui(self):
-    """Launch the Digital Transcript frame in a top-level window."""
-    from education_system.shared.transcript.transcript_gui import DigitalTranscriptFrame
-    win = self.create_themed_toplevel(title="Digital Transcript", geometry="900x600")
-    frame = DigitalTranscriptFrame(win, db_path=None, auth=self.auth)
-    frame.pack(fill='both', expand=True)
-
-
 UnifiedManagementGUI.show_student_journey_gui = show_student_journey_gui
 UnifiedManagementGUI.show_analytics_dashboard_gui = show_analytics_dashboard_gui
 UnifiedManagementGUI.show_outcome_tracking_gui = show_outcome_tracking_gui
@@ -867,7 +859,6 @@ UnifiedManagementGUI.show_central_admin_gui = show_central_admin_gui
 UnifiedManagementGUI.show_gdpr_compliance_gui = show_gdpr_compliance_gui
 UnifiedManagementGUI.show_shared_documents_gui = show_shared_documents_gui
 UnifiedManagementGUI.show_student_self_service_gui = show_student_self_service_gui
-UnifiedManagementGUI.show_digital_transcript_gui = show_digital_transcript_gui
 
 
 def show_certificates_gui(self):

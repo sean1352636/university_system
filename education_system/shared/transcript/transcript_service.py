@@ -418,7 +418,7 @@ class TranscriptService:
                 ).fetchone()["c"]
                 present = conn.execute(
                     "SELECT COUNT(*) AS c FROM attendance_records WHERE pupil_id = ? "
-                    "AND status IN ('Present','Late')", (pid,)
+                    "AND LOWER(status) IN ('present','late')", (pid,)
                 ).fetchone()["c"]
                 data["attendance"] = {
                     "total_sessions": total,
@@ -531,7 +531,7 @@ class TranscriptService:
                 ).fetchone()["c"]
                 present = conn.execute(
                     "SELECT COUNT(*) AS c FROM attendance_records WHERE student_id = ? "
-                    "AND status IN ('present','late')", (pk,)
+                    "AND LOWER(status) IN ('present','late')", (pk,)
                 ).fetchone()["c"]
                 data["attendance"] = {
                     "total_sessions": total,
@@ -629,7 +629,7 @@ class TranscriptService:
                 ).fetchone()["c"]
                 present = conn.execute(
                     f"SELECT COUNT(*) AS c FROM attendance_records ar {join} "
-                    f"WHERE ar.student_id = ? AND ar.status IN ('present','late')",
+                    f"WHERE ar.student_id = ? AND LOWER(ar.status) IN ('present','late')",
                     (pk,),
                 ).fetchone()["c"]
                 data["attendance"] = {
@@ -730,7 +730,7 @@ class TranscriptService:
                 ).fetchone()["c"]
                 present = conn.execute(
                     f"SELECT COUNT(*) AS c FROM {att_table} WHERE student_id = ? "
-                    "AND status IN ('present','late')", (pk,)
+                    "AND LOWER(status) IN ('present','late')", (pk,)
                 ).fetchone()["c"]
                 data["attendance"] = {
                     "total_sessions": total,

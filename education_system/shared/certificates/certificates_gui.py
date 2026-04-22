@@ -25,7 +25,6 @@ class CertificatesGUI(tk.Frame):
 
         # Lazy-load services
         self._cert_svc = None
-        self._transcript_svc = None
 
         self._build_ui()
 
@@ -35,11 +34,59 @@ class CertificatesGUI(tk.Frame):
             self._cert_svc = CertificateService(self._db_path)
         return self._cert_svc
 
-    def _get_transcript_svc(self):
-        if self._transcript_svc is None:
-            from education_system.shared.certificates.transcript_service import TranscriptService
-            self._transcript_svc = TranscriptService(self._db_path)
-        return self._transcript_svc
+    # ------------------------------------------------------------------
+    # Auth helpers
+    # ------------------------------------------------------------------
+
+    def _current_user(self):
+        if not self._auth:
+            return None
+        user = getattr(self._auth, "current_user", None)
+        if user is None and hasattr(self._auth, "get_current_user"):
+            try:
+                user = self._auth.get_current_user()
+            except Exception:
+                user = None
+        return user or None
+
+    def _is_student(self):
+        """True iff the logged-in user has only the 'student' role.
+
+        Staff/admin (or unauthenticated callers) get the full GUI.
+        """
+        user = self._current_user()
+        if not user:
+            return False
+        role = (user.get("role") or "").lower()
+        if role:
+            return role == "student"
+        # Multi-system shared auth packs roles per system_key.
+        roles = {
+            (s.get("role") or "").lower()
+            for s in (user.get("systems") or [])
+        }
+        roles.discard("")
+        return bool(roles) and roles.issubset({"student"})
+
+    def _student_identity(self):
+        """Return (student_id, display_name) for the logged-in student."""
+        user = self._current_user() or {}
+        sid = (
+            user.get("student_id")
+            or user.get("user_id")
+            or user.get("id")
+            or user.get("username")
+            or ""
+        )
+        name = (
+            user.get("display_name")
+            or user.get("name")
+            or (
+                f"{user.get('first_name', '')} {user.get('last_name', '')}".strip()
+            )
+            or str(sid)
+        )
+        return str(sid), name
 
     # ------------------------------------------------------------------
     # UI building
@@ -48,13 +95,21 @@ class CertificatesGUI(tk.Frame):
     def _build_ui(self):
         self.configure(bg="#f5f6fa")
 
+        student_mode = self._is_student()
+        sid, name = self._student_identity() if student_mode else ("", "")
+
         # Header
         header = tk.Frame(self, bg="#1a3c6e", height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
+        header_text = (
+            f"My Certificates & Transcript — {name or sid}"
+            if student_mode
+            else "Certificates & Transcripts"
+        )
         tk.Label(
             header,
-            text="Certificates & Transcripts",
+            text=header_text,
             font=("Helvetica", 16, "bold"),
             bg="#1a3c6e",
             fg="white",
@@ -64,10 +119,99 @@ class CertificatesGUI(tk.Frame):
         self._notebook = ttk.Notebook(self)
         self._notebook.pack(fill="both", expand=True, padx=10, pady=10)
 
+        if student_mode:
+            self._build_my_certificates_tab(sid)
+            self._build_my_transcript_tab(name or sid)
+            return
+
+        # Staff/admin: full management surface.
         self._build_certificates_tab()
         self._build_transcripts_tab()
         self._build_generate_tab()
         self._build_verify_tab()
+
+    # ── Student-only Tabs ────────────────────────────────────────────
+
+    def _build_my_certificates_tab(self, student_id):
+        tab = tk.Frame(self._notebook, bg="#ffffff")
+        self._notebook.add(tab, text="  My Certificate  ")
+
+        info = tk.Frame(tab, bg="#ffffff", pady=10)
+        info.pack(fill="x", padx=15)
+        tk.Label(
+            info,
+            text=f"Certificates issued to {student_id}",
+            bg="#ffffff",
+            font=("Helvetica", 11, "bold"),
+            fg="#1a3c6e",
+        ).pack(side="left")
+        ttk.Button(info, text="Refresh",
+                   command=lambda: self._load_my_certificates(student_id)).pack(side="right", padx=(0, 5))
+        ttk.Button(info, text="Export Selected as HTML",
+                   command=self._export_cert_html).pack(side="right", padx=(0, 5))
+
+        cols = ("cert_number", "type", "course", "award_date", "grade", "status", "issued_by")
+        self._cert_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
+        headers = {
+            "cert_number": ("Certificate No.", 170),
+            "type": ("Type", 100),
+            "course": ("Course", 200),
+            "award_date": ("Award Date", 100),
+            "grade": ("Grade", 70),
+            "status": ("Status", 80),
+            "issued_by": ("Issued By", 100),
+        }
+        for col, (heading, width) in headers.items():
+            self._cert_tree.heading(col, text=heading)
+            self._cert_tree.column(col, width=width, minwidth=40)
+
+        vsb = ttk.Scrollbar(tab, orient="vertical", command=self._cert_tree.yview)
+        self._cert_tree.configure(yscrollcommand=vsb.set)
+        self._cert_tree.pack(fill="both", expand=True, padx=15, pady=(0, 10))
+        vsb.pack(side="right", fill="y")
+
+        # Load on open
+        self.after(0, lambda: self._load_my_certificates(student_id))
+
+    def _load_my_certificates(self, student_id):
+        for item in self._cert_tree.get_children():
+            self._cert_tree.delete(item)
+        try:
+            certs = self._get_cert_svc().list_certificates(student_id=student_id)
+            for c in certs:
+                self._cert_tree.insert(
+                    "",
+                    "end",
+                    iid=str(c.get("id", "")),
+                    values=(
+                        c.get("certificate_number", ""),
+                        c.get("certificate_type", ""),
+                        c.get("course_name", ""),
+                        c.get("award_date", ""),
+                        c.get("grade", ""),
+                        c.get("status", ""),
+                        c.get("issued_by", ""),
+                    ),
+                )
+            if not certs:
+                # Inline notice instead of a popup so the empty state is calm.
+                self._cert_tree.insert(
+                    "", "end", values=("(none)", "", "No certificates on file yet.", "", "", "", "")
+                )
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to load certificates: {e}", parent=self)
+
+    def _build_my_transcript_tab(self, student_name):
+        from education_system.shared.certificates.digital_transcript_frame import DigitalTranscriptFrame
+
+        tab = tk.Frame(self._notebook, bg="#ffffff")
+        self._notebook.add(tab, text="  My Transcript  ")
+        DigitalTranscriptFrame(
+            tab,
+            db_path=self._db_path,
+            auth=self._auth,
+            restrict_to_student=student_name,
+        ).pack(fill="both", expand=True)
 
     # ── Certificates Tab ─────────────────────────────────────────────
 
@@ -139,17 +283,22 @@ class CertificatesGUI(tk.Frame):
         try:
             certs = self._get_cert_svc().list_certificates(student_id=student_id)
             for c in certs:
-                self._cert_tree.insert("", "end", values=(
-                    c.get("id", ""),
-                    c.get("student_id", ""),
-                    c.get("certificate_number", ""),
-                    c.get("certificate_type", ""),
-                    c.get("course_name", ""),
-                    c.get("award_date", ""),
-                    c.get("grade", ""),
-                    c.get("status", ""),
-                    c.get("issued_by", ""),
-                ))
+                self._cert_tree.insert(
+                    "",
+                    "end",
+                    iid=str(c.get("id", "")),
+                    values=(
+                        c.get("id", ""),
+                        c.get("student_id", ""),
+                        c.get("certificate_number", ""),
+                        c.get("certificate_type", ""),
+                        c.get("course_name", ""),
+                        c.get("award_date", ""),
+                        c.get("grade", ""),
+                        c.get("status", ""),
+                        c.get("issued_by", ""),
+                    ),
+                )
             if not certs:
                 messagebox.showinfo("No Results", "No certificates found.", parent=self)
         except Exception as e:
@@ -162,7 +311,7 @@ class CertificatesGUI(tk.Frame):
             messagebox.showwarning("Selection", "Select a certificate to export.",
                                    parent=self)
             return
-        cert_id = self._cert_tree.item(sel[0], "values")[0]
+        cert_id = sel[0]  # iid is the cert id; works for both staff and student tabs
         try:
             html = self._get_cert_svc().export_certificate_html(int(cert_id))
             path = filedialog.asksaveasfilename(
@@ -185,7 +334,7 @@ class CertificatesGUI(tk.Frame):
             messagebox.showwarning("Selection", "Select a certificate to revoke.",
                                    parent=self)
             return
-        cert_id = self._cert_tree.item(sel[0], "values")[0]
+        cert_id = sel[0]
         reason = tk.simpledialog.askstring(
             "Revoke Certificate",
             "Enter reason for revocation:",
@@ -212,123 +361,15 @@ class CertificatesGUI(tk.Frame):
     # ── Transcripts Tab ──────────────────────────────────────────────
 
     def _build_transcripts_tab(self):
+        from education_system.shared.certificates.digital_transcript_frame import DigitalTranscriptFrame
+
         tab = tk.Frame(self._notebook, bg="#ffffff")
         self._notebook.add(tab, text="  Transcripts  ")
 
-        ctrl = tk.Frame(tab, bg="#ffffff", pady=10)
-        ctrl.pack(fill="x", padx=15)
-
-        tk.Label(ctrl, text="Student ID:", bg="#ffffff",
-                 font=("Helvetica", 10)).pack(side="left", padx=(0, 5))
-        self._tr_student_var = tk.StringVar()
-        ttk.Entry(ctrl, textvariable=self._tr_student_var, width=20).pack(
-            side="left", padx=(0, 10)
+        # Cross-system transcript browser (search-by-name across all systems).
+        DigitalTranscriptFrame(tab, db_path=self._db_path, auth=self._auth).pack(
+            fill="both", expand=True
         )
-
-        tk.Label(ctrl, text="Academic Year:", bg="#ffffff",
-                 font=("Helvetica", 10)).pack(side="left", padx=(0, 5))
-        self._tr_year_var = tk.StringVar()
-        ttk.Entry(ctrl, textvariable=self._tr_year_var, width=14).pack(
-            side="left", padx=(0, 10)
-        )
-
-        ttk.Button(ctrl, text="Generate", command=self._generate_transcript).pack(
-            side="left", padx=(0, 5)
-        )
-        ttk.Button(ctrl, text="Export HTML", command=self._export_transcript_html).pack(
-            side="left", padx=(0, 5)
-        )
-        ttk.Button(ctrl, text="Export CSV", command=self._export_transcript_csv).pack(
-            side="left"
-        )
-
-        # Transcript display area
-        self._tr_text = tk.Text(tab, wrap="word", font=("Courier", 10),
-                                state="disabled", bg="#fafafa")
-        tr_scroll = ttk.Scrollbar(tab, orient="vertical", command=self._tr_text.yview)
-        self._tr_text.configure(yscrollcommand=tr_scroll.set)
-        self._tr_text.pack(fill="both", expand=True, padx=15, pady=(0, 10))
-        tr_scroll.pack(side="right", fill="y")
-
-    def _get_tr_args(self):
-        sid = self._tr_student_var.get().strip()
-        if not sid:
-            messagebox.showwarning("Input Required", "Enter a Student ID.", parent=self)
-            return None, None
-        year = self._tr_year_var.get().strip() or None
-        return sid, year
-
-    def _generate_transcript(self):
-        sid, year = self._get_tr_args()
-        if sid is None:
-            return
-        try:
-            data = self._get_transcript_svc().generate_transcript(sid, academic_year=year)
-            self._tr_text.configure(state="normal")
-            self._tr_text.delete("1.0", "end")
-            self._tr_text.insert("end", f"TRANSCRIPT FOR: {data['student_name']}\n")
-            self._tr_text.insert("end", f"Student ID: {data['student_id']}\n")
-            self._tr_text.insert("end", f"Institution: {data['institution']}\n")
-            self._tr_text.insert("end", f"Academic Year: {data['academic_year']}\n")
-            self._tr_text.insert("end", f"Generated: {data['generated_at']}\n")
-            self._tr_text.insert("end", f"Transcript ID: {data.get('transcript_id', 'N/A')}\n")
-            self._tr_text.insert("end", "-" * 60 + "\n\n")
-
-            if data["subjects"]:
-                self._tr_text.insert("end", f"{'Subject':<30} {'Grade':<10} {'Credits':<10} {'Date'}\n")
-                self._tr_text.insert("end", "-" * 70 + "\n")
-                for s in data["subjects"]:
-                    self._tr_text.insert(
-                        "end",
-                        f"{s['name']:<30} {s['grade']:<10} {s['credits']:<10} {s['date']}\n",
-                    )
-            else:
-                self._tr_text.insert("end", "No academic records found.\n")
-
-            self._tr_text.insert("end", "\n" + "-" * 60 + "\n")
-            self._tr_text.insert("end", f"Overall Average / GPA: {data['gpa']}\n")
-            self._tr_text.configure(state="disabled")
-        except Exception as e:
-            messagebox.showerror("Error", f"Transcript generation failed: {e}",
-                                 parent=self)
-
-    def _export_transcript_html(self):
-        sid, year = self._get_tr_args()
-        if sid is None:
-            return
-        try:
-            html = self._get_transcript_svc().export_transcript_html(sid, academic_year=year)
-            path = filedialog.asksaveasfilename(
-                parent=self,
-                defaultextension=".html",
-                filetypes=[("HTML files", "*.html"), ("All files", "*.*")],
-                initialfile=f"transcript_{sid}.html",
-            )
-            if path:
-                with open(path, "w", encoding="utf-8") as f:
-                    f.write(html)
-                messagebox.showinfo("Exported", f"Transcript saved to:\n{path}",
-                                    parent=self)
-        except Exception as e:
-            messagebox.showerror("Error", f"Export failed: {e}", parent=self)
-
-    def _export_transcript_csv(self):
-        sid, year = self._get_tr_args()
-        if sid is None:
-            return
-        try:
-            path = filedialog.asksaveasfilename(
-                parent=self,
-                defaultextension=".csv",
-                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-                initialfile=f"transcript_{sid}.csv",
-            )
-            if path:
-                self._get_transcript_svc().export_transcript_csv(sid, path, academic_year=year)
-                messagebox.showinfo("Exported", f"Transcript CSV saved to:\n{path}",
-                                    parent=self)
-        except Exception as e:
-            messagebox.showerror("Error", f"CSV export failed: {e}", parent=self)
 
     # ── Generate Tab ─────────────────────────────────────────────────
 

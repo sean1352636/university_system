@@ -323,7 +323,7 @@ def _get_frame_map():
     from education_system.shared.gdpr.gdpr_gui import GDPRComplianceFrame
     from education_system.shared.documents.document_gui import SharedDocumentsFrame
     from education_system.shared.student_portal.portal_gui import StudentSelfServiceFrame
-    from education_system.shared.transcript.transcript_gui import DigitalTranscriptFrame
+    from education_system.shared.certificates.digital_transcript_frame import DigitalTranscriptFrame
     from education_system.shared.certificates.certificates_gui import CertificatesGUI
     from education_system.shared.extras.extras_frame import ExtrasFrame
     from education_system.shared.academic_misconduct.misconduct_frame import MisconductFrame

@@ -270,15 +270,7 @@ def show_student_details(self, student_id):
         personal_tab = ttk.Frame(notebook)
         notebook.add(personal_tab, text=_t("student_details.tab_personal_info"))
 
-        personal_frame = ttk.LabelFrame(personal_tab, text=_t("student_details.student_information"), padding=20)
-        personal_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        # Create scrollable text for personal info
-        personal_text = scrolledtext.ScrolledText(personal_frame, wrap=tk.WORD, height=25,
-                                                 font=('Courier', 11))
-        personal_text.pack(fill=tk.BOTH, expand=True)
-
-        # Format personal information with None checks
+        # ── Personal info tab: structured cards instead of monospaced blob ──
         na = _t("student_details.na")
         title = student[2] if student[2] else na
         first_name = student[3] if student[3] else na
@@ -287,64 +279,213 @@ def show_student_details(self, student_id):
         gender = student[6].title() if student[6] else na
         course = student[9] if student[9] else na
 
-        # Build full name safely
-        name_parts = []
-        if student[2]:  # title
-            name_parts.append(student[2])
-        if student[3]:  # first name
-            name_parts.append(student[3])
-        if student[4]:  # middle name
-            name_parts.append(student[4])
-        if student[5]:  # last name
-            name_parts.append(student[5])
+        name_parts = [p for p in (student[2], student[3], student[4], student[5]) if p]
         full_name = ' '.join(name_parts) if name_parts else na
 
+        # Hero header
+        hero = ttk.Frame(personal_tab, padding=(20, 14))
+        hero.pack(fill=tk.X, padx=10, pady=(10, 0))
+        ttk.Label(hero, text=full_name, font=('Arial', 18, 'bold')).pack(anchor='w')
+        sub_bits = []
+        if student[0]:
+            sub_bits.append(f"ID: {student[0]}")
+        if course not in (na, ''):
+            sub_bits.append(course)
+        if student[1]:
+            sub_bits.append(student[1])
+        if sub_bits:
+            ttk.Label(hero, text=' · '.join(sub_bits),
+                      font=('Arial', 10), foreground='#555555').pack(anchor='w', pady=(2, 0))
+        ttk.Separator(personal_tab, orient='horizontal').pack(fill=tk.X, padx=10, pady=(8, 4))
+
+        # Scrollable container for the cards (works on small windows)
+        canvas = tk.Canvas(personal_tab, borderwidth=0, highlightthickness=0)
+        vbar = ttk.Scrollbar(personal_tab, orient='vertical', command=canvas.yview)
+        canvas.configure(yscrollcommand=vbar.set)
+        canvas.pack(side='left', fill=tk.BOTH, expand=True, padx=(10, 0), pady=(0, 10))
+        vbar.pack(side='right', fill='y', pady=(0, 10))
+
+        cards = ttk.Frame(canvas)
+        cards_window = canvas.create_window((0, 0), window=cards, anchor='nw')
+
+        def _on_inner(_event):
+            canvas.configure(scrollregion=canvas.bbox('all'))
+
+        def _on_canvas(event):
+            canvas.itemconfigure(cards_window, width=event.width)
+
+        cards.bind('<Configure>', _on_inner)
+        canvas.bind('<Configure>', _on_canvas)
+
+        def _add_field(parent, row, label, value):
+            ttk.Label(parent, text=label, font=('Arial', 10, 'bold'),
+                      foreground='#333333').grid(row=row, column=0, sticky='w', padx=(0, 16), pady=3)
+            ttk.Label(parent, text=str(value), font=('Arial', 10)).grid(
+                row=row, column=1, sticky='w', pady=3,
+            )
+
+        # Card 1 — Identity
+        identity = ttk.LabelFrame(cards, text=_t("student_details.header_personal_info"),
+                                  padding=15)
+        identity.pack(fill=tk.X, pady=6)
+        identity.columnconfigure(1, weight=1)
         years_text = _t("student_details.label_years")
-        personal_info = f"""{_t("student_details.header_student_record")}
-{'='*80}
+        _add_field(identity, 0, _t("student_details.label_student_id"), student[0] or na)
+        _add_field(identity, 1, _t("student_details.label_email_address"), student[1] or na)
+        _add_field(identity, 2, _t("student_details.label_title"), title)
+        _add_field(identity, 3, _t("student_details.label_first_name"), first_name)
+        _add_field(identity, 4, _t("student_details.label_middle_name"), middle_name or na)
+        _add_field(identity, 5, _t("student_details.label_last_name"), last_name)
+        _add_field(identity, 6, _t("student_details.label_full_name"), full_name)
 
-{_t("student_details.header_personal_info")}
-  {_t("student_details.label_student_id"):18}{student[0] or na}
-  {_t("student_details.label_email_address"):18}{student[1] or na}
-  {_t("student_details.label_title"):18}{title}
-  {_t("student_details.label_first_name"):18}{first_name}
-  {_t("student_details.label_middle_name"):18}{middle_name or na}
-  {_t("student_details.label_last_name"):18}{last_name}
-  {_t("student_details.label_full_name"):18}{full_name}
+        # Card 2 — Demographics
+        demographics = ttk.LabelFrame(cards, text=_t("student_details.header_demographics"),
+                                      padding=15)
+        demographics.pack(fill=tk.X, pady=6)
+        demographics.columnconfigure(1, weight=1)
+        age_value = (
+            f"{student[8]} {years_text}" if student[8] not in (None, '') else na
+        )
+        _add_field(demographics, 0, _t("student_details.label_gender"), gender)
+        _add_field(demographics, 1, _t("student_details.label_date_of_birth"), student[7] or na)
+        _add_field(demographics, 2, _t("student_details.label_age"), age_value)
 
-{_t("student_details.header_demographics")}
-  {_t("student_details.label_gender"):18}{gender}
-  {_t("student_details.label_date_of_birth"):18}{student[7] or na}
-  {_t("student_details.label_age"):18}{student[8] or na} {years_text}
-
-{_t("student_details.header_academic_info")}
-  {_t("student_details.label_course"):18}{course}
-  {_t("student_details.label_registration"):18}{student[10] or na}
-
-{'='*80}
-"""
-
-        personal_text.insert(tk.END, personal_info)
-        personal_text.config(state=tk.DISABLED)
+        # Card 3 — Academic info
+        academic_info_card = ttk.LabelFrame(cards, text=_t("student_details.header_academic_info"),
+                                            padding=15)
+        academic_info_card.pack(fill=tk.X, pady=6)
+        academic_info_card.columnconfigure(1, weight=1)
+        _add_field(academic_info_card, 0, _t("student_details.label_course"), course)
+        _add_field(academic_info_card, 1, _t("student_details.label_registration"),
+                   student[10] or na)
 
         # Academic Information Tab
         academic_tab = ttk.Frame(notebook)
         notebook.add(academic_tab, text=_t("student_details.tab_academic_records"))
 
-        # Refresh button at the top
-        btn_frame = ttk.Frame(academic_tab)
-        btn_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
-        ttk.Button(btn_frame, text=_t("common.refresh", default="Refresh"),
-                   command=lambda: self._load_academic_data(student_id, academic_text, na)).pack(side=tk.RIGHT)
+        # Top bar: summary line on the left, refresh on the right
+        top_bar = ttk.Frame(academic_tab)
+        top_bar.pack(fill=tk.X, padx=10, pady=(10, 0))
+        academic_summary = ttk.Label(top_bar, text="", font=('Arial', 10, 'italic'),
+                                     foreground='#555555')
+        academic_summary.pack(side=tk.LEFT)
+        ttk.Button(
+            top_bar,
+            text=_t("common.refresh", default="Refresh"),
+            command=lambda: self._load_academic_data(
+                student_id, modules_tree, grades_tree, attendance_tree,
+                academic_summary, na,
+            ),
+        ).pack(side=tk.RIGHT)
 
-        academic_frame = ttk.LabelFrame(academic_tab, text=_t("student_details.modules_academic_data"), padding=20)
-        academic_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(5, 10))
+        # Scrollable container — three Treeviews can't all fit when the
+        # window is 700px tall, so wrap them in a Canvas + Scrollbar.
+        ac_canvas = tk.Canvas(academic_tab, borderwidth=0, highlightthickness=0)
+        ac_vbar = ttk.Scrollbar(academic_tab, orient='vertical', command=ac_canvas.yview)
+        ac_canvas.configure(yscrollcommand=ac_vbar.set)
+        ac_canvas.pack(side='left', fill=tk.BOTH, expand=True, padx=(10, 0), pady=(8, 10))
+        ac_vbar.pack(side='right', fill='y', pady=(8, 10))
 
-        academic_text = scrolledtext.ScrolledText(academic_frame, wrap=tk.WORD, height=25,
-                                                 font=('Courier', 11))
-        academic_text.pack(fill=tk.BOTH, expand=True)
+        ac_inner = ttk.Frame(ac_canvas)
+        ac_window = ac_canvas.create_window((0, 0), window=ac_inner, anchor='nw')
 
-        self._load_academic_data(student_id, academic_text, na)
+        def _on_ac_inner(_event):
+            ac_canvas.configure(scrollregion=ac_canvas.bbox('all'))
+
+        def _on_ac_canvas(event):
+            ac_canvas.itemconfigure(ac_window, width=event.width)
+
+        ac_inner.bind('<Configure>', _on_ac_inner)
+        ac_canvas.bind('<Configure>', _on_ac_canvas)
+
+        def _on_ac_wheel(event):
+            delta = -1 if getattr(event, 'num', None) == 5 or event.delta < 0 else 1
+            ac_canvas.yview_scroll(-delta, 'units')
+
+        for seq in ('<MouseWheel>', '<Button-4>', '<Button-5>'):
+            ac_canvas.bind_all(
+                seq,
+                lambda e, c=ac_canvas: _on_ac_wheel(e)
+                if str(c.winfo_containing(e.x_root, e.y_root)).startswith(str(c))
+                else None,
+            )
+
+        # Three stacked panels with Treeviews (now inside the scrollable inner frame)
+        modules_frame = ttk.LabelFrame(
+            ac_inner, text=_t("student_details.header_enrolled_modules", default="Enrolled Modules"),
+            padding=10,
+        )
+        modules_frame.pack(fill=tk.X, padx=4, pady=(0, 6))
+        modules_tree = ttk.Treeview(
+            modules_frame, columns=("type", "code", "name"),
+            show="headings", height=6,
+        )
+        modules_tree.heading("type", text="Type")
+        modules_tree.heading("code", text="Code")
+        modules_tree.heading("name", text="Module Name")
+        modules_tree.column("type", width=110, anchor="w")
+        modules_tree.column("code", width=110, anchor="w")
+        modules_tree.column("name", width=400, anchor="w")
+        mod_vsb = ttk.Scrollbar(modules_frame, orient="vertical", command=modules_tree.yview)
+        modules_tree.configure(yscrollcommand=mod_vsb.set)
+        modules_tree.pack(side="left", fill=tk.X, expand=True)
+        mod_vsb.pack(side="right", fill="y")
+        modules_tree.tag_configure("group", background="#eef2f7", font=('Arial', 10, 'bold'))
+
+        grades_frame = ttk.LabelFrame(
+            ac_inner, text=_t("student_details.header_grades_assessments", default="Grades & Assessments"),
+            padding=10,
+        )
+        grades_frame.pack(fill=tk.X, padx=4, pady=6)
+        grades_tree = ttk.Treeview(
+            grades_frame, columns=("module", "assessment", "grade", "date"),
+            show="headings", height=6,
+        )
+        grades_tree.heading("module", text="Module")
+        grades_tree.heading("assessment", text="Assessment")
+        grades_tree.heading("grade", text="Grade")
+        grades_tree.heading("date", text="Date")
+        grades_tree.column("module", width=110, anchor="w")
+        grades_tree.column("assessment", width=300, anchor="w")
+        grades_tree.column("grade", width=80, anchor="center")
+        grades_tree.column("date", width=160, anchor="w")
+        gr_vsb = ttk.Scrollbar(grades_frame, orient="vertical", command=grades_tree.yview)
+        grades_tree.configure(yscrollcommand=gr_vsb.set)
+        grades_tree.pack(side="left", fill=tk.X, expand=True)
+        gr_vsb.pack(side="right", fill="y")
+        grades_tree.tag_configure("good", foreground="#1b7f3a")
+        grades_tree.tag_configure("warn", foreground="#b87a00")
+        grades_tree.tag_configure("fail", foreground="#b00020")
+
+        attendance_frame = ttk.LabelFrame(
+            ac_inner, text=_t("student_details.header_recent_attendance", default="Recent Attendance"),
+            padding=10,
+        )
+        attendance_frame.pack(fill=tk.X, padx=4, pady=(6, 0))
+        attendance_tree = ttk.Treeview(
+            attendance_frame, columns=("date", "module", "status", "notes"),
+            show="headings", height=6,
+        )
+        attendance_tree.heading("date", text="Date")
+        attendance_tree.heading("module", text="Module")
+        attendance_tree.heading("status", text="Status")
+        attendance_tree.heading("notes", text="Notes")
+        attendance_tree.column("date", width=120, anchor="w")
+        attendance_tree.column("module", width=110, anchor="w")
+        attendance_tree.column("status", width=100, anchor="center")
+        attendance_tree.column("notes", width=320, anchor="w")
+        att_vsb = ttk.Scrollbar(attendance_frame, orient="vertical", command=attendance_tree.yview)
+        attendance_tree.configure(yscrollcommand=att_vsb.set)
+        attendance_tree.pack(side="left", fill=tk.X, expand=True)
+        att_vsb.pack(side="right", fill="y")
+        attendance_tree.tag_configure("present", foreground="#1b7f3a")
+        attendance_tree.tag_configure("late", foreground="#b87a00")
+        attendance_tree.tag_configure("absent", foreground="#b00020")
+
+        self._load_academic_data(
+            student_id, modules_tree, grades_tree, attendance_tree,
+            academic_summary, na,
+        )
 
         # Actions Tab
         actions_tab = ttk.Frame(notebook)
@@ -396,8 +537,14 @@ def show_student_details(self, student_id):
         messagebox.showerror(_t("common.error"), _t("student_details.error_load_details", error=str(e)))
         detail_window.destroy()
 
-def _load_academic_data(self, student_id, academic_text, na):
-    """Load (or refresh) academic data into the text widget."""
+def _load_academic_data(self, student_id, modules_tree, grades_tree,
+                        attendance_tree, summary_label, na):
+    """Refresh the three academic Treeviews and the summary line."""
+    # Clear
+    for tree in (modules_tree, grades_tree, attendance_tree):
+        for item in tree.get_children():
+            tree.delete(item)
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -439,61 +586,104 @@ def _load_academic_data(self, student_id, academic_text, na):
 
         conn.close()
 
-        academic_info = f"""{_t("student_details.header_academic_records")}
-{'='*80}
-
-{_t("student_details.header_enrolled_modules")}
-{'-'*40}
-"""
-
+        # Modules — group by type with a faint header row before each block
         if modules:
-            current_type = None
-            modules_suffix = _t("student_details.modules_type_suffix")
+            current_type = object()
             for module in modules:
-                if current_type != module[0]:
-                    current_type = module[0]
-                    type_display = current_type.upper() if current_type else _t("student_details.unknown").upper()
-                    academic_info += f"\n{type_display} {modules_suffix}\n"
-                module_code = module[1] if module[1] else na
-                module_name = module[2] if module[2] else _t("student_details.unknown_module")
-                academic_info += f"  {module_code} - {module_name}\n"
+                module_type = (module[0] or _t("student_details.unknown")).strip()
+                if module_type != current_type:
+                    current_type = module_type
+                    modules_tree.insert(
+                        "", tk.END,
+                        values=(module_type.upper(), "", ""),
+                        tags=("group",),
+                    )
+                modules_tree.insert(
+                    "", tk.END,
+                    values=(
+                        "",
+                        module[1] if module[1] else na,
+                        module[2] if module[2] else _t("student_details.unknown_module"),
+                    ),
+                )
         else:
-            academic_info += f"  {_t('student_details.no_modules_enrolled')}\n"
+            modules_tree.insert(
+                "", tk.END,
+                values=("", "", _t("student_details.no_modules_enrolled")),
+            )
 
-        academic_info += f"\n{_t('student_details.header_grades_assessments')}\n{'-'*40}\n"
+        # Grades — colour-code by score band
         if grades:
             for grade in grades:
                 module_code = grade[0] if grade[0] else na
                 assessment_name = grade[1] if grade[1] else _t("student_details.unknown_assessment")
-                grade_value = grade[2] if grade[2] else _t("student_details.no_grade")
+                raw_grade = grade[2]
+                grade_value = (
+                    raw_grade if raw_grade not in (None, "")
+                    else _t("student_details.no_grade")
+                )
                 grade_date = grade[3] if grade[3] else _t("student_details.unknown_date")
-                academic_info += f"  {module_code} - {assessment_name}: {grade_value} ({_t('student_details.label_date')} {grade_date})\n"
-        else:
-            academic_info += f"  {_t('student_details.no_grades_recorded')}\n"
 
-        academic_info += f"\n{_t('student_details.header_recent_attendance')}\n{'-'*40}\n"
+                tag = ()
+                try:
+                    score = float(raw_grade)
+                    if score >= 70:
+                        tag = ("good",)
+                    elif score >= 40:
+                        tag = ("warn",)
+                    else:
+                        tag = ("fail",)
+                except (TypeError, ValueError):
+                    pass
+
+                grades_tree.insert(
+                    "", tk.END,
+                    values=(module_code, assessment_name, grade_value, grade_date),
+                    tags=tag,
+                )
+        else:
+            grades_tree.insert(
+                "", tk.END,
+                values=("", _t("student_details.no_grades_recorded"), "", ""),
+            )
+
+        # Attendance — colour-code present/late/absent
         if attendance:
             for att in attendance:
                 module_code = att[0] if att[0] else na
                 att_date = att[1] if att[1] else _t("student_details.unknown_date")
                 status = att[2] if att[2] else _t("student_details.unknown")
-                reason_text = f" - {att[3]}" if att[3] else ""
-                academic_info += f"  {att_date} ({module_code}): {status}{reason_text}\n"
+                notes = att[3] or ""
+
+                status_lc = (status or "").strip().lower()
+                if status_lc == "present":
+                    tag = ("present",)
+                elif status_lc == "late":
+                    tag = ("late",)
+                elif status_lc in ("absent", "unauthorised", "unauthorized"):
+                    tag = ("absent",)
+                else:
+                    tag = ()
+
+                attendance_tree.insert(
+                    "", tk.END,
+                    values=(att_date, module_code, status, notes),
+                    tags=tag,
+                )
         else:
-            academic_info += f"  {_t('student_details.no_attendance_records')}\n"
+            attendance_tree.insert(
+                "", tk.END,
+                values=("", "", _t("student_details.no_attendance_records"), ""),
+            )
 
-        academic_info += f"\n{'='*80}"
-
-        academic_text.config(state=tk.NORMAL)
-        academic_text.delete('1.0', tk.END)
-        academic_text.insert(tk.END, academic_info)
-        academic_text.config(state=tk.DISABLED)
+        summary_label.config(
+            text=f"{len(modules)} module(s) · {len(grades)} grade(s) · "
+                 f"{len(attendance)} recent attendance entry(ies)"
+        )
 
     except Exception as e:
-        academic_text.config(state=tk.NORMAL)
-        academic_text.delete('1.0', tk.END)
-        academic_text.insert(tk.END, f"Error loading academic data: {e}")
-        academic_text.config(state=tk.DISABLED)
+        summary_label.config(text=f"Error loading academic data: {e}",
+                             foreground='#b00020')
 
 def search_students_dialog(self):
     """Create search dialog"""
