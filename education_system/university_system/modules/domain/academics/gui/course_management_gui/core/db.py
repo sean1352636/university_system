@@ -313,7 +313,7 @@ class DatabaseMixin:
             print(_("course_management.errors.migration_error", error=str(e)))
 
     def refresh_course_list(self):
-        """FIXED: Enhanced error handling for course list refresh"""
+        """Reload the current page of courses from the database."""
         try:
             # Switch to courses tab first
             self.notebook.select(0)  # Courses tab is index 0
@@ -365,16 +365,28 @@ class DatabaseMixin:
                 else:
                     extra_fields.append("'Active' as status")
 
-                query = f"SELECT {base_fields}, {', '.join(extra_fields)} FROM courses WHERE course_code IS NOT NULL ORDER BY course_code"
+                # Total row count for pagination math.
+                cursor.execute("SELECT COUNT(*) FROM courses WHERE course_code IS NOT NULL")
+                self._page_total = cursor.fetchone()[0] or 0
+                if hasattr(self, "_update_pager_label"):
+                    self._update_pager_label()
 
-                cursor.execute(query)
+                page_size = max(1, getattr(self, "_page_size", 50))
+                page = getattr(self, "_page", 0)
+                offset = page * page_size
+
+                query = (f"SELECT {base_fields}, {', '.join(extra_fields)} "
+                         f"FROM courses WHERE course_code IS NOT NULL "
+                         f"ORDER BY course_code LIMIT ? OFFSET ?")
+
+                cursor.execute(query, (page_size, offset))
                 courses = cursor.fetchall()
 
-                # Populate treeview
                 for course in courses:
                     self.course_tree.insert("", tk.END, values=course)
 
-                self.update_status(_("course_management.status.courses_loaded", count=len(courses)))
+                self.update_status(
+                    f"Showing {len(courses)} of {self._page_total} course(s).")
 
         except sqlite3.Error as e:
             self.update_status(_("course_management.status.database_error", error=str(e)), error=True)

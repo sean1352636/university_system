@@ -111,185 +111,95 @@ except ImportError as e:
 # =====================================================================
 
 
-def show_import_csv(self):
-    """Show import CSV dialog"""
-    dialog = ImportExportDialog(self.root, self.auth, "import")
-    if dialog.result:
-        self.refresh_course_list()
-        self.update_status(_("course_management.status.courses_imported"))
+def export_pdf(self):
+    """Export the (filterable) course list to a printable PDF.
 
-
-def show_export_csv(self):
-    """Show export CSV dialog"""
-    dialog = ImportExportDialog(self.root, self.auth, "export")
-    if dialog.result:
-        self.update_status(_("course_management.status.courses_exported"))
-
-
-def import_csv(self):
-    """Import courses from CSV file"""
-    file_path = filedialog.askopenfilename(
-        title="Select CSV file to import",
-        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
-    )
-
-    if not file_path:
+    Uses reportlab directly because the shared PDFGenerator hardcodes a
+    18-char cell truncation that would clip course names.
+    """
+    try:
+        from reportlab.lib import colors
+        from reportlab.lib.pagesizes import landscape, letter
+        from reportlab.lib.styles import getSampleStyleSheet
+        from reportlab.lib.units import inch
+        from reportlab.platypus import (Paragraph, SimpleDocTemplate, Spacer,
+                                        Table, TableStyle)
+    except ImportError:
+        messagebox.showerror(_("common.error"),
+                             "PDF export requires reportlab. Install it with:\n"
+                             "  pip install reportlab")
         return
 
-    try:
-        imported_count = 0
-        error_count = 0
-
-        with open(file_path, 'r', newline='', encoding='utf-8') as csvfile:
-            reader = csv.DictReader(csvfile)
-
-            required_fields = ['course_code', 'course_name', 'department']
-            if not all(field in reader.fieldnames for field in required_fields):
-                messagebox.showerror(_("common.import_error"), f"CSV must contain these required columns: {', '.join(required_fields)}")
-                return
-
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            try:
-                cursor = conn.cursor()
-                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-                for row_num, row in enumerate(reader, 1):
-                    try:
-                        course_code = row['course_code'].strip().upper()
-                        course_name = row['course_name'].strip()
-                        department = row['department'].strip()
-
-                        if not course_code or not course_name:
-                            error_count += 1
-                            continue
-
-                        # Check for duplicates
-                        cursor.execute("SELECT id FROM courses WHERE code = ?", (course_code,))
-                        if cursor.fetchone():
-                            error_count += 1
-                            continue
-
-                        # Prepare optional fields
-                        description = row.get('description', '').strip()
-                        level = row.get('level', '').strip()
-                        credit_hours = float(row.get('credit_hours', 3.0))
-                        max_enrollment = int(row.get('max_enrollment', 30))
-                        course_type = row.get('course_type', 'Core').strip()
-
-                        import uuid
-                        course_id = str(uuid.uuid4())
-
-                        # Insert course
-                        cursor.execute('''
-                        INSERT INTO courses (
-                            id, code, name, credits, date_added,
-                            course_code, course_name, description, level, department,
-                            credit_hours, max_enrollment, course_type, created_at, updated_at
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ''', (course_id, course_code, course_name, int(credit_hours), timestamp,
-                              course_code, course_name, description, level, department,
-                              credit_hours, max_enrollment, course_type, timestamp, timestamp))
-
-                        imported_count += 1
-
-                    except (ValueError, sqlite3.Error):
-                        error_count += 1
-                        continue
-
-                conn.commit()
-            finally:
-                conn.close()
-
-        self.refresh_course_list()
-
-        message = f"Import completed!\n\nSuccessfully imported: {imported_count} courses\nErrors: {error_count} courses"
-        messagebox.showinfo("Import Results", message)
-        self.update_status(f"Imported {imported_count} courses from CSV")
-
-    except Exception as e:
-        messagebox.showerror(_("common.import_error"), f"Failed to import CSV: {e}")
-
-
-def export_csv(self):
-    """Export courses to CSV file"""
     file_path = filedialog.asksaveasfilename(
-        title="Save CSV file",
-        defaultextension=".csv",
-        filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+        title="Save PDF file",
+        defaultextension=".pdf",
+        filetypes=[("PDF files", "*.pdf"), ("All files", "*.*")],
     )
-
     if not file_path:
         return
 
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-        cursor = conn.cursor()
-
-        cursor.execute("SELECT * FROM courses ORDER BY course_code")
-        courses = cursor.fetchall()
-
-        # Get column names
-        cursor.execute("PRAGMA table_info(courses)")
-        columns = [col[1] for col in cursor.fetchall()]
-
-        with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.writer(csvfile)
-            writer.writerow(columns)
-            writer.writerows(courses)
-
-        conn.close()
-
-        messagebox.showinfo(_("common.export_complete"), f"Exported {len(courses)} courses to {file_path}")
-        self.update_status(f"Exported {len(courses)} courses to CSV")
-
-    except Exception as e:
-        messagebox.showerror(_("common.export_error"), f"Failed to export CSV: {e}")
-
-
-def backup_database(self):
-    """Create database backup - enhanced version"""
-    file_path = filedialog.asksaveasfilename(
-        title="Save database backup",
-        defaultextension=".sql",
-        filetypes=[("SQL files", "*.sql"), ("SQLite files", "*.db"), ("All files", "*.*")]
-    )
-
-    if not file_path:
+        with sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0) as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT COALESCE(course_code, code, '') AS code,
+                       COALESCE(course_name, name, '') AS name,
+                       COALESCE(department, 'N/A') AS department,
+                       COALESCE(level, 'N/A') AS level,
+                       COALESCE(credit_hours, credits, 0) AS credits,
+                       COALESCE(current_enrollment, 0) || '/' || COALESCE(max_enrollment, 0) AS enrol,
+                       COALESCE(status, 'Active') AS status
+                FROM courses
+                WHERE COALESCE(course_code, code) IS NOT NULL
+                ORDER BY code
+            """)
+            rows = cur.fetchall()
+    except sqlite3.Error as e:
+        messagebox.showerror(_("common.export_error"),
+                             f"Failed to read courses: {e}")
         return
 
+    headers = ["Code", "Name", "Department", "Level", "Credits", "Enrollment", "Status"]
+    table_data = [headers] + [[str(c) if c is not None else "" for c in r] for r in rows]
+
+    doc = SimpleDocTemplate(file_path, pagesize=landscape(letter),
+                            leftMargin=0.4 * inch, rightMargin=0.4 * inch,
+                            topMargin=0.5 * inch, bottomMargin=0.4 * inch)
+    styles = getSampleStyleSheet()
+    elements = [
+        Paragraph("Course List", styles["Heading1"]),
+        Paragraph(f"{len(rows)} course(s) — generated "
+                  f"{datetime.now().strftime('%Y-%m-%d %H:%M')}",
+                  styles["Normal"]),
+        Spacer(1, 0.2 * inch),
+    ]
+    col_widths = [0.7 * inch, 3.2 * inch, 1.6 * inch, 1.2 * inch,
+                  0.7 * inch, 1.0 * inch, 0.9 * inch]
+    table = Table(table_data, colWidths=col_widths, repeatRows=1)
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#34495e")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 8),
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ("GRID", (0, 0), (-1, -1), 0.25, colors.HexColor("#bbbbbb")),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1),
+            [colors.whitesmoke, colors.HexColor("#f4f6f7")]),
+    ]))
+    elements.append(table)
+
     try:
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-
-        if file_path.endswith('.sql'):
-            # SQL dump backup
-            with open(file_path, 'w') as f:
-                for line in conn.iterdump():
-                    f.write('%s\n' % line)
-        else:
-            # Binary database copy
-            backup_conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
-            try:
-                conn.backup(backup_conn)
-            finally:
-                backup_conn.close()
-
-        conn.close()
-
-        messagebox.showinfo("Backup Complete", f"Database backup saved to {file_path}")
-        self.update_status("Database backup created")
-
+        doc.build(elements)
     except Exception as e:
-        messagebox.showerror("Backup Error", f"Failed to create backup: {e}")
+        messagebox.showerror(_("common.export_error"),
+                             f"Failed to write PDF: {e}")
+        return
 
-
-def import_courses_from_csv_wrapper(self):
-    """Import courses from CSV file. Calls existing import_csv()."""
-    self.import_csv()
-
-
-def export_courses_to_csv_wrapper(self):
-    """Export courses to CSV file. Calls existing export_csv()."""
-    self.export_csv()
+    messagebox.showinfo(_("common.export_complete"),
+                        f"Exported {len(rows)} courses to {file_path}")
+    self.update_status(f"Exported {len(rows)} courses to PDF")
 
 
 class ImportExportDialog:

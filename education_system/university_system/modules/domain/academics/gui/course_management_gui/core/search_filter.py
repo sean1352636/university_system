@@ -7,61 +7,75 @@ class SearchFilterMixin:
 
     def on_search_change(self, event=None):
         """Handle search text change"""
+        self._page = 0  # new search collapses back to page 1
         self.filter_courses()
 
     def on_filter_change(self, event=None):
         """Handle filter change"""
+        self._page = 0
         self.filter_courses()
 
     def filter_courses(self):
-        """Filter courses based on search and filter criteria"""
+        """Filter courses based on search and filter criteria, paginated."""
         try:
-            # Clear existing items
             for item in self.course_tree.get_children():
                 self.course_tree.delete(item)
 
-            # Build query
             search_text = self.search_var.get().strip()
             dept_filter = self.dept_filter.get()
             status_filter = self.status_filter.get()
 
-            query = """
-            SELECT id, COALESCE(course_code, code) as course_code, COALESCE(course_name, name) as course_name,
-                   COALESCE(department, 'N/A') as department,
-                   COALESCE(level, 'N/A') as level,
-                   COALESCE(credit_hours, credits, 3.0) as credit_hours,
-                   COALESCE(current_enrollment, 0) || '/' || COALESCE(max_enrollment, 0) as enrollment,
-                   COALESCE(status, 'Active') as status
-            FROM courses WHERE COALESCE(course_code, code) IS NOT NULL
-            AND COALESCE(course_name, name) IS NOT NULL
-            """
+            where_sql = (" WHERE COALESCE(course_code, code) IS NOT NULL "
+                         "AND COALESCE(course_name, name) IS NOT NULL")
             params = []
 
             if search_text:
-                query += " AND (course_code LIKE ? OR course_name LIKE ? OR description LIKE ?)"
+                where_sql += " AND (course_code LIKE ? OR course_name LIKE ? OR description LIKE ?)"
                 search_param = f"%{escape_like(search_text)}%"
                 params.extend([search_param, search_param, search_param])
 
-            if dept_filter and dept_filter != "All":
-                query += " AND department = ?"
+            # `_("common.all")` is what populates the filter combo, so compare
+            # against that — not the literal "All" — to honour translations.
+            all_label = _("common.all")
+            if dept_filter and dept_filter not in ("All", all_label):
+                where_sql += " AND department = ?"
                 params.append(dept_filter)
 
-            if status_filter and status_filter != "All":
-                query += " AND status = ?"
+            if status_filter and status_filter not in ("All", all_label):
+                where_sql += " AND status = ?"
                 params.append(status_filter)
-
-            query += " ORDER BY course_code"
 
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
-                cursor.execute(query, params)
+                cursor.execute(f"SELECT COUNT(*) FROM courses{where_sql}", params)
+                self._page_total = cursor.fetchone()[0] or 0
+                if hasattr(self, "_update_pager_label"):
+                    self._update_pager_label()
+
+                page_size = max(1, getattr(self, "_page_size", 50))
+                page = getattr(self, "_page", 0)
+                offset = page * page_size
+
+                query = f"""
+                SELECT id, COALESCE(course_code, code) as course_code,
+                       COALESCE(course_name, name) as course_name,
+                       COALESCE(department, 'N/A') as department,
+                       COALESCE(level, 'N/A') as level,
+                       COALESCE(credit_hours, credits, 3.0) as credit_hours,
+                       COALESCE(current_enrollment, 0) || '/' || COALESCE(max_enrollment, 0) as enrollment,
+                       COALESCE(status, 'Active') as status
+                FROM courses{where_sql}
+                ORDER BY course_code
+                LIMIT ? OFFSET ?
+                """
+                cursor.execute(query, (*params, page_size, offset))
                 courses = cursor.fetchall()
 
-            # Populate filtered results
             for course in courses:
                 self.course_tree.insert("", tk.END, values=course)
 
-            self.update_status(_("course_management.status.search_found", count=len(courses)))
+            self.update_status(
+                f"Showing {len(courses)} of {self._page_total} matching course(s).")
 
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), _("course_management.messages.search_failed").format(error=e))

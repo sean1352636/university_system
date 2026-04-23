@@ -10,6 +10,14 @@ from education_system.university_system.modules.domain.academics.gui.course_mana
     CreateScheduleDialog, ViewSchedulesDialog, UpdateScheduleDialog,
     AddToWaitlistDialog, ViewWaitlistsDialog, ProcessWaitlistDialog,
     RemovePrerequisiteDialog, RecommendCoursesDialog, AlternativeCourseDialog,
+    CourseCatalogGUI, COURSE_CATALOG_AVAILABLE,
+    CourseForumsGUI, COURSE_FORUMS_AVAILABLE,
+    CourseHealthDashboardGUI, COURSE_HEALTH_AVAILABLE,
+    AIDetectorGUI, AI_DETECTOR_AVAILABLE,
+    ScheduleConflictReportDialog,
+    AuditLogViewerDialog,
+    PrerequisiteChainDialog,
+    EvaluationTemplatesViewerDialog,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,6 +59,95 @@ class DialogsMixin:
         except Exception as e:
             messagebox.showerror(_("common.error"), _("course_management.messages.course_evaluation_launch_failed").format(error=e))
 
+    def show_course_catalog(self):
+        """Launch the Course Catalog browser (Toplevel)."""
+        if not COURSE_CATALOG_AVAILABLE:
+            messagebox.showerror(_("common.error"),
+                                 _("course_management.messages.catalog_not_available",
+                                   default="Course Catalog is not available."))
+            return
+        try:
+            CourseCatalogGUI(self.root, self.auth)
+        except Exception as e:
+            logger.exception("Failed to launch Course Catalog")
+            messagebox.showerror(_("common.error"), f"Failed to launch Course Catalog: {e}")
+
+    def show_course_forums(self):
+        """Launch the Course / Module Discussion Forums (Toplevel)."""
+        if not COURSE_FORUMS_AVAILABLE:
+            messagebox.showerror(_("common.error"),
+                                 _("course_management.messages.forums_not_available",
+                                   default="Discussion Forums are not available."))
+            return
+        try:
+            CourseForumsGUI(self.root, self.auth)
+        except Exception as e:
+            logger.exception("Failed to launch Course Forums")
+            messagebox.showerror(_("common.error"), f"Failed to launch Discussion Forums: {e}")
+
+    def show_course_health(self):
+        """Launch the Course Health Dashboard (Toplevel)."""
+        if not COURSE_HEALTH_AVAILABLE:
+            messagebox.showerror(_("common.error"),
+                                 _("course_management.messages.course_health_not_available",
+                                   default="Course Health dashboard is not available."))
+            return
+        try:
+            CourseHealthDashboardGUI(self.root, self.auth)
+        except Exception as e:
+            logger.exception("Failed to launch Course Health Dashboard")
+            messagebox.showerror(_("common.error"), f"Failed to launch Course Health: {e}")
+
+    def show_evaluation_templates(self):
+        """Browse the bundled course-evaluation rubric templates."""
+        try:
+            EvaluationTemplatesViewerDialog(self.root, self.auth)
+        except Exception as e:
+            logger.exception("Failed to open Evaluation Templates Viewer")
+            messagebox.showerror(_("common.error"),
+                                 f"Failed to open Evaluation Templates: {e}")
+
+    def show_prerequisite_chain(self):
+        """Open the transitive prerequisite chain viewer."""
+        try:
+            PrerequisiteChainDialog(self.root, self.auth)
+        except Exception as e:
+            logger.exception("Failed to open Prerequisite Chain Viewer")
+            messagebox.showerror(_("common.error"),
+                                 f"Failed to open Prerequisite Chain Viewer: {e}")
+
+    def show_audit_log_viewer(self):
+        """Open the audit / activity log viewer."""
+        try:
+            AuditLogViewerDialog(self.root, self.auth)
+        except Exception as e:
+            logger.exception("Failed to open Audit Log Viewer")
+            messagebox.showerror(_("common.error"),
+                                 f"Failed to open Audit Log Viewer: {e}")
+
+    def show_schedule_conflict_report(self):
+        """Open the cross-course schedule conflict report."""
+        try:
+            ScheduleConflictReportDialog(self.root, self.auth)
+        except Exception as e:
+            logger.exception("Failed to open Schedule Conflict Report")
+            messagebox.showerror(_("common.error"),
+                                 f"Failed to open Schedule Conflict Report: {e}")
+
+    def show_ai_integrity_alerts(self):
+        """Launch the AI Detector / Academic Integrity Alerts dashboard."""
+        if not AI_DETECTOR_AVAILABLE:
+            messagebox.showerror(_("common.error"),
+                                 _("course_management.messages.ai_detector_not_available",
+                                   default="AI Integrity Alerts are not available."))
+            return
+        try:
+            ai_window = Toplevel(self.root)
+            AIDetectorGUI(ai_window, self.auth)
+        except Exception as e:
+            logger.exception("Failed to launch AI Integrity Alerts")
+            messagebox.showerror(_("common.error"), f"Failed to launch AI Integrity Alerts: {e}")
+
     # --- Quick menu shortcuts ---
 
     def show_update_schedule(self):
@@ -86,6 +183,15 @@ class DialogsMixin:
         dialog = ImportExportDialog(self.root, self.auth, "export")
         if dialog.result:
             self.update_status(_("course_management.status.courses_exported"))
+
+    def show_export_pdf(self):
+        """Export the course list to a printable PDF (file picker dialog)."""
+        from education_system.university_system.modules.domain.academics.gui.course_management_gui.import_export.import_export import export_pdf
+        try:
+            export_pdf(self)
+        except Exception as e:
+            logger.exception("PDF export failed")
+            messagebox.showerror(_("common.error"), f"PDF export failed: {e}")
 
     def show_recommend_courses(self):
         """Show course recommendations dialog"""

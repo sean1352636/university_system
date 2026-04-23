@@ -182,13 +182,23 @@ class ProcessWaitlistDialog:
 
                     if stu_row and stu_row[0]:
                         from education_system.university_system.infrastructure.email.email_service import send_email
-                        subj = f"Enrollment Confirmed: {code} - {name}"
-                        body = (
-                            f"Dear {stu_row[1] or 'Student'},\n\n"
-                            f"You have been enrolled in {code} - {name} from the waitlist.\n\n"
-                            f"Please check your course schedule for class times and locations.\n\n"
-                            f"Best regards,\nAcademic Administration"
-                        )
+                        from education_system.university_system.infrastructure.email.template_utils import render_template
+                        try:
+                            subj, body = render_template("course_waitlist_enrolled", {
+                                "first_name": stu_row[1] or "Student",
+                                "course_code": code,
+                                "course_name": name,
+                            })
+                            if not subj or not body:
+                                raise ValueError("Template returned empty subject/body")
+                        except Exception:
+                            subj = f"Enrollment Confirmed: {code} - {name}"
+                            body = (
+                                f"Dear {stu_row[1] or 'Student'},\n\n"
+                                f"You have been enrolled in {code} - {name} from the waitlist.\n\n"
+                                f"Please check your course schedule for class times and locations.\n\n"
+                                f"Best regards,\nAcademic Administration"
+                            )
                         send_email(recipient_email=stu_row[0], subject=subj, body=body)
                 except Exception as email_err:
                     print(f"Waitlist enrollment email failed for {student_id}: {email_err}")

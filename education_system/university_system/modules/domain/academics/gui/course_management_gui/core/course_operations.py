@@ -5,10 +5,16 @@ class CourseOperationsMixin:
     """Course CRUD operations and cascade deletes."""
 
     def edit_selected_course(self):
-        """Edit the selected course"""
+        """Edit the selected course (single-row only — bulk edit is via Tools → Bulk Update)."""
         selection = self.course_tree.selection()
         if not selection:
             messagebox.showwarning(_("course_management.messages.no_selection"), _("course_management.messages.select_course_to_edit"))
+            return
+
+        if len(selection) > 1:
+            messagebox.showinfo(_("common.info", default="Info"),
+                                "Select a single course to edit. "
+                                "For bulk edits use Tools → Bulk Update.")
             return
 
         item = self.course_tree.item(selection[0])
@@ -20,42 +26,61 @@ class CourseOperationsMixin:
             self.update_status(_("course_management.status.course_updated"))
 
     def delete_selected_course(self):
-        """Delete the selected course"""
+        """Delete one or many selected courses in a single transaction."""
         selection = self.course_tree.selection()
         if not selection:
             messagebox.showwarning(_("course_management.messages.no_selection"), _("course_management.messages.select_course_to_delete"))
             return
 
-        item = self.course_tree.item(selection[0])
-        course_id = item['values'][0]
-        course_code = item['values'][1]
-        course_name = item['values'][2]
+        # Extract (id, code, name) for each selected row.
+        targets = []
+        for iid in selection:
+            vals = self.course_tree.item(iid).get("values") or []
+            if len(vals) >= 3:
+                targets.append((vals[0], vals[1], vals[2]))
+        if not targets:
+            return
 
-        # Enhanced delete confirmation with impact analysis
-        if self.confirm_course_deletion(course_id, course_code, course_name):
-            try:
-                with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
-                    cursor = conn.cursor()
+        # Single delete keeps the existing impact-analysis dialog.
+        if len(targets) == 1:
+            course_id, course_code, course_name = targets[0]
+            if not self.confirm_course_deletion(course_id, course_code, course_name):
+                return
+        else:
+            # Batch confirmation — one dialog instead of N.
+            sample = ", ".join(f"{c}" for _, c, _name in targets[:5])
+            if len(targets) > 5:
+                sample += f", … (+{len(targets) - 5} more)"
+            msg = (f"Delete {len(targets)} courses?\n\n"
+                   f"{sample}\n\n"
+                   f"{_('course_management.messages.action_cannot_be_undone')}")
+            if not messagebox.askyesno(_("course_management.dialogs.confirm_deletion"), msg):
+                return
 
-                    # Handle student reassignment before deleting course
+        deleted = 0
+        try:
+            with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                cursor = conn.cursor()
+                for course_id, course_code, _name in targets:
                     self.reassign_students_from_deleted_course(cursor, course_code)
-
-                    # Delete related records first
-                    cursor.execute("DELETE FROM course_prerequisites WHERE course_id = ? OR prerequisite_course_id = ?", (course_id, course_id))
+                    cursor.execute("DELETE FROM course_prerequisites WHERE course_id = ? OR prerequisite_course_id = ?",
+                                   (course_id, course_id))
                     cursor.execute("DELETE FROM course_schedule WHERE course_id = ?", (course_id,))
                     cursor.execute("DELETE FROM course_waitlist WHERE course_id = ?", (course_id,))
                     cursor.execute("DELETE FROM course_history WHERE course_id = ?", (course_id,))
-
-                    # Delete the course
                     cursor.execute("DELETE FROM courses WHERE id = ?", (course_id,))
+                    deleted += 1
+                conn.commit()
+        except sqlite3.Error as e:
+            messagebox.showerror(_("common.database_error"),
+                                 _("course_management.messages.delete_course_failed").format(error=e))
+            return
 
-                    conn.commit()
-
-                self.refresh_course_list()
-                self.update_status(_("course_management.status.course_deleted").format(course=course_code))
-
-            except sqlite3.Error as e:
-                messagebox.showerror(_("common.database_error"), _("course_management.messages.delete_course_failed").format(error=e))
+        self.refresh_course_list()
+        if deleted == 1:
+            self.update_status(_("course_management.status.course_deleted").format(course=targets[0][1]))
+        else:
+            self.update_status(f"Deleted {deleted} courses.")
 
     def reassign_students_from_deleted_course(self, cursor, course_code):
         """Reassign students from a course that's being deleted to other available courses and modules"""

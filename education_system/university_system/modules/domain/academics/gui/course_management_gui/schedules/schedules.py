@@ -322,32 +322,31 @@ def create_course_schedule_gui(self):
                 if cursor.fetchone():
                     messagebox.showerror("Schedule Conflict",
                                        f"Schedule conflict detected for {module_code} on {day_var.get()}")
+                    return
+
+                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                # Insert into course_schedule table
+                cursor.execute('''
+                    INSERT INTO course_schedule (course_code, day_of_week, start_time, end_time,
+                                               room_id, instructor_id, session_type, semester, year, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (module_code, day_var.get(), start_time_var.get(), end_time_var.get(),
+                      room_id, instructor_id, session_type_var.get(), current_semester, current_year, timestamp))
+
+                conn.commit()
+
+                messagebox.showinfo(_("common.success"),
+                                  f"Schedule created successfully!\n\n"
+                                  f"Course: {module_code}\n"
+                                  f"Day: {day_var.get()}\n"
+                                  f"Time: {start_time_var.get()} - {end_time_var.get()}\n"
+                                  f"Session: {session_type_var.get()}\n"
+                                  f"Semester: {current_semester} {current_year}")
+                self.update_status("Course schedule created in course_schedule table")
+                dialog.destroy()
             finally:
                 conn.close()
-                return
-
-            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-            # Insert into course_schedule table
-            cursor.execute('''
-                INSERT INTO course_schedule (course_code, day_of_week, start_time, end_time,
-                                           room_id, instructor_id, session_type, semester, year, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (module_code, day_var.get(), start_time_var.get(), end_time_var.get(),
-                  room_id, instructor_id, session_type_var.get(), current_semester, current_year, timestamp))
-
-            conn.commit()
-            conn.close()
-
-            messagebox.showinfo(_("common.success"),
-                              f"Schedule created successfully!\n\n"
-                              f"Course: {module_code}\n"
-                              f"Day: {day_var.get()}\n"
-                              f"Time: {start_time_var.get()} - {end_time_var.get()}\n"
-                              f"Session: {session_type_var.get()}\n"
-                              f"Semester: {current_semester} {current_year}")
-            self.update_status("Course schedule created in course_schedule table")
-            dialog.destroy()
 
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to create schedule: {e}")

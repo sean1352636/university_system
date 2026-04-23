@@ -10,6 +10,20 @@ from education_system.university_system.modules.domain.academics.gui.course_mana
 class UISetupMixin:
     """Menu bar, toolbar, and tab creation."""
 
+    def _bind_shortcut(self, menu, label, command, accelerator=None, sequence=None):
+        """Add a menu command with an accelerator label AND a root key binding.
+
+        Going through one helper makes the two halves impossible to drift
+        apart. ``sequence`` is the Tk event spec ('<Control-n>'); accelerator
+        is the cosmetic 'Ctrl+N' label shown next to the menu item.
+        """
+        kwargs = {"label": label, "command": command}
+        if accelerator:
+            kwargs["accelerator"] = accelerator
+        menu.add_command(**kwargs)
+        if sequence:
+            self.root.bind_all(sequence, lambda _e, c=command: c())
+
     def create_menu(self):
         """Create the main menu bar with role-based access"""
         menubar = tk.Menu(self.root)
@@ -25,8 +39,16 @@ class UISetupMixin:
 
         # Admin and Staff can import/export
         if is_admin or is_staff:
-            file_menu.add_command(label=_("course_management.menu.import_csv"), command=self.show_import_csv)
-            file_menu.add_command(label=_("course_management.menu.export_csv"), command=self.show_export_csv)
+            self._bind_shortcut(file_menu, _("course_management.menu.import_csv"),
+                                self.show_import_csv,
+                                accelerator="Ctrl+I", sequence="<Control-i>")
+            self._bind_shortcut(file_menu, _("course_management.menu.export_csv"),
+                                self.show_export_csv,
+                                accelerator="Ctrl+E", sequence="<Control-e>")
+            self._bind_shortcut(file_menu,
+                                _("course_management.menu.export_pdf", default="Export to PDF"),
+                                self.show_export_pdf,
+                                accelerator="Ctrl+P", sequence="<Control-p>")
             file_menu.add_separator()
 
         # Admin only - Database backup
@@ -34,7 +56,8 @@ class UISetupMixin:
             file_menu.add_command(label=_("course_management.menu.database_backup"), command=self.backup_database)
             file_menu.add_separator()
 
-        file_menu.add_command(label=_("common.exit"), command=self.root.quit)
+        self._bind_shortcut(file_menu, _("common.exit"), self.root.quit,
+                            accelerator="Ctrl+Q", sequence="<Control-q>")
 
         # Course menu
         course_menu = tk.Menu(menubar, tearoff=0)
@@ -42,17 +65,36 @@ class UISetupMixin:
 
         # Admin and Staff can create courses
         if is_admin or is_staff:
-            course_menu.add_command(label=_("course_management.menu.create_course"), command=self.show_create_course)
+            self._bind_shortcut(course_menu, _("course_management.menu.create_course"),
+                                self.show_create_course,
+                                accelerator="Ctrl+N", sequence="<Control-n>")
 
         # Everyone can view and search
-        course_menu.add_command(label=_("course_management.menu.view_all_courses"), command=self.refresh_course_list)
-        course_menu.add_command(label=_("course_management.menu.search_courses"), command=self.show_search_dialog)
+        self._bind_shortcut(course_menu, _("course_management.menu.view_all_courses"),
+                            self.refresh_course_list,
+                            accelerator="F5", sequence="<F5>")
+        self._bind_shortcut(course_menu, _("course_management.menu.search_courses"),
+                            self.show_search_dialog,
+                            accelerator="Ctrl+F", sequence="<Control-f>")
+        course_menu.add_command(
+            label=_("course_management.menu.browse_catalog", default="Browse Catalog"),
+            command=self.show_course_catalog,
+        )
+        course_menu.add_command(
+            label=_("course_management.menu.discussion_forums", default="Discussion Forums"),
+            command=self.show_course_forums,
+        )
 
         # Admin and Staff can manage prerequisites
         if is_admin or is_staff:
             course_menu.add_separator()
             course_menu.add_command(label=_("course_management.menu.manage_prerequisites"), command=self.show_prerequisites_window)
             course_menu.add_command(label=_("course_management.menu.remove_prerequisite"), command=self.show_remove_prerequisite)
+        # Chain viewer is read-only — useful for everyone
+        course_menu.add_command(
+            label=_("course_management.menu.prereq_chain", default="Prerequisite Chain"),
+            command=self.show_prerequisite_chain,
+        )
 
         # Everyone can find alternatives
         course_menu.add_command(label=_("course_management.menu.find_alternatives"), command=self.find_alternative_courses)
@@ -68,6 +110,11 @@ class UISetupMixin:
             schedule_menu.add_command(label=_("course_management.menu.create_schedule"), command=self.show_create_schedule)
             schedule_menu.add_command(label=_("course_management.menu.update_schedule"), command=self.show_update_schedule)
             schedule_menu.add_command(label=_("course_management.menu.view_schedules"), command=self.show_view_schedules)
+            schedule_menu.add_separator()
+            schedule_menu.add_command(
+                label=_("course_management.menu.conflict_report", default="Conflict Report"),
+                command=self.show_schedule_conflict_report,
+            )
         elif is_student:
             # Students can only view schedules
             schedule_menu = tk.Menu(menubar, tearoff=0)
@@ -115,17 +162,92 @@ class UISetupMixin:
 
             tools_menu.add_command(label=_("course_management.menu.course_recommendations"), command=self.show_recommend_courses)
             tools_menu.add_separator()
-            tools_menu.add_command(label=_("course_management.menu.advanced_search"), command=self.show_advanced_search)
+            self._bind_shortcut(tools_menu, _("course_management.menu.advanced_search"),
+                                self.show_advanced_search,
+                                accelerator="Ctrl+Shift+F",
+                                sequence="<Control-Shift-F>")
 
             # Admin only - data validation
             if is_admin:
                 tools_menu.add_command(label=_("course_management.menu.data_validation"), command=self.show_data_validation)
+                self._bind_shortcut(tools_menu,
+                                    _("course_management.menu.audit_log_viewer", default="Audit Log Viewer"),
+                                    self.show_audit_log_viewer,
+                                    accelerator="Ctrl+L",
+                                    sequence="<Control-l>")
+
+            tools_menu.add_separator()
+            tools_menu.add_command(
+                label=_("course_management.menu.course_health", default="Course Health Dashboard"),
+                command=self.show_course_health,
+            )
+            tools_menu.add_command(
+                label=_("course_management.menu.ai_integrity_alerts", default="AI Integrity Alerts"),
+                command=self.show_ai_integrity_alerts,
+            )
+            tools_menu.add_command(
+                label=_("course_management.menu.evaluation_templates", default="Evaluation Templates"),
+                command=self.show_evaluation_templates,
+            )
 
         # Help menu - available to everyone
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label=_("course_management.menu.help"), menu=help_menu)
         help_menu.add_command(label=_("course_management.menu.about"), command=self.show_about)
         help_menu.add_command(label=_("course_management.menu.user_guide"), command=self.show_help)
+
+    # --- Pagination helpers (state lives on `self` so refresh/filter can read it) ---
+
+    def _is_filter_active(self) -> bool:
+        """True when the user has typed a search term or chosen a non-'All' filter."""
+        try:
+            all_label = _("common.all")
+            return bool(
+                (self.search_var.get() or "").strip()
+                or (self.dept_filter.get() and self.dept_filter.get() not in ("All", all_label))
+                or (self.status_filter.get() and self.status_filter.get() not in ("All", all_label))
+            )
+        except (AttributeError, tk.TclError):
+            return False
+
+    def _reload_current_view(self):
+        if self._is_filter_active():
+            self.filter_courses()
+        else:
+            self.refresh_course_list()
+
+    def _on_page_size_change(self):
+        try:
+            new_size = max(1, int(self._page_size_var.get()))
+        except ValueError:
+            return
+        self._page_size = new_size
+        self._page = 0
+        self._reload_current_view()
+
+    def page_jump(self, where: str):
+        last_page = max(0, (self._page_total - 1) // max(1, self._page_size))
+        if where == "first":
+            self._page = 0
+        elif where == "prev":
+            self._page = max(0, self._page - 1)
+        elif where == "next":
+            self._page = min(last_page, self._page + 1)
+        elif where == "last":
+            self._page = last_page
+        self._reload_current_view()
+
+    def _update_pager_label(self):
+        if not hasattr(self, "_page_label_var"):
+            return
+        if self._page_total <= 0:
+            self._page_label_var.set("Page 0 of 0")
+            return
+        total_pages = max(1, (self._page_total + self._page_size - 1) // self._page_size)
+        if self._page >= total_pages:
+            self._page = total_pages - 1
+        self._page_label_var.set(
+            f"Page {self._page + 1} of {total_pages}  ({self._page_total} total)")
 
     def create_main_interface(self):
         """Create the main interface with tabs"""
@@ -139,7 +261,10 @@ class UISetupMixin:
         home_button.pack(side=tk.LEFT, padx=5)
 
         # Launch CLI button
-        ttk.Button(toolbar_frame, text="Switch to CLI", command=self.open_course_management_cli).pack(side=tk.LEFT, padx=5)
+        ttk.Button(toolbar_frame,
+                   text=_("course_management.buttons.switch_to_cli", default="Switch to CLI"),
+                   command=self.open_course_management_cli
+                   ).pack(side=tk.LEFT, padx=5)
 
         # Create notebook for tabs
         self.notebook = ttk.Notebook(self.root)
@@ -276,7 +401,11 @@ class UISetupMixin:
             "Enrollment": _("course_management.columns.enrollment"),
             "Status": _("course_management.columns.status")
         }
-        self.course_tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=20)
+        # selectmode='extended' enables Ctrl/Shift-click to multi-select
+        # so the Delete button can act on a batch of courses.
+        self.course_tree = ttk.Treeview(list_frame, columns=columns,
+                                        show="headings", height=20,
+                                        selectmode="extended")
 
         # Configure column headings and widths
         for col in columns:
@@ -306,6 +435,38 @@ class UISetupMixin:
 
         # Bind double-click event
         self.course_tree.bind("<Double-1>", self.on_course_double_click)
+
+        # Pagination — keeps the treeview from loading the entire courses
+        # table when it grows beyond a few hundred rows. State is set on
+        # `self` so it persists across refresh / filter / page-change calls.
+        if not hasattr(self, "_page"):
+            self._page = 0
+        if not hasattr(self, "_page_size"):
+            self._page_size = 50
+        if not hasattr(self, "_page_total"):
+            self._page_total = 0
+
+        pager = ttk.Frame(course_frame)
+        pager.pack(fill=tk.X, padx=5)
+        ttk.Button(pager, text="<<", width=3,
+                   command=lambda: self.page_jump("first")).pack(side=tk.LEFT)
+        ttk.Button(pager, text="<", width=3,
+                   command=lambda: self.page_jump("prev")).pack(side=tk.LEFT, padx=(2, 6))
+        self._page_label_var = tk.StringVar(value="Page 1 of 1")
+        ttk.Label(pager, textvariable=self._page_label_var, width=24,
+                  anchor=tk.CENTER).pack(side=tk.LEFT)
+        ttk.Button(pager, text=">", width=3,
+                   command=lambda: self.page_jump("next")).pack(side=tk.LEFT, padx=(6, 2))
+        ttk.Button(pager, text=">>", width=3,
+                   command=lambda: self.page_jump("last")).pack(side=tk.LEFT)
+        ttk.Label(pager, text="  Rows per page:").pack(side=tk.LEFT, padx=(15, 2))
+        self._page_size_var = tk.StringVar(value=str(self._page_size))
+        page_size_combo = ttk.Combobox(pager, textvariable=self._page_size_var,
+                                       values=["25", "50", "100", "250", "500"],
+                                       width=5, state="readonly")
+        page_size_combo.pack(side=tk.LEFT)
+        page_size_combo.bind("<<ComboboxSelected>>",
+                             lambda _e: self._on_page_size_change())
 
         # Buttons frame - Role-based access
         buttons_frame = ttk.Frame(course_frame)

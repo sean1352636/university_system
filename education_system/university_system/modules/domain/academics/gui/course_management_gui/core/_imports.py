@@ -126,8 +126,14 @@ from education_system.university_system.modules.domain.academics.gui.course_mana
 from education_system.university_system.modules.domain.academics.gui.course_management_gui.schedules.schedules import (
     CreateScheduleDialog, ViewSchedulesDialog, UpdateScheduleDialog
 )
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.schedules.conflict_report import (
+    ScheduleConflictReportDialog
+)
 from education_system.university_system.modules.domain.academics.gui.course_management_gui.prerequisites.prerequisites import (
     PrerequisitesWindow, RemovePrerequisiteDialog
+)
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.prerequisites.chain_viewer import (
+    PrerequisiteChainDialog
 )
 from education_system.university_system.modules.domain.academics.gui.course_management_gui.search.search import (
     AdvancedCourseSearchDialog, AdvancedSearchDialog
@@ -147,6 +153,9 @@ from education_system.university_system.modules.domain.academics.gui.course_mana
 from education_system.university_system.modules.domain.academics.gui.course_management_gui.maintenance.maintenance import (
     MaintenanceDialog
 )
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.maintenance.audit_log import (
+    AuditLogViewerDialog
+)
 from education_system.university_system.modules.domain.academics.gui.course_management_gui.import_export.import_export import (
     ImportExportDialog
 )
@@ -155,4 +164,43 @@ from education_system.university_system.modules.domain.academics.gui.course_mana
 )
 from education_system.university_system.modules.domain.academics.gui.course_management_gui.instructors.instructors import (
     InstructorCreateDialog, AssignInstructorDialog
+)
+
+# Sibling academic GUIs (course catalog / forums / health / AI integrity alerts).
+# Each is optional — wrap so a missing or broken sibling does not break the
+# whole Course Management GUI.
+try:
+    from education_system.university_system.modules.domain.academics.gui.course_catalog.course_catalog_gui import CourseCatalogGUI
+    COURSE_CATALOG_AVAILABLE = True
+except ImportError as e:
+    CourseCatalogGUI = None
+    COURSE_CATALOG_AVAILABLE = False
+    logger.debug("Course Catalog GUI unavailable: %s", e)
+
+try:
+    from education_system.university_system.modules.domain.academics.gui.course_forums.course_forums_gui import CourseForumsGUI
+    COURSE_FORUMS_AVAILABLE = True
+except ImportError as e:
+    CourseForumsGUI = None
+    COURSE_FORUMS_AVAILABLE = False
+    logger.debug("Course Forums GUI unavailable: %s", e)
+
+try:
+    from education_system.university_system.modules.domain.academics.gui.course_health.course_health_gui import CourseHealthDashboardGUI
+    COURSE_HEALTH_AVAILABLE = True
+except ImportError as e:
+    CourseHealthDashboardGUI = None
+    COURSE_HEALTH_AVAILABLE = False
+    logger.debug("Course Health GUI unavailable: %s", e)
+
+try:
+    from education_system.university_system.modules.domain.academics.gui.ai_detector import AIDetectorGUI
+    AI_DETECTOR_AVAILABLE = True
+except ImportError as e:
+    AIDetectorGUI = None
+    AI_DETECTOR_AVAILABLE = False
+    logger.debug("AI Detector GUI unavailable: %s", e)
+
+from education_system.university_system.modules.domain.academics.gui.course_management_gui.academic_systems.templates_viewer import (
+    EvaluationTemplatesViewerDialog
 )

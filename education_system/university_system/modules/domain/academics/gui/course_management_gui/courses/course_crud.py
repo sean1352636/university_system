@@ -556,19 +556,30 @@ class CourseEditDialog:
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             cursor = conn.cursor()
+            cursor.execute("PRAGMA table_info(courses)")
+            self._course_columns = [row[1] for row in cursor.fetchall()]
             cursor.execute("SELECT * FROM courses WHERE id = ?", (self.course_id,))
-            self.course_data = cursor.fetchone()
+            row = cursor.fetchone()
             conn.close()
 
-            if not self.course_data:
+            if not row:
+                self.course_data = None
                 messagebox.showerror(_("common.error"), "Course not found.")
                 self.dialog.destroy()
+                return
+            self.course_data = dict(zip(self._course_columns, row))
         except sqlite3.Error as e:
             messagebox.showerror(_("common.database_error"), f"Failed to load course: {e}")
             self.dialog.destroy()
 
+    def _get(self, *keys, default=""):
+        """Read the first present-and-non-null column from the loaded row."""
+        for k in keys:
+            if k in self.course_data and self.course_data[k] not in (None, ""):
+                return self.course_data[k]
+        return default
+
     def create_widgets(self):
-        # Similar to create dialog but pre-populate with existing data
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
@@ -577,21 +588,64 @@ class CourseEditDialog:
         basic_frame.pack(fill=tk.X, pady=5)
 
         ttk.Label(basic_frame, text="Course Code:").grid(row=0, column=0, sticky=tk.W)
-        self.code_var = tk.StringVar(value=self.course_data[1])
+        self.code_var = tk.StringVar(value=str(self._get("course_code", "code")))
         ttk.Entry(basic_frame, textvariable=self.code_var, width=15).grid(row=0, column=1, sticky=tk.W, padx=5)
 
         ttk.Label(basic_frame, text="Course Name:").grid(row=1, column=0, sticky=tk.W)
-        self.name_var = tk.StringVar(value=self.course_data[2])
+        self.name_var = tk.StringVar(value=str(self._get("course_name", "name")))
         ttk.Entry(basic_frame, textvariable=self.name_var, width=40).grid(row=1, column=1, sticky=tk.W, padx=5)
 
         ttk.Label(basic_frame, text="Description:").grid(row=2, column=0, sticky=tk.NW)
         self.desc_text = tk.Text(basic_frame, width=40, height=3)
         self.desc_text.grid(row=2, column=1, sticky=tk.W, padx=5)
-        if len(self.course_data) > 3 and self.course_data[3]:
-            self.desc_text.insert(1.0, self.course_data[3])
+        existing_desc = self._get("description")
+        if existing_desc:
+            self.desc_text.insert(1.0, str(existing_desc))
 
-        # Add other fields similar to create dialog...
-        # (For brevity, showing key fields)
+        ttk.Label(basic_frame, text="Department:").grid(row=3, column=0, sticky=tk.W)
+        self.dept_var = tk.StringVar(value=str(self._get("department")))
+        ttk.Combobox(basic_frame, textvariable=self.dept_var, width=25,
+                     values=["Computer Science", "Data Science", "Engineering",
+                             "Mathematics", "Business", "Arts", "Science", "Other"]
+                     ).grid(row=3, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(basic_frame, text="Level:").grid(row=4, column=0, sticky=tk.W)
+        self.level_var = tk.StringVar(value=str(self._get("level", default="Undergraduate")))
+        ttk.Combobox(basic_frame, textvariable=self.level_var, state='readonly',
+                     values=["Undergraduate", "Postgraduate", "PhD", "Certificate", "Diploma"]
+                     ).grid(row=4, column=1, sticky=tk.W, padx=5)
+
+        # Academic Details
+        academic_frame = ttk.LabelFrame(main_frame, text="Academic Details", padding=10)
+        academic_frame.pack(fill=tk.X, pady=5)
+
+        ttk.Label(academic_frame, text="Credit Hours:").grid(row=0, column=0, sticky=tk.W)
+        self.credits_var = tk.StringVar(value=str(self._get("credit_hours", "credits", default="3.0")))
+        ttk.Entry(academic_frame, textvariable=self.credits_var, width=10).grid(row=0, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(academic_frame, text="Max Enrollment:").grid(row=1, column=0, sticky=tk.W)
+        self.max_enroll_var = tk.StringVar(value=str(self._get("max_enrollment", default="30")))
+        ttk.Entry(academic_frame, textvariable=self.max_enroll_var, width=10).grid(row=1, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(academic_frame, text="Course Type:").grid(row=2, column=0, sticky=tk.W)
+        self.type_var = tk.StringVar(value=str(self._get("course_type", default="Degree Program")))
+        ttk.Combobox(academic_frame, textvariable=self.type_var, state='readonly',
+                     values=["Degree Program", "Certificate", "Diploma", "Short Course"]
+                     ).grid(row=2, column=1, sticky=tk.W, padx=5)
+
+        ttk.Label(academic_frame, text="Course Fee:").grid(row=3, column=0, sticky=tk.W)
+        self.fee_var = tk.StringVar(value=str(self._get("course_fee", default="0.0")))
+        ttk.Entry(academic_frame, textvariable=self.fee_var, width=10).grid(row=3, column=1, sticky=tk.W, padx=5)
+
+        # Additional Options
+        options_frame = ttk.LabelFrame(main_frame, text="Additional Options", padding=10)
+        options_frame.pack(fill=tk.X, pady=5)
+
+        self.lab_required = tk.BooleanVar(value=bool(self._get("lab_required", default=False)))
+        ttk.Checkbutton(options_frame, text="Lab Required", variable=self.lab_required).grid(row=0, column=0, sticky=tk.W)
+
+        self.online_available = tk.BooleanVar(value=bool(self._get("online_available", default=False)))
+        ttk.Checkbutton(options_frame, text="Online Available", variable=self.online_available).grid(row=0, column=1, sticky=tk.W)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
@@ -602,7 +656,6 @@ class CourseEditDialog:
 
     def update_course(self):
         try:
-            # Get updated values
             course_code = self.code_var.get().strip().upper()
             course_name = self.name_var.get().strip()
             description = self.desc_text.get(1.0, tk.END).strip()
@@ -611,19 +664,70 @@ class CourseEditDialog:
                 messagebox.showerror(_("common.validation_error"), "Course code and name are required.")
                 return
 
-            # Update database
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0); conn.execute("PRAGMA journal_mode=WAL")
             try:
+                credit_hours = float(self.credits_var.get())
+                max_enrollment = int(self.max_enroll_var.get())
+                course_fee = float(self.fee_var.get())
+            except ValueError:
+                messagebox.showerror(_("common.validation_error"),
+                                     "Please enter valid numbers for credits, enrollment, and fee.")
+                return
+
+            if max_enrollment < 0:
+                messagebox.showerror(_("common.validation_error"), "Max enrollment cannot be negative.")
+                return
+
+            # Reject capacity below current enrollment so an admin doesn't
+            # silently strand already-enrolled students above the new cap.
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
+            try:
+                conn.execute("PRAGMA journal_mode=WAL")
+                cur = conn.cursor()
+                cur.execute(
+                    "SELECT COUNT(*) FROM enrollments WHERE course_id = ? AND status = 'enrolled'",
+                    (self.course_id,),
+                )
+                row = cur.fetchone()
+                current_enrolled = row[0] if row else 0
+                if max_enrollment and current_enrolled > max_enrollment:
+                    if not messagebox.askyesno(
+                        _("common.confirm"),
+                        f"There are already {current_enrolled} enrolled students but the new "
+                        f"capacity is {max_enrollment}. Save anyway?",
+                    ):
+                        return
+            except sqlite3.Error:
+                pass  # enrollments table may not exist in all deployments
+            finally:
+                conn.close()
+
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0)
+            try:
+                conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
-
-                timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-                cursor.execute('''
-                UPDATE courses
-                SET course_code = ?, course_name = ?, description = ?
-                WHERE id = ?
-                ''', (course_code, course_name, description, self.course_id))
-
+                # Build UPDATE dynamically — only touch columns that exist on this DB.
+                fields = {
+                    "course_code": course_code,
+                    "course_name": course_name,
+                    "description": description,
+                    "department": self.dept_var.get().strip(),
+                    "level": self.level_var.get().strip(),
+                    "credit_hours": credit_hours,
+                    "max_enrollment": max_enrollment,
+                    "course_type": self.type_var.get(),
+                    "course_fee": course_fee,
+                    "lab_required": int(self.lab_required.get()),
+                    "online_available": int(self.online_available.get()),
+                    "updated_at": timestamp,
+                }
+                set_cols = [c for c in fields if c in self._course_columns]
+                if not set_cols:
+                    messagebox.showerror(_("common.error"), "No editable columns found on courses table.")
+                    return
+                set_sql = ", ".join(f"{c} = ?" for c in set_cols)
+                values = [fields[c] for c in set_cols] + [self.course_id]
+                cursor.execute(f"UPDATE courses SET {set_sql} WHERE id = ?", values)
                 conn.commit()
             finally:
                 conn.close()

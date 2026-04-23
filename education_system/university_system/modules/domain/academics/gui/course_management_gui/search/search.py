@@ -225,6 +225,22 @@ class AdvancedCourseSearchDialog:
         notebook.add(results_frame, text="Search Results")
         self.create_results_display(results_frame)
 
+        # Saved searches bar
+        saved_bar = ttk.LabelFrame(main_frame, text="Saved Searches", padding=8)
+        saved_bar.pack(fill=tk.X, pady=(0, 5))
+        ttk.Label(saved_bar, text="Load:").pack(side=tk.LEFT)
+        self.saved_search_var = tk.StringVar()
+        self.saved_search_combo = ttk.Combobox(saved_bar, textvariable=self.saved_search_var,
+                                               state="readonly", width=30)
+        self.saved_search_combo.pack(side=tk.LEFT, padx=(4, 8))
+        ttk.Button(saved_bar, text="Apply",
+                   command=self.load_saved_search).pack(side=tk.LEFT, padx=2)
+        ttk.Button(saved_bar, text="Delete",
+                   command=self.delete_saved_search).pack(side=tk.LEFT, padx=2)
+        ttk.Button(saved_bar, text="Save current...",
+                   command=self.save_current_search).pack(side=tk.RIGHT, padx=2)
+        self._refresh_saved_searches()
+
         # Search buttons
         button_frame = ttk.Frame(main_frame)
         button_frame.pack(fill=tk.X, pady=10)
@@ -301,6 +317,16 @@ class AdvancedCourseSearchDialog:
             var = tk.BooleanVar()
             self.level_vars[level] = var
             ttk.Checkbutton(level_frame, text=level, variable=var).grid(row=i//2, column=i%2, sticky=tk.W)
+
+        # Instructor filter (matches first or last name; runs against the
+        # course's primary instructor only — schedule-level co-instructors
+        # are not searched).
+        instructor_frame = ttk.LabelFrame(parent, text="Instructor", padding=10)
+        instructor_frame.pack(fill=tk.X, pady=5)
+        ttk.Label(instructor_frame, text="Name contains:").grid(row=0, column=0, sticky=tk.W)
+        self.instructor_var = tk.StringVar()
+        ttk.Entry(instructor_frame, textvariable=self.instructor_var, width=30
+                  ).grid(row=0, column=1, padx=5, sticky=tk.W)
 
         # Credit hours range
         credits_frame = ttk.LabelFrame(parent, text="Credit Hours", padding=10)
@@ -402,50 +428,50 @@ class AdvancedCourseSearchDialog:
             if keyword:
                 search_in = self.search_in_var.get()
                 if search_in == "all":
-                    conditions.append("(course_code LIKE ? OR course_name LIKE ? OR description LIKE ?)")
+                    conditions.append("(courses.course_code LIKE ? OR courses.course_name LIKE ? OR courses.description LIKE ?)")
                     params.extend([f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%", f"%{escape_like(keyword)}%"])
                 elif search_in == "name":
-                    conditions.append("course_name LIKE ?")
+                    conditions.append("courses.course_name LIKE ?")
                     params.append(f"%{escape_like(keyword)}%")
                 elif search_in == "description":
-                    conditions.append("description LIKE ?")
+                    conditions.append("courses.description LIKE ?")
                     params.append(f"%{escape_like(keyword)}%")
                 elif search_in == "code":
-                    conditions.append("course_code LIKE ?")
+                    conditions.append("courses.course_code LIKE ?")
                     params.append(f"%{escape_like(keyword)}%")
 
             # Quick filters
             if self.only_active.get():
-                conditions.append("LOWER(COALESCE(status, 'active')) = 'active'")
+                conditions.append("LOWER(COALESCE(courses.status, 'active')) = 'active'")
 
             if self.only_available.get():
-                conditions.append("COALESCE(current_enrollment, 0) < COALESCE(max_enrollment, 0)")
+                conditions.append("COALESCE(courses.current_enrollment, 0) < COALESCE(courses.max_enrollment, 0)")
 
             if self.online_only.get():
-                conditions.append("online_available = 1")
+                conditions.append("courses.online_available = 1")
 
             if self.no_lab.get():
-                conditions.append("lab_required = 0")
+                conditions.append("courses.lab_required = 0")
 
             # Department filter
             selected_depts = [dept for dept, var in self.dept_vars.items() if var.get()]
             if selected_depts:
                 placeholders = ','.join(['?' for _ in selected_depts])
-                conditions.append(f"department IN ({placeholders})")
+                conditions.append(f"courses.department IN ({placeholders})")
                 params.extend(selected_depts)
 
             # Level filter
             selected_levels = [level for level, var in self.level_vars.items() if var.get()]
             if selected_levels:
                 placeholders = ','.join(['?' for _ in selected_levels])
-                conditions.append(f"level IN ({placeholders})")
+                conditions.append(f"courses.level IN ({placeholders})")
                 params.extend(selected_levels)
 
             # Credit hours filter
             if self.min_credits_var.get():
                 try:
                     min_credits = float(self.min_credits_var.get())
-                    conditions.append("credit_hours >= ?")
+                    conditions.append("courses.credit_hours >= ?")
                     params.append(min_credits)
                 except ValueError:
                     pass
@@ -453,7 +479,7 @@ class AdvancedCourseSearchDialog:
             if self.max_credits_var.get():
                 try:
                     max_credits = float(self.max_credits_var.get())
-                    conditions.append("credit_hours <= ?")
+                    conditions.append("courses.credit_hours <= ?")
                     params.append(max_credits)
                 except ValueError:
                     pass
@@ -462,26 +488,36 @@ class AdvancedCourseSearchDialog:
             fill_rate = self.fill_rate_var.get()
             if fill_rate != "any":
                 if fill_rate == "low":
-                    conditions.append("COALESCE(max_enrollment, 0) > 0 AND CAST(COALESCE(current_enrollment, 0) AS FLOAT) / max_enrollment < 0.25")
+                    conditions.append("COALESCE(courses.max_enrollment, 0) > 0 AND CAST(COALESCE(courses.current_enrollment, 0) AS FLOAT) / courses.max_enrollment < 0.25")
                 elif fill_rate == "medium":
-                    conditions.append("COALESCE(max_enrollment, 0) > 0 AND CAST(COALESCE(current_enrollment, 0) AS FLOAT) / max_enrollment BETWEEN 0.25 AND 0.75")
+                    conditions.append("COALESCE(courses.max_enrollment, 0) > 0 AND CAST(COALESCE(courses.current_enrollment, 0) AS FLOAT) / courses.max_enrollment BETWEEN 0.25 AND 0.75")
                 elif fill_rate == "high":
-                    conditions.append("COALESCE(max_enrollment, 0) > 0 AND CAST(COALESCE(current_enrollment, 0) AS FLOAT) / max_enrollment > 0.75")
+                    conditions.append("COALESCE(courses.max_enrollment, 0) > 0 AND CAST(COALESCE(courses.current_enrollment, 0) AS FLOAT) / courses.max_enrollment > 0.75")
                 elif fill_rate == "full":
-                    conditions.append("COALESCE(current_enrollment, 0) >= COALESCE(max_enrollment, 0)")
+                    conditions.append("COALESCE(courses.current_enrollment, 0) >= COALESCE(courses.max_enrollment, 0)")
+
+            # Instructor name filter — match first OR last name (case-insensitive).
+            instructor_q = (self.instructor_var.get() or "").strip()
+            join_sql = ""
+            if instructor_q:
+                join_sql = " LEFT JOIN instructors i ON i.id = courses.instructor_id "
+                conditions.append("(i.first_name LIKE ? OR i.last_name LIKE ?)")
+                params.extend([f"%{escape_like(instructor_q)}%",
+                               f"%{escape_like(instructor_q)}%"])
 
             # Build final query - exclude module records (course_code IS NULL)
             base_query = """
-            SELECT course_code, course_name, department, level, credit_hours,
-                   current_enrollment, max_enrollment, status
+            SELECT courses.course_code, courses.course_name, courses.department, courses.level,
+                   courses.credit_hours, courses.current_enrollment, courses.max_enrollment,
+                   courses.status
             FROM courses
-            """
+            """ + join_sql
 
-            conditions.insert(0, "course_name IS NOT NULL")
-            conditions.insert(0, "course_code IS NOT NULL")
+            conditions.insert(0, "courses.course_name IS NOT NULL")
+            conditions.insert(0, "courses.course_code IS NOT NULL")
             query = base_query + " WHERE " + " AND ".join(conditions)
 
-            query += " ORDER BY course_code"
+            query += " ORDER BY courses.course_code"
 
             cursor.execute(query, params)
             results = cursor.fetchall()
@@ -520,6 +556,8 @@ class AdvancedCourseSearchDialog:
         self.min_credits_var.set("")
         self.max_credits_var.set("")
         self.fill_rate_var.set("any")
+        if hasattr(self, "instructor_var"):
+            self.instructor_var.set("")
 
         # Clear department and level selections
         for var in self.dept_vars.values():
@@ -581,6 +619,175 @@ class AdvancedCourseSearchDialog:
                 conn.close()
             except sqlite3.Error:
                 pass
+
+    # ------------------------------------------------------------------
+    # Saved searches — persisted per-user in `course_saved_searches`.
+    # The table is created lazily so callers don't need a schema migration.
+    # ------------------------------------------------------------------
+
+    def _current_user_key(self) -> str:
+        """Return a stable identifier for the current user, or 'default'."""
+        try:
+            user = getattr(self.auth, "current_user", None)
+            if isinstance(user, dict):
+                return str(user.get("username") or user.get("user_id") or "default")
+            if user and hasattr(user, "username"):
+                return str(user.username)
+        except Exception:
+            pass
+        return "default"
+
+    def _ensure_saved_searches_table(self, cursor):
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS course_saved_searches (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                name TEXT NOT NULL,
+                criteria_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                UNIQUE(user_id, name)
+            )
+        """)
+
+    def _serialize_criteria(self) -> str:
+        criteria = {
+            "keyword": self.keyword_var.get(),
+            "search_in": self.search_in_var.get(),
+            "only_available": self.only_available.get(),
+            "only_active": self.only_active.get(),
+            "online_only": self.online_only.get(),
+            "no_lab": self.no_lab.get(),
+            "departments": [d for d, v in self.dept_vars.items() if v.get()],
+            "levels": [l for l, v in self.level_vars.items() if v.get()],
+            "min_credits": self.min_credits_var.get(),
+            "max_credits": self.max_credits_var.get(),
+            "fill_rate": self.fill_rate_var.get(),
+            "instructor": self.instructor_var.get() if hasattr(self, "instructor_var") else "",
+        }
+        return json.dumps(criteria)
+
+    def _apply_criteria(self, criteria: dict):
+        self.keyword_var.set(criteria.get("keyword", ""))
+        self.search_in_var.set(criteria.get("search_in", "all"))
+        self.only_available.set(bool(criteria.get("only_available", False)))
+        self.only_active.set(bool(criteria.get("only_active", True)))
+        self.online_only.set(bool(criteria.get("online_only", False)))
+        self.no_lab.set(bool(criteria.get("no_lab", False)))
+        wanted_depts = set(criteria.get("departments", []))
+        for dept, var in self.dept_vars.items():
+            var.set(dept in wanted_depts)
+        wanted_levels = set(criteria.get("levels", []))
+        for level, var in self.level_vars.items():
+            var.set(level in wanted_levels)
+        self.min_credits_var.set(criteria.get("min_credits", ""))
+        self.max_credits_var.set(criteria.get("max_credits", ""))
+        self.fill_rate_var.set(criteria.get("fill_rate", "any"))
+        if hasattr(self, "instructor_var"):
+            self.instructor_var.set(criteria.get("instructor", ""))
+
+    def _refresh_saved_searches(self):
+        try:
+            with sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0) as conn:
+                conn.execute("PRAGMA journal_mode=WAL")
+                cur = conn.cursor()
+                self._ensure_saved_searches_table(cur)
+                cur.execute(
+                    "SELECT name FROM course_saved_searches WHERE user_id = ? ORDER BY name",
+                    (self._current_user_key(),),
+                )
+                names = [r[0] for r in cur.fetchall()]
+        except sqlite3.Error:
+            names = []
+        self.saved_search_combo["values"] = names
+        if not names:
+            self.saved_search_var.set("")
+
+    def save_current_search(self):
+        name = simpledialog.askstring("Save Search", "Name for this saved search:",
+                                      parent=self.dialog)
+        if not name:
+            return
+        name = name.strip()
+        if not name:
+            return
+        criteria_json = self._serialize_criteria()
+        try:
+            with sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0) as conn:
+                conn.execute("PRAGMA journal_mode=WAL")
+                cur = conn.cursor()
+                self._ensure_saved_searches_table(cur)
+                from datetime import datetime as _dt
+                cur.execute("""
+                    INSERT INTO course_saved_searches (user_id, name, criteria_json, created_at)
+                    VALUES (?, ?, ?, ?)
+                    ON CONFLICT(user_id, name) DO UPDATE
+                        SET criteria_json = excluded.criteria_json,
+                            created_at    = excluded.created_at
+                """, (self._current_user_key(), name, criteria_json,
+                      _dt.now().strftime("%Y-%m-%d %H:%M:%S")))
+                conn.commit()
+        except sqlite3.Error as e:
+            messagebox.showerror(_("common.database_error"),
+                                 f"Failed to save search: {e}")
+            return
+        self._refresh_saved_searches()
+        self.saved_search_var.set(name)
+
+    def load_saved_search(self):
+        name = self.saved_search_var.get().strip()
+        if not name:
+            messagebox.showinfo(_("common.info", default="Info"),
+                                "Pick a saved search from the dropdown first.")
+            return
+        try:
+            with sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0) as conn:
+                conn.execute("PRAGMA journal_mode=WAL")
+                cur = conn.cursor()
+                self._ensure_saved_searches_table(cur)
+                cur.execute(
+                    "SELECT criteria_json FROM course_saved_searches "
+                    "WHERE user_id = ? AND name = ?",
+                    (self._current_user_key(), name),
+                )
+                row = cur.fetchone()
+        except sqlite3.Error as e:
+            messagebox.showerror(_("common.database_error"),
+                                 f"Failed to load search: {e}")
+            return
+        if not row:
+            messagebox.showwarning(_("common.error"), f"Saved search '{name}' not found.")
+            return
+        try:
+            criteria = json.loads(row[0])
+        except json.JSONDecodeError as e:
+            messagebox.showerror(_("common.error"),
+                                 f"Saved search '{name}' is corrupt: {e}")
+            return
+        self._apply_criteria(criteria)
+        self.perform_search()
+
+    def delete_saved_search(self):
+        name = self.saved_search_var.get().strip()
+        if not name:
+            return
+        if not messagebox.askyesno(_("common.confirm", default="Confirm"),
+                                   f"Delete saved search '{name}'?"):
+            return
+        try:
+            with sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30.0) as conn:
+                conn.execute("PRAGMA journal_mode=WAL")
+                cur = conn.cursor()
+                self._ensure_saved_searches_table(cur)
+                cur.execute(
+                    "DELETE FROM course_saved_searches WHERE user_id = ? AND name = ?",
+                    (self._current_user_key(), name),
+                )
+                conn.commit()
+        except sqlite3.Error as e:
+            messagebox.showerror(_("common.database_error"),
+                                 f"Failed to delete search: {e}")
+            return
+        self._refresh_saved_searches()
 
 
 class AdvancedSearchDialog:
