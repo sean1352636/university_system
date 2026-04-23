@@ -28,7 +28,7 @@ reportlab==4.4.10              # PDF generation and reports
 openpyxl==3.1.5                # Excel file handling and export
 fpdf2==2.8.7                   # Alternative PDF generation
 python-docx==1.2.0             # Word document support
-pypdf==6.10.0                  # PDF file processing and manipulation (replaces abandoned PyPDF2; >=6.10.0 fixes infinite-loop on malformed comment)
+pypdf==6.10.2                  # PDF file processing and manipulation (replaces abandoned PyPDF2; >=6.10.2 fixes four FlateDecode / cross-reference / incremental-mode DoS CVEs — Dependabot alerts #26-#29)
 
 # ===============================
 # WEB & NETWORKING
