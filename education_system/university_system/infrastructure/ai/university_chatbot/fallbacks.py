@@ -5,6 +5,7 @@ even when heavy libraries (speech_recognition, flask, transformers, etc.)
 are not installed.
 """
 
+import importlib.util as _importlib_util
 import json
 import logging
 import warnings
@@ -168,14 +169,12 @@ except ImportError:
     np = DummyNumpy()
 
 # ---------------------------------------------------------------------------
-# pandas
+# pandas — availability probe only. `pd` is never referenced from this module,
+# so importing pandas (~1s) purely to set an availability flag is pure waste.
 # ---------------------------------------------------------------------------
-try:
-    import pandas as pd  # noqa: F401
-    LIBRARIES_AVAILABLE['pandas'] = True
-except ImportError:
+LIBRARIES_AVAILABLE['pandas'] = _importlib_util.find_spec('pandas') is not None
+if not LIBRARIES_AVAILABLE['pandas']:
     logging.debug("Optional dependency missing: pandas library not available - data analysis features limited")
-    LIBRARIES_AVAILABLE['pandas'] = False
 
 # ---------------------------------------------------------------------------
 # pyttsx3
@@ -524,25 +523,50 @@ except ImportError:
     request = DummyRequest()
 
 # ---------------------------------------------------------------------------
-# transformers
+# transformers — lazy resolution.
+#
+# Importing transformers triggers torch/tensorflow load (seconds of startup).
+# Probe with find_spec and defer the real import until first use, identical to
+# the sklearn pattern below.
 # ---------------------------------------------------------------------------
-try:
-    from transformers import pipeline, AutoTokenizer, AutoModel  # noqa: F401
-    try:
-        import torch  # noqa: F401
-        LIBRARIES_AVAILABLE['transformers'] = True
-    except ImportError:
-        try:
-            import tensorflow  # noqa: F401
-            LIBRARIES_AVAILABLE['transformers'] = True
-        except ImportError:
-            logging.debug("Optional dependency missing: transformers requires PyTorch or TensorFlow - using fallback")
-            LIBRARIES_AVAILABLE['transformers'] = False
-except ImportError:
-    logging.debug("Optional dependency missing: transformers library not available - advanced AI features disabled")
-    LIBRARIES_AVAILABLE['transformers'] = False
+_transformers_ok = _importlib_util.find_spec('transformers') is not None
+# `transformers` also needs a backend (torch or tensorflow).
+_has_torch = _importlib_util.find_spec('torch') is not None
+_has_tf = _importlib_util.find_spec('tensorflow') is not None
+LIBRARIES_AVAILABLE['transformers'] = bool(_transformers_ok and (_has_torch or _has_tf))
 
-if not LIBRARIES_AVAILABLE.get('transformers'):
+if LIBRARIES_AVAILABLE['transformers']:
+    _transformers_real = {}
+
+    def _load_transformers():
+        if _transformers_real:
+            return
+        from transformers import pipeline as _pipeline, AutoTokenizer as _Tok, AutoModel as _Mod
+        _transformers_real['pipeline'] = _pipeline
+        _transformers_real['AutoTokenizer'] = _Tok
+        _transformers_real['AutoModel'] = _Mod
+
+    def pipeline(task, model=None, **kwargs):
+        _load_transformers()
+        return _transformers_real['pipeline'](task, model=model, **kwargs)
+
+    class AutoTokenizer:  # type: ignore[no-redef]
+        @classmethod
+        def from_pretrained(cls, *args, **kwargs):
+            _load_transformers()
+            return _transformers_real['AutoTokenizer'].from_pretrained(*args, **kwargs)
+
+    class AutoModel:  # type: ignore[no-redef]
+        @classmethod
+        def from_pretrained(cls, *args, **kwargs):
+            _load_transformers()
+            return _transformers_real['AutoModel'].from_pretrained(*args, **kwargs)
+else:
+    if not _transformers_ok:
+        logging.debug("Optional dependency missing: transformers library not available - advanced AI features disabled")
+    else:
+        logging.debug("Optional dependency missing: transformers requires PyTorch or TensorFlow - using fallback")
+
     def pipeline(task, model=None):
         class DummyPipeline:
             def __call__(self, text, **kwargs):
@@ -556,15 +580,39 @@ if not LIBRARIES_AVAILABLE.get('transformers'):
         return DummyPipeline()
 
 # ---------------------------------------------------------------------------
-# sklearn
+# sklearn — lazy resolution.
+#
+# Importing sklearn.feature_extraction.text pulls in the entire scipy stack
+# (~4s at startup). Every code path that touches this module (e.g., auth.core
+# probes the chatbot on import) would pay that cost, even though most app
+# sessions never invoke chatbot similarity matching. Use importlib.util
+# .find_spec to probe availability without importing, and defer the real
+# import until TfidfVectorizer / cosine_similarity is first *called*.
 # ---------------------------------------------------------------------------
-try:
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity
-    LIBRARIES_AVAILABLE['sklearn'] = True
-except ImportError:
+LIBRARIES_AVAILABLE['sklearn'] = _importlib_util.find_spec('sklearn') is not None
+
+if LIBRARIES_AVAILABLE['sklearn']:
+    _sklearn_real = {}
+
+    def _load_sklearn():
+        if _sklearn_real:
+            return
+        from sklearn.feature_extraction.text import TfidfVectorizer as _Tfidf
+        from sklearn.metrics.pairwise import cosine_similarity as _cos
+        _sklearn_real['tfidf'] = _Tfidf
+        _sklearn_real['cosine'] = _cos
+
+    class TfidfVectorizer:  # type: ignore[no-redef]
+        """Lazy shim around sklearn's TfidfVectorizer — imports on first instantiation."""
+        def __new__(cls, *args, **kwargs):
+            _load_sklearn()
+            return _sklearn_real['tfidf'](*args, **kwargs)
+
+    def cosine_similarity(a, b):
+        _load_sklearn()
+        return _sklearn_real['cosine'](a, b)
+else:
     logging.debug("Optional dependency missing: sklearn library not available - similarity matching disabled")
-    LIBRARIES_AVAILABLE['sklearn'] = False
 
     class DummyTfidfVectorizer:
         def fit_transform(self, texts): return [[0] * len(texts)]

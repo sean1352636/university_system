@@ -17,34 +17,12 @@ from typing import Optional
 
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.infrastructure.database.schemas.staff_hr_schemas_all import init_all_staff_hr_schemas
+from education_system.university_system.infrastructure.database.schemas.staff_hr_schemas_all import init_staff_hr_schemas
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity
 
-from education_system.university_system.modules.domain.staff_hr.gui.leave_management_gui import LeaveManagementGUI
-from education_system.university_system.modules.domain.staff_hr.gui.time_attendance_gui import TimeAttendanceGUI
-from education_system.university_system.modules.domain.staff_hr.gui.training_gui import TrainingGUI
-from education_system.university_system.modules.domain.staff_hr.gui.appraisal_gui import AppraisalGUI
-from education_system.university_system.modules.domain.staff_hr.gui.onboarding_gui import OnboardingGUI
-from education_system.university_system.modules.domain.staff_hr.gui.contract_gui import ContractGUI
-from education_system.university_system.modules.domain.staff_hr.gui.expense_gui import ExpenseGUI
-from education_system.university_system.modules.domain.staff_hr.gui.grievance_gui import GrievanceGUI
-from education_system.university_system.modules.domain.staff_hr.gui.exit_gui import ExitGUI
-from education_system.university_system.modules.domain.staff_hr.gui.payroll_gui import PayrollGUI
-from education_system.university_system.modules.domain.staff_hr.gui.faculty_schedule_gui import FacultyScheduleGUI
-from education_system.university_system.modules.domain.staff_hr.gui.curriculum_gui import CurriculumGUI
-from education_system.university_system.modules.domain.staff_hr.gui.travel_gui import TravelGUI
-from education_system.university_system.modules.domain.staff_hr.gui.sabbatical_gui import SabbaticalGUI
-from education_system.university_system.modules.domain.staff_hr.gui.committee_gui import CommitteeGUI
-from education_system.university_system.modules.domain.staff_hr.gui.ip_gui import IPGUI
-from education_system.university_system.modules.domain.staff_hr.gui.equipment_gui import EquipmentGUI
-from education_system.university_system.modules.domain.staff_hr.gui.cover_gui import CoverGUI
-from education_system.university_system.modules.domain.staff_hr.gui.workload_gui import WorkloadGUI
-from education_system.university_system.modules.domain.staff_hr.gui.directory_gui import DirectoryGUI
-from education_system.university_system.modules.domain.staff_hr.gui.mentoring_gui import MentoringGUI
-from education_system.university_system.modules.domain.staff_hr.gui.grant_budget_gui import GrantBudgetGUI
-from education_system.university_system.modules.domain.staff_hr.gui.peer_review_gui import PeerReviewGUI
-from education_system.university_system.modules.domain.staff_hr.gui.comm_hub_gui import CommHubGUI
-from education_system.university_system.modules.domain.staff_hr.gui.teaching_load_gui import TeachingLoadGUI
+# Sub-feature GUIs are imported lazily inside each `_load_*` method below.
+# The 25 sibling modules together add ~11s to import of this file when loaded
+# eagerly; paying each import on demand keeps Staff HR launch under a second.
 
 # Import i18n for internationalization
 from education_system.university_system.modules.shared.utils.i18n import (
@@ -66,9 +44,9 @@ class StaffHRGUI:
             messagebox.showerror(_t("common.error"), _t("staff_hr.errors.login_required"))
             return
 
-        # Initialize database schemas (all versions)
+        # Initialize database schemas
         try:
-            init_all_staff_hr_schemas()
+            init_staff_hr_schemas()
         except Exception as e:
             print(f"Warning: Could not initialize Staff HR schemas: {e}")
 
@@ -344,102 +322,127 @@ class StaffHRGUI:
 
     def _load_leave_management(self):
         """Load leave management as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.leave_management_gui import LeaveManagementGUI
         self._load_tab_safe(LeaveManagementGUI, _t("staff_hr.tabs.leave_management"))
 
     def _load_time_attendance(self):
         """Load time & attendance as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.time_attendance_gui import TimeAttendanceGUI
         self._load_tab_safe(TimeAttendanceGUI, _t("staff_hr.tabs.time_attendance"))
 
     def _load_training(self):
         """Load training & certifications as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.training_gui import TrainingGUI
         self._load_tab_safe(TrainingGUI, _t("staff_hr.tabs.training"))
 
     def _load_appraisals(self):
         """Load performance appraisals as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.appraisal_gui import AppraisalGUI
         self._load_tab_safe(AppraisalGUI, _t("staff_hr.tabs.appraisals"))
 
     def _load_onboarding(self):
         """Load onboarding as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.onboarding_gui import OnboardingGUI
         self._load_tab_safe(OnboardingGUI, _t("staff_hr.tabs.onboarding"))
 
     def _load_contracts(self):
         """Load contract management as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.contract_gui import ContractGUI
         self._load_tab_safe(ContractGUI, _t("staff_hr.tabs.contracts"))
 
     def _load_expenses(self):
         """Load expense claims as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.expense_gui import ExpenseGUI
         self._load_tab_safe(ExpenseGUI, _t("staff_hr.tabs.expenses"))
 
     def _load_grievances(self):
         """Load grievance management as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.grievance_gui import GrievanceGUI
         self._load_tab_safe(GrievanceGUI, _t("staff_hr.tabs.grievances"))
 
     def _load_payroll(self):
         """Load payroll management as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.payroll_gui import PayrollGUI
         self._load_tab_safe(PayrollGUI, "Payroll")
 
     def _load_faculty_schedule(self):
         """Load faculty schedule builder as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.faculty_schedule_gui import FacultyScheduleGUI
         self._load_tab_safe(FacultyScheduleGUI, "Schedule")
 
     def _load_curriculum(self):
         """Load curriculum design tools as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.curriculum_gui import CurriculumGUI
         self._load_tab_safe(CurriculumGUI, "Curriculum")
 
     def _load_travel(self):
         """Load travel & conference management as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.travel_gui import TravelGUI
         self._load_tab_safe(TravelGUI, "Travel")
 
     def _load_sabbatical(self):
         """Load sabbatical / study leave as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.sabbatical_gui import SabbaticalGUI
         self._load_tab_safe(SabbaticalGUI, "Sabbatical")
 
     def _load_committees(self):
         """Load committee management as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.committee_gui import CommitteeGUI
         self._load_tab_safe(CommitteeGUI, "Committees")
 
     def _load_ip(self):
         """Load intellectual property management as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.ip_gui import IPGUI
         self._load_tab_safe(IPGUI, "IP")
 
     def _load_equipment(self):
         """Load lab/equipment booking as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.equipment_gui import EquipmentGUI
         self._load_tab_safe(EquipmentGUI, "Equipment")
 
     def _load_cover(self):
         """Load substitute/cover arrangements as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.cover_gui import CoverGUI
         self._load_tab_safe(CoverGUI, "Cover")
 
     def _load_workload(self):
         """Load workload dashboard as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.workload_gui import WorkloadGUI
         self._load_tab_safe(WorkloadGUI, "Workload")
 
     def _load_directory(self):
         """Load staff directory as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.directory_gui import DirectoryGUI
         self._load_tab_safe(DirectoryGUI, "Directory")
 
     def _load_mentoring(self):
         """Load mentoring programme management as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.mentoring_gui import MentoringGUI
         self._load_tab_safe(MentoringGUI, "Mentoring")
 
     def _load_grant_budget(self):
         """Load grant budget tracking as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.grant_budget_gui import GrantBudgetGUI
         self._load_tab_safe(GrantBudgetGUI, "Grant Budget")
 
     def _load_peer_review(self):
         """Load peer review / collaboration as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.peer_review_gui import PeerReviewGUI
         self._load_tab_safe(PeerReviewGUI, "Peer Review")
 
     def _load_comm_hub(self):
         """Load staff communication hub as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.comm_hub_gui import CommHubGUI
         self._load_tab_safe(CommHubGUI, "Comm Hub")
 
     def _load_teaching_load(self):
         """Load teaching load management as a tab."""
+        from education_system.university_system.modules.domain.staff_hr.gui.teaching_load_gui import TeachingLoadGUI
         self._load_tab_safe(TeachingLoadGUI, "Teaching Load")
 
     def _load_exit_management(self):
         """Load exit management as a tab (admin only)."""
+        from education_system.university_system.modules.domain.staff_hr.gui.exit_gui import ExitGUI
         self._load_tab_safe(ExitGUI, _t("staff_hr.tabs.exit_management"))
 
     def _get_leave_balance(self) -> str:

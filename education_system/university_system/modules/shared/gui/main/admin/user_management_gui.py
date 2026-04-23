@@ -654,33 +654,226 @@ def view_all_users(self):
     except Exception as e:
         messagebox.showerror(_t("user_management_gui.errors.error_title"), _t("user_management_gui.errors.failed_to_view_users", error=str(e)))
 def add_new_user(self):
-    """Add a new user to the system"""
+    """Add a new user to the system — opens the create-user form directly."""
     try:
-        # Open the user management GUI for adding users
-        messagebox.showinfo(_t("user_management_gui.add_user.title"), _t("user_management_gui.add_user.info_message"))
-        self.show_user_management()
+        # show_create_user builds its own Toplevel with username / email / name
+        # / role fields, generates a temp password, calls auth.create_user and
+        # audit-logs the creation. It needs a user_tree to refresh on success,
+        # so make sure the user management panel exists first.
+        if not hasattr(self, 'user_tree'):
+            self.show_user_management()
+        self.show_create_user()
     except Exception as e:
         messagebox.showerror(_t("user_management_gui.errors.error_title"), _t("user_management_gui.errors.failed_to_add_user", error=str(e)))
 
 def manage_permissions(self):
-    """Manage user permissions"""
+    """Manage role-level permissions.
+
+    Opens a modal window with a role selector on the left and a searchable,
+    scrollable checkbox list of every known permission on the right. Loading a
+    role populates its current grants; Save diffs the checkbox state against
+    what's in the DB and calls PermissionManager.grant_role_permission /
+    revoke_role_permission for each change. All changes are activity-logged and
+    audit-logged (PERMISSION_GRANT / PERMISSION_REVOKE).
+    """
+    if not self.auth.current_user or 'manage_roles' not in self.auth.current_user.get('permissions', []):
+        messagebox.showerror(
+            _t("user_management_gui.errors.access_denied_title"),
+            _t("user_management_gui.manage_permissions.errors.manage_roles_required"),
+        )
+        return
+
     try:
-        perms_window = tk.Toplevel(self.root)
-        perms_window.title(_t("user_management_gui.manage_permissions.window_title"))
-        perms_window.geometry("600x400")
+        pm = self.auth.permission_manager
+        roles = pm.list_roles()
+        all_permissions = pm.list_permissions() or []
+        if not roles or not all_permissions:
+            messagebox.showerror(
+                _t("user_management_gui.errors.error_title"),
+                _t("user_management_gui.manage_permissions.errors.load_failed"),
+            )
+            return
 
-        ttk.Label(perms_window, text=_t("user_management_gui.manage_permissions.title"),
-                 font=('Arial', 14, 'bold')).pack(pady=10)
+        window = tk.Toplevel(self.root)
+        window.title(_t("user_management_gui.manage_permissions.window_title"))
+        window.geometry("900x640")
+        window.transient(self.root)
+        window.grab_set()
 
-        info_text = scrolledtext.ScrolledText(perms_window, wrap=tk.WORD, height=15,
-                                              fg="#000000", bg="#FFFFFF")
-        info_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        ttk.Label(
+            window,
+            text=_t("user_management_gui.manage_permissions.title"),
+            font=('Arial', 14, 'bold'),
+        ).pack(pady=(10, 5))
 
-        perms_info = _t("user_management_gui.manage_permissions.info_text")
-        info_text.insert("1.0", perms_info)
-        info_text.config(state=tk.DISABLED)
+        body = ttk.Frame(window, padding=10)
+        body.pack(fill=tk.BOTH, expand=True)
+        body.columnconfigure(1, weight=1)
+        body.rowconfigure(0, weight=1)
 
-        ttk.Button(perms_window, text=_t("user_management_gui.buttons.close"), command=perms_window.destroy).pack(pady=10)
+        # ---- Left: role picker ----
+        left = ttk.LabelFrame(body, text=_t("user_management_gui.manage_permissions.roles_frame"), padding=8)
+        left.grid(row=0, column=0, sticky='nsw', padx=(0, 10))
+
+        role_var = tk.StringVar()
+        role_listbox = tk.Listbox(left, listvariable=role_var, exportselection=False, width=22, height=18)
+        role_listbox.pack(fill=tk.Y, expand=True)
+        for r in roles:
+            role_listbox.insert(tk.END, r['role_name'])
+
+        # ---- Right: permission grid ----
+        right = ttk.LabelFrame(body, text=_t("user_management_gui.manage_permissions.permissions_frame"), padding=8)
+        right.grid(row=0, column=1, sticky='nsew')
+        right.columnconfigure(0, weight=1)
+        right.rowconfigure(2, weight=1)
+
+        # Search box
+        search_row = ttk.Frame(right)
+        search_row.grid(row=0, column=0, sticky='ew', pady=(0, 5))
+        ttk.Label(search_row, text=_t("user_management_gui.manage_permissions.search_label")).pack(side=tk.LEFT)
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_row, textvariable=search_var)
+        search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5, 0))
+
+        # Count / status line
+        status_var = tk.StringVar(value=_t("user_management_gui.manage_permissions.no_role_selected"))
+        ttk.Label(right, textvariable=status_var, foreground='#666').grid(row=1, column=0, sticky='w', pady=(0, 5))
+
+        # Scrollable check-button area
+        canvas = tk.Canvas(right, borderwidth=0, highlightthickness=0)
+        vscroll = ttk.Scrollbar(right, orient='vertical', command=canvas.yview)
+        canvas.configure(yscrollcommand=vscroll.set)
+        canvas.grid(row=2, column=0, sticky='nsew')
+        vscroll.grid(row=2, column=1, sticky='ns')
+        check_frame = ttk.Frame(canvas)
+        canvas.create_window((0, 0), window=check_frame, anchor='nw')
+
+        def _reflow_scroll(_event=None):
+            canvas.configure(scrollregion=canvas.bbox('all'))
+        check_frame.bind('<Configure>', _reflow_scroll)
+
+        # Build the checkbox grid once; we reuse the widgets across role switches.
+        perm_vars = {}  # permission_name -> (BooleanVar, Checkbutton)
+        for idx, perm in enumerate(all_permissions):
+            var = tk.BooleanVar()
+            cb = ttk.Checkbutton(check_frame, text=perm['permission_name'], variable=var)
+            cb.grid(row=idx, column=0, sticky='w', padx=5, pady=1)
+            perm_vars[perm['permission_name']] = (var, cb)
+
+        current_role = {'name': None, 'original': set()}
+
+        def _apply_search(*_):
+            needle = search_var.get().strip().lower()
+            for name, (_var, cb) in perm_vars.items():
+                visible = needle in name.lower() if needle else True
+                if visible:
+                    cb.grid()
+                else:
+                    cb.grid_remove()
+            _reflow_scroll()
+
+        search_var.trace_add('write', _apply_search)
+
+        def _load_role(_event=None):
+            sel = role_listbox.curselection()
+            if not sel:
+                return
+            role_name = role_listbox.get(sel[0])
+            granted = set(pm.get_role_permissions(role_name))
+            current_role['name'] = role_name
+            current_role['original'] = granted
+            for name, (var, _cb) in perm_vars.items():
+                var.set(name in granted)
+            status_var.set(_t(
+                "user_management_gui.manage_permissions.role_summary",
+                role=role_name, count=len(granted), total=len(perm_vars),
+            ))
+
+        role_listbox.bind('<<ListboxSelect>>', _load_role)
+
+        # ---- Save / revert / close buttons ----
+        footer = ttk.Frame(window, padding=(10, 5))
+        footer.pack(fill=tk.X)
+
+        def _revert():
+            if not current_role['name']:
+                return
+            for name, (var, _cb) in perm_vars.items():
+                var.set(name in current_role['original'])
+
+        def _save():
+            if not current_role['name']:
+                messagebox.showinfo(
+                    _t("user_management_gui.manage_permissions.window_title"),
+                    _t("user_management_gui.manage_permissions.errors.pick_role_first"),
+                )
+                return
+            role_name = current_role['name']
+            original = current_role['original']
+            new_state = {name for name, (var, _cb) in perm_vars.items() if var.get()}
+            to_grant = new_state - original
+            to_revoke = original - new_state
+            if not to_grant and not to_revoke:
+                messagebox.showinfo(
+                    _t("user_management_gui.manage_permissions.window_title"),
+                    _t("user_management_gui.manage_permissions.no_changes"),
+                )
+                return
+
+            failed = []
+            for p in sorted(to_grant):
+                if not pm.grant_role_permission(role_name, p):
+                    failed.append(p)
+            for p in sorted(to_revoke):
+                if not pm.revoke_role_permission(role_name, p):
+                    failed.append(p)
+
+            # If the admin edited their own role, refresh the in-memory
+            # permissions so subsequent checks see the new state this session.
+            if self.auth.current_user and self.auth.current_user.get('role') == role_name:
+                try:
+                    uid = self.auth.current_user.get('id')
+                    if uid is not None:
+                        self.auth.current_user['permissions'] = pm.get_user_permissions(uid)
+                except Exception:
+                    pass
+
+            # Refresh the "original" snapshot so the next diff is accurate.
+            current_role['original'] = set(pm.get_role_permissions(role_name))
+            status_var.set(_t(
+                "user_management_gui.manage_permissions.role_summary",
+                role=role_name, count=len(current_role['original']), total=len(perm_vars),
+            ))
+            if failed:
+                messagebox.showwarning(
+                    _t("user_management_gui.manage_permissions.window_title"),
+                    _t("user_management_gui.manage_permissions.save_partial", failed=", ".join(failed)),
+                )
+            else:
+                messagebox.showinfo(
+                    _t("user_management_gui.manage_permissions.window_title"),
+                    _t(
+                        "user_management_gui.manage_permissions.save_success",
+                        role=role_name,
+                        granted=len(to_grant),
+                        revoked=len(to_revoke),
+                    ),
+                )
+
+        ttk.Button(footer, text=_t("user_management_gui.manage_permissions.save_button"),
+                   command=_save).pack(side=tk.LEFT, padx=5)
+        ttk.Button(footer, text=_t("user_management_gui.manage_permissions.revert_button"),
+                   command=_revert).pack(side=tk.LEFT, padx=5)
+        ttk.Button(footer, text=_t("user_management_gui.buttons.close"),
+                   command=window.destroy).pack(side=tk.RIGHT, padx=5)
+
+        # Preselect the first role for convenience.
+        role_listbox.selection_set(0)
+        _load_role()
 
     except Exception as e:
-        messagebox.showerror(_t("user_management_gui.errors.error_title"), _t("user_management_gui.errors.failed_to_manage_permissions", error=str(e)))
+        logger.exception("Manage Permissions window failed")
+        messagebox.showerror(
+            _t("user_management_gui.errors.error_title"),
+            _t("user_management_gui.errors.failed_to_manage_permissions", error=str(e)),
+        )

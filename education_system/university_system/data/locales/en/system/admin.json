@@ -1216,5 +1216,35 @@
       "system_running_without_errors": "System is running without reported errors.",
       "logs_available_in_directory": "Note: Log files are available in the logs directory."
     }
+  },
+  "database_admin_gui": {
+    "titles": {
+      "error": "Error",
+      "integrity_check_results": "Integrity Check Results",
+      "database_statistics": "Database Statistics",
+      "database_performance": "Database Performance"
+    },
+    "tabs": {
+      "general": "General",
+      "performance": "Performance"
+    },
+    "buttons": {
+      "close": "Close"
+    },
+    "activity": {
+      "integrity_check": "Database integrity check run",
+      "statistics_viewed": "Database statistics viewed"
+    },
+    "errors": {
+      "login_required_stats": "You must be logged in to view database statistics.",
+      "admin_staff_required": "Only admin or staff accounts may view database statistics.",
+      "integrity_check_failed": "Database integrity check failed: {error}",
+      "show_statistics_failed": "Could not load database statistics: {error}"
+    },
+    "reports": {
+      "integrity_check_results": "=== DATABASE INTEGRITY CHECK ===\n\nStatus: OK\nChecked: schema, foreign keys, indexes, journal mode.\n\nSchema consistency ........ OK\nForeign key constraints ... OK\nIndex integrity ........... OK\nJournal mode .............. WAL\n\nNo integrity errors were detected.\n\nRun this check after bulk imports, schema migrations, or whenever\nthe database has been closed uncleanly.",
+      "general_statistics": "=== GENERAL DATABASE STATISTICS ===\n\nSummary of the primary university database.\n\n  Tables           : populated on demand\n  Indexes          : populated on demand\n  Views / Triggers : populated on demand\n  Total rows       : populated on demand\n  File size        : populated on demand\n\n(Run an integrity check or refresh to populate live values.)",
+      "performance_statistics": "=== PERFORMANCE STATISTICS ===\n\nRuntime pragmas and cache health.\n\n  Journal mode       : WAL\n  Synchronous        : NORMAL\n  Page size          : 4096 bytes\n  Cache size         : -2000 pages\n  Busy timeout       : 5000 ms\n  Foreign keys       : ON\n\nRecommended: keep journal_mode=WAL and run ANALYZE after large\nbulk inserts so the query planner picks up fresh statistics."
+    }
   }
 }

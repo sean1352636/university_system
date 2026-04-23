@@ -27,10 +27,10 @@ _t = get_translation
 
 try:
     from education_system.university_system.infrastructure.database.schemas.staff_hr_schemas_all import (
-        init_staff_hr_v2_schemas, get_departments, get_employment_types
+        init_staff_hr_schemas, get_departments, get_employment_types
     )
 except ImportError:
-    init_staff_hr_v2_schemas = None
+    init_staff_hr_schemas = None
     get_departments = lambda: ['Computer Science', 'Engineering', 'Business', 'Administration', 'Other']
     get_employment_types = lambda: ['full-time', 'part-time', 'contract']
 
@@ -48,10 +48,10 @@ class StaffProfileGUI:
 
         # Initialize schemas
         try:
-            if init_staff_hr_v2_schemas:
-                init_staff_hr_v2_schemas()
+            if init_staff_hr_schemas:
+                init_staff_hr_schemas()
         except Exception as e:
-            print(f"Warning: Could not initialize Staff HR v2 schemas: {e}")
+            print(f"Warning: Could not initialize Staff HR schemas: {e}")
 
         if parent_notebook:
             self.tab = ttk.Frame(parent_notebook)

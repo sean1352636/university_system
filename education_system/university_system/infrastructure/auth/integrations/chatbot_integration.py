@@ -32,20 +32,25 @@ from education_system.university_system.infrastructure.auth.optional_dependencie
     OptionalDependencyError,
 )
 
-# Check availability
-CHATBOT_AVAILABLE = is_chatbot_available()
+# Chatbot availability is probed lazily via module-level __getattr__ (PEP 562).
+# The probe imports the entire chatbot module tree (~1.8s); deferring it to
+# first access means modules that merely `from ... import something` from this
+# file don't pay that cost.
 
-# Import UniversityChatbot class if available
-UniversityChatbot = None
-if CHATBOT_AVAILABLE:
-    try:
-        UniversityChatbot = get_chatbot_class()
-        logger.info("Chatbot module is available")
-    except (ImportError, OptionalDependencyError, AttributeError) as e:
-        logger.warning(f"Failed to get chatbot class: {e}")
-        CHATBOT_AVAILABLE = False
-else:
-    logger.info("Chatbot module not available - feature will be disabled")
+def __getattr__(name):  # noqa: N807 — PEP 562 module-level hook
+    if name == 'CHATBOT_AVAILABLE':
+        try:
+            return is_chatbot_available()
+        except (ImportError, OptionalDependencyError, AttributeError) as e:
+            logger.warning(f"Failed to probe chatbot availability: {e}")
+            return False
+    if name == 'UniversityChatbot':
+        try:
+            return get_chatbot_class()
+        except (ImportError, OptionalDependencyError, AttributeError) as e:
+            logger.warning(f"Failed to get chatbot class: {e}")
+            return None
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 def initialize_chatbot_integration(auth_instance):
     """Initialize chatbot integration with comprehensive error handling
@@ -56,10 +61,11 @@ def initialize_chatbot_integration(auth_instance):
     Returns:
         bool: True if successful, False otherwise
     """
-    if CHATBOT_AVAILABLE:
+    chatbot_cls = get_chatbot_class()
+    if chatbot_cls is not None:
         try:
             print("Initializing chatbot integration...")
-            auth_instance.chatbot = UniversityChatbot(db_path=auth_instance.db_path)
+            auth_instance.chatbot = chatbot_cls(db_path=auth_instance.db_path)
 
             # Verify the chatbot has required attributes
             required_attrs = ['app', 'config', 'conversation_history', 'auth_system']
@@ -342,7 +348,7 @@ def generate_chatbot_analytics(auth_instance) -> Dict[str, Any]:
                 'total_interactions': total_interactions,
                 'unique_users': unique_users,
                 'daily_interactions': daily_interactions,
-                'status': 'active' if CHATBOT_AVAILABLE else 'limited',
+                'status': 'active' if is_chatbot_available() else 'limited',
                 'generated_at': datetime.now().isoformat()
             }
 
@@ -399,7 +405,7 @@ def display_chatbot_integration_menu(auth):
         print("===============================")
         print(f"Logged in as: {user['username']} ({user['role']})")
 
-        if CHATBOT_AVAILABLE:
+        if is_chatbot_available():
             print("Status: ✅ Available")
         else:
             print("Status: ⚠️ Limited functionality")
@@ -668,6 +674,8 @@ def test_chatbot_integration(auth):
 
     print("\nTesting Chatbot Integration:")
     print("=" * 35)
+
+    CHATBOT_AVAILABLE = is_chatbot_available()  # local probe for this test
 
     # Test 1: Check if chatbot is available
     if CHATBOT_AVAILABLE:

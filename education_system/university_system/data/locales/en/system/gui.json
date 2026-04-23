@@ -2300,8 +2300,23 @@
     },
     "manage_permissions": {
       "window_title": "Manage Permissions",
-      "title": "Manage User Permissions",
-      "info_text": "Select permissions for this user."
+      "title": "Manage Role Permissions",
+      "info_text": "Select permissions for this role.",
+      "roles_frame": "Roles",
+      "permissions_frame": "Permissions",
+      "search_label": "Search:",
+      "no_role_selected": "Select a role on the left to see its permissions.",
+      "role_summary": "{role}: {count} of {total} permissions granted",
+      "save_button": "Save Changes",
+      "revert_button": "Revert",
+      "no_changes": "No changes to save.",
+      "save_success": "Saved {role}: +{granted} granted, -{revoked} revoked.",
+      "save_partial": "Some changes failed: {failed}",
+      "errors": {
+        "manage_roles_required": "You need the 'manage_roles' permission to open this dialog.",
+        "load_failed": "Could not load roles or permissions from the database.",
+        "pick_role_first": "Pick a role before saving."
+      }
     },
     "status": {
       "active": "Active",

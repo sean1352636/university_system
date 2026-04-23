@@ -33,12 +33,23 @@ from education_system.university_system.infrastructure.exceptions import (
 
 logger = logging.getLogger(__name__)
 
-# Import optional chatbot availability check
+# Chatbot availability is probed lazily — the probe loads the whole chatbot
+# module tree. Import the probe function here but defer calling it until
+# someone actually reads CHATBOT_AVAILABLE (via PEP 562 module __getattr__).
 try:
     from education_system.university_system.infrastructure.auth.optional_dependencies import is_chatbot_available
-    CHATBOT_AVAILABLE = is_chatbot_available()
 except ImportError:
-    CHATBOT_AVAILABLE = False
+    def is_chatbot_available():  # type: ignore[misc]
+        return False
+
+
+def __getattr__(name):  # noqa: N807 — PEP 562 module-level hook
+    if name == 'CHATBOT_AVAILABLE':
+        try:
+            return is_chatbot_available()
+        except Exception:
+            return False
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 # Import PERMISSIONS constant - will be populated by core module
 PERMISSIONS = {}
@@ -71,7 +82,7 @@ def initialize_complete_system():
 
         # Test the integration
         print("4. Testing integration...")
-        if CHATBOT_AVAILABLE:
+        if is_chatbot_available():
             print("✓ Chatbot integration available")
         else:
             logger.warning("Chatbot integration not available")

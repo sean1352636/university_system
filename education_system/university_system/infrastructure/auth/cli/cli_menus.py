@@ -37,14 +37,25 @@ from education_system.university_system.infrastructure.exceptions import (
 # Initialize logger
 logger = logging.getLogger(__name__)
 
-# Import optional dependencies
+# Chatbot availability is probed lazily — the probe imports the entire chatbot
+# module tree (~1.8s). Deferring via PEP 562 module __getattr__ keeps CLI menu
+# import cheap for callers that never invoke the chatbot.
 try:
     from education_system.university_system.infrastructure.auth.optional_dependencies import (
         is_chatbot_available,
     )
-    CHATBOT_AVAILABLE = is_chatbot_available()
 except ImportError:
-    CHATBOT_AVAILABLE = False
+    def is_chatbot_available():  # type: ignore[misc]
+        return False
+
+
+def __getattr__(name):  # noqa: N807 — PEP 562 module-level hook
+    if name == 'CHATBOT_AVAILABLE':
+        try:
+            return is_chatbot_available()
+        except Exception:
+            return False
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 # Default roles constant (used for role protection)
 ROLES = {
@@ -183,7 +194,7 @@ def display_auth_menu(existing_auth=None):
         auth, auto_login = _check_cli_remember_me_token(auth)
 
     # Initialize chatbot integration
-    if CHATBOT_AVAILABLE:
+    if is_chatbot_available():
         try:
             from education_system.university_system.infrastructure.auth.integrations.chatbot_integration import (
                 initialize_chatbot_integration as _init_chatbot,
@@ -2240,7 +2251,7 @@ def display_chatbot_integration_menu(auth):
         print("===============================")
         print(f"Logged in as: {user['username']} ({user['role']})")
 
-        if CHATBOT_AVAILABLE:
+        if is_chatbot_available():
             print("Status: ✅ Available")
         else:
             print("Status: ⚠️ Limited functionality")
@@ -2420,7 +2431,7 @@ def display_chatbot_integration_menu(auth):
             print("\nTesting Chatbot Integration:")
             print("=" * 35)
 
-            if CHATBOT_AVAILABLE:
+            if is_chatbot_available():
                 print("✅ Chatbot module available")
 
                 if hasattr(auth, 'chatbot') and auth.chatbot:

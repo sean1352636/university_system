@@ -56,6 +56,8 @@ class StudentData:
     health_records: List[Dict[str, Any]] = field(default_factory=list)
     messages: List[Dict[str, Any]] = field(default_factory=list)
     activity_log: List[Dict[str, Any]] = field(default_factory=list)
+    attendance: List[Dict[str, Any]] = field(default_factory=list)
+    attendance_summary: Dict[str, Any] = field(default_factory=dict)
     export_metadata: Dict[str, Any] = field(default_factory=dict)
 
 class DataExporter(ABC):
@@ -275,8 +277,8 @@ class DataExportService:
         with get_connection(self.db_path) as conn:
             # Get student profile
             cursor = conn.execute('''
-                SELECT * FROM students WHERE student_id = ? OR id = ?
-            ''', (student_id, student_id))
+                SELECT * FROM students WHERE student_id = ?
+            ''', (student_id,))
             row = cursor.fetchone()
             if row:
                 data.profile = dict(row) if hasattr(row, 'keys') else {'id': row[0]}
@@ -292,14 +294,23 @@ class DataExportService:
                 if row:
                     data.profile['user'] = dict(row) if hasattr(row, 'keys') else {}
 
-            # Get enrollments
-            cursor = conn.execute('''
-                SELECT e.*, c.name as course_name, c.code as course_code
-                FROM enrollments e
-                LEFT JOIN courses c ON e.course_id = c.id
-                WHERE e.student_id = ?
-            ''', (student_id,))
-            data.enrollments = [dict(row) if hasattr(row, 'keys') else {} for row in cursor.fetchall()]
+            # Get enrollments (enrollments table in some deployments, student_modules in others)
+            try:
+                cursor = conn.execute('''
+                    SELECT e.*, c.name as course_name, c.code as course_code
+                    FROM enrollments e
+                    LEFT JOIN courses c ON e.course_id = c.id
+                    WHERE e.student_id = ?
+                ''', (student_id,))
+                data.enrollments = [dict(row) if hasattr(row, 'keys') else {} for row in cursor.fetchall()]
+            except sqlite3.OperationalError:
+                try:
+                    cursor = conn.execute('''
+                        SELECT * FROM student_modules WHERE student_id = ?
+                    ''', (student_id,))
+                    data.enrollments = [dict(row) if hasattr(row, 'keys') else {} for row in cursor.fetchall()]
+                except sqlite3.OperationalError:
+                    pass
 
             # Get grades
             try:
@@ -318,6 +329,45 @@ class DataExportService:
                 data.financial_records = [dict(row) if hasattr(row, 'keys') else {} for row in cursor.fetchall()]
             except sqlite3.OperationalError:
                 pass
+
+            # Get attendance records (from enhanced attendance tracker)
+            try:
+                cursor = conn.execute('''
+                    SELECT id, student_id, module_code, date, status, notes,
+                           recorded_by, recorded_at, check_in_method,
+                           location_data, session_id, makeup_for_date,
+                           verification_status
+                    FROM attendance_records
+                    WHERE student_id = ?
+                    ORDER BY date DESC, recorded_at DESC
+                ''', (student_id,))
+                data.attendance = [dict(row) if hasattr(row, 'keys') else {} for row in cursor.fetchall()]
+            except sqlite3.OperationalError:
+                pass  # attendance_records table may not exist in this deployment
+
+            # Fallback / supplement: legacy `attendance` table used by some installs
+            if not data.attendance:
+                try:
+                    cursor = conn.execute('''
+                        SELECT * FROM attendance WHERE student_id = ? ORDER BY date DESC
+                    ''', (student_id,))
+                    data.attendance = [dict(row) if hasattr(row, 'keys') else {} for row in cursor.fetchall()]
+                except sqlite3.OperationalError:
+                    pass
+
+            # Build a small summary (counts by status + attendance rate)
+            if data.attendance:
+                status_counts: Dict[str, int] = {}
+                for record in data.attendance:
+                    status = str(record.get('status') or 'unknown').lower()
+                    status_counts[status] = status_counts.get(status, 0) + 1
+                total = sum(status_counts.values())
+                present = status_counts.get('present', 0) + status_counts.get('late', 0)
+                data.attendance_summary = {
+                    'total_records': total,
+                    'status_counts': status_counts,
+                    'attendance_rate_percent': round((present / total) * 100, 2) if total else 0.0,
+                }
 
             # Get messages
             if data.profile.get('user_id'):

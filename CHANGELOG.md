@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.88.0 — 2026-04-23](#8880---2026-04-23)
+- [8.87.0 — 2026-04-23](#8870---2026-04-23)
+- [8.86.0 — 2026-04-23](#8860---2026-04-23)
+- [8.85.0 — 2026-04-23](#8850---2026-04-23)
 - [8.84.0 — 2026-04-22](#8840---2026-04-22)
 - [8.83.0 — 2026-04-22](#8830---2026-04-22)
 - [8.82.0 — 2026-04-21](#8820---2026-04-21)
@@ -189,6 +193,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.88.0] — 2026-04-23
+
+### System Administration: missing translations, Add New User wired, Manage Permissions fully implemented, config-editor / changelog-viewer / email-config path fixes
+
+#### Added
+
+- **Role-level permission management API.** `infrastructure/auth/managers/permission_manager.py` gained `list_roles()`, `get_role_permissions(role_name)`, `grant_role_permission(role_name, permission_name)` and `revoke_role_permission(role_name, permission_name)`. All mutation methods are gated on the actor holding `manage_roles`, are idempotent against the `role_permissions` join table, write an activity-log line, and emit an immutable audit entry (`PERMISSION_GRANT` / `PERMISSION_REVOKE`) via `safe_log_security_event`. Defensive `str(user_id)` cast in the audit helper because `immutable_audit_log` joins hash-chain fields with `|` and was breaking on int user_ids with *"sequence item 2: expected str instance, int found"*.
+- **New i18n namespace `database_admin_gui.*`** in `data/locales/en/system/admin.json` — `titles`, `tabs`, `buttons`, `activity`, `errors`, and `reports` (`integrity_check_results`, `general_statistics`, `performance_statistics`). The three `_t("database_admin_gui.reports.*")` calls at `admin/database_admin_gui.py:185,229,245` previously rendered the raw key because no `database_admin_gui` namespace existed in the locale JSON at all.
+- **`gui.manage_permissions.*` keys** extended in `data/locales/en/system/gui.json` (`roles_frame`, `permissions_frame`, `search_label`, `no_role_selected`, `role_summary`, `save_button`, `revert_button`, `no_changes`, `save_success`, `save_partial`, `errors.manage_roles_required`, `errors.load_failed`, `errors.pick_role_first`) for the new Manage Permissions dialog.
+
+#### Changed
+
+- **Manage Permissions GUI fully implemented.** `modules/shared/gui/main/admin/user_management_gui.py::manage_permissions` was a static-text placeholder (`scrolledtext` with a `_t("...info_text")` blurb). Replaced with a real two-pane modal: role list on the left (from `pm.list_roles()`), scrollable checkbox grid of every permission in the `permissions` table on the right (6 roles × 430 permissions on this DB), with a live-filter search box, role-specific status line ("*{role}: n of total permissions granted*"), and Save/Revert/Close controls. Save diffs the checkbox state against the snapshot loaded for the selected role and calls grant/revoke for each change; partial failures are surfaced to the admin. If the admin edited their own role, `self.auth.current_user['permissions']` is refreshed in place from `pm.get_user_permissions(uid)` so the change takes effect in-session without re-login. All mutations honour `manage_roles`.
+- **"Add New User" wired to the real create-user form.** `add_new_user()` at `modules/shared/gui/main/admin/user_management_gui.py:656-663` previously did `messagebox.showinfo(...)` + `self.show_user_management()` (a list view, not a form). Now calls the existing `show_create_user()` Toplevel (lines 128-215) which has username / email / name / role fields, generates a 12-char temp password, calls `auth.create_user(...)` with `password_reset_required=True`, writes an immutable `USER_CREATE` audit entry, and refreshes the list on success. `add_new_user` first ensures the user-management panel exists so `show_create_user` has a `user_tree` to refresh against.
+- **`paths.EMAIL_CONFIG_FILE` resolves to the canonical shared location.** `university_system/core/paths.py:84-97` — `EMAIL_CONFIG_FILE` was pointing at `university_system/data/email/email_config.json`, a directory that is empty and never populated. Replaced the bare constant with `_resolve_email_config_file()` which mirrors the search order already documented in `shared/email/config.py::load_email_config`: (1) `education_system/shared/data/config/email_config.json` (canonical), (2) `university_system/data/config/email_config.json` (legacy), (3) canonical path as the default save target for fresh installs. Fixes the Admin Tools → Config Editor error *"Failed to load configuration: No such file or directory: .../data/email/email_config.json"*. No changes needed to `admin_tools_gui.py` or the email loaders — they all read the constant.
+- **Config Editor first-run tolerance.** `modules/shared/gui/main/admin/admin_tools_gui.py::show_config_editor` inner `_load_json` now returns `{}` when the target file doesn't exist (opens the editor with empty fields rather than showing an error dialog); inner `_save_json` calls `os.makedirs(parent, exist_ok=True)` before writing so a fresh install can create the config directory on first save. Other errors (corrupted JSON, permission denied) still surface as before.
+- **System Changelog viewer search order.** `modules/shared/gui/main/admin/admin_tools_gui.py::show_system_changelog` used to search `PROJECT_ROOT/../CHANGELOG.md` (resolves to `education_system/CHANGELOG.md` — doesn't exist) and `PROJECT_ROOT/CHANGELOG.md` (resolves to `education_system/university_system/CHANGELOG.md` — doesn't exist); the `repo_root` branch was a no-op duplicate of the first try. Rewrote as an ordered candidate list `[../../CHANGELOG.md, ../CHANGELOG.md, ./CHANGELOG.md]` so it now finds the real file at the repo root (`/home/seancatchpole989/CHANGELOG.md` in the user install), matching the *"Data & Compliance says CHANGELOG.md not found"* bug report.
+
+---
+
+## [8.87.0] — 2026-04-23
+
+### Staff HR cold-start 11.3 s → 2.6 s (77% faster) via lazy imports across the chatbot/auth chain
+
+#### Changed
+
+- **`staff_hr_gui.py` — 25 sibling GUI imports made lazy.** Each `_load_*` method (LeaveManagement, TimeAttendance, Payroll, Curriculum, Mentoring, …) now imports its GUI class inside the method body rather than at the top of the file. Top-of-file cost drops from "load 25 GUI modules + their manager trees" to "load none". Each feature pays its own import cost only when its tab is opened, and only once (Python caches the module).
+- **`staff_hr/gui/__init__.py` — dropped 25 re-exports.** The package previously eagerly `from … import XxxGUI` for all 25 sibling GUIs so `from staff_hr.gui import SomeGUI` worked; grep confirmed nothing outside the package used that form. Now exports only `StaffHRGUI`; sub-feature GUIs are imported directly via their submodule paths.
+- **`university_chatbot/fallbacks.py` — sklearn / transformers / pandas probes no longer import their libraries.** Three library probes were doing `try: from X import …; LIBRARIES_AVAILABLE[X] = True / except ImportError: …` at module top. On a machine with X installed this forced the full import just to set a boolean. Replaced with `importlib.util.find_spec(X)` probes (no import cost), plus lazy shims for the real classes (`TfidfVectorizer`, `cosine_similarity`, `pipeline`, `AutoTokenizer`, `AutoModel`) that trigger the real import on first call. `pandas` had no post-import reference at all (`pd` was imported purely to set the availability flag) — now a pure `find_spec` probe. Semantics preserved: `LIBRARIES_AVAILABLE[...]` flags stay accurate; the real sklearn/transformers classes are returned when actually used.
+- **`auth/core.py`, `auth/integrations/chatbot_integration.py`, `auth/integrations/module_permissions.py`, `auth/cli/cli_menus.py` — chatbot availability probed lazily.** Every one of these four modules did `CHATBOT_AVAILABLE = is_chatbot_available()` / `UniversityChatbot = get_chatbot_class()` at module top. Each probe call imports the entire chatbot module tree (`chatbot.py` → `nlp_processor`, `intent_handlers`, `recommendation_engine`, `voice_support`, `fallbacks`, …), a ~1.8 s chain each time. Replaced with PEP 562 module-level `__getattr__`: external reads of `module.CHATBOT_AVAILABLE` / `module.UniversityChatbot` / `module.VOICE_AVAILABLE` still work transparently but now resolve on first access rather than at import. Internal uses within each module were switched to direct `is_chatbot_available()` / `get_chatbot_class()` calls.
+
+#### Fixed
+
+- **Unused `VOICE_AVAILABLE` global removed.** `auth/core.py:120` defined `VOICE_AVAILABLE = is_voice_interface_available()` at module top. Nothing in the project read that global (confirmed by grep). The eager probe cost remained. Rolled into the `__getattr__` hook so any future consumer still resolves the name, but no work happens at import.
+
+#### Measurement
+
+Cold `import` of `education_system.…staff_hr.gui.staff_hr_gui` (fresh Python process, warm disk cache):
+
+| Stage                                                       | Cold import (ms) |
+|-------------------------------------------------------------|------------------|
+| Baseline                                                    | 11,320           |
+| After lazy GUI imports (this change, file 1+2)              | 8,690            |
+| After sklearn/transformers/pandas lazy probes (file 3)      | 5,280            |
+| After auth `__getattr__` (files 4+5+6+7)                    | **2,587**        |
+
+`sklearn`, `scipy`, `transformers`, `torch`, `tensorflow`, `nltk`, `speech_recognition`, `pandas`, `spacy` are all absent from `sys.modules` after `staff_hr_gui` import — they load only when code that actually needs them runs. Subsequent clicks into Staff HR sub-tabs pay their own ~300–500 ms local import cost the first time and are free thereafter (module cache).
+
+---
+
+## [8.86.0] — 2026-04-23
+
+### Staff HR schemas consolidated to a single public entry point
+
+#### Changed
+
+- **`staff_hr_schemas_all.py` — single public `init_staff_hr_schemas()` entry point.** The file had seven public init functions (`init_staff_hr_schemas`, `init_staff_hr_v2_schemas`, … `init_staff_hr_v7_schemas`) each printing its own `"Staff HR v{N} ... initialized successfully"` line, plus an aggregator `init_all_staff_hr_schemas()` that called all seven. Startup produced seven near-identical log lines. Refactor: the seven functions are now private (`_init_staff_hr_base_schemas`, `_init_staff_hr_v{2..7}_schemas`), their individual success prints removed, and a single public `init_staff_hr_schemas()` at the bottom of the file calls them in order and prints one `"Staff HR schemas initialized successfully"`. Idempotent (every statement is `CREATE TABLE IF NOT EXISTS`). The module docstring was rewritten to present the file as "the" Staff HR schema rather than "a consolidation of v1–v7".
+- **Callers repointed** at the single entry point: `domain/staff_hr/__init__.py` (now exports only `init_staff_hr_schemas`), `domain/staff_hr/gui/staff_hr_gui.py:20,71`, `domain/staff_hr/gui/staff_profile_gui.py:29-52` (previously invoked only `init_staff_hr_v2_schemas` before reading dropdowns — now inits the full schema, which is harmless because of the `IF NOT EXISTS` guards), `domain/staff_hr/cli/staff_hr_cli.py:54-58`.
+- **Backward-compat aliases** retained at the bottom of `staff_hr_schemas_all.py` (`init_all_staff_hr_schemas = init_staff_hr_schemas`, `init_staff_hr_v2_schemas = _init_staff_hr_v2_schemas`) so any downstream code still importing the old names continues to work — new code should use `init_staff_hr_schemas`.
+
+---
+
+## [8.85.0] — 2026-04-23
+
+### Student export includes attendance; comprehensive exporters share one section schema
+
+#### Added
+
+- **Attendance in `DataExportService`.** `StudentData` gained `attendance: List[Dict]` and `attendance_summary: Dict`. `collect_student_data` now queries `attendance_records` (the enhanced tracker table written by QR / geofence / face-recognition / manual paths) selecting `id, student_id, module_code, date, status, notes, recorded_by, recorded_at, check_in_method, location_data, session_id, makeup_for_date, verification_status` ordered by date DESC. Wrapped in try/except with a fallback to the legacy `attendance` table for older deployments. `attendance_summary` tallies `status_counts`, `total_records`, and `attendance_rate_percent` (present + late / total × 100). All four output formats — JSON, CSV, PDF, and the ZIP bundle — pick the new sections up with no formatter changes.
+- **Shared `EXPORT_SECTIONS` schema** in `modules/shared/gui/main/students/student_export_gui.py` drives the four `_export_comprehensive_*` formatters. 22 ordered entries, each a dict of `key` / `title_key` / `header_keys` / optional `sheet_name_key`. Adding a new section is now a one-line append (plus the fetch in `export_individual_student_data`), and all four formats render it automatically. Helpers: `_resolved_headers(section)` translates column headers; `_excel_sheet_name(section, used_names)` strips Excel-forbidden chars (`[]:*?/\`), truncates to 31 chars, and deduplicates within a workbook.
+
+#### Changed
+
+- **Main GUI → Student Records → Actions → Export Data now includes attendance.** The comprehensive export was already trying to fetch attendance on line 138 of `student_export_gui.py`, but queried `FROM attendance` — an empty legacy table (0 rows). Real rows live in `attendance_records` (9 rows, 1 for S12345). Re-pointed the query and aliased `notes AS reason` so the existing column headers (`Date | Module | Status | Reason`) still line up. Verified S12345's PDF/CSV/TXT/XLSX outputs now include the `ATTENDANCE RECORDS` section with their 2026-03-16 CIS0001 Present entry.
+- **All four comprehensive exporters (CSV, XLSX, PDF, TXT) render the same sections.** Previously each formatter had its own hardcoded section list: CSV had ~20, TXT had ~19, XLSX had ~15, PDF had only 9. Now each formatter iterates `EXPORT_SECTIONS` and emits empty sections as no-ops. PDF and XLSX gained `payments`, `financial_aid`, `clubs`, `health_appointments`, `medical_conditions`, `internships`, `library`, `support_tickets`, `badges`, `parking`, `meal_plan`, `meal_transactions`, and `advising` sections (previously dropped entirely).
+- **PDF exporter — cell-content truncation (60 chars) and tail-row note.** `_export_comprehensive_pdf` still caps each section at 20 rows to keep reportlab Tables from overflowing letter-sized pages, but now explicitly notes `... and N more rows (see CSV/XLSX/TXT export for full data)` when truncation happens rather than silently dropping the overflow. Long cell values are trimmed to 60 chars so wide tables don't blow out the page width.
+- **CSV exporter — flattened grouping headings.** The combined wrappers (`FINANCIAL INFORMATION` over fees+payments, `SCHOLARSHIPS & FINANCIAL AID`, `EXTRACURRICULAR ACTIVITIES`, `HEALTH RECORDS`, `MEAL PLAN & TRANSACTIONS`) were CSV-only cosmetic groupings that didn't exist in the other formats. Dropped for consistency — each section now gets its own `=` heading row matching the TXT style.
+
+#### Fixed
+
+- **`DataExportService.collect_student_data` — broken `OR id = ?` clause.** The students query `SELECT * FROM students WHERE student_id = ? OR id = ?` raised `OperationalError: no such column: id` on every call — the `students` table only has `student_id`. The bug prevented the entire export from running. Dropped the bogus `OR id = ?` clause (pre-existing regression from older schema).
+- **`DataExportService.collect_student_data` — unwrapped `enrollments` query.** Unlike `grades` / `financial_transactions` / `messages`, the enrollments query wasn't inside a try/except, so it crashed the whole collector on databases that use `student_modules` instead of `enrollments` (this deployment). Wrapped with a fallback that tries `enrollments ⨝ courses` first and falls back to `SELECT * FROM student_modules` — matches the existing defensive pattern for other optional tables.
 
 ---
 

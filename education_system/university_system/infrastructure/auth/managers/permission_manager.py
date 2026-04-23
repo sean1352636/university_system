@@ -314,3 +314,132 @@ class PermissionManager:
         except sqlite3.Error as e:
             logger.error(f"Database error: {e}")
             return False
+
+    # ------------------------------------------------------------------
+    # Role-level permission management
+    # ------------------------------------------------------------------
+    # Permissions are role-based: the `role_permissions` table joins roles to
+    # permissions and is the source of truth consulted by `get_user_permissions`
+    # at login time. The helpers below let the Manage Permissions GUI diff and
+    # apply role→permission grants without reaching into the users table.
+
+    def list_roles(self) -> List[Dict]:
+        """Return every role with its id and name, ordered by name."""
+        try:
+            with self.db_manager.get_connection() as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                cursor.execute('SELECT id, role_name, description FROM roles ORDER BY role_name')
+                return [dict(row) for row in cursor.fetchall()]
+        except sqlite3.Error as e:
+            logger.error(f"Database error listing roles: {e}")
+            return []
+
+    def get_role_permissions(self, role_name: str) -> List[str]:
+        """Return the list of permission names currently granted to a role."""
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    SELECT p.permission_name
+                    FROM permissions p
+                    JOIN role_permissions rp ON p.id = rp.permission_id
+                    JOIN roles r ON rp.role_id = r.id
+                    WHERE r.role_name = ?
+                    ORDER BY p.permission_name
+                ''', (role_name,))
+                return [row[0] for row in cursor.fetchall()]
+        except sqlite3.Error as e:
+            logger.error(f"Database error loading role permissions: {e}")
+            return []
+
+    def grant_role_permission(self, role_name: str, permission_name: str) -> bool:
+        """Add `permission_name` to `role_name`. Idempotent.
+
+        Requires the current user to hold ``manage_roles``.
+        """
+        current_user = self.get_current_user()
+        if not current_user or 'manage_roles' not in current_user.get('permissions', []):
+            logger.warning("grant_role_permission denied: missing manage_roles")
+            return False
+
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('SELECT id FROM roles WHERE role_name = ?', (role_name,))
+                role_row = cursor.fetchone()
+                cursor.execute('SELECT id FROM permissions WHERE permission_name = ?', (permission_name,))
+                perm_row = cursor.fetchone()
+                if not role_row or not perm_row:
+                    return False
+                role_id, perm_id = role_row[0], perm_row[0]
+                cursor.execute(
+                    'SELECT 1 FROM role_permissions WHERE role_id = ? AND permission_id = ?',
+                    (role_id, perm_id),
+                )
+                if cursor.fetchone():
+                    return True  # already granted — idempotent
+                cursor.execute(
+                    'INSERT INTO role_permissions (role_id, permission_id) VALUES (?, ?)',
+                    (role_id, perm_id),
+                )
+                conn.commit()
+                self.activity_logger(
+                    current_user['username'],
+                    f'Role permission granted: {role_name} + {permission_name}',
+                    None, current_user['id'],
+                )
+                self._audit_role_change(current_user, role_name, permission_name, granted=True)
+                return True
+        except sqlite3.Error as e:
+            logger.error(f"Database error granting role permission: {e}")
+            return False
+
+    def revoke_role_permission(self, role_name: str, permission_name: str) -> bool:
+        """Remove `permission_name` from `role_name`. Idempotent."""
+        current_user = self.get_current_user()
+        if not current_user or 'manage_roles' not in current_user.get('permissions', []):
+            logger.warning("revoke_role_permission denied: missing manage_roles")
+            return False
+
+        try:
+            with self.db_manager.get_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute('''
+                    DELETE FROM role_permissions
+                    WHERE role_id = (SELECT id FROM roles WHERE role_name = ?)
+                      AND permission_id = (SELECT id FROM permissions WHERE permission_name = ?)
+                ''', (role_name, permission_name))
+                conn.commit()
+                self.activity_logger(
+                    current_user['username'],
+                    f'Role permission revoked: {role_name} - {permission_name}',
+                    None, current_user['id'],
+                )
+                self._audit_role_change(current_user, role_name, permission_name, granted=False)
+                return True
+        except sqlite3.Error as e:
+            logger.error(f"Database error revoking role permission: {e}")
+            return False
+
+    def _audit_role_change(self, actor, role_name, permission_name, granted):
+        """Best-effort immutable audit log entry for a role-permission change."""
+        if not IMMUTABLE_AUDIT_AVAILABLE:
+            return
+        try:
+            # immutable_audit_log's hash-chain step joins fields with '|', so
+            # every field must be a string — cast user_id defensively.
+            uid = actor.get('id')
+            safe_log_security_event(
+                action=AuditAction.PERMISSION_GRANT if granted else AuditAction.PERMISSION_REVOKE,
+                user_id=str(uid) if uid is not None else None,
+                resource_type='role',
+                resource_id=role_name,
+                details={
+                    'role': role_name,
+                    'permission': permission_name,
+                    'granted': bool(granted),
+                },
+            )
+        except Exception as e:
+            logger.debug(f"Audit log failed for role change: {e}")

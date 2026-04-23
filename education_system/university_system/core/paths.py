@@ -88,7 +88,25 @@ EMAIL_TEMPLATES_DIR: Path = PROJECT_ROOT / "templates" / "email"
 # Configuration directory
 CONFIG_DIR: Path = DATA_DIR / "config"
 
-EMAIL_CONFIG_FILE: Path = EMAIL_DATA_DIR / "email_config.json"
+
+def _resolve_email_config_file() -> Path:
+    """Resolve the canonical email config path.
+
+    Matches the resolution order in `education_system.shared.email.config`:
+      1. shared/data/config/email_config.json (canonical)
+      2. university_system/data/config/email_config.json (legacy fallback)
+      3. shared path as the default for fresh installs (save-path target).
+    """
+    shared_candidate = PROJECT_ROOT.parent / "shared" / "data" / "config" / "email_config.json"
+    legacy_candidate = CONFIG_DIR / "email_config.json"
+    if shared_candidate.exists():
+        return shared_candidate
+    if legacy_candidate.exists():
+        return legacy_candidate
+    return shared_candidate
+
+
+EMAIL_CONFIG_FILE: Path = _resolve_email_config_file()
 EMAIL_CONFIG_PATH: Path = EMAIL_CONFIG_FILE
 
 # Activity logger configuration lives in config data.

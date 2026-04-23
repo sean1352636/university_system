@@ -12,6 +12,298 @@ from education_system.university_system.core.sql_safety import validate_identifi
 
 logger = logging.getLogger(__name__)
 
+
+# Shared schema: every comprehensive export formatter iterates this list so all
+# four output formats (CSV, XLSX, PDF, TXT) render the same sections in the same
+# order, with the same headers. Empty sections are skipped by each formatter.
+#
+# Each entry:
+#   key           — `data_sections[key]` fetched in export_individual_student_data
+#   title_key     — i18n key for the section heading
+#   header_keys   — i18n keys for the column headers, in row order
+#   sheet_name_key — (optional) shorter i18n key used for the Excel sheet tab
+#
+# Header counts match the column count produced by the SQL in
+# export_individual_student_data. `student_info` is handled separately by each
+# formatter (it renders as two-column key/value, not a tabular list).
+EXPORT_SECTIONS = (
+    dict(
+        key='modules',
+        title_key='student_export.comprehensive.enrolled_modules',
+        header_keys=(
+            'student_export.headers.module_code',
+            'student_export.headers.module_name',
+            'student_export.headers.credits',
+            'student_export.headers.enrollment_date',
+            'student_export.headers.status',
+        ),
+        sheet_name_key='student_export.sheets.modules',
+    ),
+    dict(
+        key='assignments',
+        title_key='student_export.comprehensive.assignments_available',
+        header_keys=(
+            'student_export.headers.module_code',
+            'student_export.headers.title',
+            'student_export.headers.due_date',
+            'student_export.headers.max_marks',
+            'student_export.headers.type',
+        ),
+        sheet_name_key='student_export.sheets.assignments',
+    ),
+    dict(
+        key='submissions',
+        title_key='student_export.comprehensive.assignment_submissions',
+        header_keys=(
+            'student_export.headers.assignment',
+            'student_export.headers.module',
+            'student_export.headers.submission_date',
+            'student_export.headers.grade',
+            'student_export.headers.max_marks',
+            'student_export.headers.status',
+            'student_export.headers.late',
+        ),
+        sheet_name_key='student_export.sheets.submissions',
+    ),
+    dict(
+        key='grades',
+        title_key='student_export.comprehensive.grades_assessments',
+        header_keys=(
+            'student_export.headers.module',
+            'student_export.headers.assessment',
+            'student_export.headers.type',
+            'student_export.headers.score',
+            'student_export.headers.max_points',
+            'student_export.headers.letter_grade',
+            'student_export.headers.date',
+        ),
+        sheet_name_key='student_export.sheets.grades',
+    ),
+    dict(
+        key='attendance',
+        title_key='student_export.comprehensive.attendance_records',
+        header_keys=(
+            'student_export.headers.date',
+            'student_export.headers.module',
+            'student_export.headers.status',
+            'student_export.headers.reason',
+        ),
+        sheet_name_key='student_export.sheets.attendance',
+    ),
+    dict(
+        key='fees',
+        title_key='student_export.comprehensive.fees',
+        header_keys=(
+            'student_export.headers.fee_type',
+            'student_export.headers.amount',
+            'student_export.headers.due_date',
+            'student_export.headers.status',
+        ),
+        sheet_name_key='student_export.sheets.fees',
+    ),
+    dict(
+        key='payments',
+        title_key='student_export.comprehensive.payments',
+        header_keys=(
+            'student_export.headers.payment_date',
+            'student_export.headers.amount',
+            'student_export.headers.method',
+            'student_export.headers.transaction_id',
+        ),
+        sheet_name_key='student_export.sheets.payments',
+    ),
+    dict(
+        key='scholarships',
+        title_key='student_export.comprehensive.scholarships',
+        header_keys=(
+            'student_export.headers.scholarship_name',
+            'student_export.headers.amount',
+            'student_export.headers.academic_year',
+            'student_export.headers.status',
+        ),
+        sheet_name_key='student_export.sheets.scholarships',
+    ),
+    dict(
+        key='financial_aid',
+        title_key='student_export.comprehensive.financial_aid',
+        header_keys=(
+            'student_export.headers.aid_type',
+            'student_export.headers.amount',
+            'student_export.headers.academic_year',
+            'student_export.headers.status',
+        ),
+    ),
+    dict(
+        key='activities',
+        title_key='student_export.comprehensive.activities',
+        header_keys=(
+            'student_export.headers.activity_name',
+            'student_export.headers.role',
+            'student_export.headers.start_date',
+            'student_export.headers.end_date',
+            'student_export.headers.status',
+        ),
+        sheet_name_key='student_export.sheets.activities',
+    ),
+    dict(
+        key='clubs',
+        title_key='student_export.comprehensive.club_memberships',
+        header_keys=(
+            'student_export.headers.club_name',
+            'student_export.headers.role',
+            'student_export.headers.join_date',
+            'student_export.headers.status',
+        ),
+        sheet_name_key='student_export.sheets.clubs',
+    ),
+    dict(
+        key='health_appointments',
+        title_key='student_export.comprehensive.health_appointments',
+        header_keys=(
+            'student_export.headers.date',
+            'student_export.headers.type',
+            'student_export.headers.provider',
+            'student_export.headers.notes',
+        ),
+    ),
+    dict(
+        key='medical_conditions',
+        title_key='student_export.comprehensive.medical_conditions',
+        header_keys=(
+            'student_export.headers.condition',
+            'student_export.headers.diagnosed_date',
+            'student_export.headers.status',
+        ),
+    ),
+    dict(
+        key='housing',
+        title_key='student_export.comprehensive.housing_assignments',
+        header_keys=(
+            'student_export.headers.building',
+            'student_export.headers.room_number',
+            'student_export.headers.start_date',
+            'student_export.headers.end_date',
+            'student_export.headers.status',
+        ),
+        sheet_name_key='student_export.sheets.housing',
+    ),
+    dict(
+        key='internships',
+        title_key='student_export.comprehensive.internships_placements',
+        header_keys=(
+            'student_export.headers.company',
+            'student_export.headers.position',
+            'student_export.headers.status',
+            'student_export.headers.application_date',
+            'student_export.headers.start_date',
+            'student_export.headers.end_date',
+        ),
+        sheet_name_key='student_export.sheets.internships',
+    ),
+    dict(
+        key='library',
+        title_key='student_export.comprehensive.library_records',
+        header_keys=(
+            'student_export.headers.book_title',
+            'student_export.headers.checkout_date',
+            'student_export.headers.due_date',
+            'student_export.headers.return_date',
+            'student_export.headers.status',
+        ),
+        sheet_name_key='student_export.sheets.library',
+    ),
+    dict(
+        key='support_tickets',
+        title_key='student_export.comprehensive.support_tickets',
+        header_keys=(
+            'student_export.headers.ticket_id',
+            'student_export.headers.subject',
+            'student_export.headers.category',
+            'student_export.headers.status',
+            'student_export.headers.created',
+            'student_export.headers.resolved',
+        ),
+    ),
+    dict(
+        key='badges',
+        title_key='student_export.comprehensive.badges_achievements',
+        header_keys=(
+            'student_export.headers.badge_name',
+            'student_export.headers.date_earned',
+            'student_export.headers.description',
+        ),
+        sheet_name_key='student_export.sheets.badges',
+    ),
+    dict(
+        key='parking',
+        title_key='student_export.comprehensive.parking_permits',
+        header_keys=(
+            'student_export.headers.permit_number',
+            'student_export.headers.vehicle_make',
+            'student_export.headers.vehicle_model',
+            'student_export.headers.start_date',
+            'student_export.headers.end_date',
+            'student_export.headers.type',
+        ),
+        sheet_name_key='student_export.sheets.parking',
+    ),
+    dict(
+        key='meal_plan',
+        title_key='student_export.comprehensive.meal_plan',
+        header_keys=(
+            'student_export.headers.plan_type',
+            'student_export.headers.balance',
+            'student_export.headers.last_transaction_date',
+        ),
+    ),
+    dict(
+        key='meal_transactions',
+        title_key='student_export.comprehensive.recent_transactions',
+        header_keys=(
+            'student_export.headers.date',
+            'student_export.headers.location',
+            'student_export.headers.amount',
+            'student_export.headers.description',
+        ),
+    ),
+    dict(
+        key='advising',
+        title_key='student_export.comprehensive.academic_advising',
+        header_keys=(
+            'student_export.headers.date',
+            'student_export.headers.advisor',
+            'student_export.headers.notes',
+            'student_export.headers.follow_up_required',
+        ),
+    ),
+)
+
+
+def _resolved_headers(section):
+    """Translate a section's header keys into display strings."""
+    return [_t(k) for k in section['header_keys']]
+
+
+def _excel_sheet_name(section, used_names):
+    """Build an Excel-safe sheet name (<=31 chars, unique within a workbook)."""
+    raw = _t(section.get('sheet_name_key') or section['title_key'])
+    # Excel forbids these characters in sheet names
+    for ch in '[]:*?/\\':
+        raw = raw.replace(ch, '_')
+    name = raw[:31] or section['key'][:31]
+    if name not in used_names:
+        used_names.add(name)
+        return name
+    # Deduplicate with a numeric suffix
+    base = name[:28]
+    for i in range(2, 100):
+        candidate = f"{base}_{i}"
+        if candidate not in used_names:
+            used_names.add(candidate)
+            return candidate
+    used_names.add(name)
+    return name
+
 def export_student_data(self, student_id):
     """Export individual student data"""
     try:
@@ -132,14 +424,29 @@ def export_individual_student_data(self, student_id, first_name, last_name):
             """, (student_id,))
             data_sections['grades'] = cursor.fetchall()
 
-            # 6. Attendance Records
-            cursor.execute("""
-                SELECT date, module_code, status, reason
-                FROM attendance
-                WHERE student_id = ?
-                ORDER BY date DESC
-            """, (student_id,))
-            data_sections['attendance'] = cursor.fetchall()
+            # 6. Attendance Records — primary table is attendance_records (enhanced tracker);
+            # fall back to legacy `attendance` table for older deployments.
+            try:
+                cursor.execute("""
+                    SELECT date, module_code, status, notes AS reason
+                    FROM attendance_records
+                    WHERE student_id = ?
+                    ORDER BY date DESC, recorded_at DESC
+                """, (student_id,))
+                data_sections['attendance'] = cursor.fetchall()
+            except Exception:
+                data_sections['attendance'] = []
+            if not data_sections['attendance']:
+                try:
+                    cursor.execute("""
+                        SELECT date, module_code, status, reason
+                        FROM attendance
+                        WHERE student_id = ?
+                        ORDER BY date DESC
+                    """, (student_id,))
+                    data_sections['attendance'] = cursor.fetchall()
+                except Exception:
+                    data_sections['attendance'] = []
 
             # 7. Financial Information
             try:
@@ -909,16 +1216,12 @@ def _export_comprehensive_csv(self, filename, student_id, first_name, last_name,
     """Export comprehensive student data to CSV format with clear sections"""
     with open(filename, 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)  # nosemgrep: python.lang.security.audit.csv-writer-injection
-
-        # Convert Row objects
         student_data = tuple(data_sections['student_info']) if data_sections['student_info'] else ()
 
-        # Header
         writer.writerow([f"{_t('student_export.comprehensive.title')} - {first_name} {last_name}"])
         writer.writerow([f"{_t('student_export.comprehensive.generated')}: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"])
         writer.writerow([])
 
-        # 1. BASIC INFORMATION
         writer.writerow(['=' * 80])
         writer.writerow([_t('student_export.comprehensive.basic_info')])
         writer.writerow(['=' * 80])
@@ -930,244 +1233,44 @@ def _export_comprehensive_csv(self, filename, student_id, first_name, last_name,
             writer.writerow([_t('student_export.headers.registration_date'), student_data[10]])
         writer.writerow([])
 
-        # 2. ENROLLED MODULES
-        writer.writerow(['=' * 80])
-        writer.writerow([_t('student_export.comprehensive.enrolled_modules')])
-        writer.writerow(['=' * 80])
-        writer.writerow([_t('student_export.headers.module_code'), _t('student_export.headers.module_name'), _t('student_export.headers.credits'), _t('student_export.headers.enrollment_date'), _t('student_export.headers.status')])
-        for module in data_sections['modules']:
-            writer.writerow(tuple(module))
-        writer.writerow([])
-
-        # 3. ASSIGNMENTS (Available)
-        writer.writerow(['=' * 80])
-        writer.writerow([_t('student_export.comprehensive.assignments_available')])
-        writer.writerow(['=' * 80])
-        writer.writerow([_t('student_export.headers.module_code'), _t('student_export.headers.title'), _t('student_export.headers.due_date'), _t('student_export.headers.max_marks'), _t('student_export.headers.type')])
-        for assignment in data_sections['assignments']:
-            writer.writerow(tuple(assignment))
-        writer.writerow([])
-
-        # 4. ASSIGNMENT SUBMISSIONS
-        writer.writerow(['=' * 80])
-        writer.writerow([_t('student_export.comprehensive.assignment_submissions')])
-        writer.writerow(['=' * 80])
-        writer.writerow([_t('student_export.headers.assignment'), _t('student_export.headers.module'), _t('student_export.headers.submission_date'), _t('student_export.headers.grade'), _t('student_export.headers.max_marks'), _t('student_export.headers.status'), _t('student_export.headers.late')])
-        for submission in data_sections['submissions']:
-            writer.writerow(tuple(submission))
-        writer.writerow([])
-
-        # 5. GRADES & ASSESSMENTS
-        writer.writerow(['=' * 80])
-        writer.writerow([_t('student_export.comprehensive.grades_assessments')])
-        writer.writerow(['=' * 80])
-        writer.writerow([_t('student_export.headers.module'), _t('student_export.headers.assessment'), _t('student_export.headers.type'), _t('student_export.headers.score'), _t('student_export.headers.max_points'), _t('student_export.headers.letter_grade'), _t('student_export.headers.date')])
-        for grade in data_sections['grades']:
-            writer.writerow(tuple(grade))
-        writer.writerow([])
-
-        # 6. ATTENDANCE RECORDS
-        writer.writerow(['=' * 80])
-        writer.writerow([_t('student_export.comprehensive.attendance_records')])
-        writer.writerow(['=' * 80])
-        writer.writerow([_t('student_export.headers.date'), _t('student_export.headers.module'), _t('student_export.headers.status'), _t('student_export.headers.reason')])
-        for attendance in data_sections['attendance']:
-            writer.writerow(tuple(attendance))
-        writer.writerow([])
-
-        # 7. FINANCIAL INFORMATION
-        if data_sections['fees'] or data_sections['payments']:
+        for section in EXPORT_SECTIONS:
+            rows = data_sections.get(section['key']) or []
+            if not rows:
+                continue
             writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.comprehensive.financial_info')])
+            writer.writerow([_t(section['title_key'])])
             writer.writerow(['=' * 80])
-
-            writer.writerow([_t('student_export.comprehensive.fees')])
-            writer.writerow([_t('student_export.headers.fee_type'), _t('student_export.headers.amount'), _t('student_export.headers.due_date'), _t('student_export.headers.status')])
-            for fee in data_sections['fees']:
-                writer.writerow(tuple(fee))
-            writer.writerow([])
-
-            writer.writerow([_t('student_export.comprehensive.payments')])
-            writer.writerow([_t('student_export.headers.payment_date'), _t('student_export.headers.amount'), _t('student_export.headers.method'), _t('student_export.headers.transaction_id')])
-            for payment in data_sections['payments']:
-                writer.writerow(tuple(payment))
-            writer.writerow([])
-
-        # 8. SCHOLARSHIPS & FINANCIAL AID
-        if data_sections['scholarships'] or data_sections['financial_aid']:
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.comprehensive.scholarships_aid')])
-            writer.writerow(['=' * 80])
-
-            writer.writerow([_t('student_export.comprehensive.scholarships')])
-            writer.writerow([_t('student_export.headers.scholarship_name'), _t('student_export.headers.amount'), _t('student_export.headers.academic_year'), _t('student_export.headers.status')])
-            for scholarship in data_sections['scholarships']:
-                writer.writerow(tuple(scholarship))
-            writer.writerow([])
-
-            writer.writerow([_t('student_export.comprehensive.financial_aid')])
-            writer.writerow([_t('student_export.headers.aid_type'), _t('student_export.headers.amount'), _t('student_export.headers.academic_year'), _t('student_export.headers.status')])
-            for aid in data_sections['financial_aid']:
-                writer.writerow(tuple(aid))
-            writer.writerow([])
-
-        # 9. EXTRACURRICULAR ACTIVITIES
-        if data_sections['activities'] or data_sections['clubs']:
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.comprehensive.extracurricular')])
-            writer.writerow(['=' * 80])
-
-            writer.writerow([_t('student_export.comprehensive.activities')])
-            writer.writerow([_t('student_export.headers.activity_name'), _t('student_export.headers.role'), _t('student_export.headers.start_date'), _t('student_export.headers.end_date'), _t('student_export.headers.status')])
-            for activity in data_sections['activities']:
-                writer.writerow(tuple(activity))
-            writer.writerow([])
-
-            writer.writerow([_t('student_export.comprehensive.club_memberships')])
-            writer.writerow([_t('student_export.headers.club_name'), _t('student_export.headers.role'), _t('student_export.headers.join_date'), _t('student_export.headers.status')])
-            for club in data_sections['clubs']:
-                writer.writerow(tuple(club))
-            writer.writerow([])
-
-        # 10. HEALTH RECORDS
-        if data_sections['health_appointments'] or data_sections['medical_conditions']:
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.comprehensive.health_records')])
-            writer.writerow(['=' * 80])
-
-            writer.writerow([_t('student_export.comprehensive.health_appointments')])
-            writer.writerow([_t('student_export.headers.date'), _t('student_export.headers.type'), _t('student_export.headers.provider'), _t('student_export.headers.notes')])
-            for appointment in data_sections['health_appointments']:
-                writer.writerow(tuple(appointment))
-            writer.writerow([])
-
-            writer.writerow([_t('student_export.comprehensive.medical_conditions')])
-            writer.writerow([_t('student_export.headers.condition'), _t('student_export.headers.diagnosed_date'), _t('student_export.headers.status')])
-            for condition in data_sections['medical_conditions']:
-                writer.writerow(tuple(condition))
-            writer.writerow([])
-
-        # 11. HOUSING
-        if data_sections['housing']:
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.comprehensive.housing_assignments')])
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.headers.building'), _t('student_export.headers.room_number'), _t('student_export.headers.start_date'), _t('student_export.headers.end_date'), _t('student_export.headers.status')])
-            for housing in data_sections['housing']:
-                writer.writerow(tuple(housing))
-            writer.writerow([])
-
-        # 12. INTERNSHIPS
-        if data_sections['internships']:
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.comprehensive.internships_placements')])
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.headers.company'), _t('student_export.headers.position'), _t('student_export.headers.status'), _t('student_export.headers.application_date'), _t('student_export.headers.start_date'), _t('student_export.headers.end_date')])
-            for internship in data_sections['internships']:
-                writer.writerow(tuple(internship))
-            writer.writerow([])
-
-        # 13. LIBRARY RECORDS
-        if data_sections['library']:
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.comprehensive.library_records')])
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.headers.book_title'), _t('student_export.headers.checkout_date'), _t('student_export.headers.due_date'), _t('student_export.headers.return_date'), _t('student_export.headers.status')])
-            for loan in data_sections['library']:
-                writer.writerow(tuple(loan))
-            writer.writerow([])
-
-        # 14. SUPPORT TICKETS
-        if data_sections['support_tickets']:
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.comprehensive.support_tickets')])
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.headers.ticket_id'), _t('student_export.headers.subject'), _t('student_export.headers.category'), _t('student_export.headers.status'), _t('student_export.headers.created'), _t('student_export.headers.resolved')])
-            for ticket in data_sections['support_tickets']:
-                writer.writerow(tuple(ticket))
-            writer.writerow([])
-
-        # 15. BADGES & ACHIEVEMENTS
-        if data_sections['badges']:
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.comprehensive.badges_achievements')])
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.headers.badge_name'), _t('student_export.headers.date_earned'), _t('student_export.headers.description')])
-            for badge in data_sections['badges']:
-                writer.writerow(tuple(badge))
-            writer.writerow([])
-
-        # 16. PARKING
-        if data_sections['parking']:
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.comprehensive.parking_permits')])
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.headers.permit_number'), _t('student_export.headers.vehicle_make'), _t('student_export.headers.vehicle_model'), _t('student_export.headers.start_date'), _t('student_export.headers.end_date'), _t('student_export.headers.type')])
-            for permit in data_sections['parking']:
-                writer.writerow(tuple(permit))
-            writer.writerow([])
-
-        # 17. MEAL PLAN
-        if data_sections['meal_plan'] or data_sections['meal_transactions']:
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.comprehensive.meal_plan_transactions')])
-            writer.writerow(['=' * 80])
-
-            writer.writerow([_t('student_export.comprehensive.meal_plan')])
-            writer.writerow([_t('student_export.headers.plan_type'), _t('student_export.headers.balance'), _t('student_export.headers.last_transaction_date')])
-            for meal_plan in data_sections['meal_plan']:
-                writer.writerow(tuple(meal_plan))
-            writer.writerow([])
-
-            writer.writerow([_t('student_export.comprehensive.recent_transactions')])
-            writer.writerow([_t('student_export.headers.date'), _t('student_export.headers.location'), _t('student_export.headers.amount'), _t('student_export.headers.description')])
-            for transaction in data_sections['meal_transactions']:
-                writer.writerow(tuple(transaction))
-            writer.writerow([])
-
-        # 18. ADVISING
-        if data_sections['advising']:
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.comprehensive.academic_advising')])
-            writer.writerow(['=' * 80])
-            writer.writerow([_t('student_export.headers.date'), _t('student_export.headers.advisor'), _t('student_export.headers.notes'), _t('student_export.headers.follow_up_required')])
-            for advising in data_sections['advising']:
-                writer.writerow(tuple(advising))
+            writer.writerow(_resolved_headers(section))
+            for row in rows:
+                writer.writerow(tuple(row))
             writer.writerow([])
 def _export_comprehensive_excel(self, filename, student_id, first_name, last_name, data_sections):
     """Export comprehensive student data to Excel with multiple sheets"""
     try:
         import openpyxl
-        from openpyxl.styles import Font, PatternFill, Alignment
+        from openpyxl.styles import Font, PatternFill
 
         wb = openpyxl.Workbook()
-        wb.remove(wb.active)  # Remove default sheet
+        wb.remove(wb.active)
+        used_sheet_names = set()
 
-        # Helper to create sheet with data
-        def create_sheet(sheet_name, headers, data, title=None):
+        def create_sheet(sheet_name, headers, data):
             ws = wb.create_sheet(sheet_name)
-            if title:
-                ws['A1'] = title
-                ws['A1'].font = Font(bold=True, size=14)
-                start_row = 3
-            else:
-                start_row = 1
-
-            # Headers
             for col_idx, header in enumerate(headers, 1):
-                cell = ws.cell(row=start_row, column=col_idx)
-                cell.value = header
+                cell = ws.cell(row=1, column=col_idx, value=header)
                 cell.font = Font(bold=True)
                 cell.fill = PatternFill(start_color="CCCCCC", end_color="CCCCCC", fill_type="solid")
-
-            # Data
-            for row_idx, row_data in enumerate(data, start_row + 1):
+            for row_idx, row_data in enumerate(data, 2):
                 for col_idx, value in enumerate(tuple(row_data), 1):
                     ws.cell(row=row_idx, column=col_idx, value=value)
 
-        # 1. Student Info
         student_data = tuple(data_sections['student_info']) if data_sections['student_info'] else ()
-        ws1 = wb.create_sheet(_t('student_export.sheets.student_info'))
+        info_sheet = _excel_sheet_name(
+            {'sheet_name_key': 'student_export.sheets.student_info',
+             'title_key': 'student_export.sheets.student_info', 'key': 'student_info'},
+            used_sheet_names,
+        )
+        ws1 = wb.create_sheet(info_sheet)
         ws1['A1'] = _t('student_export.sections.student_info_title', first_name=first_name, last_name=last_name)
         ws1['A1'].font = Font(bold=True, size=14)
         if student_data:
@@ -1177,39 +1280,11 @@ def _export_comprehensive_excel(self, filename, student_id, first_name, last_nam
             ws1.append([_t('student_export.headers.course'), student_data[9]])
             ws1.append([_t('student_export.headers.registration_date'), student_data[10]])
 
-        # 2-18. All other sections
-        create_sheet(_t('student_export.sheets.modules'), [_t('student_export.headers.module_code'), _t('student_export.headers.module_name'), _t('student_export.headers.credits'), _t('student_export.headers.enrollment_date'), _t('student_export.headers.status')],
-                    data_sections['modules'])
-        create_sheet(_t('student_export.sheets.assignments'), [_t('student_export.headers.module'), _t('student_export.headers.title'), _t('student_export.headers.due_date'), _t('student_export.headers.max_marks'), _t('student_export.headers.type')],
-                    data_sections['assignments'])
-        create_sheet(_t('student_export.sheets.submissions'), [_t('student_export.headers.assignment'), _t('student_export.headers.module'), _t('student_export.headers.submission_date'), _t('student_export.headers.grade'), _t('student_export.headers.max'), _t('student_export.headers.status'), _t('student_export.headers.late')],
-                    data_sections['submissions'])
-        create_sheet(_t('student_export.sheets.grades'), [_t('student_export.headers.module'), _t('student_export.headers.assessment'), _t('student_export.headers.type'), _t('student_export.headers.score'), _t('student_export.headers.max'), _t('student_export.headers.letter'), _t('student_export.headers.date')],
-                    data_sections['grades'])
-        create_sheet(_t('student_export.sheets.attendance'), [_t('student_export.headers.date'), _t('student_export.headers.module'), _t('student_export.headers.status'), _t('student_export.headers.reason')],
-                    data_sections['attendance'])
-
-        if data_sections['fees']:
-            create_sheet(_t('student_export.sheets.fees'), [_t('student_export.headers.fee_type'), _t('student_export.headers.amount'), _t('student_export.headers.due_date'), _t('student_export.headers.status')], data_sections['fees'])
-        if data_sections['payments']:
-            create_sheet(_t('student_export.sheets.payments'), [_t('student_export.headers.date'), _t('student_export.headers.amount'), _t('student_export.headers.method'), _t('student_export.headers.transaction_id')], data_sections['payments'])
-        if data_sections['scholarships']:
-            create_sheet(_t('student_export.sheets.scholarships'), [_t('student_export.headers.name'), _t('student_export.headers.amount'), _t('student_export.headers.academic_year'), _t('student_export.headers.status')], data_sections['scholarships'])
-        if data_sections['activities']:
-            create_sheet(_t('student_export.sheets.activities'), [_t('student_export.headers.activity'), _t('student_export.headers.role'), _t('student_export.headers.start'), _t('student_export.headers.end'), _t('student_export.headers.status')], data_sections['activities'])
-        if data_sections['clubs']:
-            create_sheet(_t('student_export.sheets.clubs'), [_t('student_export.headers.club_name'), _t('student_export.headers.role'), _t('student_export.headers.join_date'), _t('student_export.headers.status')], data_sections['clubs'])
-        if data_sections['housing']:
-            create_sheet(_t('student_export.sheets.housing'), [_t('student_export.headers.building'), _t('student_export.headers.room'), _t('student_export.headers.start'), _t('student_export.headers.end'), _t('student_export.headers.status')], data_sections['housing'])
-        if data_sections['internships']:
-            create_sheet(_t('student_export.sheets.internships'), [_t('student_export.headers.company'), _t('student_export.headers.position'), _t('student_export.headers.status'), _t('student_export.headers.app_date'), _t('student_export.headers.start'), _t('student_export.headers.end')],
-                       data_sections['internships'])
-        if data_sections['library']:
-            create_sheet(_t('student_export.sheets.library'), [_t('student_export.headers.book'), _t('student_export.headers.checkout'), _t('student_export.headers.due'), _t('student_export.headers.return'), _t('student_export.headers.status')], data_sections['library'])
-        if data_sections['badges']:
-            create_sheet(_t('student_export.sheets.badges'), [_t('student_export.headers.badge'), _t('student_export.headers.date_earned'), _t('student_export.headers.description')], data_sections['badges'])
-        if data_sections['parking']:
-            create_sheet(_t('student_export.sheets.parking'), [_t('student_export.headers.permit_num'), _t('student_export.headers.make'), _t('student_export.headers.model'), _t('student_export.headers.start'), _t('student_export.headers.end'), _t('student_export.headers.type')], data_sections['parking'])
+        for section in EXPORT_SECTIONS:
+            rows = data_sections.get(section['key']) or []
+            if not rows:
+                continue
+            create_sheet(_excel_sheet_name(section, used_sheet_names), _resolved_headers(section), rows)
 
         wb.save(filename)
     except ImportError:
@@ -1221,31 +1296,36 @@ def _export_comprehensive_pdf(self, filename, student_id, first_name, last_name,
         from reportlab.lib.pagesizes import letter
         from reportlab.lib import colors
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, PageBreak
+        from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
         from reportlab.lib.units import inch
 
         doc = SimpleDocTemplate(filename, pagesize=letter, topMargin=0.5*inch, bottomMargin=0.5*inch)
         elements = []
         styles = getSampleStyleSheet()
 
-        # Custom styles
         heading_style = ParagraphStyle('CustomHeading', parent=styles['Heading2'],
                                       fontSize=14, textColor=colors.HexColor('#003366'))
 
-        # Title
-        title = Paragraph(f"<b>{_t('student_export.comprehensive.title').upper()}</b><br/>{first_name} {last_name}",
-                        styles['Title'])
-        elements.append(title)
+        elements.append(Paragraph(
+            f"<b>{_t('student_export.comprehensive.title').upper()}</b><br/>{first_name} {last_name}",
+            styles['Title']))
         elements.append(Spacer(1, 0.3*inch))
 
-        # Helper function to add section
+        # PDFs can't reasonably hold unlimited rows or very wide cells; cap both.
+        PDF_ROW_LIMIT = 20
+        PDF_CELL_CHAR_LIMIT = 60
+
         def add_section(section_title, headers, data):
             if not data:
                 return
             elements.append(Paragraph(f"<b>{section_title}</b>", heading_style))
             elements.append(Spacer(1, 0.1*inch))
 
-            table_data = [list(headers)] + [list(tuple(row)) for row in data[:20]]  # Limit to 20 rows
+            truncated = [
+                [(str(v)[:PDF_CELL_CHAR_LIMIT] if v is not None else '') for v in tuple(row)]
+                for row in data[:PDF_ROW_LIMIT]
+            ]
+            table_data = [list(headers)] + truncated
             t = Table(table_data, repeatRows=1)
             t.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
@@ -1257,9 +1337,12 @@ def _export_comprehensive_pdf(self, filename, student_id, first_name, last_name,
                 ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ]))
             elements.append(t)
+            if len(data) > PDF_ROW_LIMIT:
+                elements.append(Paragraph(
+                    f"<i>... and {len(data) - PDF_ROW_LIMIT} more rows (see CSV/XLSX/TXT export for full data)</i>",
+                    styles['Normal']))
             elements.append(Spacer(1, 0.2*inch))
 
-        # Student Info
         student_data = tuple(data_sections['student_info']) if data_sections['student_info'] else ()
         if student_data:
             info_data = [
@@ -1268,22 +1351,15 @@ def _export_comprehensive_pdf(self, filename, student_id, first_name, last_name,
                 [_t('student_export.text_labels.name'), f"{student_data[3]} {student_data[5]}"],
                 [_t('student_export.headers.course'), student_data[9]],
             ]
-            add_section(_t('student_export.comprehensive.basic_info'), [_t('student_export.headers.field'), _t('student_export.headers.value')], info_data)
+            add_section(_t('student_export.comprehensive.basic_info'),
+                        [_t('student_export.headers.field'), _t('student_export.headers.value')],
+                        info_data)
 
-        # All sections
-        add_section(_t('student_export.comprehensive.enrolled_modules'), [_t('student_export.headers.module'), _t('student_export.headers.name'), _t('student_export.headers.credits'), _t('student_export.headers.date'), _t('student_export.headers.status')], data_sections['modules'])
-        add_section(_t('student_export.comprehensive.assignment_submissions'), [_t('student_export.headers.assignment'), _t('student_export.headers.module'), _t('student_export.headers.date'), _t('student_export.headers.grade'), _t('student_export.headers.max')], data_sections['submissions'])
-        add_section(_t('student_export.comprehensive.grades_assessments'), [_t('student_export.headers.module'), _t('student_export.headers.assessment'), _t('student_export.headers.score'), _t('student_export.headers.max'), _t('student_export.headers.grade')], data_sections['grades'])
-        add_section(_t('student_export.comprehensive.attendance_records'), [_t('student_export.headers.date'), _t('student_export.headers.module'), _t('student_export.headers.status'), _t('student_export.headers.reason')], data_sections['attendance'])
-
-        if data_sections['fees']:
-            add_section(_t('student_export.comprehensive.fees'), [_t('student_export.headers.type'), _t('student_export.headers.amount'), _t('student_export.headers.due_date'), _t('student_export.headers.status')], data_sections['fees'])
-        if data_sections['scholarships']:
-            add_section(_t('student_export.comprehensive.scholarships'), [_t('student_export.headers.name'), _t('student_export.headers.amount'), _t('student_export.headers.year'), _t('student_export.headers.status')], data_sections['scholarships'])
-        if data_sections['activities']:
-            add_section(_t('student_export.comprehensive.activities'), [_t('student_export.headers.activity'), _t('student_export.headers.role'), _t('student_export.headers.start'), _t('student_export.headers.status')], data_sections['activities'])
-        if data_sections['housing']:
-            add_section(_t('student_export.comprehensive.housing_assignments'), [_t('student_export.headers.building'), _t('student_export.headers.room'), _t('student_export.headers.start'), _t('student_export.headers.status')], data_sections['housing'])
+        for section in EXPORT_SECTIONS:
+            rows = data_sections.get(section['key']) or []
+            if not rows:
+                continue
+            add_section(_t(section['title_key']), _resolved_headers(section), rows)
 
         doc.build(elements)
     except ImportError:
@@ -1294,13 +1370,11 @@ def _export_comprehensive_txt(self, filename, student_id, first_name, last_name,
     with open(filename, 'w', encoding='utf-8') as f:
         student_data = tuple(data_sections['student_info']) if data_sections['student_info'] else ()
 
-        # Header
         f.write("=" * 80 + "\n")
         f.write(f"{_t('student_export.comprehensive.title').upper()}: {first_name} {last_name}\n")
         f.write(f"{_t('student_export.comprehensive.generated')}: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write("=" * 80 + "\n\n")
 
-        # Helper function
         def write_section(section_title, headers, data):
             if not data:
                 return
@@ -1312,7 +1386,6 @@ def _export_comprehensive_txt(self, filename, student_id, first_name, last_name,
             for row in data:
                 f.write(" | ".join(str(v) if v is not None else '' for v in tuple(row)) + "\n")
 
-        # Student Info
         f.write(f"{_t('student_export.comprehensive.basic_info')}\n")
         f.write("-" * 80 + "\n")
         if student_data:
@@ -1322,23 +1395,8 @@ def _export_comprehensive_txt(self, filename, student_id, first_name, last_name,
             f.write(f"{_t('student_export.headers.course')}: {student_data[9]}\n")
             f.write(f"{_t('student_export.headers.registration_date')}: {student_data[10]}\n")
 
-        # All sections
-        write_section(_t('student_export.comprehensive.enrolled_modules'), [_t('student_export.headers.code'), _t('student_export.headers.name'), _t('student_export.headers.credits'), _t('student_export.headers.enrolled'), _t('student_export.headers.status')], data_sections['modules'])
-        write_section(_t('student_export.comprehensive.assignments_available'), [_t('student_export.headers.module'), _t('student_export.headers.title'), _t('student_export.headers.due'), _t('student_export.headers.marks'), _t('student_export.headers.type')], data_sections['assignments'])
-        write_section(_t('student_export.comprehensive.submissions'), [_t('student_export.headers.assignment'), _t('student_export.headers.module'), _t('student_export.headers.date'), _t('student_export.headers.grade'), _t('student_export.headers.max'), _t('student_export.headers.status')], data_sections['submissions'])
-        write_section(_t('student_export.comprehensive.grades_assessments'), [_t('student_export.headers.module'), _t('student_export.headers.assessment'), _t('student_export.headers.type'), _t('student_export.headers.score'), _t('student_export.headers.max'), _t('student_export.headers.letter')], data_sections['grades'])
-        write_section(_t('student_export.comprehensive.attendance_records'), [_t('student_export.headers.date'), _t('student_export.headers.module'), _t('student_export.headers.status'), _t('student_export.headers.reason')], data_sections['attendance'])
-        write_section(_t('student_export.comprehensive.fees'), [_t('student_export.headers.type'), _t('student_export.headers.amount'), _t('student_export.headers.due'), _t('student_export.headers.status')], data_sections['fees'])
-        write_section(_t('student_export.comprehensive.payments'), [_t('student_export.headers.date'), _t('student_export.headers.amount'), _t('student_export.headers.method'), _t('student_export.headers.transaction')], data_sections['payments'])
-        write_section(_t('student_export.comprehensive.scholarships'), [_t('student_export.headers.name'), _t('student_export.headers.amount'), _t('student_export.headers.year'), _t('student_export.headers.status')], data_sections['scholarships'])
-        write_section(_t('student_export.comprehensive.financial_aid'), [_t('student_export.headers.type'), _t('student_export.headers.amount'), _t('student_export.headers.year'), _t('student_export.headers.status')], data_sections['financial_aid'])
-        write_section(_t('student_export.comprehensive.activities'), [_t('student_export.headers.activity'), _t('student_export.headers.role'), _t('student_export.headers.start'), _t('student_export.headers.end'), _t('student_export.headers.status')], data_sections['activities'])
-        write_section(_t('student_export.comprehensive.club_memberships'), [_t('student_export.headers.club'), _t('student_export.headers.role'), _t('student_export.headers.joined'), _t('student_export.headers.status')], data_sections['clubs'])
-        write_section(_t('student_export.comprehensive.housing_assignments'), [_t('student_export.headers.building'), _t('student_export.headers.room'), _t('student_export.headers.start'), _t('student_export.headers.end'), _t('student_export.headers.status')], data_sections['housing'])
-        write_section(_t('student_export.comprehensive.internships_placements'), [_t('student_export.headers.company'), _t('student_export.headers.position'), _t('student_export.headers.status'), _t('student_export.headers.applied'), _t('student_export.headers.start'), _t('student_export.headers.end')], data_sections['internships'])
-        write_section(_t('student_export.comprehensive.library_records'), [_t('student_export.headers.book'), _t('student_export.headers.checkout'), _t('student_export.headers.due'), _t('student_export.headers.return'), _t('student_export.headers.status')], data_sections['library'])
-        write_section(_t('student_export.comprehensive.support_tickets'), [_t('student_export.headers.id'), _t('student_export.headers.subject'), _t('student_export.headers.category'), _t('student_export.headers.status'), _t('student_export.headers.created'), _t('student_export.headers.resolved')], data_sections['support_tickets'])
-        write_section(_t('student_export.comprehensive.badges_achievements'), [_t('student_export.headers.badge'), _t('student_export.headers.earned'), _t('student_export.headers.description')], data_sections['badges'])
-        write_section(_t('student_export.comprehensive.parking_permits'), [_t('student_export.headers.permit'), _t('student_export.headers.make'), _t('student_export.headers.model'), _t('student_export.headers.start'), _t('student_export.headers.end'), _t('student_export.headers.type')], data_sections['parking'])
-        write_section(_t('student_export.comprehensive.meal_plan'), [_t('student_export.headers.type'), _t('student_export.headers.balance'), _t('student_export.headers.last_transaction')], data_sections['meal_plan'])
-        write_section(_t('student_export.comprehensive.academic_advising'), [_t('student_export.headers.date'), _t('student_export.headers.advisor'), _t('student_export.headers.notes'), _t('student_export.headers.follow_up')], data_sections['advising'])
+        for section in EXPORT_SECTIONS:
+            rows = data_sections.get(section['key']) or []
+            if not rows:
+                continue
+            write_section(_t(section['title_key']), _resolved_headers(section), rows)

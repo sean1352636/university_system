@@ -115,21 +115,33 @@ from education_system.university_system.infrastructure.auth.optional_dependencie
     VoiceInterface,
 )
 
-# Check availability of optional features
-CHATBOT_AVAILABLE = is_chatbot_available()
-VOICE_AVAILABLE = is_voice_interface_available()
+# Chatbot / voice availability is probed lazily — the probes trigger the
+# entire chatbot module tree (sklearn, transformers, scipy, …) which adds
+# multiple seconds to app startup. Resolve on first access via module-level
+# __getattr__ (PEP 562) so `auth.core.CHATBOT_AVAILABLE`,
+# `auth.core.VOICE_AVAILABLE`, and `auth.core.UniversityChatbot` still work
+# for any external caller that reads them, but the cost is only paid when
+# the name is actually needed.
 
-# Import UniversityChatbot class if available
-UniversityChatbot = None
-if CHATBOT_AVAILABLE:
-    try:
-        UniversityChatbot = get_chatbot_class()
-        logger.info("Chatbot module is available")
-    except (ImportError, OptionalDependencyError, AttributeError) as e:
-        logger.warning(f"Failed to get chatbot class: {e}")
-        CHATBOT_AVAILABLE = False
-else:
-    logger.info("Chatbot module not available - feature will be disabled")
+def __getattr__(name):  # noqa: N807 — PEP 562 module-level hook
+    if name == 'CHATBOT_AVAILABLE':
+        try:
+            return is_chatbot_available()
+        except (ImportError, OptionalDependencyError, AttributeError) as e:
+            logger.warning(f"Failed to probe chatbot availability: {e}")
+            return False
+    if name == 'VOICE_AVAILABLE':
+        try:
+            return is_voice_interface_available()
+        except (ImportError, OptionalDependencyError, AttributeError):
+            return False
+    if name == 'UniversityChatbot':
+        try:
+            return get_chatbot_class()
+        except (ImportError, OptionalDependencyError, AttributeError) as e:
+            logger.warning(f"Failed to get chatbot class: {e}")
+            return None
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 # Import constants (safe to import at module level)
 from education_system.university_system.infrastructure.auth.core_utils.constants import ROLES, PERMISSIONS
@@ -292,7 +304,7 @@ class UserAuth:
 
             # Initialize voice interface with error handling
             try:
-                if CHATBOT_AVAILABLE:
+                if is_chatbot_available():
                     # Try to import the real VoiceInterface
                     from education_system.university_system.infrastructure.ai.university_chatbot import VoiceInterface
                     self.voice_interface = VoiceInterface()
@@ -2030,10 +2042,11 @@ class UserAuth:
 
     def initialize_chatbot_integration(self):
         """Initialize chatbot integration with comprehensive error handling"""
-        if CHATBOT_AVAILABLE:
+        chatbot_cls = get_chatbot_class()
+        if chatbot_cls is not None:
             try:
                 logger.info("Initializing chatbot integration...")
-                self.chatbot = UniversityChatbot(db_path=self.db_path)
+                self.chatbot = chatbot_cls(db_path=self.db_path)
 
                 # Verify the chatbot has required attributes
                 required_attrs = ['app', 'config', 'conversation_history', 'auth_system']

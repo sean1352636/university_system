@@ -255,6 +255,11 @@ def show_configuration_editor(self):
 
         # ---- helpers ----
         def _load_json(path):
+            # First-run scenario: the config file hasn't been written yet.
+            # Open the editor with blank fields rather than failing — saving
+            # later creates the file.
+            if not os.path.exists(path):
+                return {}
             try:
                 with open(path, 'r') as f:
                     return json.load(f)
@@ -264,7 +269,11 @@ def show_configuration_editor(self):
                 return {}
 
         def _save_json(path, data):
-            # backup
+            # Ensure parent directory exists (first-run case)
+            parent = os.path.dirname(str(path))
+            if parent:
+                os.makedirs(parent, exist_ok=True)
+            # Backup existing file before overwrite
             if os.path.exists(path):
                 bak = str(path) + ".bak"
                 try:
@@ -2058,13 +2067,15 @@ def show_system_changelog(self):
         return
 
     try:
-        changelog_path = os.path.join(PROJECT_ROOT, '..', 'CHANGELOG.md')
-        if not os.path.exists(changelog_path):
-            changelog_path = os.path.join(PROJECT_ROOT, 'CHANGELOG.md')
-        # Also try repo root
-        repo_root = os.path.abspath(os.path.join(PROJECT_ROOT, '..'))
-        if not os.path.exists(changelog_path):
-            changelog_path = os.path.join(repo_root, 'CHANGELOG.md')
+        # Search order: repo root (two levels above PROJECT_ROOT), then
+        # one level up (education_system/), then PROJECT_ROOT itself.
+        # The canonical location is the repo root.
+        candidates = [
+            os.path.abspath(os.path.join(PROJECT_ROOT, '..', '..', 'CHANGELOG.md')),
+            os.path.abspath(os.path.join(PROJECT_ROOT, '..', 'CHANGELOG.md')),
+            os.path.abspath(os.path.join(PROJECT_ROOT, 'CHANGELOG.md')),
+        ]
+        changelog_path = next((p for p in candidates if os.path.exists(p)), candidates[0])
 
         changelog_content = ''
         if os.path.exists(changelog_path):

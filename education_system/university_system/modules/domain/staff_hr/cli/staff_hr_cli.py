@@ -50,12 +50,11 @@ def init_staff_hr_db() -> bool:
     to ensure all Staff HR tables exist.
     """
     try:
-        # Import and initialize all schema versions
         from education_system.university_system.infrastructure.database.schemas.staff_hr_schemas_all import (
-            init_all_staff_hr_schemas
+            init_staff_hr_schemas
         )
 
-        init_all_staff_hr_schemas()
+        init_staff_hr_schemas()
 
         logger.info("Staff HR database initialized successfully")
         return True

@@ -1,17 +1,17 @@
 """
-Staff HR Management Database Schemas - Consolidated
+Staff HR Management Database Schemas.
 
-All staff HR schema definitions in a single file.
-Consolidates the original staff_hr_schemas.py and v2-v7 files.
+Single unified schema file for every Staff HR table. Callers use
+`init_staff_hr_schemas()` as the one public entry point; it materialises
+all tables (leave, time, training, appraisals, onboarding, profiles,
+teaching, admin, communication, recruitment, asset tracking, contracts,
+expenses, grievances, disciplinary, exit, payroll, faculty schedules,
+curriculum, travel, sabbaticals, committees, IP, lab booking, cover,
+workload, directory, mentoring, grant budgets, peer review, comm hub,
+teaching load) in a single call.
 
-Sections:
-  - Base schemas (Leave, Time & Attendance, Training, Appraisals, Onboarding)
-  - V2 schemas (Profiles, Teaching, Admin, Communication, Recruitment)
-  - V3 schemas (Asset/Equipment Tracking)
-  - V4 schemas (Contracts, Expenses, Grievances, Disciplinary, Exit)
-  - V5 schemas (Payroll, Faculty Schedules, Curriculum, Travel, Sabbaticals)
-  - V6 schemas (Committees, IP, Lab Booking, Cover, Workload, Directory)
-  - V7 schemas (Mentoring, Grant Budgets, Peer Review, Comm Hub, Teaching Load)
+The internal `_init_staff_hr_*_schemas` helpers are organised by
+theme for readability only; they are not part of the public API.
 """
 
 from __future__ import annotations
@@ -27,8 +27,8 @@ from education_system.university_system.core.sql_safety import safe_alter_table_
 # Base schemas (Leave, Time & Attendance, Training, Appraisals, Onboarding)
 # ======================================================================
 
-def init_staff_hr_schemas():
-    """Initialize all Staff HR Management tables."""
+def _init_staff_hr_base_schemas():
+    """Create base Staff HR tables (leave, time & attendance, training, appraisals, onboarding)."""
     try:
         with get_connection() as conn:
             cursor = conn.cursor()
@@ -399,10 +399,8 @@ def init_staff_hr_schemas():
             _insert_default_leave_types(cursor)
             conn.commit()
 
-            print("Staff HR schemas initialized successfully")
-
     except sqlite3.Error as e:
-        print(f"Error initializing Staff HR schemas: {e}")
+        print(f"Error initializing Staff HR base schemas: {e}")
         raise
 
 def _insert_default_leave_types(cursor):
@@ -450,7 +448,7 @@ def _insert_default_training_courses(cursor):
 # V2 schemas (Profiles, Teaching, Admin, Communication, Recruitment)
 # ======================================================================
 
-def init_staff_hr_v2_schemas():
+def _init_staff_hr_v2_schemas():
     """Initialize all Staff HR v2 database tables."""
     with transaction() as conn:
         cursor = conn.cursor()
@@ -1114,7 +1112,6 @@ def init_staff_hr_v2_schemas():
         ]
 
         conn.commit()
-        print("Staff HR v2 schemas initialized successfully")
 
 
 def get_departments():
@@ -1162,7 +1159,7 @@ def get_interview_types():
 # V3 schemas (Asset/Equipment Tracking)
 # ======================================================================
 
-def init_staff_hr_v3_schemas():
+def _init_staff_hr_v3_schemas():
     """Initialize all Staff HR v3 database tables for asset tracking."""
     with transaction() as conn:
         cursor = conn.cursor()
@@ -1505,7 +1502,6 @@ def init_staff_hr_v3_schemas():
             ''', cat)
 
         conn.commit()
-        print("Staff HR v3 schemas (Asset Tracking) initialized successfully")
 
 
 def get_asset_statuses():
@@ -1598,7 +1594,7 @@ def generate_asset_tag(category_id: int) -> str:
 # V4 schemas (Contracts, Expenses, Grievances, Disciplinary, Exit)
 # ======================================================================
 
-def init_staff_hr_v4_schemas():
+def _init_staff_hr_v4_schemas():
     """Initialize all Staff HR v4 database tables."""
     try:
         with get_connection() as conn:
@@ -2117,8 +2113,6 @@ def init_staff_hr_v4_schemas():
             # Insert default data
             _insert_v4_defaults(cursor)
             conn.commit()
-
-            print("Staff HR v4 database schemas initialized successfully")
             return True
 
     except sqlite3.Error as e:
@@ -2277,7 +2271,7 @@ def _insert_v4_defaults(cursor):
 # V5 schemas (Payroll, Faculty Schedules, Curriculum, Travel, Sabbaticals)
 # ======================================================================
 
-def init_staff_hr_v5_schemas():
+def _init_staff_hr_v5_schemas():
     """Initialize all Staff HR v5 database tables."""
     try:
         with get_connection() as conn:
@@ -2726,8 +2720,6 @@ def init_staff_hr_v5_schemas():
             # Insert default data
             _insert_v5_defaults(cursor)
             conn.commit()
-
-            print("Staff HR v5 database schemas initialized successfully")
             return True
 
     except sqlite3.Error as e:
@@ -2829,7 +2821,7 @@ def _insert_v5_defaults(cursor):
 # V6 schemas (Committees, IP, Lab Booking, Cover, Workload, Directory)
 # ======================================================================
 
-def init_staff_hr_v6_schemas():
+def _init_staff_hr_v6_schemas():
     """Initialize all Staff HR v6 database tables."""
     try:
         with get_connection() as conn:
@@ -3283,8 +3275,6 @@ def init_staff_hr_v6_schemas():
             # Insert default data
             _insert_v6_defaults(cursor)
             conn.commit()
-
-            print("Staff HR v6 database schemas initialized successfully")
             return True
 
     except sqlite3.Error as e:
@@ -3391,7 +3381,7 @@ def _insert_v6_defaults(cursor):
 # V7 schemas (Mentoring, Grant Budgets, Peer Review, Comm Hub, Teaching Load)
 # ======================================================================
 
-def init_staff_hr_v7_schemas():
+def _init_staff_hr_v7_schemas():
     """Initialize all Staff HR v7 database tables."""
     try:
         with get_connection() as conn:
@@ -3915,8 +3905,6 @@ def init_staff_hr_v7_schemas():
             # Insert defaults
             _insert_v7_defaults(cursor)
             conn.commit()
-
-            print("Staff HR v7 database schemas initialized successfully")
             return True
 
     except sqlite3.Error as e:
@@ -4080,16 +4068,28 @@ def _insert_v7_defaults(cursor):
 
 
 # ======================================================================
-# Master initialization function
+# Public API — one entry point materialises every Staff HR table.
 # ======================================================================
 
-def init_all_staff_hr_schemas():
-    """Initialize all Staff HR database schemas (v1 through v7)."""
-    init_staff_hr_schemas()
-    init_staff_hr_v2_schemas()
-    init_staff_hr_v3_schemas()
-    init_staff_hr_v4_schemas()
-    init_staff_hr_v5_schemas()
-    init_staff_hr_v6_schemas()
-    init_staff_hr_v7_schemas()
+def init_staff_hr_schemas():
+    """Initialize every Staff HR database table in a single call.
+
+    Idempotent (every statement is ``CREATE TABLE IF NOT EXISTS``). Safe to
+    call repeatedly at startup — the helpers below just no-op on existing
+    tables and upsert their default rows.
+    """
+    _init_staff_hr_base_schemas()
+    _init_staff_hr_v2_schemas()
+    _init_staff_hr_v3_schemas()
+    _init_staff_hr_v4_schemas()
+    _init_staff_hr_v5_schemas()
+    _init_staff_hr_v6_schemas()
+    _init_staff_hr_v7_schemas()
+    print("Staff HR schemas initialized successfully")
+
+
+# Backward-compatible aliases — older callers still import these names.
+# Prefer `init_staff_hr_schemas` in new code.
+init_all_staff_hr_schemas = init_staff_hr_schemas
+init_staff_hr_v2_schemas = _init_staff_hr_v2_schemas
 
