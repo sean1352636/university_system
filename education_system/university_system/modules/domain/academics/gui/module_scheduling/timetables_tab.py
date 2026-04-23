@@ -127,6 +127,10 @@ def create_timetables_tab(self):
               command=self.email_student_timetable).pack(fill=tk.X, pady=2)
     ttk.Button(student_frame, text=_t("scheduling.check_student_conflicts"),
               command=self.check_student_conflicts).pack(fill=tk.X, pady=2)
+    # Per-student week-grid view — picks any student, renders their full
+    # week with conflicts highlighted.
+    ttk.Button(student_frame, text="Open Student Timetable Viewer…",
+               command=self._show_student_timetable_dialog).pack(fill=tk.X, pady=2)
 
     # Instructor timetable section
     instructor_frame = ttk.LabelFrame(left_panel, text=_t("scheduling.instructor_timetables"), padding=10)
@@ -653,14 +657,18 @@ def _get_student_schedule_data(self, student_id):
             return []
 
         placeholders = ','.join(['?'] * len(modules))
+        # Pull recurrence/recurrence_until and only consider published rows so
+        # students don't see what-if drafts in their personal timetable.
         query = f'''
         SELECT ms.module_code, m.module_name, ms.day_of_week, ms.start_time, ms.end_time,
-               r.building, r.room_number, i.first_name, i.last_name, ms.session_type
+               r.building, r.room_number, i.first_name, i.last_name, ms.session_type,
+               ms.recurrence, ms.recurrence_until
         FROM module_schedule ms
         LEFT JOIN rooms r ON ms.room_id = r.id
         LEFT JOIN instructors i ON ms.instructor_id = i.id
         LEFT JOIN modules m ON ms.module_code = m.module_code
         WHERE ms.module_code IN ({placeholders})
+          AND COALESCE(ms.status, 'published') = 'published'
         ORDER BY ms.day_of_week, ms.start_time
         '''
 
@@ -669,7 +677,9 @@ def _get_student_schedule_data(self, student_id):
 
         schedule_data = []
         for schedule in schedules:
-            module_code, module_name, day, start, end, building, room, first_name, last_name, session_type = schedule
+            (module_code, module_name, day, start, end, building, room,
+             first_name, last_name, session_type, recurrence,
+             recurrence_until) = schedule
             schedule_data.append({
                 'module_code': module_code,
                 'module_name': module_name or "Unknown",
@@ -678,7 +688,9 @@ def _get_student_schedule_data(self, student_id):
                 'end_time': end,
                 'room': f"{building}-{room}" if building and room else "TBA",
                 'instructor': f"{first_name} {last_name}" if first_name and last_name else "TBA",
-                'session_type': session_type
+                'session_type': session_type,
+                'recurrence': recurrence or 'weekly',
+                'recurrence_until': recurrence_until,
             })
 
         return schedule_data
@@ -692,12 +704,14 @@ def _get_instructor_schedule_data(self, instructor_id):
 
         query = '''
         SELECT ms.module_code, m.module_name, ms.day_of_week, ms.start_time, ms.end_time,
-               r.building, r.room_number, i.first_name, i.last_name, ms.session_type
+               r.building, r.room_number, i.first_name, i.last_name, ms.session_type,
+               ms.recurrence, ms.recurrence_until
         FROM module_schedule ms
         LEFT JOIN rooms r ON ms.room_id = r.id
         LEFT JOIN instructors i ON ms.instructor_id = i.id
         LEFT JOIN modules m ON ms.module_code = m.module_code
         WHERE ms.instructor_id = ?
+          AND COALESCE(ms.status, 'published') = 'published'
         ORDER BY ms.day_of_week, ms.start_time
         '''
 
@@ -706,7 +720,9 @@ def _get_instructor_schedule_data(self, instructor_id):
 
         schedule_data = []
         for schedule in schedules:
-            module_code, module_name, day, start, end, building, room, first_name, last_name, session_type = schedule
+            (module_code, module_name, day, start, end, building, room,
+             first_name, last_name, session_type, recurrence,
+             recurrence_until) = schedule
             schedule_data.append({
                 'module_code': module_code,
                 'module_name': module_name or "Unknown",
@@ -715,7 +731,9 @@ def _get_instructor_schedule_data(self, instructor_id):
                 'end_time': end,
                 'room': f"{building}-{room}" if building and room else "TBA",
                 'instructor': f"{first_name} {last_name}" if first_name and last_name else "TBA",
-                'session_type': session_type
+                'session_type': session_type,
+                'recurrence': recurrence or 'weekly',
+                'recurrence_until': recurrence_until,
             })
 
         return schedule_data
@@ -831,4 +849,32 @@ def show_grid_view(self):
     GridViewWindow(self.root, self.scheduler)
 
 ModuleSchedulingGUI.show_grid_view = show_grid_view
+
+
+def _show_student_timetable_dialog(self):
+    """Open the per-student week-grid viewer."""
+    try:
+        from education_system.university_system.modules.domain.academics.gui.module_scheduling.student_timetable_dialog import StudentTimetableDialog
+        StudentTimetableDialog(self.root, self.scheduler)
+    except Exception as e:
+        messagebox.showerror("Error",
+                             f"Failed to open student timetable viewer: {e}",
+                             parent=self.root)
+
+
+ModuleSchedulingGUI._show_student_timetable_dialog = _show_student_timetable_dialog
+
+
+def _show_drag_drop_grid(self):
+    """Open the canvas-based drag-and-drop weekly grid."""
+    try:
+        from education_system.university_system.modules.domain.academics.gui.module_scheduling.drag_grid_dialog import DragDropTimetableDialog
+        DragDropTimetableDialog(self.root, self.scheduler, gui=self)
+    except Exception as e:
+        messagebox.showerror("Error",
+                             f"Failed to open drag-drop grid: {e}",
+                             parent=self.root)
+
+
+ModuleSchedulingGUI._show_drag_drop_grid = _show_drag_drop_grid
 

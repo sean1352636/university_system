@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.89.0 — 2026-04-23](#8890---2026-04-23)
 - [8.88.0 — 2026-04-23](#8880---2026-04-23)
 - [8.87.0 — 2026-04-23](#8870---2026-04-23)
 - [8.86.0 — 2026-04-23](#8860---2026-04-23)
@@ -193,6 +194,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.89.0] — 2026-04-23
+
+### Module Scheduling: enterprise features (recurring sessions / draft workflow / audit trail / multi-term / what-if), bulk ops + per-student view + drag-drop grid, indexes / pagination / saved views / inline conflict highlight
+
+#### Added
+
+- **Six new columns on `module_schedule`** via additive idempotent migration in `services/module_scheduling/core.py::_migrate_database`: `semester TEXT DEFAULT 'Fall'`, `year INTEGER DEFAULT 0`, `status TEXT DEFAULT 'published'` (draft/published/archived), `recurrence TEXT DEFAULT 'weekly'` (none/weekly/biweekly), `recurrence_until TEXT` (ISO date, NULL = open-ended), `parent_schedule_id INTEGER` (links what-if clones back to their source). All NULLable or with safe defaults so existing rows + the legacy CLI/services keep working unchanged.
+- **Seven `CREATE INDEX IF NOT EXISTS`** statements on `module_schedule(semester,year)`, `(status)`, `(module_code)`, `(day_of_week)`, `(instructor_id)`, `(room_id)` and `schedule_history(schedule_id)`. `EXPLAIN QUERY PLAN` for the term filter went from `SCAN module_schedule` to `SEARCH module_schedule USING INDEX idx_module_schedule_term`.
+- **`gui/module_scheduling/history_dialog.py` — new `ScheduleHistoryDialog`.** Reads `schedule_history` for a single schedule_id, lists every change in reverse-chronological order with action/changed_by/timestamp columns, and renders a JSON old→new diff in a detail pane on selection. Reachable from the new "View History" button on `EditScheduleDialog`.
+- **`gui/module_scheduling/clone_term_dialog.py` — new `CloneTermDialog` (what-if).** Source-term + target-term selectors with a live "preview" line counting how many published rows will be cloned. Bulk-copies every published row of source term into draft rows of target term with `parent_schedule_id` filled in, going through the service so each clone gets its own `schedule_history` row. Drafts skip conflict checks so cloning into an already-busy term works without false rejections.
+- **`gui/module_scheduling/bulk_actions_dialog.py` — new `BulkActionsDialog`.** One dialog covering three actions: **Reassign instructor** (instructor combo → batch update), **Cancel (delete)** (single confirm + service-layer batch delete with `force=True`), **Shift time by ±N minutes** (validates each row would not roll past midnight; rejects rather than silently moving to wrong day). Operates on the multi-selected rows in the schedules tree; every action goes through the service so `schedule_history` records the change.
+- **`gui/module_scheduling/student_timetable_dialog.py` — new `StudentTimetableDialog`.** Picks any student from the `students` table → joins through `student_modules` to `module_schedule` (published only) → renders Mon–Fri week grid with one row per distinct start time. Term filter (semester+year). Inline conflict detection: any two same-day overlapping sessions tag the cells with a `#ffd9d9` background plus a banner `⚠ N session(s) overlap`. Reachable from the Timetables tab.
+- **`gui/module_scheduling/drag_grid_dialog.py` — new `DragDropTimetableDialog`.** Canvas-based week grid: Mon–Fri columns × 15-minute time rows from 08:00–20:00. Each schedule row becomes a draggable rectangle. On drop the block snaps to the nearest 15-minute slot, recomputes new (day, start, end) from the canvas position, and persists via `update_module_schedule(...)` so `schedule_history` records the move and the published-row conflict check still fires. On rejection (room/instructor conflict) the block snaps back automatically with a warning. Drafts shown dashed-outline; each module gets a stable colour from a 10-colour palette. Wired into the View menu next to the existing read-only Grid View.
+- **`gui/module_scheduling/tooltip.py` — tiny reusable `Tooltip` class.** 500ms hover delay, `<Toplevel>` cleanup on `<Leave>`/`<ButtonPress>`, no leaked windows when the user mouses out fast. Applied to the new "Publish Selected", "Bulk Actions…", and "Clone Term…" buttons in the schedules tab.
+- **Saved views per user.** New `module_scheduling_saved_views` table (created lazily on first use), keyed on `(user_id, name)` with a `criteria_json` blob holding semester/year/status/search. Save / Apply / Delete bar on the schedules tab. Mirrors the saved-search pattern from the course-management work.
+
+#### Changed
+
+- **Service-layer signatures broadened (back-compat).** `services/module_scheduling/core.py::add_module_schedule` now accepts `semester=`, `year=`, `status=`, `recurrence=`, `recurrence_until=`, `parent_schedule_id=`, `changed_by=` as optional kwargs. Defaults: current calendar year + season-inferred semester, `status='published'`, `recurrence='weekly'`. Drafts skip room/instructor conflict checks AND notifications — what-if scenarios can overlap the live schedule freely. Returns the new int `schedule_id` instead of `True` (truthy = back-compat with all 4 existing callers verified by grep). `update_module_schedule` accepts the same new kwargs + `changed_by=`, validates them, touches `modified_date` on every update. Both write a `'create'` / `'update'` row to `schedule_history` with old/new diff so the audit trail is complete.
+- **`delete_module_schedule(force=False, changed_by=None)`.** Existing CLI version called `input()` for confirmation, blocking the GUI. New `force=True` skips the prompt; both paths now write a `'delete'` snapshot row to `schedule_history` before removing. Notifications fire only for published rows so deleted drafts don't email students.
+- **`AddScheduleDialog` (dialogs.py) — new field rows.** Term selector (semester+year), Status (Publish / Save as draft radios), Recurrence dropdown + end-date entry. Conflict-warning popup suppressed for drafts. Post-save notification block also gated on status — drafts are silent.
+- **`EditScheduleDialog` (dialogs.py) — same new field set + a "View History" button.** `load_current_data` rewritten to be PRAGMA-driven so the dialog tolerates pre-migration databases. Update path threads `changed_by` from auth context for the audit trail.
+- **`schedules_tab.py` — significant rework.** Top filter row now has Term (semester + year), Status combos plus a Saved Views bar on the right. Two new columns on the tree: **Term** and **Status**. Drafts shown grey, archived rows lighter grey, **conflicts shown with rose-tinted background** (overlapping room/instructor/same-course pairs detected in-memory after each refresh, no extra DB roundtrip). Treeview switched to `selectmode="extended"`. New buttons: **Publish Selected** (batches draft→published through the service path), **Bulk Actions…**, **Clone Term…**. Pagination: COUNT(*) + LIMIT/OFFSET on both refresh and filter paths; page bar with `<<` `<` page-label `>` `>>` + rows-per-page combo (50/100/250/500/1000). `_sched_filter_changed()` resets to page 1 on any search/filter change so the user doesn't get stuck on page 5 with a 1-page result.
+- **iCal export (exports.py + timetables_tab.py) — RRULE driven by per-row recurrence.** Replaced the hardcoded `RRULE:FREQ=WEEKLY;COUNT=15`. Now: `weekly` → `FREQ=WEEKLY;INTERVAL=1`, `biweekly` → `INTERVAL=2`. With `recurrence_until` set, emits `UNTIL=<YYYYMMDD>T235959Z`; otherwise falls back to `COUNT=15` (back-compat). Single occurrences (`recurrence='none'`) emit no RRULE. Both `_get_student_schedule_data` and `_get_instructor_schedule_data` now SELECT recurrence fields and **only return `status='published'` rows** so personal timetables don't show what-if drafts.
+- **Multi-select on every schedules-related tree.** `selectmode="extended"` added to `schedules_tree`, `instructors_tree`, `rooms_tree`, `modules_tree`, `conflicts_tree`, `holidays_tree`. Lets the new bulk-actions dialog operate on a Ctrl/Shift-selected batch.
+- **Keyboard shortcuts on the menu bar.** New `_bind_shortcut` helper on `ModuleSchedulingGUI` sets the cosmetic accelerator label and the root key binding atomically. Wired: `Ctrl+I` (import), `Ctrl+E` (export), `Ctrl+Q` (exit), `F5` (refresh all), `Ctrl+N` (new schedule). `Delete` bound on the schedules tree only (so pressing Delete inside an entry doesn't nuke a row by accident); bound after a 100ms `after()` delay so the tree exists when the binding runs.
+
+#### Fixed
+
+- **`schedules.py::save_schedule` finally/return swallowing the INSERT.** The previous `try: … finally: conn.close(); return` block always returned after the conflict check, leaving the INSERT (and the `cursor`/`conn` references on the next lines) unreachable AND closing the connection before the dead code would have used it. Refactored into a single try/finally so the conflict check short-circuits via early return inside `try` while INSERT runs on the clean path; conn closed exactly once.
 
 ---
 

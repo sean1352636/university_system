@@ -260,6 +260,49 @@ class ModuleScheduler(
                     if 'status' not in existing_columns:
                         migrations.append("ALTER TABLE rooms ADD COLUMN status TEXT DEFAULT 'available'")
 
+                    # module_schedule: term, status (draft/published), recurrence, what-if linkage.
+                    # All additive with safe defaults so existing rows stay valid and the legacy
+                    # CLI/services that don't reference these columns keep working unchanged.
+                    cursor.execute("PRAGMA table_info(module_schedule)")
+                    ms_cols = {row[1] for row in cursor.fetchall()}
+                    if 'semester' not in ms_cols:
+                        migrations.append("ALTER TABLE module_schedule ADD COLUMN semester TEXT DEFAULT 'Fall'")
+                    if 'year' not in ms_cols:
+                        # SQLite ALTER TABLE won't accept non-constant DEFAULT, so default to a
+                        # placeholder; the GUI/service code populates real values on insert.
+                        migrations.append("ALTER TABLE module_schedule ADD COLUMN year INTEGER DEFAULT 0")
+                    if 'status' not in ms_cols:
+                        migrations.append("ALTER TABLE module_schedule ADD COLUMN status TEXT DEFAULT 'published'")
+                    if 'recurrence' not in ms_cols:
+                        migrations.append("ALTER TABLE module_schedule ADD COLUMN recurrence TEXT DEFAULT 'weekly'")
+                    if 'recurrence_until' not in ms_cols:
+                        migrations.append("ALTER TABLE module_schedule ADD COLUMN recurrence_until TEXT")
+                    if 'parent_schedule_id' not in ms_cols:
+                        migrations.append("ALTER TABLE module_schedule ADD COLUMN parent_schedule_id INTEGER")
+
+                    # Indexes on the columns the GUI/CLI filter or join on
+                    # most often. CREATE INDEX IF NOT EXISTS is idempotent.
+                    # Composite (semester, year) covers the term filter that
+                    # every list/grid view applies; (status) feeds the draft
+                    # vs published split; module_code/instructor_id/room_id
+                    # back the LIKE/JOIN paths in schedules_tab + reports.
+                    migrations.extend([
+                        "CREATE INDEX IF NOT EXISTS idx_module_schedule_term "
+                        "ON module_schedule(semester, year)",
+                        "CREATE INDEX IF NOT EXISTS idx_module_schedule_status "
+                        "ON module_schedule(status)",
+                        "CREATE INDEX IF NOT EXISTS idx_module_schedule_module_code "
+                        "ON module_schedule(module_code)",
+                        "CREATE INDEX IF NOT EXISTS idx_module_schedule_day "
+                        "ON module_schedule(day_of_week)",
+                        "CREATE INDEX IF NOT EXISTS idx_module_schedule_instructor "
+                        "ON module_schedule(instructor_id)",
+                        "CREATE INDEX IF NOT EXISTS idx_module_schedule_room "
+                        "ON module_schedule(room_id)",
+                        "CREATE INDEX IF NOT EXISTS idx_schedule_history_schedule "
+                        "ON schedule_history(schedule_id)",
+                    ])
+
                     # Execute all migrations
                     for migration in migrations:
                         try:
@@ -400,14 +443,22 @@ class ModuleScheduler(
             print(f"Error getting modules: {e}")
             return []
 
-    def delete_module_schedule(self, schedule_id):
-        """Delete a module schedule entry"""
+    def delete_module_schedule(self, schedule_id, force=False, changed_by=None):
+        """Delete a module schedule entry.
+
+        force=True skips the interactive `input()` confirmation so the GUI
+        can call this safely. changed_by is recorded on the schedule_history
+        row.
+        """
         try:
             with get_connection(self.db_path, row_factory=False) as conn:
                 conn.execute("PRAGMA journal_mode=WAL")
                 cursor = conn.cursor()
 
-                # Check if schedule exists
+                # Snapshot the row + column names so the history record holds
+                # the full pre-delete state in one place.
+                cursor.execute("PRAGMA table_info(module_schedule)")
+                col_names = [c[1] for c in cursor.fetchall()]
                 cursor.execute('SELECT * FROM module_schedule WHERE id = ?', (schedule_id,))
                 schedule = cursor.fetchone()
 
@@ -415,26 +466,36 @@ class ModuleScheduler(
                     print(f"Schedule ID {schedule_id} does not exist.")
                     return False
 
-                # Confirm deletion
-                print(f"Schedule to delete: Module {schedule[1]} on {schedule[2]} at {schedule[3]}-{schedule[4]}")
-                confirm = input("Are you sure you want to delete this schedule? (y/n): ")
-
-                if confirm.lower() != 'y':
-                    print("Deletion cancelled.")
-                    return False
+                if not force:
+                    print(f"Schedule to delete: Module {schedule[1]} on {schedule[2]} at {schedule[3]}-{schedule[4]}")
+                    confirm = input("Are you sure you want to delete this schedule? (y/n): ")
+                    if confirm.lower() != 'y':
+                        print("Deletion cancelled.")
+                        return False
 
                 # Log the deletion
                 self._log_system_action('schedule_deleted',
                                       f"Deleted schedule ID {schedule_id}: {schedule[1]} on {schedule[2]} {schedule[3]}-{schedule[4]}")
+
+                # Schedule history snapshot before the row vanishes.
+                import json as _json
+                old_snapshot = _json.dumps(dict(zip(col_names, schedule)), default=str)
+                cursor.execute("""
+                    INSERT INTO schedule_history
+                    (schedule_id, action, old_values, new_values, changed_by)
+                    VALUES (?, 'delete', ?, NULL, ?)
+                """, (schedule_id, old_snapshot, changed_by or 'system'))
 
                 # Delete the schedule
                 cursor.execute('DELETE FROM module_schedule WHERE id = ?', (schedule_id,))
 
                 print(f"Schedule deleted successfully.")
 
-                # Send notifications about the deletion
-                self.send_schedule_change_notifications(schedule_id,
-                                                      f"Class cancelled: {schedule[1]} on {schedule[2]} {schedule[3]}-{schedule[4]}")
+                # Notifications — skip for drafts (which were never visible to students).
+                row_status = dict(zip(col_names, schedule)).get('status', 'published')
+                if row_status == 'published':
+                    self.send_schedule_change_notifications(schedule_id,
+                                                          f"Class cancelled: {schedule[1]} on {schedule[2]} {schedule[3]}-{schedule[4]}")
 
                 return True
 
@@ -443,7 +504,14 @@ class ModuleScheduler(
             return False
 
     def update_module_schedule(self, schedule_id, **kwargs):
-        """Update a module schedule entry"""
+        """Update a module schedule entry.
+
+        Accepts the same new optional fields as add_module_schedule:
+        semester, year, status, recurrence, recurrence_until.
+        Caller can pass `changed_by=<username>` for the schedule_history row;
+        it is stripped from kwargs before building the UPDATE.
+        """
+        changed_by = kwargs.pop('changed_by', None)
         conn = get_connection(self.db_path, row_factory=False)
         cursor = conn.cursor()
 
@@ -455,6 +523,12 @@ class ModuleScheduler(
             print(f"Schedule ID {schedule_id} does not exist.")
             conn.close()
             return False
+
+        # Snapshot column-name -> old-value for the history record so the
+        # diff stored in schedule_history is meaningful.
+        cursor.execute("PRAGMA table_info(module_schedule)")
+        col_names = [c[1] for c in cursor.fetchall()]
+        old_values_map = dict(zip(col_names, schedule))
 
         # Build update query based on provided kwargs
         update_fields = []
@@ -528,10 +602,40 @@ class ModuleScheduler(
             update_fields.append("session_type = ?")
             update_values.append(session_type)
 
+        # New optional fields — light validation, accept anything else as-is.
+        if 'semester' in kwargs:
+            update_fields.append("semester = ?")
+            update_values.append(kwargs['semester'])
+        if 'year' in kwargs:
+            update_fields.append("year = ?")
+            update_values.append(int(kwargs['year']))
+        if 'status' in kwargs:
+            new_status = kwargs['status']
+            if new_status not in ("draft", "published", "archived"):
+                print(f"Invalid status: {new_status}")
+                conn.close()
+                return False
+            update_fields.append("status = ?")
+            update_values.append(new_status)
+        if 'recurrence' in kwargs:
+            new_rec = kwargs['recurrence']
+            if new_rec not in ("none", "weekly", "biweekly"):
+                print(f"Invalid recurrence: {new_rec}")
+                conn.close()
+                return False
+            update_fields.append("recurrence = ?")
+            update_values.append(new_rec)
+        if 'recurrence_until' in kwargs:
+            update_fields.append("recurrence_until = ?")
+            update_values.append(kwargs['recurrence_until'])
+
         if not update_fields:
             print("No fields to update.")
             conn.close()
             return False
+
+        # Touch modified_date on every update so listings can sort by recency.
+        update_fields.append("modified_date = CURRENT_TIMESTAMP")
 
         # Get current schedule details for conflict checking
         cursor.execute('''
@@ -574,6 +678,23 @@ class ModuleScheduler(
 
         try:
             cursor.execute(query, update_values)
+
+            # Schedule history — record only the columns the caller actually
+            # changed, not the full row, so diffs stay readable.
+            import json as _json
+            tracked = ('day_of_week', 'start_time', 'end_time', 'room_id',
+                       'instructor_id', 'session_type', 'semester', 'year',
+                       'status', 'recurrence', 'recurrence_until')
+            old_diff = {k: old_values_map.get(k) for k in tracked if k in kwargs}
+            new_diff = {k: kwargs[k] for k in tracked if k in kwargs}
+            if old_diff:  # nothing tracked changed → skip the history row
+                cursor.execute("""
+                    INSERT INTO schedule_history
+                    (schedule_id, action, old_values, new_values, changed_by)
+                    VALUES (?, 'update', ?, ?, ?)
+                """, (schedule_id, _json.dumps(old_diff), _json.dumps(new_diff),
+                      changed_by or 'system'))
+
             conn.commit()
             print(f"Schedule updated successfully.")
             return True
@@ -681,8 +802,26 @@ class ModuleScheduler(
             conn.close()
 
     def add_module_schedule(self, module_code, day_of_week, start_time, end_time,
-                            room_id, instructor_id, session_type):
-        """Add a new schedule entry for a module (enhanced with conflict detection)"""
+                            room_id, instructor_id, session_type,
+                            semester=None, year=None, status="published",
+                            recurrence="weekly", recurrence_until=None,
+                            parent_schedule_id=None, changed_by=None):
+        """Add a new schedule entry for a module (enhanced with conflict detection).
+
+        New optional kwargs (default to back-compat values so legacy callers stay
+        unchanged):
+          semester / year       — multi-term planning. Defaults to current term.
+          status                — 'draft' | 'published' | 'archived'.
+          recurrence            — 'none' | 'weekly' | 'biweekly'.
+          recurrence_until      — ISO date string, end of recurrence (NULL = open).
+          parent_schedule_id    — non-NULL when this row was cloned from another
+                                  (for what-if scenarios).
+          changed_by            — username for the schedule_history row.
+
+        Drafts skip room/instructor conflict checks — they're allowed to overlap
+        published rows so planners can stage scenarios without fighting the live
+        timetable.
+        """
         if day_of_week not in DAYS_OF_WEEK:
             print(f"Invalid day of week. Must be one of: {', '.join(DAYS_OF_WEEK)}")
             return False
@@ -697,6 +836,17 @@ class ModuleScheduler(
         if start_time >= end_time:
             print("Start time must be before end time.")
             return False
+
+        # Default term to current calendar year + a sensible season inference.
+        if year is None:
+            year = datetime.now().year
+        if semester is None:
+            month = datetime.now().month
+            semester = "Spring" if month <= 5 else ("Summer" if month <= 7 else "Fall")
+        if status not in ("draft", "published", "archived"):
+            status = "published"
+        if recurrence not in ("none", "weekly", "biweekly"):
+            recurrence = "weekly"
 
         conn = get_connection(self.db_path, row_factory=False)
         cursor = conn.cursor()
@@ -721,33 +871,54 @@ class ModuleScheduler(
             conn.close()
             return False
 
-        # Enhanced conflict checking
-        room_conflicts = self._check_room_conflicts(room_id, day_of_week, start_time, end_time)
-        if room_conflicts:
-            print(f"Room conflict detected: Room is already scheduled during this time.")
-            # Suggest alternatives
-            alternatives = self.find_alternative_slots(day_of_week, start_time, end_time)
-            if alternatives:
-                print("Suggested alternatives:")
-                for alt in alternatives[:3]:
-                    print(f"  - {alt['day']} {alt['start_time']}-{alt['end_time']}")
-            conn.close()
-            return False
+        # Enhanced conflict checking — skipped for drafts so what-if scenarios
+        # can overlap the live schedule without false-positive blocks.
+        if status == "published":
+            room_conflicts = self._check_room_conflicts(room_id, day_of_week, start_time, end_time)
+            if room_conflicts:
+                print(f"Room conflict detected: Room is already scheduled during this time.")
+                alternatives = self.find_alternative_slots(day_of_week, start_time, end_time)
+                if alternatives:
+                    print("Suggested alternatives:")
+                    for alt in alternatives[:3]:
+                        print(f"  - {alt['day']} {alt['start_time']}-{alt['end_time']}")
+                conn.close()
+                return False
 
-        instructor_conflicts = self._check_instructor_conflicts(instructor_id, day_of_week, start_time, end_time)
-        if instructor_conflicts:
-            print(f"Instructor conflict detected: Instructor is already scheduled during this time.")
-            conn.close()
-            return False
+            instructor_conflicts = self._check_instructor_conflicts(instructor_id, day_of_week, start_time, end_time)
+            if instructor_conflicts:
+                print(f"Instructor conflict detected: Instructor is already scheduled during this time.")
+                conn.close()
+                return False
 
         try:
             cursor.execute("""
             INSERT INTO module_schedule
-            (module_code, day_of_week, start_time, end_time, room_id, instructor_id, session_type)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (module_code, day_of_week, start_time, end_time, room_id, instructor_id, session_type))
+            (module_code, day_of_week, start_time, end_time, room_id, instructor_id, session_type,
+             semester, year, status, recurrence, recurrence_until, parent_schedule_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (module_code, day_of_week, start_time, end_time, room_id, instructor_id, session_type,
+                  semester, year, status, recurrence, recurrence_until, parent_schedule_id))
 
             schedule_id = cursor.lastrowid
+
+            # Schedule history — record the create. JSON snapshot is the new
+            # row's user-visible fields so audits show what was created.
+            import json as _json
+            new_snapshot = _json.dumps({
+                "module_code": module_code, "day_of_week": day_of_week,
+                "start_time": start_time, "end_time": end_time,
+                "room_id": room_id, "instructor_id": instructor_id,
+                "session_type": session_type,
+                "semester": semester, "year": year, "status": status,
+                "recurrence": recurrence, "recurrence_until": recurrence_until,
+                "parent_schedule_id": parent_schedule_id,
+            })
+            cursor.execute("""
+                INSERT INTO schedule_history
+                (schedule_id, action, old_values, new_values, changed_by)
+                VALUES (?, 'create', NULL, ?, ?)
+            """, (schedule_id, new_snapshot, changed_by or 'system'))
             conn.commit()
 
             print(f"Schedule for module {module_code} added successfully.")
@@ -755,10 +926,12 @@ class ModuleScheduler(
             # Log the action
             self._log_system_action('schedule_added', f"Added schedule for {module_code} on {day_of_week} {start_time}-{end_time}")
 
-            # Send notifications
-            self.send_schedule_change_notifications(schedule_id, f"New class scheduled: {module_code} on {day_of_week} {start_time}-{end_time}")
+            # Send notifications — only on publish; drafts are silent so
+            # what-if scenarios don't spam students with cancelled-class emails.
+            if status == "published":
+                self.send_schedule_change_notifications(schedule_id, f"New class scheduled: {module_code} on {day_of_week} {start_time}-{end_time}")
 
-            return True
+            return schedule_id
         except sqlite3.Error as e:
             print(f"Database error: {e}")
             return False

@@ -84,7 +84,8 @@ def create_conflicts_tab(self):
     tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     columns = ("ID", "Type", "Description", "Status", "Detected Date")
-    self.conflicts_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", style='Data.Treeview')
+    self.conflicts_tree = ttk.Treeview(tree_frame, columns=columns, show="headings",
+                                       style='Data.Treeview', selectmode="extended")
 
     for col in columns:
         self.conflicts_tree.heading(col, text=col)

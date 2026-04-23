@@ -210,8 +210,12 @@ class ModuleSchedulingGUI:
 
         # Admin and Staff can import/export
         if is_admin or is_staff:
-            file_menu.add_command(label=_t("scheduling.import_csv"), command=self.import_csv)
-            file_menu.add_command(label=_t("scheduling.export_all"), command=self.export_all_data)
+            self._bind_shortcut(file_menu, _t("scheduling.import_csv"),
+                                self.import_csv,
+                                accelerator="Ctrl+I", sequence="<Control-i>")
+            self._bind_shortcut(file_menu, _t("scheduling.export_all"),
+                                self.export_all_data,
+                                accelerator="Ctrl+E", sequence="<Control-e>")
             file_menu.add_separator()
 
         # Admin only - Backup/Restore
@@ -220,7 +224,8 @@ class ModuleSchedulingGUI:
             file_menu.add_command(label=_t("scheduling.restore"), command=self.restore_backup)
             file_menu.add_separator()
 
-        file_menu.add_command(label=_t("menu.exit"), command=self.on_closing)
+        self._bind_shortcut(file_menu, _t("menu.exit"), self.on_closing,
+                            accelerator="Ctrl+Q", sequence="<Control-q>")
 
         # Staff and Admin can manage modules
         if is_admin or is_staff:
@@ -230,8 +235,14 @@ class ModuleSchedulingGUI:
         # View menu
         view_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label=_t("menu.view"), menu=view_menu)
-        view_menu.add_command(label=_t("scheduling.refresh_all"), command=self.refresh_all_data)
+        self._bind_shortcut(view_menu, _t("scheduling.refresh_all"),
+                            self.refresh_all_data,
+                            accelerator="F5", sequence="<F5>")
         view_menu.add_command(label=_t("scheduling.grid_view"), command=self.show_grid_view)
+        view_menu.add_command(
+            label=_t("scheduling.drag_drop_grid", default="Drag-and-Drop Grid"),
+            command=self._show_drag_drop_grid,
+        )
 
         # Admin and Staff get CLI mode
         if is_admin or is_staff:
@@ -242,17 +253,46 @@ class ModuleSchedulingGUI:
         if is_admin or is_staff:
             tools_menu = tk.Menu(menubar, tearoff=0)
             menubar.add_cascade(label=_t("menu.tools"), menu=tools_menu)
+            self._bind_shortcut(
+                tools_menu,
+                _t("scheduling.new_schedule", default="New Schedule…"),
+                self.show_add_schedule_dialog,
+                accelerator="Ctrl+N", sequence="<Control-n>",
+            )
             tools_menu.add_command(label=_t("scheduling.scheduling_wizard"), command=self.schedule_module_interactively)
             tools_menu.add_separator()
             tools_menu.add_command(label=_t("scheduling.detect_conflicts"), command=self.detect_all_conflicts)
             tools_menu.add_command(label=_t("scheduling.data_validation"), command=self.validate_data)
             tools_menu.add_command(label=_t("scheduling.generate_reports"), command=self.generate_reports)
 
+        # Tree-scoped Delete: only fires when the schedules tree owns focus,
+        # so pressing Delete inside an entry doesn't nuke a row by accident.
+        # Bind after the tab+tree have been created.
+        def _bind_delete_on_tree():
+            tree = getattr(self, "schedules_tree", None)
+            if tree:
+                tree.bind("<Delete>",
+                          lambda _e: self.delete_selected_schedule())
+        self.root.after(100, _bind_delete_on_tree)
+
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label=_t("menu.help"), menu=help_menu)
         help_menu.add_command(label=_t("scheduling.user_guide"), command=self.show_help)
         help_menu.add_command(label=_t("scheduling.about"), command=self.show_about)
+
+    def _bind_shortcut(self, menu, label, command, accelerator=None, sequence=None):
+        """Add a menu command + matching root key binding in one call.
+
+        Going through one helper keeps the cosmetic accelerator label and
+        the actual key binding from drifting apart.
+        """
+        kwargs = {"label": label, "command": command}
+        if accelerator:
+            kwargs["accelerator"] = accelerator
+        menu.add_command(**kwargs)
+        if sequence:
+            self.root.bind_all(sequence, lambda _e, c=command: c())
 
     def create_status_bar(self):
         """Create the status bar at the bottom"""

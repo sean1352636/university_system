@@ -190,6 +190,11 @@ def _export_timetable_to_ical(self, timetable_data):
                 module_code = entry.get('module_code', 'N/A')
                 session_type = entry.get('session_type', 'Session')
                 room = entry.get('room', 'TBA')
+                # Per-row recurrence (added with the multi-term migration).
+                # Older rows or non-DB-backed entries fall back to weekly,
+                # matching the previous behaviour.
+                recurrence = (entry.get('recurrence') or 'weekly').lower()
+                recurrence_until = entry.get('recurrence_until')  # YYYY-MM-DD or None
 
                 if not day or not start_time_str or not end_time_str:
                     continue
@@ -213,8 +218,25 @@ def _export_timetable_to_ical(self, timetable_data):
                 dtstart = start_dt.strftime("%Y%m%dT%H%M%S")
                 dtend = end_dt.strftime("%Y%m%dT%H%M%S")
 
-                # Add event
-                ical_lines.extend([
+                # Build the RRULE from the row's recurrence settings.
+                #   none      → no RRULE (single occurrence)
+                #   weekly    → FREQ=WEEKLY;INTERVAL=1
+                #   biweekly  → FREQ=WEEKLY;INTERVAL=2
+                # If recurrence_until is set, emit UNTIL=<YYYYMMDD>T235959Z;
+                # otherwise default to COUNT=15 (back-compat with old behaviour).
+                rrule_line = None
+                if recurrence == "weekly":
+                    rrule_line = "RRULE:FREQ=WEEKLY;INTERVAL=1"
+                elif recurrence == "biweekly":
+                    rrule_line = "RRULE:FREQ=WEEKLY;INTERVAL=2"
+                if rrule_line:
+                    if recurrence_until:
+                        until = recurrence_until.replace("-", "")
+                        rrule_line += f";UNTIL={until}T235959Z"
+                    else:
+                        rrule_line += ";COUNT=15"
+
+                event = [
                     "BEGIN:VEVENT",
                     f"UID:{uid}@university.edu",
                     f"DTSTAMP:{datetime.now().strftime('%Y%m%dT%H%M%SZ')}",
@@ -224,9 +246,11 @@ def _export_timetable_to_ical(self, timetable_data):
                     f"LOCATION:{room}",
                     f"DESCRIPTION:{module_code} {session_type}\\nRoom: {room}",
                     "STATUS:CONFIRMED",
-                    f"RRULE:FREQ=WEEKLY;COUNT=15",  # Repeat for 15 weeks (semester)
-                    "END:VEVENT"
-                ])
+                ]
+                if rrule_line:
+                    event.append(rrule_line)
+                event.append("END:VEVENT")
+                ical_lines.extend(event)
 
             except Exception as e:
                 print(f"Error processing entry for iCal: {e}")

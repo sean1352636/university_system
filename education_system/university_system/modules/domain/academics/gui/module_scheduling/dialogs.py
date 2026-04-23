@@ -168,14 +168,56 @@ class AddScheduleDialog:
         session_combo = ttk.Combobox(main_frame, textvariable=self.session_type_var, values=SESSION_TYPES, width=30)
         session_combo.grid(row=7, column=1, pady=5, sticky=tk.W)
 
+        # --- New: Term (Semester + Year) ---
+        ttk.Label(main_frame, text="Term:").grid(row=8, column=0, sticky=tk.W, pady=5)
+        term_frame = ttk.Frame(main_frame)
+        term_frame.grid(row=8, column=1, pady=5, sticky=tk.W)
+        # Default to current calendar inference (matches the service layer).
+        _now = datetime.now()
+        default_semester = "Spring" if _now.month <= 5 else ("Summer" if _now.month <= 7 else "Fall")
+        self.semester_var = tk.StringVar(value=default_semester)
+        ttk.Combobox(term_frame, textvariable=self.semester_var,
+                     values=["Fall", "Spring", "Summer", "Winter"],
+                     width=10, state="readonly").pack(side=tk.LEFT)
+        self.year_var = tk.StringVar(value=str(_now.year))
+        ttk.Spinbox(term_frame, from_=_now.year - 1, to=_now.year + 5,
+                    textvariable=self.year_var, width=6).pack(side=tk.LEFT, padx=(8, 0))
+
+        # --- New: Status (Draft / Publish) ---
+        ttk.Label(main_frame, text="Status:").grid(row=9, column=0, sticky=tk.W, pady=5)
+        self.status_var = tk.StringVar(value="published")
+        status_frame = ttk.Frame(main_frame)
+        status_frame.grid(row=9, column=1, pady=5, sticky=tk.W)
+        ttk.Radiobutton(status_frame, text="Publish", variable=self.status_var,
+                        value="published").pack(side=tk.LEFT)
+        ttk.Radiobutton(status_frame, text="Save as draft", variable=self.status_var,
+                        value="draft").pack(side=tk.LEFT, padx=(10, 0))
+
+        # --- New: Recurrence ---
+        ttk.Label(main_frame, text="Recurrence:").grid(row=10, column=0, sticky=tk.W, pady=5)
+        rec_frame = ttk.Frame(main_frame)
+        rec_frame.grid(row=10, column=1, pady=5, sticky=tk.W)
+        self.recurrence_var = tk.StringVar(value="weekly")
+        ttk.Combobox(rec_frame, textvariable=self.recurrence_var,
+                     values=["none", "weekly", "biweekly"], width=10,
+                     state="readonly").pack(side=tk.LEFT)
+        ttk.Label(rec_frame, text=" until ").pack(side=tk.LEFT)
+        # End-date picker. Use plain Entry — the codebase doesn't bring a
+        # date-picker widget, and YYYY-MM-DD is what the service expects.
+        self.recurrence_until_var = tk.StringVar()
+        ttk.Entry(rec_frame, textvariable=self.recurrence_until_var,
+                  width=12).pack(side=tk.LEFT)
+        ttk.Label(rec_frame, text=" (YYYY-MM-DD, blank = open-ended)",
+                  font=("Arial", 8), foreground="#666").pack(side=tk.LEFT)
+
         # Conflict notification area
-        ttk.Label(main_frame, text="Conflicts/Warnings:").grid(row=8, column=0, sticky=tk.NW, pady=5)
+        ttk.Label(main_frame, text="Conflicts/Warnings:").grid(row=11, column=0, sticky=tk.NW, pady=5)
         self.conflict_text = tk.Text(main_frame, width=30, height=4, state='disabled', bg='#f0f0f0')
-        self.conflict_text.grid(row=8, column=1, pady=5, sticky=tk.W)
+        self.conflict_text.grid(row=11, column=1, pady=5, sticky=tk.W)
 
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=9, column=0, columnspan=2, pady=20)
+        button_frame.grid(row=12, column=0, columnspan=2, pady=20)
 
         ttk.Button(button_frame, text="Check Conflicts", command=self.check_conflicts).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Save", command=self.save_schedule).pack(side=tk.LEFT, padx=5)
@@ -345,23 +387,71 @@ class AddScheduleDialog:
 
             # Check if there are actual conflicts
             conflict_message = self.conflict_text.get(1.0, tk.END).strip()
-            if conflict_message and not conflict_message.startswith("✓"):
-                # Show warning but allow user to proceed
+            # Drafts are allowed to overlap published rows (that's the whole
+            # point of a what-if scenario), so skip the conflict prompt for
+            # them. Published saves still surface the warning.
+            if (conflict_message and not conflict_message.startswith("✓")
+                    and self.status_var.get() != "draft"):
                 response = messagebox.askyesno(
                     "Conflicts Detected",
                     "There are scheduling conflicts:\n\n" + conflict_message + "\n\nDo you want to save anyway?",
-                    icon='warning'
-                , parent=self.dialog)
+                    icon='warning',
+                    parent=self.dialog,
+                )
                 if not response:
                     return
 
+            # Validate the optional recurrence-until date if the user filled
+            # it in — empty is fine (= open-ended), garbage isn't.
+            rec_until = (self.recurrence_until_var.get() or "").strip() or None
+            if rec_until:
+                try:
+                    datetime.strptime(rec_until, "%Y-%m-%d")
+                except ValueError:
+                    messagebox.showerror("Error",
+                                         "Recurrence end date must be YYYY-MM-DD or blank.",
+                                         parent=self.dialog)
+                    return
+
+            try:
+                year_int = int(self.year_var.get())
+            except (TypeError, ValueError):
+                messagebox.showerror("Error", "Year must be a whole number.",
+                                     parent=self.dialog)
+                return
+
+            # Resolve the calling user for the audit trail. Prefer the gui's
+            # auth context; fall back to a generic 'gui' marker.
+            changed_by = "gui"
+            try:
+                if self.gui and hasattr(self.gui, "auth") and self.gui.auth:
+                    user = getattr(self.gui.auth, "current_user", None)
+                    if isinstance(user, dict):
+                        changed_by = str(user.get("username") or user.get("user_id") or "gui")
+                    elif user and hasattr(user, "username"):
+                        changed_by = str(user.username)
+            except Exception:
+                pass
+
             # Save schedule
             success = self.scheduler.add_module_schedule(
-                module_code, day, start_time, end_time, room_id, instructor_id, session_type
+                module_code, day, start_time, end_time, room_id, instructor_id, session_type,
+                semester=self.semester_var.get(),
+                year=year_int,
+                status=self.status_var.get(),
+                recurrence=self.recurrence_var.get(),
+                recurrence_until=rec_until,
+                changed_by=changed_by,
             )
 
             if success:
-                # Send notifications to instructor and students
+                # Send notifications to instructor and students — ONLY for
+                # published rows. Drafts are silent so what-if scenarios
+                # don't email students about classes that may never run.
+                if self.status_var.get() == "draft":
+                    self.result = True
+                    self.dialog.destroy()
+                    return
                 try:
                     # Get module info for the notification
                     with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
@@ -744,23 +834,23 @@ class EditScheduleDialog:
             with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
                 cursor = conn.cursor()
 
-                cursor.execute('''
-                SELECT module_code, day_of_week, start_time, end_time, room_id, instructor_id, session_type
-                FROM module_schedule WHERE id = ?
-                ''', (self.schedule_id,))
-
+                # PRAGMA-driven so the dialog tolerates the schema before
+                # the migration has run on a stale DB (e.g. test fixtures).
+                cursor.execute("PRAGMA table_info(module_schedule)")
+                cols = {row[1] for row in cursor.fetchall()}
+                want = ["module_code", "day_of_week", "start_time", "end_time",
+                        "room_id", "instructor_id", "session_type",
+                        "semester", "year", "status", "recurrence",
+                        "recurrence_until"]
+                select_cols = [c if c in cols else f"NULL AS {c}" for c in want]
+                cursor.execute(
+                    f"SELECT {', '.join(select_cols)} FROM module_schedule WHERE id = ?",
+                    (self.schedule_id,),
+                )
                 schedule = cursor.fetchone()
 
             if schedule:
-                self.current_data = {
-                    'module_code': schedule[0],
-                    'day_of_week': schedule[1],
-                    'start_time': schedule[2],
-                    'end_time': schedule[3],
-                    'room_id': schedule[4],
-                    'instructor_id': schedule[5],
-                    'session_type': schedule[6]
-                }
+                self.current_data = dict(zip(want, schedule))
             else:
                 raise CourseNotFoundError(f"Schedule {self.schedule_id}")
 
@@ -861,12 +951,68 @@ class EditScheduleDialog:
         session_combo = ttk.Combobox(main_frame, textvariable=self.session_type_var, values=SESSION_TYPES, width=30)
         session_combo.grid(row=6, column=1, pady=5, sticky=tk.W)
 
+        # --- New: Term ---
+        ttk.Label(main_frame, text="Term:").grid(row=7, column=0, sticky=tk.W, pady=5)
+        term_frame = ttk.Frame(main_frame)
+        term_frame.grid(row=7, column=1, pady=5, sticky=tk.W)
+        self.semester_var = tk.StringVar(value=self.current_data.get('semester') or 'Fall')
+        ttk.Combobox(term_frame, textvariable=self.semester_var,
+                     values=["Fall", "Spring", "Summer", "Winter"],
+                     width=10, state="readonly").pack(side=tk.LEFT)
+        year_default = self.current_data.get('year') or datetime.now().year
+        try:
+            year_default = int(year_default) if year_default else datetime.now().year
+        except (TypeError, ValueError):
+            year_default = datetime.now().year
+        if year_default <= 0:
+            year_default = datetime.now().year
+        self.year_var = tk.StringVar(value=str(year_default))
+        ttk.Spinbox(term_frame, from_=year_default - 5, to=year_default + 5,
+                    textvariable=self.year_var, width=6).pack(side=tk.LEFT, padx=(8, 0))
+
+        # --- New: Status ---
+        ttk.Label(main_frame, text="Status:").grid(row=8, column=0, sticky=tk.W, pady=5)
+        self.status_var = tk.StringVar(value=self.current_data.get('status') or 'published')
+        status_frame = ttk.Frame(main_frame)
+        status_frame.grid(row=8, column=1, pady=5, sticky=tk.W)
+        for label, value in (("Published", "published"),
+                             ("Draft", "draft"),
+                             ("Archived", "archived")):
+            ttk.Radiobutton(status_frame, text=label, variable=self.status_var,
+                            value=value).pack(side=tk.LEFT, padx=(0, 8))
+
+        # --- New: Recurrence ---
+        ttk.Label(main_frame, text="Recurrence:").grid(row=9, column=0, sticky=tk.W, pady=5)
+        rec_frame = ttk.Frame(main_frame)
+        rec_frame.grid(row=9, column=1, pady=5, sticky=tk.W)
+        self.recurrence_var = tk.StringVar(value=self.current_data.get('recurrence') or 'weekly')
+        ttk.Combobox(rec_frame, textvariable=self.recurrence_var,
+                     values=["none", "weekly", "biweekly"], width=10,
+                     state="readonly").pack(side=tk.LEFT)
+        ttk.Label(rec_frame, text=" until ").pack(side=tk.LEFT)
+        self.recurrence_until_var = tk.StringVar(
+            value=self.current_data.get('recurrence_until') or '')
+        ttk.Entry(rec_frame, textvariable=self.recurrence_until_var,
+                  width=12).pack(side=tk.LEFT)
+
         # Buttons
         button_frame = ttk.Frame(main_frame)
-        button_frame.grid(row=7, column=0, columnspan=2, pady=20)
+        button_frame.grid(row=10, column=0, columnspan=2, pady=20)
 
+        ttk.Button(button_frame, text="View History",
+                   command=self._show_history).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Update", command=self.update_schedule).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _show_history(self):
+        """Open the read-only schedule_history viewer for this row."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.module_scheduling.history_dialog import ScheduleHistoryDialog
+            ScheduleHistoryDialog(self.dialog, self.schedule_id)
+        except Exception as e:
+            messagebox.showerror("Error",
+                                 f"Failed to open history viewer: {e}",
+                                 parent=self.dialog)
 
     def update_schedule(self):
         try:
@@ -897,9 +1043,54 @@ class EditScheduleDialog:
             if self.session_type_var.get() != self.current_data['session_type']:
                 updates['session_type'] = self.session_type_var.get()
 
+            # New fields — only push when the user actually changed them.
+            cur_sem = self.current_data.get('semester') or 'Fall'
+            if self.semester_var.get() != cur_sem:
+                updates['semester'] = self.semester_var.get()
+            try:
+                year_int = int(self.year_var.get())
+            except (TypeError, ValueError):
+                messagebox.showerror("Error", "Year must be a whole number.",
+                                     parent=self.dialog)
+                return
+            cur_year = self.current_data.get('year') or 0
+            if year_int != cur_year:
+                updates['year'] = year_int
+            cur_status = self.current_data.get('status') or 'published'
+            if self.status_var.get() != cur_status:
+                updates['status'] = self.status_var.get()
+            cur_rec = self.current_data.get('recurrence') or 'weekly'
+            if self.recurrence_var.get() != cur_rec:
+                updates['recurrence'] = self.recurrence_var.get()
+            new_rec_until = (self.recurrence_until_var.get() or '').strip() or None
+            if new_rec_until:
+                try:
+                    datetime.strptime(new_rec_until, "%Y-%m-%d")
+                except ValueError:
+                    messagebox.showerror("Error",
+                                         "Recurrence end date must be YYYY-MM-DD or blank.",
+                                         parent=self.dialog)
+                    return
+            cur_rec_until = self.current_data.get('recurrence_until') or None
+            if new_rec_until != cur_rec_until:
+                updates['recurrence_until'] = new_rec_until
+
             if not updates:
                 messagebox.showinfo("Info", "No changes detected.", parent=self.dialog)
                 return
+
+            # Resolve calling user for the schedule_history audit row.
+            changed_by = "gui"
+            try:
+                if self.gui and hasattr(self.gui, "auth") and self.gui.auth:
+                    user = getattr(self.gui.auth, "current_user", None)
+                    if isinstance(user, dict):
+                        changed_by = str(user.get("username") or user.get("user_id") or "gui")
+                    elif user and hasattr(user, "username"):
+                        changed_by = str(user.username)
+            except Exception:
+                pass
+            updates['changed_by'] = changed_by
 
             # Update schedule
             success = self.scheduler.update_module_schedule(self.schedule_id, **updates)

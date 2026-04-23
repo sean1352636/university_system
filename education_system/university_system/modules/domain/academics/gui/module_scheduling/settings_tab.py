@@ -124,7 +124,8 @@ def create_settings_tab(self):
     holidays_tree_frame.pack(fill=tk.BOTH, expand=True, pady=5)
 
     columns = ("Name", "Start Date", "End Date", "Recurring", "Description")
-    self.holidays_tree = ttk.Treeview(holidays_tree_frame, columns=columns, show="headings", height=8)
+    self.holidays_tree = ttk.Treeview(holidays_tree_frame, columns=columns, show="headings",
+                                      height=8, selectmode="extended")
 
     for col in columns:
         self.holidays_tree.heading(col, text=col)

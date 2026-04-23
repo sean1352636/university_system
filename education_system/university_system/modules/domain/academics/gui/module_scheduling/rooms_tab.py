@@ -98,7 +98,8 @@ def create_rooms_tab(self):
     tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     columns = ("ID", "Building", "Room", "Capacity", "Type", "Equipment", "Status")
-    self.rooms_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", style='Data.Treeview')
+    self.rooms_tree = ttk.Treeview(tree_frame, columns=columns, show="headings",
+                                   style='Data.Treeview', selectmode="extended")
 
     for col in columns:
         self.rooms_tree.heading(col, text=col)

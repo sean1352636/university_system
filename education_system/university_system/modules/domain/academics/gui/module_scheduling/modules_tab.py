@@ -96,7 +96,8 @@ def create_modules_tab(self):
     tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     columns = ("ID", "Code", "Name", "Credits", "Semester", "Type", "Instructor")
-    self.modules_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", style='Data.Treeview')
+    self.modules_tree = ttk.Treeview(tree_frame, columns=columns, show="headings",
+                                     style='Data.Treeview', selectmode="extended")
 
     for col in columns:
         self.modules_tree.heading(col, text=col)

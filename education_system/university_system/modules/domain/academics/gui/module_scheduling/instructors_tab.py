@@ -96,7 +96,8 @@ def create_instructors_tab(self):
     tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
     columns = ("ID", "Name", "Email", "Department", "Max Hours", "Current Hours", "Status")
-    self.instructors_tree = ttk.Treeview(tree_frame, columns=columns, show="headings", style='Data.Treeview')
+    self.instructors_tree = ttk.Treeview(tree_frame, columns=columns, show="headings",
+                                         style='Data.Treeview', selectmode="extended")
 
     for col in columns:
         self.instructors_tree.heading(col, text=col)
