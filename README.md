@@ -59,12 +59,12 @@ make lint                  # Check code quality
 
 | System | Files | Modules | Interfaces | Focus |
 |--------|-------|---------|------------|-------|
-| **University** | 3,420+ | 51 domains | CLI, GUI, REST API, Web Portal | Higher education — academics, finance, health, housing, commerce, HR, student success (23 modules) |
-| **Sixth Form College** | 930+ | 112 domains | CLI, GUI, REST API | FE college (16-19) — apprenticeships, T-levels, UCAS, safeguarding, GDPR, quality assurance |
-| **Secondary School** | 290+ | 50 domains | CLI, GUI, REST API, Web Dashboard | Years 7-11 — KS3/KS4, GCSE grades 9-1, pastoral care, behaviour, form groups |
-| **Primary School** | 280+ | 46 domains | CLI, GUI, REST API, Web Dashboard | Reception-Year 6 — EYFS/KS1/KS2, phonics, reading records, SATs |
+| **University** | 3,458+ | 16 domain categories (85+ sub-modules) | CLI, GUI, REST API, Web Portal | Higher education — academics, finance, health, housing, commerce, HR, student success, campus services |
+| **Sixth Form College** | 1,020+ | 112 domains | CLI, GUI, REST API | FE college (16-19) — apprenticeships, T-levels, UCAS, safeguarding, GDPR, quality assurance |
+| **Secondary School** | 590+ | 50 domains | CLI, GUI, REST API, Web Dashboard | Years 7-11 — KS3/KS4, GCSE grades 9-1, pastoral care, behaviour, form groups |
+| **Primary School** | 670+ | 46 domains | CLI, GUI, REST API, Web Dashboard | Reception-Year 6 — EYFS/KS1/KS2, phonics, reading records, SATs |
 
-**Combined:** 5,169+ Python files, 257 domain modules, 319 REST API routes, 454+ test files.
+**Combined:** 6,530+ Python files, 300+ domain modules, 319 REST API routes, 740+ test files. University domain directory reorganised into 15 top-level categories in v8.77.0 (April 2026).
 
 All four systems share:
 - **Unified launcher** (`run.py`) with CLI & GUI system selection
@@ -116,10 +116,10 @@ All four systems share:
 
 ```
 education_system/
-├── university_system/       # University (3,420+ files, 51 domains)
-├── college_system/          # Sixth Form College (930+ files, 112 domains)
-├── secondary_school/        # Secondary School (290+ files, 50 domains)
-├── primary_school/          # Primary School (280+ files, 46 domains)
+├── university_system/       # University (3,458+ files, 16 domain categories)
+├── college_system/          # Sixth Form College (1,020+ files, 112 domains)
+├── secondary_school/        # Secondary School (590+ files, 50 domains)
+├── primary_school/          # Primary School (670+ files, 46 domains)
 ├── shared/                  # Shared modules across all 4 systems
 │   ├── api/                 # Unified REST API (unified_server.py + per-system routes)
 │   │   └── web/             # Web Portal SPA (HTML/CSS/JS)
@@ -314,7 +314,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 | Document | Description |
 |----------|-------------|
-| [CHANGELOG.md](CHANGELOG.md) | Complete version history (340+ releases) |
+| [CHANGELOG.md](CHANGELOG.md) | Complete v8.x version history (165 releases, latest 8.91.0 on 2026-04-24) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, branch naming, commit format |
 | [SECURITY.md](SECURITY.md) | Security features, practices, and vulnerability reporting |
 | [ROADMAP.md](docs/operations/ROADMAP.md) | Future plans and known limitations |
@@ -634,15 +634,39 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 ## What's New
 
-### Version 8.57.0 (March 30, 2026) — Latest
+### Version 8.91.0 (April 24, 2026) — Latest
 
-- **28-item security & feature hardening** — encryption enforcement, password expiry/history/reuse prevention, forgot password flow, common password blocking, timing oracle fix, MFA enforcement, persistent rate limiting, unified audit logging, zip bomb detection, API key expiry/rotation, backup encryption, webhook system, GDPR consent tracking, data subject rights (rectification/restriction/portability), configurable retention, cross-system consent, offline sync, PWA/mobile support, MS Teams integration, GraphQL additions, real-time WebSocket helpers, AI/ML early warning, primary school skills tracker, WCAG accessibility tests
+- **Log consolidation** — 8 specialised log files collapsed into `app.log` (43 literal substitutions across 34 files). `analytics.log`, `activity.log`, `health_portal_audit.log`, `reporting_system.log`, `restaurant_system.log`, `permit_system.log`, `student_support.log` and `student_support_errors.log` deleted; only `app.log` remains. Writer and reader sites both redirected; rotation now handled centrally by `infrastructure/logging/log_config.py` (5 MB × 5 backups).
 
-### Version 8.56.0 (March 29, 2026)
+### Version 8.90.0 (April 24, 2026)
 
-- **Comprehensive CI test failure remediation** — reduced failures from 1615 to ~1000 across 10 commits
+- **Path centralization** across `university_system` — ~97 hardcoded paths eliminated across 70 files. Five absolute/`~`-relative paths fixed; 14 config/template filename call sites consolidated onto 8 new constants in `core/paths.py`; 41 of 42 fragile `Path(__file__).resolve().parents[N]` constructions eliminated; 13 hardcoded directory strings replaced; 12 subdirectory-name literals in the assignments domain replaced with constants from new `assignments/core/constants.py`. Four latent bugs fixed in passing (CWD-relative file writes, wrong parent depth) plus `church_management_gui` `unified_events` column-name bug.
 
-See [CHANGELOG.md](CHANGELOG.md) for complete version history.
+### Version 8.89.0 (April 23, 2026)
+
+- **Module Scheduling enterprise features** — recurring sessions, draft workflow, audit trail, multi-term, what-if scenarios; bulk ops + per-student view + drag-drop grid; schema extended with 6 new columns + 7 indexes + schedule-history; iCal RRULE now per-row; saved-views per user; pagination; schedule-insert bug fix.
+
+### Version 8.88.0 (April 23, 2026)
+
+- **System Administration** — missing translations filled in (`database_admin_gui.*`, `gui.manage_permissions.*`); role-level permission management API (`list_roles`, `grant_role_permission`, `revoke_role_permission`); Manage Permissions GUI fully implemented; Add New User wired to real form; `paths.EMAIL_CONFIG_FILE` resolution and System Changelog viewer fixed.
+
+### Version 8.87.0 (April 23, 2026)
+
+- **Staff HR cold-start 11.3 s → 2.6 s** (77% faster) — 25 sibling GUI imports made lazy, chatbot/auth chain deferred until first use.
+
+### Version 8.84.0–8.86.0 (April 22–23, 2026)
+
+- **Certificates / Transcript** merge into a single Print & Certificates surface; Portfolio FK migration; role-dispatch fix for printing payments; Staff HR schemas consolidated to a single public entry point; student export includes attendance with a shared section-schema across comprehensive exporters.
+
+### Version 8.80.0–8.83.0 (April 21–22, 2026)
+
+- **Role-scoped Course Management portals** with LMS UX polish + data-layer fixes; assignment submission pipeline unified with AI Auto-Grading portal, Grade Tracking rewire, student feedback viewer; login-shell launchers + role portals de-duplicated; **v8.80.0** relocated misplaced files into their correct architectural layers across the `education_system` tree.
+
+### Version 8.77.0 (April 14, 2026)
+
+- **Domain directory reorganisation** — `university_system/modules/domain/` collapsed from 63 folders into 15 top-level categories (`academics`, `finance`, `health`, `commerce`, `campus`, `student_affairs`, etc.). Sub-modules moved, not deleted.
+
+See [CHANGELOG.md](CHANGELOG.md) for the complete v8.x history (165 releases) and [docs/changelogs/CHANGELOG-v5.md](docs/changelogs/CHANGELOG-v5.md) for earlier versions.
 
 ---
 
