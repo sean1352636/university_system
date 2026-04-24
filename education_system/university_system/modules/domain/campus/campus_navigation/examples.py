@@ -5,7 +5,7 @@ Campus Navigation Module - Usage Examples
 This file demonstrates how to use the Campus Navigation module's various features.
 """
 
-from education_system.university_system.modules.domain.campus.campus_navigation.import NavigationService
+from education_system.university_system.modules.domain.campus.campus_navigation import NavigationService
 
 
 def example_basic_search():
