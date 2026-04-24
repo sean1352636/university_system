@@ -40,7 +40,7 @@ from education_system.university_system.infrastructure.database.db import get_co
 from education_system.university_system.infrastructure.logging.log_config import configure_logging, get_log_file
 from education_system.university_system.infrastructure.email.template_utils import render_template
 # Configure logging
-log_path = get_log_file("analytics.log")
+log_path = get_log_file("app.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
 logging.basicConfig(

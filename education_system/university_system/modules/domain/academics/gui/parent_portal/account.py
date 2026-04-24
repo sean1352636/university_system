@@ -119,7 +119,7 @@ def _load_activity_log_entries(self, max_entries=100):
         from education_system.university_system.modules.shared.constants import paths
 
         log_dir = paths.LOG_DIR
-        log_file = log_dir / 'activity.log'
+        log_file = log_dir / 'app.log'
 
         # Try to read current activity log
         if log_file.exists():

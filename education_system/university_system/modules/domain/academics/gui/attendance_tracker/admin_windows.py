@@ -232,10 +232,10 @@ class AuditLogsWindow:
 
     LOG_FILES = (
         "audit_system.log",
-        "activity.log",
-        "analytics.log",
+        "app.log",
+        "app.log",
         "attendance.log",
-        "health_portal_audit.log",
+        "app.log",
     )
 
     def __init__(self, parent):
@@ -1093,7 +1093,7 @@ class DiagnosticsWindow:
 
         # Append tail of log file for manual inspection
         from education_system.university_system.core.paths import LOG_DIR
-        activity_log = LOG_DIR / "activity.log"
+        activity_log = LOG_DIR / "app.log"
         if activity_log.exists():
             self.log_text.insert(tk.END, "\n\n--- activity.log (latest entries) ---\n")
             try:

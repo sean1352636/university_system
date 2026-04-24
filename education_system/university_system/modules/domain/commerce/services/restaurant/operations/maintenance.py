@@ -121,7 +121,7 @@ def clear_old_logs():
         print("\nClearing old log files...")
 
         # Get log directory
-        log_dir = os.path.dirname(get_log_file("restaurant_system.log"))
+        log_dir = os.path.dirname(get_log_file("app.log"))
 
         if not os.path.exists(log_dir):
             print("Log directory not found.")

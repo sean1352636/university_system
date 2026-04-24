@@ -65,9 +65,9 @@ class AuditSecurityMixin:
     def load_audit_log(self):
         """Load audit log from file"""
         try:
-            log_file = paths.LOG_DIR / "health_portal_audit.log"
+            log_file = paths.LOG_DIR / "app.log"
             if not os.path.exists(log_file) or os.path.getsize(log_file) == 0:
-                log_file = paths.LOG_DIR / "activity.log"
+                log_file = paths.LOG_DIR / "app.log"
 
             if os.path.exists(log_file):
                 with open(log_file, 'r', encoding='utf-8') as f:
@@ -94,9 +94,9 @@ class AuditSecurityMixin:
             return
 
         try:
-            log_file = paths.LOG_DIR / "health_portal_audit.log"
+            log_file = paths.LOG_DIR / "app.log"
             if not os.path.exists(log_file) or os.path.getsize(log_file) == 0:
-                log_file = paths.LOG_DIR / "activity.log"
+                log_file = paths.LOG_DIR / "app.log"
 
             if os.path.exists(log_file):
                 with open(log_file, 'r', encoding='utf-8') as f:
@@ -175,9 +175,9 @@ class AuditSecurityMixin:
             report.append(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             report.append("")
 
-            log_file = paths.LOG_DIR / "health_portal_audit.log"
+            log_file = paths.LOG_DIR / "app.log"
             if not os.path.exists(log_file) or os.path.getsize(log_file) == 0:
-                log_file = paths.LOG_DIR / "activity.log"
+                log_file = paths.LOG_DIR / "app.log"
 
             if os.path.exists(log_file):
                 try:

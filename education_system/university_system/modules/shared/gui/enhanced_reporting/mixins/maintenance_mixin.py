@@ -231,7 +231,7 @@ class MaintenanceMixin:
             return
 
         try:
-            log_file = get_log_file('reporting_system.log')
+            log_file = get_log_file('app.log')
 
             if not os.path.exists(log_file):
                 messagebox.showwarning("No Logs", "No log file found")

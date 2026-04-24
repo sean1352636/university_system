@@ -59,7 +59,7 @@ class ActivityLogger:
         logger.handlers.clear()
 
         # Daily rotating file handler
-        log_file = self.log_dir / 'activity.log'
+        log_file = self.log_dir / 'app.log'
         log_file.parent.mkdir(parents=True, exist_ok=True)
         handler = TimedRotatingFileHandler(
             filename=str(log_file),

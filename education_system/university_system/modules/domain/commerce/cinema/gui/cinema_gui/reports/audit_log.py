@@ -30,7 +30,7 @@ def load_audit_from_logs(self, action_filter="all"):
     try:
         # Get all activity log files (activity.log and dated ones)
         log_patterns = [
-            os.path.join(logs_dir, "activity.log"),
+            os.path.join(logs_dir, "app.log"),
             os.path.join(logs_dir, "activity.*"),
             os.path.join(logs_dir, "app.log"),
         ]

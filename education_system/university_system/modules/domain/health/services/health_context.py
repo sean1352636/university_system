@@ -36,7 +36,7 @@ from education_system.university_system.infrastructure.logging.log_config import
 # Without this import a NameError would be raised when computing log_path below.
 from education_system.university_system.infrastructure.logging.log_config import get_log_file
 
-log_path = get_log_file("health_portal_audit.log")
+log_path = get_log_file("app.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
 logging.basicConfig(

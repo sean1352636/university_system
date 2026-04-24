@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.91.0 — 2026-04-24](#8910---2026-04-24)
 - [8.90.0 — 2026-04-24](#8900---2026-04-24)
 - [8.89.0 — 2026-04-23](#8890---2026-04-23)
 - [8.88.0 — 2026-04-23](#8880---2026-04-23)
@@ -195,6 +196,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.91.0] — 2026-04-24
+
+### Log consolidation — 8 specialised log files collapsed into `app.log` (43 substitutions across 34 files)
+
+#### Changed
+
+- **All 43 string literals** referring to the 8 specialised log filenames rewritten to `"app.log"` across 34 files. Writer sites (handler configs, `get_log_file()` calls, `FileHandler(...)`) and reader sites (admin GUI audit panels, log tails) both updated so there is a single source of truth. Substitutions:
+  - `analytics.log` — 16 files in `modules/domain/finance/` (dashboard, compliance, analytics, db_manager, invoice_manager, layout/_base, report_manager, finance_gui, settings/_base, billing/*, core/*).
+  - `activity.log` — 7 files including `core/activity_logger.py` (TimedRotatingFileHandler target), `admin_tools_gui.py` (log tail viewer), `attendance_tracker/admin_windows.py` + `settings_admin_tabs.py`, `parent_portal/account.py`, `cinema_gui/reports/audit_log.py`, `health_portal/audit_security.py`.
+  - `health_portal_audit.log` — `health_context.py`, `audit_security.py` (6 refs), `auth_encryption.py`.
+  - `reporting_system.log` — 4 files in `enhanced_reporting/` (`standalone/constants.py` basicConfig, `mixins/maintenance_mixin.py`, `mixins/dialogs_mixin.py`, `shared/services/analytics/enhanced_reporting/menu.py`).
+  - `restaurant_system.log` — 3 files in `commerce/services/restaurant/operations/` (`restaurant_context.py` basicConfig, `backup.py`, `maintenance.py`).
+  - `permit_system.log` — `parking_management/core.py`.
+  - `student_support.log` + `student_support_errors.log` — both in `student_support/utils/helpers.py`.
+
+#### Removed
+
+- **Deleted 8 zero-byte/stale log files** from `university_system/logs/`: `activity.log`, `analytics.log`, `health_portal_audit.log`, `permit_system.log`, `reporting_system.log`, `restaurant_system.log`, `student_support.log`, `student_support_errors.log`. Only `app.log` remains. The 7 zero-byte files hadn't been written since their creation on 2026-04-14; `activity.log` held a single 49-byte line. All logging now funnels through `app.log` via `infrastructure/logging/log_config.py::configure_logging`, which installs a 5 MB `RotatingFileHandler` with 5 backups on the root logger.
+
+### Known post-consolidation caveats
+
+- **Rotation policy overlap (unfixed, suboptimal).** `core/activity_logger.py` still installs a `TimedRotatingFileHandler` (nightly rotation, 90-day retention), now targeting `app.log`. The root `RotatingFileHandler` uses size-based rotation (5 MB × 5 backups). Both coexist on `app.log`: when one rotates, the other's open file handle persists to the rotated file until that handler rotates itself. Writes aren't lost but may temporarily land in yesterday's rotated file. If this becomes noisy, drop the `TimedRotatingFileHandler` and rely on propagation to root.
+- **Readers of the old specialised logs now read `app.log`.** Admin-tools log tail, cinema audit report, parent-portal activity panel and health-portal audit panels will show the full log stream rather than just their former per-domain subset. Some already keyword-filter (`admin_tools_gui.py:2483` filters on `'backup', 'api', 'email', 'smtp', 'sync', 'integration', 'database', 'connection'`); the others may display noisier output post-merge.
+- **Duplicate timestamps on activity messages.** `core/activity_logger.py` pre-formats messages with trailing `" - DateTime"`; the root formatter prepends `%(asctime)s`. Activity entries now render as `2026-04-24 08:04:57 - INFO - UniversitySystemActivity - admin - Closed AI Features - 2026-04-24 08:04:57`. Cosmetic, not functional.
 
 ---
 

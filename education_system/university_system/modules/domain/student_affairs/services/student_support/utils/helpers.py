@@ -190,11 +190,11 @@ def setup_enhanced_logging():
     logger.setLevel(logging.DEBUG)
 
     # File handler for all logs
-    file_handler = logging.FileHandler(get_log_file("student_support.log"))
+    file_handler = logging.FileHandler(get_log_file("app.log"))
     file_handler.setLevel(logging.INFO)
 
     # File handler for errors only
-    error_handler = logging.FileHandler(get_log_file("student_support_errors.log"))
+    error_handler = logging.FileHandler(get_log_file("app.log"))
     error_handler.setLevel(logging.ERROR)
 
     # Console handler

@@ -85,7 +85,7 @@ def backup_full_system():
         shutil.copy2(DATABASE_FILE, db_backup_path)
 
         # Backup log files
-        log_dir = os.path.dirname(get_log_file("restaurant_system.log"))
+        log_dir = os.path.dirname(get_log_file("app.log"))
         if os.path.exists(log_dir):
             log_backup_dir = os.path.join(backup_dir, "logs")
             shutil.copytree(log_dir, log_backup_dir, ignore_errors=True)

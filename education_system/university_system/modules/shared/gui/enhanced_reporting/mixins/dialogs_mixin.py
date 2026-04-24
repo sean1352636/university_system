@@ -1411,7 +1411,7 @@ curl -X POST http://localhost:5000/api/templates \\
 
             def load_logs():
                 try:
-                    log_file = get_log_file('reporting_system.log')
+                    log_file = get_log_file('app.log')
                     if not os.path.exists(log_file):
                         logs_text.insert(tk.END, "No log file found\n")
                         return

@@ -2478,7 +2478,7 @@ def show_integration_status_dashboard(self):
         sync_tree.pack(fill=tk.BOTH, expand=True)
 
         # Load activity log for integration events
-        log_path = str(LOG_DIR / 'activity.log')
+        log_path = str(LOG_DIR / 'app.log')
         if os.path.exists(log_path):
             try:
                 with open(log_path, 'r', encoding='utf-8') as f:

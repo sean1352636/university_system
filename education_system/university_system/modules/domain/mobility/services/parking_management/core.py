@@ -8,7 +8,7 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 _t = get_text
 
 # Configure logging
-log_path = get_log_file("permit_system.log")
+log_path = get_log_file("app.log")
 
 logging.basicConfig(
     level=logging.INFO,

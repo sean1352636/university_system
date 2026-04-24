@@ -109,7 +109,7 @@ def refresh_audit_logs(self):
             self.audit_tree.delete(item)
 
         # Read from actual activity.log file
-        activity_log_path = os.path.join(LOG_DIR, 'activity.log')
+        activity_log_path = os.path.join(LOG_DIR, 'app.log')
 
         try:
             if os.path.exists(activity_log_path):

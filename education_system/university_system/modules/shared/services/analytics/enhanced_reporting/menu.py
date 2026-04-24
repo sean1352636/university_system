@@ -983,7 +983,7 @@ def export_logs_menu():
     print("\n📄 EXPORT SYSTEM LOGS")
     print("="*35)
 
-    log_file = get_log_file('reporting_system.log')
+    log_file = get_log_file('app.log')
 
     if not os.path.exists(log_file):
         print("❌ No log file found")

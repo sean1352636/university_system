@@ -87,7 +87,7 @@ from education_system.university_system.modules.domain.finance.gui.finance.commo
 )
 
 # Configure logging
-log_path = get_log_file("analytics.log")
+log_path = get_log_file("app.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
 logging.basicConfig(

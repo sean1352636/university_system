@@ -115,7 +115,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(str(paths.LOG_DIR / 'reporting_system.log')),
+        logging.FileHandler(str(paths.LOG_DIR / 'app.log')),
         logging.StreamHandler()
     ]
 )

@@ -85,7 +85,7 @@ class AuthEncryptionMixin:
             level=logging.INFO,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
             handlers=[
-                logging.FileHandler(os.path.join(log_dir, "health_portal_audit.log")),
+                logging.FileHandler(os.path.join(log_dir, "app.log")),
                 logging.StreamHandler()
             ]
         )

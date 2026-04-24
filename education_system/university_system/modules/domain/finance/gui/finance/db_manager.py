@@ -185,7 +185,7 @@ except ImportError:
         quick_fix_database = _make_stub('quick_fix_database')
 
 # Configure logging
-log_path = get_log_file("analytics.log")
+log_path = get_log_file("app.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
 logging.basicConfig(

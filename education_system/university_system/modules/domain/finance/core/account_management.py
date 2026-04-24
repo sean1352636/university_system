@@ -49,7 +49,7 @@ from education_system.university_system.infrastructure.logging.log_config import
 from education_system.university_system.modules.domain.finance.core.students import student_exists, get_student_name
 
 # Configure logging
-log_path = get_log_file("analytics.log")
+log_path = get_log_file("app.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
 logging.basicConfig(

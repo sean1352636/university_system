@@ -42,7 +42,7 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 from education_system.university_system.modules.domain.finance.core.students import student_exists, get_student_name
 from education_system.university_system.modules.domain.finance.core.security_automation import log_audit_action
 # Configure logging
-log_path = get_log_file("analytics.log")
+log_path = get_log_file("app.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
 logging.basicConfig(

@@ -40,7 +40,7 @@ from education_system.university_system.infrastructure.logging.log_config import
 # Import get_log_file helper for audit logging.
 from education_system.university_system.infrastructure.logging.log_config import get_log_file
 
-log_path = get_log_file("restaurant_system.log")
+log_path = get_log_file("app.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
 logging.basicConfig(

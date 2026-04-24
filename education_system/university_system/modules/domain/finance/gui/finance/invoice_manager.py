@@ -158,7 +158,7 @@ except ImportError:
     globals().update({name: _make_stub(name) for name in _missing_functions})
 
 # Configure logging
-log_path = get_log_file("analytics.log")
+log_path = get_log_file("app.log")
 os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
 logging.basicConfig(
