@@ -10,7 +10,7 @@ from tkinter import ttk, filedialog, messagebox, scrolledtext
 import schedule
 
 from education_system.university_system.modules.shared.gui.batch_operations.constants import _t, logger, EXTERNAL_DB_CONFIG_PATH, EXTERNAL_API_CONFIG_PATH
-from education_system.university_system.core.paths import CONFIG_DIR, PROJECT_ROOT
+from education_system.university_system.core.paths import CONFIG_DIR, PROJECT_ROOT, API_SERVER_CONFIG_FILE
 from education_system.university_system.modules.shared.gui.batch_operations.progress_dialog import GUIProgressDialog
 
 
@@ -672,7 +672,7 @@ system schedulers like cron (Linux/Mac) or Task Scheduler (Windows).
                     }
 
                     # Save configuration
-                    config_filename = str(CONFIG_DIR / "api_server_config.json")
+                    config_filename = str(API_SERVER_CONFIG_FILE)
                     with open(config_filename, 'w') as f:
                         json.dump(server_config, f, indent=2)
 

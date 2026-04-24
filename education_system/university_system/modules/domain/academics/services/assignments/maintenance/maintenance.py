@@ -1,5 +1,8 @@
 from education_system.university_system.infrastructure.database.db import sqlite3, ensure_parent_dir
 from education_system.university_system.core.sql_safety import validate_table_name
+from education_system.university_system.modules.domain.academics.services.assignments.core.constants import (
+    SUBDIR_BACKUPS, SUBDIR_EXPORTS, SUBDIR_SUBMITTED,
+)
 from datetime import datetime, timedelta
 from pathlib import Path
 import json
@@ -18,7 +21,7 @@ class MaintenanceMixin:
 
         try:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            backup_dir = os.path.join(self.submission_dir, 'backups', f'backup_{timestamp}')
+            backup_dir = os.path.join(self.submission_dir, SUBDIR_BACKUPS, f'backup_{timestamp}')
             os.makedirs(backup_dir, exist_ok=True)
 
             print(f"\nCreating backup in: {backup_dir}")
@@ -32,7 +35,7 @@ class MaintenanceMixin:
             submissions_backup = os.path.join(backup_dir, 'submissions')
             if os.path.exists(self.submission_dir):
                 shutil.copytree(
-                    os.path.join(self.submission_dir, 'submitted'),
+                    os.path.join(self.submission_dir, SUBDIR_SUBMITTED),
                     submissions_backup,
                     ignore=shutil.ignore_patterns('*.tmp', '.DS_Store')
                 )
@@ -160,7 +163,7 @@ class MaintenanceMixin:
         """Archive all submissions for an assignment"""
         try:
             if not archive_path:
-                archive_path = os.path.join(self.submission_dir, 'backups', f'archive_{assignment_id}_{datetime.now().strftime("%Y%m%d")}.zip')
+                archive_path = os.path.join(self.submission_dir, SUBDIR_BACKUPS, f'archive_{assignment_id}_{datetime.now().strftime("%Y%m%d")}.zip')
 
             ensure_parent_dir(archive_path)
 
@@ -195,7 +198,7 @@ class MaintenanceMixin:
         """Export all system data to JSON"""
         try:
             if not export_path:
-                export_path = os.path.join(self.submission_dir, 'exports', f'system_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json')
+                export_path = os.path.join(self.submission_dir, SUBDIR_EXPORTS, f'system_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json')
 
             ensure_parent_dir(export_path)
 

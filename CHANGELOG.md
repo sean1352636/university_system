@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.90.0 — 2026-04-24](#8900---2026-04-24)
 - [8.89.0 — 2026-04-23](#8890---2026-04-23)
 - [8.88.0 — 2026-04-23](#8880---2026-04-23)
 - [8.87.0 — 2026-04-23](#8870---2026-04-23)
@@ -194,6 +195,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.90.0] — 2026-04-24
+
+### Path centralization across university_system (~97 call sites / 70 files); church_management unified_events column fix
+
+#### Added
+
+- **Eight new canonical path constants in `core/paths.py`** (and re-exported through the `modules/shared/constants/paths.py` back-compat shim): `SAVED_REPORTS_FILE`, `API_SERVER_CONFIG_FILE`, `LICENSES_FILE`, `DR_CONFIG_FILE`, `MAINTENANCE_WINDOWS_FILE`, `FINANCE_GUI_SETTINGS_FILE` (all under `CONFIG_DIR`), `SCHEDULED_REPORTS_FILE` (under `REPORTS_DIR`), `EMAIL_TEMPLATE_MAPPING_FILE` (under `TEMPLATES_DIR`). Previously each of these filenames was hardcoded at 1–4 call sites — renaming meant hunting through multiple files.
+- **New `modules/domain/academics/services/assignments/core/constants.py`** defining `SUBDIR_PENDING / SUBMITTED / GRADED / FEEDBACK / TEMPLATES / EXPORTS / BACKUPS / PREVIEWS` and a `SUBMISSION_SUBDIRS` tuple. Replaces 10+ inline string literals for the per-assignment submission directory layout; the subdir list in `core/database.py::_init_directories` now drives off the tuple.
+
+#### Changed
+
+- **Five critical absolute / `~`-relative paths replaced.** `infrastructure/auth/managers/activity_logger.py` last-resort log fallback no longer writes to `~/activity_backup.log` (uses `paths.DATA_DIR`). `assignments/submissions.py` download fallback no longer writes to `~/Downloads` (uses `paths.EXPORTS_SUBMISSIONS_DIR`). `email_manager_main.py` standalone-mode config write no longer targets `~/.email_manager_config.json` (uses `paths.CONFIG_DIR / 'email_manager_config.json'`). Two docstring examples scrubbed (`academic_calendar/validators.py`, `security/security_integration.py`) so copy-paste doesn't propagate hardcoded `/home/user/uploads` / `/tmp/upload.pdf`.
+- **Fourteen config/template filename call sites consolidated** onto the new constants. `modules/shared/gui/main/admin/admin_tools_gui.py` alone dropped 10 hardcoded filenames (4× `saved_reports.json`, 3× `api_server_config.json`, plus `licenses.json`, `dr_config.json`, `scheduled_reports.json`, `email_template_mapping.json`). Also updated: `batch_operations/automation_manager.py`, integration-marketplace `scheduling.py` (×2), `enhanced_reporting/config.py`, `infrastructure/email/template_utils.py`.
+- **41 fragile `Path(__file__).resolve().parents[N]` constructions eliminated** (of the 42 originally present — one migration script left for manual review). Three classes of replacement:
+  - **19 grade-tracking files** (`grade_tracking/*.py`, `grade_tracking/dialogs/*.py`, `grade_tracking/analytics_manager/constants.py`) had an identical 5-line dead-code block inside the `get_connection` fallback: `base_dir = Path(__file__).resolve().parents[1]; db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH); ...; db_path.parent.mkdir(...)`. The variables were set and never used by the `sqlite3.connect(str(DEFAULT_DB_PATH))` that followed. Collapsed to a single `DEFAULT_DB_PATH.parent.mkdir(parents=True, exist_ok=True)` line.
+  - **12 service CLIs** (`services/cli/*.py`: carrental, church, equipment_rental, legal_services, music_shop, phone_shop, police_station, security_desk, taxi_booking, train_station, academic_misconduct, medical_accommodation) each had `try: from ...paths import DEFAULT_DB_PATH; except ImportError: DEFAULT_DB_PATH = Path(__file__).resolve().parents[3] / "data" / "db_files" / "student_records.db"`. The fallback would only fire if the whole `paths` module couldn't be imported, which never happens in a valid install. Removed the except branch.
+  - **10 miscellaneous files** now import from `paths` directly: `shared_imports.py` (defensive fallback that duplicated the whole paths module), `attendance/backup.py`, `attendance/cli/backup_cli.py`, `course_management_gui/academic_systems/templates_viewer.py` (7-deep parents), `module_scheduling/settings_tab.py` (5-deep), three finance-GUI fallbacks (`finance_gui.py`, `invoice_manager.py`, `layout/_base.py`) and one last-resort fallback in `finance/db_manager.py`.
+- **13 hardcoded directory-name strings replaced** with existing `paths.*` constants. `admin_tools_gui.py`: `PROJECT_ROOT / "data" / "uploads"` → `UPLOAD_DIR`, `PROJECT_ROOT / "backups"` → `BACKUP_DIR`, `os.path.join(PROJECT_ROOT, 'templates', 'email')` → `str(EMAIL_TEMPLATES_DIR)`, `os.path.join(PROJECT_ROOT, 'logs', 'activity.log')` → `str(LOG_DIR / 'activity.log')`. `batch_operations/mixins/backup_restore.py`: 3× `DATA_DIR / 'backups'` → `BACKUP_DIR` (with `BACKUP_DIR` added to `batch_operations/constants.py` re-exports). Integration-marketplace `import_export.py` + `security.py`: 5× `os.path.join(paths.DATA_DIR, 'exports'/'reports', …)` → `paths.EXPORTS_DIR` / `paths.REPORTS_DIR`.
+- **12 subdirectory-name literals in the assignments domain** replaced with named constants from the new `assignments/core/constants.py`: `maintenance.py` (4×: backups/submitted/backups/exports), `grading.py`, `crud.py`, `submissions.py`, `group_management.py` (×2), `analytics.py`, plus the subdir list in `core/database.py`.
+
+#### Fixed
+
+- **`church_management_gui.py::load_data` — `sqlite3.OperationalError: no such column: id`.** The SELECT at line ~1976 read `SELECT id, title, description, …` from `unified_events`, but the `unified_events` primary-key column is `event_id` (confirmed in `student_union_core.py:171` and `career_alumni_schemas.py:111`). Also present in the UPDATE at line ~2101 (`WHERE id=? AND source_type='church'`). Fixed the SELECT to alias `SELECT event_id AS id, …` so downstream consumers that read `event['id']` (add/edit dialogs, `self.events` list iteration) keep working without changes; fixed the UPDATE's `WHERE` to use `event_id=?`. INSERT path left alone — `cursor.lastrowid` correctly returns the autoincrement `event_id`, which is stored back into `event['id']`.
+- **`finance_reporting/settings_tab.py` — settings silently disappeared when app ran from a non-default CWD.** `save_settings` / `load_settings` opened `'finance_gui_settings.json'` as a bare filename (resolved against `os.getcwd()`), so saving from one directory and launching from another meant the settings file wasn't found. Now resolves to `paths.FINANCE_GUI_SETTINGS_FILE` (`CONFIG_DIR / finance_gui_settings.json`).
+- **`module_scheduling/main_gui.py::setup_application` — directories created in CWD instead of the project tree.** The function did `os.makedirs(directory, exist_ok=True)` over the literal list `['timetable_reports', 'backups', 'analytics', 'templates']`, littering whichever directory happened to be CWD with empty dirs. Now resolves each to a proper `paths.*` location (`REPORTS_DIR / 'timetable_reports'`, `BACKUP_DIR`, `ANALYTICS_DIR`, `TEMPLATES_DIR / 'scheduling'`) and uses `Path.mkdir(parents=True, exist_ok=True)`.
+- **`restaurant_management_gui/add_sample_menu_items.py` — double `university_system` in the DB path.** Sample-data seeder's fallback constructed `Path(__file__).parents[5] / 'university_system' / 'data' / 'db_files' / 'student_records.db'`; `parents[5]` is already the `university_system` directory, so the real path became `.../university_system/university_system/data/db_files/student_records.db`. The seeder would create a second, empty database rather than populate the real one. Replaced with a direct import of `DEFAULT_DB_PATH`.
+- **`attendance_tracker/admin_windows.py:1095` — log tail panel pointed at `domain/logs/`.** `log_dir = Path(__file__).resolve().parents[3] / "logs"` resolves to `.../modules/domain/logs/` from that file's location — a directory that doesn't exist — so the "activity.log (latest entries)" pane was permanently empty. Now reads from `paths.LOG_DIR / 'activity.log'`.
+
+### Not touched (by design)
+
+- **`scripts/reset_password.py`** — `_SafePathsClass` inline fallback is a deliberate security-motivated defense for emergency standalone execution (the comment explains the rationale). Left intact.
+- **`infrastructure/database/migrations/fix_facilities_schema.py:15`** — standalone migration script whose `sys.path.insert(Path(__file__).resolve().parents[3])` may rely on a specific PYTHONPATH setup at invocation time. The remaining 1 of 42 `.parents[N]` usages in the codebase; flagged for future manual review.
+- **`templates.json` references in `enhanced_reporting/mixins/*` and `standalone/system_ops.py`** — these read from `CONFIG.get('templates_dir', str(paths.REPORT_TEMPLATES_DIR))`. The directory is deliberately user-overridable via CONFIG; extracting a full-path constant would break the override contract. The filename stays as a string literal inside that configurable path.
+- **`modules/shared/utils/templates.py`** — dead code (no importers in the project). Contains several fragile relative-path joins but the fix has no upside while its changes have nonzero risk.
 
 ---
 

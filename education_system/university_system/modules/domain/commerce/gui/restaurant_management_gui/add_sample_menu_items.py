@@ -6,14 +6,7 @@ for testing the order placement system.
 """
 
 from education_system.university_system.infrastructure.database.db import sqlite3
-from pathlib import Path
-
-# Database path - use absolute from current working directory
-import os
-if os.path.exists('university_system/data/db_files/student_records.db'):
-    DB_PATH = 'university_system/data/db_files/student_records.db'
-else:
-    DB_PATH = Path(__file__).parents[5] / 'university_system' / 'data' / 'db_files' / 'student_records.db'
+from education_system.university_system.core.paths import DEFAULT_DB_PATH as DB_PATH
 
 def add_sample_menu_items():
     """Add sample menu items to the database"""

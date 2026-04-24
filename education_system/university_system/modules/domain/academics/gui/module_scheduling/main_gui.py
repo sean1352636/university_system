@@ -617,10 +617,18 @@ def create_desktop_shortcut():
 def setup_application():
     """Setup application for first-time use"""
     try:
-        # Create necessary directories
-        directories = ['timetable_reports', 'backups', 'analytics', 'templates']
+        # Create necessary directories under the project's data tree
+        from education_system.university_system.core.paths import (
+            REPORTS_DIR, BACKUP_DIR, ANALYTICS_DIR, TEMPLATES_DIR,
+        )
+        directories = [
+            REPORTS_DIR / 'timetable_reports',
+            BACKUP_DIR,
+            ANALYTICS_DIR,
+            TEMPLATES_DIR / 'scheduling',
+        ]
         for directory in directories:
-            os.makedirs(directory, exist_ok=True)
+            directory.mkdir(parents=True, exist_ok=True)
 
         # Initialize database if it doesn't exist
         if not os.path.exists(str(DEFAULT_DB_PATH)):

@@ -1,5 +1,6 @@
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.core.sql_safety import validate_table_name
+from education_system.university_system.modules.domain.academics.services.assignments.core.constants import SUBDIR_EXPORTS
 from datetime import datetime, timedelta
 import csv
 import os
@@ -120,7 +121,7 @@ class AnalyticsMixin:
         try:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filename = f"analytics_report_{timestamp}.csv"
-            filepath = os.path.join(self.submission_dir, 'exports', filename)
+            filepath = os.path.join(self.submission_dir, SUBDIR_EXPORTS, filename)
 
             cursor.execute('''
             SELECT a.title, a.module_code, a.due_date,

@@ -13,16 +13,14 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import ttk, messagebox
 
+from education_system.university_system.core.paths import TEMPLATES_DIR
 from education_system.university_system.modules.shared.utils.i18n import get_text as _
 
 logger = logging.getLogger(__name__)
 
 # Templates live alongside the python source tree under
-# ``university_system/templates/course_evaluation/``. Resolve relative to this
-# module so the path stays correct regardless of the CWD.
-_TEMPLATES_DIR = (
-    Path(__file__).resolve().parents[6] / "templates" / "course_evaluation"
-)
+# ``university_system/templates/course_evaluation/``.
+_TEMPLATES_DIR = TEMPLATES_DIR / "course_evaluation"
 
 
 def _list_template_files() -> list[Path]:

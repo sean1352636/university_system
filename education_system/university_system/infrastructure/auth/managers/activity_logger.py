@@ -660,7 +660,7 @@ def _fallback_to_alternate_location(log_entry: Dict[str, Any], reason: str) -> b
     alternate_locations = [
         str(paths.TEMP_DIR / 'activity_backup.log'),
         str(paths.LOG_DIR / 'activity_backup.log'),
-        f'{os.path.expanduser("~")}/activity_backup.log'
+        str(paths.DATA_DIR / 'activity_backup.log'),
     ]
 
     for alt_location in alternate_locations:

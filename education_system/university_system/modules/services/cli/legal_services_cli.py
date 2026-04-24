@@ -9,10 +9,7 @@ from pathlib import Path
 
 from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
 
-try:
-    from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-except ImportError:
-    DEFAULT_DB_PATH = Path(__file__).resolve().parents[3] / "data" / "db_files" / "student_records.db"
+from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 
 try:
     from education_system.university_system.infrastructure.database.db import get_connection

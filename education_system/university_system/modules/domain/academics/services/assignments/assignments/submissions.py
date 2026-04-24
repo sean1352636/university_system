@@ -4,6 +4,9 @@ import os
 import shutil
 import zipfile
 
+from education_system.university_system.core import paths
+from education_system.university_system.modules.domain.academics.services.assignments.core.constants import SUBDIR_EXPORTS
+
 
 class SubmissionsMixin:
     """Mixin providing submission, resubmission, file preview, and download."""
@@ -473,7 +476,9 @@ class SubmissionsMixin:
             source_path, file_name = result
 
             if not download_path:
-                download_path = os.path.join(os.path.expanduser('~'), 'Downloads', file_name)
+                downloads_dir = paths.EXPORTS_SUBMISSIONS_DIR
+                downloads_dir.mkdir(parents=True, exist_ok=True)
+                download_path = str(downloads_dir / file_name)
 
             shutil.copy2(source_path, download_path)
             print(f"File downloaded to: {download_path}")
@@ -487,7 +492,7 @@ class SubmissionsMixin:
         """Export all submissions for an assignment as ZIP"""
         try:
             if not export_path:
-                export_path = os.path.join(self.submission_dir, 'exports', f'submissions_{assignment_id}.zip')
+                export_path = os.path.join(self.submission_dir, SUBDIR_EXPORTS, f'submissions_{assignment_id}.zip')
 
             conn = sqlite3.connect(self.db_path)
             try:

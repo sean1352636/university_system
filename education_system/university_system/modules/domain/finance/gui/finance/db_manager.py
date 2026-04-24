@@ -606,12 +606,8 @@ class DatabaseManager:
                 backup_dir = university_system_root / 'university_system' / 'backups'
             else:
                 # Fallback to centralized backup directory
-                try:
-                    from education_system.university_system.modules.shared.constants.paths import BACKUP_DIR
-                    backup_dir = BACKUP_DIR
-                except ImportError:
-                    # Last resort fallback
-                    backup_dir = Path(__file__).resolve().parents[4] / 'backups'
+                from education_system.university_system.modules.shared.constants.paths import BACKUP_DIR
+                backup_dir = BACKUP_DIR
 
             # Create backup directory if it doesn't exist
             backup_dir.mkdir(parents=True, exist_ok=True)

@@ -56,9 +56,6 @@ except ImportError:
         a single database file when the main refactored modules are not
         available.
         """
-        # Determine the project root (refactored directory) one level above finance
-        base_dir = Path(__file__).resolve().parents[1]
-        db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 
     def configure_logging(name=None):

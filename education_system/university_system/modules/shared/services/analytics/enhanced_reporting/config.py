@@ -20,7 +20,7 @@ CONFIG = {
     'templates_dir': str(paths.REPORT_TEMPLATES_DIR),
     'cache_dir': str(paths.REPORT_CACHE_DIR),
     'logs_dir': str(paths.LOG_DIR),
-    'scheduled_reports_file': str(paths.REPORTS_DIR / 'scheduled_reports.json'),
+    'scheduled_reports_file': str(paths.SCHEDULED_REPORTS_FILE),
     'config_file': str(paths.DATA_DIR / 'system_config.json'),
     'secret_key': os.environ.get('FLASK_SECRET_KEY', secrets.token_hex(32)),
     'cache_expiry_hours': 24,

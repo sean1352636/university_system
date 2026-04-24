@@ -54,22 +54,8 @@ if SERVICE_AVAILABLE:
     validate_table_name(TEMPLATES_TABLE)
 
 # Database imports
-try:
-    from education_system.university_system.infrastructure.database.db import get_connection
-    from education_system.university_system.modules.shared.constants import paths
-    DB_AVAILABLE = True
-except ImportError:
-    DB_AVAILABLE = False
-    from pathlib import Path
-    # Fallback paths
-    BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
-    DEFAULT_DB_PATH = BASE_DIR / "data" / "db_files" / "student_records.db"
-
-    def get_connection():
-        """Fallback database connection"""
-        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-        conn.execute("PRAGMA busy_timeout = 30000")
-        return conn
+from education_system.university_system.infrastructure.database.db import get_connection
+from education_system.university_system.modules.shared.constants import paths
 
 # Activity logging
 try:

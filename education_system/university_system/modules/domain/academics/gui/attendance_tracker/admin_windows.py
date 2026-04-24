@@ -1092,8 +1092,8 @@ class DiagnosticsWindow:
             self.log_text.insert('1.0', "\n\n".join(lines))
 
         # Append tail of log file for manual inspection
-        log_dir = Path(__file__).resolve().parents[3] / "logs"
-        activity_log = log_dir / "activity.log"
+        from education_system.university_system.core.paths import LOG_DIR
+        activity_log = LOG_DIR / "activity.log"
         if activity_log.exists():
             self.log_text.insert(tk.END, "\n\n--- activity.log (latest entries) ---\n")
             try:

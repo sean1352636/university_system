@@ -28,7 +28,7 @@ from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
 
 # Import path constants
-from education_system.university_system.modules.shared.constants.paths import DATA_DIR
+from education_system.university_system.modules.shared.constants.paths import DATA_DIR, BACKUP_DIR
 
 # Configuration file paths
 GUI_SETTINGS_PATH = DATA_DIR / "gui_settings.json"

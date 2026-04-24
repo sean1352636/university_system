@@ -47,7 +47,7 @@ def _load_mapping():
         return _MAPPING_CACHE
 
     templates_dir = paths.EMAIL_TEMPLATES_DIR
-    mapping_file = templates_dir.parent / "email_template_mapping.json"
+    mapping_file = paths.EMAIL_TEMPLATE_MAPPING_FILE
 
     if mapping_file.exists():
         try:

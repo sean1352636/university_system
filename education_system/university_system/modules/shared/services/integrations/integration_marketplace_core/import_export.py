@@ -22,7 +22,7 @@ class ImportExportManager:
             catalog = [dict(row) for row in cursor.fetchall()]
 
         if not filepath:
-            filepath = os.path.join(paths.DATA_DIR, 'exports', f'catalog_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json')
+            filepath = os.path.join(paths.EXPORTS_DIR, f'catalog_export_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json')
 
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
@@ -102,7 +102,7 @@ class ImportExportManager:
             bundle['webhooks'] = [dict(row) for row in cursor.fetchall()]
 
         if not filepath:
-            filepath = os.path.join(paths.DATA_DIR, 'exports', f'config_bundle_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json')
+            filepath = os.path.join(paths.EXPORTS_DIR, f'config_bundle_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json')
 
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
@@ -193,7 +193,7 @@ class ImportExportManager:
             logs = cursor.fetchall()
 
         if not filepath:
-            filepath = os.path.join(paths.DATA_DIR, 'reports', f'sync_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf')
+            filepath = os.path.join(paths.REPORTS_DIR, f'sync_report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf')
 
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
@@ -248,7 +248,7 @@ class ImportExportManager:
             mappings = cursor.fetchall()
 
         if not filepath:
-            filepath = os.path.join(paths.DATA_DIR, 'exports', f'mappings_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx')
+            filepath = os.path.join(paths.EXPORTS_DIR, f'mappings_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx')
 
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 

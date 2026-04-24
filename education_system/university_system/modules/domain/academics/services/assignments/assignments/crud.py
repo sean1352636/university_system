@@ -1,5 +1,6 @@
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.core.sql_safety import validate_identifier  # nosec B608
+from education_system.university_system.modules.domain.academics.services.assignments.core.constants import SUBDIR_EXPORTS
 from datetime import datetime
 import csv
 import json
@@ -598,7 +599,7 @@ class AssignmentCrudMixin:
         """Export assignment data to CSV"""
         try:
             if not export_path:
-                export_path = os.path.join(self.submission_dir, 'exports', f'assignment_{assignment_id}.csv')
+                export_path = os.path.join(self.submission_dir, SUBDIR_EXPORTS, f'assignment_{assignment_id}.csv')
 
             conn = sqlite3.connect(self.db_path)
             try:

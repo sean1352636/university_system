@@ -159,8 +159,9 @@ class SecurityManager:
         )
 
         # Validate file upload
+        # (use paths.TEMP_DIR / 'upload.pdf' in real code)
         file_result = security.validate_file_upload(
-            file_path='/tmp/upload.pdf',
+            file_path='<temp-upload-path>',
             original_filename='document.pdf',
             validator_type='document'
         )

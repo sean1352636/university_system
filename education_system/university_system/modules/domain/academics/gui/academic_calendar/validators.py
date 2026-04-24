@@ -190,9 +190,10 @@ def validate_file_path(file_path: str, allowed_directories: Optional[List[str]] 
         Tuple[bool, Optional[str]]: (is_valid, error_message or None)
 
     Example:
+        from education_system.university_system.core import paths
         is_valid, error = validate_file_path(
             user_path,
-            allowed_directories=['/home/user/uploads'],
+            allowed_directories=[str(paths.UPLOAD_DIR)],
             allowed_extensions=['.txt', '.pdf']
         )
         if not is_valid:

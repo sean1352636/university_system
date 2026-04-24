@@ -133,7 +133,8 @@ def save_settings(self):
     }
 
     try:
-        with open('finance_gui_settings.json', 'w') as f:
+        paths.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        with open(paths.FINANCE_GUI_SETTINGS_FILE, 'w') as f:
             json.dump(settings, f, indent=2)
 
         messagebox.showinfo(_("finance_reporting.messages.settings_saved"), _("finance_reporting.messages.settings_saved_msg"))
@@ -145,8 +146,8 @@ def save_settings(self):
 def load_settings(self):
     """Load application settings"""
     try:
-        if Path('finance_gui_settings.json').exists():
-            with open('finance_gui_settings.json', 'r') as f:
+        if paths.FINANCE_GUI_SETTINGS_FILE.exists():
+            with open(paths.FINANCE_GUI_SETTINGS_FILE, 'r') as f:
                 settings = json.load(f)
 
             # Load alert thresholds

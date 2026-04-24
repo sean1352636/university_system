@@ -2,7 +2,7 @@
 
 from education_system.university_system.modules.shared.gui.batch_operations.constants import (
     datetime, shutil, logging,
-    DATA_DIR,
+    DATA_DIR, BACKUP_DIR,
     logger,
 )
 
@@ -18,7 +18,7 @@ class BackupRestoreMixin:
                 progress_callback(0, "Creating database backup...")
 
             # Create backups directory
-            backup_dir = DATA_DIR / 'backups'
+            backup_dir = BACKUP_DIR
             backup_dir.mkdir(parents=True, exist_ok=True)
 
             # Generate backup filename
@@ -58,7 +58,7 @@ class BackupRestoreMixin:
             if progress_callback:
                 progress_callback(0, f"Cleaning up old backups (keeping {keep_count})...")
 
-            backup_dir = DATA_DIR / 'backups'
+            backup_dir = BACKUP_DIR
             if not backup_dir.exists():
                 return 0
 
@@ -106,7 +106,7 @@ class BackupRestoreMixin:
             if progress_callback:
                 progress_callback(0, "Looking for automatic backup...")
 
-            backup_dir = DATA_DIR / 'backups'
+            backup_dir = BACKUP_DIR
             if not backup_dir.exists():
                 raise FileNotFoundError("No backups directory found")
 

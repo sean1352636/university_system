@@ -108,7 +108,7 @@ class SecurityCredentialsManager:
         key = dk.hex()
         encrypted = ''.join(chr(ord(c) ^ ord(key[i % len(key)])) for i, c in enumerate(content))
 
-        filepath = os.path.join(paths.DATA_DIR, 'exports', f'credentials_encrypted_{datetime.now().strftime("%Y%m%d_%H%M%S")}.enc')
+        filepath = os.path.join(paths.EXPORTS_DIR, f'credentials_encrypted_{datetime.now().strftime("%Y%m%d_%H%M%S")}.enc')
         os.makedirs(os.path.dirname(filepath), exist_ok=True)
 
         with open(filepath, 'w') as f:

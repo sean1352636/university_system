@@ -537,7 +537,8 @@ ModuleSchedulingGUI.save_schedule_template = save_schedule_template
 def _save_template_json_file(template_name, description, schedules):
     """Save a schedule template as a JSON file in templates/scheduling/"""
     import json
-    templates_dir = Path(__file__).resolve().parents[5] / "templates" / "scheduling"
+    from education_system.university_system.core.paths import TEMPLATES_DIR
+    templates_dir = TEMPLATES_DIR / "scheduling"
     templates_dir.mkdir(parents=True, exist_ok=True)
 
     # Sanitise filename

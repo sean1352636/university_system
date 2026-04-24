@@ -9,10 +9,7 @@ from pathlib import Path
 import random
 import string
 
-try:
-    from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-except ImportError:
-    DEFAULT_DB_PATH = Path(__file__).resolve().parents[3] / "data" / "db_files" / "student_records.db"
+from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 
 try:
     from education_system.university_system.infrastructure.database.db import get_connection

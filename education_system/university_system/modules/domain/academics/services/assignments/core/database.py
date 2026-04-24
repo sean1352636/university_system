@@ -1,5 +1,6 @@
 from education_system.university_system.infrastructure.database.db import sqlite3, ensure_parent_dir
 from education_system.university_system.core.sql_safety import validate_table_name, validate_identifier  # nosec B608
+from education_system.university_system.modules.domain.academics.services.assignments.core.constants import SUBMISSION_SUBDIRS
 from pathlib import Path
 import os
 
@@ -14,8 +15,7 @@ class DatabaseMixin:
             Path(self.submission_dir).mkdir(exist_ok=True)
 
             # Create subdirectories for organization
-            subdirs = ['pending', 'submitted', 'graded', 'feedback', 'templates', 'exports', 'backups', 'previews']
-            for subdir in subdirs:
+            for subdir in SUBMISSION_SUBDIRS:
                 Path(os.path.join(self.submission_dir, subdir)).mkdir(exist_ok=True)
 
         except Exception as e:

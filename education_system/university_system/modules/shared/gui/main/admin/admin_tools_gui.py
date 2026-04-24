@@ -7,7 +7,12 @@ import json
 import csv
 from datetime import datetime, timedelta
 
-from education_system.university_system.core.paths import PROJECT_ROOT, DATA_DIR, CONFIG_DIR, DB_DIR, LOG_DIR, EMAIL_CONFIG_FILE
+from education_system.university_system.core.paths import (
+    PROJECT_ROOT, DATA_DIR, CONFIG_DIR, DB_DIR, LOG_DIR, EMAIL_CONFIG_FILE,
+    SAVED_REPORTS_FILE, API_SERVER_CONFIG_FILE, LICENSES_FILE, DR_CONFIG_FILE,
+    SCHEDULED_REPORTS_FILE, EMAIL_TEMPLATE_MAPPING_FILE,
+    UPLOAD_DIR, BACKUP_DIR, EMAIL_TEMPLATES_DIR,
+)
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
 
 logger = logging.getLogger(__name__)
@@ -251,7 +256,7 @@ def show_configuration_editor(self):
         nb.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
         email_cfg_path = EMAIL_CONFIG_FILE
-        api_cfg_path = CONFIG_DIR / "api_server_config.json"
+        api_cfg_path = API_SERVER_CONFIG_FILE
 
         # ---- helpers ----
         def _load_json(path):
@@ -819,8 +824,8 @@ def show_capacity_planning(self):
         dirs_to_check = [
             (_t("admin_tools.capacity.database"), DB_DIR),
             (_t("admin_tools.capacity.logs"), LOG_DIR),
-            (_t("admin_tools.capacity.uploads"), PROJECT_ROOT / "data" / "uploads"),
-            (_t("admin_tools.capacity.backups"), PROJECT_ROOT / "backups"),
+            (_t("admin_tools.capacity.uploads"), UPLOAD_DIR),
+            (_t("admin_tools.capacity.backups"), BACKUP_DIR),
         ]
 
         total_all = 0
@@ -1481,7 +1486,7 @@ def show_custom_report_builder(self):
                 'limit': limit_var.get(),
                 'saved_at': datetime.now().isoformat()
             }
-            saved_path = os.path.join(CONFIG_DIR, 'saved_reports.json')
+            saved_path = str(SAVED_REPORTS_FILE)
             reports = _load_json(saved_path, [])
             reports.append(report)
             _save_json(saved_path, reports)
@@ -1508,7 +1513,7 @@ def show_custom_report_builder(self):
 
         def load_saved_reports():
             saved_tree.delete(*saved_tree.get_children())
-            saved_path = os.path.join(CONFIG_DIR, 'saved_reports.json')
+            saved_path = str(SAVED_REPORTS_FILE)
             reports = _load_json(saved_path, [])
             if not reports:
                 return
@@ -1522,7 +1527,7 @@ def show_custom_report_builder(self):
             if not sel:
                 return
             idx = saved_tree.index(sel[0])
-            saved_path = os.path.join(CONFIG_DIR, 'saved_reports.json')
+            saved_path = str(SAVED_REPORTS_FILE)
             reports = _load_json(saved_path, [])
             if idx < len(reports):
                 r = reports[idx]
@@ -1543,7 +1548,7 @@ def show_custom_report_builder(self):
             if not sel:
                 return
             idx = saved_tree.index(sel[0])
-            saved_path = os.path.join(CONFIG_DIR, 'saved_reports.json')
+            saved_path = str(SAVED_REPORTS_FILE)
             reports = _load_json(saved_path, [])
             if idx < len(reports):
                 reports.pop(idx)
@@ -1567,7 +1572,7 @@ def show_custom_report_builder(self):
             sched_tree.column(c, width=w)
         sched_tree.pack(fill=tk.BOTH, expand=True)
 
-        sched_path = os.path.join(DATA_DIR, 'reports', 'scheduled_reports.json')
+        sched_path = str(SCHEDULED_REPORTS_FILE)
         scheduled = _load_json(sched_path, [])
         if scheduled:
             for s in scheduled:
@@ -1604,7 +1609,7 @@ def show_api_documentation(self):
         notebook = ttk.Notebook(win)
         notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        api_config_path = os.path.join(CONFIG_DIR, 'api_server_config.json')
+        api_config_path = str(API_SERVER_CONFIG_FILE)
         api_config = _load_json(api_config_path)
 
         # --- Tab 1: Endpoints ---
@@ -1749,8 +1754,8 @@ def show_notification_template_manager(self):
         notebook = ttk.Notebook(win)
         notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        mapping_path = os.path.join(PROJECT_ROOT, 'templates', 'email_template_mapping.json')
-        templates_dir = os.path.join(PROJECT_ROOT, 'templates', 'email')
+        mapping_path = str(EMAIL_TEMPLATE_MAPPING_FILE)
+        templates_dir = str(EMAIL_TEMPLATES_DIR)
         mapping = _load_json(mapping_path, {})
 
         # --- Tab 1: Browse Templates ---
@@ -2409,7 +2414,7 @@ def show_integration_status_dashboard(self):
             status_labels['db'][1].config(text=f"{_t('admin_tools_v2.integration.last_check')}: {now}")
 
             # API Server
-            api_config_path = os.path.join(CONFIG_DIR, 'api_server_config.json')
+            api_config_path = str(API_SERVER_CONFIG_FILE)
             api_cfg = _load_json(api_config_path)
             if api_cfg.get('host'):
                 try:
@@ -2473,7 +2478,7 @@ def show_integration_status_dashboard(self):
         sync_tree.pack(fill=tk.BOTH, expand=True)
 
         # Load activity log for integration events
-        log_path = os.path.join(PROJECT_ROOT, 'logs', 'activity.log')
+        log_path = str(LOG_DIR / 'activity.log')
         if os.path.exists(log_path):
             try:
                 with open(log_path, 'r', encoding='utf-8') as f:
@@ -2550,7 +2555,7 @@ def show_license_management(self):
     try:
         from education_system.university_system.infrastructure.database.db import get_connection
 
-        licenses_path = os.path.join(CONFIG_DIR, 'licenses.json')
+        licenses_path = str(LICENSES_FILE)
         if not os.path.exists(licenses_path):
             default_licenses = [{
                 "name": "University Management System",
@@ -2759,7 +2764,7 @@ def show_disaster_recovery_plan(self):
     try:
         from education_system.university_system.infrastructure.database.data_backup.metadata import metadata_manager
 
-        dr_config_path = os.path.join(CONFIG_DIR, 'dr_config.json')
+        dr_config_path = str(DR_CONFIG_FILE)
         if not os.path.exists(dr_config_path):
             _save_json(dr_config_path, {
                 "rto_hours": 4,

@@ -10,10 +10,7 @@ from pathlib import Path
 import json
 
 # Database and utilities imports
-try:
-    from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
-except ImportError:
-    DEFAULT_DB_PATH = Path(__file__).resolve().parents[3] / "data" / "db_files" / "student_records.db"
+from education_system.university_system.modules.shared.constants.paths import DEFAULT_DB_PATH
 
 try:
     from education_system.university_system.infrastructure.email.email_service import queue_email

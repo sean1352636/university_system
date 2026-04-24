@@ -259,7 +259,7 @@ class SchedulingMixin:
                         'created_at': datetime.now().isoformat()
                     }
 
-                    config_path = os.path.join(paths.DATA_DIR, 'config', 'maintenance_windows.json')
+                    config_path = str(paths.MAINTENANCE_WINDOWS_FILE)
                     os.makedirs(os.path.dirname(config_path), exist_ok=True)
 
                     windows = []

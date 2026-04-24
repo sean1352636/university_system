@@ -29,12 +29,8 @@ def handle_backup_recovery(backup_system):
 
     elif choice == '2':
         # Use centralized backup directory
-        try:
-            from education_system.university_system.modules.shared.constants.paths import BACKUP_ATTENDANCE_DIR
-            backup_dir = BACKUP_ATTENDANCE_DIR
-        except ImportError:
-            # Fallback to project root relative path
-            backup_dir = Path(__file__).resolve().parents[5] / "backups" / "attendance"
+        from education_system.university_system.modules.shared.constants.paths import BACKUP_ATTENDANCE_DIR
+        backup_dir = BACKUP_ATTENDANCE_DIR
 
         if backup_dir.exists():
             backups = sorted(backup_dir.glob("*.db"), key=lambda x: x.stat().st_mtime, reverse=True)

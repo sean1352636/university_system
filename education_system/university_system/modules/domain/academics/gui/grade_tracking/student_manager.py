@@ -88,11 +88,7 @@ try:
 except ImportError:
     def get_connection():
         """Fallback database connection function"""
-        base_dir = Path(__file__).resolve().parents[1]  # Fixed indentation here
-        db_path = base_dir / "db_files" / str(DEFAULT_DB_PATH)
-
-        # Ensure directory exists
-        db_path.parent.mkdir(parents=True, exist_ok=True)
+        DEFAULT_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
         return sqlite3.connect(str(DEFAULT_DB_PATH))
 

@@ -80,6 +80,7 @@ DB_EXPORTS_DIR: Path = DB_DIR / "exports"
 REPORTS_DIR: Path = DATA_DIR / "reports"
 REPORT_TEMPLATES_DIR: Path = PROJECT_ROOT / "templates" / "reports_templates"
 REPORT_CACHE_DIR: Path = DATA_DIR / "report_cache"
+SCHEDULED_REPORTS_FILE: Path = REPORTS_DIR / "scheduled_reports.json"
 
 # Email subsystem paths - consolidated to templates/email
 EMAIL_DATA_DIR: Path = DATA_DIR / "email"
@@ -87,6 +88,14 @@ EMAIL_TEMPLATES_DIR: Path = PROJECT_ROOT / "templates" / "email"
 
 # Configuration directory
 CONFIG_DIR: Path = DATA_DIR / "config"
+
+# Canonical config/report/template files (previously hardcoded at many call sites)
+SAVED_REPORTS_FILE: Path = CONFIG_DIR / "saved_reports.json"
+API_SERVER_CONFIG_FILE: Path = CONFIG_DIR / "api_server_config.json"
+LICENSES_FILE: Path = CONFIG_DIR / "licenses.json"
+DR_CONFIG_FILE: Path = CONFIG_DIR / "dr_config.json"
+MAINTENANCE_WINDOWS_FILE: Path = CONFIG_DIR / "maintenance_windows.json"
+FINANCE_GUI_SETTINGS_FILE: Path = CONFIG_DIR / "finance_gui_settings.json"
 
 
 def _resolve_email_config_file() -> Path:
@@ -139,6 +148,7 @@ TEMP_DIR: Path = DATA_DIR / "temp"
 
 # Templates directory - unified location at project root
 TEMPLATES_DIR: Path = PROJECT_ROOT / "templates"
+EMAIL_TEMPLATE_MAPPING_FILE: Path = TEMPLATES_DIR / "email_template_mapping.json"
 ASSIGNMENT_TEMPLATES_DIR: Path = TEMPLATES_DIR / "assignments"
 BACKUP_TEMPLATES_DIR: Path = TEMPLATES_DIR / "backup_templates"
 MEDICAL_TEMPLATES_DIR: Path = TEMPLATES_DIR / "medical_templates"
@@ -266,6 +276,14 @@ __all__ = [
     "EMAIL_CONFIG_PATH",
     "EMAIL_TEMPLATES_DIR",
     "CONFIG_DIR",
+    "SAVED_REPORTS_FILE",
+    "API_SERVER_CONFIG_FILE",
+    "LICENSES_FILE",
+    "DR_CONFIG_FILE",
+    "MAINTENANCE_WINDOWS_FILE",
+    "FINANCE_GUI_SETTINGS_FILE",
+    "SCHEDULED_REPORTS_FILE",
+    "EMAIL_TEMPLATE_MAPPING_FILE",
     "EMAIL_CONFIG_FILE",
     "LOGGER_CONFIG_DIR",
     "CHATBOT_DATA_DIR",

@@ -13,12 +13,8 @@ from education_system.university_system.modules.domain.academics.services.attend
 class BackupRecoverySystem:
     def __init__(self):
         # Use centralized attendance backup directory
-        try:
-            from education_system.university_system.modules.shared.constants.paths import BACKUP_ATTENDANCE_DIR
-            self.backup_dir = BACKUP_ATTENDANCE_DIR
-        except ImportError:
-            # Fallback to project root relative path
-            self.backup_dir = Path(__file__).resolve().parents[4] / "backups" / "attendance"
+        from education_system.university_system.modules.shared.constants.paths import BACKUP_ATTENDANCE_DIR
+        self.backup_dir = BACKUP_ATTENDANCE_DIR
         self.backup_dir.mkdir(parents=True, exist_ok=True)
 
         # Get the correct database path

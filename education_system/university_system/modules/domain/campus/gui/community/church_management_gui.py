@@ -1971,9 +1971,9 @@ Grace Community Church Management System
                 cursor = conn.execute("SELECT * FROM church_donations ORDER BY date DESC")
                 self.donations = [dict(row) for row in cursor.fetchall()]
 
-                # Load events from unified_events
+                # Load events from unified_events (primary key column is event_id)
                 cursor = conn.execute("""
-                    SELECT id, title, description,
+                    SELECT event_id AS id, title, description,
                            DATE(start_datetime) as date,
                            TIME(start_datetime) as time,
                            location, event_type, max_capacity as capacity,
@@ -2098,7 +2098,7 @@ Grace Community Church Management System
                 if event.get('id'):
                     conn.execute("""
                         UPDATE unified_events SET title=?, description=?, start_datetime=?,
-                        location=?, event_type=?, max_capacity=? WHERE id=? AND source_type='church'
+                        location=?, event_type=?, max_capacity=? WHERE event_id=? AND source_type='church'
                     """, (event.get('title'), event.get('description'), start_datetime,
                           event.get('location'), event.get('event_type'),
                           event.get('capacity'), event['id']))

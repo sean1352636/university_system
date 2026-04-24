@@ -1,4 +1,5 @@
 from education_system.university_system.infrastructure.database.db import sqlite3
+from education_system.university_system.modules.domain.academics.services.assignments.core.constants import SUBDIR_EXPORTS
 from datetime import datetime
 import csv
 import os
@@ -317,7 +318,7 @@ class GroupManagementMixin:
 
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
             filename = f"groups_{assignment_title.replace(' ', '_')}_{timestamp}.csv"
-            filepath = os.path.join(self.submission_dir, 'exports', filename)
+            filepath = os.path.join(self.submission_dir, SUBDIR_EXPORTS, filename)
 
             cursor.execute('''
             SELECT g.group_name, gm.student_id, s.first_name, s.last_name, gm.role, gm.joined_at
@@ -592,7 +593,7 @@ class GroupManagementMixin:
         """Export group list to CSV"""
         try:
             if not export_path:
-                export_path = os.path.join(self.submission_dir, 'exports', f'groups_{assignment_id}.csv')
+                export_path = os.path.join(self.submission_dir, SUBDIR_EXPORTS, f'groups_{assignment_id}.csv')
 
             conn = sqlite3.connect(self.db_path)
             try:

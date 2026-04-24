@@ -597,13 +597,14 @@ def quick_system_health_check(self):
         else:
             health_status.append(("Database Connection", "✅ Demo Mode"))
 
-        # File system checks — resolve relative to the university system root
-        # DB is at .../university_system/data/db_files/student_records.db
-        uni_root = os.path.dirname(os.path.dirname(os.path.dirname(str(DEFAULT_DB_PATH))))
+        # File system checks — resolve via centralized path constants
+        from education_system.university_system.core.paths import (
+            BACKUP_DIR, QR_CODES_DIR, PROJECT_ROOT,
+        )
         dir_paths = {
-            'backups': os.path.join(uni_root, 'data', 'backups'),
-            'qr_codes': os.path.join(uni_root, 'qr_codes'),
-            'digital_library': os.path.join(uni_root, 'digital_library'),
+            'backups': str(BACKUP_DIR),
+            'qr_codes': str(QR_CODES_DIR),
+            'digital_library': str(PROJECT_ROOT / 'digital_library'),
         }
 
         for directory, dir_path in dir_paths.items():
