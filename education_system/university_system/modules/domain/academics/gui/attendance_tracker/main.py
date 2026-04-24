@@ -362,6 +362,7 @@ AttendanceGUI.refresh_modules = attendance_tab.refresh_modules
 AttendanceGUI.on_module_selected = attendance_tab.on_module_selected
 AttendanceGUI.load_module_students = attendance_tab.load_module_students
 AttendanceGUI.edit_attendance_record = attendance_tab.edit_attendance_record
+AttendanceGUI.open_absence_tracker = attendance_tab.open_absence_tracker
 
 # Students tab methods
 AttendanceGUI.create_students_tab = students_tab.create_students_tab

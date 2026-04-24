@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, simpledialog, scrolledtext
 from education_system.university_system.infrastructure.database.db import sqlite3
 import datetime
+import subprocess
+import sys
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
@@ -35,6 +37,29 @@ from education_system.university_system.modules.domain.academics.gui.attendance_
 from education_system.university_system.modules.domain.academics.gui.attendance_tracker.qr_windows import QRAttendanceWindow
 from education_system.university_system.modules.domain.academics.gui.attendance_tracker.face_recognition_windows import FaceRecognitionAttendanceWindow
 
+
+def open_absence_tracker(self):
+        """Launch the standalone University Absence Tracker as a separate process.
+
+        Passes the current authenticated user via CLI args — no second login prompt.
+        """
+        try:
+            cmd = [sys.executable, "-m",
+                   "education_system.university_system.modules.domain.academics.attendance.absence_tracker"]
+            user = getattr(self.auth, "current_user", None) if getattr(self, "auth", None) else None
+            if user:
+                if user.get("username"):
+                    cmd += ["--username", str(user["username"])]
+                elif user.get("id") is not None:
+                    cmd += ["--user-id", str(user["id"])]
+                if user.get("role"):
+                    cmd += ["--role", str(user["role"])]
+            else:
+                messagebox.showerror("Absence Tracker", "Please log in first.")
+                return
+            subprocess.Popen(cmd, close_fds=True)
+        except Exception as e:
+            messagebox.showerror("Absence Tracker", f"Failed to open Absence Tracker: {e}")
 
 def refresh_attendance_data(self):
         """Refresh attendance data for current module"""
@@ -248,6 +273,8 @@ def create_attendance_tab(self):
                   command=self.refresh_attendance_data, style='Success.TButton').pack(fill=tk.X, pady=2)
         ttk.Button(actions_frame, text=_("attendance.buttons.generate_report"),
                   command=self.generate_quick_report, style='Warning.TButton').pack(fill=tk.X, pady=2)
+        ttk.Button(actions_frame, text="Open Absence Tracker",
+                  command=self.open_absence_tracker, style='Primary.TButton').pack(fill=tk.X, pady=2)
 
         # Right panel - Student list and attendance
         right_panel = ttk.Frame(attendance_frame)

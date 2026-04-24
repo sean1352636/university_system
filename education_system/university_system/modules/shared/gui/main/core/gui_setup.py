@@ -317,6 +317,7 @@ def create_navigation_panel(self, parent):
         ('scheduling', _t("nav.buttons.scheduling"), self.show_module_scheduling),
         ('my_timetable', _t("nav.buttons.my_timetable"), self.show_student_timetable_gui),
         ('attendance', _t("nav.buttons.attendance"), self.open_attendance_gui),
+        ('absence_tracker', "Absence Tracker", self.open_absence_tracker_gui),
         ('exam_portal', "Exam Management", self.show_exam_portal),
     ]
 
@@ -740,6 +741,8 @@ def get_visible_buttons_for_role(self, role=None):
         'cross_system_calendar', 'digital_transcript', 'certificates',
         # LMS
         'lms',
+        # Absence tracker — available to all roles
+        'absence_tracker',
         # New features (modules 21-30) - student-accessible
         'student_app', 'achievement_badges', 'study_recommendations',
     }

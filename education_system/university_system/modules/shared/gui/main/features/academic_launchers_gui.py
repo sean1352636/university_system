@@ -488,6 +488,32 @@ def open_attendance_gui(self):
             messagebox.showerror(_t("academic_launchers.titles.attendance"), _t("academic_launchers.errors.attendance_unexpected_error", error=e))
         except Exception as ex:
             logger.error(f"Failed to show attendance error dialog: {ex}")
+def open_absence_tracker_gui(self):
+    """Launch the standalone University Absence Tracker as a separate process.
+
+    Passes the current authenticated user via CLI args — no second login prompt.
+    """
+    try:
+        python = sys.executable
+        cmd = [python, "-m",
+               "education_system.university_system.modules.domain.academics.attendance.absence_tracker"]
+        user = getattr(self.auth, "current_user", None) if getattr(self, "auth", None) else None
+        if user:
+            if user.get("username"):
+                cmd += ["--username", str(user["username"])]
+            elif user.get("id") is not None:
+                cmd += ["--user-id", str(user["id"])]
+            if user.get("role"):
+                cmd += ["--role", str(user["role"])]
+        else:
+            messagebox.showerror("Absence Tracker", "Please log in first.")
+            return
+        subprocess.Popen(cmd, close_fds=True)
+    except Exception as e:
+        try:
+            messagebox.showerror("Absence Tracker", f"Failed to open Absence Tracker: {e}")
+        except Exception as ex:
+            logger.error(f"Failed to show absence tracker error dialog: {ex}")
 def show_office_hours_gui(self):
     """Launch the Office Hours Management GUI in a child window"""
     if not self.auth.current_user:

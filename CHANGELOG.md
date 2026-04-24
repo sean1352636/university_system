@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.92.0 — 2026-04-24](#8920---2026-04-24)
 - [8.91.0 — 2026-04-24](#8910---2026-04-24)
 - [8.90.0 — 2026-04-24](#8900---2026-04-24)
 - [8.89.0 — 2026-04-23](#8890---2026-04-23)
@@ -196,6 +197,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.92.0] — 2026-04-24
+
+### Absence Tracker — integrated into the Education System with 150+ role-scoped features
+
+#### Added
+
+- **New subpackage `education_system/university_system/modules/domain/academics/attendance/`** with 4 files:
+  - `absence_tracker.py` — Tkinter GUI with role-based dashboards (Admin / Staff / Student). Launched as a standalone process from the main system.
+  - `admin_features.py` — 50 admin utilities + shared infrastructure (`@safe` decorator, `audit()`, `ensure_support_tables()`, `pick_date`, `pick_date_range`, 12 support tables).
+  - `student_features.py` — 51 student utilities (50 original + date-picker time-off request).
+  - `staff_features.py` — 51 staff/instructor utilities (50 original + date-picker leave request writing to `leave_requests`).
+- **Launcher wiring** so admins/staff/instructors/students can open the tracker from:
+  - `shared/gui/main/features/academic_launchers_gui.py::open_absence_tracker_gui` — main GUI category entry.
+  - `modules/domain/academics/gui/attendance_tracker/attendance_tab.py::open_absence_tracker` — Quick Actions button inside the existing Attendance GUI.
+  - `shared/gui/main/staff_portal.py`, `instructor_portal.py`, `student_portal.py` — per-role dashboard buttons.
+  - `shared/gui/main/core/gui_setup.py` — added `('absence_tracker', 'Absence Tracker', ...)` under Scheduling & Attendance; `'absence_tracker'` added to the base visible-buttons set in `get_visible_buttons_for_role` so all logged-in roles see it.
+  - Both launchers pass `--username`, `--role` (optionally `--user-id`) so the tool opens into the correct dashboard without a second login.
+- **150 role-scoped feature functions** across 3 modules, each registered in a `FEATURES` list and rendered as a scrollable, category-grouped button grid (blue for admin, sky-blue for student, purple for staff). Every function is wrapped with the shared `@safe` decorator — exceptions get logged with traceback and shown as a friendly dialog rather than crashing the GUI. Every action writes to the `abs_tracker_audit` table (user, action, target, details).
+  - **Admin Tools (50)** across 9 categories: Data (7), Requests (6), Policies (5), Reports (8), Notifications (4), Integrations (7), Bulk (4), Security (5), Diagnostics (4). Includes CSV import/export, soft-delete trash with 24h undo, duplicate merge, SQLite-trigger-backed past-date lock, bulk request approval, auto-expire, delegations, comment threads, request templates, per-module policies, auto-excuse rules, at-risk / module-health / cohort / weekly / term / heatmap reports, scheduled reports, parent/SMS/announcement notifications, calendar & schedule integration, risk feed into `student_risk_assessment`, grade / wellbeing / disciplinary / scholarship cross-references, bulk roll operations, permission matrix, full audit trail, read-only impersonation, retention purge, GDPR subject export, orphan/missing-session/enrollment-mismatch scans, and DB health panel.
+  - **Student Tools (51)** across 9 categories: Visibility (8), Requests (9), Reminders (6), Planning (6), Support (7), Social (4), Appeals (3), Integrations (5), Accessibility (3). Includes colour-coded month calendar, traffic-light gauges, streak tracker, timeline, CSV export, compare-to-module-average, absence-budget projection, personal heatmap, template quick-submit, evidence attachment, status tracker, withdraw/resubmit, multi-day bulk request, drafts, preferences, goals, term forecast, ICS calendar sync, recovery planner, wellbeing check-in, notes/office-hours/study-buddy/recordings/advising links, note-share marketplace, streak badges, weekly digest, disputes, appeals, timetable, grade/assignment/library/exam integrations, accessibility mode, language, dashboard layout, and a **date-picker time-off request** (feature 51).
+  - **Staff Tools (51)** across 10 categories: Roll-call (10), Roster (5), Requests (6), Analytics (7), Communication (6), Pastoral (5), Assessment (3), Collaboration (3), Config (3), Productivity (2). Includes today-dashboard, session generation, notes, cancel session, substitute mode, all-present-with-excepts, late/early-leave log, QR code, roll correction, roster (with contacts), student search, risk filter, groups, triage queue, evidence preview, approve-with-modification, SLA dashboard, dept-head routing, heatmap, drop-off detector, module comparisons, historical cohort, profile view, attendance-vs-grade correlation, student emails, at-risk/pastoral outreach, catch-up messages, parent outreach, office-hours publication, pastoral flags, check-in/intervention logs, safeguarding escalation, meeting scheduler, assignment/exam/lab-safety links, co-teacher grant, TA handoff, peer observation, policy quick-edit, excuse date ranges, seating charts, personal KPIs, to-do list, and a **date-picker leave request** (feature 51) writing to the main `leave_requests` table with `total_days` and `status='pending'`.
+- **Reusable date-picker helpers** in `admin_features.py` (exported): `pick_date(parent, title, initial)` opens a modal with Year/Month/Day `Combobox` dropdowns (day list auto-adjusts when month/year changes); `pick_date_range(parent, title)` chains two pickers and auto-swaps if end < start.
+- **Logging** — module-level `logging.handlers.RotatingFileHandler` at `university_system/logs/absence_tracker.log` (2 MB × 3 backups); student and staff loggers share the same file handler. Every `@safe`-wrapped call emits a start/success/failure line including username.
+- **35 support tables** auto-created on first use (all prefixed `abs_tracker_` so they're easy to spot):
+  - Shared: `abs_tracker_audit`, `abs_tracker_trash`, `abs_tracker_settings`, `abs_tracker_module_policy`, `abs_tracker_statuses`, `abs_tracker_auto_excuse_rules`, `abs_tracker_request_attachments`, `abs_tracker_request_comments`, `abs_tracker_request_templates`, `abs_tracker_delegations`, `abs_tracker_scheduled_reports`, `abs_tracker_retention`.
+  - Student: `abs_tracker_student_goals`, `abs_tracker_student_drafts`, `abs_tracker_student_prefs`, `abs_tracker_attendance_disputes`, `abs_tracker_note_requests`, `abs_tracker_study_buddies`, `abs_tracker_wellbeing_flags`, `abs_tracker_note_share`, `abs_tracker_student_badges`, `abs_tracker_appeals`.
+  - Staff: `abs_tracker_session_notes`, `abs_tracker_session_status`, `abs_tracker_staff_prefs`, `abs_tracker_groups`, `abs_tracker_group_members`, `abs_tracker_session_qr`, `abs_tracker_staff_tasks`, `abs_tracker_intervention_log`, `abs_tracker_peer_observations`, `abs_tracker_seating`, `abs_tracker_co_teachers`, `abs_tracker_ta_handoff`, `abs_tracker_request_route`.
+- **Soft-delete monkeypatch** on `Database.delete_absence` — deletions are snapshotted to `abs_tracker_trash` before row removal, enabling the 24-hour undo feature.
+
+#### Changed
+
+- **`absence_tracker.py` full rewrite** (from the standalone Tkinter app originally dropped in the repo root as `/home/seancatchpole989/absence_tracker.py`):
+  - **Removed login screen.** No `LoginWindow`, no SHA-256 password hashing, no default-account seeding. User identity is received from the caller via CLI args (`--username` / `--user-id` / `--role`) and resolved against the real `users` table. Without args the GUI shows an error and exits.
+  - **DB now = main DB.** Connects to `DEFAULT_DB_PATH` (`university_system/data/db_files/student_records.db`) via `core.paths.DEFAULT_DB_PATH` instead of its own `university_absences.db`.
+  - **Real schema.** All queries target `users`, `students`, `staff`, `modules`, `student_modules`, `instructor_modules`, and the `attendance` table. The only tracker-owned operational table is `absence_requests`, which is created on first run (it didn't exist in the core schema).
+  - Admin/Staff/Student dashboards adapted to the real column shapes (`students.student_id` TEXT primary key, `modules.module_code`, `instructor_modules.instructor_id` → `users.id`). Admin no longer has add/edit/delete user or course controls (these belong to the main system); those tabs are read-only over live data.
+
+#### Notes
+
+- The Absence Tracker is launched as a **separate process** (`python -m education_system.university_system.modules.domain.academics.attendance.absence_tracker`) because it runs its own `tk.Tk()` mainloop — this avoids double-root conflicts with the host Education System GUI. The three launch points (main GUI entry, attendance-GUI Quick Actions button, and the three role portals) all pass the authenticated user context through on the command line.
+- Total new/changed code: ~3,300 lines across the 4 files in `modules/domain/academics/attendance/` plus ~25 lines of launcher wiring in 7 existing files.
 
 ---
 

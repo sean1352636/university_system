@@ -315,6 +315,7 @@ from education_system.university_system.modules.shared.gui.main.features.academi
     show_ai_detector,
     open_ai_detector_window,
     open_attendance_gui,
+    open_absence_tracker_gui,
     show_virtual_classroom_gui,
     show_office_hours_gui,
     show_student_outcomes_gui,
@@ -617,6 +618,7 @@ UnifiedManagementGUI.show_plagiarism_checker = show_plagiarism_checker
 UnifiedManagementGUI.show_ai_detector = show_ai_detector
 UnifiedManagementGUI.open_ai_detector_window = open_ai_detector_window
 UnifiedManagementGUI.open_attendance_gui = open_attendance_gui
+UnifiedManagementGUI.open_absence_tracker_gui = open_absence_tracker_gui
 UnifiedManagementGUI.show_virtual_classroom_gui = show_virtual_classroom_gui
 UnifiedManagementGUI.show_office_hours_gui = show_office_hours_gui
 UnifiedManagementGUI.show_student_union_portal = show_student_union_portal
