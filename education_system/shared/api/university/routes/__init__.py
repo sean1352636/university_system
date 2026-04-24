@@ -8,6 +8,7 @@ if TYPE_CHECKING:
     from flask import Flask
 
 # --- Existing routes ---
+from education_system.shared.api.university.routes.absence_routes import absence_bp
 from education_system.shared.api.university.routes.accommodation_routes import accommodation_bp
 from education_system.shared.api.university.routes.account_routes import account_bp
 from education_system.shared.api.university.routes.admission_routes import admission_bp

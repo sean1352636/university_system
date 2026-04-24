@@ -25,7 +25,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Any, Callable, Optional
 
-from education_system.university_system.modules.domain.academics.attendance.admin_features import (
+from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking.admin_features import (
     safe, audit, _combo_dialog, _show_table, _export_rows_to_csv,
     _get_setting, _set_setting, ensure_support_tables, logger as _admin_logger,
     pick_date, pick_date_range,

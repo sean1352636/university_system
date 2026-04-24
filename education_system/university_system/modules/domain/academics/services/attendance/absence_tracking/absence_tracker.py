@@ -339,7 +339,7 @@ class AdminDashboard(BaseDashboard):
         self._all_absences_tab()
         self._reports_tab()
         try:
-            from education_system.university_system.modules.domain.academics.attendance \
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking \
                 import admin_features as af
             ctx = af.AdminContext(db=self.db, parent=self.root, user=self.user)
             af.build_admin_tab(self.notebook, ctx)
@@ -350,6 +350,12 @@ class AdminDashboard(BaseDashboard):
                 "The Admin Tools tab failed to load (see log).",
                 parent=self.root,
             )
+        try:
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking \
+                import absence_enhancements as ae
+            ae.bootstrap(self, "admin")
+        except Exception:
+            logger.exception("failed to bootstrap enhancements (admin)")
 
     def _users_tab(self):
         f = ttk.Frame(self.notebook)
@@ -453,9 +459,25 @@ class AdminDashboard(BaseDashboard):
             self.abs_tree.heading(c, text=c)
             self.abs_tree.column(c, width=w)
         self.abs_tree.pack(expand=True, fill="both", padx=10, pady=(0, 10))
-        self._refresh_abs()
+        # #38 filter bar, #40 pagination
+        try:
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking \
+                import absence_enhancements as ae
+            self._abs_rows_cache = list(self.db.get_absences())
+            ae.add_filter_bar(f, self.abs_tree,
+                              lambda: self._abs_rows_cache, list(cols))
+            self._abs_paginator = ae.Paginator(
+                self.abs_tree, f, lambda: self._abs_rows_cache, page_size=100)
+            self._abs_paginator.refresh()
+        except Exception:
+            logger.exception("pagination wiring (all_absences) failed")
+            self._refresh_abs()
 
     def _refresh_abs(self):
+        if hasattr(self, "_abs_paginator"):
+            self._abs_rows_cache = list(self.db.get_absences())
+            self._abs_paginator.refresh()
+            return
         self.clear_tree(self.abs_tree)
         for row in self.db.get_absences():
             self.abs_tree.insert("", "end", values=row)
@@ -469,6 +491,8 @@ class AdminDashboard(BaseDashboard):
         if messagebox.askyesno("Confirm", f"Delete record #{vals[0]}?"):
             self.db.delete_absence(vals[0])
             self._refresh_abs()
+
+    _REPORT_COLS = ("Module Code", "Module", "Absent", "Late", "Excused", "Present")
 
     def _reports_tab(self):
         f = ttk.Frame(self.notebook)
@@ -489,10 +513,13 @@ class AdminDashboard(BaseDashboard):
         tk.Button(top, text="Generate Report", bg="#2563eb", fg="white",
                   relief="flat", padx=12, pady=4,
                   command=self._gen_report).pack(side="left", padx=5)
+        tk.Button(top, text="🗔 Open in new window", bg="#0ea5e9", fg="white",
+                  relief="flat", padx=12, pady=4,
+                  command=self._open_report_window).pack(side="left", padx=5)
 
-        cols = ("Module Code", "Module", "Absent", "Late", "Excused", "Present")
-        self.rep_tree = ttk.Treeview(f, columns=cols, show="headings")
-        for c, w in zip(cols, (120, 280, 80, 80, 80, 80)):
+        self.rep_tree = ttk.Treeview(f, columns=self._REPORT_COLS,
+                                     show="headings")
+        for c, w in zip(self._REPORT_COLS, (120, 280, 80, 80, 80, 80)):
             self.rep_tree.heading(c, text=c)
             self.rep_tree.column(c, width=w, anchor="center")
         self.rep_tree.pack(expand=True, fill="both", padx=10, pady=10)
@@ -500,6 +527,31 @@ class AdminDashboard(BaseDashboard):
         self.rep_summary = tk.Label(f, text="", font=("Arial", 11, "bold"),
                                     fg="#1e3a5f")
         self.rep_summary.pack(pady=5)
+
+        # Inline export / email toolbar
+        actions = tk.Frame(f)
+        actions.pack(fill="x", padx=10, pady=(0, 10))
+        tk.Button(actions, text="💾 Save CSV", bg="#16a34a", fg="white",
+                  relief="flat", padx=10, pady=4,
+                  command=lambda: self._save_report("csv")).pack(side="left", padx=4)
+        tk.Button(actions, text="📝 Save TXT", bg="#16a34a", fg="white",
+                  relief="flat", padx=10, pady=4,
+                  command=lambda: self._save_report("txt")).pack(side="left", padx=4)
+        tk.Button(actions, text="📄 Save PDF", bg="#16a34a", fg="white",
+                  relief="flat", padx=10, pady=4,
+                  command=lambda: self._save_report("pdf")).pack(side="left", padx=4)
+        tk.Button(actions, text="✉ Email admin", bg="#2563eb", fg="white",
+                  relief="flat", padx=10, pady=4,
+                  command=self._email_report).pack(side="left", padx=4)
+
+    def _current_report_rows(self):
+        """Re-collect the current report's rows from the tree in display order."""
+        return [self.rep_tree.item(i)["values"]
+                for i in self.rep_tree.get_children()]
+
+    def _current_report_title(self) -> str:
+        name = self.rep_var.get() or "(no student)"
+        return f"Attendance report — {name}"
 
     def _gen_report(self):
         if not self.rep_var.get():
@@ -517,6 +569,101 @@ class AdminDashboard(BaseDashboard):
             text=f"Total Absent: {total_absent}   |   Total Late: {total_late}"
         )
 
+    def _open_report_window(self):
+        """Open the current report in its own window with full export toolbar."""
+        rows = self._current_report_rows()
+        if not rows:
+            messagebox.showwarning("No report",
+                                   "Generate a report first.",
+                                   parent=self.root)
+            return
+        try:
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking \
+                import admin_features as af
+            af._report_window(self.root, self._current_report_title(),
+                              self._REPORT_COLS, rows,
+                              db=self.db, user=self.user)
+        except Exception:
+            logger.exception("open_report_window failed")
+            messagebox.showerror("Error",
+                                 "Failed to open the report window.",
+                                 parent=self.root)
+
+    def _save_report(self, fmt: str):
+        rows = self._current_report_rows()
+        if not rows:
+            messagebox.showwarning("No report",
+                                   "Generate a report first.",
+                                   parent=self.root)
+            return
+        try:
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking \
+                import admin_features as af
+            from tkinter import filedialog as _fd
+            title = self._current_report_title()
+            if fmt == "csv":
+                import csv as _csv
+                path = _fd.asksaveasfilename(parent=self.root,
+                                             defaultextension=".csv",
+                                             initialfile="attendance_report.csv")
+                if not path:
+                    return
+                with open(path, "w", newline="", encoding="utf-8") as fh:
+                    w = _csv.writer(fh)
+                    w.writerow(self._REPORT_COLS)
+                    w.writerows(rows)
+            elif fmt == "txt":
+                path = _fd.asksaveasfilename(parent=self.root,
+                                             defaultextension=".txt",
+                                             initialfile="attendance_report.txt")
+                if not path:
+                    return
+                with open(path, "w", encoding="utf-8") as fh:
+                    fh.write(title + "\n" + ("=" * len(title)) + "\n\n")
+                    fh.write(af._rows_to_txt(self._REPORT_COLS, rows))
+            elif fmt == "pdf":
+                path = _fd.asksaveasfilename(parent=self.root,
+                                             defaultextension=".pdf",
+                                             initialfile="attendance_report.pdf")
+                if not path:
+                    return
+                af._rows_to_pdf(path, title, self._REPORT_COLS, rows)
+            else:
+                return
+            messagebox.showinfo("Saved", f"Saved: {path}", parent=self.root)
+        except Exception as e:
+            logger.exception("save_report %s failed", fmt)
+            messagebox.showerror("Error", str(e), parent=self.root)
+
+    def _email_report(self):
+        rows = self._current_report_rows()
+        if not rows:
+            messagebox.showwarning("No report",
+                                   "Generate a report first.",
+                                   parent=self.root)
+            return
+        try:
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking \
+                import admin_features as af
+            title = self._current_report_title()
+            body = af._rows_to_txt(self._REPORT_COLS, rows)
+            n = af._email_admin(self.db, f"[Absence Tracker] {title}", body,
+                                self.user.get("username", ""))
+            if n == 0:
+                messagebox.showwarning(
+                    "No recipients",
+                    "No admin/superadmin users have an email address on file.\n"
+                    "Set one in User Management and try again.",
+                    parent=self.root)
+            else:
+                messagebox.showinfo(
+                    "Sent",
+                    f"Report emailed to {n} admin recipient(s).",
+                    parent=self.root)
+        except Exception as e:
+            logger.exception("email_report failed")
+            messagebox.showerror("Error", str(e), parent=self.root)
+
 
 # ---------------------------------------------------------------------------
 # Staff / instructor dashboard
@@ -529,7 +676,7 @@ class StaffDashboard(BaseDashboard):
         self._requests_tab()
         self._view_records_tab()
         try:
-            from education_system.university_system.modules.domain.academics.attendance \
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking \
                 import staff_features as stf
             ctx = stf.StaffContext(db=self.db, parent=self.root, user=self.user)
             stf.build_staff_tab(self.notebook, ctx)
@@ -540,6 +687,12 @@ class StaffDashboard(BaseDashboard):
                 "The Staff Tools tab failed to load (see log).",
                 parent=self.root,
             )
+        try:
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking \
+                import absence_enhancements as ae
+            ae.bootstrap(self, "staff")
+        except Exception:
+            logger.exception("failed to bootstrap enhancements (staff)")
 
     def _my_courses_tab(self):
         f = ttk.Frame(self.notebook)
@@ -733,21 +886,36 @@ class StaffDashboard(BaseDashboard):
             self.view_tree.heading(c, text=c)
             self.view_tree.column(c, width=w)
         self.view_tree.pack(expand=True, fill="both", padx=10, pady=10)
+        self._view_rows_cache = []
+        try:
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking \
+                import absence_enhancements as ae
+            ae.add_filter_bar(f, self.view_tree,
+                              lambda: self._view_rows_cache, list(cols))
+            self._view_paginator = ae.Paginator(
+                self.view_tree, f, lambda: self._view_rows_cache, page_size=100)
+        except Exception:
+            logger.exception("pagination wiring (staff records) failed")
         self._load_records()
 
     def _load_records(self):
-        self.clear_tree(self.view_tree)
+        rows: list = []
         if self.view_course_var.get() == "All my modules":
             for c in self.my_courses:
-                for row in self.db.get_absences(course_id=c[0]):
-                    self.view_tree.insert("", "end", values=row)
+                rows.extend(self.db.get_absences(course_id=c[0]))
         else:
             code = self.view_course_var.get().split(" - ")[0]
             for c in self.my_courses:
                 if c[1] == code:
-                    for row in self.db.get_absences(course_id=c[0]):
-                        self.view_tree.insert("", "end", values=row)
+                    rows.extend(self.db.get_absences(course_id=c[0]))
                     break
+        self._view_rows_cache = rows
+        if hasattr(self, "_view_paginator"):
+            self._view_paginator.refresh()
+            return
+        self.clear_tree(self.view_tree)
+        for row in rows:
+            self.view_tree.insert("", "end", values=row)
 
 
 # ---------------------------------------------------------------------------
@@ -767,7 +935,7 @@ class StudentDashboard(BaseDashboard):
         self._my_requests_tab()
         self._stats_tab()
         try:
-            from education_system.university_system.modules.domain.academics.attendance \
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking \
                 import student_features as sf
             ctx = sf.StudentContext(db=self.db, parent=self.root, user=self.user)
             sf.build_student_tab(self.notebook, ctx)
@@ -778,6 +946,12 @@ class StudentDashboard(BaseDashboard):
                 "The Student Tools tab failed to load (see log).",
                 parent=self.root,
             )
+        try:
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking \
+                import absence_enhancements as ae
+            ae.bootstrap(self, "student")
+        except Exception:
+            logger.exception("failed to bootstrap enhancements (student)")
 
     def _my_courses_tab(self):
         f = ttk.Frame(self.notebook)

@@ -74,7 +74,7 @@ def create_app(config_path: str | None = None) -> Flask:
         integrity_bp, campus_bp, evaluation_bp, communication_bp,
         counseling_bp, emergency_bp, virtual_classroom_bp, equipment_bp,
         election_bp, document_bp, credential_bp, office_hours_bp, ta_bp,
-        mfa_bp, account_bp, docs_bp,
+        mfa_bp, account_bp, docs_bp, absence_bp,
     )
 
     for bp in [
@@ -90,7 +90,7 @@ def create_app(config_path: str | None = None) -> Flask:
         integrity_bp, campus_bp, evaluation_bp, communication_bp,
         counseling_bp, emergency_bp, virtual_classroom_bp, equipment_bp,
         election_bp, document_bp, credential_bp, office_hours_bp, ta_bp,
-        mfa_bp, account_bp, docs_bp,
+        mfa_bp, account_bp, docs_bp, absence_bp,
     ]:
         app.register_blueprint(bp)
 

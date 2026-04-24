@@ -45,7 +45,7 @@ def open_absence_tracker(self):
         """
         try:
             cmd = [sys.executable, "-m",
-                   "education_system.university_system.modules.domain.academics.attendance.absence_tracker"]
+                   "education_system.university_system.modules.domain.academics.services.attendance.absence_tracking.absence_tracker"]
             user = getattr(self.auth, "current_user", None) if getattr(self, "auth", None) else None
             if user:
                 if user.get("username"):

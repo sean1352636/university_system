@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.93.0 — 2026-04-24](#8930---2026-04-24)
 - [8.92.0 — 2026-04-24](#8920---2026-04-24)
 - [8.91.0 — 2026-04-24](#8910---2026-04-24)
 - [8.90.0 — 2026-04-24](#8900---2026-04-24)
@@ -199,6 +200,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.93.0] — 2026-04-24
+
+### Absence Tracker — 17 enhancements, email-report inbox fix, consolidation under `services/attendance/`
+
+#### Added
+
+- **`absence_enhancements.py`** (new module) implementing the 17 features that weren't already covered by the existing 152 role-scoped features:
+  - **#3 Geofenced check-in** — delegates to `services.attendance.geofencing.GeofencingSystem` (creates an `attendance_sessions` row anchored at the configured campus centre if one doesn't already exist, then calls `check_location_attendance`).
+  - **#4 Facial-recognition kiosk** — delegates to `services.attendance.face_recognition_system.FaceRecognitionSystem.recognize_face_attendance`; `register_kiosk()` + `attendance_kiosks` table kept as the physical-device registry.
+  - **#11 Request categories** — `absence_request_categories` table seeded with medical / bereavement / religious / representative / other, each with its own `approval_route`, `auto_approve`, and `requires_evidence` flags; `category_id` + `date_end` columns added to `absence_requests` via `ALTER TABLE` probe.
+  - **#21 Mobile push notifications** — `absence_push_queue` table + `queue_push` / `drain_push_queue` (best-effort delivery via `shared.notifications.push`; leaves rows pending if the sender isn't wired up).
+  - **#30 HESA-ready attendance export** — `hesa_export()` writes a 10-column CSV (HUSID / STULOAD / MODULECODE / MODULENAME / ENGAGEMENT_DATE / ENGAGEMENT_TYPE / ENGAGEMENT_OUTCOME / EXPECTED_SESSIONS / ATTENDED_SESSIONS / ATTENDANCE_PCT). Column-probe-safe on `students.study_mode`.
+  - **#31 UKVI engagement monitoring** — `ukvi_engagement_events` table + `ukvi_log_event()` / `ukvi_at_risk()` (probes `students.visa_type` / `students.international` so it works on schemas with or without those columns).
+  - **#35 Digital signature on evidence** — `absence_evidence_signatures` table + `sign_evidence()` / `verify_evidence()` (SHA-256 ledger).
+  - **#36 Dark mode + #42 High-contrast theme** — three themes (`light`/`dark`/`high_contrast`) with `apply_theme()` walking the widget tree and styling `ttk.Treeview` via `ttk.Style`; theme persisted in the new `absence_settings` KV table.
+  - **#37 Keyboard shortcuts** — Ctrl+S save, Ctrl+F filter, Ctrl+R refresh, Ctrl+D theme-cycle.
+  - **#38 Search/filter bar** — `add_filter_bar()` helper with per-column selection; wired into the admin "All Absences" tab and the staff "Records" tab.
+  - **#39 Column sort on header click** — `make_sortable()` helper applied to every `ttk.Treeview` on every dashboard via `apply_ux()`.
+  - **#40 Pagination** — `Paginator` class with prev/next + configurable page size, wired into the two heavy tree tabs.
+  - **#42 Accessibility** — `add_a11y_labels()` focus-event hook, toggleable via a checkbox on the Enhancements tab.
+  - **#46 LMS two-way sync** — `lms_access_grants` table + `lms_on_absence()` / `lms_sync_approved_requests()` (best-effort push into `academics.services.lms.lms_core.grant_access` when available).
+  - **#47 REST endpoints** — new blueprint `shared/api/university/routes/absence_routes.py` exposing 14 JSON endpoints under `/api/absence/*` (categories, checkin, kiosk/scan, push, push/drain, hesa-export, ukvi/at-risk, ukvi/events, evidence/sign, evidence/verify, lms/sync, anomalies, anomalies/scan, quota/<student_id>). Registered in `shared/api/university/routes/__init__.py` and `api_server.py`.
+  - **#49 Chatbot intent** — `handle_absence_quota_query` added to `infrastructure/ai/university_chatbot/intent_handlers.py`; answers "Am I allowed one more absence in <module>?" by computing remaining misses under a configurable threshold.
+  - **#50 Anomaly detection** — `attendance_anomalies` table + `anomaly_scan()` with three rules: (a) impossible concurrency (same student present in >1 module on one date), (b) shared device across ≥5 students (probes `attendance_records.location_data` JSON), (c) mass-proxy-reason (≥10 students share the same reason string on one date).
+- **Enhancement tab** (`✨ Enhancements`) added to every dashboard via `bootstrap()`. Admin sees appearance / geofence / categories / compliance / integrations sections; staff see appearance / kiosk / categories / compliance / integrations; student sees appearance / geofenced check-in / absence-quota calculator.
+
+#### Changed
+
+- **Moved the entire absence-tracker package** from `modules/domain/academics/attendance/` → `modules/domain/academics/services/attendance/absence_tracking/` so the absence-request GUI lives alongside the geofencing/face/QR service layer it delegates to. The old `modules/domain/academics/attendance/` directory was removed.
+- **Import paths updated** in 9 files: the 5 moved Python modules plus `modules/shared/gui/main/features/academic_launchers_gui.py`, `modules/domain/academics/gui/attendance_tracker/attendance_tab.py`, `infrastructure/ai/university_chatbot/intent_handlers.py`, and `shared/api/university/routes/absence_routes.py`. Both subprocess-launch string paths (the main GUI launcher and the Attendance-GUI Quick Actions button) were updated to the new dotted module name.
+- **`admin_features._email_admin` rewritten** so the admin "Email report" button actually lands in the admin's **in-app inbox**:
+  - Writes directly to `messages` (the table the inbox reads), `stored_emails` (the "Sent" archive), and `email_log` (audit trail) — schema-probed so it tolerates legacy columns.
+  - Resolves the sender's `user_id` so replies/threading work.
+  - Widened recipient query to include `role='superadmin'` and to require `TRIM(email) <> ''` (your `system_` admin with an empty email was silently counted before).
+  - SMTP via `infrastructure.email.send_email` is now a best-effort secondary channel rather than the primary path (the previous path reported success while nothing was actually written to any visible table).
+- **Better caller feedback** — `AdminDashboard._email_report` now shows a "No recipients" warning when nobody has an address on file, instead of the misleading "Emailed 0 admin recipient(s)" success dialog. Success message changed from "Queued" to "Sent".
+- **`absence_enhancements` geofence/face now delegate** to `services.attendance.GeofencingSystem` and `services.attendance.FaceRecognitionSystem` rather than maintaining a parallel `attendance_checkins` table. The duplicate `attendance_checkins` table was removed from `SCHEMA_SQL` (no new installs create it). The anomaly-scan shared-device rule was repointed to `attendance_records.location_data` JSON (with column probing + `json1` fallback).
+- **HESA export SQL** made column-probe-safe — the initial version hard-coded `s.study_mode` which blew up on databases without that column.
+- **Geofence "unset coordinates" check** fixed — previously `campus_lon = 0.0` (Greenwich meridian) was treated as "unset" due to `0.0` being falsy; now uses an explicit `None`/`""` check.
+
+#### Fixed
+
+- Geofence section of the Enhancements tab no longer crashes with `TclError: cannot use geometry manager pack inside ... which already has slaves managed by grid` — the kiosk `Treeview` is now wrapped in its own pack-managed `ksub` frame grid-placed inside the parent `LabelFrame`.
+- Build-enhancements import chain no longer fails when the `absence_tracker.py` dashboards try to bootstrap — the three dashboards (`AdminDashboard` / `StaffDashboard` / `StudentDashboard`) each call `ae.bootstrap(self, "admin"|"staff"|"student")` inside a broad try/except so one failure can't take down the host window.
+
+#### Notes
+
+- **151 → 152 feature count correction.** The commit `82e0b48d` reports "151 role-scoped features"; actual count is 50 admin + 51 staff + 51 student = 152. Pre-existing coverage on my original list of 49 proposed additions was ~32/49 — the 17 I actually built are the genuinely missing ones. Cross-reference table in the session explains which existing `feat_` / `stf_` / `stu_` function covers each of the pre-existing items.
+- **Schema migrations are additive and idempotent.** `ensure_enhanced_schema()` uses `CREATE TABLE IF NOT EXISTS` + `ALTER TABLE ... ADD COLUMN` inside a try/except. Safe to re-run; safe on existing databases with the original `absence_requests` schema.
+- **The `attendance_checkins` table** created by earlier dev runs is now orphaned but harmless — not referenced by any code. Can be dropped manually if desired.
+
 
 ## [8.92.0] — 2026-04-24
 

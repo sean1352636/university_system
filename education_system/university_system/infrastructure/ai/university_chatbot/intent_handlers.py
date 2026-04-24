@@ -12,6 +12,39 @@ from education_system.university_system.infrastructure.ai.university_chatbot.fal
 from education_system.university_system.infrastructure.ai.university_chatbot.models import ConversationContext
 
 
+def handle_absence_quota_query(chatbot, nlp_result: Dict, context: ConversationContext) -> str:
+    """#49 — 'Am I allowed one more absence in PHYS101?' and similar.
+
+    Triggered when the NLP result intent is 'absence_quota', or when the
+    user utterance contains attendance/absence quota phrasing. Uses the
+    absence_enhancements module to compute remaining misses per module.
+    """
+    try:
+        from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking \
+            import absence_enhancements as ae
+        from education_system.university_system.infrastructure.database.db import (
+            get_connection,
+        )
+    except Exception:
+        return "Attendance lookup is unavailable right now."
+
+    entities = nlp_result.get("entities", {}) if isinstance(nlp_result, dict) else {}
+    sid = (entities.get("student_id")
+           or context.entities.get("student_id")
+           or getattr(context, "user_id", None))
+    if not sid:
+        return ("To tell you how many absences you can still take I need your "
+                "student ID — please share it.")
+    module = entities.get("module_code") or context.entities.get("module_code")
+    try:
+        conn = get_connection()
+        ae.ensure_enhanced_schema(conn)
+        threshold = float(entities.get("threshold", 75))
+        return ae.chatbot_absence_quota(conn, sid, module, threshold)
+    except Exception:
+        return "I couldn't compute your attendance quota right now."
+
+
 def handle_course_inquiry(chatbot, nlp_result: Dict, context: ConversationContext) -> str:
     """Handle course-related inquiries"""
     entities = nlp_result["entities"]

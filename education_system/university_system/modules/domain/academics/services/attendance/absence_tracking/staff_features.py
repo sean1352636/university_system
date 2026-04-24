@@ -20,7 +20,7 @@ from datetime import date, datetime, timedelta
 from tkinter import filedialog, messagebox, simpledialog, ttk
 from typing import Any, Callable, Optional
 
-from education_system.university_system.modules.domain.academics.attendance.admin_features import (
+from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking.admin_features import (
     safe, audit, _combo_dialog, _show_table, _export_rows_to_csv,
     _get_setting, _set_setting, ensure_support_tables, logger as _admin_logger,
     pick_date, pick_date_range,
@@ -836,10 +836,10 @@ def stf_29_email_student(ctx: StaffContext):
     if not (sid and subject and body):
         return
     ctx.db.cur.execute(
-        """INSERT INTO emails (sender_email, recipient_email, subject, body, sent_at, status)
-           SELECT ?, email_address, ?, ?, CURRENT_TIMESTAMP, 'queued'
+        """INSERT INTO emails (recipient, subject, body, sent_at, status)
+           SELECT email_address, ?, ?, CURRENT_TIMESTAMP, 'queued'
            FROM students WHERE student_id=?""",
-        (ctx.user.get("email") or "noreply@university.edu", subject, body, sid))
+        (subject, body, sid))
     ctx.db.conn.commit()
     audit(ctx, "staff.email", "emails", sid, subject[:80])
     messagebox.showinfo("Queued", "Email queued.", parent=ctx.parent)
@@ -865,9 +865,9 @@ def stf_30_email_at_risk(ctx: StaffContext):
     body = f"At-risk students (<{threshold:.0f}%):\n" + \
            "\n".join(f"  {sid}: {p or 0:.1f}%" for sid, p in rows)
     ctx.db.cur.execute(
-        """INSERT INTO emails (sender_email, recipient_email, subject, body, sent_at, status)
-           VALUES (?, ?, 'At-risk attendance', ?, CURRENT_TIMESTAMP, 'queued')""",
-        (ctx.user.get("email") or "noreply@university.edu", to, body))
+        """INSERT INTO emails (recipient, subject, body, sent_at, status)
+           VALUES (?, 'At-risk attendance', ?, CURRENT_TIMESTAMP, 'queued')""",
+        (to, body))
     ctx.db.conn.commit()
     audit(ctx, "staff.email_at_risk", "emails", to, f"n={len(rows)}")
     messagebox.showinfo("Queued", f"Emailed summary to {to}.", parent=ctx.parent)
@@ -911,11 +911,9 @@ def stf_32_catchup_message(ctx: StaffContext):
         (mc, d)).fetchall()
     for sid, email in absent:
         ctx.db.cur.execute(
-            """INSERT INTO emails (sender_email, recipient_email, subject, body,
-                                   sent_at, status)
-               VALUES (?, ?, 'Catch up', ?, CURRENT_TIMESTAMP, 'queued')""",
-            (ctx.user.get("email") or "noreply@university.edu",
-             email or sid, msg))
+            """INSERT INTO emails (recipient, subject, body, sent_at, status)
+               VALUES (?, 'Catch up', ?, CURRENT_TIMESTAMP, 'queued')""",
+            (email or sid, msg))
     ctx.db.conn.commit()
     audit(ctx, "staff.catchup", "emails", mc, f"{d} n={len(absent)}")
     messagebox.showinfo("Sent", f"Queued {len(absent)} email(s).",
