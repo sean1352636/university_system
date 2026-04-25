@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.95.0 — 2026-04-25](#8950---2026-04-25)
 - [8.94.0 — 2026-04-25](#8940---2026-04-25)
 - [8.93.0 — 2026-04-24](#8930---2026-04-24)
 - [8.92.0 — 2026-04-24](#8920---2026-04-24)
@@ -202,7 +203,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [8.94.0] — 2026-04-25
+## [8.95.0] — 2026-04-25
+
+### Cross-system integration — attendance · absence tracker · exam management · wellbeing
+
+#### Added
+
+- **Frequent-absence email alert** with new JSON template `templates/email/attendance/frequent_absence_alert.json`. `AbsenceEmailService.notify_frequent_absences(student_id, year_month=None, threshold=5, force=False)` queries the calendar month's non-present rows in `attendance` and emails the student when the count meets the threshold. Escalates on each new bucket of `threshold` (sends at 5, 10, 15, …); body lists the offending dates and any upcoming exams in the affected modules.
+  - **Per-student opt-out** stored in a new `frequent_absence_email_prefs(student_id PK, opted_out, updated_at)` table; `set_frequent_absence_opt_out(db, sid, opted_out=True)` and `is_frequent_absence_opted_out(db, sid)` module-level helpers.
+  - **7-day cross-month cooldown** (`FREQUENT_ABSENCE_COOLDOWN_DAYS`) — even after a new bucket triggers, no second email goes out within the window. `force=True` bypasses both opt-out and cooldown.
+  - Send dedup table `frequent_absence_alerts(student_id, year_month, sent_at, count_at_send)`. New buckets compared against `MAX(count_at_send)`.
+- **Auto-create wellbeing referral on absence spike** — new `maybe_create_wellbeing_referral(db, sid, year_month=None, threshold=10)` opens a `wellbeing_referrals` row (`referred_by='absence_tracker'`, `concern_type='attendance'`) when a student crosses 10 absences in a calendar month. Dedup'd while an open referral exists; urgency escalates to `'high'` at 2× the threshold. `WELLBEING_REFERRAL_THRESHOLD = 10` constant.
+- **Three new exam-GUI tabs** — wired to existing `data_manager.exams` + the cross-system attendance data:
+  - **Deferred Exam Requests** (`tabs/deferred_tab.py`) — surfaces `absence_requests` rows with `is_missed_exam=1`. Approve auto-creates (or attaches to) a resit exam, runs conflict checks against existing exams via the existing `conflicts` module, asks Yes / No / Cancel when an existing resit is found, supports Cancel-aborts that leave the request pending.
+  - **At-Risk Audit** (`tabs/attendance_intel_tab.py`) — for each upcoming exam, lists enrolled students with ≥ N absences in the last 60 days for that module; threshold adjustable.
+  - **Exam Eligibility** (same file) — per-(student, module) attendance % from `attendance_records`; below threshold flagged Not Eligible; rows tinted green/red.
+- **Today cross-system Toplevel** (`absence_tracking/today_dashboard.py`) — read-only window showing today's classes (per-module present/absent/late/recorded counts), today's exams, and pending absence requests with missed-exam rows highlighted. Reachable from the absence tracker header button (`📅 Today`) and the attendance GUI's quick-actions panel.
+- **Embedded "Absence Tracker" tab in the attendance GUI** — full role-aware dashboard (Admin / Staff / Student) hosted as a tab inside the attendance GUI's notebook instead of a separate window. Built during idle time so the click is instant; rebuilds automatically when the signed-in user changes; admins get a "View as role:" `Combobox` to preview Staff / Student / Instructor dashboards.
+- **`absence_tracker.launch_in_frame(frame, user, prefill=None)`** — complements `launch_in_window`. Builds a Database, runs `launch_dashboard` against the frame, binds `<Destroy>` on the frame to close the connection.
+- **Resit auto-creation on deferral approval** — the Deferred Exam tab's Approve button now creates an `exams` row (or appends the student to an existing resit), with `parent_exam_id` linking it to the original. Picks original date + 28 days as the suggested date; runs room and instructor conflict checks; loops on conflict until the user accepts or cancels.
+- **Attendance-mirror helper `_sync_to_absence_db`** in `attendance_windows.py` — when an attendance row is saved (Manual / Batch / Edit), mirrors absent/late/excused rows into the absence tracker's `attendance` table via `record_absence`, opens a pending `absence_requests` row when the student gave no reason, dispatches `notify_frequent_absences` and `maybe_create_wellbeing_referral`. All best-effort; failures don't block the attendance save.
+- **Source filter dropdown on the wellbeing list view** — All sources / Auto (absence tracker) / Manual referrals; auto rows tagged yellow, high-urgency rows tagged red.
+
+#### Changed
+
+- **`BaseDashboard` is now embed-aware** — detects whether `root` is a `Tk`/`Toplevel` or a `Frame`. When embedded: skips `root.title(…)`, `center(…)`, the Close/Back/Today buttons; window-only operations are guarded so the same dashboard works as a Toplevel and as a tab content frame.
+- **`Database.get_absences`** now filters to `LOWER(status) IN ('absent','late','excused')`. The shared `attendance` table holds every recorded status (the StaffDashboard's Record Attendance tab writes `present` rows alongside the others), but this view is the "All Absences" tree — present rows shouldn't surface there.
+- **`messagebox.showwarning` shim no longer logs tracebacks.** The `infrastructure/logging/log_config.py` patch was reading `sys.exc_info()` and emitting `exc_info=True` whenever a warning popup was raised inside an `except` block. Tk's `simpledialog.validate` shows its "Illegal value, please try again" warning from inside its own `except ValueError:`, so every empty-input retry was dumping a multi-frame traceback to the log. Warnings are user-facing nudges; errors keep their traceback context.
+- **Absence-tracker `Open` button removed from the unified launcher portals.** Now that the dashboard is embedded as a tab in the attendance GUI, the standalone-launch buttons in `student_portal.py`, `staff_portal.py`, `instructor_portal.py`, and the `'absence_tracker'` entries in `core/gui_setup.py` are gone. The underlying `open_absence_tracker_gui` function and its `UnifiedManagementGUI` binding remain for any programmatic callers.
+- **Admin "Wellbeing cross-reference" button** (feature spec #35) now offers an `📊 Open Wellbeing GUI` extra-button on its results dialog that launches the `WellbeingFrame` in a Toplevel.
+- **Wellbeing list tab now actually populates.** Previously had `show="headings"` but no `columns=` argument — the tree was always empty regardless of data. Columns: id / student / concern type / urgency / status / referred_by / created_at; clears + populates on Refresh and on filter change.
+
+#### Schema migrations
+
+- `absence_requests` gains `is_missed_exam INTEGER NOT NULL DEFAULT 0` and `exam_id INTEGER` (idempotent ALTER ADD COLUMN under PRAGMA guard).
+- `exams` gains `parent_exam_id INTEGER` (links resits to their original).
+- New tables (created on first use): `frequent_absence_alerts`, `frequent_absence_email_prefs`.
+
+#### Fixed
+
+- **`BaseDashboard.apply_prefill` AttributeError** when embedded — was unconditionally calling `self.root.title(...)`. Now guarded by `self.embedded`; embedded dashboards skip the title decoration but the StaffDashboard still pre-selects the inbound module/date in its body.
+- **`WellbeingService._conn()` row_factory bug** — `connect()` doesn't set a row factory by default, so `[dict(r) for r in cursor.fetchall()]` raised `TypeError: cannot convert dictionary update sequence element #0 to a sequence` on every list/get. The error was silently swallowed by the GUI's `messagebox.showerror`, so the list looked empty rather than crashed. Now sets `row_factory = sqlite3.Row` in `_conn`.
+- **`BatchAttendanceWindow` notes placeholder** — the helper's "no reason given → file pending request" filter excluded every batch row because the window hardcoded `"Batch entry"` as notes. The placeholder list now includes `"Batch entry"`, `"Manual GUI Entry"`, and `"GUI Edit"`, so absent rows from any of the three save paths chase a reason correctly.
+- **`EditAttendanceWindow.save_changes`** — the inline-register status-edit path now dispatches the same absence-tracker mirror + email + referral flow as the Manual/Batch save windows. Previously it only wrote to `attendance_records` and the absence tracker never saw it.
+
+
 
 ### Absence Tracker — service-class refactor, decision audit + email loop, 66× faster startup
 
