@@ -490,6 +490,27 @@ def show_security_desk_gui(self):
         messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.security_desk_failed").format(error=str(e)))
         print(_t("extras_gui.messages.security_desk_error").format(error=e))
 
+def show_equality_diversity_gui(self):
+    """Launch the Equality & Diversity Management GUI."""
+    try:
+        if not self.auth or not getattr(self.auth, "current_user", None):
+            messagebox.showerror(
+                "Equality & Diversity",
+                "You must be logged in to open the Equality & Diversity system.",
+            )
+            return
+        from education_system.university_system.modules.domain.student_affairs.equality_diversity import (
+            open_equality_diversity_gui,
+        )
+        open_equality_diversity_gui(self.root, self.auth)
+    except Exception as e:
+        logger.error(f"Error opening Equality & Diversity GUI: {e}")
+        messagebox.showerror(
+            "Equality & Diversity",
+            f"Failed to open Equality & Diversity system: {e}",
+        )
+
+
 def show_church_management_gui(self):
     """Launch the Church Management System GUI"""
     try:

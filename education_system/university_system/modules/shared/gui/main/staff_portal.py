@@ -221,6 +221,7 @@ class StaffPortalGUI:
         self._add_button("Transfer Documents", self._launch('show_transfer_documents_gui'))
         self._add_button("Shared Documents", self._launch('show_shared_documents_gui'))
         self._add_button("GDPR Compliance", self._launch('show_gdpr_compliance_gui'))
+        self._add_button("Equality & Diversity", self._launch('show_equality_diversity_gui'))
 
         # Account
         self._add_heading("Account")

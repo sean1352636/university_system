@@ -1,0 +1,15 @@
+{
+  "subject": "Absence request REJECTED — {module_code} on {date}",
+  "body": "Hi {student_name},\n\nYour absence request has been REJECTED.\n\n  Module:  {module_code} ({module_name})\n  Date:    {date}\n  Reason you gave: {reason}\n  Decided by: {decided_by}\n  Reason for rejection: {decision_reason}\n\nIf you believe this is an error, you can resubmit with additional context or appeal via the Student Tools tab.\n\nRequest ID: {request_id}\n\n— Absence Tracker (automated)",
+  "sender_name": "Absence Tracker",
+  "variables": {
+    "student_name": "Student's display name (or student_id if missing)",
+    "module_code": "Module code the absence is for",
+    "module_name": "Module name (falls back to module_code)",
+    "date": "Date of absence (YYYY-MM-DD)",
+    "reason": "Original reason the student gave",
+    "decided_by": "Username of staff/admin who rejected",
+    "decision_reason": "Free-text rejection reason from the decider",
+    "request_id": "Numeric request id"
+  }
+}

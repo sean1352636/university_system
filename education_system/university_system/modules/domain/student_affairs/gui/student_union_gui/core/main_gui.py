@@ -254,6 +254,11 @@ from education_system.university_system.modules.domain.student_affairs.gui.stude
 # Import knowledge sharing functions
 from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.knowledge.knowledge_sharing import open_knowledge_sharing_dialog as _open_knowledge_sharing_dialog
 
+# Import student council launcher
+from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui.core.navigation import (
+    open_student_council_dialog as _open_student_council_dialog,
+)
+
 class StudentUnionGUI:
     """Main GUI application for Student Union Management System"""
 
@@ -411,6 +416,9 @@ class StudentUnionGUI:
 
     # Bind knowledge sharing functions
     open_knowledge_sharing_dialog = _open_knowledge_sharing_dialog
+
+    # Bind student council launcher
+    open_student_council_dialog = _open_student_council_dialog
 
     def __init__(self, parent=None):
         if parent:
@@ -786,6 +794,7 @@ class StudentUnionGUI:
         # Elections & Voting
         self.add_sidebar_separator()
         self.add_sidebar_header("🗳️ Elections & Voting", "")
+        self.add_sidebar_button("Student Council", self.open_student_council_dialog, "🏛️")
         self.add_sidebar_button("Elections & Voting", self.open_elections_dialog, "🗳️")
         self.add_sidebar_button("Candidate Profiles", self.open_candidate_profiles_dialog, "👤")
         self.add_sidebar_button("Ranked Choice Voting", self.open_ranked_choice_voting_dialog, "🥇")

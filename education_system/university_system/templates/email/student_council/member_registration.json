@@ -1,0 +1,4 @@
+{
+    "subject": "Student Council Registration Confirmed - $position",
+    "body": "Dear $name,\n\nYou have been successfully registered as a member of the University Student Council.\n\nDetails:\n  Position:    $position\n  Department:  $department\n  Student ID:  $student_id\n  Registered:  $registered_at\n\nThank you for your service to the student community. You will receive further information about upcoming meetings and responsibilities shortly.\n\nKind regards,\nUniversity Student Council\n$signature"
+}

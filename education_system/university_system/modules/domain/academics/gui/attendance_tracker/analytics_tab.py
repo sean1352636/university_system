@@ -7,6 +7,20 @@ import pandas as pd
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.analytics_tab")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.analytics_tab")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import path constants
@@ -17,6 +31,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("analytics_tab.py:33 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 # Import all original functions and classes
@@ -26,6 +41,7 @@ try:
     )
     ORIGINAL_FUNCTIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("analytics_tab.py:42 %s", 'except ImportError')
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
 # Import window classes
@@ -112,6 +128,7 @@ def predict_student_risk(self):
                 messagebox.showwarning(_("common.warning"), _("attendance.messages.prediction_failed"))
 
         except Exception as e:
+            logger.exception("analytics_tab.py:128 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), _("attendance.messages.prediction_error", error=str(e)))
 
 def on_model_trained(self, success):
@@ -205,6 +222,7 @@ def train_prediction_model(self):
                 success = self.analytics.train_model()
                 self.root.after(0, lambda: self.on_model_trained(success))
             except Exception as e:
+                logger.exception("analytics_tab.py:221 %s", 'except Exception as e')
                 self.root.after(0, lambda _e=e: messagebox.showerror(_("common.error"), _("attendance.messages.model_training_error", error=str(_e))))
 
         threading.Thread(target=train_model, daemon=True).start()

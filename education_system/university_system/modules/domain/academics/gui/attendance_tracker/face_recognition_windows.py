@@ -21,6 +21,20 @@ from collections import deque
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.face_recognition_windows")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.face_recognition_windows")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import path constants
@@ -34,6 +48,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("face_recognition_windows.py:50 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 # Import all original functions and classes
@@ -48,6 +63,7 @@ try:
     )
     ORIGINAL_FUNCTIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("face_recognition_windows.py:64 %s", 'except ImportError')
     print("Warning: Original attendance_tracker.py not found. Some functions may not work.")
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
@@ -58,6 +74,7 @@ try:
     )
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("face_recognition_windows.py:74 %s", 'except ImportError')
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = False
 
 # Feature flags
@@ -215,9 +232,11 @@ class FaceRecognitionAttendanceWindow:
             self.update_camera_feed()
 
         except ImportError:
+            logger.exception("face_recognition_windows.py:231 %s", 'except ImportError')
             messagebox.showerror(_("common.error"), "OpenCV (cv2) not installed.\n\n"
                                          "Install with: pip install opencv-python")
         except Exception as e:
+            logger.exception("face_recognition_windows.py:234 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to start camera: {e}")
             import traceback
             traceback.print_exc()
@@ -331,6 +350,7 @@ class FaceRecognitionAttendanceWindow:
             self.window.after(33, self.update_camera_feed)  # ~30 FPS
 
         except Exception as e:
+            logger.exception("face_recognition_windows.py:347 %s", 'except Exception as e')
             print(f"Error in camera feed: {e}")
             import traceback
             traceback.print_exc()
@@ -375,6 +395,7 @@ class FaceRecognitionAttendanceWindow:
             self.window.bell()
 
         except Exception as e:
+            logger.exception("face_recognition_windows.py:391 %s", 'except Exception as e')
             print(f"Error adding recognized student: {e}")
             import traceback
             traceback.print_exc()
@@ -417,6 +438,7 @@ class FaceRecognitionAttendanceWindow:
             os.unlink(temp_file.name)
 
         except Exception as e:
+            logger.exception("face_recognition_windows.py:433 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Capture failed: {e}")
             import traceback
             traceback.print_exc()
@@ -506,6 +528,7 @@ class FaceRecognitionAttendanceWindow:
                 os.unlink(photo_path)
 
         except Exception as e:
+            logger.exception("face_recognition_windows.py:522 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Enrollment failed: {e}")
             import traceback
             traceback.print_exc()
@@ -534,6 +557,7 @@ class FaceRecognitionAttendanceWindow:
             self.on_closing()
 
         except Exception as e:
+            logger.exception("face_recognition_windows.py:550 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Error saving attendance: {e}")
             import traceback
             traceback.print_exc()
@@ -655,6 +679,7 @@ class FaceRecognitionWindow:
                 messagebox.showerror(_("common.error"), message)
 
         except Exception as e:
+            logger.exception("face_recognition_windows.py:671 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Enrollment failed: {e}")
 
     def recognize_face(self):
@@ -676,6 +701,7 @@ class FaceRecognitionWindow:
                 messagebox.showwarning("Recognition Failed", message)
 
         except Exception as e:
+            logger.exception("face_recognition_windows.py:692 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Recognition failed: {e}")
 
     def load_enrolled_students(self):
@@ -706,6 +732,7 @@ class FaceRecognitionWindow:
                     # Show message if no students found
                     self.enrolled_tree.insert('', 'end', values=("--", "No students enrolled", "--"))
         except Exception as e:
+            logger.exception("face_recognition_windows.py:722 %s", 'except Exception as e')
             self.enrolled_tree.insert('', 'end', values=("--", f"Error: {e}", "--"))
 
 class BiometricsManagementWindow:
@@ -806,6 +833,7 @@ class BiometricsManagementWindow:
                 messagebox.showinfo("Demo", "Face would be enrolled here (face recognition not available)")
 
         except Exception as e:
+            logger.exception("face_recognition_windows.py:822 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Enrollment failed: {e}")
 
     def load_enrolled_students(self):
@@ -841,5 +869,6 @@ class BiometricsManagementWindow:
                         self.enrolled_tree.insert('', 'end', values=('ERROR', 'Students table not found', '', 'Database needs initialization'))
 
         except Exception as e:
+            logger.exception("face_recognition_windows.py:857 %s", 'except Exception as e')
             self.enrolled_tree.insert('', 'end', values=('ERROR', f'Database error: {str(e)}', '', 'Unable to load enrollment data'))
 

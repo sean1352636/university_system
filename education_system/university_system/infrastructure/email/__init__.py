@@ -5,10 +5,25 @@ from __future__ import annotations
 from education_system.university_system.infrastructure.email.email_service import (
     queue_email,
     queue_template_email,
-    send_email,
+    send_email as _real_send_email,
     send_template_email,
 )
 from education_system.university_system.infrastructure.email import email_service as _email_service_module
+
+
+def send_email(*args, **kwargs):
+    """Compatibility wrapper around ``email_service.core.send_email``.
+
+    Historically two parallel ``send_email`` implementations existed:
+    one in ``email_service.core`` (the real one — recipient kwarg
+    ``recipient_email``) and a no-op queue stub in ``email_manager``
+    (kwarg ``recipient``). Callers split roughly 50/50 between the two
+    spellings. This wrapper accepts either so both populations keep
+    working after the package facade was fixed to expose only the real
+    implementation."""
+    if "recipient" in kwargs and "recipient_email" not in kwargs:
+        kwargs["recipient_email"] = kwargs.pop("recipient")
+    return _real_send_email(*args, **kwargs)
 from education_system.university_system.infrastructure.email.admin import (
     initialize_communication_system,
     set_auth,
@@ -241,14 +256,26 @@ except ImportError as e:
 # Import the legacy compatibility facade so callers can access the broader
 # email subsystem (templates, admin helpers, etc.) directly from this
 # package, matching historical behaviour.
+#
+# IMPORTANT: only export names from email_manager that aren't already
+# bound at this point. Several names (notably ``send_email``) exist in
+# both modules — the implementations in email_manager are no-op queue
+# stubs that just append to an in-process Python list, while the ones
+# already imported from email_service.core actually persist to the
+# inbox / SMTP. Letting the loop overwrite them silently broke every
+# caller that expected `from infrastructure.email import send_email` to
+# deliver mail. (Was the cause of the council emails never showing up.)
 from education_system.university_system.infrastructure.email import email_manager as _email_manager  # noqa: E402  (import after __all__ setup)
 
+_already_bound = set(globals())
 for _name in getattr(_email_manager, "__all__", []):
+    if _name in _already_bound:
+        continue  # don't clobber the real implementation
     globals()[_name] = getattr(_email_manager, _name)
     if _name not in __all__:
         __all__.append(_name)
 
-del _name, _email_manager
+del _name, _email_manager, _already_bound
 
 # Additionally expose selected helper functions directly from the email_service
 # module.  Certain parts of the application import these helpers from the

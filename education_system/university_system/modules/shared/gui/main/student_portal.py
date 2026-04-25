@@ -187,6 +187,7 @@ class StudentPortalGUI:
         self._add_button("Advising Portal", self._launch('show_advising_portal_gui'))
         self._add_button("Student Support", self._open_student_support)
         self._add_button("Accessibility", self._open_accessibility)
+        self._add_button("Equality & Diversity", self._launch('show_equality_diversity_gui'))
         self._add_button("Feedback", self._launch('show_feedback_system_gui'))
 
         # Portfolio & Achievements

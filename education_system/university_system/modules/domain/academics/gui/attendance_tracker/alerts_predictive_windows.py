@@ -21,6 +21,20 @@ from collections import deque
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.alerts_predictive_windows")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.alerts_predictive_windows")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import path constants
@@ -34,6 +48,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("alerts_predictive_windows.py:50 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 # Import all original functions and classes
@@ -48,6 +63,7 @@ try:
     )
     ORIGINAL_FUNCTIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("alerts_predictive_windows.py:64 %s", 'except ImportError')
     print("Warning: Original attendance_tracker.py not found. Some functions may not work.")
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
@@ -59,6 +75,7 @@ try:
     )
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("alerts_predictive_windows.py:75 %s", 'except ImportError')
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = False
 
 # Feature flags
@@ -288,6 +305,7 @@ class CreateAlertWindow:
             self.window.destroy()
 
         except Exception as e:
+            logger.exception("alerts_predictive_windows.py:304 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to create alert: {e}")
 
 class AlertDetailsWindow:
@@ -417,6 +435,7 @@ class PredictiveAnalyticsWindow:
 
                 self.window.after(0, lambda: self.on_training_complete(success))
             except Exception as e:
+                logger.exception("alerts_predictive_windows.py:433 %s", 'except Exception as e')
                 self.window.after(0, lambda _e=e: messagebox.showerror(_("common.error"), f"Training failed: {_e}"))
 
         threading.Thread(target=train_in_background, daemon=True).start()
@@ -519,6 +538,7 @@ class PredictiveAnalyticsWindow:
             messagebox.showinfo("Success", f"Analyzed {len(results)} student-module combinations")
 
         except Exception as e:
+            logger.exception("alerts_predictive_windows.py:535 %s", 'except Exception as e')
             messagebox.showerror("Error", f"Failed to load predictions: {e}")
 
     def update_predictions(self, prediction_data):
@@ -684,6 +704,7 @@ class SinglePredictionWindow:
                 self.window.destroy()
 
         except Exception as e:
+            logger.exception("alerts_predictive_windows.py:700 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Prediction failed: {e}")
 
 

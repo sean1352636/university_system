@@ -172,6 +172,7 @@ class InstructorPortalGUI:
         self._add_button("Campus Events", self._open_campus_events_portal)
         self._add_button("Clubs & Societies", self._open_clubs_portal)
         self._add_button("Student Jobs", self._open_student_jobs_portal)
+        self._add_button("Equality & Diversity", self._launch('show_equality_diversity_gui'))
 
         # Communication
         self._add_heading("Communication")

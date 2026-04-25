@@ -22,6 +22,20 @@ from education_system.university_system.core.sql_safety import validate_identifi
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.backup_database_windows")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.backup_database_windows")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import path constants
@@ -35,6 +49,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("backup_database_windows.py:51 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 # Import all original functions and classes
@@ -49,6 +64,7 @@ try:
     )
     ORIGINAL_FUNCTIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("backup_database_windows.py:65 %s", 'except ImportError')
     print("Warning: Original attendance_tracker.py not found. Some functions may not work.")
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
@@ -60,6 +76,7 @@ try:
     )
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("backup_database_windows.py:76 %s", 'except ImportError')
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = False
 
 # Feature flags
@@ -170,6 +187,7 @@ class BackupRecoveryWindow:
                 else:
                     messagebox.showerror(_("common.error"), "Backup creation failed")
             except Exception as e:
+                logger.exception("backup_database_windows.py:186 %s", 'except Exception as e')
                 messagebox.showerror(_("common.error"), f"Backup creation failed: {e}")
         else:
             messagebox.showinfo("Demo", f"Backup of type '{backup_type}' would be created here")
@@ -209,6 +227,7 @@ class BackupRecoveryWindow:
                 else:
                     messagebox.showerror(_("common.error"), message)
             except Exception as e:
+                logger.exception("backup_database_windows.py:225 %s", 'except Exception as e')
                 messagebox.showerror(_("common.error"), f"Restore failed: {e}")
         else:
             messagebox.showinfo("Demo", f"Database would be restored from {backup_path}")
@@ -231,6 +250,7 @@ class BackupRecoveryWindow:
 
                 self.load_backups()
         except (ValueError, TypeError):
+            logger.exception("backup_database_windows.py:247 %s", 'except (ValueError, TypeError)')
             messagebox.showerror(_("common.error"), "Invalid number of days")
 
     def load_backup_status(self):
@@ -364,6 +384,7 @@ class BackupSettingsWindow:
             self.window.destroy()
 
         except ValueError:
+            logger.exception("backup_database_windows.py:380 %s", 'except ValueError')
             messagebox.showerror(_("common.error"), "Please enter valid numbers for frequency and retention")
 
     def test_backup(self):
@@ -522,10 +543,12 @@ class DatabaseMaintenanceWindow:
                     count = cursor.fetchone()[0]
                     info["tables"].append((table, count))
                 except Exception:
+                    logger.exception("backup_database_windows.py:538 %s", 'except Exception')
                     info["tables"].append((table, None))
 
             conn.close()
         except Exception as exc:
+            logger.exception("backup_database_windows.py:542 %s", 'except Exception as exc')
             info["error"] = str(exc)
 
         return info
@@ -599,6 +622,7 @@ class DatabaseMaintenanceWindow:
             self._append_log(f"Integrity check: {result[0] if result else 'No response'}")
             messagebox.showinfo("Integrity Check", result[0] if result else "No response")
         except Exception as exc:
+            logger.exception("backup_database_windows.py:615 %s", 'except Exception as exc')
             self._append_log(f"Integrity check failed: {exc}")
             messagebox.showerror("Integrity Check Failed", str(exc))
 
@@ -615,6 +639,7 @@ class DatabaseMaintenanceWindow:
             self._append_log(f"Executed {command}")
             messagebox.showinfo("Maintenance", f"{command} executed successfully.")
         except Exception as exc:
+            logger.exception("backup_database_windows.py:631 %s", 'except Exception as exc')
             self._append_log(f"{command} failed: {exc}")
             messagebox.showerror("Maintenance Failed", str(exc))
 
@@ -634,6 +659,7 @@ class DatabaseMaintenanceWindow:
             self._populate_backup_history()
             messagebox.showinfo("Backup Complete", f"Backup saved to {destination}")
         except Exception as exc:
+            logger.exception("backup_database_windows.py:650 %s", 'except Exception as exc')
             self._append_log(f"Backup failed: {exc}")
             messagebox.showerror("Backup Failed", str(exc))
 
@@ -665,6 +691,7 @@ class DatabaseMaintenanceWindow:
             messagebox.showinfo("Restore Complete", "Database has been restored successfully.")
             self.refresh_view()
         except Exception as exc:
+            logger.exception("backup_database_windows.py:681 %s", 'except Exception as exc')
             self._append_log(f"Restore failed: {exc}")
             messagebox.showerror("Restore Failed", str(exc))
 

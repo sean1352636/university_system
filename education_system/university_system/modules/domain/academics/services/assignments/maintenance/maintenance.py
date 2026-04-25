@@ -1,7 +1,8 @@
 from education_system.university_system.infrastructure.database.db import sqlite3, ensure_parent_dir
 from education_system.university_system.core.sql_safety import validate_table_name
+from education_system.university_system.core.paths import BACKUP_SUBMISSIONS_DIR
 from education_system.university_system.modules.domain.academics.services.assignments.core.constants import (
-    SUBDIR_BACKUPS, SUBDIR_EXPORTS, SUBDIR_SUBMITTED,
+    SUBDIR_EXPORTS, SUBDIR_SUBMITTED,
 )
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -21,7 +22,11 @@ class MaintenanceMixin:
 
         try:
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            backup_dir = os.path.join(self.submission_dir, SUBDIR_BACKUPS, f'backup_{timestamp}')
+            # Submission backups now live under the project-wide backups
+            # tree (matching BACKUP_DATABASE_DIR / BACKUP_ATTENDANCE_DIR /
+            # ... etc.) rather than nested inside the submissions data
+            # tree. See core/paths.py BACKUP_SUBMISSIONS_DIR.
+            backup_dir = os.path.join(str(BACKUP_SUBMISSIONS_DIR), f'backup_{timestamp}')
             os.makedirs(backup_dir, exist_ok=True)
 
             print(f"\nCreating backup in: {backup_dir}")
@@ -163,7 +168,9 @@ class MaintenanceMixin:
         """Archive all submissions for an assignment"""
         try:
             if not archive_path:
-                archive_path = os.path.join(self.submission_dir, SUBDIR_BACKUPS, f'archive_{assignment_id}_{datetime.now().strftime("%Y%m%d")}.zip')
+                archive_path = os.path.join(
+                    str(BACKUP_SUBMISSIONS_DIR),
+                    f'archive_{assignment_id}_{datetime.now().strftime("%Y%m%d")}.zip')
 
             ensure_parent_dir(archive_path)
 

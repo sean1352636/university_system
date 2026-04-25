@@ -7,6 +7,20 @@ import pandas as pd
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.reports_tab")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.reports_tab")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import path constants
@@ -17,6 +31,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("reports_tab.py:33 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 # Import all original functions and classes
@@ -26,6 +41,7 @@ try:
     )
     ORIGINAL_FUNCTIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("reports_tab.py:42 %s", 'except ImportError')
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
 # Import attendance notification service
@@ -35,6 +51,7 @@ try:
     )
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("reports_tab.py:51 %s", 'except ImportError')
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = False
 
 # Import window classes
@@ -42,6 +59,7 @@ try:
     from education_system.university_system.modules.domain.academics.gui.attendance_tracker.misc_windows import ReportPreviewWindow, CustomReportDialog, ReportWindow, CustomReportWindow
     WINDOWS_AVAILABLE = True
 except ImportError as e:
+    logger.exception("reports_tab.py:58 %s", 'except ImportError as e')
     print(f"Warning: Could not import window classes: {e}")
     ReportPreviewWindow = None
     CustomReportDialog = None
@@ -106,6 +124,7 @@ def generate_module_report(self):
                 self.report_preview.insert(tk.END, report_content)
 
         except Exception as e:
+            logger.exception("reports_tab.py:122 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to generate report: {e}")
 
 def create_reports_tab(self):
@@ -189,6 +208,7 @@ def generate_executive_report(self):
                 messagebox.showinfo(_("common.info"), _("attendance.messages.executive_report_demo"))
 
         except Exception as e:
+            logger.exception("reports_tab.py:205 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to generate executive report: {e}")
 
 def _send_attendance_alert_emails(self, at_risk_students, threshold):
@@ -237,6 +257,7 @@ def _send_attendance_alert_emails(self, at_risk_students, threshold):
                 _("attendance.messages.email_alerts_sent_message").format(count=len(at_risk_students), threshold=threshold))
 
         except Exception as e:
+            logger.exception("reports_tab.py:253 %s", 'except Exception as e')
             print(f"Failed to send attendance alert emails: {e}")
             messagebox.showerror(_("attendance.messages.email_error"),
                 _("attendance.messages.email_error_message"))
@@ -260,8 +281,10 @@ def _send_email_via_gui(self, to_email, subject, message):
             return True
 
         except ImportError:
+            logger.exception("reports_tab.py:276 %s", 'except ImportError')
             return False
         except Exception as e:
+            logger.exception("reports_tab.py:278 %s", 'except Exception as e')
             print(f"Error sending email via GUI: {e}")
             return False
 
@@ -304,6 +327,7 @@ def generate_quick_report(self):
             self.notebook.select(3)  # Reports tab index
 
         except Exception as e:
+            logger.exception("reports_tab.py:320 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to generate quick report: {e}")
 
 def generate_student_report(self):
@@ -358,6 +382,7 @@ def generate_student_report(self):
                 self.report_preview.insert(tk.END, report_content)
 
         except Exception as e:
+            logger.exception("reports_tab.py:374 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to generate report: {e}")
 
 def generate_custom_report(self):
@@ -436,6 +461,7 @@ def generate_at_risk_report(self):
                 self.report_preview.insert(tk.END, f"No students below {threshold}% attendance threshold.\n")
 
         except Exception as e:
+            logger.exception("reports_tab.py:452 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to generate at-risk report: {e}")
 
 def generate_trends_report(self):
@@ -470,7 +496,7 @@ def generate_trends_report(self):
                 for code, name in get_modules():
                     module_values.append(f"{code} - {name}")
         except Exception:
-            pass
+            logger.exception("reports_tab.py:486 %s", 'except Exception')
         ttk.Combobox(controls_frame, textvariable=module_filter_var,
                     values=module_values, width=25, state='readonly').grid(row=0, column=3, sticky='w')
 
@@ -584,6 +610,7 @@ def generate_trends_report(self):
                     report_lines.append("  ENG102: 85.1% (Fair)")
 
             except Exception as e:
+                logger.exception("reports_tab.py:600 %s", 'except Exception as e')
                 report_lines.append(f"\nError generating report: {e}")
 
             report_lines.append(f"\n{'=' * 50}")
@@ -628,8 +655,10 @@ def generate_trends_report(self):
                     body=self._trends_report_content)
                 messagebox.showinfo(_("common.success"), "Report emailed to admin.", parent=trends_window)
             except ImportError:
+                logger.exception("reports_tab.py:644 %s", 'except ImportError')
                 messagebox.showerror(_("common.error"), "Email service not available.", parent=trends_window)
             except Exception as e:
+                logger.exception("reports_tab.py:646 %s", 'except Exception as e')
                 messagebox.showerror(_("common.error"), f"Failed to send email: {e}", parent=trends_window)
 
         ttk.Button(btn_frame, text="Email to Admin", command=email_to_admin).pack(side=tk.LEFT, padx=(0, 10))
@@ -663,5 +692,6 @@ def _show_attendance_email_fallback(self, name, email, subject, message, attenda
             ttk.Button(fallback_window, text=_("common.close"),
                       command=fallback_window.destroy).pack(pady=10)
         except Exception as e:
+            logger.exception("reports_tab.py:679 %s", 'except Exception as e')
             print(f"Failed to show attendance email fallback: {e}")
 

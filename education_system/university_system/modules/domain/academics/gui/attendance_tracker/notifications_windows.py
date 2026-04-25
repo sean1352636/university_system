@@ -21,6 +21,20 @@ from collections import deque
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.notifications_windows")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.notifications_windows")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import path constants
@@ -34,6 +48,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("notifications_windows.py:50 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 # Import all original functions and classes
@@ -48,6 +63,7 @@ try:
     )
     ORIGINAL_FUNCTIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("notifications_windows.py:64 %s", 'except ImportError')
     print("Warning: Original attendance_tracker.py not found. Some functions may not work.")
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
@@ -59,6 +75,7 @@ try:
     )
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("notifications_windows.py:75 %s", 'except ImportError')
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = False
 
 # Feature flags
@@ -329,8 +346,10 @@ class ParentNotificationWindow:
                     conn.commit()
                 self.contacts_tree.insert('', 'end', values=("INFO", "Parent contacts table created", "Add your first parent contact", "", "", "", ""))
             except Exception as e:
+                logger.exception("notifications_windows.py:345 %s", 'except Exception as e')
                 self.contacts_tree.insert('', 'end', values=("ERROR", f"Database error: {e}", "", "", "", "", ""))
         except Exception as e:
+            logger.exception("notifications_windows.py:347 %s", 'except Exception as e')
             self.contacts_tree.insert('', 'end', values=("ERROR", f"Error loading contacts: {e}", "", "", "", "", ""))
 
     def filter_contacts(self):
@@ -377,6 +396,7 @@ class ParentNotificationWindow:
                 messagebox.showinfo(_("common.success"), "Parent contact deleted successfully")
                 self.load_parent_contacts()
             except Exception as e:
+                logger.exception("notifications_windows.py:393 %s", 'except Exception as e')
                 messagebox.showerror(_("common.error"), f"Failed to delete parent contact: {e}")
 
     def update_recipient_mode(self):
@@ -489,6 +509,7 @@ class ParentNotificationWindow:
                         sent_count += 1
 
                 except Exception as e:
+                    logger.exception("notifications_windows.py:505 %s", 'except Exception as e')
                     failed_count += 1
                     print(f"Failed to send notification to student {student_id}: {e}")
 
@@ -501,6 +522,7 @@ class ParentNotificationWindow:
             self.load_notification_history()
 
         except Exception as e:
+            logger.exception("notifications_windows.py:517 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to send notifications: {e}")
 
     def log_notification(self, student_id, parent_name, method, subject, status):
@@ -530,6 +552,7 @@ class ParentNotificationWindow:
 
                 conn.commit()
         except Exception as e:
+            logger.exception("notifications_windows.py:546 %s", 'except Exception as e')
             print(f"Error logging notification: {e}")
 
     def check_low_attendance_now(self):
@@ -582,6 +605,7 @@ class ParentNotificationWindow:
             self.load_notification_history()
 
         except Exception as e:
+            logger.exception("notifications_windows.py:598 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to check attendance:\n{e}")
             import traceback
             traceback.print_exc()
@@ -645,6 +669,7 @@ class ParentNotificationWindow:
                       command=report_window.destroy).pack(pady=10)
 
         except Exception as e:
+            logger.exception("notifications_windows.py:661 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to generate report:\n{e}")
             import traceback
             traceback.print_exc()
@@ -684,8 +709,10 @@ class ParentNotificationWindow:
                 else:
                     self.history_tree.insert('', 'end', values=("N/A", "", "No notification history found", "", "", "", "", ""))
         except sqlite3.OperationalError:
+            logger.exception("notifications_windows.py:700 %s", 'except sqlite3.OperationalError')
             self.history_tree.insert('', 'end', values=("INFO", "", "No notifications sent yet", "", "", "", "", "Send your first notification"))
         except Exception as e:
+            logger.exception("notifications_windows.py:702 %s", 'except Exception as e')
             self.history_tree.insert('', 'end', values=("ERROR", "", f"Error loading history: {e}", "", "", "", "", ""))
 
     def export_notification_history(self):
@@ -713,6 +740,7 @@ class ParentNotificationWindow:
             messagebox.showinfo(_("common.success"), f"Notification history exported to:\n{filename}")
 
         except Exception as e:
+            logger.exception("notifications_windows.py:729 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to export history: {e}")
 
     def view_notification_details(self, event):
@@ -770,6 +798,7 @@ Subject: {notification_data[7]}
             messagebox.showinfo(_("common.success"), "Notification settings saved successfully")
 
         except Exception as e:
+            logger.exception("notifications_windows.py:786 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to save settings: {e}")
 
 class ParentContactDialog:
@@ -899,6 +928,7 @@ class ParentContactDialog:
             self.window.destroy()
 
         except Exception as e:
+            logger.exception("notifications_windows.py:915 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to save parent contact: {e}")
 
 class NotificationSettingsWindow:
@@ -960,6 +990,7 @@ class NotificationSettingsWindow:
 
                 conn.close()
         except Exception as e:
+            logger.exception("notifications_windows.py:976 %s", 'except Exception as e')
             print(f"Error loading notification settings: {e}")
 
         return settings
@@ -1199,9 +1230,9 @@ class NotificationSettingsWindow:
                 log_activity('update', 'notification_settings',
                            details={'settings_count': len(self.settings)})
             except Exception:
-                pass
-
+                logger.exception("notifications_windows.py:1215 %s", 'except Exception')
         except Exception as e:
+            logger.exception("notifications_windows.py:1218 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to save settings:\n{e}")
             import traceback
             traceback.print_exc()
@@ -1281,5 +1312,6 @@ This is an automated test message from the University Attendance System.
                                      "Failed to send test notification. Please check email configuration.")
 
         except Exception as e:
+            logger.exception("notifications_windows.py:1297 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to send test notification:\n{e}")
 

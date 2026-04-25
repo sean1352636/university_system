@@ -12,7 +12,7 @@ import logging
 import sqlite3
 import sys
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 from datetime import datetime, date
 
 from education_system.university_system.core.paths import DEFAULT_DB_PATH
@@ -37,19 +37,40 @@ class Database:
         self._ensure_absence_requests_table()
 
     def _ensure_absence_requests_table(self):
-        """`absence_requests` isn't part of the core schema — create if missing."""
+        """`absence_requests` isn't part of the core schema — create if missing.
+
+        Decision-audit columns (``decided_by``, ``decided_at``,
+        ``decision_reason``) are added inline for fresh DBs and via
+        ``ALTER TABLE`` migrations for existing ones."""
         self.cur.execute(
             """CREATE TABLE IF NOT EXISTS absence_requests (
-                 id           INTEGER PRIMARY KEY AUTOINCREMENT,
-                 student_id   TEXT NOT NULL,
-                 module_code  TEXT NOT NULL,
-                 date         TEXT NOT NULL,
-                 reason       TEXT NOT NULL,
-                 status       TEXT NOT NULL DEFAULT 'pending'
-                              CHECK(status IN ('pending','approved','rejected')),
-                 submitted_at TEXT DEFAULT CURRENT_TIMESTAMP
+                 id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                 student_id      TEXT NOT NULL,
+                 module_code     TEXT NOT NULL,
+                 date            TEXT NOT NULL,
+                 reason          TEXT NOT NULL,
+                 status          TEXT NOT NULL DEFAULT 'pending'
+                                 CHECK(status IN ('pending','approved','rejected')),
+                 submitted_at    TEXT DEFAULT CURRENT_TIMESTAMP,
+                 decided_by      TEXT,
+                 decided_at      TEXT,
+                 decision_reason TEXT
                )"""
         )
+        # Migrate older DBs that pre-date the audit columns.
+        self.cur.execute("PRAGMA table_info(absence_requests)")
+        cols = {r[1] for r in self.cur.fetchall()}
+        for col, ddl in (
+            ("decided_by",      "ALTER TABLE absence_requests ADD COLUMN decided_by TEXT"),
+            ("decided_at",      "ALTER TABLE absence_requests ADD COLUMN decided_at TEXT"),
+            ("decision_reason", "ALTER TABLE absence_requests ADD COLUMN decision_reason TEXT"),
+        ):
+            if col not in cols:
+                try:
+                    self.cur.execute(ddl)
+                except sqlite3.OperationalError:
+                    logger.exception(
+                        "absence_requests ALTER for %s skipped", col)
         self.conn.commit()
 
     # ---- User identity ----
@@ -212,14 +233,35 @@ class Database:
             (student_id, module_code, d, reason),
         )
         self.conn.commit()
+        request_id = self.cur.lastrowid
+        # Best-effort acknowledgement email — never raises.
+        try:
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking.email_notifications import (  # noqa: E501
+                notify_request_submitted,
+            )
+            notify_request_submitted(self, request_id)
+        except Exception:
+            logger.exception(
+                "submission email hook failed rid=%s sid=%s",
+                request_id, student_id)
+        return request_id
 
     def get_requests(self, student_id=None, staff_id=None, status=None):
+        """Return request rows.
+
+        Columns 0-9 are stable for legacy positional callers; the audit
+        columns (``decided_by``, ``decided_at``, ``decision_reason``) are
+        appended at positions 10-12.
+        """
         q = """SELECT r.id,
                       TRIM(COALESCE(s.first_name,'') || ' ' || COALESCE(s.last_name,'')),
                       r.module_code,
                       COALESCE(m.module_name, r.module_code),
                       r.date, r.reason, r.status, r.submitted_at,
-                      r.student_id, r.module_code
+                      r.student_id, r.module_code,
+                      COALESCE(r.decided_by,''),
+                      COALESCE(r.decided_at,''),
+                      COALESCE(r.decision_reason,'')
                FROM absence_requests r
                LEFT JOIN students s ON s.student_id = r.student_id
                LEFT JOIN modules m  ON m.module_code = r.module_code
@@ -241,11 +283,49 @@ class Database:
         return self.cur.fetchall()
 
     def update_request(self, request_id, new_status):
+        """Backwards-compatible status setter — does NOT send email.
+
+        Prefer ``decide_request`` for the admin/staff approval flow so the
+        student gets an explanation email."""
         self.cur.execute(
             "UPDATE absence_requests SET status = ? WHERE id = ?",
             (new_status, request_id),
         )
         self.conn.commit()
+
+    def decide_request(self, request_id, decision,
+                       decision_reason="", decided_by=""):
+        """Approve or reject a request, write the audit columns, and email
+        the student the outcome.
+
+        ``decision`` must be ``'approved'`` or ``'rejected'``. The status
+        update + audit write are atomic; the email dispatch is best-effort
+        and never blocks the DB write."""
+        if decision not in ("approved", "rejected"):
+            raise ValueError(f"unknown decision {decision!r}")
+        decided_at = datetime.now().isoformat(timespec="seconds")
+        self.cur.execute(
+            """UPDATE absence_requests
+               SET status = ?,
+                   decided_by = ?,
+                   decided_at = ?,
+                   decision_reason = ?
+               WHERE id = ?""",
+            (decision, decided_by or "", decided_at,
+             decision_reason or "", request_id),
+        )
+        self.conn.commit()
+        try:
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking.email_notifications import (  # noqa: E501
+                notify_request_decided,
+            )
+            notify_request_decided(self, request_id, decision,
+                                   decision_reason=decision_reason,
+                                   decided_by=decided_by)
+        except Exception:
+            logger.exception(
+                "decision email hook failed rid=%s decision=%s",
+                request_id, decision)
 
     def close(self):
         self.conn.close()
@@ -270,6 +350,96 @@ def center(win, w, h):
 
 
 # ---------------------------------------------------------------------------
+# Sidebar navigation (drop-in replacement for ttk.Notebook)
+# ---------------------------------------------------------------------------
+class SidebarNotebook(tk.Frame):
+    """Sidebar nav + content pane that mimics ``ttk.Notebook.add``.
+
+    External plug-ins (admin_features, staff_features, student_features,
+    absence_enhancements) call ``notebook.add(frame, text=...)`` — that API
+    is preserved here so they work unchanged. Each call adds a button to the
+    left sidebar; clicking the button shows that frame in the right pane.
+    """
+
+    SIDEBAR_BG = "#1e3a5f"
+    SIDEBAR_HEADER_FG = "#94a3b8"
+    BTN_BG = "#1e3a5f"
+    BTN_FG = "#e2e8f0"
+    BTN_HOVER = "#2c4f7a"
+    BTN_ACTIVE = "#2563eb"
+    BTN_ACTIVE_FG = "#ffffff"
+    CONTENT_BG = "#f0f4f8"
+
+    def __init__(self, master, sidebar_title="MENU", **kw):
+        super().__init__(master, bg=self.CONTENT_BG, **kw)
+
+        self.sidebar = tk.Frame(self, bg=self.SIDEBAR_BG, width=240)
+        self.sidebar.grid(row=0, column=0, sticky="ns")
+        self.sidebar.grid_propagate(False)
+        tk.Label(self.sidebar, text=sidebar_title,
+                 font=("Arial", 9, "bold"), bg=self.SIDEBAR_BG,
+                 fg=self.SIDEBAR_HEADER_FG).pack(anchor="w",
+                                                 padx=18, pady=(16, 8))
+
+        # Scrollable inner sidebar (in case many tabs are added)
+        self._sb_canvas = tk.Canvas(self.sidebar, bg=self.SIDEBAR_BG,
+                                    highlightthickness=0, bd=0)
+        self._sb_canvas.pack(fill="both", expand=True)
+        self._sb_inner = tk.Frame(self._sb_canvas, bg=self.SIDEBAR_BG)
+        self._sb_window = self._sb_canvas.create_window(
+            (0, 0), window=self._sb_inner, anchor="nw")
+        self._sb_inner.bind(
+            "<Configure>",
+            lambda e: self._sb_canvas.configure(
+                scrollregion=self._sb_canvas.bbox("all")))
+        self._sb_canvas.bind(
+            "<Configure>",
+            lambda e: self._sb_canvas.itemconfigure(
+                self._sb_window, width=e.width))
+
+        # Content area on the right
+        self.grid_columnconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=1)
+
+        self._tabs = []
+        self._current = None
+
+    def add(self, frame, text="", **_kw):
+        idx = len(self._tabs)
+        btn = tk.Button(
+            self._sb_inner, text=f"  {text}", anchor="w",
+            font=("Arial", 11), bg=self.BTN_BG, fg=self.BTN_FG,
+            activebackground=self.BTN_ACTIVE,
+            activeforeground=self.BTN_ACTIVE_FG,
+            relief="flat", bd=0, padx=18, pady=11, cursor="hand2",
+            command=lambda i=idx: self._select(i),
+        )
+        btn.pack(fill="x", pady=1)
+        btn.bind("<Enter>", lambda e, b=btn: self._hover(b, True))
+        btn.bind("<Leave>", lambda e, b=btn: self._hover(b, False))
+        self._tabs.append({"frame": frame, "btn": btn})
+        if self._current is None:
+            self._select(0)
+
+    def _hover(self, btn, entering):
+        idx = next((i for i, t in enumerate(self._tabs)
+                    if t["btn"] is btn), -1)
+        if idx == self._current:
+            return
+        btn.config(bg=self.BTN_HOVER if entering else self.BTN_BG)
+
+    def _select(self, idx):
+        if self._current is not None:
+            cur = self._tabs[self._current]
+            cur["frame"].grid_remove()
+            cur["btn"].config(bg=self.BTN_BG, fg=self.BTN_FG)
+        new = self._tabs[idx]
+        new["frame"].grid(row=0, column=1, sticky="nsew", padx=16, pady=14)
+        new["btn"].config(bg=self.BTN_ACTIVE, fg=self.BTN_ACTIVE_FG)
+        self._current = idx
+
+
+# ---------------------------------------------------------------------------
 # Base dashboard
 # ---------------------------------------------------------------------------
 class BaseDashboard:
@@ -281,35 +451,76 @@ class BaseDashboard:
 
         role = (user.get("role") or "user").title()
         root.title(f"Absence Tracker - {role}: {user['name']}")
-        center(root, 1100, 680)
+        center(root, 1240, 740)
         root.configure(bg="#f0f4f8")
 
-        header = tk.Frame(root, bg="#1e3a5f", height=60)
+        # ---- Header ----
+        header = tk.Frame(root, bg="#0f1f3a", height=64)
         header.pack(fill="x")
         header.pack_propagate(False)
 
         tk.Label(
-            header, text=f"🎓 {role} Dashboard",
-            font=("Arial", 16, "bold"), bg="#1e3a5f", fg="white",
-        ).pack(side="left", padx=20)
-
-        tk.Button(
-            header, text="Close", font=("Arial", 10, "bold"),
-            bg="#dc2626", fg="white", activebackground="#b91c1c",
-            relief="flat", cursor="hand2", command=self._close,
-        ).pack(side="right", padx=20, pady=15)
+            header, text="🎓  Absence Tracker",
+            font=("Arial", 17, "bold"), bg="#0f1f3a", fg="white",
+        ).pack(side="left", padx=22)
 
         tk.Label(
-            header, text=f"Welcome, {user['name']}",
-            font=("Arial", 11), bg="#1e3a5f", fg="#cbd5e1",
-        ).pack(side="right", padx=10)
+            header, text=role.upper(),
+            font=("Arial", 9, "bold"), bg="#2563eb", fg="white",
+            padx=10, pady=4,
+        ).pack(side="left", padx=4, pady=20)
 
-        self.notebook = ttk.Notebook(root)
-        self.notebook.pack(expand=True, fill="both", padx=10, pady=10)
+        tk.Button(
+            header, text="✕  Close", font=("Arial", 10, "bold"),
+            bg="#dc2626", fg="white", activebackground="#b91c1c",
+            activeforeground="white", relief="flat", cursor="hand2",
+            padx=14, pady=6, bd=0, command=self._close,
+        ).pack(side="right", padx=18, pady=14)
 
+        right_info = tk.Frame(header, bg="#0f1f3a")
+        right_info.pack(side="right", padx=8)
+        tk.Label(
+            right_info, text=user.get("name", ""),
+            font=("Arial", 11, "bold"), bg="#0f1f3a", fg="white",
+        ).pack(anchor="e")
+        tk.Label(
+            right_info, text=user.get("email", "") or user.get("username", ""),
+            font=("Arial", 9), bg="#0f1f3a", fg="#94a3b8",
+        ).pack(anchor="e")
+
+        # ---- Shared ttk styling ----
         style = ttk.Style()
-        style.configure("Treeview", rowheight=26, font=("Arial", 10))
-        style.configure("Treeview.Heading", font=("Arial", 10, "bold"))
+        try:
+            style.theme_use("clam")
+        except tk.TclError:
+            pass
+        style.configure(
+            "Treeview", rowheight=28, font=("Arial", 10),
+            fieldbackground="white", background="white",
+            bordercolor="#cbd5e1", borderwidth=0,
+        )
+        style.configure(
+            "Treeview.Heading", font=("Arial", 10, "bold"),
+            background="#1e3a5f", foreground="white",
+            relief="flat", padding=6,
+        )
+        style.map("Treeview.Heading", background=[("active", "#2c4f7a")])
+        style.map("Treeview", background=[("selected", "#2563eb")],
+                  foreground=[("selected", "white")])
+        style.configure("TLabelframe",
+                        background="#f0f4f8", borderwidth=1, relief="solid")
+        style.configure("TLabelframe.Label",
+                        background="#f0f4f8", foreground="#1e3a5f",
+                        font=("Arial", 11, "bold"))
+        style.configure("TButton", padding=6)
+        style.configure("Accent.TButton",
+                        background="#2563eb", foreground="white",
+                        font=("Arial", 10, "bold"), padding=8)
+        style.map("Accent.TButton", background=[("active", "#1d4ed8")])
+
+        # ---- Sidebar nav (replaces top-level Notebook tabs) ----
+        self.notebook = SidebarNotebook(root, sidebar_title=f"{role.upper()} MENU")
+        self.notebook.pack(expand=True, fill="both")
 
         self.build_tabs()
 
@@ -337,6 +548,7 @@ class AdminDashboard(BaseDashboard):
         self._courses_tab()
         self._enrollments_tab()
         self._all_absences_tab()
+        self._pending_requests_tab()
         self._reports_tab()
         try:
             from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking \
@@ -491,6 +703,148 @@ class AdminDashboard(BaseDashboard):
         if messagebox.askyesno("Confirm", f"Delete record #{vals[0]}?"):
             self.db.delete_absence(vals[0])
             self._refresh_abs()
+
+    # ------------------------------------------------------------------
+    # Pending absence requests (admin-wide approve / reject + email)
+    # ------------------------------------------------------------------
+    _REQ_COLS = ("ID", "Student", "Code", "Module", "Date",
+                 "Reason", "Status", "Submitted",
+                 "Decided by", "Decided at", "Decision note")
+
+    def _pending_requests_tab(self):
+        f = ttk.Frame(self.notebook)
+        self.notebook.add(f, text="📬 Absence Requests")
+
+        bar = tk.Frame(f)
+        bar.pack(fill="x", padx=10, pady=10)
+        tk.Button(bar, text="✅ Approve", bg="#16a34a", fg="white",
+                  relief="flat", padx=12, pady=6,
+                  command=lambda: self._admin_decide("approved")
+                  ).pack(side="left", padx=4)
+        tk.Button(bar, text="❌ Reject", bg="#dc2626", fg="white",
+                  relief="flat", padx=12, pady=6,
+                  command=lambda: self._admin_decide("rejected")
+                  ).pack(side="left", padx=4)
+        tk.Button(bar, text="🔄 Refresh", bg="#6b7280", fg="white",
+                  relief="flat", padx=12, pady=6,
+                  command=self._refresh_admin_req).pack(side="left", padx=4)
+
+        self.admin_req_show_all = tk.BooleanVar(value=False)
+        # `bar` is a tk.Frame (not ttk) — safe to read its bg, and we want
+        # the checkbutton's background to match so it doesn't render in a
+        # different shade. ttk widgets don't expose `bg` so don't try `f`.
+        tk.Checkbutton(bar, text="Show decided too",
+                       variable=self.admin_req_show_all,
+                       bg=bar.cget("bg"),
+                       command=self._refresh_admin_req
+                       ).pack(side="left", padx=12)
+
+        self.admin_req_tree = ttk.Treeview(
+            f, columns=self._REQ_COLS, show="headings")
+        widths = (50, 160, 100, 200, 100, 240, 90, 140, 110, 140, 240)
+        for c, w in zip(self._REQ_COLS, widths):
+            self.admin_req_tree.heading(c, text=c)
+            self.admin_req_tree.column(c, width=w)
+        self.admin_req_tree.pack(expand=True, fill="both",
+                                 padx=10, pady=(0, 10))
+        self._refresh_admin_req()
+
+    def _refresh_admin_req(self):
+        self.clear_tree(self.admin_req_tree)
+        try:
+            rows = self.db.get_requests(
+                status=None if self.admin_req_show_all.get() else "pending")
+        except Exception:
+            logger.exception("admin pending requests fetch failed")
+            messagebox.showerror(
+                "Error",
+                "Could not load absence requests (see log).",
+                parent=self.root)
+            return
+        # get_requests returns 13 cols: 0-7 the legacy fields, 8-9 the
+        # student_id / module_code internal pair, 10-12 the audit columns.
+        # The tree shows 0-7 + 10-12.
+        for row in rows:
+            display = row[:8] + row[10:13]
+            self.admin_req_tree.insert("", "end", values=display)
+
+    def _admin_decide(self, decision):
+        sel = self.admin_req_tree.selection()
+        if not sel:
+            messagebox.showwarning(
+                "Select", "Pick a request first.", parent=self.root)
+            return
+        vals = self.admin_req_tree.item(sel[0])["values"]
+        if vals[6] != "pending":
+            messagebox.showinfo(
+                "Info", "Request already decided.", parent=self.root)
+            return
+        req_id = vals[0]
+
+        # Re-fetch the full row so we have the student id + module code
+        # for the post-approval attendance write.
+        full = None
+        try:
+            for row in self.db.get_requests():
+                if row[0] == req_id:
+                    full = row
+                    break
+        except Exception:
+            logger.exception("admin decide lookup failed rid=%s", req_id)
+        if not full:
+            messagebox.showerror(
+                "Missing",
+                f"Could not re-load request {req_id}.",
+                parent=self.root)
+            return
+        _id, _name, _code, _cname, d, reason, _status, _sub, sid, cid, *_audit = full
+
+        prompt = ("Note to send the student (optional):"
+                  if decision == "approved"
+                  else "Reason for rejection (will be emailed to the student):")
+        comment = simpledialog.askstring(
+            f"{decision.title()} request {req_id}", prompt,
+            parent=self.root) or ""
+        if decision == "rejected" and not comment.strip():
+            messagebox.showerror(
+                "Reason required",
+                "Please give the student a reason for the rejection.",
+                parent=self.root)
+            return
+        if not messagebox.askyesno(
+                f"Confirm {decision}",
+                f"{decision.title()} request {req_id} for "
+                f"{_name or sid} on {d}?",
+                parent=self.root):
+            return
+
+        try:
+            self.db.decide_request(
+                req_id, decision,
+                decision_reason=comment.strip(),
+                decided_by=self.user.get("username", ""),
+            )
+            if decision == "approved":
+                self.db.record_absence(
+                    sid, cid, d, "excused",
+                    f"[Approved by admin] {reason}",
+                    self.user["id"])
+        except Exception:
+            logger.exception(
+                "admin decide failed rid=%s decision=%s",
+                req_id, decision)
+            messagebox.showerror(
+                "Failed",
+                f"Could not {decision} request (see log).",
+                parent=self.root)
+            return
+        logger.info("admin %s %s request %s",
+                    self.user.get("username"), decision, req_id)
+        messagebox.showinfo(
+            "Done",
+            f"Request {decision}; the student has been emailed.",
+            parent=self.root)
+        self._refresh_admin_req()
 
     _REPORT_COLS = ("Module Code", "Module", "Absent", "Late", "Excused", "Present")
 
@@ -850,16 +1204,36 @@ class StaffDashboard(BaseDashboard):
         req_id = vals[0]
         for row in self.db.get_requests(staff_id=self.user["id"]):
             if row[0] == req_id:
-                _id, _name, _code, _cname, d, reason, _status, _sub, sid, cid = row
+                _id, _name, _code, _cname, d, reason, _status, _sub, sid, cid, *_audit = row
                 break
         else:
             return
 
-        self.db.update_request(req_id, decision)
+        # Prompt for an explanation — required for reject, optional for approve.
+        prompt = ("Reason / note to send the student:" if decision == "approved"
+                  else "Reason for rejection (will be emailed to the student):")
+        comment = simpledialog.askstring(
+            f"{decision.title()} request", prompt, parent=self.root) or ""
+        if decision == "rejected" and not comment.strip():
+            messagebox.showerror(
+                "Reason required",
+                "Please give the student a reason for the rejection.")
+            return
+
+        self.db.decide_request(
+            req_id, decision,
+            decision_reason=comment.strip(),
+            decided_by=self.user.get("username", ""),
+        )
         if decision == "approved":
             self.db.record_absence(sid, cid, d, "excused",
-                                   f"[Approved request] {reason}", self.user["id"])
-        messagebox.showinfo("Done", f"Request {decision}.")
+                                   f"[Approved request] {reason}",
+                                   self.user["id"])
+        logger.info("staff %s %s request %s",
+                    self.user.get("username"), decision, req_id)
+        messagebox.showinfo(
+            "Done",
+            f"Request {decision}; the student has been emailed.")
         self._refresh_req()
 
     def _view_records_tab(self):
@@ -1150,6 +1524,17 @@ def launch_dashboard(root, db, user):
 def main(argv=None):
     args = _parse_args(argv if argv is not None else sys.argv[1:])
     db = Database()
+    # Initialise the shared auth singleton early so the email
+    # infrastructure (which calls shared_context.get_auth() to attribute
+    # senders) doesn't log a SECURITY error on every send.
+    try:
+        from education_system.university_system.infrastructure.shared_context import (  # noqa: E501
+            is_auth_initialized, initialize_auth,
+        )
+        if not is_auth_initialized():
+            initialize_auth(db.path)
+    except Exception:
+        logger.exception("could not initialise auth (continuing)")
     user = _resolve_user(db, args)
 
     root = tk.Tk()

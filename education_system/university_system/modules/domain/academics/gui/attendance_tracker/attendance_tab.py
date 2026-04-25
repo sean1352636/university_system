@@ -7,6 +7,20 @@ import sys
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.attendance_tab")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.attendance_tab")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import path constants
@@ -17,6 +31,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("attendance_tab.py:33 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 # Import all original functions and classes
@@ -26,6 +41,7 @@ try:
     )
     ORIGINAL_FUNCTIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("attendance_tab.py:42 %s", 'except ImportError')
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
 # Feature flags
@@ -59,6 +75,7 @@ def open_absence_tracker(self):
                 return
             subprocess.Popen(cmd, close_fds=True)
         except Exception as e:
+            logger.exception("attendance_tab.py:75 %s", 'except Exception as e')
             messagebox.showerror("Absence Tracker", f"Failed to open Absence Tracker: {e}")
 
 def refresh_attendance_data(self):
@@ -111,6 +128,7 @@ def refresh_modules(self):
                 self.module_combo.set(module_list[0])
 
         except Exception as e:
+            logger.exception("attendance_tab.py:127 %s", 'except Exception as e')
             print(f"Error refreshing modules: {e}")
 
 def qr_attendance(self):
@@ -205,6 +223,7 @@ def load_module_students(self, module_code):
             conn.close()
 
         except Exception as e:
+            logger.exception("attendance_tab.py:221 %s", 'except Exception as e')
             print(f"Error loading module students: {e}")
             messagebox.showerror(_("common.error"), _("attendance.messages.failed_to_load_students").format(error=e))
 
@@ -355,6 +374,8 @@ def geo_attendance(self):
         try:
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
+                # `attendance_records.recorded_at` is the canonical
+                # check-in timestamp column — there is no `check_in_time`.
                 cursor.execute('''
                     SELECT
                         s.first_name || ' ' || s.last_name || ' (' || s.student_id || ')' as student,
@@ -364,7 +385,7 @@ def geo_attendance(self):
                             ELSE 'Absent'
                         END as status,
                         COALESCE(ar.location_data, 'Unknown') as location,
-                        COALESCE(strftime('%I:%M %p', ar.check_in_time), '--') as time
+                        COALESCE(strftime('%I:%M %p', ar.recorded_at), '--') as time
                     FROM students s
                     LEFT JOIN attendance_records ar ON s.student_id = ar.student_id
                         AND ar.date = date('now')
@@ -380,6 +401,7 @@ def geo_attendance(self):
                     # Show message if no data available
                     students_tree.insert('', 'end', values=(_("attendance.messages.no_students_found"), "", "", ""))
         except Exception as e:
+            logger.exception("attendance_tab.py:396 %s", 'except Exception as e')
             students_tree.insert('', 'end', values=(_("attendance.messages.error_loading_data").format(error=e), "", "", ""))
 
         # Control buttons

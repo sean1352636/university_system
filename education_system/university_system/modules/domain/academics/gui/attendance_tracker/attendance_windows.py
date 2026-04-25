@@ -21,6 +21,20 @@ from collections import deque
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.attendance_windows")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.attendance_windows")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import path constants
@@ -34,6 +48,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("attendance_windows.py:50 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 # Import all original functions and classes
@@ -48,6 +63,7 @@ try:
     )
     ORIGINAL_FUNCTIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("attendance_windows.py:64 %s", 'except ImportError')
     print("Warning: Original attendance_tracker.py not found. Some functions may not work.")
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
@@ -59,6 +75,7 @@ try:
     )
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("attendance_windows.py:75 %s", 'except ImportError')
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = False
 
 # Feature flags
@@ -155,6 +172,7 @@ class ManualAttendanceWindow:
                 self.create_student_row(student_id, f"{first_name} {last_name}")
 
         except Exception as e:
+            logger.exception("attendance_windows.py:171 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to load students: {e}")
 
     def create_student_row(self, student_id, name):
@@ -216,6 +234,7 @@ class ManualAttendanceWindow:
                 self.window.destroy()
 
         except Exception as e:
+            logger.exception("attendance_windows.py:232 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to save attendance: {e}")
 
 class BatchAttendanceWindow:
@@ -351,6 +370,7 @@ class BatchAttendanceWindow:
             self.update_selection_display()
 
         except Exception as e:
+            logger.exception("attendance_windows.py:367 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to load students: {e}")
             import traceback
             traceback.print_exc()
@@ -440,6 +460,7 @@ class BatchAttendanceWindow:
                 self.window.destroy()
 
         except Exception as e:
+            logger.exception("attendance_windows.py:456 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to save attendance: {e}")
             import traceback
             traceback.print_exc()
@@ -526,6 +547,7 @@ class EditAttendanceWindow:
             self.callback()  # Refresh parent data
             self.window.destroy()
         except Exception as e:
+            logger.exception("attendance_windows.py:542 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to save changes: {e}")
 
     def _safe_grab_set(self):
@@ -534,6 +556,7 @@ class EditAttendanceWindow:
             if self.window.winfo_exists():
                 self.window.grab_set()
         except Exception as e:
+            logger.exception("attendance_windows.py:550 %s", 'except Exception as e')
             print(f"Warning: Could not set window grab: {e}")
 
 class AddEditStudentWindow:
@@ -599,6 +622,7 @@ class AddEditStudentWindow:
             if self.window.winfo_exists():
                 self.window.grab_set()
         except Exception as e:
+            logger.exception("attendance_windows.py:615 %s", 'except Exception as e')
             print(f"Warning: Could not set window grab: {e}")
 
     def save_student(self):

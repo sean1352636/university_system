@@ -63,6 +63,7 @@ BACKUP_LIBRARY_DIR: Path = BACKUP_DIR / "library"
 BACKUP_HEALTH_DIR: Path = BACKUP_DIR / "health"
 BACKUP_SETTINGS_DIR: Path = BACKUP_DIR / "settings"
 BACKUP_CALENDAR_DIR: Path = BACKUP_DIR / "calendar"
+BACKUP_SUBMISSIONS_DIR: Path = BACKUP_DIR / "submissions"
 # Backward-compatible aliases
 DB_BACKUPS_DIR: Path = BACKUP_DATABASE_DIR
 

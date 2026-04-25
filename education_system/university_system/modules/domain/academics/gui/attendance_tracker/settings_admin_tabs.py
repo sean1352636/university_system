@@ -9,6 +9,20 @@ import json
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.settings_admin_tabs")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.settings_admin_tabs")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import path constants
@@ -19,6 +33,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("settings_admin_tabs.py:35 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 # Import all original functions and classes
@@ -28,6 +43,7 @@ try:
     )
     ORIGINAL_FUNCTIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("settings_admin_tabs.py:44 %s", 'except ImportError')
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
 # Import window classes
@@ -68,6 +84,7 @@ def export_audit_logs(self):
                 messagebox.showinfo(_("common.success"), _("attendance.messages.audit_logs_exported").format(filename=filename))
 
             except Exception as e:
+                logger.exception("settings_admin_tabs.py:84 %s", 'except Exception as e')
                 messagebox.showerror(_("common.error"), _("attendance.messages.audit_logs_export_failed").format(error=e))
 
 def database_maintenance(self):
@@ -100,6 +117,7 @@ def backup_database(self):
                 messagebox.showerror(_("common.error"), _("attendance.messages.backup_failed"))
 
         except Exception as e:
+            logger.exception("settings_admin_tabs.py:116 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), _("attendance.messages.backup_error").format(error=e))
 
 def refresh_audit_logs(self):
@@ -142,6 +160,7 @@ def refresh_audit_logs(self):
                 self.audit_tree.insert('', 'end', values=("", "System", f"No activity log found at {activity_log_path}", "-", "-"))
 
         except Exception as e:
+            logger.exception("settings_admin_tabs.py:158 %s", 'except Exception as e')
             self.audit_tree.insert('', 'end', values=("", "Error", f"Failed to read logs: {str(e)}", "-", "-"))
 
 def manage_attendance_policies(self):
@@ -353,6 +372,7 @@ def cleanup_old_data(self):
                                 parent=self.root)
 
         except Exception as e:
+            logger.exception("settings_admin_tabs.py:369 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Cleanup failed: {e}", parent=self.root)
 
 def import_data(self):
@@ -387,6 +407,7 @@ def restore_database(self):
                         messagebox.showerror(_("common.error"), message)
 
                 except Exception as e:
+                    logger.exception("settings_admin_tabs.py:403 %s", 'except Exception as e')
                     messagebox.showerror(_("common.error"), _("attendance.messages.restore_error").format(error=e))
 
 def create_thresholds_settings(self, parent):
@@ -521,6 +542,7 @@ def save_thresholds(self):
                 messagebox.showerror(_("common.error"), _("attendance.messages.thresholds_invalid"))
 
         except ValueError:
+            logger.exception("settings_admin_tabs.py:537 %s", 'except ValueError')
             messagebox.showerror(_("common.error"), _("attendance.messages.thresholds_invalid_numbers"))
 
 def export_data(self):

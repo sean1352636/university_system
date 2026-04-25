@@ -21,6 +21,20 @@ from collections import deque
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.qr_windows")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.qr_windows")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import path constants
@@ -34,6 +48,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("qr_windows.py:50 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 # Import all original functions and classes
@@ -48,6 +63,7 @@ try:
     )
     ORIGINAL_FUNCTIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("qr_windows.py:64 %s", 'except ImportError')
     print("Warning: Original attendance_tracker.py not found. Some functions may not work.")
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
@@ -59,6 +75,7 @@ try:
     )
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("qr_windows.py:75 %s", 'except ImportError')
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = False
 
 # Feature flags
@@ -185,6 +202,7 @@ class QRAttendanceWindow:
                         self.start_time_var.set(start_time)
                         self.end_time_var.set(end_time)
         except Exception as e:
+            logger.exception("qr_windows.py:201 %s", 'except Exception as e')
             print(f"Could not auto-fill location: {e}")
 
     def generate_qr(self):
@@ -211,11 +229,13 @@ class QRAttendanceWindow:
                     messagebox.showinfo(_("common.success"), f"QR code generated!\nSession ID: {session_id}")
 
                 except Exception as e:
+                    logger.exception("qr_windows.py:227 %s", 'except Exception as e')
                     self.qr_label.config(text=f"QR code generated but cannot display: {e}")
             else:
                 messagebox.showerror(_("common.error"), "Failed to generate QR code")
 
         except Exception as e:
+            logger.exception("qr_windows.py:232 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"QR generation failed: {e}")
 
     def manual_checkin(self):
@@ -336,6 +356,7 @@ class QRGeneratorWindow:
                         self.start_time_var.set(start_time)
                         self.end_time_var.set(end_time)
         except Exception as e:
+            logger.exception("qr_windows.py:352 %s", 'except Exception as e')
             print(f"Could not auto-fill location: {e}")
 
     def generate_qr(self):
@@ -379,10 +400,12 @@ class QRGeneratorWindow:
                     messagebox.showinfo(_("common.success"), f"QR code generated successfully!\nSaved as: {qr_filename}")
 
                 except Exception as e:
+                    logger.exception("qr_windows.py:395 %s", 'except Exception as e')
                     messagebox.showerror(_("common.error"), f"QR code generated but cannot display: {e}")
             else:
                 messagebox.showerror(_("common.error"), "Failed to generate QR code")
 
         except Exception as e:
+            logger.exception("qr_windows.py:400 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"QR generation failed: {e}")
 

@@ -3,6 +3,20 @@ from tkinter import ttk, messagebox
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.students_tab")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.students_tab")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import main database connection
@@ -10,6 +24,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("students_tab.py:26 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 ORIGINAL_FUNCTIONS_AVAILABLE = MAIN_DB_AVAILABLE
@@ -93,6 +108,7 @@ def filter_students(self, event=None):
                 conn.close()
 
         except Exception as e:
+            logger.exception("students_tab.py:109 %s", 'except Exception as e')
             print(f"Error filtering students: {e}")
 
 def add_student(self):
@@ -156,6 +172,7 @@ def refresh_students_data(self):
                     self.students_tree.insert('', 'end', values=student)
 
         except Exception as e:
+            logger.exception("students_tab.py:172 %s", 'except Exception as e')
             print(f"Error refreshing students data: {e}")
 
 def create_students_tab(self):

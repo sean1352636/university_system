@@ -183,6 +183,7 @@ def setup_main_menu(self):
     # New Features menu
     features_menu = tk.Menu(self.menu_bar, tearoff=0)
     self.menu_bar.add_cascade(label="🆕 New Features", menu=features_menu)
+    features_menu.add_command(label="🏛️ Student Council", command=self.open_student_council_dialog)
     features_menu.add_command(label="🗳️ Elections & Voting", command=self.open_elections_dialog)
     features_menu.add_command(label="🌱 Green Initiatives", command=self.open_green_initiatives_dialog)
     features_menu.add_command(label="🤝 Volunteer Opportunities", command=self.open_volunteer_opportunities_dialog)
@@ -337,3 +338,15 @@ def return_to_main_menu(self):
 # =========================================================================
 
 
+
+
+def open_student_council_dialog(self):
+    """Open the Student Council Management System in a child window."""
+    try:
+        from education_system.university_system.modules.domain.student_affairs.student_union.student_council import (
+            StudentCouncilSystem,
+        )
+        win = tk.Toplevel(self.root)
+        StudentCouncilSystem(win)
+    except Exception as e:
+        messagebox.showerror("Student Council", f"Failed to open Student Council: {e}")

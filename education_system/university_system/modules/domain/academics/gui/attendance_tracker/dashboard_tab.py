@@ -7,6 +7,20 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.dashboard_tab")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.dashboard_tab")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import main database connection
@@ -14,6 +28,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("dashboard_tab.py:30 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 ORIGINAL_FUNCTIONS_AVAILABLE = MAIN_DB_AVAILABLE
@@ -87,6 +102,7 @@ def update_dashboard_stats(self):
             conn.close()
 
         except Exception as e:
+            logger.exception("dashboard_tab.py:103 %s", 'except Exception as e')
             print(f"Error updating dashboard stats: {e}")
             # Set default values
             for key in self.stat_cards:
@@ -201,6 +217,7 @@ def refresh_recent_activity(self):
             conn.close()
 
         except Exception as e:
+            logger.exception("dashboard_tab.py:217 %s", 'except Exception as e')
             print(f"Error refreshing recent activity: {e}")
 
 def update_dashboard_charts(self):
@@ -276,6 +293,7 @@ def update_dashboard_charts(self):
             conn.close()
 
         except Exception as e:
+            logger.exception("dashboard_tab.py:292 %s", 'except Exception as e')
             self.create_sample_charts()
             print(f"Error updating charts: {e}")
 

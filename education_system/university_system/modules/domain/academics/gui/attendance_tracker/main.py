@@ -21,6 +21,20 @@ from collections import deque
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.main")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.main")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import path constants
@@ -34,6 +48,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("main.py:50 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 # Import all original functions and classes
@@ -48,6 +63,7 @@ try:
     )
     ORIGINAL_FUNCTIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("main.py:64 %s", 'except ImportError')
     print("Warning: Original attendance_tracker.py not found. Some functions may not work.")
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
@@ -59,6 +75,7 @@ try:
     )
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("main.py:75 %s", 'except ImportError')
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = False
 
 # Feature flags
@@ -215,6 +232,7 @@ class AttendanceGUI:
                     app = UnifiedManagementGUI(self.auth)
                     app.run()
             except Exception as e:
+                logger.exception("main.py:231 %s", 'except Exception as e')
                 print(f"Error returning to main menu: {e}")
                 import traceback
                 traceback.print_exc()
@@ -224,8 +242,7 @@ class AttendanceGUI:
                 if hasattr(self, "main_menu_button") and self.main_menu_button.winfo_exists():
                     return
             except Exception:
-                pass
-
+                logger.exception("main.py:240 %s", 'except Exception')
             self.main_menu_button = ttk.Button(
                 self.root,
                 text=_("common.return_to_main_menu"),
@@ -273,6 +290,7 @@ class AttendanceGUI:
                 try:
                     display_attendance_menu()
                 except Exception as e:
+                    logger.exception("main.py:289 %s", 'except Exception as e')
                     print(f"CLI error: {e}")
 
             threading.Thread(target=run_cli, daemon=True).start()
@@ -309,6 +327,7 @@ class AttendanceGUI:
                     self.analytics = AttendancePredictiveAnalytics()
                     self.backup_system = BackupRecoverySystem()
                 except Exception as e:
+                    logger.exception("main.py:325 %s", 'except Exception as e')
                     print(f"Warning: Could not initialize some systems: {e}")
                     self.qr_system = None
                     self.geo_system = None

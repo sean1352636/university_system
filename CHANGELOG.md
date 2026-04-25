@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.94.0 — 2026-04-25](#8940---2026-04-25)
 - [8.93.0 — 2026-04-24](#8930---2026-04-24)
 - [8.92.0 — 2026-04-24](#8920---2026-04-24)
 - [8.91.0 — 2026-04-24](#8910---2026-04-24)
@@ -198,6 +199,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.94.0] — 2026-04-25
+
+### Absence Tracker — service-class refactor, decision audit + email loop, 66× faster startup
+
+#### Added
+
+- **Email notifications for absence requests**:
+  - Three JSON templates under `university_system/templates/email/attendance/` — `absence_request_submitted.json`, `absence_request_approved.json`, `absence_request_rejected.json`. Each carries `subject`, `body`, `sender_name`, `variables` (matching the existing `test_notification.json` convention) so non-coders can edit copy without touching Python.
+  - **`absence_tracking/email_notifications.py`** (new) with `EmailTemplate`, `EmailTemplateLoader` (in-process cache + `reload_templates()` invalidator), `_SafeDict` (missing placeholders render as `{key}` instead of `KeyError`), `AbsenceEmailService` (looks up student email from the `students` table, renders via `str.format_map`, dispatches via `infrastructure.email.queue_email`). Best-effort throughout — missing template/missing email/missing infra log + return `False` rather than raise.
+  - Module-level wrappers `notify_request_submitted(db, rid)` and `notify_request_decided(db, rid, decision, decision_reason, decided_by)`.
+- **`Database.decide_request(request_id, decision, decision_reason="", decided_by="")`** — atomic status + audit-column write, then fires the outcome email best-effort. Validates `decision in ('approved','rejected')`. Old `update_request` preserved as a back-compat shim that does NOT email.
+- **Decision audit columns on `absence_requests`** — `decided_by`, `decided_at`, `decision_reason`. Added inline for fresh DBs and via three idempotent `ALTER TABLE` migrations (`PRAGMA table_info` guard) for existing ones. `get_requests()` now returns 13 columns: positions 0-9 unchanged for legacy callers, audit at 10-12.
+- **Admin "📬 Absence Requests" tab** in `AdminDashboard` — unscoped pending-requests view (vs the existing staff-scoped tab), "Show decided too" toggle, approve/reject buttons that prompt for a reason (mandatory on reject), confirmation dialog, audit columns surfaced.
+
+#### Changed
+
+- **Service-class refactor of every `*_features.py` file** in `absence_tracking/` — flat `feat_NN_*` / `stf_NN_*` / `stu_NN_*` functions reorganised into 9-11 named service classes per file (`AttendanceVisibilityService`, `RequestService`, `RollCallService`, `RosterService`, `RequestReviewService`, `AnalyticsService`, `CommunicationService`, `PastoralService`, `AssessmentIntegrationService`, `CollaborationService`, `ConfigurationService`, `ProductivityService`, `LeaveService`, `AttendanceDataService`, `RequestWorkflowService`, `PolicyService`, `ReportingService`, `NotificationService`, `IntegrationService`, `BulkOperationsService`, `SecurityAuditService`, `DiagnosticsService`). Methods got descriptive names (`bulk_import_csv`, `decide_with_comment`, `excuse_date_range`, `mark_module_all_present`, `notify_parents_of_low_attendance`, …). All public surface preserved as module-level legacy aliases via `_LEGACY_ALIASES` + `globals().update()` so chatbot intent handlers, REST routes, and `absence_tracker.py` keep working without changes.
+- **`absence_enhancements.py` reorganised into 9 domain service classes** + `EnhancementTabBuilder`. `Paginator` kept as a public class (used by `absence_tracker.py`). Logger now goes through `configure_logging` and lands in `university_system/logs/app.log` — previously the bare `getLogger("absence_enhancements")` had no handlers so most output was being silently dropped.
+- **`absence_enhancements.EnhancementTabBuilder`** — dropped `_build_geofence_section` (campus-centre + kiosk registry) and `_build_staff_enh_section` (face-kiosk simulator) to remove duplication with `attendance_tracker/settings_admin_tabs.py` + `face_recognition_windows.py`. Replaced with a single `_build_attendance_tracker_pointer` notice section. Module-level legacy aliases for the two dropped sections removed (no external callers — confirmed by grep). `GeofenceService` / `FaceCheckinService` themselves kept (still used by REST routes).
+- **Logger setup added to all 17 `attendance_tracker/` GUI files** via central `configure_logging(name="attendance_tracker.gui.<file>")`. Previous state: 0 logger imports, 0 logger calls across 11k lines, 178 `except` blocks all swallowing tracebacks (5 silent `pass`, 76 messagebox-only, 97 other). After: 175 `logger.exception(...)` calls injected at the top of every previously-silent / messagebox-only handler via an AST-aware transformer pass; existing handler bodies preserved verbatim so user-facing dialogs still appear, but the traceback now also lands in `app.log`.
+- **Staff `_decide` updated** to prompt for a reason and route through `decide_request` so the student is automatically emailed (previously silent).
+- **`Database.submit_request` returns the new request id** (was `None`) and fires `notify_request_submitted` after commit. Email failure is caught + logged, never blocks the DB write.
+
+#### Performance
+
+- **`services/attendance/__init__.py` converted to PEP 562 lazy attribute loading.** Was eagerly re-exporting 16 names from `attendance_tracker.py`, which itself eagerly imports 12 CLI submodules (~7.7 s). Now only loads on first attribute access; public name list (`__all__`) preserved.
+- **`services/__init__.py` converted to PEP 562 lazy attribute loading.** Was eagerly importing `parent_portal.ParentPortal`, which transitively pulled in `infrastructure.database.data_backup` → `pandas` (~4.6 s). `PARENT_PORTAL_AVAILABLE` flag is now populated on first access.
+- **Net effect:** `import absence_tracker` dropped from **14,027 ms → 210 ms** (≈66× speedup). The chatbot intent handler, REST routes, and unit tests touching `services.attendance.*` now load instantly. The QR / Geofencing / FaceRecognition / ParentPortal load costs are paid lazily on first use, cached on subsequent lookups.
+
+#### Fixed
+
+- **`admin_features.py` `HAVING N < ?` literal-compare bugs** — feature **#34 grade_link** (`HAVING 3 < ?`, always true) and **#37 finance_link** (`HAVING 2 < ?`) were comparing integer literals to the threshold instead of the aggregated percentage column. Now use `HAVING pct IS NOT NULL AND pct < ?`. Previously these reports returned every (student, module) pair regardless of threshold.
+- **`admin_features.py` parent_id='' bug** — features **#27 threshold_alerts** and **#29 bulk_announcement** wrote `parent_id=''` so no parent ever actually received the notification. Now resolves real linked parents via `parent_student_links` and emits one row per parent.
+- **`staff_features.py` `HAVING N < ?` literal-compare bugs** — same class of bug in features **#30 email_at_risk**, **#33 parent_outreach**, **#40 assignment_link** (`HAVING 4 >= 2`), **#41 exam_eligibility**. All four queries now filter on the actual aggregate column.
+- **`staff_features.py` `_admin_decide` / `_decide` unpack** — extended both call sites to use `*_audit` catch-all to absorb the new audit columns 10-12 returned by `get_requests`.
+- **`attendance_tab.py` geofencing query** — `ar.check_in_time` does not exist in `attendance_records`; replaced with `ar.recorded_at` (the canonical timestamp column per `services/attendance/db.py:25`).
+- **`absence_tracker.py` admin tab `_tkinter.TclError: unknown option "-bg"`** — `f` is a `ttk.Frame` (themed widget, no `-bg`). Read `bar.cget("bg")` (a `tk.Frame`) instead.
+- **`absence_enhancements.py` `add_a11y_labels`** — previous body was a no-op (`if False else None`); now actually attaches the accessible name as `_a11y_name` on focus so assistive tech can read it.
+- **`absence_enhancements.py` `anomaly_scan` split** into `_scan_concurrency` / `_scan_shared_devices` / `_scan_mass_identical_reasons` so a failure in one branch no longer poisons the whole batch; each commits independently and logs.
+- **`Paginator.refresh`** — wrapped `get_rows` callable invocation in `try/except` so a flaky source can't crash the UI.
+
+#### Removed
+
+- `EnhancementTabBuilder._build_geofence_section`, `_build_staff_enh_section`, and their module-level legacy aliases (duplicated `attendance_tracker/` GUI panels).
+- Bespoke `RotatingFileHandler` setup in `admin_features.py` (was writing to `LOG_DIR / absence_tracker.log` separately from the rest of the system); now routes through `configure_logging` to the shared `app.log`.
 
 ---
 

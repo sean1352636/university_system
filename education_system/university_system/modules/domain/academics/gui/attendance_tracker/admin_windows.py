@@ -22,6 +22,20 @@ from education_system.university_system.core.sql_safety import validate_table_na
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.admin_windows")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.admin_windows")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import path constants
@@ -35,6 +49,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("admin_windows.py:51 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 # Import all original functions and classes
@@ -49,6 +64,7 @@ try:
     )
     ORIGINAL_FUNCTIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("admin_windows.py:65 %s", 'except ImportError')
     print("Warning: Original attendance_tracker.py not found. Some functions may not work.")
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
@@ -60,6 +76,7 @@ try:
     )
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("admin_windows.py:76 %s", 'except ImportError')
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = False
 
 # Feature flags
@@ -187,6 +204,7 @@ class ApiManagementWindow:
                 try:
                     self.api_server.run_api(host=host, port=port, debug=False)
                 except Exception as e:
+                    logger.exception("admin_windows.py:203 %s", 'except Exception as e')
                     print(f"API server error: {e}")
 
             self.api_thread = threading.Thread(target=run_server, daemon=True)
@@ -200,8 +218,10 @@ class ApiManagementWindow:
             messagebox.showinfo("Server Started", f"API server started at http://{host}:{port}")
 
         except ValueError:
+            logger.exception("admin_windows.py:216 %s", 'except ValueError')
             messagebox.showerror(_("common.error"), "Invalid port number")
         except Exception as e:
+            logger.exception("admin_windows.py:218 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to start server: {e}")
 
     def stop_server(self):
@@ -216,6 +236,7 @@ class ApiManagementWindow:
             self.status_label.config(text="● Server Stopped", foreground='red')
 
         except Exception as e:
+            logger.exception("admin_windows.py:232 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Error stopping server: {e}")
 
     def close_window(self):
@@ -374,10 +395,12 @@ class AuditLogsWindow:
                         if log_entry:
                             logs.append(log_entry)
                 except Exception as exc:
+                    logger.exception("admin_windows.py:390 %s", 'except Exception as exc')
                     self.errors.append(f"{table_name}: {exc}")
 
             conn.close()
         except Exception as exc:
+            logger.exception("admin_windows.py:394 %s", 'except Exception as exc')
             self.errors.append(f"Database error: {exc}")
         return logs
 
@@ -390,6 +413,7 @@ class AuditLogsWindow:
                 if any(keyword in name.lower() for keyword in ("audit", "log", "activity"))
             ]
         except Exception as exc:
+            logger.exception("admin_windows.py:406 %s", 'except Exception as exc')
             self.errors.append(f"Unable to list tables: {exc}")
             return []
 
@@ -450,8 +474,7 @@ class AuditLogsWindow:
                 dt = datetime.datetime.fromtimestamp(value)
                 return dt, dt.strftime("%Y-%m-%d %H:%M:%S")
             except Exception:
-                pass
-
+                logger.exception("admin_windows.py:466 %s", 'except Exception')
         value_str = str(value).strip()
         if not value_str:
             return None, ""
@@ -462,12 +485,14 @@ class AuditLogsWindow:
                 dt = datetime.datetime.strptime(value_str.replace("Z", ""), fmt)
                 return dt, dt.strftime("%Y-%m-%d %H:%M:%S")
             except ValueError:
+                logger.exception("admin_windows.py:478 %s", 'except ValueError')
                 continue
 
         try:
             dt = datetime.datetime.fromisoformat(value_str.replace("Z", "+00:00"))
             return dt, dt.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S %Z")
         except Exception:
+            logger.exception("admin_windows.py:484 %s", 'except Exception')
             return None, value_str
 
     def _load_file_logs(self):
@@ -484,6 +509,7 @@ class AuditLogsWindow:
                         if record:
                             logs.append(record)
             except Exception as exc:
+                logger.exception("admin_windows.py:500 %s", 'except Exception as exc')
                 self.errors.append(f"{filename}: {exc}")
         return logs
 
@@ -567,6 +593,7 @@ class AuditLogsWindow:
                     threshold = start_dt
                     range_end = end_dt
                 except Exception:
+                    logger.exception("admin_windows.py:583 %s", 'except Exception')
                     messagebox.showerror("Invalid Range", "Could not parse the supplied date range.")
                     threshold = None
                     range_end = None
@@ -670,6 +697,7 @@ class AuditLogsWindow:
                     ])
             messagebox.showinfo("Export Complete", f"Exported {len(self.filtered_logs)} log entries to {filename}")
         except Exception as exc:
+            logger.exception("admin_windows.py:686 %s", 'except Exception as exc')
             messagebox.showerror("Export Failed", f"Unable to export logs:\n{exc}")
 
     def view_log_details(self, event=None):
@@ -904,6 +932,7 @@ class DiagnosticsWindow:
                             count = cursor.fetchone()[0]
                             metrics["counts"][metric_label] = f"{count:,}"
                         except Exception:
+                            logger.exception("admin_windows.py:920 %s", 'except Exception')
                             continue
 
                 recent_activity = self._load_recent_activity(cursor, tables)
@@ -911,6 +940,7 @@ class DiagnosticsWindow:
 
                 conn.close()
             except Exception as exc:
+                logger.exception("admin_windows.py:927 %s", 'except Exception as exc')
                 metrics["db_status"] = "Connection failed"
                 metrics["issues"] = str(exc)
                 metrics["errors"].append(str(exc))
@@ -928,6 +958,7 @@ class DiagnosticsWindow:
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
             existing = {row[0] for row in cursor.fetchall()}
         except Exception:
+            logger.exception("admin_windows.py:944 %s", 'except Exception')
             existing = set()
 
         required = [
@@ -949,6 +980,7 @@ class DiagnosticsWindow:
                     cursor.execute("SELECT COUNT(*) FROM [" + safe_name + "]")
                     row_count = f"{cursor.fetchone()[0]:,}"
                 except Exception:
+                    logger.exception("admin_windows.py:965 %s", 'except Exception')
                     row_count = "?"
             tables.append({
                 "name": name,
@@ -995,6 +1027,7 @@ class DiagnosticsWindow:
                 if recent:
                     return recent
             except Exception:
+                logger.exception("admin_windows.py:1011 %s", 'except Exception')
                 continue
         return []
 
@@ -1101,6 +1134,7 @@ class DiagnosticsWindow:
                     for line in deque(handle, maxlen=15):
                         self.log_text.insert(tk.END, line)
             except Exception as exc:
+                logger.exception("admin_windows.py:1117 %s", 'except Exception as exc')
                 self.log_text.insert(tk.END, f"[Unable to read activity.log: {exc}]\n")
 
         self.log_text.config(state='disabled')
@@ -1127,6 +1161,7 @@ class DiagnosticsWindow:
             message = result[0] if result else "No response"
             messagebox.showinfo("Integrity Check", f"Database integrity check returned: {message}")
         except Exception as exc:
+            logger.exception("admin_windows.py:1143 %s", 'except Exception as exc')
             messagebox.showerror("Integrity Check Failed", str(exc))
 
 

@@ -21,6 +21,20 @@ from collections import deque
 
 # Import internationalization support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _, init_i18n
+# --- central logger (routes to university_system/logs/app.log) ----------
+try:
+    from education_system.university_system.infrastructure.logging.log_config import (
+        configure_logging,
+    )
+    logger = configure_logging(name="attendance_tracker.gui.misc_windows")
+except Exception:  # pragma: no cover
+    import logging
+    logger = logging.getLogger("attendance_tracker.gui.misc_windows")
+    if not logger.handlers:
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+# -------------------------------------------------------------------------
+
 init_i18n()
 
 # Import path constants
@@ -34,6 +48,7 @@ try:
     from education_system.university_system.infrastructure.database.db import get_db_connection
     MAIN_DB_AVAILABLE = True
 except ImportError:
+    logger.exception("misc_windows.py:50 %s", 'except ImportError')
     MAIN_DB_AVAILABLE = False
 
 # Import all original functions and classes
@@ -48,6 +63,7 @@ try:
     )
     ORIGINAL_FUNCTIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("misc_windows.py:64 %s", 'except ImportError')
     print("Warning: Original attendance_tracker.py not found. Some functions may not work.")
     ORIGINAL_FUNCTIONS_AVAILABLE = False
 
@@ -58,6 +74,7 @@ try:
     )
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = True
 except ImportError:
+    logger.exception("misc_windows.py:74 %s", 'except ImportError')
     ATTENDANCE_NOTIFICATIONS_AVAILABLE = False
 
 # Feature flags
@@ -148,6 +165,7 @@ class GeofencingWindow:
                 from education_system.university_system.infrastructure.database.db import get_db_connection as get_conn
                 conn = get_conn()
             except ImportError:
+                logger.exception("misc_windows.py:164 %s", 'except ImportError')
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
 
             cursor = conn.cursor()
@@ -179,6 +197,7 @@ class GeofencingWindow:
                     # In a real system, you'd have a rooms table with GPS coords
                     # For now, leave latitude/longitude empty for manual entry
         except Exception as e:
+            logger.exception("misc_windows.py:195 %s", 'except Exception as e')
             print(f"Could not auto-fill location: {e}")
 
     def create_session(self):
@@ -201,8 +220,10 @@ class GeofencingWindow:
                 messagebox.showerror(_("common.error"), "Failed to create geofenced session")
 
         except ValueError:
+            logger.exception("misc_windows.py:217 %s", 'except ValueError')
             messagebox.showerror(_("common.error"), "Please enter valid latitude, longitude, and radius values")
         except Exception as e:
+            logger.exception("misc_windows.py:219 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Session creation failed: {e}")
 
     def test_location(self):
@@ -220,8 +241,10 @@ class GeofencingWindow:
                 messagebox.showwarning("Location Test", f"❌ {message}")
 
         except ValueError:
+            logger.exception("misc_windows.py:236 %s", 'except ValueError')
             messagebox.showerror(_("common.error"), "Please enter valid student ID, latitude, and longitude")
         except Exception as e:
+            logger.exception("misc_windows.py:238 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Location test failed: {e}")
 
 class LMSIntegrationWindow:
@@ -451,6 +474,7 @@ class LMSIntegrationWindow:
             messagebox.showinfo(_("common.success"), "LMS settings saved successfully")
 
         except Exception as e:
+            logger.exception("misc_windows.py:467 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to save settings: {e}")
 
     def start_sync(self):
@@ -737,6 +761,7 @@ class CalendarSyncWindow:
             messagebox.showinfo(_("common.success"), "Calendar sync settings saved successfully")
 
         except Exception as e:
+            logger.exception("misc_windows.py:753 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to save settings: {e}")
 
     def export_to_file(self):
@@ -954,6 +979,7 @@ class GamificationWindow:
                         self.leaderboard_tree.insert('', 'end', values=('ERROR', '', 'Database not initialized', '0', '0', '0', 'Setup required'))
 
         except Exception as e:
+            logger.exception("misc_windows.py:970 %s", 'except Exception as e')
             self.leaderboard_tree.insert('', 'end', values=('ERROR', '', f'Database error: {str(e)}', '0', '0', '0', 'Unable to load leaderboard'))
 
     def lookup_student(self):
@@ -1006,6 +1032,7 @@ Last Attendance: 2024-12-20"""
             self.award_reason_var.set("")
 
         except ValueError:
+            logger.exception("misc_windows.py:1022 %s", 'except ValueError')
             messagebox.showerror(_("common.error"), "Please enter a valid number of points")
 
 class CustomReportWindow:
@@ -1123,6 +1150,7 @@ class CustomReportWindow:
                     f.write(report_content)
             messagebox.showinfo(_("common.success"), f"Report exported to {filename}", parent=self.window)
         except Exception as e:
+            logger.exception("misc_windows.py:1139 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Export failed: {e}", parent=self.window)
 
     def preview_report(self):
@@ -1250,6 +1278,7 @@ class CustomReportWindow:
             conn.close()
 
         except Exception as e:
+            logger.exception("misc_windows.py:1266 %s", 'except Exception as e')
             lines.append(f"\nError querying database: {e}")
 
         return "\n".join(lines)
@@ -1384,6 +1413,7 @@ class CustomReportWindow:
             return modules if modules else ["No modules found"]
 
         except Exception as e:
+            logger.exception("misc_windows.py:1400 %s", 'except Exception as e')
             print(f"Error loading modules: {e}")
             return ["Error loading modules"]
 
@@ -1464,6 +1494,7 @@ class ImportDataWindow:
             self.preview_text.insert(tk.END, preview_text)
 
         except Exception as e:
+            logger.exception("misc_windows.py:1480 %s", 'except Exception as e')
             self.preview_text.insert(tk.END, f"Error loading preview: {e}")
 
     def import_data(self):
@@ -1478,6 +1509,7 @@ class ImportDataWindow:
             self.window.destroy()
 
         except Exception as e:
+            logger.exception("misc_windows.py:1494 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Import failed: {e}")
 
 class ExportDataWindow:
@@ -1556,6 +1588,7 @@ class ExportDataWindow:
                 self.window.destroy()
 
         except Exception as e:
+            logger.exception("misc_windows.py:1572 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Export failed: {e}")
 
 class ReportWindow:
@@ -1630,6 +1663,7 @@ class ReportWindow:
                 messagebox.showinfo(_("common.success"), f"Report saved to:\n{filename}")
 
         except Exception as e:
+            logger.exception("misc_windows.py:1646 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to save report:\n{e}")
 
     def copy_to_clipboard(self):
@@ -1639,6 +1673,7 @@ class ReportWindow:
             self.window.clipboard_append(self.report_content)
             messagebox.showinfo(_("common.success"), "Report copied to clipboard!")
         except Exception as e:
+            logger.exception("misc_windows.py:1655 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to copy to clipboard:\n{e}")
 
     def send_to_admin(self):
@@ -1684,6 +1719,7 @@ class ReportWindow:
                     else:
                         failed_count += 1
                 except Exception as e:
+                    logger.exception("misc_windows.py:1700 %s", 'except Exception as e')
                     print(f"Failed to send to {admin_email}: {e}")
                     failed_count += 1
 
@@ -1702,6 +1738,7 @@ class ReportWindow:
                     "Please check email configuration.")
 
         except Exception as e:
+            logger.exception("misc_windows.py:1718 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to send report:\n{e}")
             import traceback
             traceback.print_exc()
@@ -1744,6 +1781,7 @@ class ReportWindow:
                     admin_emails = [row[0] for row in results]
 
         except Exception as e:
+            logger.exception("misc_windows.py:1760 %s", 'except Exception as e')
             print(f"Error getting admin emails: {e}")
             import traceback
             traceback.print_exc()
@@ -1798,6 +1836,7 @@ Attendance Management System
             return success
 
         except Exception as e:
+            logger.exception("misc_windows.py:1814 %s", 'except Exception as e')
             print(f"Error sending email to {recipient_email}: {e}")
             import traceback
             traceback.print_exc()
@@ -1868,6 +1907,7 @@ class AttendancePoliciesWindow:
 
                 conn.close()
         except Exception as e:
+            logger.exception("misc_windows.py:1884 %s", 'except Exception as e')
             print(f"Error loading attendance policies: {e}")
 
         return policies
@@ -2194,9 +2234,9 @@ class AttendancePoliciesWindow:
                 log_activity('update', 'attendance_policies',
                            details={'policies_count': len(self.policies)})
             except Exception:
-                pass
-
+                logger.exception("misc_windows.py:2210 %s", 'except Exception')
         except Exception as e:
+            logger.exception("misc_windows.py:2213 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to save policies:\n{e}")
             import traceback
             traceback.print_exc()
@@ -2263,6 +2303,7 @@ class AttendancePoliciesWindow:
                 messagebox.showinfo(_("common.success"), f"Policies exported to:\n{filename}")
 
         except Exception as e:
+            logger.exception("misc_windows.py:2279 %s", 'except Exception as e')
             messagebox.showerror(_("common.error"), f"Failed to export policies:\n{e}")
 
 class HelpWindow:
