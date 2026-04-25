@@ -2124,8 +2124,30 @@ class IntegrationService:
         except sqlite3.Error:
             logger.exception("wellbeing link query failed")
             rows = []
+
+        def _open_wellbeing_gui():
+            try:
+                import tkinter as tk
+                from education_system.university_system.modules.domain.student_affairs.student_wellbeing.gui.wellbeing_gui import (  # noqa: E501
+                    WellbeingFrame,
+                )
+                win = tk.Toplevel(self.ctx.parent)
+                win.title("Wellbeing")
+                win.geometry("1000x650")
+                WellbeingFrame(win, db_path=self.ctx.db.path,
+                               auth=getattr(self.ctx, "auth", None)
+                               ).pack(fill="both", expand=True)
+            except Exception:
+                logger.exception("could not open Wellbeing GUI")
+                from tkinter import messagebox
+                messagebox.showerror(
+                    "Wellbeing", "Could not open the Wellbeing GUI "
+                    "(see log).", parent=self.ctx.parent)
+
         _show_table(self.ctx.parent, "Absences vs mood",
-                    ("student", "absences", "avg_mood"), rows)
+                    ("student", "absences", "avg_mood"), rows,
+                    extra_button=("📊  Open Wellbeing GUI",
+                                  _open_wellbeing_gui))
 
     # --- #36 ----------------------------------------------------------
     @safe("Disciplinary action")

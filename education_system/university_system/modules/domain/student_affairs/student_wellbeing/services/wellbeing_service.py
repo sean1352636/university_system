@@ -1,6 +1,7 @@
 """WellbeingService service for the University System."""
 
 import logging
+import sqlite3
 import traceback
 from datetime import datetime
 
@@ -17,7 +18,12 @@ class WellbeingService:
         self._db_path = db_path
 
     def _conn(self):
-        return connect(self._db_path)
+        # The low-level connect() doesn't set a row_factory; this service
+        # returns rows as dicts (`dict(r)`), which only works when the
+        # connection yields ``sqlite3.Row`` objects.
+        conn = connect(self._db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
 
     def create(self, **kwargs):
         """Create a new wellbeing referral record."""

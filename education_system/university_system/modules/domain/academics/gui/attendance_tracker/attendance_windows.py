@@ -156,11 +156,13 @@ def _sync_to_absence_db(module_code, date_str, attendance_data, recorded_by=None
                 try:
                     from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking.email_notifications import (  # noqa: E501
                         notify_frequent_absences,
+                        maybe_create_wellbeing_referral,
                     )
                     for sid in absent_sids:
                         notify_frequent_absences(db, sid)
+                        maybe_create_wellbeing_referral(db, sid)
                 except Exception:
-                    logger.exception("frequent-absence alert dispatch failed")
+                    logger.exception("frequent-absence dispatch failed")
             return (n_abs, n_req)
         finally:
             db.close()

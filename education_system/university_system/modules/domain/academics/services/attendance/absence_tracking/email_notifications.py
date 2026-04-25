@@ -67,6 +67,14 @@ TEMPLATE_FILES = {
 }
 
 FREQUENT_ABSENCE_THRESHOLD = 5
+# Quiet window after the most recent send to the same student. Even if the
+# bucket logic would normally re-alert, no second email goes out inside this
+# window — protects against runaway sends in heavy-absence cases.
+FREQUENT_ABSENCE_COOLDOWN_DAYS = 7
+# Higher bar to auto-create a wellbeing referral (vs. just emailing the
+# student). Rationale: 5 absences/month is a "you should hear from us";
+# crossing this threshold says "wellbeing staff should know about this".
+WELLBEING_REFERRAL_THRESHOLD = 10
 
 
 @dataclass(frozen=True)
@@ -306,6 +314,69 @@ class AbsenceEmailService:
         except sqlite3.Error:
             logger.exception("could not ensure frequent_absence_alerts table")
 
+    @staticmethod
+    def _ensure_prefs_table(db) -> None:
+        try:
+            db.cur.execute(
+                """CREATE TABLE IF NOT EXISTS frequent_absence_email_prefs (
+                       student_id  TEXT PRIMARY KEY,
+                       opted_out   INTEGER NOT NULL DEFAULT 0,
+                       updated_at  TEXT
+                   )"""
+            )
+            db.conn.commit()
+        except sqlite3.Error:
+            logger.exception("could not ensure frequent_absence_email_prefs table")
+
+    def is_opted_out(self, student_id) -> bool:
+        self._ensure_prefs_table(self.db)
+        try:
+            row = self.db.cur.execute(
+                "SELECT opted_out FROM frequent_absence_email_prefs "
+                "WHERE student_id = ?",
+                (student_id,),
+            ).fetchone()
+        except sqlite3.Error:
+            logger.exception("opt-out lookup failed sid=%s", student_id)
+            return False
+        return bool(row and row[0])
+
+    def set_opt_out(self, student_id, opted_out: bool = True) -> None:
+        self._ensure_prefs_table(self.db)
+        from datetime import datetime as _dt
+        try:
+            self.db.cur.execute(
+                """INSERT INTO frequent_absence_email_prefs
+                       (student_id, opted_out, updated_at)
+                   VALUES (?, ?, ?)
+                   ON CONFLICT(student_id) DO UPDATE SET
+                       opted_out  = excluded.opted_out,
+                       updated_at = excluded.updated_at""",
+                (student_id, 1 if opted_out else 0, _dt.utcnow().isoformat()),
+            )
+            self.db.conn.commit()
+        except sqlite3.Error:
+            logger.exception("opt-out write failed sid=%s", student_id)
+
+    def _last_send_at(self, student_id) -> Optional["datetime.datetime"]:
+        from datetime import datetime as _dt
+        try:
+            row = self.db.cur.execute(
+                "SELECT MAX(sent_at) FROM frequent_absence_alerts "
+                "WHERE student_id = ?",
+                (student_id,),
+            ).fetchone()
+        except sqlite3.Error:
+            logger.exception("last-send lookup failed sid=%s", student_id)
+            return None
+        last = (row or [None])[0]
+        if not last:
+            return None
+        try:
+            return _dt.fromisoformat(last)
+        except ValueError:
+            return None
+
     def _lookup_student(self, student_id) -> Optional[dict]:
         try:
             row = self.db.cur.execute(
@@ -376,9 +447,16 @@ class AbsenceEmailService:
     ) -> bool:
         """If *student_id* has >= threshold absences in *year_month*, email
         them — at most once per (student, month) unless ``force=True``."""
-        from datetime import date as _date
+        from datetime import date as _date, datetime as _dt, timedelta as _td
         ym = year_month or _date.today().strftime("%Y-%m")
         self._ensure_alert_table(self.db)
+
+        # Hard opt-out wins regardless of bucket — set via set_opt_out().
+        if not force and self.is_opted_out(student_id):
+            logger.debug("frequent-absence email skipped: sid=%s opted out",
+                         student_id)
+            return False
+
         rows = self._absences_in_month(student_id, ym)
         count = len(rows)
         if count < threshold:
@@ -406,6 +484,18 @@ class AbsenceEmailService:
                     "sid=%s ym=%s count=%d last_bucket=%d",
                     student_id, ym, count, last_bucket)
                 return False
+            # Cooldown: even if the bucket has advanced, don't send another
+            # email within FREQUENT_ABSENCE_COOLDOWN_DAYS of the most recent
+            # send to this student (cross-month, regardless of bucket).
+            last_sent = self._last_send_at(student_id)
+            if last_sent is not None:
+                age = _dt.utcnow() - last_sent
+                if age < _td(days=FREQUENT_ABSENCE_COOLDOWN_DAYS):
+                    logger.info(
+                        "frequent-absence email suppressed by cooldown "
+                        "sid=%s last_sent=%s age=%s",
+                        student_id, last_sent.isoformat(), age)
+                    return False
 
         student = self._lookup_student(student_id)
         if not student:
@@ -501,6 +591,91 @@ def notify_request_decided(db, request_id: int, decision: str,
         return False
 
 
+def maybe_create_wellbeing_referral(
+    db, student_id, year_month: Optional[str] = None,
+    threshold: int = WELLBEING_REFERRAL_THRESHOLD,
+) -> Optional[int]:
+    """When a student crosses *threshold* absences in a calendar month,
+    open a wellbeing referral so support staff can reach out.
+
+    Dedup'd: at most one **open** referral with concern_type='attendance'
+    per student at a time. Returns the new referral id, an existing
+    referral id (already on file), or None if the threshold isn't met.
+    """
+    from datetime import date as _date
+    ym = year_month or _date.today().strftime("%Y-%m")
+    try:
+        # Count this month's non-present rows
+        count_row = db.cur.execute(
+            """SELECT COUNT(*) FROM attendance
+               WHERE student_id = ?
+                 AND substr(date, 1, 7) = ?
+                 AND LOWER(COALESCE(status,'')) IN ('absent','late','excused')""",
+            (student_id, ym),
+        ).fetchone()
+        count = (count_row or [0])[0] or 0
+        if count < threshold:
+            return None
+
+        # Skip if there's already an open attendance referral for this student
+        existing = db.cur.execute(
+            """SELECT id FROM wellbeing_referrals
+               WHERE student_id = ?
+                 AND concern_type = 'attendance'
+                 AND COALESCE(status, 'open') = 'open'
+               ORDER BY id DESC LIMIT 1""",
+            (student_id,),
+        ).fetchone()
+        if existing:
+            logger.debug(
+                "wellbeing referral already open sid=%s ref=%s — skipping",
+                student_id, existing[0])
+            return existing[0]
+
+        urgency = "high" if count >= threshold * 2 else "normal"
+        description = (
+            f"Auto-referral: {count} absence/late/excused row(s) recorded "
+            f"in {ym}, exceeding the {threshold}/month threshold. "
+            "Recommend a wellbeing check-in."
+        )
+        db.cur.execute(
+            """INSERT INTO wellbeing_referrals
+                   (student_id, referred_by, concern_type, description,
+                    urgency, status)
+               VALUES (?, 'absence_tracker', 'attendance', ?, ?, 'open')""",
+            (student_id, description, urgency),
+        )
+        db.conn.commit()
+        new_id = db.cur.lastrowid
+        logger.info(
+            "wellbeing referral opened sid=%s ref=%s ym=%s count=%d urgency=%s",
+            student_id, new_id, ym, count, urgency)
+        return new_id
+    except sqlite3.Error:
+        logger.exception("maybe_create_wellbeing_referral failed sid=%s",
+                         student_id)
+        return None
+
+
+def set_frequent_absence_opt_out(db, student_id, opted_out: bool = True) -> None:
+    """Set or clear a student's opt-out for frequent-absence emails."""
+    try:
+        AbsenceEmailService(db).set_opt_out(student_id, opted_out)
+    except Exception:
+        logger.exception("set_frequent_absence_opt_out swallowed sid=%s",
+                         student_id)
+
+
+def is_frequent_absence_opted_out(db, student_id) -> bool:
+    """Check whether a student has opted out of frequent-absence emails."""
+    try:
+        return AbsenceEmailService(db).is_opted_out(student_id)
+    except Exception:
+        logger.exception("is_frequent_absence_opted_out swallowed sid=%s",
+                         student_id)
+        return False
+
+
 def notify_frequent_absences(db, student_id, year_month: Optional[str] = None,
                              threshold: int = FREQUENT_ABSENCE_THRESHOLD,
                              force: bool = False) -> bool:
@@ -519,6 +694,10 @@ __all__ = [
     "EmailTemplate", "EmailTemplateLoader",
     "AbsenceEmailService",
     "notify_request_submitted", "notify_request_decided",
-    "notify_frequent_absences", "FREQUENT_ABSENCE_THRESHOLD",
+    "notify_frequent_absences",
+    "set_frequent_absence_opt_out", "is_frequent_absence_opted_out",
+    "maybe_create_wellbeing_referral",
+    "FREQUENT_ABSENCE_THRESHOLD", "FREQUENT_ABSENCE_COOLDOWN_DAYS",
+    "WELLBEING_REFERRAL_THRESHOLD",
     "reload_templates", "TEMPLATE_DIR", "TEMPLATE_FILES",
 ]
