@@ -128,3 +128,9 @@ education_system/university_system/data/db_files/.encryption_master_key
 
 # Nginx TLS certificates
 nginx/certs/
+
+# Local-only artifacts
+.academic_calendar/
+TESTING*.docx
+education_system/university_system/data/config/licenses.json
+education_system/university_system/data/submissions/submitted/
