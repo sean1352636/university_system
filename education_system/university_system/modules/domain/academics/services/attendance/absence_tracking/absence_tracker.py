@@ -185,6 +185,8 @@ class Database:
         self.conn.commit()
 
     def get_absences(self, student_id=None, course_id=None):
+        # The shared `attendance` table holds *every* recorded status, but
+        # this view is "All Absences" — exclude rows the student attended.
         q = """SELECT a.id,
                       TRIM(COALESCE(s.first_name,'') || ' ' || COALESCE(s.last_name,'')),
                       a.module_code,
@@ -193,7 +195,7 @@ class Database:
                FROM attendance a
                LEFT JOIN students s ON s.student_id = a.student_id
                LEFT JOIN modules m  ON m.module_code = a.module_code
-               WHERE 1=1"""
+               WHERE LOWER(COALESCE(a.status,'')) IN ('absent','late','excused')"""
         params = []
         if student_id is not None:
             q += " AND a.student_id = ?"
