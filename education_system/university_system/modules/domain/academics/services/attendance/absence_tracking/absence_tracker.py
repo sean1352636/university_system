@@ -64,6 +64,8 @@ class Database:
             ("decided_by",      "ALTER TABLE absence_requests ADD COLUMN decided_by TEXT"),
             ("decided_at",      "ALTER TABLE absence_requests ADD COLUMN decided_at TEXT"),
             ("decision_reason", "ALTER TABLE absence_requests ADD COLUMN decision_reason TEXT"),
+            ("is_missed_exam",  "ALTER TABLE absence_requests ADD COLUMN is_missed_exam INTEGER NOT NULL DEFAULT 0"),
+            ("exam_id",         "ALTER TABLE absence_requests ADD COLUMN exam_id INTEGER"),
         ):
             if col not in cols:
                 try:
@@ -443,16 +445,25 @@ class SidebarNotebook(tk.Frame):
 # Base dashboard
 # ---------------------------------------------------------------------------
 class BaseDashboard:
-    def __init__(self, root, db, user, on_logout=None):
+    def __init__(self, root, db, user, on_logout=None, on_back=None):
         self.root = root
         self.db = db
         self.user = user
         self.on_logout = on_logout
+        self.on_back = on_back
+        # When ``root`` isn't a top-level window (Tk/Toplevel), we're being
+        # embedded as a tab inside another GUI — skip window-only calls and
+        # don't render the Close/Back buttons that would destroy the host.
+        self.embedded = not isinstance(root, (tk.Tk, tk.Toplevel))
 
         role = (user.get("role") or "user").title()
-        root.title(f"Absence Tracker - {role}: {user['name']}")
-        center(root, 1240, 740)
-        root.configure(bg="#f0f4f8")
+        if not self.embedded:
+            root.title(f"Absence Tracker - {role}: {user['name']}")
+            center(root, 1240, 740)
+        try:
+            root.configure(bg="#f0f4f8")
+        except tk.TclError:
+            pass  # ttk frames reject bg= silently on some themes
 
         # ---- Header ----
         header = tk.Frame(root, bg="#0f1f3a", height=64)
@@ -470,12 +481,29 @@ class BaseDashboard:
             padx=10, pady=4,
         ).pack(side="left", padx=4, pady=20)
 
-        tk.Button(
-            header, text="✕  Close", font=("Arial", 10, "bold"),
-            bg="#dc2626", fg="white", activebackground="#b91c1c",
-            activeforeground="white", relief="flat", cursor="hand2",
-            padx=14, pady=6, bd=0, command=self._close,
-        ).pack(side="right", padx=18, pady=14)
+        if not self.embedded:
+            tk.Button(
+                header, text="✕  Close", font=("Arial", 10, "bold"),
+                bg="#dc2626", fg="white", activebackground="#b91c1c",
+                activeforeground="white", relief="flat", cursor="hand2",
+                padx=14, pady=6, bd=0, command=self._close,
+            ).pack(side="right", padx=18, pady=14)
+
+            if self.on_back is not None:
+                tk.Button(
+                    header, text="←  Attendance", font=("Arial", 10, "bold"),
+                    bg="#2563eb", fg="white", activebackground="#1d4ed8",
+                    activeforeground="white", relief="flat", cursor="hand2",
+                    padx=14, pady=6, bd=0, command=self._back,
+                ).pack(side="left", padx=8, pady=14)
+
+        if not self.embedded:
+            tk.Button(
+                header, text="📅  Today", font=("Arial", 10, "bold"),
+                bg="#0ea5e9", fg="white", activebackground="#0284c7",
+                activeforeground="white", relief="flat", cursor="hand2",
+                padx=14, pady=6, bd=0, command=self._open_today,
+            ).pack(side="left", padx=8, pady=14)
 
         right_info = tk.Frame(header, bg="#0f1f3a")
         right_info.pack(side="right", padx=8)
@@ -527,11 +555,42 @@ class BaseDashboard:
     def build_tabs(self):
         raise NotImplementedError
 
+    def apply_prefill(self, prefill):
+        """Default: surface the inbound context in the window title.
+        Skipped in embedded mode — Frames have no title."""
+        if self.embedded:
+            return
+        bits = []
+        if prefill.get("module"):
+            bits.append(prefill["module"])
+        if prefill.get("date"):
+            bits.append(prefill["date"])
+        if bits:
+            self.root.title(self.root.title() + f"  —  {' / '.join(bits)}")
+
     def _close(self):
         if self.on_logout:
             self.on_logout()
         else:
             self.root.destroy()
+
+    def _back(self):
+        try:
+            self.on_back()
+        except Exception:
+            logger.exception("on_back callback failed")
+
+    def _open_today(self):
+        try:
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking.today_dashboard import (  # noqa: E501
+                open_today_window,
+            )
+            open_today_window(self.root)
+        except Exception:
+            logger.exception("Today dashboard failed to open")
+            messagebox.showerror("Today",
+                                 "Could not open the Today dashboard "
+                                 "(see log).", parent=self.root)
 
     @staticmethod
     def clear_tree(tree):
@@ -1023,6 +1082,30 @@ class AdminDashboard(BaseDashboard):
 # Staff / instructor dashboard
 # ---------------------------------------------------------------------------
 class StaffDashboard(BaseDashboard):
+    def apply_prefill(self, prefill):
+        super().apply_prefill(prefill)
+        module = prefill.get("module")
+        d = prefill.get("date")
+        try:
+            if module and getattr(self, "course_map", None):
+                key = next(
+                    (k for k in self.course_map if k.split(" - ")[0] == module),
+                    None,
+                )
+                if key:
+                    self.course_var.set(key)
+                    self._load_roster()
+            if d and getattr(self, "date_entry", None) is not None:
+                self.date_entry.delete(0, "end")
+                self.date_entry.insert(0, d)
+            # Jump to the Record Attendance tab (index 1 — see build_tabs order).
+            try:
+                self.notebook._select(1)
+            except Exception:
+                pass
+        except Exception:
+            logger.exception("StaffDashboard.apply_prefill failed")
+
     def build_tabs(self):
         self.my_courses = self.db.get_courses(staff_id=self.user["id"])
         self._my_courses_tab()
@@ -1480,6 +1563,8 @@ def _parse_args(argv):
     p.add_argument("--username", help="Username of the already-authenticated user")
     p.add_argument("--user-id", type=int, help="users.id of the authenticated user")
     p.add_argument("--role", help="Role override (admin/staff/instructor/student)")
+    p.add_argument("--module", help="Pre-select this module code on launch")
+    p.add_argument("--date", help="Pre-select this date (YYYY-MM-DD) on launch")
     return p.parse_args(argv)
 
 
@@ -1509,16 +1594,91 @@ def _resolve_user(db, args):
     return None
 
 
-def launch_dashboard(root, db, user):
+def launch_dashboard(root, db, user, prefill=None, on_back=None):
     role = (user.get("role") or "").lower()
+    kw = {"on_back": on_back} if on_back is not None else {}
     if role == "admin":
-        AdminDashboard(root, db, user)
+        dash = AdminDashboard(root, db, user, **kw)
     elif role in ("staff", "instructor", "teacher"):
-        StaffDashboard(root, db, user)
+        dash = StaffDashboard(root, db, user, **kw)
     elif role == "student":
-        StudentDashboard(root, db, user)
+        dash = StudentDashboard(root, db, user, **kw)
     else:
-        AdminDashboard(root, db, user)
+        dash = AdminDashboard(root, db, user, **kw)
+    if prefill and any(prefill.values()):
+        try:
+            dash.apply_prefill(prefill)
+        except Exception:
+            logger.exception("apply_prefill failed")
+    return dash
+
+
+def launch_in_frame(frame, user, prefill=None):
+    """Build the absence-tracker dashboard *inside an existing Frame* — used
+    when the tracker is hosted as a tab in another GUI rather than a separate
+    window. Returns ``(db, dashboard)``. Closes its own ``Database`` when the
+    frame is destroyed."""
+    db = Database()
+    try:
+        from education_system.university_system.infrastructure.shared_context import (  # noqa: E501
+            is_auth_initialized, initialize_auth,
+        )
+        if not is_auth_initialized():
+            initialize_auth(db.path)
+    except Exception:
+        logger.exception("could not initialise auth (continuing)")
+
+    dash = launch_dashboard(frame, db, user, prefill=prefill)
+
+    def _on_destroy(event, _frame=frame, _db=db):
+        if event.widget is _frame:
+            try:
+                _db.close()
+            except Exception:
+                pass
+    frame.bind("<Destroy>", _on_destroy, add="+")
+    return db, dash
+
+
+def launch_in_window(parent, user, prefill=None, on_back=None):
+    """Open the Absence Tracker as a Toplevel of *parent* (no subprocess).
+
+    Returns ``(toplevel, dashboard)``. Closes its own ``Database`` when the
+    Toplevel is destroyed.
+    """
+    win = tk.Toplevel(parent)
+    db = Database()
+    try:
+        from education_system.university_system.infrastructure.shared_context import (  # noqa: E501
+            is_auth_initialized, initialize_auth,
+        )
+        if not is_auth_initialized():
+            initialize_auth(db.path)
+    except Exception:
+        logger.exception("could not initialise auth (continuing)")
+
+    cb_back = None
+    if on_back is not None:
+        def cb_back():
+            try:
+                on_back()
+            except Exception:
+                logger.exception("on_back failed")
+            try:
+                win.lift()
+            except Exception:
+                pass
+
+    dash = launch_dashboard(win, db, user, prefill=prefill, on_back=cb_back)
+
+    def _on_destroy(event, _w=win, _db=db):
+        if event.widget is _w:
+            try:
+                _db.close()
+            except Exception:
+                pass
+    win.bind("<Destroy>", _on_destroy, add="+")
+    return win, dash
 
 
 def main(argv=None):
@@ -1549,7 +1709,7 @@ def main(argv=None):
         db.close()
         return 1
 
-    launch_dashboard(root, db, user)
+    launch_dashboard(root, db, user, prefill={"module": args.module, "date": args.date})
     root.mainloop()
     db.close()
     return 0

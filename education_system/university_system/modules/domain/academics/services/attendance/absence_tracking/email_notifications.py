@@ -63,7 +63,10 @@ TEMPLATE_FILES = {
     "submitted": "absence_request_submitted.json",
     "approved":  "absence_request_approved.json",
     "rejected":  "absence_request_rejected.json",
+    "frequent_absence": "frequent_absence_alert.json",
 }
+
+FREQUENT_ABSENCE_THRESHOLD = 5
 
 
 @dataclass(frozen=True)
@@ -286,6 +289,177 @@ class AbsenceEmailService:
                 recipient)
         return ok
 
+    # ------- frequent-absence alerts --------------------------------
+    @staticmethod
+    def _ensure_alert_table(db) -> None:
+        try:
+            db.cur.execute(
+                """CREATE TABLE IF NOT EXISTS frequent_absence_alerts (
+                       student_id    TEXT NOT NULL,
+                       year_month    TEXT NOT NULL,
+                       sent_at       TEXT NOT NULL,
+                       count_at_send INTEGER NOT NULL,
+                       PRIMARY KEY (student_id, year_month)
+                   )"""
+            )
+            db.conn.commit()
+        except sqlite3.Error:
+            logger.exception("could not ensure frequent_absence_alerts table")
+
+    def _lookup_student(self, student_id) -> Optional[dict]:
+        try:
+            row = self.db.cur.execute(
+                """SELECT student_id,
+                          TRIM(COALESCE(first_name,'')||' '||COALESCE(last_name,'')) AS name,
+                          COALESCE(email_address,'') AS email
+                   FROM students
+                   WHERE student_id = ?""",
+                (student_id,),
+            ).fetchone()
+        except sqlite3.Error:
+            logger.exception("student lookup failed sid=%s", student_id)
+            return None
+        if not row:
+            return None
+        return {"student_id": row[0], "name": row[1], "email": row[2]}
+
+    def _upcoming_exams_for_modules(self, modules: list[str], limit: int = 6) -> str:
+        if not modules:
+            return "  (none scheduled)"
+        try:
+            placeholders = ",".join("?" * len(modules))
+            from datetime import date as _date
+            rows = self.db.cur.execute(
+                f"""SELECT date, start_time, end_time, module_code,
+                          COALESCE(module_name, module_code), COALESCE(room,'')
+                   FROM exams
+                   WHERE module_code IN ({placeholders})
+                     AND date >= ?
+                   ORDER BY date, start_time
+                   LIMIT ?""",
+                (*modules, _date.today().isoformat(), limit),
+            ).fetchall()
+        except sqlite3.Error:
+            logger.exception("upcoming exam lookup failed modules=%r", modules)
+            return "  (none scheduled)"
+        if not rows:
+            return "  (none scheduled)"
+        return "\n".join(
+            f"  • {d} {st}-{et} — {code} ({name}){' in ' + room if room else ''}"
+            for (d, st, et, code, name, room) in rows
+        )
+
+    def _absences_in_month(self, student_id, year_month: str) -> list[tuple]:
+        try:
+            return list(self.db.cur.execute(
+                """SELECT a.date,
+                          a.module_code,
+                          COALESCE(m.module_name, a.module_code),
+                          COALESCE(a.status,'')
+                   FROM attendance a
+                   LEFT JOIN modules m ON m.module_code = a.module_code
+                   WHERE a.student_id = ?
+                     AND substr(a.date, 1, 7) = ?
+                     AND LOWER(COALESCE(a.status,'')) IN ('absent','late','excused')
+                   ORDER BY a.date""",
+                (student_id, year_month),
+            ).fetchall())
+        except sqlite3.Error:
+            logger.exception("absence lookup failed sid=%s ym=%s",
+                             student_id, year_month)
+            return []
+
+    def notify_frequent_absences(
+        self, student_id, year_month: Optional[str] = None,
+        threshold: int = FREQUENT_ABSENCE_THRESHOLD,
+        force: bool = False,
+    ) -> bool:
+        """If *student_id* has >= threshold absences in *year_month*, email
+        them — at most once per (student, month) unless ``force=True``."""
+        from datetime import date as _date
+        ym = year_month or _date.today().strftime("%Y-%m")
+        self._ensure_alert_table(self.db)
+        rows = self._absences_in_month(student_id, ym)
+        count = len(rows)
+        if count < threshold:
+            return False
+        # Escalating cadence: alert each time the count crosses a new
+        # multiple of *threshold* (5, 10, 15, ...). The bucket is
+        # ``count // threshold``; we re-alert only when it has grown
+        # since the last send.
+        current_bucket = count // threshold
+        last_bucket = 0
+        if not force:
+            try:
+                row = self.db.cur.execute(
+                    "SELECT MAX(count_at_send) FROM frequent_absence_alerts "
+                    "WHERE student_id = ? AND year_month = ?",
+                    (student_id, ym),
+                ).fetchone()
+                last_count = (row or [0])[0] or 0
+                last_bucket = last_count // threshold
+            except sqlite3.Error:
+                logger.exception("alert dedup check failed")
+            if current_bucket <= last_bucket:
+                logger.debug(
+                    "frequent-absence alert already sent for this bucket "
+                    "sid=%s ym=%s count=%d last_bucket=%d",
+                    student_id, ym, count, last_bucket)
+                return False
+
+        student = self._lookup_student(student_id)
+        if not student:
+            logger.warning("student %s not found — no alert", student_id)
+            return False
+        recipient = (student.get("email") or "").strip()
+        if not recipient:
+            logger.warning("no email for student %s — skipping alert", student_id)
+            return False
+
+        tpl = self.loader.load("frequent_absence")
+        if not tpl:
+            return False
+
+        from datetime import datetime as _dt
+        try:
+            month_name = _dt.strptime(ym, "%Y-%m").strftime("%B %Y")
+        except ValueError:
+            month_name = ym
+        absence_list = "\n".join(
+            f"  • {d} — {code} ({name}) — {status or 'absent'}"
+            for (d, code, name, status) in rows
+        ) or "  (none on file)"
+        affected_modules = sorted({code for (_d, code, _n, _s) in rows})
+        upcoming_exams = self._upcoming_exams_for_modules(affected_modules)
+        ctx = {
+            "student_id":     student["student_id"],
+            "student_name":   (student.get("name") or "").strip()
+                              or student["student_id"],
+            "count":          len(rows),
+            "threshold":      threshold,
+            "year_month":     ym,
+            "month_name":     month_name,
+            "absence_list":   absence_list,
+            "upcoming_exams": upcoming_exams,
+        }
+        subject, body = tpl.render(ctx)
+        ok = self._queue_email(recipient, subject, body)
+        if ok:
+            try:
+                from datetime import datetime as _dt2
+                self.db.cur.execute(
+                    """INSERT OR REPLACE INTO frequent_absence_alerts
+                       (student_id, year_month, sent_at, count_at_send)
+                       VALUES (?, ?, ?, ?)""",
+                    (student_id, ym, _dt2.utcnow().isoformat(), len(rows)),
+                )
+                self.db.conn.commit()
+            except sqlite3.Error:
+                logger.exception("alert dedup record failed")
+            logger.info("sent frequent-absence email sid=%s ym=%s count=%d",
+                        student_id, ym, len(rows))
+        return ok
+
     # ------- public entry points ------------------------------------
     def notify_submitted(self, request_id: int) -> bool:
         return self._send("submitted", request_id)
@@ -327,9 +501,24 @@ def notify_request_decided(db, request_id: int, decision: str,
         return False
 
 
+def notify_frequent_absences(db, student_id, year_month: Optional[str] = None,
+                             threshold: int = FREQUENT_ABSENCE_THRESHOLD,
+                             force: bool = False) -> bool:
+    """Best-effort: email a student who has hit the absence threshold this
+    calendar month. At most one email per (student, month)."""
+    try:
+        return AbsenceEmailService(db).notify_frequent_absences(
+            student_id, year_month=year_month, threshold=threshold, force=force)
+    except Exception:
+        logger.exception("notify_frequent_absences swallowed sid=%s ym=%s",
+                         student_id, year_month)
+        return False
+
+
 __all__ = [
     "EmailTemplate", "EmailTemplateLoader",
     "AbsenceEmailService",
     "notify_request_submitted", "notify_request_decided",
+    "notify_frequent_absences", "FREQUENT_ABSENCE_THRESHOLD",
     "reload_templates", "TEMPLATE_DIR", "TEMPLATE_FILES",
 ]

@@ -4,7 +4,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 
 from education_system.university_system.modules.domain.academics.gui.exam_management.data_manager import DataManager
-from education_system.university_system.modules.domain.academics.gui.exam_management.tabs import ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarTabMixin
+from education_system.university_system.modules.domain.academics.gui.exam_management.tabs import ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarTabMixin, DeferredExamTabMixin, AtRiskTabMixin, ExamEligibilityTabMixin
 from education_system.university_system.modules.domain.academics.gui.exam_management.dialogs import DialogsMixin
 
 # i18n import
@@ -15,7 +15,9 @@ except ImportError:
         return key
 
 
-class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarTabMixin, DialogsMixin):
+class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
+                       CalendarTabMixin, DeferredExamTabMixin,
+                       AtRiskTabMixin, ExamEligibilityTabMixin, DialogsMixin):
     """Main application class for the Exam Scheduling System."""
 
     def __init__(self, root):
@@ -94,6 +96,9 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin, CalendarT
         self.create_exams_tab()
         self.create_rooms_tab()
         self.create_calendar_tab()
+        self.create_deferred_tab()
+        self.create_at_risk_tab()
+        self.create_eligibility_tab()
 
     def export_schedule(self):
         """Export the schedule to a CSV file."""

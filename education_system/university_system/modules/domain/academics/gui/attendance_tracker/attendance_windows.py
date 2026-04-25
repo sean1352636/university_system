@@ -83,6 +83,92 @@ GEOFENCING_SUPPORT = True
 FACE_RECOGNITION_SUPPORT = True
 
 
+_ABSENCE_PLACEHOLDER_NOTES = {"", "batch entry", "manual gui entry", "gui edit"}
+_NON_PRESENT_STATUSES = {"absent", "late", "excused"}
+
+
+def _sync_to_absence_db(module_code, date_str, attendance_data, recorded_by=None):
+    """Mirror non-present rows into the absence tracker's tables.
+
+    For every row whose status is absent/late/excused, insert into
+    ``attendance`` (powers "All Absences"). Additionally, for absent rows
+    with no real reason, file a pending row in ``absence_requests``
+    (powers "Pending Requests" + the badge).
+
+    attendance_data tuples: (student_id, status, notes). Best-effort —
+    failure here must not block attendance recording. Returns
+    ``(n_absences, n_requests)``.
+    """
+    rows = [
+        (sid, str(status).strip().lower(), (notes or "").strip())
+        for (sid, status, notes) in attendance_data
+    ]
+    rows = [(sid, st, n) for (sid, st, n) in rows if st in _NON_PRESENT_STATUSES]
+    if not rows:
+        return (0, 0)
+    try:
+        from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking.absence_tracker import (  # noqa: E501
+            Database as _AbsenceDB,
+        )
+        db = _AbsenceDB()
+        try:
+            n_abs = 0
+            n_req = 0
+            for sid, status, notes in rows:
+                try:
+                    db.record_absence(sid, module_code, date_str, status,
+                                      notes or "", recorded_by=recorded_by)
+                    n_abs += 1
+                except Exception:
+                    logger.exception("record_absence failed sid=%s", sid)
+                    continue
+                if status == "absent" and notes.lower() in _ABSENCE_PLACEHOLDER_NOTES:
+                    try:
+                        rid = db.submit_request(
+                            sid, module_code, date_str,
+                            "(auto) absence recorded — reason pending")
+                        n_req += 1
+                        # If an exam exists on this (module, date), tag the
+                        # request as a missed-exam so the exam GUI's
+                        # Deferred Exam Requests tab picks it up.
+                        try:
+                            exam_row = db.cur.execute(
+                                "SELECT id FROM exams "
+                                "WHERE module_code = ? AND date = ? "
+                                "LIMIT 1",
+                                (module_code, date_str),
+                            ).fetchone()
+                            if exam_row:
+                                db.cur.execute(
+                                    "UPDATE absence_requests "
+                                    "SET is_missed_exam = 1, exam_id = ? "
+                                    "WHERE id = ?",
+                                    (exam_row[0], rid),
+                                )
+                                db.conn.commit()
+                        except Exception:
+                            logger.exception(
+                                "missed-exam flag update failed rid=%s", rid)
+                    except Exception:
+                        logger.exception("submit_request failed sid=%s", sid)
+            absent_sids = {sid for (sid, st, _n) in rows if st == "absent"}
+            if absent_sids:
+                try:
+                    from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking.email_notifications import (  # noqa: E501
+                        notify_frequent_absences,
+                    )
+                    for sid in absent_sids:
+                        notify_frequent_absences(db, sid)
+                except Exception:
+                    logger.exception("frequent-absence alert dispatch failed")
+            return (n_abs, n_req)
+        finally:
+            db.close()
+    except Exception:
+        logger.exception("absence-db sync failed")
+        return (0, 0)
+
+
 class ManualAttendanceWindow:
     def __init__(self, parent, module_code, date, callback):
         self.parent = parent
@@ -223,7 +309,15 @@ class ManualAttendanceWindow:
             if ORIGINAL_FUNCTIONS_AVAILABLE:
                 success = record_attendance(self.module_code, self.date, attendance_data, "Manual GUI Entry")
                 if success:
-                    messagebox.showinfo(_("common.success"), "Attendance recorded successfully!")
+                    n_abs, n_req = _sync_to_absence_db(
+                        self.module_code, self.date, attendance_data,
+                        recorded_by="Manual GUI Entry")
+                    msg = "Attendance recorded successfully!"
+                    if n_abs:
+                        msg += f"\n{n_abs} absence/late row(s) mirrored to the Absence Tracker."
+                    if n_req:
+                        msg += f"\n{n_req} pending request(s) created for absentees with no reason."
+                    messagebox.showinfo(_("common.success"), msg)
                     self.callback()  # Refresh parent data
                     self.window.destroy()
                 else:
@@ -449,7 +543,15 @@ class BatchAttendanceWindow:
             if ORIGINAL_FUNCTIONS_AVAILABLE:
                 success = record_attendance(self.module_code, self.date, attendance_data, "Batch GUI Entry")
                 if success:
-                    messagebox.showinfo(_("common.success"), f"Attendance recorded for {len(attendance_data)} student(s)!")
+                    n_abs, n_req = _sync_to_absence_db(
+                        self.module_code, self.date, attendance_data,
+                        recorded_by="Batch GUI Entry")
+                    msg = f"Attendance recorded for {len(attendance_data)} student(s)!"
+                    if n_abs:
+                        msg += f"\n{n_abs} absence/late row(s) mirrored to the Absence Tracker."
+                    if n_req:
+                        msg += f"\n{n_req} pending request(s) created for absentees with no reason."
+                    messagebox.showinfo(_("common.success"), msg)
                     self.callback()  # Refresh parent data
                     self.window.destroy()
                 else:
@@ -540,7 +642,16 @@ class EditAttendanceWindow:
                 conn.commit()
                 conn.close()
 
-                messagebox.showinfo(_("common.success"), "Attendance record updated successfully!")
+                n_abs, n_req = _sync_to_absence_db(
+                    self.module_code, self.date,
+                    [(self.student_id, self.status_var.get(), self.notes_var.get())],
+                    recorded_by="GUI Edit")
+                msg = "Attendance record updated successfully!"
+                if n_abs:
+                    msg += "\nMirrored to Absence Tracker."
+                if n_req:
+                    msg += "\nPending absence request created (no reason given)."
+                messagebox.showinfo(_("common.success"), msg)
             else:
                 messagebox.showinfo("Demo", "Attendance record would be updated here")
 

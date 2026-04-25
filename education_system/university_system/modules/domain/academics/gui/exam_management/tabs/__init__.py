@@ -4,3 +4,5 @@ from education_system.university_system.modules.domain.academics.gui.exam_manage
 from education_system.university_system.modules.domain.academics.gui.exam_management.tabs.exams_tab import ExamsTabMixin
 from education_system.university_system.modules.domain.academics.gui.exam_management.tabs.rooms_tab import RoomsTabMixin
 from education_system.university_system.modules.domain.academics.gui.exam_management.tabs.calendar_tab import CalendarTabMixin
+from education_system.university_system.modules.domain.academics.gui.exam_management.tabs.deferred_tab import DeferredExamTabMixin
+from education_system.university_system.modules.domain.academics.gui.exam_management.tabs.attendance_intel_tab import AtRiskTabMixin, ExamEligibilityTabMixin

@@ -67,6 +67,15 @@ class DataManager:
                         FOREIGN KEY (instructor_id) REFERENCES instructors(id)
                     )
                 """)
+                # Migration: parent_exam_id links resits to their original exam.
+                cols = {r[1] for r in conn.execute(
+                    "PRAGMA table_info(exams)").fetchall()}
+                if "parent_exam_id" not in cols:
+                    try:
+                        conn.execute(
+                            "ALTER TABLE exams ADD COLUMN parent_exam_id INTEGER")
+                    except Exception:
+                        logger.exception("exams.parent_exam_id ALTER skipped")
         except Exception as e:
             logger.warning(f"Failed to create exams table: {e}")
 

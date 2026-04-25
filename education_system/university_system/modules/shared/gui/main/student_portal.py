@@ -152,7 +152,6 @@ class StudentPortalGUI:
         self._add_heading("Schedule")
         self._add_button("Academic Calendar", self._open_calendar_portal)
         self._add_button("My Timetable", self._launch('show_student_timetable_gui'))
-        self._add_button("Absence Tracker", self._launch('open_absence_tracker_gui'))
         self._add_button("Exam Management", self._launch('show_exam_portal'))
 
         # Finance

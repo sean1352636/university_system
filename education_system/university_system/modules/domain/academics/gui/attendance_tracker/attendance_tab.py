@@ -54,29 +54,178 @@ from education_system.university_system.modules.domain.academics.gui.attendance_
 from education_system.university_system.modules.domain.academics.gui.attendance_tracker.face_recognition_windows import FaceRecognitionAttendanceWindow
 
 
-def open_absence_tracker(self):
-        """Launch the standalone University Absence Tracker as a separate process.
-
-        Passes the current authenticated user via CLI args — no second login prompt.
-        """
+def _resolve_absence_user(self):
+    """Translate auth.current_user into the row shape the absence dashboards expect."""
+    user = getattr(self.auth, "current_user", None) if getattr(self, "auth", None) else None
+    if not user:
+        return None
+    try:
+        from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking import absence_tracker as at
+        db = at.Database()
         try:
-            cmd = [sys.executable, "-m",
-                   "education_system.university_system.modules.domain.academics.services.attendance.absence_tracking.absence_tracker"]
-            user = getattr(self.auth, "current_user", None) if getattr(self, "auth", None) else None
-            if user:
-                if user.get("username"):
-                    cmd += ["--username", str(user["username"])]
-                elif user.get("id") is not None:
-                    cmd += ["--user-id", str(user["id"])]
-                if user.get("role"):
-                    cmd += ["--role", str(user["role"])]
-            else:
-                messagebox.showerror("Absence Tracker", "Please log in first.")
-                return
-            subprocess.Popen(cmd, close_fds=True)
-        except Exception as e:
-            logger.exception("attendance_tab.py:75 %s", 'except Exception as e')
-            messagebox.showerror("Absence Tracker", f"Failed to open Absence Tracker: {e}")
+            resolved = None
+            if user.get("username"):
+                resolved = db.lookup_user_by_username(user["username"])
+            if not resolved and user.get("id") is not None:
+                db.cur.execute(
+                    "SELECT id, username, role, first_name, last_name, email, student_id "
+                    "FROM users WHERE id = ?",
+                    (user["id"],),
+                )
+                row = db.cur.fetchone()
+                if row:
+                    uid, uname, role, first, last, email, sid = row
+                    resolved = {
+                        "id": uid, "username": uname,
+                        "role": user.get("role") or role,
+                        "name": (f"{first or ''} {last or ''}").strip() or uname,
+                        "email": email, "student_id": sid,
+                    }
+        finally:
+            db.close()
+        if resolved and user.get("role"):
+            resolved["role"] = user["role"]
+        return resolved
+    except Exception:
+        logger.exception("absence-tracker user resolution failed")
+        return None
+
+def _absence_user_signature(self):
+    """Stable identity key — changes when the signed-in user changes."""
+    user = getattr(getattr(self, "auth", None), "current_user", None)
+    if not user:
+        return None
+    return (user.get("username"), user.get("id"))
+
+def create_absence_tracker_tab(self):
+    """Add an Absence Tracker tab whose contents are the full role-aware
+    dashboard (Admin / Staff / Student).
+
+    Built eagerly during idle time so the user's first click is instant,
+    re-built automatically if the signed-in user changes, and exposes a
+    role-view selector so admins can preview Staff / Student dashboards.
+    """
+    tab = ttk.Frame(self.notebook)
+    self.notebook.add(tab, text="Absence Tracker")
+    self._absence_tab_frame = tab
+    self._absence_tab_built = False
+    self._absence_tab_user_sig = None
+    self._absence_tab_role_view = None  # admin override; None = use real role
+
+    # Pre-build during idle: keeps the first click instant. If auth isn't
+    # initialised yet, _maybe_build will re-defer.
+    try:
+        self.root.after(400, self._maybe_build_absence_tab)
+    except Exception:
+        pass
+    # Re-check on tab selection — this is the cheap path that catches a
+    # sign-out / sign-in (identity change) without polling.
+    self.notebook.bind("<<NotebookTabChanged>>",
+                       lambda _e: self._maybe_build_absence_tab(),
+                       add="+")
+
+def _maybe_build_absence_tab(self):
+    """Build the absence tab, or rebuild if the active user changed."""
+    tab = getattr(self, "_absence_tab_frame", None)
+    if tab is None:
+        return
+    sig = self._absence_user_signature()
+    if self._absence_tab_built and sig == self._absence_tab_user_sig:
+        return  # already up-to-date
+    if sig is None:
+        # User signed out — wipe the dashboard and show a placeholder.
+        for w in tab.winfo_children():
+            w.destroy()
+        ttk.Label(tab,
+                  text="Please sign in to view the Absence Tracker.",
+                  padding=20).pack(expand=True)
+        self._absence_tab_built = False
+        self._absence_tab_user_sig = None
+        self._absence_tab_role_view = None
+        return
+    if sig != self._absence_tab_user_sig:
+        # Different user — drop the previous role override.
+        self._absence_tab_role_view = None
+    for w in tab.winfo_children():
+        w.destroy()
+    self._build_absence_tab_contents(tab)
+    self._absence_tab_user_sig = sig
+
+def _build_absence_tab_contents(self, tab, role_override=None):
+    resolved = self._resolve_absence_user()
+    if not resolved:
+        ttk.Label(tab,
+                  text="Could not resolve your user record.",
+                  padding=20).pack(expand=True)
+        self._absence_tab_built = False
+        return
+
+    actual_role = (resolved.get("role") or "admin").lower()
+    role_options = (["admin", "staff", "instructor", "student"]
+                    if actual_role == "admin" else [actual_role])
+    effective_role = role_override or self._absence_tab_role_view or actual_role
+    if effective_role not in role_options:
+        effective_role = actual_role
+
+    # Role-switcher bar (only meaningful for admins)
+    bar = ttk.Frame(tab)
+    bar.pack(fill="x", padx=8, pady=(6, 4))
+    ttk.Label(bar, text="View as role:").pack(side="left")
+    role_var = tk.StringVar(value=effective_role)
+    state = "readonly" if len(role_options) > 1 else "disabled"
+    cb = ttk.Combobox(bar, textvariable=role_var, values=role_options,
+                      state=state, width=12)
+    cb.pack(side="left", padx=6)
+    if len(role_options) == 1:
+        ttk.Label(bar,
+                  text="(your role — admins can switch views)",
+                  foreground="#64748b").pack(side="left", padx=4)
+
+    def _on_role_change(_event=None):
+        new = role_var.get()
+        if new == effective_role:
+            return
+        self._absence_tab_role_view = new
+        # Rebuild the body with the new role
+        for w in tab.winfo_children():
+            w.destroy()
+        self._build_absence_tab_contents(tab, role_override=new)
+    cb.bind("<<ComboboxSelected>>", _on_role_change)
+
+    # Body that hosts the actual dashboard
+    body = ttk.Frame(tab)
+    body.pack(fill="both", expand=True)
+
+    resolved_for_view = dict(resolved)
+    resolved_for_view["role"] = effective_role
+
+    selected = self.module_var.get() if hasattr(self, "module_var") else ""
+    module = selected.split(" - ")[0] if selected else None
+    sel_date = self.date_var.get() if hasattr(self, "date_var") else None
+    prefill = {"module": module, "date": sel_date or None}
+
+    try:
+        from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking import absence_tracker as at
+        at.launch_in_frame(body, resolved_for_view, prefill=prefill)
+        self._absence_tab_built = True
+    except Exception as exc:
+        logger.exception("embedded absence tracker failed to build")
+        ttk.Label(body,
+                  text=f"Could not build Absence Tracker: {exc}",
+                  padding=20).pack(expand=True)
+        self._absence_tab_built = False
+
+def open_today_dashboard(self):
+        try:
+            from education_system.university_system.modules.domain.academics.services.attendance.absence_tracking.today_dashboard import (  # noqa: E501
+                open_today_window,
+            )
+            open_today_window(self.root)
+        except Exception:
+            logger.exception("Today dashboard failed to open")
+            messagebox.showerror("Today",
+                                 "Could not open the Today dashboard "
+                                 "(see log).")
 
 def refresh_attendance_data(self):
         """Refresh attendance data for current module"""
@@ -292,8 +441,9 @@ def create_attendance_tab(self):
                   command=self.refresh_attendance_data, style='Success.TButton').pack(fill=tk.X, pady=2)
         ttk.Button(actions_frame, text=_("attendance.buttons.generate_report"),
                   command=self.generate_quick_report, style='Warning.TButton').pack(fill=tk.X, pady=2)
-        ttk.Button(actions_frame, text="Open Absence Tracker",
-                  command=self.open_absence_tracker, style='Primary.TButton').pack(fill=tk.X, pady=2)
+        ttk.Button(actions_frame, text="Today (cross-system)",
+                  command=self.open_today_dashboard,
+                  style='Primary.TButton').pack(fill=tk.X, pady=2)
 
         # Right panel - Student list and attendance
         right_panel = ttk.Frame(attendance_frame)

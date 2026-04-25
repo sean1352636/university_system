@@ -151,7 +151,6 @@ class StaffPortalGUI:
         self._add_button("AI Auto-Grading", self._open_auto_grading_portal)
         self._add_button("Virtual Classroom", self._launch('show_virtual_classroom_gui'))
         self._add_button("Attendance", self._launch('open_attendance_gui'))
-        self._add_button("Absence Tracker", self._launch('open_absence_tracker_gui'))
 
 
         # Schedule

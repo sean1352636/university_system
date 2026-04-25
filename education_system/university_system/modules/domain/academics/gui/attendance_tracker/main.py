@@ -280,6 +280,7 @@ class AttendanceGUI:
             self.create_analytics_tab()
             self.create_settings_tab()
             self.create_admin_tab()
+            self.create_absence_tracker_tab()
     def run_original_cli(self):
             """Run original CLI in a separate thread"""
             if not ORIGINAL_FUNCTIONS_AVAILABLE:
@@ -381,7 +382,12 @@ AttendanceGUI.refresh_modules = attendance_tab.refresh_modules
 AttendanceGUI.on_module_selected = attendance_tab.on_module_selected
 AttendanceGUI.load_module_students = attendance_tab.load_module_students
 AttendanceGUI.edit_attendance_record = attendance_tab.edit_attendance_record
-AttendanceGUI.open_absence_tracker = attendance_tab.open_absence_tracker
+AttendanceGUI.create_absence_tracker_tab = attendance_tab.create_absence_tracker_tab
+AttendanceGUI._resolve_absence_user = attendance_tab._resolve_absence_user
+AttendanceGUI._absence_user_signature = attendance_tab._absence_user_signature
+AttendanceGUI._maybe_build_absence_tab = attendance_tab._maybe_build_absence_tab
+AttendanceGUI._build_absence_tab_contents = attendance_tab._build_absence_tab_contents
+AttendanceGUI.open_today_dashboard = attendance_tab.open_today_dashboard
 
 # Students tab methods
 AttendanceGUI.create_students_tab = students_tab.create_students_tab

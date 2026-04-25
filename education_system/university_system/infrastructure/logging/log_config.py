@@ -87,11 +87,12 @@ def patch_messagebox_logging():
         return _original_showerror(title, message, **kwargs)
 
     def _logged_showwarning(title=None, message=None, **kwargs):
-        exc = sys.exc_info()[1]
-        if exc is not None:
-            _mb_logger.warning("Dialog [%s]: %s", title, message, exc_info=True)
-        else:
-            _mb_logger.warning("Dialog [%s]: %s", title, message)
+        # Warnings are user-facing nudges ("Please select…", "Enter a value…").
+        # The active exception (if any) is incidental — most often Tk's own
+        # simpledialog.validate catching a ValueError on empty input — and
+        # logging the traceback every time produces a lot of noise. Stick
+        # to the message; errors keep traceback context separately.
+        _mb_logger.warning("Dialog [%s]: %s", title, message)
         return _original_showwarning(title, message, **kwargs)
 
     messagebox.showerror = _logged_showerror

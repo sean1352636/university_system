@@ -2099,15 +2099,25 @@ class IntegrationService:
     @safe("Wellbeing link")
     def show_absences_vs_mood(self) -> None:
         try:
+            # Match the canonical schema in
+            # infrastructure/database/schemas/health_wellness_schemas.py
+            # (column is `mood_rating`, not `mood`).
             self.ctx.db.cur.execute(
                 """CREATE TABLE IF NOT EXISTS mental_health_checkins (
-                    id INTEGER PRIMARY KEY,
-                    student_id TEXT, mood INTEGER, checkin_date TEXT)""")
+                    checkin_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    student_id TEXT NOT NULL,
+                    mood_rating INTEGER NOT NULL,
+                    stress_level INTEGER NOT NULL,
+                    sleep_quality INTEGER,
+                    notes TEXT,
+                    checkin_date TEXT DEFAULT CURRENT_DATE,
+                    checkin_time TEXT DEFAULT CURRENT_TIME,
+                    follow_up_required BOOLEAN DEFAULT 0)""")
             rows = self.ctx.db.cur.execute(
                 """SELECT a.student_id,
                           SUM(CASE WHEN a.status='absent' THEN 1 ELSE 0 END)
                               AS abs_cnt,
-                          (SELECT AVG(mood) FROM mental_health_checkins mc
+                          (SELECT AVG(mood_rating) FROM mental_health_checkins mc
                            WHERE mc.student_id=a.student_id) AS avg_mood
                    FROM attendance a GROUP BY a.student_id
                    ORDER BY abs_cnt DESC LIMIT 50""").fetchall()
@@ -2130,13 +2140,24 @@ class IntegrationService:
                               f"Raise written warning for {sid}?"):
             return
         try:
+            today = date.today().isoformat()
+            now = datetime.now().isoformat(timespec="seconds")
+            # disciplinary_actions.record_id is a FK to
+            # disciplinary_records(record_id); we must create the parent
+            # row first or the FK constraint fails.
+            self.ctx.db.cur.execute(
+                """INSERT INTO disciplinary_records
+                   (user_id, offense_type, description, date_occurred,
+                    date_reported, reported_by, severity, status)
+                   VALUES (?, 'attendance', ?, ?, ?, ?, 'minor', 'under_review')""",
+                (sid, reason, today, today, self.ctx.username))
+            record_id = self.ctx.db.cur.lastrowid
             self.ctx.db.cur.execute(
                 """INSERT INTO disciplinary_actions
                    (record_id, action_type, action_level, effective_date,
                     duration_days, imposed_by, reason, created_at)
-                   VALUES (0, 'warning', 'written', ?, 0, ?, ?, ?)""",
-                (date.today().isoformat(), self.ctx.username, reason,
-                 datetime.now().isoformat(timespec="seconds")))
+                   VALUES (?, 'warning', 'written', ?, 0, ?, ?, ?)""",
+                (record_id, today, self.ctx.username, reason, now))
             self.ctx.db.conn.commit()
         except sqlite3.Error as e:
             self.ctx.db.conn.rollback()
