@@ -562,6 +562,22 @@ def display_menu():
             ]
             print_row(items)
 
+        # ✨ NEW FEATURES
+        print(f"\n✨ {get_text('cli.menu.new_features', default='NEW FEATURES')}")
+        items = [
+            add_option("Employer Portal", "nf_employer_portal"),
+            add_option("Intervention Outcomes", "nf_intervention_outcomes"),
+            add_option("KPI Dashboard", "nf_kpi_dashboard"),
+            add_option("Bursary Management", "nf_bursary"),
+        ]
+        print_row(items)
+        items = [
+            add_option("Peer Mentoring Matching", "nf_mentoring_matching"),
+            add_option("Room Booking", "nf_room_booking"),
+            add_option("Tutor Groups", "nf_tutor_groups"),
+        ]
+        print_row(items)
+
         # 📱 INFRASTRUCTURE & ⚙️ SYSTEM
         print(f"\n📱 {get_text('cli.menu.infrastructure_system', default='INFRASTRUCTURE & SYSTEM')}")
         items = [
@@ -1016,6 +1032,8 @@ def display_menu():
                     input("Press Enter to continue...")
             elif option.startswith("cross_"):
                 _handle_cross_system_tool(option, auth)
+            elif option.startswith("nf_"):
+                _dispatch_new_feature(option, auth)
             elif option == "logout":
                 cleanup_database_connections()
                 auth.logout()
@@ -1029,6 +1047,65 @@ def display_menu():
                 print(get_text('cli.invalid_choice', default='Invalid choice. Please try again.'))
         else:
             print(get_text('cli.invalid_choice', default='Invalid choice. Please try again.'))
+
+
+_NEW_FEATURE_CLI_DISPATCH = {
+    "nf_employer_portal": (
+        "education_system.university_system.modules.domain.student_affairs."
+        "employer_portal.cli.employer_portal_cli",
+        "display_employer_portal_menu",
+    ),
+    "nf_intervention_outcomes": (
+        "education_system.university_system.modules.domain.student_affairs."
+        "services.early_warning.outcomes.intervention_outcomes_cli",
+        "display_intervention_outcomes_menu",
+    ),
+    "nf_kpi_dashboard": (
+        "education_system.university_system.modules.domain.analytics."
+        "kpi_dashboard.cli.kpi_dashboard_cli",
+        "display_kpi_dashboard_menu",
+    ),
+    "nf_bursary": (
+        "education_system.university_system.modules.domain.finance."
+        "bursary.cli.bursary_cli",
+        "display_bursary_menu",
+    ),
+    "nf_mentoring_matching": (
+        "education_system.university_system.modules.domain.student_affairs."
+        "student_union.services.mentoring_matching.cli.matching_cli",
+        "display_mentoring_matching_menu",
+    ),
+    "nf_room_booking": (
+        "education_system.university_system.modules.domain.campus."
+        "room_booking.cli.room_booking_cli",
+        "display_room_booking_menu",
+    ),
+    "nf_tutor_groups": (
+        "education_system.university_system.modules.domain.academics."
+        "tutor_groups.cli.tutor_group_cli",
+        "display_tutor_group_menu",
+    ),
+}
+
+
+def _dispatch_new_feature(option, auth):
+    """Resolve a new-feature option key to its CLI menu and run it."""
+    target = _NEW_FEATURE_CLI_DISPATCH.get(option)
+    if not target:
+        print(f"\n  Unknown new feature: {option}")
+        input("Press Enter to continue...")
+        return
+    module_path, fn_name = target
+    try:
+        import importlib
+        mod = importlib.import_module(module_path)
+        if hasattr(mod, "set_auth"):
+            mod.set_auth(auth)
+        fn = getattr(mod, fn_name)
+        fn()
+    except Exception as e:
+        print(f"\n  Failed to launch new feature ({option}): {e}")
+        input("Press Enter to continue...")
 
 
 def _vc_schedule_session(auth):

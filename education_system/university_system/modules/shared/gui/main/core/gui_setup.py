@@ -612,6 +612,7 @@ def create_navigation_panel(self, parent):
         ('cross_system_calendar', 'Cross-System Calendar', self.show_cross_system_calendar_gui),
         ('central_admin_portal', 'Central Admin Portal', self.show_central_admin_gui),
         ('gdpr_compliance', 'GDPR Compliance', self.show_gdpr_compliance_gui),
+        ('equality_diversity', 'Equality & Diversity', self.show_equality_diversity_gui),
         ('shared_documents', 'Shared Documents', self.show_shared_documents_gui),
         ('student_self_service', 'Student Self-Service', self.show_student_self_service_gui),
         ('certificates', 'Certificates', self.show_certificates_gui),
@@ -622,6 +623,67 @@ def create_navigation_panel(self, parent):
                                    command=lambda: open_category_window("Cross-System", cross_system_buttons_data),
                                    style='Large.TButton')
         cross_system_btn.pack(fill=tk.X, pady=2, padx=5)
+
+    # ---------- New Features ----------
+    # Standalone Tk apps recently homed under modules/domain/. Each
+    # launches in its own subprocess via UnifiedManagementGUI._launch_
+    # new_feature_module so it can't collide with the main GUI's Tk root.
+    new_features_buttons_data = [
+        ('new_feature_complaints_portal',       'Complaints Portal',
+            self.show_new_feature_complaints_portal),
+        ('new_feature_course_evaluation_system','Course Evaluation',
+            self.show_new_feature_course_evaluation_system),
+        ('new_feature_lecturer_evaluation',     'Lecturer Evaluation',
+            self.show_new_feature_lecturer_evaluation),
+        ('new_feature_module_evaluation_portal','Module Evaluation',
+            self.show_new_feature_module_evaluation_portal),
+        ('new_feature_disciplinary_portal',     'Disciplinary Portal',
+            self.show_new_feature_disciplinary_portal),
+        ('new_feature_risk_management',         'Risk Management',
+            self.show_new_feature_risk_management),
+        ('new_feature_first_aid_portal',        'First Aid Portal',
+            self.show_new_feature_first_aid_portal),
+        ('new_feature_health_safety_portal',    'Health & Safety',
+            self.show_new_feature_health_safety_portal),
+        ('new_feature_intervention_support',    'Intervention Support',
+            self.show_new_feature_intervention_support),
+        ('new_feature_safeguarding_system',     'Safeguarding',
+            self.show_new_feature_safeguarding_system),
+        ('new_feature_lesson_planner',          'Lesson Planner',
+            self.show_new_feature_lesson_planner),
+        ('new_feature_background_checker',      'Background Checker',
+            self.show_new_feature_background_checker),
+        ('new_feature_university_research',     'Research Portal',
+            self.show_new_feature_university_research),
+        # Cross-system ports added 2026-04
+        ('new_feature_employer_portal',         'Employer Portal',
+            self.show_new_feature_employer_portal),
+        ('new_feature_intervention_outcomes',   'Intervention Outcomes',
+            self.show_new_feature_intervention_outcomes),
+        ('new_feature_kpi_dashboard',           'KPI Dashboard',
+            self.show_new_feature_kpi_dashboard),
+        ('new_feature_bursary',                 'Bursary Management',
+            self.show_new_feature_bursary),
+        ('new_feature_mentoring_matching',      'Peer Mentoring Matching',
+            self.show_new_feature_mentoring_matching),
+        ('new_feature_room_booking',            'Room Booking',
+            self.show_new_feature_room_booking),
+        ('new_feature_tutor_groups',            'Tutor Groups',
+            self.show_new_feature_tutor_groups),
+        # Standalone Tk apps moved from /add 2026-04
+        ('new_feature_apprenticeship_system',   'Apprenticeships',
+            self.show_new_feature_apprenticeship_system),
+        ('new_feature_placement_tracker',       'Placement Hours',
+            self.show_new_feature_placement_tracker),
+        ('new_feature_bakery_shop',             'Bakery Shop',
+            self.show_new_feature_bakery_shop),
+    ]
+
+    if any(name in visible_buttons for name, _, _ in new_features_buttons_data):
+        new_features_btn = ttk.Button(scrollable_frame, text="\u2728 New Features" + " \u25b6",
+                                      command=lambda: open_category_window("New Features", new_features_buttons_data),
+                                      style='Large.TButton')
+        new_features_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # Finalize scroll region
     scrollable_frame.update_idletasks()
@@ -745,6 +807,33 @@ def get_visible_buttons_for_role(self, role=None):
         'absence_tracker',
         # New features (modules 21-30) - student-accessible
         'student_app', 'achievement_badges', 'study_recommendations',
+        # New Features sidebar category (13 standalone Tk apps under
+        # modules/domain/, launched as subprocesses by main_gui.py).
+        'new_feature_complaints_portal',
+        'new_feature_course_evaluation_system',
+        'new_feature_lecturer_evaluation',
+        'new_feature_module_evaluation_portal',
+        'new_feature_disciplinary_portal',
+        'new_feature_risk_management',
+        'new_feature_first_aid_portal',
+        'new_feature_health_safety_portal',
+        'new_feature_intervention_support',
+        'new_feature_safeguarding_system',
+        'new_feature_lesson_planner',
+        'new_feature_background_checker',
+        'new_feature_university_research',
+        # Cross-system ports added 2026-04
+        'new_feature_employer_portal',
+        'new_feature_intervention_outcomes',
+        'new_feature_kpi_dashboard',
+        'new_feature_bursary',
+        'new_feature_mentoring_matching',
+        'new_feature_room_booking',
+        'new_feature_tutor_groups',
+        # Standalone Tk apps moved from /add 2026-04
+        'new_feature_apprenticeship_system',
+        'new_feature_placement_tracker',
+        'new_feature_bakery_shop',
     }
 
     # Student-specific additions
@@ -810,7 +899,7 @@ def get_visible_buttons_for_role(self, role=None):
             'usage_adoption_reports',
             'custom_report_builder',
             # Admin-only shared modules
-            'central_admin_portal', 'gdpr_compliance',
+            'central_admin_portal', 'gdpr_compliance', 'equality_diversity',
             # New features - admin level
             'hesa_export', 'clearing_adjustment',
         })

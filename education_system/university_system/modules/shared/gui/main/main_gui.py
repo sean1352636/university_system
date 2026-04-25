@@ -403,6 +403,7 @@ from education_system.university_system.modules.shared.gui.main.features.student
     show_police_station_gui,
     show_security_desk_gui,
     show_church_management_gui,
+    show_equality_diversity_gui,
 )
 from education_system.university_system.modules.shared.gui.main.features.student_success_gui import (
     show_ai_features_gui,
@@ -692,6 +693,7 @@ UnifiedManagementGUI.show_police_station_gui = show_police_station_gui
 UnifiedManagementGUI.show_security_desk_gui = show_security_desk_gui
 UnifiedManagementGUI.show_todo_app_gui = show_todo_app_gui
 UnifiedManagementGUI.show_church_management_gui = show_church_management_gui
+UnifiedManagementGUI.show_equality_diversity_gui = show_equality_diversity_gui
 UnifiedManagementGUI.show_bank_app_gui = show_bank_app_gui
 UnifiedManagementGUI.show_exam_scheduler_gui = show_exam_scheduler_gui
 UnifiedManagementGUI.show_exam_portal = show_exam_portal
@@ -880,3 +882,127 @@ UnifiedManagementGUI.show_achievement_badge_gui = show_achievement_badge_gui
 UnifiedManagementGUI.show_study_recommendations_gui = show_study_recommendations_gui
 UnifiedManagementGUI.show_clearing_adjustment_gui = show_clearing_adjustment_gui
 
+
+# ===========================================================================
+# "New Features" launchers — 13 standalone Tk apps recently added under
+# /add and now homed under modules/domain/. Each runs its own Tk root +
+# event loop, so launching them as subprocesses keeps them isolated from
+# the main GUI's Tk root and from each other.
+# ===========================================================================
+
+import subprocess  # noqa: E402
+import sys  # noqa: E402
+import importlib.util  # noqa: E402
+
+
+_NEW_FEATURE_MODULES = [
+    # (button_name, label, dotted module path)
+    ("complaints_portal", "Complaints Portal",
+     "education_system.university_system.modules.domain.communications.feedback.complaints_portal"),
+    ("course_evaluation_system", "Course Evaluation",
+     "education_system.university_system.modules.domain.academics.course_evaluation.course_evaluation_system"),
+    ("lecturer_evaluation", "Lecturer Evaluation",
+     "education_system.university_system.modules.domain.academics.course_evaluation.lecturer_evaluation"),
+    ("module_evaluation_portal", "Module Evaluation",
+     "education_system.university_system.modules.domain.academics.course_evaluation.module_evaluation_portal"),
+    ("disciplinary_portal", "Disciplinary Portal",
+     "education_system.university_system.modules.domain.legal.disciplinary.disciplinary_portal"),
+    ("risk_management", "Risk Management",
+     "education_system.university_system.modules.domain.legal.risk_management.university_risk_management"),
+    ("first_aid_portal", "First Aid Portal",
+     "education_system.university_system.modules.domain.health.first_aid.first_aid_portal"),
+    ("health_safety_portal", "Health & Safety",
+     "education_system.university_system.modules.domain.health.health_safety.health_safety_portal"),
+    ("intervention_support", "Intervention Support",
+     "education_system.university_system.modules.domain.student_affairs.student_wellbeing.intervention_support"),
+    ("safeguarding_system", "Safeguarding",
+     "education_system.university_system.modules.domain.student_affairs.safeguarding.safeguarding_system"),
+    ("lesson_planner", "Lesson Planner",
+     "education_system.university_system.modules.domain.academics.course_planning.lesson_planner"),
+    ("background_checker", "Background Checker",
+     "education_system.university_system.modules.domain.staff_hr.background_checks.university_bg_checker"),
+    ("university_research", "Research Portal",
+     "education_system.university_system.modules.domain.research.services.university_research"),
+    # Cross-system ports added 2026-04 — services with their own Tk launchers.
+    ("employer_portal", "Employer Portal",
+     "education_system.university_system.modules.domain.student_affairs.employer_portal.employer_portal_app"),
+    ("intervention_outcomes", "Intervention Outcomes",
+     "education_system.university_system.modules.domain.student_affairs.services.early_warning.outcomes.intervention_outcomes_app"),
+    ("kpi_dashboard", "KPI Dashboard",
+     "education_system.university_system.modules.domain.analytics.kpi_dashboard.kpi_dashboard_app"),
+    ("bursary", "Bursary Management",
+     "education_system.university_system.modules.domain.finance.bursary.bursary_app"),
+    ("mentoring_matching", "Peer Mentoring Matching",
+     "education_system.university_system.modules.domain.student_affairs.student_union.services.mentoring_matching.mentoring_matching_app"),
+    ("room_booking", "Room Booking",
+     "education_system.university_system.modules.domain.campus.room_booking.room_booking_app"),
+    ("tutor_groups", "Tutor Groups",
+     "education_system.university_system.modules.domain.academics.tutor_groups.tutor_groups_app"),
+    # Standalone Tk apps moved from /add 2026-04
+    ("apprenticeship_system", "Apprenticeships",
+     "education_system.university_system.modules.domain.academics.apprenticeships.apprenticeship_system"),
+    ("placement_tracker", "Placement Hours",
+     "education_system.university_system.modules.domain.academics.placements.placement_tracker"),
+    ("bakery_shop", "Bakery Shop",
+     "education_system.university_system.modules.domain.commerce.bakery_shop.bakery_shop"),
+]
+
+
+def _launch_new_feature_module(self, module_dotted: str, label: str) -> None:
+    """Spawn a standalone Tk app in its own subprocess.
+
+    Uses ``importlib.util.find_spec`` to resolve the module path on disk
+    (works for any layout — package or single file) then runs the file
+    with the current Python interpreter so the child process gets a
+    fresh ``__main__`` and its own Tk root. Failures are logged and
+    surfaced to the user — never raised."""
+    try:
+        spec = importlib.util.find_spec(module_dotted)
+    except Exception:
+        spec = None
+        logger.exception("find_spec failed for %s", module_dotted)
+    origin = getattr(spec, "origin", None) if spec else None
+    if not origin:
+        logger.error("could not locate %s on disk", module_dotted)
+        try:
+            from tkinter import messagebox
+            messagebox.showerror(
+                "Launch failed",
+                f"Could not locate {label} on disk.\n"
+                f"Module: {module_dotted}",
+                parent=self.root)
+        except Exception:
+            pass
+        return
+    try:
+        subprocess.Popen([sys.executable, origin],
+                         cwd=str(__import__("pathlib").Path(origin).parent))
+        logger.info("launched %s -> %s", label, origin)
+    except Exception as e:
+        logger.exception("Popen failed for %s", label)
+        try:
+            from tkinter import messagebox
+            messagebox.showerror(
+                "Launch failed",
+                f"Could not launch {label}:\n{e}",
+                parent=self.root)
+        except Exception:
+            pass
+
+
+UnifiedManagementGUI._launch_new_feature_module = _launch_new_feature_module
+
+
+def _make_handler(_module_dotted, _label):
+    """Closure-bind one handler per module."""
+    def _handler(self):
+        self._launch_new_feature_module(_module_dotted, _label)
+    _handler.__name__ = f"show_new_feature_{_module_dotted.rsplit('.', 1)[-1]}"
+    return _handler
+
+
+for _btn_name, _label, _module in _NEW_FEATURE_MODULES:
+    _attr = f"show_new_feature_{_btn_name}"
+    setattr(UnifiedManagementGUI, _attr, _make_handler(_module, _label))
+
+del _btn_name, _label, _module, _attr
