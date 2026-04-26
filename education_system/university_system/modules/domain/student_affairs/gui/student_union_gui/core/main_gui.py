@@ -366,22 +366,60 @@ class StudentUnionGUI:
     open_vote_integrity_dialog = _open_vote_integrity_dialog
 
     def open_election_voting_portal(self):
-        """Launch the merged Tk voting GUI in a Toplevel.
-
-        This is the polished card-based voting interface; the other
-        ``Elections & Voting`` entries above are the per-feature CLI
-        dialogs that wrap the underlying service layer.
+        """Launch the unified Elections Hub: voter / admin dashboard
+        plus all specialised election tools, behind one window with
+        a notebook of tabs. Replaces the previous sprawl of 10
+        separate sidebar buttons.
         """
         try:
             from education_system.university_system.modules.domain.student_affairs.student_union.elections.election_gui import (  # noqa: E501
-                open_in_toplevel,
+                open_elections_hub,
             )
-            open_in_toplevel(self.root, getattr(self, 'auth', None))
         except Exception as e:
             from tkinter import messagebox
             messagebox.showerror(
                 "Election Voting Portal",
-                f"Could not launch the voting portal:\n{e}",
+                f"Could not launch the elections hub:\n{e}",
+                parent=getattr(self, 'root', None))
+            return
+
+        # Tool tabs: (label, icon, role_filter, callback).
+        # role_filter is None / 'admin' / 'staff'; staff implies
+        # admin. The callbacks reuse the existing dialog launchers
+        # bound on this class so the underlying dialogs are
+        # untouched — only the access path changes.
+        tools = [
+            ("Candidate Profiles",      "👤",  None,
+                self.open_candidate_profiles_dialog),
+            ("Ranked Choice Voting",    "🥇",  None,
+                self.open_ranked_choice_voting_dialog),
+            ("Election Accessibility",  "♿",  None,
+                self.open_election_accessibility_dialog),
+            ("Setup Election",          "⚙️",  'admin',
+                self.open_setup_election_dialog),
+            ("Campaign Expenses",       "💰",  'staff',
+                self.open_campaign_expenses_dialog),
+            ("Campaign Compliance",     "⚖️",  'staff',
+                self.open_campaign_compliance_dialog),
+            ("Election Security",       "🔒",  'staff',
+                self.open_election_security_dialog),
+            ("Vote Integrity Check",    "✅",  'staff',
+                self.open_vote_integrity_dialog),
+            ("Manage Enhanced Voting",  "🔧",  'admin',
+                self.open_manage_enhanced_voting_dialog),
+            ("Configure Voting Methods","⚙️",  'admin',
+                self.open_configure_voting_methods_dialog),
+        ]
+
+        try:
+            open_elections_hub(self.root,
+                               auth=getattr(self, 'auth', None),
+                               tool_handlers=tools)
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror(
+                "Election Voting Portal",
+                f"Could not launch the elections hub:\n{e}",
                 parent=getattr(self, 'root', None))
 
     # Bind volunteer functions
@@ -810,25 +848,21 @@ class StudentUnionGUI:
         self.add_sidebar_button("Events", self.show_events_content, "📅")
         self.add_sidebar_button("Facilities", self.show_facilities_content, "🏢")
 
-        # Elections & Voting
+        # Elections & Voting — sidebar reduced to two entries.
+        # "Elections & Voting" opens a unified Hub window with a
+        # notebook that consolidates the Voter / Admin dashboard plus
+        # all the specialised tools that used to be standalone
+        # sidebar buttons (Candidate Profiles, Ranked Choice, Setup
+        # Election, Campaign Expenses / Compliance, Security, Vote
+        # Integrity, Manage / Configure Voting Methods, Accessibility).
+        # "Student Council" stays separate because it's a roster/
+        # membership view rather than an election workflow.
         self.add_sidebar_separator()
         self.add_sidebar_header("🗳️ Elections & Voting", "")
-        # Single canonical entry — replaces the older "Elections & Voting"
-        # data-grid dialog. Self-nomination is now reachable from the
-        # voter dashboard inside this same window.
         self.add_sidebar_button("Elections & Voting",
                                 self.open_election_voting_portal, "🗳️")
-        self.add_sidebar_button("Student Council", self.open_student_council_dialog, "🏛️")
-        self.add_sidebar_button("Candidate Profiles", self.open_candidate_profiles_dialog, "👤")
-        self.add_sidebar_button("Ranked Choice Voting", self.open_ranked_choice_voting_dialog, "🥇")
-        self.add_sidebar_button("Election Accessibility", self.open_election_accessibility_dialog, "♿")
-        self.add_sidebar_button("Setup Election", self.open_setup_election_dialog, "⚙️", admin_only=True)
-        self.add_sidebar_button("Campaign Expenses", self.open_campaign_expenses_dialog, "💰", staff_only=True)
-        self.add_sidebar_button("Campaign Compliance", self.open_campaign_compliance_dialog, "⚖️", staff_only=True)
-        self.add_sidebar_button("Election Security", self.open_election_security_dialog, "🔒", staff_only=True)
-        self.add_sidebar_button("Vote Integrity Check", self.open_vote_integrity_dialog, "✅", staff_only=True)
-        self.add_sidebar_button("Manage Enhanced Voting", self.open_manage_enhanced_voting_dialog, "🔧", admin_only=True)
-        self.add_sidebar_button("Configure Voting Methods", self.open_configure_voting_methods_dialog, "⚙️", admin_only=True)
+        self.add_sidebar_button("Student Council",
+                                self.open_student_council_dialog, "🏛️")
 
         # Community & Engagement
         self.add_sidebar_separator()
