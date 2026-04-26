@@ -440,6 +440,10 @@ def create_navigation_panel(self, parent):
         ('helpdesk', _t('nav.buttons.helpdesk'), self.open_helpdesk_gui),
         ('early_warning_system', _t('nav.buttons.early_warning'), self.show_early_warning_gui),
         ('accessibility', _t('nav.buttons.accessibility'), self.show_accessibility_portal_gui),
+        # Equality & Diversity is an inclusivity service alongside
+        # Accessibility — moved here from Cross-System where it sat
+        # awkwardly next to operational tools like Bulk Transfer.
+        ('equality_diversity', 'Equality & Diversity', self.show_equality_diversity_gui),
         ('portfolio', _t('nav.buttons.portfolio'), self.show_portfolio_system_gui),
         ('advising_portal', _t('nav.buttons.advising_portal'), self.show_advising_portal_gui),
     ]
@@ -616,7 +620,9 @@ def create_navigation_panel(self, parent):
         ('cross_system_calendar', 'Cross-System Calendar', self.show_cross_system_calendar_gui),
         ('central_admin_portal', 'Central Admin Portal', self.show_central_admin_gui),
         ('gdpr_compliance', 'GDPR Compliance', self.show_gdpr_compliance_gui),
-        ('equality_diversity', 'Equality & Diversity', self.show_equality_diversity_gui),
+        # Equality & Diversity moved → Student Services (alongside
+        # Accessibility) where it fits its inclusivity-service nature
+        # better than this operational/cross-system bucket.
         ('shared_documents', 'Shared Documents', self.show_shared_documents_gui),
         ('student_self_service', 'Student Self-Service', self.show_student_self_service_gui),
         ('certificates', 'Certificates', self.show_certificates_gui),
