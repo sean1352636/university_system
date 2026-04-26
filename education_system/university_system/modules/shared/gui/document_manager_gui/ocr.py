@@ -62,7 +62,7 @@ class OCRManager:
             cursor.execute('''
             SELECT sd.file_path, sd.original_filename, dt.type_name, s.first_name, s.last_name
             FROM documents sd
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             JOIN students s ON sd.owner_id = s.student_id
             WHERE sd.source_type = 'student' AND sd.document_id = ?
             ''', (doc_id,))

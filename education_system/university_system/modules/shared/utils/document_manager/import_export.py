@@ -231,7 +231,7 @@ class ImportExportMixin:
                    sd.expiry_date, sd.verification_status, sd.version_number,
                    sd.tags, sd.workflow_status
             FROM documents sd
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             LEFT JOIN students s ON sd.owner_id = s.student_id
             WHERE sd.is_current_version = 1
             ORDER BY sd.upload_date DESC
@@ -334,7 +334,7 @@ class ImportExportMixin:
             print("\n📋 EXPORT COMPLIANCE DATA")
 
             cursor.execute('''
-            SELECT s.student_id, s.first_name, s.last_name, s.program,
+            SELECT s.student_id, s.first_name, s.last_name, s.course,
                    dt.type_name, dt.is_required,
                    CASE WHEN sd.document_id IS NOT NULL THEN 'Submitted' ELSE 'Missing' END as status,
                    sd.verification_status, sd.upload_date, sd.expiry_date
@@ -342,7 +342,7 @@ class ImportExportMixin:
             CROSS JOIN document_types dt
             LEFT JOIN documents sd ON s.student_id = sd.owner_id
                 AND sd.source_type = 'student'
-                AND dt.type_id = sd.type_id AND sd.is_current_version = 1
+                AND dt.type_id = CAST(sd.document_type AS INTEGER) AND sd.is_current_version = 1
             WHERE dt.is_active = 1
             ORDER BY s.student_id, dt.category, dt.sort_order
             ''')
@@ -387,12 +387,12 @@ class ImportExportMixin:
             if choice == '6':
                 query = '''
                 SELECT sd.document_id, sd.owner_id as student_id, s.first_name, s.last_name,
-                       s.program, dt.type_name, sd.original_filename, sd.upload_date,
+                       s.course, dt.type_name, sd.original_filename, sd.upload_date,
                        sd.expiry_date, sd.verification_status, sd.verification_date,
                        sd.verification_notes, sd.version_number, sd.uploaded_by,
                        sd.tags, sd.workflow_status, sd.priority
                 FROM documents sd
-                JOIN document_types dt ON sd.type_id = dt.type_id
+                JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                 LEFT JOIN students s ON sd.owner_id = s.student_id
                 WHERE sd.is_current_version = 1
                 '''
@@ -406,7 +406,7 @@ class ImportExportMixin:
                 SELECT sd.document_id, sd.owner_id as student_id, dt.type_name, sd.original_filename,
                        sd.upload_date, sd.verification_status
                 FROM documents sd
-                JOIN document_types dt ON sd.type_id = dt.type_id
+                JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                 WHERE sd.is_current_version = 1
                 '''
                 headers = ['Document ID', 'Student ID', 'Document Type', 'Filename',

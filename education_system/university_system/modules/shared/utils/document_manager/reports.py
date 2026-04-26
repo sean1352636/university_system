@@ -57,7 +57,7 @@ class ReportsMixin:
             CROSS JOIN document_types dt
             LEFT JOIN documents sd ON s.student_id = sd.owner_id
                 AND sd.source_type = 'student'
-                AND dt.type_id = sd.type_id AND sd.is_current_version = 1
+                AND dt.type_id = CAST(sd.document_type AS INTEGER) AND sd.is_current_version = 1
             WHERE dt.is_required = 1 AND dt.is_active = 1
             '''
 
@@ -182,7 +182,7 @@ class ReportsMixin:
             SELECT dt.type_name, COUNT(*) as count,
                    SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as verified
             FROM documents sd
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.is_current_version = 1
             GROUP BY dt.type_name
             ORDER BY count DESC
@@ -231,7 +231,7 @@ class ReportsMixin:
             SELECT sd.document_id, sd.owner_id as student_id, s.first_name, s.last_name,
                    dt.type_name, sd.expiry_date, sd.verification_status
             FROM documents sd
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             LEFT JOIN students s ON sd.owner_id = s.student_id
             WHERE sd.expiry_date IS NOT NULL
               AND sd.expiry_date <= ?
@@ -303,16 +303,16 @@ class ReportsMixin:
 
             # Get programs from students
             cursor.execute('''
-            SELECT DISTINCT s.program, COUNT(DISTINCT s.student_id) as student_count,
+            SELECT DISTINCT s.course, COUNT(DISTINCT s.student_id) as student_count,
                    COUNT(sd.document_id) as doc_count,
                    SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as verified_count
             FROM students s
             LEFT JOIN documents sd ON s.student_id = sd.owner_id
                 AND sd.source_type = 'student'
                 AND sd.is_current_version = 1
-            WHERE s.program IS NOT NULL
-            GROUP BY s.program
-            ORDER BY s.program
+            WHERE s.course IS NOT NULL
+            GROUP BY s.course
+            ORDER BY s.course
             ''')
 
             programs = cursor.fetchall()
@@ -341,9 +341,9 @@ class ReportsMixin:
                     SELECT dt.type_name, COUNT(*) as count,
                            SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as verified
                     FROM documents sd
-                    JOIN document_types dt ON sd.type_id = dt.type_id
+                    JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                     JOIN students s ON sd.owner_id = s.student_id
-                    WHERE s.program = ? AND sd.is_current_version = 1
+                    WHERE s.course = ? AND sd.is_current_version = 1
                     GROUP BY dt.type_name
                     ''', (program,))
 
@@ -414,7 +414,7 @@ class ReportsMixin:
             cursor.execute('''
             SELECT dt.type_name, COUNT(*) as count
             FROM documents sd
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE strftime('%Y-%m', sd.upload_date) = ?
             GROUP BY dt.type_name
             ORDER BY count DESC
@@ -470,7 +470,7 @@ class ReportsMixin:
             SELECT dt.type_name, dt.is_required, sd.verification_status,
                    sd.upload_date, sd.expiry_date
             FROM document_types dt
-            LEFT JOIN documents sd ON dt.type_id = sd.type_id
+            LEFT JOIN documents sd ON dt.type_id = CAST(sd.document_type AS INTEGER)
                 AND sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
             WHERE dt.is_active = 1
             ORDER BY dt.category, dt.sort_order
@@ -515,7 +515,7 @@ class ReportsMixin:
             cursor.execute('''
             SELECT dt.type_name
             FROM document_types dt
-            LEFT JOIN documents sd ON dt.type_id = sd.type_id
+            LEFT JOIN documents sd ON dt.type_id = CAST(sd.document_type AS INTEGER)
                 AND sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
             WHERE dt.is_required = 1 AND dt.is_active = 1 AND sd.document_id IS NULL
             ''', (student_id,))
@@ -593,7 +593,7 @@ class ReportsMixin:
             SELECT {', '.join(select_parts)}
             FROM documents sd
             JOIN students s ON sd.owner_id = s.student_id
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.is_current_version = 1
             '''
 

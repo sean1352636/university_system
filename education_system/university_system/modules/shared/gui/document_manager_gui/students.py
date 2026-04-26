@@ -137,7 +137,7 @@ Total Documents: {doc_count}
             SELECT dt.type_name, sd.verification_status, DATE(sd.upload_date),
                    sd.expiry_date, sd.version_number
             FROM documents sd
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
             ORDER BY sd.upload_date DESC
             ''', (student_id,))
@@ -758,7 +758,7 @@ Total Documents: {doc_count}
                    END as compliance
             FROM students s
             LEFT JOIN documents sd ON s.student_id = sd.owner_id AND sd.source_type = 'student' AND sd.is_current_version = 1
-            LEFT JOIN document_types dt ON sd.type_id = dt.type_id
+            LEFT JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             GROUP BY s.student_id
             ORDER BY s.last_name, s.first_name
             '''

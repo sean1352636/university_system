@@ -644,7 +644,7 @@ def bulk_generate_library_cards_gui(self):
                 SELECT s.student_id, s.first_name, s.last_name
                 FROM students s
                 LEFT JOIN library_cards lc ON s.student_id = lc.student_id
-                WHERE lc.card_id IS NULL AND s.program_name = ?
+                WHERE lc.card_id IS NULL AND s.course = ?
                 ''', (program,))
 
             students = cursor.fetchall()
@@ -725,7 +725,7 @@ def print_library_card_gui(self):
             # Try to find card
             cursor.execute('''
             SELECT lc.card_number, lc.issue_date, lc.expiry_date, lc.status,
-                   s.student_id, s.first_name, s.last_name, s.program_name
+                   s.student_id, s.first_name, s.last_name, s.course
             FROM library_cards lc
             JOIN students s ON lc.student_id = s.student_id
             WHERE lc.card_number = ? OR lc.student_id = ?

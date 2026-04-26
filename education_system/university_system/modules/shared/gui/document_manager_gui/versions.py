@@ -119,7 +119,7 @@ class VersionManager:
                    sd.original_filename, sd.file_size, sd.verification_notes
             FROM documents sd
             JOIN students s ON sd.owner_id = s.student_id
-            JOIN document_types dt ON sd.document_type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.source_type = 'student' AND (sd.document_id = ? OR sd.parent_document_id = ?)
             ORDER BY sd.version_number ASC
             ''', (doc_id, doc_id))
@@ -215,7 +215,7 @@ class VersionManager:
                    sd.verification_status, sd.file_size, sd.uploaded_by,
                    sd.original_filename, dt.type_name, sd.verification_notes
             FROM documents sd
-            JOIN document_types dt ON sd.document_type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.document_id IN (?, ?)
             ORDER BY sd.version_number
             ''', (doc_id1, doc_id2))
@@ -417,7 +417,7 @@ class VersionManager:
                     MAX(sd.upload_date) as last_updated
                 FROM documents sd
                 JOIN students s ON sd.owner_id = s.student_id
-                JOIN document_types dt ON sd.type_id = dt.type_id
+                JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                 WHERE sd.source_type = 'student'
                 GROUP BY sd.document_id
                 HAVING COUNT(*) > 1
@@ -460,7 +460,7 @@ class VersionManager:
                             sd.file_name
                         FROM documents sd
                         JOIN students s ON sd.owner_id = s.student_id
-                        JOIN document_types dt ON sd.type_id = dt.type_id
+                        JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                         WHERE sd.source_type = 'student'
                         ORDER BY sd.document_id, sd.version_number
                         ''')
@@ -660,7 +660,7 @@ class VersionManager:
                         sd.upload_date
                     FROM documents sd
                     JOIN students s ON sd.owner_id = s.student_id
-                    JOIN document_types dt ON sd.type_id = dt.type_id
+                    JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                     WHERE sd.source_type = 'student' AND sd.upload_date < ?
                     '''
 

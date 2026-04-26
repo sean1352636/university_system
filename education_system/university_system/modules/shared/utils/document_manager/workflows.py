@@ -37,7 +37,7 @@ class WorkflowMixin:
                    dw.step_name, dw.assigned_to, dw.status
             FROM document_workflow dw
             JOIN documents sd ON dw.document_id = sd.document_id
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             JOIN students s ON sd.owner_id = s.student_id
             WHERE dw.status = 'pending'
             ORDER BY dw.step_order
@@ -78,7 +78,7 @@ class WorkflowMixin:
                    sd.document_id, dt.type_name
             FROM document_workflow dw
             JOIN documents sd ON dw.document_id = sd.document_id
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE dw.workflow_id = ? AND dw.status = 'pending'
             ''', (workflow_id,))
 

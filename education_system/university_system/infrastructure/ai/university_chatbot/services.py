@@ -114,13 +114,13 @@ class CourseRecommendationEngine:
             try:
                 cursor.execute("""
                     SELECT
-                        s.program,
+                        s.course,
                         sm.module_code,
                         AVG(s.cumulative_gpa) as avg_student_gpa
                     FROM students s
                     JOIN student_modules sm ON s.student_id = sm.student_id
                     WHERE sm.status = 'completed'
-                    GROUP BY s.program, sm.module_code
+                    GROUP BY s.course, sm.module_code
                 """)
 
                 progression_data = cursor.fetchall()

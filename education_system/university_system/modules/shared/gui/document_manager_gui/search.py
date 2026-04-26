@@ -127,7 +127,7 @@ class SearchManager:
                    DATE(sd.upload_date) as upload_date
             FROM documents sd
             JOIN students s ON sd.owner_id = s.student_id
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.source_type = 'student' AND sd.is_current_version = 1
             '''
 

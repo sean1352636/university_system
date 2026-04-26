@@ -108,7 +108,7 @@ class ReportsManager:
             CROSS JOIN document_types req_types
             LEFT JOIN documents submitted_docs ON s.student_id = submitted_docs.owner_id
                 AND submitted_docs.source_type = 'student'
-                AND req_types.type_id = submitted_docs.type_id
+                AND req_types.type_id = CAST(submitted_docs.document_type AS INTEGER)
                 AND submitted_docs.is_current_version = 1
             WHERE req_types.is_required = 1
             GROUP BY s.student_id
@@ -283,7 +283,7 @@ class ReportsManager:
                     CAST((julianday(sd.expiry_date) - julianday('now')) AS INTEGER) as days_until_expiry
                 FROM documents sd
                 JOIN students s ON sd.owner_id = s.student_id
-                JOIN document_types dt ON sd.type_id = dt.type_id
+                JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                 WHERE sd.source_type = 'student' AND sd.expiry_date IS NOT NULL
                     AND sd.expiry_date > date('now')
                     AND sd.expiry_date <= date('now', '+30 days')
@@ -499,7 +499,7 @@ class ReportsManager:
 
             # Get department stats
             cursor.execute('''
-            SELECT s.program as department,
+            SELECT s.course as department,
                    COUNT(DISTINCT sd.owner_id) as total_students,
                    COUNT(sd.document_id) as total_documents,
                    SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as verified_docs,
@@ -507,7 +507,7 @@ class ReportsManager:
             FROM documents sd
             JOIN students s ON sd.owner_id = s.student_id
             WHERE sd.source_type = 'student' AND sd.is_current_version = 1
-            GROUP BY s.program
+            GROUP BY s.course
             ORDER BY total_documents DESC
             ''')
 
@@ -658,7 +658,7 @@ class ReportsManager:
                         cursor.execute('''
                         SELECT dt.type_name, sd.upload_date, sd.verification_status, sd.version_number
                         FROM documents sd
-                        JOIN document_types dt ON sd.type_id = dt.type_id
+                        JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                         WHERE sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
                         ORDER BY sd.upload_date DESC
                         ''', (student_id,))
@@ -942,7 +942,7 @@ class ReportsManager:
                                dt.type_name, sd.upload_date, sd.verification_status, sd.file_size, sd.version_number
                         FROM documents sd
                         JOIN students s ON sd.owner_id = s.student_id
-                        JOIN document_types dt ON sd.type_id = dt.type_id
+                        JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                         WHERE sd.source_type = 'student' AND sd.is_current_version = 1
                         '''
                     elif rtype == "students":

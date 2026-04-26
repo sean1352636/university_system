@@ -1954,7 +1954,7 @@ class NotificationService:
             parent=self.ctx.parent, initialvalue=70) or 70
         try:
             self.ctx.db.cur.execute(
-                """CREATE TABLE IF NOT EXISTS sms_messages (
+                """CREATE TABLE IF NOT EXISTS abs_tracker_sms_queue (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     recipient TEXT, body TEXT,
                     queued_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -1969,7 +1969,7 @@ class NotificationService:
             queued = 0
             for sid, pct in rows:
                 self.ctx.db.cur.execute(
-                    "INSERT INTO sms_messages (recipient, body) VALUES (?,?)",
+                    "INSERT INTO abs_tracker_sms_queue (recipient, body) VALUES (?,?)",
                     (sid, f"ALERT: attendance {pct:.1f}% "
                           f"below {threshold:.0f}%"))
                 queued += 1
@@ -1979,7 +1979,7 @@ class NotificationService:
             logger.exception("SMS queue failed threshold=%s", threshold)
             messagebox.showerror("Failed", str(e), parent=self.ctx.parent)
             return
-        audit(self.ctx, "sms_queue", "sms_messages", "", f"n={queued}")
+        audit(self.ctx, "sms_queue", "abs_tracker_sms_queue", "", f"n={queued}")
         messagebox.showinfo("Queued",
                             f"{queued} SMS message(s) queued.",
                             parent=self.ctx.parent)

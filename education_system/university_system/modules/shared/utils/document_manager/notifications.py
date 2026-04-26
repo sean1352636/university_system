@@ -194,7 +194,7 @@ class NotificationsMixin:
                 CROSS JOIN document_types dt
                 LEFT JOIN documents sd ON s.student_id = sd.owner_id
                     AND sd.source_type = 'student'
-                    AND dt.type_id = sd.type_id AND sd.is_current_version = 1
+                    AND dt.type_id = CAST(sd.document_type AS INTEGER) AND sd.is_current_version = 1
                 WHERE dt.is_required = 1 AND dt.is_active = 1 AND sd.document_id IS NULL
                 ''')
 
@@ -215,7 +215,7 @@ class NotificationsMixin:
                 cursor.execute('''
                 SELECT DISTINCT sd.owner_id as student_id, s.first_name, dt.type_name, sd.expiry_date
                 FROM documents sd
-                JOIN document_types dt ON sd.type_id = dt.type_id
+                JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                 JOIN students s ON sd.owner_id = s.student_id
                 WHERE sd.expiry_date <= ? AND sd.expiry_date >= date('now')
                   AND sd.is_current_version = 1

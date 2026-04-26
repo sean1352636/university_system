@@ -61,7 +61,7 @@ class WorkflowManager:
             FROM document_workflow dw
             JOIN documents sd ON dw.document_id = sd.document_id
             JOIN students s ON sd.owner_id = s.student_id
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.source_type = 'student' AND dw.status = 'pending'
             ORDER BY sd.upload_date ASC
             ''')
@@ -306,7 +306,7 @@ class WorkflowManager:
                 FROM document_workflow dw
                 JOIN documents sd ON dw.document_id = sd.document_id
                 JOIN students s ON sd.owner_id = s.student_id
-                JOIN document_types dt ON sd.type_id = dt.type_id
+                JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                 WHERE dw.status = 'pending'
                 ORDER BY sd.upload_date ASC
                 ''')
@@ -348,7 +348,7 @@ class WorkflowManager:
             FROM document_workflow dw
             JOIN documents sd ON dw.document_id = sd.document_id
             JOIN students s ON sd.owner_id = s.student_id
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE dw.workflow_id = ? AND dw.status = 'pending'
             ''', (workflow_id,))
 

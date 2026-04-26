@@ -332,8 +332,8 @@ class DocumentsManager:
                 cursor.execute('''
                 SELECT document_id, version_number
                 FROM documents
-                WHERE owner_id = ? AND source_type = 'student' AND type_id = ? AND is_current_version = 1
-                ''', (student_id, type_id))
+                WHERE owner_id = ? AND source_type = 'student' AND document_type = ? AND is_current_version = 1
+                ''', (student_id, str(type_id)))
 
                 existing_doc = cursor.fetchone()
 
@@ -388,11 +388,11 @@ class DocumentsManager:
                 # Insert new document record
                 cursor.execute('''
                 INSERT INTO documents
-                (source_type, owner_id, type_id, file_path, original_filename, upload_date, expiry_date,
+                (source_type, owner_id, document_type, file_path, original_filename, upload_date, expiry_date,
                  verification_status, version_number, parent_document_id, uploaded_by,
                  file_size, file_hash, tags, notes, workflow_status)
                 VALUES ('student', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (student_id, type_id, new_file_path, original_filename, upload_date,
+                ''', (student_id, str(type_id), new_file_path, original_filename, upload_date,
                       expiry_date if expiry_date else None, 'Pending', new_version, parent_doc_id,
                       self.gui.current_user['username'], file_size, file_hash, tags, notes, 'submitted'))
 
@@ -471,7 +471,7 @@ class DocumentsManager:
             SELECT sd.*, s.first_name, s.last_name, s.email_address, dt.type_name, dt.description
             FROM documents sd
             JOIN students s ON sd.owner_id = s.student_id
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.source_type = 'student' AND sd.document_id = ?
             ''', (doc_id,))
 
@@ -852,7 +852,7 @@ Notes:
                    sd.expiry_date, sd.version_number, sd.verification_notes
             FROM documents sd
             JOIN students s ON sd.owner_id = s.student_id
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.source_type = 'student' AND sd.is_current_version = 1
             ORDER BY sd.upload_date DESC
             '''

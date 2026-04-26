@@ -163,7 +163,7 @@ class DashboardManager:
                    DATE(sd.upload_date) as activity_date
             FROM documents sd
             JOIN students s ON sd.owner_id = s.student_id
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.source_type = 'student' AND sd.upload_date >= date('now', '-7 days')
             ORDER BY sd.upload_date DESC
             LIMIT 15

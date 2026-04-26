@@ -178,7 +178,7 @@ class DashboardMixin:
             CROSS JOIN document_types dt
             LEFT JOIN documents sd ON s.student_id = sd.owner_id
                 AND sd.source_type = 'student'
-                AND dt.type_id = sd.type_id
+                AND dt.type_id = CAST(sd.document_type AS INTEGER)
                 AND sd.is_current_version = 1
             WHERE dt.is_required = 1
             GROUP BY s.student_id

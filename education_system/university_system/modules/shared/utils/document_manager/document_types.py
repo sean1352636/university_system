@@ -244,7 +244,7 @@ class DocumentTypeMixin:
             cursor.execute('''
             SELECT dt.type_name, COUNT(*) as usage_count
             FROM documents sd
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             GROUP BY dt.type_name
             ORDER BY usage_count DESC
             ''')
@@ -262,7 +262,7 @@ class DocumentTypeMixin:
                    COUNT(*) as total,
                    SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as verified
             FROM documents sd
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.is_current_version = 1
             GROUP BY dt.type_name
             ORDER BY dt.type_name

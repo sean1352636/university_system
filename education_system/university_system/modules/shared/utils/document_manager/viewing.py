@@ -18,7 +18,7 @@ class ViewingMixin:
                    sd.upload_date, sd.expiry_date, sd.verification_status,
                    sd.version_number, sd.workflow_status, sd.tags
             FROM documents sd
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.owner_id = ? AND sd.source_type = 'student' AND sd.is_current_version = 1
             ORDER BY sd.upload_date DESC
             ''', (student_id,))
@@ -87,7 +87,7 @@ class ViewingMixin:
                    sd.verification_notes, sd.version_number, sd.uploaded_by,
                    sd.file_size, sd.file_hash, sd.tags, sd.workflow_status, sd.priority
             FROM documents sd
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             LEFT JOIN students s ON sd.owner_id = s.student_id
             WHERE sd.document_id = ?
             ''', (doc_id,))

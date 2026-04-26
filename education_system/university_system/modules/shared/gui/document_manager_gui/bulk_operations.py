@@ -97,7 +97,7 @@ class BulkOperationsManager:
                 if criteria == "type":
                     cursor.execute('''
                     SELECT sd.document_id FROM documents sd
-                    JOIN document_types dt ON sd.type_id = dt.type_id
+                    JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                     WHERE dt.type_name LIKE ? AND sd.is_current_version = 1
                     ''', (f'%{filter_value}%',))
                 elif criteria == "status":
@@ -261,7 +261,7 @@ class BulkOperationsManager:
                     cursor.execute('''
                         SELECT sd.*, dt.type_name
                         FROM documents sd
-                        LEFT JOIN document_types dt ON sd.type_id = dt.type_id
+                        LEFT JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                     ''')
                     data = cursor.fetchall()
                     columns = [desc[0] for desc in cursor.description]
@@ -285,7 +285,7 @@ class BulkOperationsManager:
                         FROM students s
                         CROSS JOIN document_types dt
                         LEFT JOIN documents sd ON s.student_id = sd.owner_id
-                            AND sd.source_type = 'student' AND dt.type_id = sd.type_id AND sd.is_current_version = 1
+                            AND sd.source_type = 'student' AND dt.type_id = CAST(sd.document_type AS INTEGER) AND sd.is_current_version = 1
                         WHERE dt.is_required = 1
                         GROUP BY s.student_id
                     ''')

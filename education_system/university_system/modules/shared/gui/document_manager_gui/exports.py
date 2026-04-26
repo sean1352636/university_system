@@ -90,7 +90,7 @@ class ExportManager:
                            dt.type_name, sd.upload_date, sd.verification_status
                     FROM documents sd
                     JOIN students s ON sd.owner_id = s.student_id
-                    JOIN document_types dt ON sd.type_id = dt.type_id
+                    JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                     WHERE sd.source_type = 'student' AND sd.is_current_version = 1
                     ''')
                     columns = ['Document ID', 'Student ID', 'First Name', 'Last Name', 'Document Type', 'Upload Date', 'Status']
@@ -176,7 +176,7 @@ class ExportManager:
                    sd.original_filename, sd.file_size, sd.version_number
             FROM documents sd
             JOIN students s ON sd.owner_id = s.student_id
-            JOIN document_types dt ON sd.document_type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.source_type = 'student' AND sd.is_current_version = 1
             ORDER BY sd.upload_date DESC
             ''')
@@ -751,7 +751,7 @@ class ExportManager:
                                sd.original_filename, sd.verification_status,
                                sd.upload_date, sd.expiry_date, sd.file_size
                         FROM documents sd
-                        JOIN document_types dt ON sd.type_id = dt.type_id
+                        JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                         WHERE sd.is_current_version = 1
                         ORDER BY sd.upload_date DESC
                         LIMIT 1000
@@ -838,7 +838,7 @@ class ExportManager:
                            sd.original_filename, sd.verification_status,
                            sd.upload_date, sd.expiry_date, sd.file_size
                     FROM documents sd
-                    JOIN document_types dt ON sd.type_id = dt.type_id
+                    JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                     WHERE sd.is_current_version = 1
                     ORDER BY sd.upload_date DESC
                     LIMIT 1000
@@ -886,7 +886,7 @@ class ExportManager:
                     SELECT
                         COUNT(*) as total,
                         COUNT(DISTINCT sd.owner_id) as unique_students,
-                        COUNT(DISTINCT sd.type_id) as unique_types,
+                        COUNT(DISTINCT sd.document_type) as unique_types,
                         SUM(CASE WHEN sd.verification_status = 'Pending' THEN 1 ELSE 0 END) as pending,
                         SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as approved,
                         SUM(CASE WHEN sd.verification_status = 'Rejected' THEN 1 ELSE 0 END) as rejected,
@@ -953,7 +953,7 @@ class ExportManager:
                 cursor.execute("""
                     SELECT dt.type_name, COUNT(*) as count
                     FROM documents sd
-                    JOIN document_types dt ON sd.type_id = dt.type_id
+                    JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                     WHERE sd.is_current_version = 1
                     GROUP BY dt.type_name
                     ORDER BY count DESC
@@ -1071,7 +1071,7 @@ class ExportManager:
                     SELECT
                         COUNT(*) as total,
                         COUNT(DISTINCT sd.owner_id) as unique_students,
-                        COUNT(DISTINCT sd.type_id) as unique_types,
+                        COUNT(DISTINCT sd.document_type) as unique_types,
                         SUM(CASE WHEN sd.verification_status = 'Pending' THEN 1 ELSE 0 END) as pending,
                         SUM(CASE WHEN sd.verification_status = 'Verified' THEN 1 ELSE 0 END) as approved,
                         SUM(CASE WHEN sd.verification_status = 'Rejected' THEN 1 ELSE 0 END) as rejected,
@@ -1119,7 +1119,7 @@ class ExportManager:
                 cursor.execute("""
                     SELECT dt.type_name, COUNT(*) as count
                     FROM documents sd
-                    JOIN document_types dt ON sd.type_id = dt.type_id
+                    JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                     WHERE sd.is_current_version = 1
                     GROUP BY dt.type_name
                     ORDER BY count DESC
@@ -1159,7 +1159,7 @@ class ExportManager:
                     SELECT sd.owner_id as student_id, dt.type_name, sd.original_filename,
                            sd.verification_status, sd.upload_date
                     FROM documents sd
-                    JOIN document_types dt ON sd.type_id = dt.type_id
+                    JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                     WHERE sd.is_current_version = 1
                     ORDER BY sd.upload_date DESC
                     LIMIT 50

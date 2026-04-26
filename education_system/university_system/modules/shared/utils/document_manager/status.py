@@ -28,7 +28,7 @@ class StatusMixin:
                    julianday(sd.expiry_date) - julianday('now') as days_until_expiry
             FROM documents sd
             JOIN students s ON sd.owner_id = s.student_id
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.expiry_date BETWEEN ? AND ?
             AND sd.verification_status = 'Verified'
             AND sd.is_current_version = 1
@@ -43,7 +43,7 @@ class StatusMixin:
                    dt.type_name, sd.expiry_date, sd.original_filename
             FROM documents sd
             JOIN students s ON sd.owner_id = s.student_id
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.expiry_date < ?
             AND sd.verification_status != 'Expired'
             AND sd.is_current_version = 1
@@ -163,7 +163,7 @@ class StatusMixin:
                    dt.type_name, sd.verification_status, sd.original_filename
             FROM documents sd
             JOIN students s ON sd.owner_id = s.student_id
-            JOIN document_types dt ON sd.type_id = dt.type_id
+            JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
             WHERE sd.document_id = ? AND sd.is_current_version = 1
             ''', (document_id,))
 

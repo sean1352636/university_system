@@ -444,7 +444,7 @@ def show_documents_interface(self):
                        sd.upload_date, sd.uploaded_by, sd.verification_status,
                        sd.document_id, sd.file_path
                 FROM documents sd
-                LEFT JOIN document_types dt ON sd.type_id = dt.type_id
+                LEFT JOIN document_types dt ON dt.type_id = CAST(sd.document_type AS INTEGER)
                 WHERE sd.owner_id = ? AND sd.owner_type = 'student'
                   AND sd.is_current_version = 1
                 ORDER BY sd.upload_date DESC
