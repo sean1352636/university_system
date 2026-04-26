@@ -30,8 +30,10 @@ def show_archive_management_dialog(self):
         payment_range = cursor.fetchone()
 
         if payment_range[0]:
-            oldest = datetime.strptime(payment_range[0], '%Y-%m-%d')
-            newest = datetime.strptime(payment_range[1], '%Y-%m-%d')
+            # payment_date may include a time component (e.g. "2025-11-21
+            # 19:43:25") — slice to the date portion before parsing.
+            oldest = datetime.strptime(payment_range[0][:10], '%Y-%m-%d')
+            newest = datetime.strptime(payment_range[1][:10], '%Y-%m-%d')
             days_span = (newest - oldest).days
 
             ttk.Label(stats_frame, text=f"Payment Data Span: {days_span} days").pack(anchor=tk.W)

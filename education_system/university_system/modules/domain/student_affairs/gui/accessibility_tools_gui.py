@@ -35,13 +35,15 @@ from education_system.university_system.modules.domain.student_affairs.services.
 class AccessibilityToolsGUI:
     """Main GUI for Accessibility & Accommodation Tools"""
 
-    def __init__(self, root, auth: Optional[UserAuth] = None):
+    def __init__(self, root, auth: Optional[UserAuth] = None, parent_container=None):
         # Initialize i18n for language support
         init_i18n()
 
         self.root = root
         self.auth = auth
         self.window = None
+        self.parent_container = parent_container
+        self._is_embedded = parent_container is not None
         self.current_user = auth.current_user if auth and auth.current_user else None
 
         # Theme mapping between database values and display values
@@ -72,26 +74,33 @@ class AccessibilityToolsGUI:
     def create_main_window(self):
         """Create the main accessibility tools window"""
         try:
-            self.window = tk.Toplevel(self.root)
-            self.window.title(_t("accessibility.title"))
-            self.window.geometry("1400x900")
-            self.window.minsize(1200, 700)
+            if self._is_embedded:
+                self.window = self.parent_container
+            else:
+                self.window = tk.Toplevel(self.root)
+                self.window.title(_t("accessibility.title"))
+                self.window.geometry("1400x900")
+                self.window.minsize(1200, 700)
 
             # Configure style
             style = ttk.Style()
             style.configure('Header.TLabel', font=('Arial', 16, 'bold'))
             style.configure('Section.TLabel', font=('Arial', 12, 'bold'))
 
-            # Bottom frame with close button - pack FIRST to reserve space
-            bottom_frame = ttk.Frame(self.window)
-            bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
+            if not self._is_embedded:
+                # Bottom frame with close button - pack FIRST to reserve space
+                bottom_frame = ttk.Frame(self.window)
+                bottom_frame.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=5)
 
-            ttk.Button(bottom_frame, text=_t("accessibility.btn.close"),
-                      command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
+                ttk.Button(bottom_frame, text=_t("accessibility.btn.close"),
+                          command=self.window.destroy).pack(side=tk.RIGHT, padx=5)
 
-            # Status bar
-            self.status_bar = ttk.Label(self.window, text=_t("accessibility.status.ready"), relief=tk.SUNKEN, anchor=tk.W)
-            self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+                # Status bar
+                self.status_bar = ttk.Label(self.window, text=_t("accessibility.status.ready"), relief=tk.SUNKEN, anchor=tk.W)
+                self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+            else:
+                self.status_bar = ttk.Label(self.window, text=_t("accessibility.status.ready"), relief=tk.SUNKEN, anchor=tk.W)
+                self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
             # Main container with tabs
             self.notebook = ttk.Notebook(self.window)

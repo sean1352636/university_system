@@ -64,11 +64,16 @@ from education_system.university_system.modules.domain.finance.gui.finance_repor
 class FinancialManagementGUI:
     """Enhanced GUI for Financial Management System (core class)"""
 
-    def __init__(self, root, auth_instance=None):
+    def __init__(self, root, auth_instance=None, parent_container=None):
         self.root = root
         self.auth = auth_instance  # Store authentication instance
         self.current_chart_window = None  # Track current chart window to prevent duplicates
         self._time_update_id = None  # Track the after() callback for cleanup
+        self.parent_container = parent_container
+        self._is_embedded = parent_container is not None
+        # The widget that hosts the main content. Toplevel/Tk when standalone,
+        # the supplied frame when embedded inside another GUI.
+        self.host = parent_container if self._is_embedded else root
 
         # Set global auth for backward compatibility with standalone functions
         global auth
@@ -76,15 +81,16 @@ class FinancialManagementGUI:
         if HAS_AUTH and self.auth:
             set_auth_instance(self.auth)
 
-        self.root.title(_("finance_reporting.title"))
-        # Make window bigger - use 90% of screen size
-        screen_width = self.root.winfo_screenwidth()
-        screen_height = self.root.winfo_screenheight()
-        window_width = int(screen_width * 0.9)
-        window_height = int(screen_height * 0.9)
-        x = (screen_width - window_width) // 2
-        y = (screen_height - window_height) // 2
-        self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        if not self._is_embedded:
+            self.root.title(_("finance_reporting.title"))
+            # Make window bigger - use 90% of screen size
+            screen_width = self.root.winfo_screenwidth()
+            screen_height = self.root.winfo_screenheight()
+            window_width = int(screen_width * 0.9)
+            window_height = int(screen_height * 0.9)
+            x = (screen_width - window_width) // 2
+            y = (screen_height - window_height) // 2
+            self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
         # Ensure database tables exist
         ensure_financial_alerts_table()
@@ -95,8 +101,9 @@ class FinancialManagementGUI:
         # Create main interface
         self.create_main_interface()
 
-        # Handle window close button (X)
-        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        # Handle window close button (X) — only meaningful when standalone
+        if not self._is_embedded:
+            self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Initialize status
         self.update_status(_("finance_reporting.status.ready"))
@@ -166,23 +173,42 @@ class FinancialManagementGUI:
     def create_main_interface(self):
         """Create the main GUI interface"""
         # Main container with padding (matching main_gui.py)
-        main_frame = ttk.Frame(self.root, padding="10")
+        main_frame = ttk.Frame(self.host, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
-        # Configure grid weights
-        self.root.grid_rowconfigure(0, weight=1)
-        self.root.grid_columnconfigure(0, weight=1)
-        main_frame.grid_rowconfigure(2, weight=1)
+        # Configure grid weights — the content row (row 1) should absorb
+        # extra vertical space; the status bar (row 2) stays at its natural
+        # minimum at the bottom. (Previously row 2 had the weight, which left
+        # the content row stuck at requested size and clipped its children
+        # whenever the host was smaller than ~90% of the screen — e.g. when
+        # embedded inside the Finance GUI's Reports tab.)
+        self.host.grid_rowconfigure(0, weight=1)
+        self.host.grid_columnconfigure(0, weight=1)
+        main_frame.grid_rowconfigure(1, weight=1)
         main_frame.grid_columnconfigure(1, weight=1)
 
-        # Header with LabelFrame (matching main_gui.py)
-        self.create_header(main_frame)
+        # Header with LabelFrame (matching main_gui.py) — skip when embedded
+        # so the Recent Activity panel further down has room to breathe; the
+        # parent Finance GUI already provides its own toolbar.
+        if not self._is_embedded:
+            self.create_header(main_frame)
 
         # Main content area
         self.create_content_area(main_frame)
 
-        # Status bar
-        self.create_status_bar(main_frame)
+        # Status bar — skip when embedded: the unused Progressbar trough
+        # renders as a dark bar across the bottom in the clam theme, which
+        # looks like junk inside the Finance GUI's Reports tab. The parent
+        # GUI also has its own status bar.
+        if self._is_embedded:
+            # status_var is read by other code paths (run_function_background,
+            # update_status); keep the variable so those paths still work.
+            self.status_var = tk.StringVar(value=_("finance_reporting.status.ready"))
+            self.progress_var = tk.DoubleVar()
+            self.progress_bar = None
+            self.time_var = tk.StringVar()
+        else:
+            self.create_status_bar(main_frame)
 
     def create_header(self, parent):
         """Create header with title and quick actions (matching main_gui.py)"""
@@ -449,6 +475,9 @@ class FinancialManagementGUI:
         try:
             # Cancel any pending after() callbacks
             self.cancel_time_update()
+            if self._is_embedded:
+                # When embedded, the parent GUI owns navigation — do nothing.
+                return
             # Simply close this window - the parent Finance GUI should already be open
             self.root.destroy()
         except Exception as e:

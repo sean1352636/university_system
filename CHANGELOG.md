@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.98.0 — 2026-04-26](#8980---2026-04-26)
 - [8.97.0 — 2026-04-26](#8970---2026-04-26)
 - [8.96.0 — 2026-04-26](#8960---2026-04-26)
 - [8.95.0 — 2026-04-25](#8950---2026-04-25)
@@ -202,6 +203,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.98.0] — 2026-04-26
+
+### Inline-embedded sub-GUIs (Finance + Health portals); SQLite schema-mismatch sweep; archive-management bugfix
+
+#### Changed
+
+- **Finance GUI: Reports tab now embeds the Financial Reporting GUI inline** instead of opening a Toplevel window. Same treatment applied to Financial Aid, Scholarships, Research & Grants, Bank App, and Club Payments tabs — clicking each tab builds the underlying GUI directly in the content area on first visit (lazy `<Map>` event so the cost is only paid when the user actually visits the tab). The "Open …" launch buttons + descriptive info text are gone. Each underlying GUI (`FinancialManagementGUI`, `ResearchGrantsGUI`, `BankApp`, `FinancialAidGUI`, `AccessibilityToolsGUI`) now accepts an optional `parent_container=` kwarg and skips Toplevel-only calls (`title()`, `geometry()`, `minsize()`, `protocol(WM_DELETE_WINDOW)`, close button) when supplied a Frame instead of a window.
+- **Health portal "Accessibility Tools" button** now embeds the Accessibility Tools GUI directly in the health portal's content frame (matching the existing pattern used for Medical Accommodations) rather than spawning a new window.
+- **Finance GUI "Advanced Reporting" button** (dashboard quick-action + Settings → Admin) now switches to the Reports tab via `layout.show_tab('reports')` instead of opening the reporting GUI as a Toplevel — keeps the user inside one window.
+- **Reporting GUI Total Revenue metric** (`finance_reporting/dashboard_tab.py`) now uses `SELECT SUM(amount) FROM payments` to match the Finance GUI dashboard's figure. Previously it summed `student_fees.amount WHERE status='paid'`, which is a narrower slice and disagreed with the parent dashboard (e.g. £5,000 vs £27,342.57). Collection rate still divides revenue by `SUM(student_fees.amount)` so the percentage stays meaningful.
+
+#### Fixed
+
+- **SQLite schema-mismatch sweep across the university system.** The `documents` table has only `document_type` (TEXT), but ~30 sites across the document manager (and a few others) joined or filtered on a non-existent `sd.type_id` / `sd.document_type_id` / `submitted_docs.type_id`. All replaced with `dt.type_id = CAST(sd.document_type AS INTEGER)`. Document upload INSERTs now write `document_type` instead of the missing `type_id` column. Additional fixes uncovered in the same pass:
+  - `students.program` / `students.program_name` → `s.course` (the actual column) in `document_manager/reports.py`, `document_manager_gui/reports.py`, `document_manager/import_export.py`, `university_chatbot/services.py`, `library/barcode_cards.py`.
+  - Absence tracker's local SMS-queue table renamed from `sms_messages` to `abs_tracker_sms_queue` so it no longer collides with the global `sms_messages` table (different schema; the `CREATE TABLE IF NOT EXISTS` was a silent no-op against the existing table, leaving the INSERT to fail with `no such column`).
+- **Reports tab: bottom buttons clipped (Export Report, System Health) & "weird black lines at the bottom".** Two root causes:
+  - `main_frame.grid_rowconfigure(2, weight=1)` gave the *status bar* row the expansion weight instead of the content row (row 1), so the content area stayed at requested size and the rightmost dashboard column (Export Report / System Health) got clipped whenever the host was narrower than ~90% of the screen. Moved to row 1.
+  - `dashboard_frame` had no `grid_columnconfigure(0/1/2, weight=1)`, so its `columnspan=3` Quick Actions panel didn't expand to fill width, clipping the rightmost button column.
+  - The "black lines" were the unused `ttk.Progressbar` trough at the bottom (dark in the `clam` theme). Status bar is now skipped entirely when embedded; status_var/progress_var/time_var are still created so update_status() etc. continue to work.
+  - The reporting GUI's header LabelFrame (two rows of buttons + status row, ~100px) is now skipped when embedded — gives the Recent Activity panel room to render.
+- **Archive Management dialog: "Error loading archive data: unconverted data remains".** `payment_date` values include time components (e.g. `'2025-11-21 19:43:25'`), but `datetime.strptime(..., '%Y-%m-%d')` only expects the date. Sliced to `[:10]` before parsing in `archive_backup/archive_management.py`.
 
 ---
 

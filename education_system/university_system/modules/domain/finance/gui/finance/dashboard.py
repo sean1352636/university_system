@@ -556,10 +556,9 @@ class DashboardManager:
             messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.dashboard.error_show_reports", error=str(e)))
 
     def launch_reporting_gui(self):
-        """Launch the advanced reporting GUI"""
+        """Open the advanced reporting GUI in the Reports tab (embedded)."""
         try:
-            from education_system.university_system.modules.domain.finance.gui.finance_reporting import launch_financial_gui
-            launch_financial_gui(self.root)
+            self.gui.layout.show_tab('reports')
         except Exception as e:
             messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.dashboard.error_launch_reporting", error=str(e)))
 

@@ -8,72 +8,55 @@ from education_system.university_system.infrastructure.database.db import get_co
 from education_system.university_system.modules.shared.utils.i18n import get_text as _
 
 try:
-    from education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui import launch_financial_aid_gui
+    from education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui import FinancialAidGUI
     FINANCIAL_AID_GUI_AVAILABLE = True
 except ImportError:
     FINANCIAL_AID_GUI_AVAILABLE = False
-    launch_financial_aid_gui = None
+    FinancialAidGUI = None
 
 
 class ScholarshipsMixin:
-    """Scholarships: create, award, deactivate, refresh."""
+    """Scholarships tab — embeds the Financial Aid & Scholarships GUI inline."""
 
     def create_scholarships_tab(self):
-        """Create scholarships management tab - Redirects to Financial Aid GUI"""
+        """Create scholarships tab; embed lazily on first show."""
         scholarships_frame = tk.Frame(self.content_frame, bg='white')
         self.tab_frames['scholarships'] = scholarships_frame
+        self._scholarships_gui_instance = None
 
-        # Title
-        title_label = tk.Label(
-            scholarships_frame,
-            text=_("finance_gui.tabs.scholarships.title"),
-            font=('Arial', 18, 'bold'),
-            bg='white',
-            fg=self.colors['primary']
-        )
-        title_label.pack(pady=20)
-
-        # Description
-        desc_label = tk.Label(
-            scholarships_frame,
-            text=_("finance_gui.tabs.scholarships.description"),
-            font=('Arial', 11),
-            bg='white',
-            fg='#555',
-            justify='center'
-        )
-        desc_label.pack(pady=(0, 30))
-
-        # Launch button
-        if FINANCIAL_AID_GUI_AVAILABLE and launch_financial_aid_gui:
-            launch_btn = tk.Button(
-                scholarships_frame,
-                text=_("finance_gui.buttons.open_financial_aid"),
-                command=lambda: launch_financial_aid_gui(self.root, self.gui.auth),
-                font=('Arial', 12, 'bold'),
-                bg=self.colors['success'],
-                fg='white',
-                padx=30,
-                pady=15
-            )
-            launch_btn.pack(pady=10)
-        else:
-            error_label = tk.Label(
+        if not (FINANCIAL_AID_GUI_AVAILABLE and FinancialAidGUI):
+            tk.Label(
                 scholarships_frame,
                 text=_("finance_gui.messages.financial_aid_unavailable"),
                 font=('Arial', 11),
                 bg='white',
-                fg=self.colors['danger']
-            )
-            error_label.pack(pady=10)
+                fg=self.colors['danger'],
+            ).pack(pady=10)
+            return
 
-        # Info text
-        info_text = ScrolledText(scholarships_frame, height=15, width=80, font=('Arial', 10), wrap='word')
-        info_text.pack(padx=20, pady=20, fill='both', expand=True)
+        scholarships_frame.bind('<Map>', self._on_scholarships_tab_shown, add='+')
 
-        info_content = _("finance_gui.scholarships_info.info_content")
-        info_text.insert('1.0', info_content)
-        info_text.config(state='disabled')
+    def _on_scholarships_tab_shown(self, _event):
+        if getattr(self, '_scholarships_gui_instance', None) is not None:
+            return
+        scholarships_frame = self.tab_frames.get('scholarships')
+        if scholarships_frame is None:
+            return
+        try:
+            host = ttk.Frame(scholarships_frame)
+            host.pack(fill='both', expand=True)
+            auth = getattr(self.gui, 'auth', None) or getattr(self, 'auth', None)
+            self._scholarships_gui_instance = FinancialAidGUI(auth_instance=auth, parent=host)
+            self._scholarships_gui_instance.create_embedded_interface()
+        except Exception as e:
+            tk.Label(
+                scholarships_frame,
+                text=str(e),
+                font=('Arial', 11),
+                bg='white',
+                fg=self.colors['danger'],
+                justify='left',
+            ).pack(padx=20, pady=20, anchor='nw')
 
     def _create_scholarship(self):
         """Create a new scholarship"""

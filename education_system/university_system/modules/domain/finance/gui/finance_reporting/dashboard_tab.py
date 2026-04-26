@@ -52,6 +52,12 @@ def create_dashboard_tab(self):
     """Create dashboard tab with key metrics"""
     dashboard_frame = ttk.Frame(self.notebook, padding="10")
     self.notebook.add(dashboard_frame, text=_("finance_reporting.tabs.dashboard"))
+    # Allow the 3-column layout (metrics, quick actions, activity) to absorb
+    # available width; otherwise the rightmost column's buttons (Export Report
+    # / System Health) get clipped when the host is narrower than the
+    # standalone window.
+    for col in (0, 1, 2):
+        dashboard_frame.grid_columnconfigure(col, weight=1)
 
     # Dashboard title
     ttk.Label(dashboard_frame, text=_("finance_reporting.dashboard.title"),
@@ -295,15 +301,14 @@ def update_dashboard_metrics(self):
             conn = get_connection()
             cursor = conn.cursor()
 
-            # Total revenue
-            cursor.execute('''
-            SELECT SUM(sf.amount) as total_expected,
-                   SUM(CASE WHEN sf.status = 'paid' THEN sf.amount ELSE 0 END) as total_collected
-            FROM student_fees sf
-            ''')
-            revenue_data = cursor.fetchone()
-            total_revenue = revenue_data[1] or 0
-            collection_rate = (revenue_data[1] / revenue_data[0] * 100) if revenue_data[0] else 0
+            # Total revenue — match the Finance GUI dashboard (sum of all
+            # payments received). Collection rate is still computed against
+            # total billed in student_fees so the percentage stays meaningful.
+            cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM payments")
+            total_revenue = cursor.fetchone()[0] or 0
+            cursor.execute("SELECT COALESCE(SUM(amount), 0) FROM student_fees")
+            total_billed = cursor.fetchone()[0] or 0
+            collection_rate = (total_revenue / total_billed * 100) if total_billed else 0
 
             # Active students
             cursor.execute('SELECT COUNT(DISTINCT student_id) FROM student_fees')

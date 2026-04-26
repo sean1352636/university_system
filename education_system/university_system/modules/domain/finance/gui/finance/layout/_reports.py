@@ -1,57 +1,47 @@
 """Reports tab mixin for LayoutManager."""
 
 import tkinter as tk
-from tkinter.scrolledtext import ScrolledText
+from tkinter import ttk
 
-from education_system.university_system.modules.domain.finance.gui.finance_reporting import launch_financial_gui
 from education_system.university_system.modules.shared.utils.i18n import get_text as _
 
 
 class ReportsMixin:
-    """Reports tab - redirects to Finance Reporting GUI."""
+    """Reports tab - embeds the Finance Reporting GUI inline."""
 
     def create_reports_tab(self):
-        """Create reports tab - Redirects to Finance Reporting GUI"""
+        """Create reports tab — embed Finance Reporting GUI in the content area."""
         reports_frame = tk.Frame(self.content_frame, bg='white')
         self.tab_frames['reports'] = reports_frame
+        self._finance_reporting_gui = None
 
-        # Title
-        title_label = tk.Label(
-            reports_frame,
-            text=_("finance_gui.reports_tab.title"),
-            font=('Arial', 18, 'bold'),
-            bg='white',
-            fg=self.colors['primary']
-        )
-        title_label.pack(pady=20)
+        # Lazy build: only instantiate the reporting GUI the first time the tab
+        # is shown, to avoid paying the cost (and DB hits) on every Finance GUI
+        # launch when the user never visits Reports.
+        reports_frame.bind('<Map>', self._on_reports_tab_shown, add='+')
 
-        # Description
-        desc_label = tk.Label(
-            reports_frame,
-            text=_("finance_gui.tabs.reports.description"),
-            font=('Arial', 11),
-            bg='white',
-            fg='#555'
-        )
-        desc_label.pack(pady=(0, 30))
-
-        # Launch button
-        launch_btn = tk.Button(
-            reports_frame,
-            text=_("finance_gui.reports_tab.open_reporting"),
-            command=lambda: launch_financial_gui(self.root),
-            font=('Arial', 12, 'bold'),
-            bg=self.colors['success'],
-            fg='white',
-            padx=30,
-            pady=15
-        )
-        launch_btn.pack(pady=10)
-
-        # Info text
-        info_text = ScrolledText(reports_frame, height=15, width=80, font=('Arial', 10), wrap='word')
-        info_text.pack(padx=20, pady=20, fill='both', expand=True)
-
-        info_content = _("finance_gui.reports_tab.info_content")
-        info_text.insert('1.0', info_content)
-        info_text.config(state='disabled')
+    def _on_reports_tab_shown(self, _event):
+        if getattr(self, '_finance_reporting_gui', None) is not None:
+            return
+        reports_frame = self.tab_frames.get('reports')
+        if reports_frame is None:
+            return
+        try:
+            from education_system.university_system.modules.domain.finance.gui.finance_reporting.main import (
+                FinancialManagementGUI,
+            )
+            host = ttk.Frame(reports_frame)
+            host.pack(fill='both', expand=True)
+            auth = getattr(self, 'auth', None)
+            self._finance_reporting_gui = FinancialManagementGUI(
+                self.root, auth_instance=auth, parent_container=host,
+            )
+        except Exception as e:
+            tk.Label(
+                reports_frame,
+                text=_("finance_gui.reports_tab.title") + f"\n\n{e}",
+                font=('Arial', 11),
+                bg='white',
+                fg='#b00',
+                justify='left',
+            ).pack(padx=20, pady=20, anchor='nw')

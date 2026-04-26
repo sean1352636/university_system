@@ -7,106 +7,55 @@ from education_system.university_system.infrastructure.database.db import get_co
 from education_system.university_system.modules.shared.utils.i18n import get_text as _
 
 try:
-    from education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui import launch_financial_aid_gui
+    from education_system.university_system.modules.domain.finance.gui.financial_aid.financial_aid_gui import FinancialAidGUI
     FINANCIAL_AID_GUI_AVAILABLE = True
 except ImportError:
     FINANCIAL_AID_GUI_AVAILABLE = False
-    launch_financial_aid_gui = None
+    FinancialAidGUI = None
 
 
 class FinancialAidMixin:
-    """Financial aid: award, disburse, cancel, refresh."""
+    """Financial aid tab — embeds the Financial Aid & Scholarships GUI inline."""
 
     def create_aid_tab(self):
-        """Create financial aid management tab"""
+        """Create financial aid tab; embed lazily on first show."""
         aid_frame = tk.Frame(self.content_frame, bg='white')
         self.tab_frames['aid'] = aid_frame
+        self._aid_gui_instance = None
 
-        # Title
-        title_label = tk.Label(aid_frame, text=_("finance_gui.aid_tab.title"),
-                               font=('Arial', 18, 'bold'), bg='white', fg=self.colors['primary'])
-        title_label.pack(pady=20)
-
-        # Description
-        desc_label = tk.Label(
-            aid_frame,
-            text=_("finance_gui.tabs.scholarships.description"),
-            font=('Arial', 11),
-            bg='white',
-            fg='#555'
-        )
-        desc_label.pack(pady=(0, 30))
-
-        # Launch full Financial Aid GUI button
-        if FINANCIAL_AID_GUI_AVAILABLE and launch_financial_aid_gui:
-            launch_btn = tk.Button(
-                aid_frame,
-                text=_("finance_gui.buttons.open_financial_aid"),
-                command=lambda: launch_financial_aid_gui(self.root, self.gui.auth),
-                font=('Arial', 12, 'bold'),
-                bg=self.colors['success'],
-                fg='white',
-                padx=30,
-                pady=15
-            )
-            launch_btn.pack(pady=10)
-        else:
-            error_label = tk.Label(
+        if not (FINANCIAL_AID_GUI_AVAILABLE and FinancialAidGUI):
+            tk.Label(
                 aid_frame,
                 text=_("finance_gui.aid_tab.module_not_available"),
                 font=('Arial', 11),
                 bg='white',
-                fg=self.colors['danger']
-            )
-            error_label.pack(pady=10)
+                fg=self.colors['danger'],
+            ).pack(pady=10)
+            return
 
-        # Separator
-        ttk.Separator(aid_frame, orient='horizontal').pack(fill='x', padx=20, pady=20)
+        aid_frame.bind('<Map>', self._on_aid_tab_shown, add='+')
 
-        # Quick Actions section
-        quick_actions_label = tk.Label(aid_frame, text=_("finance_gui.aid_tab.quick_actions"),
-                               font=('Arial', 14, 'bold'), bg='white')
-        quick_actions_label.pack(pady=10)
-
-        # Toolbar
-        toolbar = tk.Frame(aid_frame, bg='white')
-        toolbar.pack(fill='x', padx=10, pady=10)
-
-        tk.Button(toolbar, text=_("finance_gui.aid_tab.award_aid"), command=self._award_financial_aid,
-                 bg=self.colors['success'], fg='white', font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
-        tk.Button(toolbar, text=_("finance_gui.aid_tab.disburse_funds"), command=self._disburse_aid,
-                 bg=self.colors['info'], fg='white', font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
-        tk.Button(toolbar, text=_("finance_gui.aid_tab.cancel_aid"), command=self._cancel_aid,
-                 bg=self.colors['danger'], fg='white', font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='left', padx=5)
-        tk.Button(toolbar, text=_("finance_gui.buttons.refresh"), command=self._refresh_financial_aid,
-                 bg=self.colors['secondary'], fg='white', font=('Arial', 10, 'bold'), padx=15, pady=8).pack(side='right', padx=5)
-
-        # Financial aid table
-        table_frame = tk.Frame(aid_frame)
-        table_frame.pack(fill='both', expand=True, padx=10, pady=10)
-
-        columns = ('aid_id', 'student_id', 'aid_type', 'awarded_amount', 'disbursed_amount',
-                   'remaining_amount', 'status', 'application_date')
-        self.aid_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=15)
-
-        for col in columns:
-            self.aid_tree.heading(col, text=col.replace('_', ' ').title())
-            self.aid_tree.column(col, width=110)
-
-        # Scrollbars
-        v_scroll = ttk.Scrollbar(table_frame, orient='vertical', command=self.aid_tree.yview)
-        h_scroll = ttk.Scrollbar(table_frame, orient='horizontal', command=self.aid_tree.xview)
-        self.aid_tree.configure(yscrollcommand=v_scroll.set, xscrollcommand=h_scroll.set)
-
-        self.aid_tree.grid(row=0, column=0, sticky='nsew')
-        v_scroll.grid(row=0, column=1, sticky='ns')
-        h_scroll.grid(row=1, column=0, sticky='ew')
-
-        table_frame.grid_rowconfigure(0, weight=1)
-        table_frame.grid_columnconfigure(0, weight=1)
-
-        # Load data
-        self.root.after(100, self._refresh_financial_aid)
+    def _on_aid_tab_shown(self, _event):
+        if getattr(self, '_aid_gui_instance', None) is not None:
+            return
+        aid_frame = self.tab_frames.get('aid')
+        if aid_frame is None:
+            return
+        try:
+            host = ttk.Frame(aid_frame)
+            host.pack(fill='both', expand=True)
+            auth = getattr(self.gui, 'auth', None) or getattr(self, 'auth', None)
+            self._aid_gui_instance = FinancialAidGUI(auth_instance=auth, parent=host)
+            self._aid_gui_instance.create_embedded_interface()
+        except Exception as e:
+            tk.Label(
+                aid_frame,
+                text=str(e),
+                font=('Arial', 11),
+                bg='white',
+                fg=self.colors['danger'],
+                justify='left',
+            ).pack(padx=20, pady=20, anchor='nw')
 
     def _award_financial_aid(self):
         """Award financial aid to a student"""

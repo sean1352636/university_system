@@ -39,91 +39,49 @@ class ClubPaymentsMixin:
     """Club payment management launcher tab."""
 
     def create_club_payments_tab(self):
-        """Create club payment management tab with launch button"""
+        """Create club payments tab; build the notebook lazily on first show."""
         frame = tk.Frame(self.content_frame, bg='white')
         self.tab_frames['club_payments'] = frame
+        self._club_payments_built = False
 
-        # Add title
-        title_label = tk.Label(
-            frame,
-            text=_("finance_gui.club_payments_tab.title"),
-            font=('Arial', 18, 'bold'),
-            bg='white',
-            fg=self.colors['primary']
-        )
-        title_label.pack(pady=20)
+        frame.bind('<Map>', self._on_club_payments_tab_shown, add='+')
 
-        # Description
-        desc_label = tk.Label(
-            frame,
-            text=_("finance_gui.club_payments_tab.description"),
-            font=('Arial', 11),
-            bg='white',
-            fg='#555'
-        )
-        desc_label.pack(pady=(0, 30))
-
-        # Launch button
-        launch_btn = tk.Button(
-            frame,
-            text=_("finance_gui.club_payments_tab.open_club_payments"),
-            command=self._launch_club_payments,
-            font=('Arial', 12, 'bold'),
-            bg=self.colors['success'],
-            fg='white',
-            padx=30,
-            pady=15
-        )
-        launch_btn.pack(pady=10)
-
-    def _launch_club_payments(self):
-        """Launch the Club Payment Management GUI in a new window"""
+    def _on_club_payments_tab_shown(self, _event):
+        if getattr(self, '_club_payments_built', False):
+            return
+        frame = self.tab_frames.get('club_payments')
+        if frame is None:
+            return
         try:
-            payment_window = tk.Toplevel(self.root)
-            payment_window.title(_("finance_gui.club_payments_tab.window_title"))
-            payment_window.geometry("1200x800")
-            try:
-                payment_window.transient(self.root)
-            except Exception:
-                pass
-
-            # Create main frame
-            main_frame = ttk.Frame(payment_window, padding="10")
+            main_frame = ttk.Frame(frame, padding="10")
             main_frame.pack(fill=tk.BOTH, expand=True)
 
-            # Title
-            title_label = ttk.Label(
+            ttk.Label(
                 main_frame,
                 text=_("finance_gui.club_payments_tab.header"),
-                font=('Arial', 16, 'bold')
-            )
-            title_label.pack(pady=10)
+                font=('Arial', 16, 'bold'),
+            ).pack(pady=10)
 
-            # Create notebook for different sections
             notebook = ttk.Notebook(main_frame)
             notebook.pack(fill=tk.BOTH, expand=True, pady=10)
 
-            # Payment Overview Tab
             overview_frame = ttk.Frame(notebook, padding="10")
             notebook.add(overview_frame, text=_("finance_gui.club_payments_tab.tabs.overview"))
             self._create_club_payment_overview(overview_frame)
 
-            # Record Payment Tab
             record_frame = ttk.Frame(notebook, padding="10")
             notebook.add(record_frame, text=_("finance_gui.club_payments_tab.tabs.record"))
             self._create_club_record_payment(record_frame)
 
-            # Payment History Tab
             history_frame = ttk.Frame(notebook, padding="10")
             notebook.add(history_frame, text=_("finance_gui.club_payments_tab.tabs.history"))
             self._create_club_payment_history(history_frame)
 
-            print("Club Payment Management opened successfully from Finance GUI")
-
+            self._club_payments_built = True
         except Exception as e:
             messagebox.showerror(
                 _("common.error"),
-                _("finance_gui.club_payments_tab.failed_to_open", error=str(e))
+                _("finance_gui.club_payments_tab.failed_to_open", error=str(e)),
             )
             print(f"Club Payment Management error: {e}")
 

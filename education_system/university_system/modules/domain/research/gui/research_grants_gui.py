@@ -35,19 +35,28 @@ init_i18n()
 class ResearchGrantsGUI:
     """Research & Grants Management GUI Application"""
 
-    def __init__(self, root, auth):
-        """Initialize the Research & Grants GUI"""
+    def __init__(self, root, auth, parent_container=None):
+        """Initialize the Research & Grants GUI.
+
+        If `parent_container` is supplied, the GUI is hosted inside that frame
+        instead of a new Toplevel — used to embed it in the Finance GUI's
+        Research & Grants tab.
+        """
         self.root = root
         self.auth = auth
+        self._is_embedded = parent_container is not None
 
         if not self.auth or not hasattr(self.auth, 'current_user') or not self.auth.current_user:
             messagebox.showerror(_("common.error"), _("research_grants.errors.login_required"))
             return
 
-        self.window = tk.Toplevel(root)
-        self.window.title(_("research_grants.title"))
-        self.window.geometry("1200x800")
-        self.window.minsize(1000, 600)
+        if self._is_embedded:
+            self.window = parent_container
+        else:
+            self.window = tk.Toplevel(root)
+            self.window.title(_("research_grants.title"))
+            self.window.geometry("1200x800")
+            self.window.minsize(1000, 600)
 
         # Initialize database tables
         self._init_database()
@@ -112,12 +121,14 @@ class ResearchGrantsGUI:
         self._create_equipment_tab()
         self._create_irb_tab()
 
-        # Close button
-        ttk.Button(
-            main_frame,
-            text=_("common.close"),
-            command=self.window.destroy
-        ).pack(pady=(10, 0))
+        # Close button — only shown in standalone (Toplevel) mode; when
+        # embedded inside the Finance GUI, the parent owns navigation.
+        if not self._is_embedded:
+            ttk.Button(
+                main_frame,
+                text=_("common.close"),
+                command=self.window.destroy
+            ).pack(pady=(10, 0))
 
     def _create_projects_tab(self):
         """Create Research Projects tab"""

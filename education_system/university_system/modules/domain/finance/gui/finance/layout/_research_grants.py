@@ -1,74 +1,58 @@
 """Research grants tab mixin for LayoutManager."""
 
 import tkinter as tk
-from tkinter.scrolledtext import ScrolledText
+from tkinter import ttk
 
 from education_system.university_system.modules.shared.utils.i18n import get_text as _
 
 try:
-    from education_system.university_system.modules.domain.research.gui.research_grants_gui import launch_research_grants_gui
+    from education_system.university_system.modules.domain.research.gui.research_grants_gui import ResearchGrantsGUI
     RESEARCH_GRANTS_AVAILABLE = True
 except ImportError:
     RESEARCH_GRANTS_AVAILABLE = False
-    launch_research_grants_gui = None
+    ResearchGrantsGUI = None
 
 
 class ResearchGrantsMixin:
-    """Research grants tab."""
+    """Research & Grants tab — embeds the Research & Grants GUI inline."""
 
     def create_research_grants_tab(self):
-        """Create research & grants management tab"""
+        """Create research & grants tab; embed lazily on first show."""
         frame = tk.Frame(self.content_frame, bg='white')
         self.tab_frames['research_grants'] = frame
+        self._research_grants_instance = None
 
-        # Add title
-        title_label = tk.Label(
-            frame,
-            text=_("finance_gui.research_grants_tab.title"),
-            font=('Arial', 18, 'bold'),
-            bg='white',
-            fg=self.colors['primary']
-        )
-        title_label.pack(pady=20)
-
-        # Description
-        desc_label = tk.Label(
-            frame,
-            text=_("finance_gui.tabs.research_grants.description"),
-            font=('Arial', 11),
-            bg='white',
-            fg='#555'
-        )
-        desc_label.pack(pady=(0, 30))
-
-        # Launch button
-        if RESEARCH_GRANTS_AVAILABLE and launch_research_grants_gui:
-            launch_btn = tk.Button(
-                frame,
-                text=_("finance_gui.research_grants_tab.open_management"),
-                command=lambda: launch_research_grants_gui(self.root, self.gui.auth),
-                font=('Arial', 12, 'bold'),
-                bg=self.colors['success'],
-                fg='white',
-                padx=30,
-                pady=15
-            )
-            launch_btn.pack(pady=10)
-        else:
-            error_label = tk.Label(
+        if not (RESEARCH_GRANTS_AVAILABLE and ResearchGrantsGUI):
+            tk.Label(
                 frame,
                 text=_("finance_gui.research_grants_tab.module_not_available"),
                 font=('Arial', 11),
                 bg='white',
-                fg=self.colors['danger']
+                fg=self.colors['danger'],
+            ).pack(pady=10)
+            return
+
+        frame.bind('<Map>', self._on_research_grants_tab_shown, add='+')
+
+    def _on_research_grants_tab_shown(self, _event):
+        if getattr(self, '_research_grants_instance', None) is not None:
+            return
+        frame = self.tab_frames.get('research_grants')
+        if frame is None:
+            return
+        try:
+            host = ttk.Frame(frame)
+            host.pack(fill='both', expand=True)
+            auth = getattr(self.gui, 'auth', None) or getattr(self, 'auth', None)
+            self._research_grants_instance = ResearchGrantsGUI(
+                self.root, auth, parent_container=host,
             )
-            error_label.pack(pady=10)
-
-        # Info text
-        info_text = ScrolledText(frame, height=15, width=80, font=('Arial', 10), wrap='word')
-        info_text.pack(pady=20, padx=20, fill='both', expand=True)
-
-        info_content = _("finance_gui.research_grants_tab.info_content")
-
-        info_text.insert('1.0', info_content)
-        info_text.config(state='disabled')
+        except Exception as e:
+            tk.Label(
+                frame,
+                text=str(e),
+                font=('Arial', 11),
+                bg='white',
+                fg=self.colors['danger'],
+                justify='left',
+            ).pack(padx=20, pady=20, anchor='nw')

@@ -217,18 +217,24 @@ class BankApp:
         self.student_info = None
         self.is_student_mode = False
 
-        # If parent is provided, use it; otherwise create a new Tk window
+        # If parent is provided, use it; otherwise create a new Tk window.
+        # Detect "embedded in a Frame" — when the parent isn't a Tk/Toplevel
+        # window, skip window-only calls (title/geometry/minsize) since
+        # ttk.Frame doesn't support them.
         if parent is None:
             self.root = tk.Tk()
             self.is_standalone = True
+            self.is_embedded = False
         else:
             self.root = parent
             self.is_standalone = False
+            self.is_embedded = not isinstance(parent, (tk.Tk, tk.Toplevel))
 
-        self.root.title(_t("bank_app.window.title"))
-        if self.is_standalone:
-            self.root.geometry("900x700")
-            self.root.minsize(800, 600)
+        if not self.is_embedded:
+            self.root.title(_t("bank_app.window.title"))
+            if self.is_standalone:
+                self.root.geometry("900x700")
+                self.root.minsize(800, 600)
 
         # Configure style
         self.style = ttk.Style()
