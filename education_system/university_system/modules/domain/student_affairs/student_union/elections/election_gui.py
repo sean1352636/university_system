@@ -258,28 +258,40 @@ def _is_admin_user(user):
 
 
 def _student_contact(db, student_id):
-    """Look up a student's email + display name from the central
-    ``students`` table. Returns ``(email_or_None, display_name)``.
+    """Resolve a student's inbox-routable email + display name.
 
-    Display name falls back to ``student_id`` when first/last names
-    aren't populated, so emails always have something to address.
+    Prefers ``users.email`` (joined by ``students.student_id =
+    users.student_id``) over ``students.email_address`` because the
+    central ``send_email_db_only`` flow creates the inbox ``messages``
+    row only when ``users.email`` matches the recipient address. If
+    we sent to ``students.email_address`` and the two columns differ,
+    the message lands in ``stored_emails`` but never reaches the
+    in-app inbox.
+
+    Falls back to ``students.email_address`` when no users row exists,
+    so demo / unsynced students still get a stored copy.
+    Returns ``(email_or_None, display_name)``.
     """
     if not student_id:
         return None, ""
     try:
         conn = db.connect()
         row = conn.execute(
-            "SELECT email_address, first_name, last_name "
-            "FROM students WHERE student_id = ?",
+            "SELECT u.email, s.email_address, "
+            "       s.first_name, s.last_name "
+            "FROM students s "
+            "LEFT JOIN users u ON u.student_id = s.student_id "
+            "WHERE s.student_id = ?",
             (student_id,)).fetchone()
         conn.close()
     except sqlite3.Error:
         return None, str(student_id)
     if not row:
         return None, str(student_id)
-    email, first, last = row
+    user_email, student_email, first, last = row
+    email = user_email or student_email or None
     name = _full_name(first, last, fallback=str(student_id))
-    return (email or None), name
+    return email, name
 
 
 def _send_candidate_email(db, template_name, template_vars, student_id):
@@ -337,14 +349,18 @@ def _bulk_email_active_students(db, template_name, template_vars):
 
     try:
         conn = db.connect()
+        # Prefer users.email over students.email_address so each row
+        # routes through the inbox lookup successfully (see comment
+        # on _student_contact for why).
         rows = conn.execute(
-            "SELECT student_id, "
-            "       COALESCE(email_address,''), "
-            "       COALESCE(NULLIF(TRIM(first_name||' '||last_name),''), "
-            "                student_id) "
-            "FROM students "
-            "WHERE LOWER(COALESCE(status,'active')) = 'active' "
-            "  AND COALESCE(email_address,'') <> ''").fetchall()
+            "SELECT s.student_id, "
+            "       COALESCE(u.email, s.email_address, ''), "
+            "       COALESCE(NULLIF(TRIM(s.first_name||' '||s.last_name),''), "
+            "                s.student_id) "
+            "FROM students s "
+            "LEFT JOIN users u ON u.student_id = s.student_id "
+            "WHERE LOWER(COALESCE(s.status,'active')) = 'active' "
+            "  AND COALESCE(u.email, s.email_address, '') <> ''").fetchall()
         conn.close()
     except sqlite3.Error:
         return 0
