@@ -257,6 +257,75 @@ def _is_admin_user(user):
     return role in ('admin', 'superadmin', 'staff', 'instructor')
 
 
+def _student_contact(db, student_id):
+    """Look up a student's email + display name from the central
+    ``students`` table. Returns ``(email_or_None, display_name)``.
+
+    Display name falls back to ``student_id`` when first/last names
+    aren't populated, so emails always have something to address.
+    """
+    if not student_id:
+        return None, ""
+    try:
+        conn = db.connect()
+        row = conn.execute(
+            "SELECT email_address, first_name, last_name "
+            "FROM students WHERE student_id = ?",
+            (student_id,)).fetchone()
+        conn.close()
+    except sqlite3.Error:
+        return None, str(student_id)
+    if not row:
+        return None, str(student_id)
+    email, first, last = row
+    name = _full_name(first, last, fallback=str(student_id))
+    return (email or None), name
+
+
+def _send_candidate_email(db, template_name, template_vars, student_id):
+    """Render a student_union/* template and queue it for the student.
+
+    Looks up the student's email_address from the ``students`` table
+    (the central source of truth), renders the template via the shared
+    template_utils, and queues via shared.utils.email_service.queue_email.
+    Silently no-ops if the email infrastructure isn't available, the
+    student has no email on file, or the template can't be loaded —
+    the caller's primary action (insert/delete) shouldn't fail because
+    notification failed.
+
+    Returns True on a successful queue, False otherwise.
+    """
+    email, name = _student_contact(db, student_id)
+    if not email:
+        return False
+
+    # Inject the resolved student_name if the caller didn't override it.
+    full_vars = {
+        'student_name': name,
+        'student_id': str(student_id),
+        **(template_vars or {}),
+    }
+
+    try:
+        from education_system.university_system.infrastructure.email.template_utils import (  # noqa: E501
+            render_template,
+        )
+        subject, body = render_template(
+            f'student_union/{template_name}', full_vars)
+        if not (subject and body):
+            return False
+    except Exception:
+        return False
+
+    try:
+        from education_system.university_system.modules.shared.utils.email_service import (  # noqa: E501
+            queue_email,
+        )
+        return bool(queue_email(email, subject, body))
+    except Exception:
+        return False
+
+
 # ---------- Voter Dashboard ----------
 class VoterDashboard:
     def __init__(self, root, db, user, on_logout):
@@ -723,6 +792,18 @@ class NominateDialog:
                 "Failed", f"Could not submit nomination:\n{e}",
                 parent=self.win)
             return
+
+        # The display label was "Position (Department)"; pull just the
+        # position out for the notification.
+        position_label = choice.split(" (", 1)[0]
+        _send_candidate_email(
+            self.db, 'candidate_nominated', {
+                'position': position_label,
+                'election_id': str(eid),
+                'date_nominated': datetime.now().strftime('%Y-%m-%d'),
+                'manifesto_preview': manifesto[:500],
+            }, sid)
+
         messagebox.showinfo(
             "Submitted",
             "Your nomination has been submitted. Good luck!",
@@ -1078,14 +1159,25 @@ class AdminDashboard:
             messagebox.showinfo("Select", "Select a candidate to delete.")
             return
         vals = tree.item(sel[0])["values"]
-        cid, _sid, name = vals[0], vals[1], vals[2]
+        cid, sid, name = vals[0], vals[1], vals[2]
         if not messagebox.askyesno(
                 "Delete",
                 f"Delete candidate '{name}'?\nAll votes for this candidate "
                 f"will also be removed."):
             return
+
+        # Capture the position + election id BEFORE deleting, so the
+        # notification email has full context.
         conn = self.db.connect()
         try:
+            row = conn.execute(
+                "SELECT c.election_id, e.position "
+                "FROM election_candidates c "
+                "JOIN union_elections e ON e.election_id = c.election_id "
+                "WHERE c.id = ?", (cid,)).fetchone()
+            election_id = row[0] if row else None
+            position = row[1] if row else "(unknown position)"
+
             conn.execute("DELETE FROM election_votes WHERE candidate_id=?",
                          (cid,))
             conn.execute("DELETE FROM campaign_materials WHERE candidate_id=?",
@@ -1097,6 +1189,19 @@ class AdminDashboard:
             conn.commit()
         finally:
             conn.close()
+
+        # Notify the (former) candidate that their candidacy was removed.
+        removed_by = (self.user.get('username')
+                      or self.user.get('email')
+                      or 'Elections Admin')
+        _send_candidate_email(
+            self.db, 'candidate_removed', {
+                'position': position,
+                'election_id': str(election_id) if election_id else '—',
+                'date_removed': datetime.now().strftime('%Y-%m-%d'),
+                'removed_by': removed_by,
+            }, sid)
+
         self.build_candidates_tab(parent_tab)
 
     # ----- Campaigns -----
@@ -1467,6 +1572,15 @@ class CandidateDialog:
         except sqlite3.IntegrityError as e:
             messagebox.showerror("DB error", str(e), parent=self.win)
             return
+
+        # Notify the candidate (best-effort; insert is already committed).
+        _send_candidate_email(
+            self.db, 'candidate_nominated', {
+                'position': position_title,
+                'election_id': str(eid),
+                'date_nominated': datetime.now().strftime('%Y-%m-%d'),
+                'manifesto_preview': (manifesto or '(no manifesto provided)')[:500],
+            }, sid)
 
         self.win.destroy()
         self.on_save()
