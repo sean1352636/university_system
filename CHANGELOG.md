@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.96.0 — 2026-04-26](#8960---2026-04-26)
 - [8.95.0 — 2026-04-25](#8950---2026-04-25)
 - [8.94.0 — 2026-04-25](#8940---2026-04-25)
 - [8.93.0 — 2026-04-24](#8930---2026-04-24)
@@ -200,6 +201,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.96.0] — 2026-04-26
+
+### Disciplinary Portal ↔ Academic Misconduct two-way bridge · absence-tracker GUI integrations · Student Union elections merge
+
+#### Added
+
+- **Single-file Disciplinary Portal wired to the central DB.** `modules/domain/legal/disciplinary/disciplinary_portal.py` now reads/writes the canonical `students`, `disciplinary_records`, `disciplinary_actions` tables (no more standalone `disciplinary_portal.db` or stub students). Uses `get_global_auth()` for the logged-in user; an env-var bridge (`EDU_AUTH_USER_ID`/`USERNAME`/`ROLE`/`EMAIL`/`PERMISSIONS`) lets the main GUI's subprocess launcher hand the auth across to the child process. Sidebar moved from "New Features" → "Family & Legal".
+- **Two-way Disciplinary ↔ Academic Misconduct bridge.**
+  - One-click escalation: `db.escalate_to_misconduct(record_id)` joins the disciplinary record + student and writes a pre-populated `academic_misconduct_cases` row, history entry, and flips the disciplinary record's `status` → `Escalated`. Idempotent (subsequent clicks return the existing case_id).
+  - Auto-escalation: when an incident is created with offence `Academic Misconduct / Plagiarism / Cheating / Code of Conduct Violation`, the misconduct case is created automatically.
+  - Mirror in reverse: new misconduct cases get a parallel `disciplinary_records` row via `case_dialogs._mirror_case_to_disciplinary`, linked back through `source_record_id`.
+  - Back-link: the misconduct case overview shows a "Source disciplinary record #N" button that opens the Disciplinary Portal pointed at that incident (`prefill_record_id` consumed by the portal's `__init__`).
+  - **DB-level status sync** via two `AFTER UPDATE OF status` triggers (`sync_disc_status_to_misc`, `sync_misc_status_to_disc`). Round-trip stable maps + `IN (mapped_keys)` guards halt the cross-table cascade at depth 1; verified Resolved↔Resolved, Appealed↔Pending Hearing, and that unmapped portal-only statuses (Open, Closed, Escalated) don't propagate.
+- **Risk-feed consumers actually read `student_risk_assessment`.** The absence tracker's #33 Risk Feed previously wrote rows nobody read.
+  - `AttendanceAlertsWindow.load_alerts` replaced its hardcoded sample list with a real query against the latest feed row per student; severity filter still works.
+  - `PredictiveAnalyticsWindow` gained a "Load from Risk Feed" button that populates the predictions tree from the persisted feed (alongside the existing recompute-from-attendance path).
+  - `AtRiskTabMixin` (exam-management at-risk audit) gained a `Risk (feed)` column showing each student's persisted level + score.
+  - `ParentNotificationWindow` "All At-Risk Students" recipient mode now prefers the feed (`risk_level IN ('high','medium')`); falls back to the old attendance-rate heuristic only when the feed is empty.
+  - `ProgressService.check_early_warnings` emits a structured `Predictive Risk` warning when a student's latest feed level is `high`/`medium`, so students see the same signal admins see via the existing warnings tab.
+- **Risk feed v2 (`prediction_model='attendance_blend_v1'`)** — blended attendance % + recent failed grades + pending absence requests; idempotent upsert; Δ vs. prior; level filter; quiet/scheduled mode; admin email on new HIGH crossings.
+- **Absence-tracker grade-penalty integration.** Persistent `attendance_grade_penalties` table for dedupe + audit, one-click apply that records a 0-score grade row and notifies linked parents; threshold persisted in `abs_tracker_settings`. Penalty-candidates list opens Grade Management GUI with student/module/comments prefilled; `GradeManager.add_grade_dialog` accepts `prefill_student_id` / `prefill_module_code` / `prefill_comments` kwargs.
+- **Calendar-events absence-tracker link** — two-sided window (look-back + look-ahead, both persisted), per-row absence count, in-place auto-excuse for the selected event's date+type, link to Academic Calendar GUI. New `CalendarGUI.navigate_to_date(iso_date)` method that selects matching events and opens the details dialog when there's exactly one match.
+- **Merged Student Union elections GUI** at `student_union/elections/election_gui.py` — polished Tk dashboard from the standalone `/add/voting_system.py` rebuilt over the central `union_elections` / `election_candidates` / `election_votes` / `campaign_*` tables.
+  - Voter dashboard with cards per open election + "Nominate Myself" dialog (reaches the same workflow the old `ElectionsDialog.NominationDialog` covered).
+  - Admin dashboard with seven tabs: Results, Positions, Candidates, **Campaigns** (approve/reject pending materials), **Expenses** (per-candidate totals against the £100 cap, over-cap rows highlighted), Voters, Settings.
+  - Candidates bind to a real `students.student_id` (drop-down picker) instead of free-text names.
+  - `open_in_toplevel(parent, auth)` helper so the GUI embeds inside the existing Student Union root; sidebar collapsed two duplicate "Elections & Voting" entries into one.
+- **Election candidate email notifications.** New `templates/email/student_union/candidate_nominated.json` and `candidate_removed.json` ($-style placeholders). `_send_candidate_email(db, template, vars, student_id)` resolves the email from `students.email_address`, renders via the shared `render_template`, queues via `email_service.queue_email`. Wired into admin-add (`CandidateDialog.save`), self-nomination (`NominateDialog.submit`), and admin-delete (`AdminDashboard.delete_candidate` — captures position + election_id BEFORE the cascade-delete).
+- **Disciplinary Portal extras** — refresh button on the Incidents view; offence-type filter on the misconduct escalation button (only shown for academic-flavoured types); audit on every status update; "Open Misconduct Case" button that flips to "Escalate" or "Open existing case" based on link state.
+- **Public navigation API on the misconduct panel** — `AcademicMisconductPanel.goto_case(case_id)` and `goto_student_cases(student_id)` encapsulate the previous 7-step puppet show (show_view → search_var → populate_tree → tree.selection_set → tree.see → show_overview_section → create_overview_fields). External callers drive the panel through these instead of poking at internals.
+
+#### Changed
+
+- **Severity vocabulary unified to `Minor / Major / Critical`** across the Disciplinary Portal and Academic Misconduct Panel. `_db_init._normalise_severity` runs at startup and one-shot UPDATEs legacy lowercase + 4-level rows (`minor / Moderate→Minor`, `Serious→Major`, `Severe→Critical`). `raise_disciplinary_action` (#36) now writes title-case `Minor` / `Under Review` instead of lowercase. Verified: `disciplinary_records.severity` now contains only `Minor`/`Major` — no leftover lowercase or 4-level values.
+- **Misconduct panel auth check robustened.** Removed the `isinstance(self.auth, _DummyAuth)` rejection — it was redundant (the dummy class has no `current_user` so the next check rejects it anyway) and would have broken our env-bridge `SimpleNamespace` shim if the dummy class ever changed. The check now solely verifies a non-empty `current_user`.
+- **Academic-calendar package switched to public auth API.** Six callsites in `services/academic_calendar/{auth.py,calendar_core.py}` and `gui/academic_calendar/{main_gui.py,misc.py}` were importing the private `_current_auth_instance` from `infrastructure/auth`, which logged a `SECURITY:` error every time it failed to resolve. Replaced with the public `get_global_auth()` accessor.
+- **Disciplinary Portal Add-Student removed** — student CRUD lives in the main GUI; portal is read-only on the `students` table. `DatabaseManager.add_student`, `show_add_student`, and the "+ Add Student" button all gone.
+- **Status sync moved out of application code.** Triggers replace the previous mirror logic in `update_incident_status` and `update_case_in_db`. A status UPDATE on either store now propagates regardless of who/what wrote the row (raw SQL, future tools, etc.).
+
+#### Schema migrations
+
+Centralised in `university_system/modules/domain/legal/disciplinary/_db_init.py:ensure_disciplinary_schema(db_path)` — single source of truth for the bridge schema, called once at login (`main_gui.set_auth`) plus from each surface as a safety net.
+
+- `disciplinary_records.location TEXT` (idempotent ALTER ADD COLUMN).
+- `students.year_of_study INTEGER` (idempotent).
+- `academic_misconduct_cases.source_record_id INTEGER` (idempotent).
+- New triggers `sync_disc_status_to_misc` and `sync_misc_status_to_disc` (DROP + CREATE so vocabulary changes in `_db_init.py` actually take effect on next launch).
+- Severity normalisation as documented above.
+- New `union_voting_settings(key TEXT PK, value TEXT)` for the election GUI's global voting toggle; `union_elections.description TEXT` added idempotently; `UNIQUE INDEX idx_election_votes_uniq ON election_votes(election_id, voter_id)` enforces one-vote-per-voter-per-election.
+- `attendance_grade_penalties(id, student_id, module_code, threshold, pct, applied_at, applied_by, grade_row_id)` for the absence-tracker grade-penalty workflow (`UNIQUE(student_id, module_code)`).
+
+#### Fixed
+
+- **Subprocess auth dropped for the Disciplinary Portal & Misconduct Panel.** Subprocesses launched via `main_gui._launch_new_feature_module` had no in-process auth (each is a fresh interpreter), so the misconduct panel's auth check showed "please log in via main GUI". Fixed by propagating `EDU_AUTH_*` env vars from the launcher and rebuilding a `SimpleNamespace` shim in the child via `_bootstrap_auth_from_env()`. Registers with both `infrastructure.auth.set_global_auth` AND `infrastructure.shared_context.set_auth` so downstream callers stop logging the `SECURITY:` warning.
+- **Disciplinary Portal subprocess `ModuleNotFoundError: No module named 'education_system'`.** When the main GUI launched the file via `subprocess.Popen([python, origin], …)` with no PYTHONPATH, the child couldn't import `education_system.*`. Top-of-file bootstrap now walks up from `__file__` to find the directory containing `education_system/` and prepends it to `sys.path`. Guarded by `'education_system' not in sys.modules`.
+- **Misconduct panel "Open existing case" no-op.** Setting `selected_case` and refreshing the overview did nothing visible because the panel's default landing view is the Dashboard, not the Cases view. `goto_case(case_id)` now switches to the cases view first, drives `search_var` + `populate_tree` to filter to the row, programmatically selects it in the tree (so the row highlights), then shows the overview section and rebuilds its fields.
+- **Cross-table trigger cascade overwriting user writes.** SQLite's `recursive_triggers=OFF` does NOT suppress chains across tables (it only blocks direct self-recursion). With non-bijective status maps, a portal write to `Appealed` was being overwritten back to `Under Review` by the second-level trigger. Fixed by tightening the maps to a round-trip-stable subset and adding `AND NEW.status IN <map_keys>` to each trigger's `WHEN` clause, so unmapped statuses don't propagate at all rather than ELSE-falling to a value that oscillates.
 
 ---
 
