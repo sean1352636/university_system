@@ -283,29 +283,22 @@ def _student_contact(db, student_id):
 
 
 def _send_candidate_email(db, template_name, template_vars, student_id):
-    """Render a student_union/* template and queue it for the student.
+    """Render a student_union/* template and queue it for one student.
 
-    Looks up the student's email_address from the ``students`` table
-    (the central source of truth), renders the template via the shared
-    template_utils, and queues via shared.utils.email_service.queue_email.
-    Silently no-ops if the email infrastructure isn't available, the
-    student has no email on file, or the template can't be loaded —
-    the caller's primary action (insert/delete) shouldn't fail because
-    notification failed.
-
-    Returns True on a successful queue, False otherwise.
+    Looks up the student's email_address from the central ``students``
+    table, renders the template via shared template_utils, queues via
+    shared.utils.email_service.queue_email. Silently no-ops on missing
+    email/template/infra so the caller's primary action is never
+    blocked. Returns True on a successful queue.
     """
     email, name = _student_contact(db, student_id)
     if not email:
         return False
-
-    # Inject the resolved student_name if the caller didn't override it.
     full_vars = {
         'student_name': name,
         'student_id': str(student_id),
         **(template_vars or {}),
     }
-
     try:
         from education_system.university_system.infrastructure.email.template_utils import (  # noqa: E501
             render_template,
@@ -316,7 +309,6 @@ def _send_candidate_email(db, template_name, template_vars, student_id):
             return False
     except Exception:
         return False
-
     try:
         from education_system.university_system.modules.shared.utils.email_service import (  # noqa: E501
             queue_email,
@@ -324,6 +316,56 @@ def _send_candidate_email(db, template_name, template_vars, student_id):
         return bool(queue_email(email, subject, body))
     except Exception:
         return False
+
+
+def _bulk_email_active_students(db, template_name, template_vars):
+    """Render ``student_union/<template_name>`` once per active student
+    and queue it. Used for whole-cohort notifications such as the
+    voting-closed broadcast.
+
+    Returns the count of successfully queued emails.
+    """
+    try:
+        from education_system.university_system.infrastructure.email.template_utils import (  # noqa: E501
+            render_template,
+        )
+        from education_system.university_system.modules.shared.utils.email_service import (  # noqa: E501
+            queue_email,
+        )
+    except Exception:
+        return 0
+
+    try:
+        conn = db.connect()
+        rows = conn.execute(
+            "SELECT student_id, "
+            "       COALESCE(email_address,''), "
+            "       COALESCE(NULLIF(TRIM(first_name||' '||last_name),''), "
+            "                student_id) "
+            "FROM students "
+            "WHERE LOWER(COALESCE(status,'active')) = 'active' "
+            "  AND COALESCE(email_address,'') <> ''").fetchall()
+        conn.close()
+    except sqlite3.Error:
+        return 0
+
+    sent = 0
+    for sid, email, name in rows:
+        full_vars = {
+            'student_name': name,
+            'student_id': str(sid),
+            **(template_vars or {}),
+        }
+        try:
+            subject, body = render_template(
+                f'student_union/{template_name}', full_vars)
+            if not (subject and body):
+                continue
+            if queue_email(email, subject, body):
+                sent += 1
+        except Exception:
+            continue
+    return sent
 
 
 # ---------- Voter Dashboard ----------
@@ -624,6 +666,7 @@ class CandidatesWindow:
                 parent=self.win):
             return
         voter_id = self.user.get('student_id') or self.user.get('username')
+        vote_time = datetime.now().isoformat(timespec='seconds')
         try:
             conn = self.db.connect()
             cur = conn.cursor()
@@ -631,26 +674,46 @@ class CandidatesWindow:
                 "INSERT INTO election_votes "
                 "(election_id, voter_id, candidate_id, vote_time) "
                 "VALUES (?, ?, ?, ?)",
-                (self.election_id, voter_id, cid,
-                 datetime.now().isoformat()))
+                (self.election_id, voter_id, cid, vote_time))
             # Keep election_candidates.votes in sync so reports that
             # read it directly (e.g. analytics) stay accurate.
             cur.execute(
                 "UPDATE election_candidates "
                 "SET votes = COALESCE(votes,0) + 1 WHERE id = ?", (cid,))
+            # Look up the candidate's display name for the receipt;
+            # falls back to the chosen candidate's id.
+            row = cur.execute(
+                "SELECT COALESCE(NULLIF(TRIM(s.first_name||' '||s.last_name),''), "
+                "                c.student_id) "
+                "FROM election_candidates c "
+                "LEFT JOIN students s ON s.student_id = c.student_id "
+                "WHERE c.id = ?", (cid,)).fetchone()
+            candidate_name = row[0] if row else f"#{cid}"
             conn.commit()
             conn.close()
-            messagebox.showinfo(
-                "Vote recorded",
-                "Your vote has been securely recorded. Thank you!",
-                parent=self.win)
-            self.close()
         except sqlite3.IntegrityError:
             messagebox.showerror(
                 "Already voted",
                 "You have already voted for this position.",
                 parent=self.win)
             self.close()
+            return
+
+        # Send a confirmation receipt to the voter (best-effort).
+        _send_candidate_email(
+            self.db, 'vote_confirmation', {
+                'position': self.position_title,
+                'election_id': str(self.election_id),
+                'candidate_name': candidate_name,
+                'vote_time': vote_time,
+            }, voter_id)
+
+        messagebox.showinfo(
+            "Vote recorded",
+            "Your vote has been securely recorded. A confirmation "
+            "email has been sent. Thank you!",
+            parent=self.win)
+        self.close()
 
     def close(self):
         self.win.destroy()
@@ -1439,7 +1502,25 @@ class AdminDashboard:
 
     def toggle_voting(self, parent):
         is_open = self.db.get_setting("election_open") == "1"
+        # Flip first, then notify on the close transition.
         self.db.set_setting("election_open", "0" if is_open else "1")
+        if is_open:
+            # OPEN → CLOSED: tell every active student that voting is
+            # now closed. Bulk send via _bulk_email_active_students;
+            # best-effort, non-blocking.
+            closed_by = (self.user.get('username')
+                         or self.user.get('email')
+                         or 'Elections Admin')
+            sent = _bulk_email_active_students(
+                self.db, 'voting_closed', {
+                    'closed_at':
+                        datetime.now().strftime('%Y-%m-%d %H:%M'),
+                    'closed_by': closed_by,
+                })
+            messagebox.showinfo(
+                "Voting closed",
+                f"Voting has been closed. Notification emails queued "
+                f"for {sent} active student(s).")
         self.build_settings_tab(parent)
 
     def reset_votes(self, parent):
@@ -1678,20 +1759,29 @@ def open_in_toplevel(parent, auth=None):
     db = Database()
     setup_styles()
 
-    # Resolve user from the passed auth, or the global, or env.
+    # Resolve user — prefer the LIVE global auth over the passed-in
+    # handle. If the host GUI was opened in an earlier session, its
+    # ``self.auth`` may still point at a logged-out (or even replaced)
+    # auth instance, so trusting it would show "please log in" even
+    # though the user has since re-authenticated. Global is the source
+    # of truth that ``main_gui.set_auth`` updates on every login.
     user = None
     cu = None
     try:
-        cu = (auth.current_user if (auth and getattr(auth, 'current_user', None))
-              else None)
-        if cu is None:
-            from education_system.university_system.infrastructure.auth import (  # noqa: E501
-                get_global_auth,
-            )
-            ga = get_global_auth()
-            cu = ga.current_user if (ga and getattr(ga, 'current_user', None)) else None
+        from education_system.university_system.infrastructure.auth import (  # noqa: E501
+            get_global_auth,
+        )
+        ga = get_global_auth()
+        cu = ga.current_user if (ga and getattr(ga, 'current_user', None)) else None
     except Exception:
         cu = None
+    if cu is None:
+        try:
+            cu = (auth.current_user
+                  if (auth and getattr(auth, 'current_user', None))
+                  else None)
+        except Exception:
+            cu = None
 
     if cu:
         user = {
