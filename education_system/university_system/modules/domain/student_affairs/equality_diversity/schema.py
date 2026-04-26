@@ -218,6 +218,16 @@ _PEOPLE_COLUMNS = [
     ("deleted_by", "TEXT"),
     ("updated_at", "TEXT"),
     ("updated_by", "TEXT"),
+    # University-specific dimensions auto-pulled from the central
+    # ``students`` table so reports can segment by course / year cohort
+    # rather than just department. ``programme_level`` is derived from
+    # year_of_study + course naming (Undergraduate / Postgraduate).
+    ("course", "TEXT"),
+    ("year_of_study", "INTEGER"),
+    ("programme_level", "TEXT"),
+    # Timestamp of the last roster sync, so the GUI can show when the
+    # cached demographics were last refreshed.
+    ("last_synced_at", "TEXT"),
 ]
 
 # feature 14/15/16/17 — columns added to ed_incidents

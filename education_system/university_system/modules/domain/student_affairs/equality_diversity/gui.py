@@ -1100,6 +1100,50 @@ class EqualityDiversityGUI:
                bg="#1e3a5f", fg="white", relief="flat", padx=10
                ).pack(side="left", padx=3)
 
+        # Segment-by row — break the quick reports down by course /
+        # year_of_study / programme_level. Pulls from columns
+        # auto-synced by integrations.sync_from_students.
+        seg = Frame(top, bg=t["panel"])
+        seg.pack(anchor="w", pady=(10, 0))
+        Label(seg, text="Segment by:",
+              bg=t["panel"], fg=t["text"],
+              font=("Helvetica", 9, "bold")
+              ).pack(side="left", padx=(0, 6))
+        for axis_label, axis in [("Course", "course"),
+                                  ("Year", "year_of_study"),
+                                  ("Level", "programme_level")]:
+            Button(seg, text=axis_label,
+                   command=lambda a=axis: self._open_segment_picker(a),
+                   bg="#7c3aed", fg="white", relief="flat", padx=10
+                   ).pack(side="left", padx=3)
+
+        # Cross-domain intersections — joins ed_people against
+        # attendance, disciplinary records, the risk feed, and grades
+        # to surface "are we serving all students equally?" disparities.
+        Label(top, text=_t("ed.intersections",
+                           "Cross-domain intersections"),
+              font=("Helvetica", 11, "bold"),
+              bg=t["panel"], fg=t["text"]
+              ).pack(anchor="w", pady=(14, 0))
+        cross = Frame(top, bg=t["panel"])
+        cross.pack(anchor="w", pady=(4, 0))
+        Button(cross, text="Attendance × demographic",
+               command=lambda: self._open_intersection('attendance'),
+               bg="#dc2626", fg="white", relief="flat", padx=10
+               ).pack(side="left", padx=3)
+        Button(cross, text="Discipline × demographic",
+               command=lambda: self._open_intersection('discipline'),
+               bg="#dc2626", fg="white", relief="flat", padx=10
+               ).pack(side="left", padx=3)
+        Button(cross, text="Risk feed × demographic",
+               command=lambda: self._open_intersection('risk'),
+               bg="#dc2626", fg="white", relief="flat", padx=10
+               ).pack(side="left", padx=3)
+        Button(cross, text="Attainment gap",
+               command=lambda: self._open_intersection('attainment'),
+               bg="#dc2626", fg="white", relief="flat", padx=10
+               ).pack(side="left", padx=3)
+
         self.report_frame = Frame(root, bg=t["panel"], padx=16, pady=10)
         self.report_frame.pack(fill="both", expand=True)
         self._last_report: tuple[str, list[tuple[str, int]]] | None = None
@@ -1135,6 +1179,174 @@ class EqualityDiversityGUI:
         self._last_report = ("Incidents by category", rows)
         _render_bar_table(self.report_frame, "Incidents by category",
                           rows, self.theme)
+
+    # ---- university segmentation + cross-domain intersections ----
+
+    def _open_segment_picker(self, axis: str):
+        """Pick a demographic field, then render its breakdown
+        segmented by the given axis (course / year / programme_level).
+        Two-step so the UI doesn't need 6×4 buttons.
+        """
+        win = Toplevel(self.root)
+        win.title(f"Segment by {axis.replace('_', ' ').title()}")
+        win.configure(bg=self.theme["panel"])
+        Label(win, text=f"Pick a demographic to segment by "
+                        f"{axis.replace('_', ' ')}:",
+              bg=self.theme["panel"],
+              fg=self.theme["text"]).pack(padx=12, pady=(10, 6))
+        for label, field in [("Gender", "gender"),
+                             ("Ethnicity", "ethnicity"),
+                             ("Age", "age_group"),
+                             ("Disability", "disability"),
+                             ("Religion", "religion"),
+                             ("Sexual Orientation", "sexual_orientation")]:
+            Button(win, text=label,
+                   command=lambda f=field, a=axis:
+                       (self._render_segmented_report(f, a),
+                        win.destroy()),
+                   bg=self.theme["accent"],
+                   fg=self.theme["header_fg"],
+                   relief="flat", padx=10, pady=4
+                   ).pack(fill="x", padx=12, pady=2)
+
+    def _render_segmented_report(self, field: str, segment: str):
+        self._clear_report()
+        try:
+            triples = reports_engine.field_by_segment(field, segment)
+        except ValueError as e:
+            Label(self.report_frame, text=str(e),
+                  bg=self.theme["panel"],
+                  fg=self.theme["danger"]).pack(pady=20)
+            return
+        title = (f"{field.replace('_',' ').title()} by "
+                 f"{segment.replace('_',' ').title()}")
+        Label(self.report_frame, text=title,
+              font=("Helvetica", 12, "bold"),
+              bg=self.theme["panel"],
+              fg=self.theme["accent"]).pack(anchor="w", pady=(0, 8))
+        if not triples:
+            Label(self.report_frame,
+                  text="No data — sync the roster from the Admin tab "
+                       "to populate course / year on records.",
+                  bg=self.theme["panel"],
+                  fg=self.theme["muted"]).pack(pady=20)
+            return
+        # Render as a treeview with three columns for clarity.
+        from tkinter import ttk as _ttk
+        tree = _ttk.Treeview(self.report_frame,
+                             columns=("seg", "value", "n"),
+                             show="headings", height=14)
+        tree.heading("seg", text=segment.replace('_', ' ').title())
+        tree.heading("value", text=field.replace('_', ' ').title())
+        tree.heading("n", text="Count")
+        tree.column("seg", width=180)
+        tree.column("value", width=180)
+        tree.column("n", width=80, anchor="e")
+        for s, v, n in triples:
+            tree.insert("", "end", values=(s, v, n))
+        tree.pack(fill="both", expand=True, pady=(0, 8))
+        self._last_report = (
+            title, [(f"{s} / {v}", n) for s, v, n in triples])
+
+    def _open_intersection(self, kind: str):
+        """Pick the demographic field, then render the cross-domain
+        join. Lets one button drive four different analyses.
+        """
+        win = Toplevel(self.root)
+        win.title(f"Intersection — {kind}")
+        win.configure(bg=self.theme["panel"])
+        Label(win, text="Break down by:",
+              bg=self.theme["panel"],
+              fg=self.theme["text"]).pack(padx=12, pady=(10, 6))
+        for label, field in [("Gender", "gender"),
+                             ("Ethnicity", "ethnicity"),
+                             ("Disability", "disability"),
+                             ("Age group", "age_group"),
+                             ("Religion", "religion")]:
+            Button(win, text=label,
+                   command=lambda f=field, k=kind:
+                       (self._render_intersection(k, f),
+                        win.destroy()),
+                   bg=self.theme["accent"],
+                   fg=self.theme["header_fg"],
+                   relief="flat", padx=10, pady=4
+                   ).pack(fill="x", padx=12, pady=2)
+
+    def _render_intersection(self, kind: str, field: str):
+        self._clear_report()
+        from tkinter import ttk as _ttk
+        title_map = {
+            'attendance': f"Mean attendance % by {field}",
+            'discipline': f"Disciplinary rate by {field}",
+            'risk':       f"Risk-feed level by {field}",
+            'attainment': f"Mean grade score by {field}",
+        }
+        title = title_map.get(kind, f"{kind} by {field}")
+        Label(self.report_frame, text=title,
+              font=("Helvetica", 12, "bold"),
+              bg=self.theme["panel"],
+              fg=self.theme["accent"]).pack(anchor="w", pady=(0, 4))
+        Label(self.report_frame,
+              text="Joins ed_people → central tables. Categories with "
+                   "n<5 are suppressed.",
+              bg=self.theme["panel"], fg=self.theme["muted"],
+              font=("Helvetica", 9, "italic")
+              ).pack(anchor="w", pady=(0, 10))
+
+        if kind == 'attendance':
+            data = reports_engine.attendance_by_demographic(field)
+            cols = (("cat", field, 200), ("pct", "Mean %", 100),
+                    ("n", "n", 80))
+            rows = [(c, f"{p:.1f}%", n) for c, p, n in data]
+            self._last_report = (title, [(c, int(p)) for c, p, _n in data])
+        elif kind == 'discipline':
+            data = reports_engine.disciplinary_overrep(field)
+            cols = (("cat", field, 200),
+                    ("act", "With action", 110),
+                    ("tot", "Total", 80),
+                    ("rate", "Rate %", 90))
+            rows = [(c, a, t, f"{r:.1f}%") for c, a, t, r in data]
+            self._last_report = (title, [(c, a) for c, a, _t, _r in data])
+        elif kind == 'risk':
+            data = reports_engine.risk_feed_distribution(field)
+            cols = (("cat", field, 200),
+                    ("h", "High", 70), ("m", "Medium", 80),
+                    ("l", "Low", 70), ("t", "Total", 80))
+            rows = data
+            self._last_report = (title,
+                                 [(c, h) for c, h, _m, _l, _t in data])
+        elif kind == 'attainment':
+            data = reports_engine.attainment_gap(field)
+            cols = (("cat", field, 200),
+                    ("avg", "Mean score", 110),
+                    ("n", "n", 80))
+            rows = [(c, f"{m:.1f}", n) for c, m, n in data]
+            self._last_report = (title,
+                                 [(c, int(m)) for c, m, _n in data])
+        else:
+            Label(self.report_frame, text=f"Unknown intersection: {kind}",
+                  bg=self.theme["panel"],
+                  fg=self.theme["danger"]).pack(pady=20)
+            return
+
+        if not rows:
+            Label(self.report_frame,
+                  text="No data — either no rows match or the "
+                       "underlying tables aren't present in this DB.",
+                  bg=self.theme["panel"],
+                  fg=self.theme["muted"]).pack(pady=20)
+            return
+        tree = _ttk.Treeview(
+            self.report_frame,
+            columns=tuple(c[0] for c in cols),
+            show="headings", height=14)
+        for cid, ctext, width in cols:
+            tree.heading(cid, text=ctext)
+            tree.column(cid, width=width,
+                        anchor=("e" if cid != "cat" else "w"))
+        for r in rows:
+            tree.insert("", "end", values=r)
+        tree.pack(fill="both", expand=True)
 
     def _open_crosstab(self):
         win = Toplevel(self.root)
@@ -1361,6 +1573,14 @@ class EqualityDiversityGUI:
         nb = ttk.Notebook(root)
         nb.pack(fill="both", expand=True, padx=8, pady=8)
 
+        # Roster sync — auto-populate ed_people from the central
+        # students/staff tables instead of re-entering demographics.
+        # Lives at the front of the Admin notebook because it's the
+        # action admins want first when bootstrapping the module.
+        sync_tab = Frame(nb, bg=t["panel"])
+        nb.add(sync_tab, text="Roster sync")
+        self._build_roster_sync(sync_tab)
+
         # 31 — audit log viewer
         audit_tab = Frame(nb, bg=t["panel"])
         nb.add(audit_tab, text="Audit log")
@@ -1395,6 +1615,109 @@ class EqualityDiversityGUI:
         gdpr_tab = Frame(nb, bg=t["panel"])
         nb.add(gdpr_tab, text="GDPR")
         self._build_gdpr(gdpr_tab)
+
+    def _build_roster_sync(self, root):
+        """Pull demographics + course/year from the central students
+        and staff tables into ed_people. Idempotent: existing rows
+        are updated in place; analyst-entered demographic values are
+        preserved (we only fill blanks)."""
+        t = self.theme
+        Label(root, text=_t("ed.roster_sync.title",
+                             "Roster sync"),
+              font=("Helvetica", 13, "bold"),
+              bg=t["panel"], fg=t["accent"]
+              ).pack(anchor="w", padx=12, pady=(12, 4))
+        Label(root,
+              text=_t("ed.roster_sync.desc",
+                      "Auto-populates ed_people from the central "
+                      "students and staff tables. Pulls gender, age "
+                      "(from DOB), course, and year_of_study where "
+                      "available, then back-links student_id / "
+                      "staff_id. Re-running won't overwrite "
+                      "demographic values an analyst has already set "
+                      "manually — it only fills blanks."),
+              wraplength=720, justify="left",
+              bg=t["panel"], fg=t["muted"],
+              font=("Helvetica", 10)).pack(anchor="w", padx=12,
+                                            pady=(0, 12))
+
+        if not self.principal.is_admin:
+            Label(root,
+                  text="(admin only)",
+                  bg=t["panel"], fg=t["danger"],
+                  font=("Helvetica", 10, "italic")
+                  ).pack(anchor="w", padx=12)
+            return
+
+        button_row = Frame(root, bg=t["panel"])
+        button_row.pack(anchor="w", padx=12, pady=(0, 12))
+
+        result_box = Frame(root, bg=t["panel"], padx=12)
+        result_box.pack(fill="x", padx=12, pady=(0, 12))
+
+        def _show(result, label):
+            for w in result_box.winfo_children():
+                w.destroy()
+            Label(result_box, text=f"Last sync — {label}",
+                  font=("Helvetica", 11, "bold"),
+                  bg=t["panel"], fg=t["accent"]
+                  ).pack(anchor="w", pady=(6, 4))
+            for k, v in result.items():
+                Label(result_box, text=f"  {k}: {v}",
+                      bg=t["panel"], fg=t["text"]
+                      ).pack(anchor="w")
+
+        def _run_students():
+            try:
+                from education_system.university_system.modules.domain.student_affairs.equality_diversity import (  # noqa: E501
+                    integrations,
+                )
+                r = integrations.sync_from_students()
+                _show(r, "students")
+            except Exception as e:
+                messagebox.showerror("Roster sync",
+                                      f"Sync failed:\n{e}")
+
+        def _run_staff():
+            try:
+                from education_system.university_system.modules.domain.student_affairs.equality_diversity import (  # noqa: E501
+                    integrations,
+                )
+                r = integrations.sync_from_staff()
+                _show(r, "staff")
+            except Exception as e:
+                messagebox.showerror("Roster sync",
+                                      f"Sync failed:\n{e}")
+
+        def _run_all():
+            try:
+                from education_system.university_system.modules.domain.student_affairs.equality_diversity import (  # noqa: E501
+                    integrations,
+                )
+                r = integrations.sync_all_rosters()
+                _show({"created": r["total_created"],
+                       "updated": r["total_updated"],
+                       "students": r["students"],
+                       "staff": r["staff"]}, "all rosters")
+            except Exception as e:
+                messagebox.showerror("Roster sync",
+                                      f"Sync failed:\n{e}")
+
+        Button(button_row, text="Sync from students",
+               command=_run_students,
+               bg=t["accent"], fg=t["header_fg"],
+               relief="flat", padx=12, pady=6
+               ).pack(side="left", padx=4)
+        Button(button_row, text="Sync from staff",
+               command=_run_staff,
+               bg=t["accent"], fg=t["header_fg"],
+               relief="flat", padx=12, pady=6
+               ).pack(side="left", padx=4)
+        Button(button_row, text="Sync all rosters",
+               command=_run_all,
+               bg="#16a34a", fg="white",
+               relief="flat", padx=12, pady=6
+               ).pack(side="left", padx=4)
 
     def _build_audit_viewer(self, root):
         tree = ttk.Treeview(

@@ -361,6 +361,239 @@ def drill_down(field: str, value: str) -> list[tuple]:
         conn.close()
 
 
+# ============================================================================
+# University-specific segmentation (course / year_of_study / programme_level)
+# ============================================================================
+#
+# Until now reports grouped by ``department`` only. Course and
+# year_of_study are auto-synced from the central ``students`` table
+# (see integrations.sync_from_students), so we can break demographic
+# distributions down by degree programme and cohort year — the views
+# HE compliance teams actually want.
+
+# Whitelist of segmentation axes to keep SQL injection-free.
+SEGMENT_AXES = {
+    "course": "course",
+    "year_of_study": "year_of_study",
+    "programme_level": "programme_level",
+    "department": "department",
+}
+
+
+def field_by_segment(field: str, segment: str) -> list[tuple[str, str, int]]:
+    """Distribution of ``field`` broken down by ``segment``.
+
+    Returns ``(segment_value, field_value, count)`` triples, with the
+    n<5 suppression rule applied. Use for "DEI by course", "DEI by
+    year cohort", etc.
+    """
+    if field not in DEMOGRAPHIC_FIELDS:
+        raise ValueError(f"unknown field {field!r}")
+    if segment not in SEGMENT_AXES:
+        raise ValueError(f"unknown segment {segment!r}")
+    seg_col = SEGMENT_AXES[segment]
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            f"SELECT COALESCE(CAST({seg_col} AS TEXT), '(none)'), "
+            f"       COALESCE({field}, '(none)'), COUNT(*) "
+            f"FROM ed_people "
+            f"WHERE deleted_at IS NULL "
+            f"  AND {field} IS NOT NULL AND {field} != '' "
+            f"GROUP BY {seg_col}, {field} "
+            f"ORDER BY {seg_col}, COUNT(*) DESC"
+        ).fetchall()
+    finally:
+        conn.close()
+    return _apply_suppression_triples(
+        [(str(s), str(v), int(n)) for s, v, n in rows]
+    )
+
+
+# ============================================================================
+# Cross-domain intersections — joins ed_people against the rest of the
+# university system to surface attainment, attendance, disciplinary, and
+# risk-feed disparities by protected characteristic. This is the "are
+# we serving all students equally?" view.
+# ============================================================================
+
+# Each function returns rows shaped for the same chart/table renderer
+# the GUI already uses for native E&D reports. Suppression applied
+# everywhere n < 5. All joins are LEFT JOINs from ed_people so
+# students without matching data still show up as zero.
+
+def attendance_by_demographic(field: str = "disability"
+                              ) -> list[tuple[str, float, int]]:
+    """Mean attendance % by ``field`` value. Joins ed_people →
+    students.student_id → attendance.
+
+    Returns ``(category, mean_attendance_pct, n_students)`` rows.
+    """
+    if field not in DEMOGRAPHIC_FIELDS:
+        raise ValueError(f"unknown field {field!r}")
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            f"SELECT p.{field}, "
+            f"       AVG(att.pct) AS mean_pct, "
+            f"       COUNT(DISTINCT p.student_id) AS n "
+            f"FROM ed_people p "
+            f"LEFT JOIN ( "
+            f"  SELECT student_id, "
+            f"         SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) "
+            f"           * 100.0 / NULLIF(COUNT(*), 0) AS pct "
+            f"  FROM attendance GROUP BY student_id "
+            f") att ON att.student_id = p.student_id "
+            f"WHERE p.deleted_at IS NULL "
+            f"  AND p.person_type = 'Student' "
+            f"  AND p.student_id IS NOT NULL "
+            f"  AND p.{field} IS NOT NULL AND p.{field} != '' "
+            f"GROUP BY p.{field} "
+            f"ORDER BY mean_pct"
+        ).fetchall()
+    except sqlite3.OperationalError:
+        rows = []
+    finally:
+        conn.close()
+    return [(cat, float(pct or 0.0), int(n))
+            for cat, pct, n in rows
+            if (n or 0) >= SUPPRESSION_THRESHOLD]
+
+
+def disciplinary_overrep(field: str = "ethnicity"
+                         ) -> list[tuple[str, int, int, float]]:
+    """Disciplinary-action rate per ``field`` category.
+
+    Returns ``(category, n_with_action, n_total, rate_pct)`` so the UI
+    can flag categories whose rate is more than 1.5× the population
+    average. Joins ed_people.student_id → disciplinary_records.user_id
+    AND ed_people.student_id → academic_misconduct_cases.student_id
+    (either path counts as "an action against the student").
+    """
+    if field not in DEMOGRAPHIC_FIELDS:
+        raise ValueError(f"unknown field {field!r}")
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            f"SELECT p.{field}, "
+            f"       COUNT(DISTINCT CASE WHEN d.user_id IS NOT NULL "
+            f"                          OR m.student_id IS NOT NULL "
+            f"                       THEN p.student_id END) AS n_action, "
+            f"       COUNT(DISTINCT p.student_id) AS n_total "
+            f"FROM ed_people p "
+            f"LEFT JOIN disciplinary_records d ON d.user_id = p.student_id "
+            f"LEFT JOIN academic_misconduct_cases m "
+            f"  ON m.student_id = p.student_id "
+            f"WHERE p.deleted_at IS NULL "
+            f"  AND p.person_type = 'Student' "
+            f"  AND p.student_id IS NOT NULL "
+            f"  AND p.{field} IS NOT NULL AND p.{field} != '' "
+            f"GROUP BY p.{field}"
+        ).fetchall()
+    except sqlite3.OperationalError:
+        rows = []
+    finally:
+        conn.close()
+    out = []
+    for cat, n_action, n_total in rows:
+        if (n_total or 0) < SUPPRESSION_THRESHOLD:
+            continue
+        rate = (n_action / n_total * 100) if n_total else 0.0
+        out.append((str(cat), int(n_action), int(n_total), rate))
+    return out
+
+
+def risk_feed_distribution(field: str = "ethnicity"
+                           ) -> list[tuple[str, int, int, int, int]]:
+    """Risk-feed level distribution per ``field`` category.
+
+    Returns ``(category, n_high, n_medium, n_low, n_total)`` using each
+    student's MOST RECENT student_risk_assessment row. Suppressed
+    when ``n_total < 5``. Lets the analyst spot a model that's
+    over-flagging a particular demographic.
+    """
+    if field not in DEMOGRAPHIC_FIELDS:
+        raise ValueError(f"unknown field {field!r}")
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            f"SELECT p.{field}, "
+            f"       SUM(CASE WHEN LOWER(r.risk_level)='high' "
+            f"                THEN 1 ELSE 0 END) AS n_high, "
+            f"       SUM(CASE WHEN LOWER(r.risk_level)='medium' "
+            f"                THEN 1 ELSE 0 END) AS n_medium, "
+            f"       SUM(CASE WHEN LOWER(r.risk_level)='low' "
+            f"                THEN 1 ELSE 0 END) AS n_low, "
+            f"       COUNT(DISTINCT p.student_id) AS n_total "
+            f"FROM ed_people p "
+            f"LEFT JOIN student_risk_assessment r "
+            f"  ON r.student_id = p.student_id "
+            f"  AND r.id = (SELECT MAX(id) FROM student_risk_assessment "
+            f"              WHERE student_id = p.student_id) "
+            f"WHERE p.deleted_at IS NULL "
+            f"  AND p.person_type = 'Student' "
+            f"  AND p.student_id IS NOT NULL "
+            f"  AND p.{field} IS NOT NULL AND p.{field} != '' "
+            f"GROUP BY p.{field}"
+        ).fetchall()
+    except sqlite3.OperationalError:
+        rows = []
+    finally:
+        conn.close()
+    return [(str(cat), int(h or 0), int(m or 0), int(l or 0), int(t or 0))
+            for cat, h, m, l, t in rows
+            if (t or 0) >= SUPPRESSION_THRESHOLD]
+
+
+def attainment_gap(field: str = "ethnicity"
+                   ) -> list[tuple[str, float, int]]:
+    """Mean grade score per ``field`` category — the attainment-gap
+    dashboard. Joins ed_people.student_id → grades.student_id.
+
+    Returns ``(category, mean_score, n_students)``. Suppressed n<5.
+    """
+    if field not in DEMOGRAPHIC_FIELDS:
+        raise ValueError(f"unknown field {field!r}")
+    conn = get_connection()
+    try:
+        rows = conn.execute(
+            f"SELECT p.{field}, "
+            f"       AVG(g.score) AS mean_score, "
+            f"       COUNT(DISTINCT p.student_id) AS n "
+            f"FROM ed_people p "
+            f"LEFT JOIN grades g ON g.student_id = p.student_id "
+            f"WHERE p.deleted_at IS NULL "
+            f"  AND p.person_type = 'Student' "
+            f"  AND p.student_id IS NOT NULL "
+            f"  AND p.{field} IS NOT NULL AND p.{field} != '' "
+            f"  AND g.score IS NOT NULL "
+            f"GROUP BY p.{field} "
+            f"ORDER BY mean_score"
+        ).fetchall()
+    except sqlite3.OperationalError:
+        rows = []
+    finally:
+        conn.close()
+    return [(str(cat), float(mean or 0.0), int(n))
+            for cat, mean, n in rows
+            if (n or 0) >= SUPPRESSION_THRESHOLD]
+
+
+def cross_domain_summary() -> dict[str, Any]:
+    """Headline numbers for the new Intersections tab.
+
+    Pulls one chart's worth of data from each of the four
+    cross-domain queries above using the most useful default field
+    per metric. Cheaper than calling each individually from the GUI.
+    """
+    return {
+        "attendance_by_disability": attendance_by_demographic("disability"),
+        "discipline_by_ethnicity": disciplinary_overrep("ethnicity"),
+        "risk_by_ethnicity": risk_feed_distribution("ethnicity"),
+        "attainment_by_ethnicity": attainment_gap("ethnicity"),
+    }
+
+
 # ------ feature 50 — data-quality dashboard (lives here since it is metrics)
 def data_quality() -> dict[str, Any]:
     conn = get_connection()

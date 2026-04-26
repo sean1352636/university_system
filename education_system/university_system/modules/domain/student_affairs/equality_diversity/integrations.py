@@ -103,6 +103,249 @@ def sync_link(person_id: int, ref_code: str) -> dict | None:
     return hit
 
 
+# ------------------------------------------------ HE auto-sync from rosters ---
+
+# Map a student's gender column value into the ED gender vocabulary.
+# Anything we don't recognise stays None so the analyst sees "missing"
+# rather than a misclassification.
+_GENDER_MAP = {
+    "f": "Female", "female": "Female", "woman": "Female",
+    "m": "Male", "male": "Male", "man": "Male",
+    "nb": "Non-binary", "non-binary": "Non-binary", "nonbinary": "Non-binary",
+    "x": "Other", "other": "Other",
+}
+
+
+def _derive_age_group(dob: str | None) -> str | None:
+    """Coarse age band from a YYYY-MM-DD birth date. None on parse failure."""
+    if not dob:
+        return None
+    try:
+        y, m, d = (int(x) for x in str(dob)[:10].split("-"))
+        today = datetime.now().date()
+        age = today.year - y - (1 if (today.month, today.day) < (m, d) else 0)
+    except (ValueError, IndexError):
+        return None
+    if age < 18:
+        return "Under 18"
+    if age < 21:
+        return "18-20"
+    if age < 25:
+        return "21-24"
+    if age < 30:
+        return "25-29"
+    if age < 40:
+        return "30-39"
+    if age < 50:
+        return "40-49"
+    if age < 65:
+        return "50-64"
+    return "65+"
+
+
+def _derive_programme_level(course: str | None,
+                            year_of_study: int | None) -> str | None:
+    """Best-effort UG / PGT / PGR label from course code + year.
+
+    The university's course strings don't follow a single naming
+    convention, so fall back to a year-based heuristic when no
+    keyword matches.
+    """
+    if course:
+        c = course.lower()
+        if any(k in c for k in ("phd", "doctor", "research")):
+            return "Postgraduate (Research)"
+        if any(k in c for k in ("msc", "ma ", "m.a.", "mres", "mphil",
+                                "pgcert", "pgdip", "postgrad")):
+            return "Postgraduate (Taught)"
+        if any(k in c for k in ("bsc", "ba ", "b.a.", "beng", "llb",
+                                "undergrad")):
+            return "Undergraduate"
+    if year_of_study is None:
+        return None
+    return "Undergraduate" if year_of_study <= 4 else "Postgraduate"
+
+
+def sync_from_students(refresh_existing: bool = True) -> dict:
+    """Pull demographics from the central ``students`` table into
+    ``ed_people``. Idempotent: existing rows are updated in place,
+    new students get an ed_people row with ``ref_code = student_id``
+    and ``person_type = 'Student'``.
+
+    Demographic fields (``gender``, ``age_group`` derived from ``dob``)
+    are only populated where ``students`` actually has data — never
+    overwritten with empty strings if the analyst already entered a
+    value manually. Course / year_of_study / programme_level / status
+    track the central record on every sync.
+
+    Returns a dict ``{created, updated, skipped, errors}``.
+    """
+    created = updated = skipped = errors = 0
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    today = datetime.now().date().isoformat()
+    conn = get_connection()
+    try:
+        # Pull every active student in one query — simple enough that
+        # the overhead is dominated by the per-row UPSERT loop below.
+        rows = conn.execute(
+            "SELECT student_id, first_name, last_name, email_address, "
+            "       gender, dob, course, year_of_study, status "
+            "FROM students "
+            "WHERE COALESCE(status,'active') NOT IN ('inactive','withdrawn',"
+            "                                        'deleted','removed')"
+        ).fetchall()
+        for (sid, first, last, email, gender, dob, course,
+             year, status) in rows:
+            if not sid:
+                skipped += 1
+                continue
+            ed_gender = (_GENDER_MAP.get((gender or '').strip().lower())
+                         if gender else None)
+            age_group = _derive_age_group(dob)
+            programme_level = _derive_programme_level(course, year)
+
+            existing = conn.execute(
+                "SELECT id, gender, age_group FROM ed_people "
+                "WHERE ref_code = ? AND deleted_at IS NULL",
+                (sid,)).fetchone()
+
+            try:
+                if existing:
+                    pid, cur_gender, cur_age = existing
+                    if not refresh_existing:
+                        skipped += 1
+                        continue
+                    # Don't overwrite analyst-entered demographic
+                    # values; only fill in where blank.
+                    new_gender = cur_gender or ed_gender
+                    new_age = cur_age or age_group
+                    conn.execute(
+                        "UPDATE ed_people SET "
+                        "  student_id = ?, "
+                        "  gender = ?, age_group = ?, "
+                        "  course = ?, year_of_study = ?, "
+                        "  programme_level = ?, "
+                        "  last_synced_at = ?, updated_at = ?, "
+                        "  updated_by = 'roster-sync' "
+                        "WHERE id = ?",
+                        (sid, new_gender, new_age, course, year,
+                         programme_level, now, now, pid))
+                    updated += 1
+                else:
+                    conn.execute(
+                        "INSERT INTO ed_people "
+                        "(ref_code, person_type, department, "
+                        " gender, age_group, course, year_of_study, "
+                        " programme_level, student_id, "
+                        " date_added, last_synced_at, "
+                        " updated_at, updated_by) "
+                        "VALUES (?, 'Student', ?, ?, ?, ?, ?, ?, ?, "
+                        "        ?, ?, ?, 'roster-sync')",
+                        (sid, course, ed_gender, age_group, course,
+                         year, programme_level, sid,
+                         today, now, now))
+                    created += 1
+            except sqlite3.Error:
+                errors += 1
+                continue
+        conn.commit()
+    finally:
+        conn.close()
+
+    audit("system", "roster_sync", "ed_people", None,
+          {"source": "students", "created": created,
+           "updated": updated, "skipped": skipped, "errors": errors})
+    return {"created": created, "updated": updated,
+            "skipped": skipped, "errors": errors}
+
+
+def sync_from_staff(refresh_existing: bool = True) -> dict:
+    """Pull staff into ``ed_people`` from the central ``staff`` table.
+
+    Staff records have far less demographic data than student records
+    (the central ``staff`` table doesn't carry gender / dob), so this
+    sync mostly back-links existing ed_people entries to the staff
+    roster and creates skeleton rows for any staff member not yet
+    monitored. Department comes from ``staff.department`` when
+    available.
+
+    Returns ``{created, updated, skipped, errors}``.
+    """
+    created = updated = skipped = errors = 0
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    today = datetime.now().date().isoformat()
+    conn = get_connection()
+    try:
+        try:
+            rows = conn.execute(
+                "SELECT id, username, name, email, role, "
+                "       COALESCE(department,'') "
+                "FROM staff "
+                "WHERE COALESCE(status,'active') = 'active'"
+            ).fetchall()
+        except sqlite3.OperationalError:
+            # Some installs only have core columns; fall back without
+            # the department/status filters.
+            rows = conn.execute(
+                "SELECT id, username, name, email, role, '' "
+                "FROM staff").fetchall()
+
+        for (sid_int, username, name, email, role, dept) in rows:
+            ref = username or email
+            if not ref:
+                skipped += 1
+                continue
+            existing = conn.execute(
+                "SELECT id FROM ed_people "
+                "WHERE ref_code = ? AND deleted_at IS NULL",
+                (ref,)).fetchone()
+            try:
+                if existing:
+                    if not refresh_existing:
+                        skipped += 1
+                        continue
+                    conn.execute(
+                        "UPDATE ed_people SET "
+                        "  staff_id = ?, "
+                        "  department = COALESCE(NULLIF(department,''), ?), "
+                        "  last_synced_at = ?, "
+                        "  updated_at = ?, updated_by='roster-sync' "
+                        "WHERE id = ?",
+                        (sid_int, dept or None, now, now, existing[0]))
+                    updated += 1
+                else:
+                    conn.execute(
+                        "INSERT INTO ed_people "
+                        "(ref_code, person_type, department, staff_id, "
+                        " date_added, last_synced_at, "
+                        " updated_at, updated_by) "
+                        "VALUES (?, 'Staff', ?, ?, ?, ?, ?, "
+                        "        'roster-sync')",
+                        (ref, dept or None, sid_int,
+                         today, now, now))
+                    created += 1
+            except sqlite3.Error:
+                errors += 1
+        conn.commit()
+    finally:
+        conn.close()
+
+    audit("system", "roster_sync", "ed_people", None,
+          {"source": "staff", "created": created,
+           "updated": updated, "skipped": skipped, "errors": errors})
+    return {"created": created, "updated": updated,
+            "skipped": skipped, "errors": errors}
+
+
+def sync_all_rosters(refresh_existing: bool = True) -> dict:
+    """Run student + staff sync in one call. Convenience for the GUI."""
+    s = sync_from_students(refresh_existing)
+    t = sync_from_staff(refresh_existing)
+    return {"students": s, "staff": t,
+            "total_created": s["created"] + t["created"],
+            "total_updated": s["updated"] + t["updated"]}
+
+
 # ---------------------------------------------------------------- feature 30
 def monitoring_completeness() -> dict:
     """Return rough completeness stats vs the live student roster."""
