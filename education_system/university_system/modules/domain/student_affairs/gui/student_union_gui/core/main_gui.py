@@ -813,10 +813,12 @@ class StudentUnionGUI:
         # Elections & Voting
         self.add_sidebar_separator()
         self.add_sidebar_header("🗳️ Elections & Voting", "")
-        self.add_sidebar_button("Election Voting Portal",
-                                self.open_election_voting_portal, "🎨")
+        # Single canonical entry — replaces the older "Elections & Voting"
+        # data-grid dialog. Self-nomination is now reachable from the
+        # voter dashboard inside this same window.
+        self.add_sidebar_button("Elections & Voting",
+                                self.open_election_voting_portal, "🗳️")
         self.add_sidebar_button("Student Council", self.open_student_council_dialog, "🏛️")
-        self.add_sidebar_button("Elections & Voting", self.open_elections_dialog, "🗳️")
         self.add_sidebar_button("Candidate Profiles", self.open_candidate_profiles_dialog, "👤")
         self.add_sidebar_button("Ranked Choice Voting", self.open_ranked_choice_voting_dialog, "🥇")
         self.add_sidebar_button("Election Accessibility", self.open_election_accessibility_dialog, "♿")
