@@ -134,3 +134,7 @@ nginx/certs/
 TESTING*.docx
 education_system/university_system/data/config/licenses.json
 education_system/university_system/data/submissions/submitted/
+
+# Local scratch directory — files dropped here for ad-hoc work, not for committing.
+add/
+
