@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.97.0 — 2026-04-26](#8970---2026-04-26)
 - [8.96.0 — 2026-04-26](#8960---2026-04-26)
 - [8.95.0 — 2026-04-25](#8950---2026-04-25)
 - [8.94.0 — 2026-04-25](#8940---2026-04-25)
@@ -201,6 +202,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.97.0] — 2026-04-26
+
+### Student Union elections — Hub consolidation, real candidate data, more emails, voter relogin fix
+
+#### Added
+
+- **Vote-cast confirmation email.** New `templates/email/student_union/vote_confirmation.json` ($-style placeholders: `student_name`, `student_id`, `position`, `election_id`, `candidate_name`, `vote_time`). `CandidatesWindow.cast_vote()` queues it after the INSERT succeeds. The candidate's display name is looked up from the join with `students` so the receipt reads "voted for Bob Bear" rather than "voted for #4". `vote_time` uses `isoformat(timespec='seconds')`.
+- **Voting-closed broadcast.** New `templates/email/student_union/voting_closed.json` ($placeholders: `student_name`, `student_id`, `closed_at`, `closed_by`) + `_bulk_email_active_students(db, template, vars)` helper that selects active students with non-empty inbox-routable email and queues one email per student. `AdminDashboard.toggle_voting()` detects the open→closed transition and triggers the bulk send; admin gets a confirmation dialog with the queued count.
+- **Unified Elections Hub** (`open_elections_hub`). Single window with a `ttk.Notebook` that consolidates the previous 11 sidebar buttons into one entry point. Tab 1 embeds the polished voter / admin dashboard inside a frame (the dashboards don't touch root.title/geometry, so passing a tab Frame as their root works without modification). Subsequent tabs — one per specialised tool — render a description card + Launch button that opens the existing dialog as a Toplevel. Tool tabs are role-gated via `(label, icon, role_filter, callback)` tuples; `'admin'` / `'staff'` / None.
+- **`open_in_toplevel(parent, auth)`** alternative entry point for callers that want only the dashboard view (no tool tabs).
+
+#### Changed
+
+- **Student Union "Elections & Voting" sidebar reduced from 12 buttons to 2.** Kept: `🗳️ Elections & Voting` (now opens the Hub) and `🏛️ Student Council` (unchanged — roster/membership view, distinct workflow). Folded into Hub tabs: Candidate Profiles, Ranked Choice Voting, Election Accessibility, Setup Election, Campaign Expenses, Campaign Compliance, Election Security, Vote Integrity Check, Manage Enhanced Voting, Configure Voting Methods. The underlying dialog classes are untouched — only the entry path changed.
+- **Candidate Profiles dialog now reads from the live DB** instead of returning four hardcoded sample candidates (Alice Johnson / Bob Smith / Carol Davis / David Lee with extensive fake bios). New `_load_candidates_from_db()` joins `election_candidates ⨝ union_elections ⨝ students` for the tree's rows, with endorsement counts via correlated subquery against `candidate_endorsements`. New `_get_candidate_profiles()` builds bios from the live student record (course / year / contact), Platform from the candidate's `manifesto`, and a "no data on file" placeholder for Experience until the schema gains a column for it.
+- **Election email recipient lookup prefers `users.email` over `students.email_address`.** `_student_contact` and `_bulk_email_active_students` now `LEFT JOIN students ↔ users ON student_id` so the recipient address matches what `send_email_db_only` looks up when creating the inbox `messages` row. Falls back to `students.email_address` only when no `users` row exists.
+
+#### Fixed
+
+- **Election emails landed in `stored_emails` but not the in-app inbox.** Root cause: two-table address divergence. The election GUI was sending TO `students.email_address`, but `send_email_db_only` only creates a `messages` row when `users.email` matches the recipient. For users like S12345 the columns differed (`student@example.com` vs `student@university.edu`) so the message lookup missed and the inbox stayed empty. Fixed by resolving the recipient via the `users.email` join described above; verified S12345 now resolves to `student@university.edu` (matching `users.id=2`) and the next election email lands in their inbox.
+- **"Please log in" appearing after a session timeout + re-login.** `open_in_toplevel` was reading `auth.current_user` from the handle the host `StudentUnionGUI` held in `self.auth`. After a timeout + re-login, `main_gui.set_auth()` registered a new auth instance globally, but `self.auth` on a long-lived `StudentUnionGUI` still pointed at the old (logged-out / replaced) instance, so `current_user` was None. The auth resolution priority is now: live `get_global_auth()` first, fall back to the passed-in handle only if global has nothing. `open_elections_hub` follows the same priority.
+- **Endorsement didn't appear after submitting.** Root cause: `submit_endorsement` updated the count column in the candidate tree, but the Endorsements text widget on the right kept showing stale text — so the user's experience was "the endorsement didn't save". `show_profile_details` now stores the visible candidate name on `self._displayed_candidate`; `submit_endorsement` reloads the endorsements text via `_load_endorsements_from_db` and rewrites the panel before the success messagebox so the new entry shows up immediately.
+
+#### Data
+
+- **One-off live-DB cleanups against `student_records.db`** (not tracked in the repo, no commit):
+  - Synced `students.email_address` ← `users.email` for the only divergent row (S12345). Zero mismatches remaining.
+  - Deleted three orphan `candidate_endorsements` rows (`Alice Johnson`, `Carol Davis`, `David Lee` — the hardcoded sample candidates from the old dialog) that no longer pointed at any real `election_candidates` row.
 
 ---
 
