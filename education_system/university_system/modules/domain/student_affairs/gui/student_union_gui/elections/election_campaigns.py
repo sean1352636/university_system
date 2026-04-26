@@ -218,13 +218,11 @@ class ViewCandidateProfilesDialog:
 
         tree.pack(fill='both', expand=True, padx=5, pady=5)
 
-        # Sample candidates
-        self.candidates = [
-            ("Alice Johnson", "Student Union President", "3rd Year", "Political Science", "2 years SU", "15"),
-            ("Bob Smith", "Student Union President", "4th Year", "Business Admin", "Club President", "12"),
-            ("Carol Davis", "VP Academic Affairs", "3rd Year", "Education", "Course Rep x2", "8"),
-            ("David Lee", "Treasurer", "2nd Year", "Accounting", "Finance Club VP", "10")
-        ]
+        # Real candidates from election_candidates ⨝ students ⨝
+        # union_elections, with endorsement counts pulled from
+        # candidate_endorsements. Replaces the previous hardcoded
+        # sample list.
+        self.candidates = self._load_candidates_from_db()
 
         for candidate in self.candidates:
             tree.insert('', 'end', values=candidate)
@@ -327,32 +325,94 @@ class ViewCandidateProfilesDialog:
         except Exception:
             return "Unable to load endorsements."
 
-    def _get_candidate_profiles(self):
-        """Return profile data for all candidates."""
-        return {
-            "Alice Johnson": {
-                "bio": "Alice Johnson is a third-year Political Science student with a passion for student advocacy and democratic representation.\n\nShe has served on the Student Union executive board for two years and has been instrumental in launching several successful student initiatives including the Free Breakfast Program and the Student Mental Health Support Network.\n\nAlice is known for her collaborative leadership style and her commitment to transparency in student governance.",
-                "platform": "KEY POLICIES:\n\n1. AFFORDABILITY & SUPPORT\n   - Expand hardship fund by 50%\n   - Introduce free textbook rental program\n   - Negotiate student discount partnerships\n\n2. SUSTAINABILITY\n   - Achieve carbon-neutral campus by 2027\n   - Install solar panels on all student buildings\n   - Launch campus-wide composting program\n\n3. STUDENT WELLBEING\n   - 24/7 mental health crisis support\n   - Double counseling service capacity\n   - Create peer support network across all departments\n\n4. ACADEMIC EXCELLENCE\n   - Student voice in curriculum design\n   - Increase library opening hours\n   - Fund undergraduate research opportunities",
-                "experience": "LEADERSHIP EXPERIENCE:\n\nStudent Union Executive Board (2023-2025)\n- Led 3 successful campaigns resulting in policy changes\n- Managed \u00a350,000 budget for student initiatives\n- Coordinated team of 12 student representatives\n\nPolitical Science Society - President (2024-2025)\n- Grew membership from 45 to 120 students\n- Organized 8 speaker events with MPs and policy experts\n\nCourse Representative (2023-2024)\n- Championed improvements to assessment feedback\n\nAWARDS:\n- Outstanding Student Leadership Award 2024\n- Dean's List (2023, 2024)",
-            },
-            "Bob Smith": {
-                "bio": "Bob Smith is a fourth-year Business Administration student with extensive experience in financial management and organisational leadership.\n\nAs the current President of the Entrepreneurship Club, Bob has led fundraising efforts that raised over \u00a330,000 for student startups. He is passionate about making the Student Union financially sustainable while delivering more services to students.\n\nBob brings a practical, results-oriented approach to student governance, emphasising accountability and measurable outcomes.",
-                "platform": "KEY POLICIES:\n\n1. FINANCIAL TRANSPARENCY\n   - Publish quarterly SU financial reports\n   - Student oversight committee for budget decisions\n   - Online dashboard showing how SU fees are spent\n\n2. EMPLOYABILITY\n   - Expand careers service partnerships with employers\n   - Create paid internship fund for disadvantaged students\n   - Launch alumni mentorship programme\n\n3. STUDENT ENTERPRISE\n   - \u00a320,000 startup fund for student businesses\n   - Co-working space in the SU building\n   - Business skills workshops every semester\n\n4. CAMPUS FACILITIES\n   - Extended gym opening hours\n   - Upgrade common room facilities\n   - Better Wi-Fi across campus",
-                "experience": "LEADERSHIP EXPERIENCE:\n\nEntrepreneurship Club - President (2024-2026)\n- Raised \u00a330,000+ for student startup initiatives\n- Managed club budget of \u00a315,000\n- Organised 12 networking events with industry leaders\n\nBusiness Society - Vice President (2023-2024)\n- Led team of 8 committee members\n- Doubled society membership to 200+\n\nStudent Ambassador (2023-2025)\n- Represented university at 15+ open days\n\nAWARDS:\n- Best Society Leader 2025\n- Business Faculty Prize for Excellence",
-            },
-            "Carol Davis": {
-                "bio": "Carol Davis is a third-year Education student with a deep commitment to academic quality and student support. Having served as Course Representative twice, she understands the challenges students face.\n\nCarol has been instrumental in establishing peer tutoring programmes and advocating for improved assessment feedback. She volunteers weekly at the Student Advice Centre.\n\nHer approach to leadership centres on listening to students and turning their concerns into actionable improvements.",
-                "platform": "KEY POLICIES:\n\n1. ACADEMIC QUALITY\n   - Standardise feedback turnaround times (2 weeks max)\n   - Student evaluation of teaching quality\n   - More flexible assessment options\n\n2. LEARNING SUPPORT\n   - Expand peer tutoring to all departments\n   - Free academic writing workshops\n   - Dedicated study spaces with 24/7 access during exams\n\n3. INCLUSIVITY\n   - Improved accessibility across all buildings\n   - Better support for international students\n   - Inclusive curriculum review committee\n\n4. STUDENT VOICE\n   - Monthly open forums with university leadership\n   - Online suggestion platform with guaranteed responses\n   - Student representatives on all university committees",
-                "experience": "LEADERSHIP EXPERIENCE:\n\nCourse Representative x2 (2024-2026)\n- Successfully campaigned for improved feedback policies\n- Represented 300+ Education students\n\nPeer Tutoring Coordinator (2025-2026)\n- Set up tutoring programmes across 5 departments\n- Trained 40+ peer tutors\n\nStudent Advice Centre Volunteer (2024-2026)\n- 200+ hours of volunteer service\n\nAWARDS:\n- Student Voice Champion Award 2025\n- Faculty Commendation for Student Support",
-            },
-            "David Lee": {
-                "bio": "David Lee is a second-year Accounting student who brings financial expertise and a fresh perspective to student governance. Despite being in his second year, David has already made a significant impact as Vice President of the Finance Club.\n\nHe is passionate about financial literacy and ensuring the Student Union uses its resources effectively. David has proposed innovative budgeting approaches that could save the SU thousands while improving services.\n\nDavid believes in data-driven decision making and wants to bring modern financial practices to the Student Union.",
-                "platform": "KEY POLICIES:\n\n1. SMART BUDGETING\n   - Zero-based budgeting for all SU departments\n   - Cost-benefit analysis for all new initiatives\n   - Emergency fund for student hardship cases\n\n2. STUDENT SAVINGS\n   - Negotiate bulk purchasing deals for course materials\n   - Student discount app with local businesses\n   - Transparent pricing in all SU outlets\n\n3. FINANCIAL LITERACY\n   - Free budgeting workshops for all students\n   - Tax advice sessions for working students\n   - Scholarship and bursary awareness campaigns\n\n4. ACCOUNTABILITY\n   - Monthly financial updates to all students\n   - Open budget meetings every semester\n   - Annual value-for-money audit",
-                "experience": "LEADERSHIP EXPERIENCE:\n\nFinance Club - Vice President (2025-2026)\n- Managed club investments portfolio\n- Organised financial literacy week (500+ attendees)\n- Created budgeting app used by 200+ students\n\nClass Treasurer (2024-2025)\n- Managed class social fund of \u00a35,000\n- Delivered surplus back to students\n\nCharity Fundraising Coordinator (2025)\n- Raised \u00a38,000 for local food bank\n\nAWARDS:\n- ACCA Student Excellence Award 2025\n- Best New Committee Member (Finance Club)",
-            },
-        }
+    def _load_candidates_from_db(self):
+        """Pull every candidate from the central tables.
 
-    def show_profile_details(self, event):
+        Returns a list of 6-tuples shaped to match the existing tree's
+        columns: (Name, Position, Year, Course, Experience,
+        Endorsements). 'Experience' isn't a column in the schema, so
+        it's a placeholder; we keep the column to avoid disturbing
+        the GUI layout.
+        """
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT
+                    COALESCE(NULLIF(TRIM(s.first_name||' '||s.last_name),''),
+                             c.student_id) AS name,
+                    COALESCE(e.position, '(unknown position)'),
+                    COALESCE(NULLIF(CAST(s.year_of_study AS TEXT),''), 'N/A'),
+                    COALESCE(s.course, ''),
+                    '\u2014',
+                    (SELECT COUNT(*) FROM candidate_endorsements ce
+                      WHERE ce.candidate_name = COALESCE(
+                        NULLIF(TRIM(s.first_name||' '||s.last_name),''),
+                        c.student_id))
+                FROM election_candidates c
+                JOIN union_elections e ON e.election_id = c.election_id
+                LEFT JOIN students s ON s.student_id = c.student_id
+                ORDER BY e.position, name
+            ''')
+            rows = cursor.fetchall()
+            conn.close()
+        except sqlite3.Error:
+            return []
+        return [(name, pos, str(year), course, exp, str(count))
+                for (name, pos, year, course, exp, count) in rows]
+
+    def _get_candidate_profiles(self):
+        """Return per-candidate profile data sourced from the live DB.
+
+        The schema doesn't have separate bio / platform / experience
+        columns on candidates \u2014 only ``manifesto``. We use the
+        student's course + year-of-study + email as the bio, the
+        manifesto as the platform, and a "no data on file" fallback
+        for experience until that field is added to the schema.
+        """
+        profiles = {}
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT
+                    COALESCE(NULLIF(TRIM(s.first_name||' '||s.last_name),''),
+                             c.student_id) AS name,
+                    c.student_id,
+                    COALESCE(s.course,''),
+                    COALESCE(NULLIF(CAST(s.year_of_study AS TEXT),''), ''),
+                    COALESCE(s.email_address,''),
+                    COALESCE(c.manifesto,''),
+                    e.position
+                FROM election_candidates c
+                JOIN union_elections e ON e.election_id = c.election_id
+                LEFT JOIN students s ON s.student_id = c.student_id
+            ''')
+            for (name, sid, course, year, email,
+                 manifesto, position) in cursor.fetchall():
+                bio_lines = [f"Candidate for: {position}",
+                             f"Student ID: {sid}"]
+                if course:
+                    bio_lines.append(f"Course: {course}")
+                if year:
+                    bio_lines.append(f"Year of Study: {year}")
+                if email:
+                    bio_lines.append(f"Contact: {email}")
+                profiles[name] = {
+                    'bio': "\n".join(bio_lines),
+                    'platform': manifesto or
+                                "No manifesto submitted yet.",
+                    'experience':
+                        "No additional experience information on file. "
+                        "Candidates may submit campaign materials via "
+                        "the Student Union office.",
+                }
+            conn.close()
+        except sqlite3.Error:
+            pass
+        return profiles
+
+    def show_profile_details(self, event=None):
         selection = self.tree.selection()
         if not selection:
             return
@@ -360,6 +420,10 @@ class ViewCandidateProfilesDialog:
         item = self.tree.item(selection[0])
         values = item['values']
         name = values[0]
+
+        # Track the currently-displayed candidate so endorse() can
+        # refresh the right-hand panel in place after submitting.
+        self._displayed_candidate = name
 
         # Load profiles and endorsements from DB
         self.profiles = self._get_candidate_profiles()
@@ -829,6 +893,17 @@ class ViewCandidateProfilesDialog:
 
                 # Update endorsement count in treeview
                 self._refresh_endorsement_count(candidate_name)
+
+                # Refresh the Endorsements text widget so the new
+                # entry is visible immediately. Previously the count
+                # in the table updated but the panel kept showing the
+                # stale text, which read as "endorsement didn't save".
+                if getattr(self, '_displayed_candidate', None) == candidate_name:
+                    fresh = self._load_endorsements_from_db(candidate_name)
+                    self.endorsements_text.config(state='normal')
+                    self.endorsements_text.delete('1.0', tk.END)
+                    self.endorsements_text.insert('1.0', fresh)
+                    self.endorsements_text.config(state='disabled')
 
                 visibility_text = "publicly" if visibility == 'public' else "privately"
                 messagebox.showinfo("Endorsement Recorded",
