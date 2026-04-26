@@ -468,6 +468,11 @@ def create_navigation_panel(self, parent):
     family_and_legal_buttons_data = [
         ('parent_portal', _t('nav.buttons.family_portal'), self.open_parent_portal_gui),
         ('legal_services', _t('nav.buttons.legal_services'), self.show_legal_services_gui),
+        # Disciplinary Portal lives here (legal/conduct surface) rather
+        # than under "New Features" — it's a permanent admin tool, not
+        # an experimental add-on.
+        ('new_feature_disciplinary_portal', 'Disciplinary Portal',
+            self.show_new_feature_disciplinary_portal),
     ]
 
     if any(name in visible_buttons for name, _, _ in family_and_legal_buttons_data):
@@ -636,8 +641,8 @@ def create_navigation_panel(self, parent):
             self.show_new_feature_lecturer_evaluation),
         ('new_feature_module_evaluation_portal','Module Evaluation',
             self.show_new_feature_module_evaluation_portal),
-        ('new_feature_disciplinary_portal',     'Disciplinary Portal',
-            self.show_new_feature_disciplinary_portal),
+        # Disciplinary Portal moved to "Family & Legal" — kept out of
+        # "New Features" since it's a permanent admin tool.
         ('new_feature_risk_management',         'Risk Management',
             self.show_new_feature_risk_management),
         ('new_feature_first_aid_portal',        'First Aid Portal',

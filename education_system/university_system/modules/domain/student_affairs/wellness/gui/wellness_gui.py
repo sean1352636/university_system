@@ -951,157 +951,21 @@ class WellnessGUI:
         self.goals_text.config(state=tk.DISABLED)
 
     def create_counseling_tab(self):
-        """Create counseling appointments tab."""
+        """Counselling tab — shared CounsellingPanel (student role).
+
+        The form/list/booking UI lives in
+        ``student_affairs/gui/counselling_panel.py`` and is also embedded by
+        the staff-side WellbeingFrame so the two views stay in sync.
+        """
+        from education_system.university_system.modules.domain.student_affairs.gui.counselling_panel import (
+            CounsellingPanel,
+        )
         counseling_tab = ttk.Frame(self.notebook)
         self.notebook.add(counseling_tab, text=_t("wellness.tabs.counseling", default="💬 Counseling"))
+        panel = CounsellingPanel(counseling_tab, auth=self.auth,
+                                 role="student", service=self.service)
+        panel.pack(fill=tk.BOTH, expand=True)
 
-        # Privacy notice
-        privacy_frame = ttk.Frame(counseling_tab)
-        privacy_frame.pack(fill=tk.X, padx=10, pady=10)
-
-        ttk.Label(privacy_frame, text=_t("wellness.counseling.privacy_notice", default="🔒 All counseling appointments are confidential and private."),
-                 font=('Arial', 10, 'italic')).pack()
-
-        # Create two panels
-        left_panel = ttk.Frame(counseling_tab)
-        left_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
-
-        right_panel = ttk.Frame(counseling_tab)
-        right_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=5, pady=5)
-
-        # Booking form
-        self.create_counseling_form(left_panel)
-
-        # Appointments display
-        self.create_appointments_display(right_panel)
-
-    def create_counseling_form(self, parent):
-        """Create counseling appointment booking form."""
-        form_frame = ttk.LabelFrame(parent, text=_t("wellness.counseling.form.title", default="Book Counseling Appointment"), padding="10")
-        form_frame.pack(fill=tk.BOTH, expand=True)
-
-        # Date
-        ttk.Label(form_frame, text=_t("wellness.counseling.form.date_label", default="Appointment Date:")).grid(row=0, column=0, sticky=tk.W, pady=5)
-        self.counseling_date_var = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=self.counseling_date_var, width=27).grid(row=0, column=1, pady=5)
-        ttk.Label(form_frame, text=_t("wellness.counseling.form.date_format", default="(YYYY-MM-DD)"), font=('Arial', 8)).grid(row=0, column=2, sticky=tk.W)
-
-        # Time
-        ttk.Label(form_frame, text=_t("wellness.counseling.form.time_label", default="Preferred Time:")).grid(row=1, column=0, sticky=tk.W, pady=5)
-        self.counseling_time_var = tk.StringVar()
-        ttk.Entry(form_frame, textvariable=self.counseling_time_var, width=27).grid(row=1, column=1, pady=5)
-        ttk.Label(form_frame, text=_t("wellness.counseling.form.time_format", default="(HH:MM)"), font=('Arial', 8)).grid(row=1, column=2, sticky=tk.W)
-
-        # Appointment type
-        ttk.Label(form_frame, text=_t("wellness.counseling.form.type_label", default="Appointment Type:")).grid(row=2, column=0, sticky=tk.W, pady=5)
-        self.counseling_type_var = tk.StringVar()
-        appt_types = [
-            _t("wellness.counseling.form.types.individual", default='Individual Counseling'),
-            _t("wellness.counseling.form.types.group", default='Group Therapy'),
-            _t("wellness.counseling.form.types.crisis", default='Crisis Intervention'),
-            _t("wellness.counseling.form.types.academic", default='Academic Stress'),
-            _t("wellness.counseling.form.types.relationship", default='Relationship Issues'),
-            _t("wellness.counseling.form.types.anxiety", default='Anxiety/Depression'),
-            _t("wellness.counseling.form.types.consultation", default='General Consultation')
-        ]
-        ttk.Combobox(form_frame, textvariable=self.counseling_type_var,
-                    values=appt_types, width=25).grid(row=2, column=1, pady=5)
-
-        # Notes
-        ttk.Label(form_frame, text=_t("wellness.counseling.form.notes_label", default="Concerns (confidential):")).grid(row=3, column=0, sticky=tk.W, pady=5)
-        self.counseling_notes = scrolledtext.ScrolledText(form_frame, height=6, width=30)
-        self.counseling_notes.grid(row=3, column=1, pady=5)
-
-        # Submit button
-        ttk.Button(form_frame, text=_t("wellness.counseling.form.submit", default="Book Appointment"), command=self.submit_counseling).grid(row=4, column=0,
-                                                                                             columnspan=2, pady=10)
-
-    def submit_counseling(self):
-        """Submit counseling appointment."""
-        try:
-            appt_date = self.counseling_date_var.get()
-            appt_time = self.counseling_time_var.get()
-            appt_type = self.counseling_type_var.get()
-            notes = self.counseling_notes.get("1.0", tk.END).strip() or None
-
-            if not all([appt_date, appt_time, appt_type]):
-                messagebox.showwarning(
-                    _t("wellness.counseling.messages.title_missing", default="Missing Information"),
-                    _t("wellness.counseling.messages.missing_fields", default="Please fill in date, time, and appointment type.")
-                )
-                return
-
-            student_id = self.auth.get_current_user()['username']
-            appointment_id = self.service.schedule_counseling(student_id, appt_date, appt_time,
-                                                             appt_type, notes)
-
-            messagebox.showinfo(
-                _t("wellness.counseling.messages.title_success", default="Success"),
-                _t("wellness.counseling.messages.success", default="Counseling appointment booked!\n\nDate: {date} at {time}\nType: {type}\n\nYou will receive a confirmation.\nAll information is confidential.").format(
-                    date=appt_date,
-                    time=appt_time,
-                    type=appt_type
-                )
-            )
-
-            # Clear form
-            self.counseling_date_var.set('')
-            self.counseling_time_var.set('')
-            self.counseling_type_var.set('')
-            self.counseling_notes.delete("1.0", tk.END)
-
-            # Refresh appointments
-            self.refresh_appointments()
-
-        except Exception as e:
-            messagebox.showerror(
-                _t("wellness.counseling.messages.title_error", default="Error"),
-                _t("wellness.counseling.messages.error", default="Failed to book appointment: {error}").format(error=str(e))
-            )
-
-    def create_appointments_display(self, parent):
-        """Create appointments display."""
-        appts_frame = ttk.LabelFrame(parent, text=_t("wellness.counseling.appointments.title", default="My Appointments"), padding="10")
-        appts_frame.pack(fill=tk.BOTH, expand=True)
-
-        self.appointments_text = scrolledtext.ScrolledText(appts_frame, height=20, width=50, wrap=tk.WORD)
-        self.appointments_text.pack(fill=tk.BOTH, expand=True)
-
-        ttk.Button(appts_frame, text=_t("wellness.buttons.refresh", default="Refresh"), command=self.refresh_appointments).pack(pady=5)
-
-        self.refresh_appointments()
-
-    def refresh_appointments(self):
-        """Refresh appointments display."""
-        self.appointments_text.config(state=tk.NORMAL)
-        self.appointments_text.delete("1.0", tk.END)
-
-        student_id = self.auth.get_current_user()['username']
-        appointments = self.service.get_counseling_appointments(student_id)
-
-        if not appointments:
-            self.appointments_text.insert(tk.END, _t("wellness.counseling.appointments.no_appointments", default="No appointments scheduled."))
-        else:
-            for appt in appointments:
-                self.appointments_text.insert(tk.END, "=" * 50 + "\n")
-                appt_id_text = _t("wellness.counseling.appointments.appointment_id", default="Appointment ID: {id}").format(id=appt['appointment_id'])
-                self.appointments_text.insert(tk.END, f"{appt_id_text}\n", 'header')
-                date_time_text = _t("wellness.counseling.appointments.date_time", default="Date: {date} at {time}").format(
-                    date=appt['appointment_date'],
-                    time=appt['appointment_time']
-                )
-                self.appointments_text.insert(tk.END, f"{date_time_text}\n")
-                type_text = _t("wellness.counseling.appointments.type", default="Type: {type}").format(type=appt['appointment_type'])
-                self.appointments_text.insert(tk.END, f"{type_text}\n")
-                status_text = _t("wellness.counseling.appointments.status", default="Status: {status}").format(status=appt['status'])
-                self.appointments_text.insert(tk.END, f"{status_text}\n")
-                if appt['counselor_name']:
-                    counselor_text = _t("wellness.counseling.appointments.counselor", default="Counselor: {name}").format(name=appt['counselor_name'])
-                    self.appointments_text.insert(tk.END, f"{counselor_text}\n")
-                self.appointments_text.insert(tk.END, "\n")
-
-        self.appointments_text.tag_config('header', font=('Arial', 10, 'bold'))
-        self.appointments_text.config(state=tk.DISABLED)
 
     def create_resources_tab(self):
         """Create resources tab."""

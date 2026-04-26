@@ -415,7 +415,11 @@ class ParentNotificationWindow:
             self.module_notify_var = tk.StringVar()
             ttk.Entry(self.recipient_input_frame, textvariable=self.module_notify_var, width=20).pack(side=tk.LEFT, padx=(5, 0))
         else:  # at_risk
-            ttk.Label(self.recipient_input_frame, text="Will notify all students with attendance < 75%").pack(side=tk.LEFT)
+            ttk.Label(
+                self.recipient_input_frame,
+                text="Notifies students at high/medium risk in the latest "
+                     "Risk Feed (falls back to attendance < 75% if the "
+                     "feed is empty).").pack(side=tk.LEFT)
 
     def send_notifications(self):
         notification_type = self.notification_type_var.get()
@@ -455,21 +459,39 @@ class ParentNotificationWindow:
                     cursor.execute("SELECT DISTINCT student_id FROM enrollments WHERE module_code = ?", (module_code,))
                     recipients = [row[0] for row in cursor.fetchall()]
             else:  # at_risk
-                # Get all students with low attendance
+                # Prefer the persisted Risk Feed (student_risk_assessment)
+                # so this stays in sync with whatever the absence-tracker's
+                # blended model is currently flagging. Fall back to the
+                # raw-attendance heuristic when the feed is empty.
+                recipients = []
                 with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                     cursor = conn.cursor()
-                    cursor.execute("""
-                        SELECT s.student_id
-                        FROM students s
-                        LEFT JOIN (
-                            SELECT student_id,
-                                   SUM(CASE WHEN status = 'Present' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as rate
-                            FROM attendance
-                            GROUP BY student_id
-                        ) a ON s.student_id = a.student_id
-                        WHERE a.rate < 75 OR a.rate IS NULL
-                    """)
-                    recipients = [row[0] for row in cursor.fetchall()]
+                    try:
+                        cursor.execute("""
+                            SELECT r.student_id
+                            FROM student_risk_assessment r
+                            WHERE r.id = (SELECT MAX(id)
+                                          FROM student_risk_assessment
+                                          WHERE student_id = r.student_id)
+                              AND LOWER(COALESCE(r.risk_level, ''))
+                                  IN ('high', 'medium')
+                        """)
+                        recipients = [row[0] for row in cursor.fetchall()]
+                    except sqlite3.Error:
+                        recipients = []
+                    if not recipients:
+                        cursor.execute("""
+                            SELECT s.student_id
+                            FROM students s
+                            LEFT JOIN (
+                                SELECT student_id,
+                                       SUM(CASE WHEN status = 'Present' THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as rate
+                                FROM attendance
+                                GROUP BY student_id
+                            ) a ON s.student_id = a.student_id
+                            WHERE a.rate < 75 OR a.rate IS NULL
+                        """)
+                        recipients = [row[0] for row in cursor.fetchall()]
 
             if not recipients:
                 messagebox.showinfo("No Recipients", "No recipients found matching the criteria")

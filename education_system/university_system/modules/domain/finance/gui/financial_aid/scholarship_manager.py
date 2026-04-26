@@ -858,8 +858,12 @@ class ScholarshipManagerGUI:
             show_error(_t("financial_aid.scholarship_manager.dialogs.error"), _t("financial_aid.scholarship_manager.messages.error_occurred", error=str(e)))
             return False
 
-    def show_awards(self):
-        """Show scholarship awards interface"""
+    def show_awards(self, student_id: str = None):
+        """Show scholarship awards interface.
+
+        ``student_id`` (optional): filter rows to a single student — used by
+        the absence-tracker's "Scholarship attendance check" deep-link.
+        """
         # Ensure we have a valid parent frame/window
         parent = self._ensure_valid_parent()
         self.parent_frame = parent
@@ -869,7 +873,13 @@ class ScholarshipManagerGUI:
         # Title
         title_frame = ttk.Frame(self.parent_frame)
         title_frame.pack(fill='x', padx=10, pady=10)
-        ttk.Label(title_frame, text=_t("financial_aid.scholarship_manager.scholarship_awards_title"), style='Title.TLabel').pack(side='left')
+        title_text = _t("financial_aid.scholarship_manager.scholarship_awards_title")
+        if student_id:
+            title_text = f"{title_text} — {student_id}"
+        ttk.Label(title_frame, text=title_text, style='Title.TLabel').pack(side='left')
+        if student_id:
+            ttk.Button(title_frame, text="Show all awards",
+                       command=lambda: self.show_awards()).pack(side='right', padx=(0, 6))
         ttk.Button(title_frame, text=_t("financial_aid.scholarship_manager.buttons.back"), command=self.show_main_interface).pack(side='right')
 
         # Awards table
@@ -889,24 +899,124 @@ class ScholarshipManagerGUI:
 
         try:
             with get_connection() as conn:
-                awards = conn.execute("""
-                    SELECT ss.*, u.username, s.scholarship_name
+                # Probe whether the at-risk columns exist (added by the
+                # absence-tracker integration). Allows older DBs to keep working.
+                ss_cols = {r[1] for r in conn.execute(
+                    "PRAGMA table_info(student_scholarships)").fetchall()}
+                pct_select = (", ss.at_risk_pct AS at_risk_pct"
+                              if "at_risk_pct" in ss_cols else
+                              ", NULL AS at_risk_pct")
+
+                base_sql = f"""
+                    SELECT ss.*, u.username, s.scholarship_name{pct_select}
                     FROM student_scholarships ss
                     JOIN users u ON ss.student_id = u.student_id
                     JOIN scholarships s ON ss.scholarship_id = s.scholarship_id
-                    ORDER BY ss.awarded_date DESC
-                """).fetchall()
+                """
+                if student_id:
+                    awards = conn.execute(
+                        base_sql + " WHERE ss.student_id = ? OR u.username = ?"
+                                    " ORDER BY ss.awarded_date DESC",
+                        (student_id, student_id),
+                    ).fetchall()
+                else:
+                    awards = conn.execute(
+                        base_sql + " ORDER BY ss.awarded_date DESC"
+                    ).fetchall()
 
+                tree.tag_configure("at_risk", background="#fee2e2",
+                                   foreground="#991b1b")
                 for award in awards:
+                    pct = award["at_risk_pct"] if "at_risk_pct" in award.keys() else None
+                    status_label = (award['status'] or '').title()
+                    if pct is not None:
+                        status_label = f"{status_label} ⚠ {pct:.1f}%"
                     tree.insert('', 'end', values=(
                         award['student_scholarship_id'],
                         award['username'],
                         award['scholarship_name'],
                         format_currency(award['amount']),
                         format_date(award['awarded_date']),
-                        award['status'].title()
-                    ))
+                        status_label,
+                    ), tags=("at_risk",) if pct is not None else ())
+
+                if student_id and not awards:
+                    ttk.Label(table_frame,
+                              text=f"No awards found for student {student_id}.",
+                              foreground="#6b7280").pack(pady=10)
+
+                # Double-click an awards row → pop up that student's attendance %.
+                tree.bind("<Double-1>",
+                          lambda _e: self._show_student_attendance(
+                              tree.item(tree.selection()[0], "values")[1]
+                              if tree.selection() else None))
 
         except Exception as e:
             logger.error(f"Error loading awards: {e}")
             show_error(_t("financial_aid.scholarship_manager.dialogs.error"), _t("financial_aid.scholarship_manager.messages.failed_load_scholarships"))
+
+    def _show_student_attendance(self, student_id):
+        """Pop up the attendance summary for a single student.
+
+        Used as a reverse-link from the awards table back into the
+        absence-tracker's territory: same data, no need to context-switch.
+        """
+        if not student_id:
+            return
+        try:
+            with get_connection() as conn:
+                cols = {r[1] for r in conn.execute(
+                    "PRAGMA table_info(attendance)").fetchall()}
+                if not cols:
+                    show_warning("Attendance",
+                                 "Attendance table not available in this DB.")
+                    return
+                summary = conn.execute(
+                    """SELECT COUNT(*) AS total,
+                              SUM(CASE WHEN status='present' THEN 1 ELSE 0 END)
+                                  AS present_n
+                       FROM attendance WHERE student_id = ?""",
+                    (student_id,)).fetchone()
+                recent = conn.execute(
+                    """SELECT COALESCE(date, '') AS date,
+                              COALESCE(module_id, '') AS module,
+                              status
+                       FROM attendance WHERE student_id = ?
+                       ORDER BY date DESC LIMIT 25""",
+                    (student_id,)).fetchall() if "date" in cols else []
+        except Exception as e:
+            logger.exception("attendance lookup failed")
+            show_error("Attendance", str(e))
+            return
+
+        win = tk.Toplevel(self.parent_frame)
+        win.title(f"Attendance — {student_id}")
+        win.geometry("520x500")
+        ttk.Label(win, text=f"Student: {student_id}",
+                  font=("Arial", 12, "bold")).pack(anchor="w", padx=12, pady=(10, 4))
+
+        total = (summary["total"] if summary else 0) or 0
+        present = (summary["present_n"] if summary else 0) or 0
+        pct = (present / total * 100) if total else None
+        pct_text = f"{pct:.1f}%" if pct is not None else "—"
+        ttk.Label(
+            win,
+            text=f"Sessions logged: {total}    Present: {present}    Pct: {pct_text}",
+        ).pack(anchor="w", padx=12, pady=2)
+
+        ttk.Label(win, text="Most recent (up to 25):",
+                  font=("Arial", 10, "bold")).pack(anchor="w", padx=12, pady=(10, 2))
+        body = ttk.Frame(win)
+        body.pack(fill="both", expand=True, padx=12, pady=4)
+        cols = ("date", "module", "status")
+        tv = ttk.Treeview(body, columns=cols, show="headings", height=14)
+        for c, w in zip(cols, (110, 200, 90)):
+            tv.heading(c, text=c.title())
+            tv.column(c, width=w, anchor="w")
+        for r in recent:
+            tv.insert("", "end", values=(r["date"], r["module"], r["status"]))
+        tv.pack(side="left", fill="both", expand=True)
+        vsb = ttk.Scrollbar(body, orient="vertical", command=tv.yview)
+        tv.configure(yscrollcommand=vsb.set)
+        vsb.pack(side="right", fill="y")
+        ttk.Button(win, text="Close", command=win.destroy).pack(pady=8)

@@ -75,14 +75,21 @@ class AtRiskTabMixin:
         ttk.Button(ctrl, text="Refresh",
                    command=self.refresh_at_risk_list).pack(side=tk.RIGHT)
 
-        cols = ("date", "module", "student", "absences", "lates", "last_absence")
+        # Added "risk_feed" column so the persisted student_risk_assessment
+        # output (what the Absence Tracker's Risk Feed writes) is visible
+        # alongside this tab's own absence-count signal. Two views, one
+        # decision: gate exam entry only when both signals agree.
+        cols = ("date", "module", "student", "risk_feed",
+                "absences", "lates", "last_absence")
         self.at_risk_tree = ttk.Treeview(
             tab, columns=cols, show="headings", height=18)
         labels = {"date": "Exam date", "module": "Module",
                   "student": "Student",
+                  "risk_feed": "Risk (feed)",
                   "absences": "Absences", "lates": "Lates",
                   "last_absence": "Last absence"}
         widths = {"date": 100, "module": 100, "student": 200,
+                  "risk_feed": 120,
                   "absences": 80, "lates": 70, "last_absence": 110}
         for c in cols:
             self.at_risk_tree.heading(c, text=labels[c])
@@ -102,6 +109,29 @@ class AtRiskTabMixin:
         cutoff = (date.today() - timedelta(days=ABSENCE_LOOKBACK_DAYS)).isoformat()
         try:
             with get_connection() as conn:
+                # Pull the most-recent risk feed row per student once,
+                # up front, so we don't re-query for every exam-row in
+                # the loop below.
+                feed: dict[str, str] = {}
+                try:
+                    for sid, level, score in conn.execute(
+                        """SELECT r.student_id, r.risk_level, r.risk_score
+                           FROM student_risk_assessment r
+                           WHERE r.id = (SELECT MAX(id)
+                                         FROM student_risk_assessment
+                                         WHERE student_id = r.student_id)"""
+                    ):
+                        if level is None:
+                            continue
+                        feed[str(sid)] = (
+                            f"{level}"
+                            + (f" ({score:.0f})" if score is not None
+                               else "")
+                        )
+                except Exception:
+                    # Table may not exist on a freshly-initialised DB.
+                    feed = {}
+
                 exams = _list_upcoming_exams(conn)
                 for (_eid, mod, mname, dt, _st, _rm, raw_ids) in exams:
                     sids = _enrolled_ids(raw_ids)
@@ -126,10 +156,11 @@ class AtRiskTabMixin:
                         (mod, cutoff, *sids, threshold)).fetchall()
                     for (sid, name, abs_n, late_n, last) in rows:
                         display = (name or "").strip() or sid
+                        risk = feed.get(str(sid), "—")
                         self.at_risk_tree.insert(
                             "", tk.END,
-                            values=(dt, mod, display, abs_n, late_n,
-                                    last or ""))
+                            values=(dt, mod, display, risk,
+                                    abs_n, late_n, last or ""))
         except Exception as exc:
             messagebox.showerror("At-Risk Audit",
                                  f"Failed to load: {exc}", parent=self.root)

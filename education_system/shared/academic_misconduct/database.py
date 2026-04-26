@@ -185,15 +185,32 @@ class MisconductDatabaseMixin:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             where, params = self._system_key_filter()
-            cursor.execute(f'''
-                SELECT case_id, system_key, student_name, student_id, student_email, course,
-                       violation_type, status, date_filed, severity, notes,
-                       hearing_date, hearing_time, hearing_location, ruling, ruling_rationale
-                FROM academic_misconduct_cases
-                {where}
-                ORDER BY date_filed DESC
-            ''', params)
-            rows = cursor.fetchall()
+            # Pull source_record_id when present (column added by the
+            # disciplinary portal's escalation flow). Use a tolerant
+            # SELECT so older DBs without the column still work.
+            try:
+                cursor.execute(f'''
+                    SELECT case_id, system_key, student_name, student_id, student_email, course,
+                           violation_type, status, date_filed, severity, notes,
+                           hearing_date, hearing_time, hearing_location, ruling, ruling_rationale,
+                           source_record_id
+                    FROM academic_misconduct_cases
+                    {where}
+                    ORDER BY date_filed DESC
+                ''', params)
+                rows = cursor.fetchall()
+                has_source = True
+            except sqlite3.OperationalError:
+                cursor.execute(f'''
+                    SELECT case_id, system_key, student_name, student_id, student_email, course,
+                           violation_type, status, date_filed, severity, notes,
+                           hearing_date, hearing_time, hearing_location, ruling, ruling_rationale
+                    FROM academic_misconduct_cases
+                    {where}
+                    ORDER BY date_filed DESC
+                ''', params)
+                rows = cursor.fetchall()
+                has_source = False
 
             self.cases = []
             for row in rows:
@@ -213,7 +230,9 @@ class MisconductDatabaseMixin:
                     'hearing_time': row['hearing_time'] or '',
                     'hearing_location': row['hearing_location'] or '',
                     'ruling': row['ruling'] or '',
-                    'ruling_rationale': row['ruling_rationale'] or ''
+                    'ruling_rationale': row['ruling_rationale'] or '',
+                    'source_record_id':
+                        (row['source_record_id'] if has_source else None),
                 })
         except Exception as e:
             logger.warning("Error loading cases from database: %s", e)
@@ -267,7 +286,13 @@ class MisconductDatabaseMixin:
                 conn.close()
 
     def update_case_in_db(self, case_data):
-        """Update an existing case in the database."""
+        """Update an existing case in the database.
+
+        Status propagation to the linked ``disciplinary_records`` row
+        is handled by the DB-level trigger ``sync_misc_status_to_disc``
+        installed by ``_db_init.ensure_disciplinary_schema`` — no
+        application-side mirror needed here.
+        """
         conn = None
         try:
             conn = sqlite3.connect(self._get_db_path())

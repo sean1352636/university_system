@@ -120,6 +120,99 @@ class AcademicMisconductPanel(
         self.setup_styles()
         self.create_widgets()
 
+        # Honor optional prefill hints set by the launcher (e.g. the
+        # Disciplinary Portal sets prefill_case_id on the Toplevel
+        # before calling this constructor). The actual navigation is
+        # encapsulated in goto_case / goto_student_cases so callers
+        # don't depend on internal tab/tree wiring.
+        prefill_case_id = getattr(self.root, 'prefill_case_id', None)
+        prefill_student_id = getattr(self.root, 'prefill_student_id', None)
+        if prefill_case_id:
+            self.goto_case(prefill_case_id)
+        elif prefill_student_id:
+            self.goto_student_cases(prefill_student_id)
+
+    # ------------------------------------------------------------------
+    # Public navigation API. External callers (e.g. the Disciplinary
+    # Portal) drive the panel through these instead of poking at tabs,
+    # search vars and treeviews directly. Refactors of the case-list
+    # / overview internals only need to update these two methods.
+    # ------------------------------------------------------------------
+
+    def goto_case(self, case_id):
+        """Navigate to the Cases view and select the given case.
+
+        Returns True on success, False if the case isn't loaded.
+        """
+        if not case_id:
+            return False
+        target = next((c for c in self.cases
+                       if c.get('id') == case_id), None)
+        if target is None:
+            return False
+        self._show_cases_view()
+        self.selected_case = target
+        # Narrow the case list to this one row, then select+see it.
+        if hasattr(self, 'search_var'):
+            try:
+                self.search_var.set(case_id)
+            except Exception:
+                pass
+        if hasattr(self, 'populate_tree'):
+            try:
+                self.populate_tree()
+            except Exception:
+                pass
+        if hasattr(self, 'tree'):
+            try:
+                for item in self.tree.get_children():
+                    vals = self.tree.item(item, 'values')
+                    if vals and vals[0] == case_id:
+                        self.tree.selection_set(item)
+                        self.tree.see(item)
+                        break
+            except Exception:
+                pass
+        # Render the overview section against the newly-set case.
+        if hasattr(self, 'show_overview_section'):
+            try:
+                self.show_overview_section()
+            except Exception:
+                pass
+        if hasattr(self, 'create_overview_fields'):
+            try:
+                self.create_overview_fields()
+            except Exception:
+                pass
+        return True
+
+    def goto_student_cases(self, student_id):
+        """Navigate to the Cases view, filtered to one student.
+
+        No specific case is selected — useful when the caller knows
+        a student_id but not which (if any) case to focus on.
+        """
+        if not student_id:
+            return
+        self._show_cases_view()
+        if hasattr(self, 'search_var'):
+            try:
+                self.search_var.set(str(student_id))
+            except Exception:
+                pass
+        if hasattr(self, 'populate_tree'):
+            try:
+                self.populate_tree()
+            except Exception:
+                pass
+
+    def _show_cases_view(self):
+        if hasattr(self, 'show_view'):
+            try:
+                self.show_view('cases')
+            except Exception:
+                pass
+
     def _check_authentication(self):
         """Check if user is authenticated. Returns True if logged in, False otherwise."""
         if not self.auth:
@@ -130,16 +223,12 @@ class AcademicMisconductPanel(
             self.root.destroy()
             return False
 
-        # Check if using dummy auth (fallback when no real auth is configured)
-        # This ensures the panel only works when launched from main GUI with real login
-        if _DummyAuth is not None and isinstance(self.auth, _DummyAuth):
-            messagebox.showerror(
-                _t("misconduct.auth.required_title", "Authentication Required"),
-                _t("misconduct.auth.launch_from_gui", "You must be logged in to access the Academic Misconduct Panel.\n\nPlease launch this module from the main GUI after logging in.")
-            )
-            self.root.destroy()
-            return False
-
+        # Don't gate on the auth type — gate on whether a real user is
+        # bound. The original ``isinstance(self.auth, _DummyAuth)``
+        # check was redundant (the dummy class has no current_user, so
+        # the next check rejects it anyway) and was fragile when
+        # callers passed valid non-UserAuth shims (e.g. the env-bridge
+        # SimpleNamespace from the Disciplinary Portal subprocess).
         if not hasattr(self.auth, 'current_user') or not self.auth.current_user:
             messagebox.showerror(
                 _t("misconduct.auth.not_logged_in_title", "Not Logged In"),

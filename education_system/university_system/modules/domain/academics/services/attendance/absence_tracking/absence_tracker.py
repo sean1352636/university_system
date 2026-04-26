@@ -35,6 +35,7 @@ class Database:
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.cur = self.conn.cursor()
         self._ensure_absence_requests_table()
+        self.backfill_attendance_records()
 
     def _ensure_absence_requests_table(self):
         """`absence_requests` isn't part of the core schema — create if missing.
@@ -175,13 +176,102 @@ class Database:
         )
         return self.cur.fetchall()
 
+    def backfill_attendance_records(self):
+        """One-shot copy of legacy ``attendance`` rows into ``attendance_records``.
+
+        Idempotent — gated by ``abs_tracker_settings.attendance_records_backfilled``
+        so it runs at most once per DB. Skips rows that already have a matching
+        (student_id, module_code, date, status) entry on the GUI side.
+        """
+        try:
+            self.cur.execute(
+                """CREATE TABLE IF NOT EXISTS abs_tracker_settings (
+                       key TEXT PRIMARY KEY, value TEXT)"""
+            )
+            r = self.cur.execute(
+                "SELECT value FROM abs_tracker_settings "
+                "WHERE key = 'attendance_records_backfilled'"
+            ).fetchone()
+            if r and r[0] == "1":
+                return 0
+            # Both source and target tables must exist.
+            tables = {row[0] for row in self.cur.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+            if "attendance" not in tables or "attendance_records" not in tables:
+                return 0
+
+            from datetime import datetime as _dt
+            now_iso = _dt.now().isoformat(timespec="seconds")
+            legacy = self.cur.execute(
+                "SELECT student_id, module_code, date, status, reason "
+                "FROM attendance"
+            ).fetchall()
+            inserted = 0
+            for sid, mc, d, status, reason in legacy:
+                mirrored = self._STATUS_MIRROR.get(
+                    (status or "").strip().lower(), (status or "").title())
+                # Don't double-up if the GUI table already has this row.
+                exists = self.cur.execute(
+                    """SELECT 1 FROM attendance_records
+                       WHERE student_id IS ? AND module_code IS ?
+                         AND date IS ? AND status IS ? LIMIT 1""",
+                    (sid, mc, d, mirrored),
+                ).fetchone()
+                if exists:
+                    continue
+                self.cur.execute(
+                    """INSERT INTO attendance_records
+                       (student_id, module_code, date, status, notes,
+                        recorded_by, recorded_at)
+                       VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                    (sid, mc, d, mirrored, reason,
+                     "absence_tracker:backfill", now_iso),
+                )
+                inserted += 1
+            self.cur.execute(
+                "INSERT OR REPLACE INTO abs_tracker_settings (key, value) "
+                "VALUES ('attendance_records_backfilled', '1')"
+            )
+            self.conn.commit()
+            if inserted:
+                logger.info("attendance_records backfill copied %d row(s)", inserted)
+            return inserted
+        except sqlite3.Error:
+            self.conn.rollback()
+            logger.exception("attendance_records backfill failed")
+            return 0
+
     # ---- Attendance / absences ----
+    _STATUS_MIRROR = {
+        "present": "Present", "absent": "Absent",
+        "late": "Late", "excused": "Excused",
+    }
+
     def record_absence(self, student_id, module_code, d, status, reason, recorded_by=None):
         self.cur.execute(
             """INSERT INTO attendance (student_id, module_code, date, status, reason)
                VALUES (?, ?, ?, ?, ?)""",
             (student_id, module_code, d, status, reason),
         )
+        # Mirror into attendance_records so the main Attendance GUI (which
+        # reads from that table with capitalized statuses) stays in sync.
+        # Best-effort: if the table is missing on a stripped DB, swallow it
+        # so the legacy absence-tracker write still commits.
+        try:
+            mirrored_status = self._STATUS_MIRROR.get(
+                (status or "").strip().lower(), (status or "").title())
+            from datetime import datetime as _dt
+            self.cur.execute(
+                """INSERT INTO attendance_records
+                   (student_id, module_code, date, status, notes, recorded_by, recorded_at)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (student_id, module_code, d, mirrored_status, reason,
+                 recorded_by or "absence_tracker",
+                 _dt.now().isoformat(timespec="seconds")),
+            )
+        except Exception:
+            # Table doesn't exist or schema mismatch — keep the legacy row.
+            pass
         self.conn.commit()
 
     def get_absences(self, student_id=None, course_id=None):

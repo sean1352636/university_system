@@ -6,6 +6,36 @@ from education_system.shared.academic_misconduct._imports import tk, ttk, scroll
 class MisconductOverviewMixin:
     """Mixin providing the case overview tab."""
 
+    def _open_source_record(self, record_id):
+        """Open the Disciplinary Portal in a Toplevel pre-pointed at
+        the source disciplinary record this case was escalated from."""
+        try:
+            from education_system.university_system.modules.domain.legal.disciplinary.disciplinary_portal import (  # noqa: E501
+                DisciplinaryPortal,
+            )
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror(
+                "Disciplinary Portal",
+                f"Could not load the Disciplinary Portal:\n{e}",
+                parent=self.root)
+            return
+        win = tk.Toplevel(self.root)
+        win.geometry("1200x800")
+        win.prefill_record_id = int(record_id)
+        try:
+            DisciplinaryPortal(win)
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror(
+                "Disciplinary Portal",
+                f"Failed to launch Disciplinary Portal:\n{e}",
+                parent=self.root)
+            try:
+                win.destroy()
+            except Exception:
+                pass
+
     def create_overview_tab(self, parent):
         """Create the overview tab content."""
         # Content frame with scrolling
@@ -105,6 +135,32 @@ class MisconductOverviewMixin:
                 anchor='w'
             )
             value_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
+
+        # Source disciplinary record back-link, when this case was
+        # escalated from one. Lets the user hop straight back to the
+        # original incident in the Disciplinary Portal.
+        source_id = case.get('source_record_id')
+        if source_id:
+            link_row = tk.Frame(padding_frame, bg=self.colors['light'])
+            link_row.pack(fill=tk.X, pady=(8, 0))
+            tk.Label(
+                link_row,
+                text=_t("misconduct.fields.source_record",
+                        "Source disciplinary record:"),
+                font=('Segoe UI', 10),
+                fg=self.colors['text_muted'],
+                bg=self.colors['light'],
+                width=15, anchor='w',
+            ).pack(side=tk.LEFT)
+            tk.Button(
+                link_row,
+                text=f"#{source_id} — open in Disciplinary Portal",
+                command=lambda rid=source_id: self._open_source_record(rid),
+                font=('Segoe UI', 9, 'bold'),
+                bg=self.colors['secondary'],
+                fg='white',
+                bd=0, padx=12, pady=4, cursor='hand2',
+            ).pack(side=tk.LEFT)
 
         # Notes section
         notes_frame = tk.Frame(padding_frame, bg=self.colors['light'])

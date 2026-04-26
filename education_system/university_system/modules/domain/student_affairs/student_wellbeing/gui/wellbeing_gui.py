@@ -39,6 +39,222 @@ class WellbeingFrame(tk.Frame):
         self._notebook.add(self._summary_tab, text="Summary")
 
         self._build_list_tab()
+        self._build_check_ins_tab()
+        self._build_counselling_tab()
+        self._build_summary_tab()
+
+    def _build_counselling_tab(self):
+        """Embed the shared CounsellingPanel (staff role) into the Counselling tab."""
+        from education_system.university_system.modules.domain.student_affairs.gui.counselling_panel import (
+            CounsellingPanel,
+        )
+        panel = CounsellingPanel(self._counselling_tab, auth=self._auth, role="staff")
+        panel.pack(fill="both", expand=True)
+
+    # --------------------------------------------------------------- check-ins
+    _CHECKIN_COLS = ("id", "student_id", "mood_rating", "logged_by",
+                     "created_at", "notes")
+    _CHECKIN_WIDTHS = {"id": 50, "student_id": 100, "mood_rating": 80,
+                       "logged_by": 110, "created_at": 150, "notes": 320}
+
+    def _build_check_ins_tab(self):
+        frame = self._check_ins_tab
+
+        # Cache (label -> student_id) populated from the students table.
+        self._student_options = self._service.list_student_ids()
+        self._student_label_to_id = {label: sid for sid, label in self._student_options}
+        labels = [label for _sid, label in self._student_options]
+
+        form = tk.Frame(frame, bg="#d5dbdb", padx=6, pady=6)
+        form.pack(fill="x")
+        tk.Label(form, text="Student:", bg="#d5dbdb").pack(side="left")
+        self._chk_student = tk.StringVar()
+        self._chk_student_cb = ttk.Combobox(form, textvariable=self._chk_student,
+                                            values=labels, width=32, state="readonly")
+        self._chk_student_cb.pack(side="left", padx=(2, 4))
+        tk.Button(form, text="↻", width=2,
+                  command=self._reload_students).pack(side="left", padx=(0, 8))
+        tk.Label(form, text="Mood (1–10):", bg="#d5dbdb").pack(side="left")
+        self._chk_mood = tk.StringVar()
+        ttk.Combobox(form, textvariable=self._chk_mood,
+                     values=[str(i) for i in range(1, 11)],
+                     width=4, state="readonly").pack(side="left", padx=(2, 8))
+        tk.Label(form, text="Notes:", bg="#d5dbdb").pack(side="left")
+        self._chk_notes = tk.StringVar()
+        tk.Entry(form, textvariable=self._chk_notes, width=40).pack(side="left", padx=2,
+                                                                    fill="x", expand=True)
+        tk.Button(form, text="Log check-in", command=self._add_checkin).pack(side="left", padx=4)
+
+        toolbar = tk.Frame(frame, bg="#ecf0f1", padx=6, pady=4)
+        toolbar.pack(fill="x")
+        tk.Label(toolbar, text="Filter by student:", bg="#ecf0f1").pack(side="left")
+        self._chk_filter = tk.StringVar()
+        self._chk_filter_cb = ttk.Combobox(toolbar, textvariable=self._chk_filter,
+                                           values=["(all)"] + labels, width=32,
+                                           state="readonly")
+        self._chk_filter_cb.pack(side="left", padx=4)
+        self._chk_filter.set("(all)")
+        tk.Button(toolbar, text="Apply", command=self._refresh_checkins).pack(side="left")
+        tk.Button(toolbar, text="Show all",
+                  command=lambda: (self._chk_filter.set("(all)"),
+                                   self._refresh_checkins())).pack(side="left", padx=4)
+
+        self._chk_tree = ttk.Treeview(frame, columns=self._CHECKIN_COLS,
+                                      show="headings", selectmode="browse")
+        for c in self._CHECKIN_COLS:
+            self._chk_tree.heading(c, text=c.replace("_", " ").title())
+            self._chk_tree.column(c, width=self._CHECKIN_WIDTHS.get(c, 100), anchor="w")
+        vsb = ttk.Scrollbar(frame, orient="vertical", command=self._chk_tree.yview)
+        self._chk_tree.configure(yscrollcommand=vsb.set)
+        self._chk_tree.pack(side="left", fill="both", expand=True, padx=4, pady=4)
+        vsb.pack(side="left", fill="y", pady=4)
+
+        self._chk_status = tk.StringVar(value="Ready")
+        tk.Label(frame, textvariable=self._chk_status, anchor="w",
+                 bg="#ecf0f1", padx=8).pack(fill="x", side="bottom")
+
+        self._refresh_checkins()
+
+    def _reload_students(self):
+        """Re-pull the students list and update both comboboxes."""
+        try:
+            self._student_options = self._service.list_student_ids()
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            return
+        self._student_label_to_id = {label: sid for sid, label in self._student_options}
+        labels = [label for _sid, label in self._student_options]
+        prev_form = self._chk_student.get()
+        prev_filter = self._chk_filter.get()
+        self._chk_student_cb.configure(values=labels)
+        self._chk_filter_cb.configure(values=["(all)"] + labels)
+        if prev_form not in labels:
+            self._chk_student.set("")
+        if prev_filter not in (["(all)"] + labels):
+            self._chk_filter.set("(all)")
+        self._chk_status.set(f"Loaded {len(labels)} student(s)")
+
+    def _add_checkin(self):
+        label = self._chk_student.get().strip()
+        sid = self._student_label_to_id.get(label)
+        if not sid:
+            messagebox.showwarning("Missing", "Select a student from the dropdown.")
+            return
+        mood_raw = self._chk_mood.get().strip()
+        try:
+            mood = int(mood_raw) if mood_raw else None
+        except ValueError:
+            messagebox.showwarning("Invalid", "Mood must be a number 1–10.")
+            return
+        logged_by = None
+        if self._auth:
+            try:
+                user = self._auth.get_current_user()
+                logged_by = (user or {}).get("username")
+            except Exception:
+                logged_by = None
+        try:
+            self._service.create_checkin(
+                student_id=sid, mood_rating=mood,
+                notes=self._chk_notes.get().strip() or None,
+                logged_by=logged_by,
+            )
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            return
+        self._chk_student.set("")
+        self._chk_mood.set("")
+        self._chk_notes.set("")
+        self._refresh_checkins()
+
+    def _refresh_checkins(self):
+        for r in self._chk_tree.get_children():
+            self._chk_tree.delete(r)
+        try:
+            label = self._chk_filter.get().strip()
+            sid = self._student_label_to_id.get(label) if label and label != "(all)" else None
+            rows = self._service.list_checkins(student_id=sid)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            return
+        for r in rows:
+            self._chk_tree.insert("", "end",
+                                  values=tuple(r.get(c, "") for c in self._CHECKIN_COLS))
+        self._chk_status.set(
+            f"{len(rows)} check-in(s)" + (f" for {sid}" if sid else "")
+        )
+
+    # ------------------------------------------------------------------ summary
+    def _build_summary_tab(self):
+        frame = self._summary_tab
+        toolbar = tk.Frame(frame, bg="#d5dbdb", padx=6, pady=4)
+        toolbar.pack(fill="x")
+        tk.Button(toolbar, text="Refresh", command=self._refresh_summary).pack(side="left")
+
+        body = tk.Frame(frame)
+        body.pack(fill="both", expand=True, padx=10, pady=10)
+
+        self._sum_text = tk.Text(body, height=22, wrap="word",
+                                 font=("Helvetica", 10), bg="#fbfcfc")
+        self._sum_text.tag_configure("h", font=("Helvetica", 11, "bold"),
+                                     foreground="#1a5276", spacing3=4)
+        self._sum_text.tag_configure("k", font=("Helvetica", 10, "bold"))
+        vsb = ttk.Scrollbar(body, orient="vertical", command=self._sum_text.yview)
+        self._sum_text.configure(yscrollcommand=vsb.set)
+        self._sum_text.pack(side="left", fill="both", expand=True)
+        vsb.pack(side="left", fill="y")
+
+        self._refresh_summary()
+
+    def _refresh_summary(self):
+        try:
+            data = self._service.summary()
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+            return
+        t = self._sum_text
+        t.config(state="normal")
+        t.delete("1.0", "end")
+
+        t.insert("end", "Referrals\n", "h")
+        t.insert("end", "  Total: ", "k")
+        t.insert("end", f"{data['referrals_total']}\n")
+        t.insert("end", "  Auto (absence tracker): ", "k")
+        t.insert("end", f"{data['referrals_auto']}\n")
+        t.insert("end", "  Manual: ", "k")
+        t.insert("end", f"{data['referrals_manual']}\n")
+
+        t.insert("end", "\nBy status\n", "h")
+        for k, v in sorted(data["referrals_by_status"].items()):
+            t.insert("end", f"  {k}: ", "k")
+            t.insert("end", f"{v}\n")
+        if not data["referrals_by_status"]:
+            t.insert("end", "  (none)\n")
+
+        t.insert("end", "\nBy urgency\n", "h")
+        for k, v in sorted(data["referrals_by_urgency"].items()):
+            t.insert("end", f"  {k}: ", "k")
+            t.insert("end", f"{v}\n")
+        if not data["referrals_by_urgency"]:
+            t.insert("end", "  (none)\n")
+
+        t.insert("end", "\nCheck-ins\n", "h")
+        t.insert("end", "  Total: ", "k")
+        t.insert("end", f"{data['checkins_total']}\n")
+        t.insert("end", "  Average mood: ", "k")
+        t.insert("end", f"{data['avg_mood'] if data['avg_mood'] is not None else '—'}\n")
+
+        t.insert("end", "\nMost recent referrals\n", "h")
+        if not data["recent_referrals"]:
+            t.insert("end", "  (none)\n")
+        for r in data["recent_referrals"]:
+            t.insert(
+                "end",
+                f"  #{r['id']}  {r['created_at']}  "
+                f"{r['student_id']}  {r['concern_type']}  "
+                f"[{r['urgency']}/{r['status']}]\n",
+            )
+        t.config(state="disabled")
 
     # Filter labels → corresponding referred_by SQL filter (None = all rows).
     _SOURCE_FILTERS = {

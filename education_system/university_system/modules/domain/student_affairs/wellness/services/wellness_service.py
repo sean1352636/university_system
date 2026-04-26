@@ -543,6 +543,54 @@ class WellnessService:
 
             return [dict(row) for row in appointments]
 
+    def list_all_appointments(self, status: Optional[str] = None,
+                              limit: int = 200) -> List[Dict]:
+        """Staff view: list every counselling appointment, newest first."""
+        with get_connection() as conn:
+            if status:
+                rows = conn.execute("""
+                    SELECT * FROM counseling_appointments
+                    WHERE status = ?
+                    ORDER BY appointment_date DESC, appointment_time DESC
+                    LIMIT ?
+                """, (status, limit)).fetchall()
+            else:
+                rows = conn.execute("""
+                    SELECT * FROM counseling_appointments
+                    ORDER BY appointment_date DESC, appointment_time DESC
+                    LIMIT ?
+                """, (limit,)).fetchall()
+            return [dict(r) for r in rows]
+
+    def update_appointment(self, appointment_id: int,
+                           status: Optional[str] = None,
+                           counselor_name: Optional[str] = None,
+                           notes: Optional[str] = None) -> bool:
+        """Staff update of an appointment's status / counsellor / outcome notes."""
+        fields, values = [], []
+        if status is not None:
+            fields.append("status = ?")
+            values.append(status)
+        if counselor_name is not None:
+            fields.append("counselor_name = ?")
+            values.append(counselor_name)
+        if notes is not None:
+            fields.append("notes = ?")
+            values.append(notes)
+        if not fields:
+            return False
+        values.append(appointment_id)
+        with transaction() as conn:
+            conn.execute(
+                f"UPDATE counseling_appointments SET {', '.join(fields)} "
+                "WHERE appointment_id = ?",
+                values,
+            )
+            log_activity('update', 'counseling_appointment',
+                         appointment_id=appointment_id,
+                         details={'fields': [f.split(' = ')[0] for f in fields]})
+            return True
+
     # ========== Gamification ==========
 
     def _award_points(self, student_id: str, points: int, activity_type: str,

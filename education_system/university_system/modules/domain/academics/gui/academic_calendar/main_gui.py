@@ -37,10 +37,10 @@ from education_system.university_system.modules.domain.academics.services.academ
 
 # Import central auth system
 try:
-    from education_system.university_system.infrastructure.auth import _current_auth_instance
+    from education_system.university_system.infrastructure.auth import get_global_auth
     CENTRAL_AUTH_AVAILABLE = True
 except ImportError:
-    _current_auth_instance = None
+    get_global_auth = None  # type: ignore
     CENTRAL_AUTH_AVAILABLE = False
 
 # Import trip management GUI
@@ -173,6 +173,60 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
         """Check if current user is student"""
         role = self.get_user_role()
         return role == 'student'
+
+    def navigate_to_date(self, iso_date):
+        """Switch to the events list and select event(s) on the given date.
+
+        Matches single-day events (Date == iso_date) and multi-day events
+        whose range covers iso_date. Returns True if any rows matched. If
+        nothing matches, falls back to seeding the search box with the
+        date so the user can see they're in the right place.
+        """
+        if not iso_date:
+            return False
+        try:
+            self._show_manage_events()
+        except Exception:
+            return False
+        tree = getattr(self, 'events_tree', None)
+        if tree is None:
+            return False
+        matches = []
+        for item in tree.get_children():
+            try:
+                vals = tree.item(item, 'values')
+                start = str(vals[1]) if len(vals) > 1 else ''
+                end = str(vals[2]) if len(vals) > 2 else ''
+                if start == iso_date:
+                    matches.append(item)
+                elif start and end and start <= iso_date <= end:
+                    matches.append(item)
+            except Exception:
+                continue
+        if not matches:
+            if hasattr(self, 'search_var'):
+                try:
+                    self.search_var.set(iso_date)
+                    if hasattr(self, '_search_events'):
+                        self._search_events()
+                except Exception:
+                    pass
+            return False
+        try:
+            tree.selection_set(matches)
+            tree.see(matches[0])
+            tree.focus(matches[0])
+        except Exception:
+            pass
+        # When exactly one event matches, jump straight to its details
+        # dialog — the user clearly meant that one. For multi-match days
+        # leave selection alone so they can pick.
+        if len(matches) == 1 and hasattr(self, '_view_event_details'):
+            try:
+                self._view_event_details()
+            except Exception:
+                pass
+        return True
 
     def init_calendar_database():
         """Initialize the academic calendar database tables"""
@@ -1002,11 +1056,12 @@ def integrate_with_main_system():
     """
     try:
         # Import the main authentication system
-        from education_system.university_system.infrastructure.auth import _current_auth_instance
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        global_auth = get_global_auth()
 
-        if _current_auth_instance and _current_auth_instance.current_user:
+        if global_auth and global_auth.current_user:
             # User is authenticated, launch GUI
-            return run_gui_calendar(_current_auth_instance)
+            return run_gui_calendar(global_auth)
         else:
             # No authentication, show error
             root = tk.Tk()

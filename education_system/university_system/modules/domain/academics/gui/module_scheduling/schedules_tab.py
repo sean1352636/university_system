@@ -205,6 +205,21 @@ def create_schedules_tab(self):
     # Double-click to edit
     self.schedules_tree.bind("<Double-1>", lambda e: self.edit_selected_schedule())
 
+    # Right-click → reverse link into the absence tracker for that module.
+    # Mirrors the scholarship→attendance reverse link for symmetry.
+    self._sched_context_menu = tk.Menu(self.schedules_tree, tearoff=0)
+    self._sched_context_menu.add_command(
+        label="View attendance for this module…",
+        command=lambda: _show_module_attendance_popup(
+            self, _selected_module_code(self)),
+    )
+    def _show_ctx(event):
+        row = self.schedules_tree.identify_row(event.y)
+        if row:
+            self.schedules_tree.selection_set(row)
+            self._sched_context_menu.tk_popup(event.x_root, event.y_root)
+    self.schedules_tree.bind("<Button-3>", _show_ctx)
+
     # Pagination — keep the unbounded SELECT off this tab. State lives on
     # `self` so refresh and filter share it.
     if not hasattr(self, "_sched_page"):
@@ -237,6 +252,93 @@ def create_schedules_tab(self):
                   lambda _e: self._sched_on_page_size_change())
 
 ModuleSchedulingGUI.create_schedules_tab = create_schedules_tab
+
+
+def _selected_module_code(gui):
+    """Pull the Module column out of the currently-selected schedules row.
+
+    Schedules tree columns: ID, Module, Module Name, Day, Time, Room,
+    Instructor, Type, Term, Status. ``Module`` is values[1].
+    """
+    sel = gui.schedules_tree.selection()
+    if not sel:
+        return None
+    values = gui.schedules_tree.item(sel[0], "values")
+    return values[1] if len(values) > 1 else None
+
+
+def _show_module_attendance_popup(gui, module_code):
+    """Reverse link from the Schedules tab → attendance summary for a module."""
+    if not module_code:
+        messagebox.showinfo("No selection",
+                            "Select a schedule row first.",
+                            parent=gui.root)
+        return
+    try:
+        with get_connection() as conn:
+            tables = {r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+            if "attendance" not in tables:
+                messagebox.showwarning("Attendance",
+                                       "Attendance table not available in this DB.",
+                                       parent=gui.root)
+                return
+            summary = conn.execute(
+                """SELECT COUNT(*) AS total,
+                          SUM(CASE WHEN LOWER(status)='present' THEN 1 ELSE 0 END)
+                              AS present_n
+                   FROM attendance WHERE module_code = ?""",
+                (module_code,)).fetchone()
+            recent = conn.execute(
+                """SELECT date,
+                          SUM(CASE WHEN LOWER(status)='present' THEN 1 ELSE 0 END)
+                              AS present_n,
+                          COUNT(*) AS total
+                   FROM attendance WHERE module_code = ?
+                   GROUP BY date ORDER BY date DESC LIMIT 25""",
+                (module_code,)).fetchall()
+    except Exception as e:
+        messagebox.showerror("Attendance", str(e), parent=gui.root)
+        return
+
+    win = tk.Toplevel(gui.root)
+    win.title(f"Attendance — {module_code}")
+    win.geometry("520x500")
+    ttk.Label(win, text=f"Module: {module_code}",
+              font=("Arial", 12, "bold")).pack(anchor="w", padx=12, pady=(10, 4))
+
+    total = (summary[0] if summary else 0) or 0
+    present = (summary[1] if summary else 0) or 0
+    pct = (present / total * 100) if total else None
+    pct_text = f"{pct:.1f}%" if pct is not None else "—"
+    ttk.Label(
+        win,
+        text=(f"Rows logged: {total}    Present: {present}    "
+              f"Module pct: {pct_text}"),
+    ).pack(anchor="w", padx=12, pady=2)
+
+    ttk.Label(win, text="Most recent dates (up to 25):",
+              font=("Arial", 10, "bold")).pack(anchor="w", padx=12, pady=(10, 2))
+    body = ttk.Frame(win)
+    body.pack(fill="both", expand=True, padx=12, pady=4)
+    cols = ("date", "present", "total", "pct")
+    tv = ttk.Treeview(body, columns=cols, show="headings", height=14)
+    for c, w in zip(cols, (110, 90, 90, 90)):
+        tv.heading(c, text=c.title())
+        tv.column(c, width=w, anchor="w")
+    for d, p, t in recent:
+        per = f"{(p / t * 100):.1f}%" if t else "—"
+        tv.insert("", "end", values=(d, p, t, per))
+    tv.pack(side="left", fill="both", expand=True)
+    vsb = ttk.Scrollbar(body, orient="vertical", command=tv.yview)
+    tv.configure(yscrollcommand=vsb.set)
+    vsb.pack(side="right", fill="y")
+    ttk.Button(win, text="Close", command=win.destroy).pack(pady=8)
+
+
+ModuleSchedulingGUI._show_module_attendance_popup = staticmethod(
+    _show_module_attendance_popup)
+ModuleSchedulingGUI._selected_module_code = staticmethod(_selected_module_code)
 
 
 def _sched_update_pager_label(self):

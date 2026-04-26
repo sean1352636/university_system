@@ -1,6 +1,13 @@
 """
 University Disciplinary Actions Portal
 A GUI application for managing student disciplinary records and actions.
+
+Wired to the central university database (modules.shared.constants.paths.
+DEFAULT_DB_PATH) and the central students / disciplinary_records /
+disciplinary_actions tables defined under infrastructure/database/schemas.
+The portal does not own its own tables or data — it is a view onto the
+shared store, so records created here are visible to attendance, exam
+management, and any other module that touches the same tables.
 """
 
 import tkinter as tk
@@ -9,108 +16,169 @@ import sqlite3
 from datetime import datetime
 import csv
 import os
+import sys
+
+# When the main GUI launches us as a subprocess, the child Python is
+# invoked directly on this file's path with no PYTHONPATH set, so
+# `education_system` isn't importable. Walk up from this file until we
+# find the dir that contains the `education_system` package and put
+# that on sys.path. No-op when imported normally (the package is
+# already on the path).
+if 'education_system' not in sys.modules:
+    _here = os.path.abspath(os.path.dirname(__file__))
+    while _here and not os.path.isdir(
+            os.path.join(_here, 'education_system')):
+        _parent = os.path.dirname(_here)
+        if _parent == _here:
+            break
+        _here = _parent
+    if _here and _here not in sys.path:
+        sys.path.insert(0, _here)
+
+from education_system.university_system.modules.shared.constants.paths import (
+    DEFAULT_DB_PATH,
+)
+
+
+def _bootstrap_auth_from_env():
+    """Rebuild a global auth instance from EDU_AUTH_* env vars.
+
+    The main GUI launches this portal as a subprocess, so the parent's
+    in-process global auth doesn't carry over. The launcher passes the
+    logged-in user via env; we materialise a SimpleNamespace shaped
+    like UserAuth (so the Academic Misconduct Panel's auth check
+    accepts it — its `_DummyAuth` rejection is type-based) and
+    register it via set_global_auth.
+
+    No-op when the env vars aren't set (running standalone).
+    """
+    user_id = os.environ.get('EDU_AUTH_USER_ID')
+    username = os.environ.get('EDU_AUTH_USERNAME')
+    if not (user_id or username):
+        return
+    perms = [p for p in os.environ.get(
+        'EDU_AUTH_PERMISSIONS', '').split(',') if p]
+    current_user = {
+        'id': user_id or None,
+        'user_id': user_id or None,
+        'username': username or '',
+        'role': os.environ.get('EDU_AUTH_ROLE', '') or '',
+        'email': os.environ.get('EDU_AUTH_EMAIL', '') or '',
+        'permissions': perms,
+    }
+    try:
+        from types import SimpleNamespace
+
+        def _check_permission(perm, _u=current_user):
+            return perm in _u['permissions']
+
+        shim = SimpleNamespace(
+            current_user=current_user,
+            user_role=current_user['role'],
+            check_permission=_check_permission,
+            is_authenticated=True,
+        )
+        from education_system.university_system.infrastructure.auth import (
+            set_global_auth,
+        )
+        set_global_auth(shim)
+        # Also register with the shared_context module — that's the
+        # auth lookup the Academic Misconduct Panel and other downstream
+        # code call into (its get_auth() logs a SECURITY error if the
+        # global auth is unset).
+        try:
+            from education_system.university_system.infrastructure.shared_context import (  # noqa: E501
+                set_auth as _shared_set_auth,
+            )
+            _shared_set_auth(shim)
+        except Exception:
+            pass
+    except Exception:
+        # Don't block portal startup if auth wiring fails — the portal
+        # itself doesn't need auth, only the misconduct panel does.
+        pass
+
+
+_bootstrap_auth_from_env()
+
+
+def _current_username() -> str:
+    """Pull the logged-in username from the global UserAuth instance.
+
+    Falls back to 'Admin' when no auth is registered (e.g. when the
+    portal is launched standalone). Wrapped in try/except so a partial
+    install of the auth package never breaks the portal.
+    """
+    try:
+        from education_system.university_system.infrastructure.auth import (
+            get_global_auth,
+        )
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            user = ga.current_user
+            return (user.get('username')
+                    or user.get('email')
+                    or str(user.get('id') or 'Admin'))
+    except Exception:
+        pass
+    return 'Admin'
 
 
 # ============================================================
 # DATABASE MANAGER
 # ============================================================
 class DatabaseManager:
-    """Handles all database operations for the portal."""
+    """Handles all DB operations for the portal against the central DB.
 
-    def __init__(self, db_name="disciplinary_portal.db"):
-        self.db_name = db_name
-        self.init_database()
+    Maps the portal's domain language ('incident', 'action') onto the
+    canonical tables: students, disciplinary_records, disciplinary_actions.
+    No table creation or seed data — those tables are owned by the
+    shared schemas package and populated by real workflows.
+    """
+
+    def __init__(self, db_path=None):
+        self.db_path = str(db_path) if db_path else str(DEFAULT_DB_PATH)
+        # Single source of truth for the bridge schema (extra columns,
+        # severity normalisation, status-sync triggers). See _db_init.
+        try:
+            from education_system.university_system.modules.domain.legal.disciplinary._db_init import (  # noqa: E501
+                ensure_disciplinary_schema,
+            )
+            ensure_disciplinary_schema(self.db_path)
+        except Exception:
+            # Bootstrap failures are surfaced via downstream queries —
+            # don't block portal startup.
+            pass
 
     def get_connection(self):
-        return sqlite3.connect(self.db_name)
-
-    def init_database(self):
-        """Create tables if they don't exist."""
-        conn = self.get_connection()
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS students (
-                student_id TEXT PRIMARY KEY,
-                first_name TEXT NOT NULL,
-                last_name TEXT NOT NULL,
-                email TEXT,
-                department TEXT,
-                year_of_study INTEGER,
-                enrollment_date TEXT
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS incidents (
-                incident_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_id TEXT NOT NULL,
-                incident_date TEXT NOT NULL,
-                incident_type TEXT NOT NULL,
-                severity TEXT NOT NULL,
-                description TEXT,
-                reported_by TEXT,
-                location TEXT,
-                status TEXT DEFAULT 'Open',
-                created_at TEXT,
-                FOREIGN KEY (student_id) REFERENCES students(student_id)
-            )
-        """)
-
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS actions (
-                action_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                incident_id INTEGER NOT NULL,
-                action_type TEXT NOT NULL,
-                action_date TEXT NOT NULL,
-                duration TEXT,
-                issued_by TEXT,
-                notes TEXT,
-                FOREIGN KEY (incident_id) REFERENCES incidents(incident_id)
-            )
-        """)
-
-        # Insert sample data if tables are empty
-        cursor.execute("SELECT COUNT(*) FROM students")
-        if cursor.fetchone()[0] == 0:
-            self._insert_sample_data(cursor)
-
-        conn.commit()
-        conn.close()
-
-    def _insert_sample_data(self, cursor):
-        """Insert sample students for demonstration."""
-        sample_students = [
-            ("S1001", "John", "Smith", "j.smith@uni.edu", "Computer Science", 2, "2023-09-01"),
-            ("S1002", "Emily", "Johnson", "e.johnson@uni.edu", "Mathematics", 3, "2022-09-01"),
-            ("S1003", "Michael", "Brown", "m.brown@uni.edu", "Engineering", 1, "2024-09-01"),
-            ("S1004", "Sarah", "Davis", "s.davis@uni.edu", "Biology", 4, "2021-09-01"),
-            ("S1005", "James", "Wilson", "j.wilson@uni.edu", "Physics", 2, "2023-09-01"),
-        ]
-        cursor.executemany(
-            "INSERT INTO students VALUES (?, ?, ?, ?, ?, ?, ?)",
-            sample_students
-        )
+        return sqlite3.connect(self.db_path)
 
     # --- Student operations ---
-    def add_student(self, data):
-        conn = self.get_connection()
-        try:
-            conn.execute(
-                "INSERT INTO students VALUES (?, ?, ?, ?, ?, ?, ?)",
-                data
-            )
-            conn.commit()
-            return True, "Student added successfully"
-        except sqlite3.IntegrityError:
-            return False, "Student ID already exists"
-        finally:
-            conn.close()
+    # The central students table has a wider schema than the portal's
+    # original 7-column shape. We project into the same 7-tuple the GUI
+    # already expects:
+    #   (student_id, first_name, last_name, email, department,
+    #    year_of_study, enrollment_date)
+    # Mapping: email_address → email, course → department,
+    #          grade_level → year_of_study.
+
+    _STUDENT_PROJECTION = (
+        "student_id, first_name, last_name, "
+        "COALESCE(email_address,''), COALESCE(course,''), "
+        "COALESCE(year_of_study,''), COALESCE(enrollment_date,'')"
+    )
+
+    # Note: student CRUD lives in the main GUI's Student Management
+    # screen. The portal is read-only on the students table — it joins
+    # incident records against existing students but doesn't create or
+    # modify them.
 
     def get_all_students(self):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM students ORDER BY last_name, first_name")
+        cursor.execute(
+            f"SELECT {self._STUDENT_PROJECTION} FROM students "
+            "ORDER BY last_name, first_name")
         results = cursor.fetchall()
         conn.close()
         return results
@@ -119,12 +187,12 @@ class DatabaseManager:
         conn = self.get_connection()
         cursor = conn.cursor()
         q = f"%{query}%"
-        cursor.execute("""
-            SELECT * FROM students 
-            WHERE student_id LIKE ? OR first_name LIKE ? 
-            OR last_name LIKE ? OR department LIKE ?
-            ORDER BY last_name
-        """, (q, q, q, q))
+        cursor.execute(
+            f"SELECT {self._STUDENT_PROJECTION} FROM students "
+            "WHERE student_id LIKE ? OR first_name LIKE ? "
+            "   OR last_name LIKE ? OR course LIKE ? "
+            "ORDER BY last_name",
+            (q, q, q, q))
         results = cursor.fetchall()
         conn.close()
         return results
@@ -132,36 +200,58 @@ class DatabaseManager:
     def get_student(self, student_id):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM students WHERE student_id = ?", (student_id,))
+        cursor.execute(
+            f"SELECT {self._STUDENT_PROJECTION} FROM students "
+            "WHERE student_id = ?", (student_id,))
         result = cursor.fetchone()
         conn.close()
         return result
 
-    # --- Incident operations ---
+    # --- Incident operations (disciplinary_records) ---
+    # Project into the legacy 9-tuple shape the GUI's index-based access
+    # already uses:
+    #   (incident_id, student_id, incident_date, incident_type, severity,
+    #    description, reported_by, location, status)
+
+    _INCIDENT_PROJECTION = (
+        "record_id, user_id, date_occurred, offense_type, severity, "
+        "COALESCE(description,''), COALESCE(reported_by,''), "
+        "COALESCE(location,''), COALESCE(status,'Open')"
+    )
+
     def add_incident(self, data):
+        # data: (student_id, incident_date, incident_type, severity,
+        #        description, reported_by, location, status, created_at)
+        (sid, idate, itype, severity, description, reporter,
+         location, status, _created_at) = data
+        today = datetime.now().strftime("%Y-%m-%d")
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO incidents 
-            (student_id, incident_date, incident_type, severity, description, 
-             reported_by, location, status, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, data)
-        incident_id = cursor.lastrowid
+        cursor.execute(
+            "INSERT INTO disciplinary_records "
+            "(user_id, offense_type, severity, description, "
+            " date_occurred, date_reported, reported_by, "
+            " location, status) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (sid, itype, severity, description,
+             idate, today, reporter, location, status or 'Open'))
+        record_id = cursor.lastrowid
         conn.commit()
         conn.close()
-        return incident_id
+        return record_id
 
     def get_all_incidents(self):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT i.incident_id, i.student_id, s.first_name || ' ' || s.last_name,
-                   i.incident_date, i.incident_type, i.severity, i.status
-            FROM incidents i
-            LEFT JOIN students s ON i.student_id = s.student_id
-            ORDER BY i.incident_date DESC
-        """)
+        cursor.execute(
+            "SELECT r.record_id, r.user_id, "
+            "       TRIM(COALESCE(s.first_name,'') || ' ' "
+            "            || COALESCE(s.last_name,'')), "
+            "       r.date_occurred, r.offense_type, r.severity, "
+            "       COALESCE(r.status,'Open') "
+            "FROM disciplinary_records r "
+            "LEFT JOIN students s ON r.user_id = s.student_id "
+            "ORDER BY r.date_occurred DESC, r.record_id DESC")
         results = cursor.fetchall()
         conn.close()
         return results
@@ -169,10 +259,11 @@ class DatabaseManager:
     def get_incidents_by_student(self, student_id):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
-            SELECT * FROM incidents WHERE student_id = ?
-            ORDER BY incident_date DESC
-        """, (student_id,))
+        cursor.execute(
+            f"SELECT {self._INCIDENT_PROJECTION} "
+            "FROM disciplinary_records WHERE user_id = ? "
+            "ORDER BY date_occurred DESC, record_id DESC",
+            (student_id,))
         results = cursor.fetchall()
         conn.close()
         return results
@@ -180,29 +271,57 @@ class DatabaseManager:
     def get_incident(self, incident_id):
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM incidents WHERE incident_id = ?", (incident_id,))
+        cursor.execute(
+            f"SELECT {self._INCIDENT_PROJECTION} "
+            "FROM disciplinary_records WHERE record_id = ?",
+            (incident_id,))
         result = cursor.fetchone()
         conn.close()
         return result
 
     def update_incident_status(self, incident_id, status):
+        # The DB-level trigger ``sync_disc_status_to_misc`` (installed
+        # by _db_init.ensure_disciplinary_schema) handles propagation
+        # to any linked misconduct case, so we don't sync in app code.
         conn = self.get_connection()
-        conn.execute(
-            "UPDATE incidents SET status = ? WHERE incident_id = ?",
-            (status, incident_id)
-        )
-        conn.commit()
-        conn.close()
+        try:
+            conn.execute(
+                "UPDATE disciplinary_records "
+                "SET status = ?, updated_at = CURRENT_TIMESTAMP "
+                "WHERE record_id = ?",
+                (status, incident_id))
+            conn.commit()
+        finally:
+            conn.close()
 
-    # --- Action operations ---
+    # --- Action operations (disciplinary_actions) ---
+    # Legacy 7-tuple shape:
+    #   (action_id, incident_id, action_type, action_date,
+    #    duration, issued_by, notes)
+    # Mapping: incident_id → record_id, action_date → effective_date,
+    #          duration → conditions (free-form text), issued_by →
+    #          imposed_by, notes → reason.
+
+    _ACTION_PROJECTION = (
+        "action_id, record_id, action_type, effective_date, "
+        "COALESCE(conditions,''), COALESCE(imposed_by,''), "
+        "COALESCE(reason,'')"
+    )
+
     def add_action(self, data):
+        # data: (incident_id, action_type, action_date, duration,
+        #        issued_by, notes)
+        (record_id, action_type, action_date, duration,
+         issued_by, notes) = data
         conn = self.get_connection()
         cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO actions 
-            (incident_id, action_type, action_date, duration, issued_by, notes)
-            VALUES (?, ?, ?, ?, ?, ?)
-        """, data)
+        cursor.execute(
+            "INSERT INTO disciplinary_actions "
+            "(record_id, action_type, effective_date, conditions, "
+            " imposed_by, reason) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (record_id, action_type, action_date, duration,
+             issued_by, notes))
         conn.commit()
         conn.close()
 
@@ -210,14 +329,20 @@ class DatabaseManager:
         conn = self.get_connection()
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT * FROM actions WHERE incident_id = ? ORDER BY action_date DESC",
-            (incident_id,)
-        )
+            f"SELECT {self._ACTION_PROJECTION} "
+            "FROM disciplinary_actions WHERE record_id = ? "
+            "ORDER BY effective_date DESC, action_id DESC",
+            (incident_id,))
         results = cursor.fetchall()
         conn.close()
         return results
 
     # --- Statistics ---
+    # "Open" / "Resolved" use the portal's STATUS_OPTIONS naming (Title
+    # Case). The shared table also accepts lowercase 'under_review' /
+    # 'closed' from elsewhere in the app, so we match both shapes for
+    # the open/resolved counts.
+
     def get_statistics(self):
         conn = self.get_connection()
         cursor = conn.cursor()
@@ -226,33 +351,144 @@ class DatabaseManager:
         cursor.execute("SELECT COUNT(*) FROM students")
         stats['total_students'] = cursor.fetchone()[0]
 
-        cursor.execute("SELECT COUNT(*) FROM incidents")
+        cursor.execute("SELECT COUNT(*) FROM disciplinary_records")
         stats['total_incidents'] = cursor.fetchone()[0]
 
-        cursor.execute("SELECT COUNT(*) FROM incidents WHERE status = 'Open'")
+        cursor.execute(
+            "SELECT COUNT(*) FROM disciplinary_records "
+            "WHERE LOWER(COALESCE(status,'')) "
+            "      IN ('open', 'under_review', 'under review')")
         stats['open_incidents'] = cursor.fetchone()[0]
 
-        cursor.execute("SELECT COUNT(*) FROM incidents WHERE status = 'Resolved'")
+        cursor.execute(
+            "SELECT COUNT(*) FROM disciplinary_records "
+            "WHERE LOWER(COALESCE(status,'')) "
+            "      IN ('resolved', 'closed')")
         stats['resolved_incidents'] = cursor.fetchone()[0]
 
-        cursor.execute("SELECT COUNT(*) FROM actions")
+        cursor.execute("SELECT COUNT(*) FROM disciplinary_actions")
         stats['total_actions'] = cursor.fetchone()[0]
 
-        cursor.execute("""
-            SELECT severity, COUNT(*) FROM incidents 
-            GROUP BY severity
-        """)
+        cursor.execute(
+            "SELECT severity, COUNT(*) FROM disciplinary_records "
+            "GROUP BY severity")
         stats['by_severity'] = dict(cursor.fetchall())
 
-        cursor.execute("""
-            SELECT incident_type, COUNT(*) FROM incidents 
-            GROUP BY incident_type 
-            ORDER BY COUNT(*) DESC LIMIT 5
-        """)
+        cursor.execute(
+            "SELECT offense_type, COUNT(*) FROM disciplinary_records "
+            "GROUP BY offense_type "
+            "ORDER BY COUNT(*) DESC LIMIT 5")
         stats['top_types'] = cursor.fetchall()
 
         conn.close()
         return stats
+
+    # --- Escalation: disciplinary_records → academic_misconduct_cases ---
+
+    # Disciplinary severity is now identical to the misconduct scale
+    # (Minor/Major/Critical), so escalation passes severity through
+    # unchanged. Anything we don't recognise (e.g. legacy lowercase
+    # 'minor') falls back to Title-case 'Minor'.
+    _SEVERITY_PASSTHROUGH = {'Minor', 'Major', 'Critical'}
+
+    def find_misconduct_case_for_record(self, record_id):
+        """Return existing case_id linked to record_id, or None."""
+        try:
+            conn = self.get_connection()
+            try:
+                row = conn.execute(
+                    "SELECT case_id FROM academic_misconduct_cases "
+                    "WHERE source_record_id = ? LIMIT 1",
+                    (record_id,)).fetchone()
+                return row[0] if row else None
+            finally:
+                conn.close()
+        except sqlite3.Error:
+            return None
+
+    def escalate_to_misconduct(self, record_id, imposed_by=None,
+                               system_key='university'):
+        """Escalate a disciplinary record into an academic misconduct case.
+
+        Idempotent: if a case already references this record_id, returns
+        the existing case_id instead of creating a duplicate. Also flips
+        the disciplinary record's status to 'Escalated' so it shows up
+        as such in the incidents list.
+
+        Returns the case_id (str) on success, or raises sqlite3.Error.
+        """
+        existing = self.find_misconduct_case_for_record(record_id)
+        if existing:
+            return existing
+
+        conn = self.get_connection()
+        try:
+            cur = conn.cursor()
+            # Pull the disciplinary record + its student, in one round-trip.
+            row = cur.execute(
+                "SELECT r.user_id, r.offense_type, r.severity, "
+                "       COALESCE(r.description,''), "
+                "       TRIM(COALESCE(s.first_name,'') || ' ' "
+                "            || COALESCE(s.last_name,'')), "
+                "       COALESCE(s.email_address,''), "
+                "       COALESCE(s.course,'') "
+                "FROM disciplinary_records r "
+                "LEFT JOIN students s ON s.student_id = r.user_id "
+                "WHERE r.record_id = ?", (record_id,)).fetchone()
+            if not row:
+                raise sqlite3.Error(
+                    f"No disciplinary record #{record_id}")
+            (sid, offense_type, severity, description,
+             full_name, email, course) = row
+
+            today = datetime.now().strftime("%Y-%m-%d")
+            # case_id must be UNIQUE — embed record id + timestamp so
+            # repeat escalations would clash (the earlier idempotency
+            # check already prevents that path).
+            stamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            case_id = f"MISC-R{record_id}-{stamp}"
+
+            mapped_severity = (severity if severity in self._SEVERITY_PASSTHROUGH
+                               else 'Minor')
+            student_name = full_name or sid
+
+            cur.execute(
+                "INSERT INTO academic_misconduct_cases "
+                "(case_id, system_key, student_name, student_id, "
+                " student_email, course, violation_type, status, "
+                " date_filed, severity, notes, source_record_id) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (case_id, system_key, student_name, sid, email,
+                 course or 'Unknown', offense_type or 'Other',
+                 'Under Review', today, mapped_severity,
+                 (f"Escalated from disciplinary record #{record_id}.\n\n"
+                  + (description or '')).strip(),
+                 record_id))
+
+            cur.execute(
+                "INSERT INTO academic_misconduct_history "
+                "(case_id, event_date, event_description, event_type, "
+                " created_by) "
+                "VALUES (?, ?, ?, 'info', ?)",
+                (case_id,
+                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                 f"Case escalated from disciplinary record "
+                 f"#{record_id}.",
+                 imposed_by or ''))
+
+            cur.execute(
+                "UPDATE disciplinary_records "
+                "SET status = 'Escalated', "
+                "    updated_at = CURRENT_TIMESTAMP "
+                "WHERE record_id = ?", (record_id,))
+
+            conn.commit()
+            return case_id
+        except sqlite3.Error:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
 
 # ============================================================
@@ -282,7 +518,9 @@ class DisciplinaryPortal:
         "Attendance Violation", "Code of Conduct Violation", "Other"
     ]
 
-    SEVERITY_LEVELS = ["Minor", "Moderate", "Serious", "Severe"]
+    # Aligned with the Academic Misconduct Panel so escalations and
+    # cases share one vocabulary across both surfaces.
+    SEVERITY_LEVELS = ["Minor", "Major", "Critical"]
 
     ACTION_TYPES = [
         "Verbal Warning", "Written Warning", "Probation", "Community Service",
@@ -299,12 +537,41 @@ class DisciplinaryPortal:
         self.root.configure(bg=self.COLORS['bg'])
 
         self.db = DatabaseManager()
-        self.current_user = "Admin"
+        self.current_user = _current_username()
 
         self.setup_styles()
         self.create_header()
         self.create_main_layout()
         self.show_dashboard()
+
+        # Back-link consumer: when the misconduct panel opens this
+        # portal pointed at a specific source record, jump straight
+        # into that incident's details view.
+        prefill_record_id = getattr(self.root, 'prefill_record_id', None)
+        if prefill_record_id is not None:
+            try:
+                self._open_incident_by_id(int(prefill_record_id))
+            except Exception:
+                pass
+
+    def _open_incident_by_id(self, record_id):
+        """Navigate to the incidents view and open details for record_id.
+
+        Used by the back-link from the Academic Misconduct Panel so
+        the user can hop straight from a case to its source disciplinary
+        record without manually scrolling.
+        """
+        self.show_incidents()
+        if not hasattr(self, 'incidents_tree'):
+            return
+        # Match the row whose first column == record_id.
+        for item in self.incidents_tree.get_children():
+            vals = self.incidents_tree.item(item, 'values')
+            if vals and str(vals[0]) == str(record_id):
+                self.incidents_tree.selection_set(item)
+                self.incidents_tree.see(item)
+                self.view_incident_details()
+                return
 
     def setup_styles(self):
         """Configure ttk widget styles."""
@@ -386,6 +653,7 @@ class DisciplinaryPortal:
             ("⚠️ Incidents", self.show_incidents),
             ("📝 New Report", self.show_new_incident),
             ("📈 Reports", self.show_reports),
+            ("🎓 Academic Misconduct", self.open_academic_misconduct),
         ]
 
         for text, command in nav_items:
@@ -427,6 +695,88 @@ class DisciplinaryPortal:
             tk.Label(header, text=subtitle,
                      font=('Segoe UI', 10),
                      bg=self.COLORS['bg'], fg=self.COLORS['text_light']).pack(anchor='w')
+
+    # ============================================================
+    # ACADEMIC MISCONDUCT LINK
+    # ============================================================
+    def open_academic_misconduct(self, prefill_student_id=None,
+                                 prefill_case_id=None):
+        """Launch the Academic Misconduct Panel in a Toplevel.
+
+        Forwards the current auth so the panel doesn't reject the
+        user. ``prefill_student_id`` filters the case list to that
+        student; ``prefill_case_id`` selects a specific case. Both are
+        attached to the Toplevel for the panel's __init__ to consume.
+        """
+        try:
+            from education_system.shared.academic_misconduct.academic_misconduct_gui import (  # noqa: E501
+                AcademicMisconductPanel,
+            )
+        except Exception as e:
+            messagebox.showerror(
+                "Academic Misconduct",
+                f"Could not load the Academic Misconduct Panel:\n{e}",
+                parent=self.root)
+            return
+
+        auth = None
+        try:
+            from education_system.university_system.infrastructure.auth import (
+                get_global_auth,
+            )
+            auth = get_global_auth()
+        except Exception:
+            auth = None
+
+        win = tk.Toplevel(self.root)
+        win.geometry("1400x900")
+        if prefill_student_id:
+            win.prefill_student_id = prefill_student_id
+        if prefill_case_id:
+            win.prefill_case_id = prefill_case_id
+        try:
+            AcademicMisconductPanel(win, auth=auth, system_key='university')
+        except Exception as e:
+            messagebox.showerror(
+                "Academic Misconduct",
+                f"Failed to launch Academic Misconduct Panel:\n{e}",
+                parent=self.root)
+            try:
+                win.destroy()
+            except Exception:
+                pass
+
+    def _escalate_incident(self, record_id, parent_dialog):
+        """Confirm + run escalation, then jump into the new case."""
+        if not messagebox.askyesno(
+                "Escalate to Academic Misconduct?",
+                "This will create a new Academic Misconduct case "
+                f"pre-populated from disciplinary record #{record_id}, "
+                "mark the disciplinary record as 'Escalated', and open "
+                "the misconduct panel pointed at the new case.\n\n"
+                "Continue?",
+                parent=parent_dialog):
+            return
+        try:
+            case_id = self.db.escalate_to_misconduct(
+                record_id, imposed_by=self.current_user)
+        except sqlite3.Error as e:
+            messagebox.showerror(
+                "Escalation failed", str(e), parent=parent_dialog)
+            return
+        # Close the incident dialog so the user lands in the misconduct
+        # panel cleanly, and refresh the incidents tree to show the
+        # status flip.
+        try:
+            parent_dialog.destroy()
+        except Exception:
+            pass
+        if hasattr(self, 'incidents_tree'):
+            try:
+                self.refresh_incidents()
+            except Exception:
+                pass
+        self.open_academic_misconduct(prefill_case_id=case_id)
 
     # ============================================================
     # DASHBOARD
@@ -479,10 +829,9 @@ class DisciplinaryPortal:
                  bg=self.COLORS['card'], fg=self.COLORS['text']).pack(anchor='w', padx=15, pady=(10, 15))
 
         severity_colors = {
-            'Minor': '#48bb78',
-            'Moderate': '#ecc94b',
-            'Serious': '#ed8936',
-            'Severe': '#e53e3e',
+            'Minor':    '#48bb78',
+            'Major':    '#ed8936',
+            'Critical': '#e53e3e',
         }
 
         max_count = max(stats['by_severity'].values()) if stats['by_severity'] else 1
@@ -557,12 +906,6 @@ class DisciplinaryPortal:
         self.student_search.pack(side='left', ipady=5)
         self.student_search.bind('<KeyRelease>', lambda e: self.refresh_students())
 
-        tk.Button(action_bar, text="+ Add Student",
-                  command=self.show_add_student,
-                  font=('Segoe UI', 10, 'bold'),
-                  bg=self.COLORS['primary'], fg='white',
-                  bd=0, padx=20, pady=8, cursor='hand2').pack(side='right', padx=5)
-
         tk.Button(action_bar, text="📋 View Details",
                   command=self.view_student_details,
                   font=('Segoe UI', 10),
@@ -606,77 +949,6 @@ class DisciplinaryPortal:
 
         self.students_tree.tag_configure('odd', background='#f7fafc')
         self.students_tree.tag_configure('even', background='white')
-
-    def show_add_student(self):
-        dialog = tk.Toplevel(self.root)
-        dialog.title("Add New Student")
-        dialog.geometry("450x520")
-        dialog.configure(bg=self.COLORS['bg'])
-        dialog.transient(self.root)
-        dialog.grab_set()
-
-        tk.Label(dialog, text="Add New Student",
-                 font=('Segoe UI', 16, 'bold'),
-                 bg=self.COLORS['bg'], fg=self.COLORS['text']).pack(pady=20)
-
-        form = tk.Frame(dialog, bg=self.COLORS['bg'])
-        form.pack(padx=30, fill='x')
-
-        fields = {}
-        labels = [
-            ('Student ID*', 'student_id'),
-            ('First Name*', 'first_name'),
-            ('Last Name*', 'last_name'),
-            ('Email', 'email'),
-            ('Department', 'department'),
-            ('Year of Study', 'year'),
-        ]
-
-        for label, key in labels:
-            tk.Label(form, text=label, font=('Segoe UI', 10),
-                     bg=self.COLORS['bg'], fg=self.COLORS['text']).pack(anchor='w', pady=(8, 2))
-            entry = tk.Entry(form, font=('Segoe UI', 10),
-                             relief='solid', bd=1)
-            entry.pack(fill='x', ipady=6)
-            fields[key] = entry
-
-        def save():
-            try:
-                data = (
-                    fields['student_id'].get().strip(),
-                    fields['first_name'].get().strip(),
-                    fields['last_name'].get().strip(),
-                    fields['email'].get().strip(),
-                    fields['department'].get().strip(),
-                    int(fields['year'].get()) if fields['year'].get().strip() else None,
-                    datetime.now().strftime("%Y-%m-%d"),
-                )
-
-                if not data[0] or not data[1] or not data[2]:
-                    messagebox.showerror("Error", "ID, First Name, and Last Name are required")
-                    return
-
-                success, msg = self.db.add_student(data)
-                if success:
-                    messagebox.showinfo("Success", msg)
-                    dialog.destroy()
-                    self.refresh_students()
-                else:
-                    messagebox.showerror("Error", msg)
-            except ValueError:
-                messagebox.showerror("Error", "Year of Study must be a number")
-
-        btn_frame = tk.Frame(dialog, bg=self.COLORS['bg'])
-        btn_frame.pack(pady=20)
-
-        tk.Button(btn_frame, text="Cancel", command=dialog.destroy,
-                  font=('Segoe UI', 10),
-                  bg='#cbd5e0', fg=self.COLORS['text'],
-                  bd=0, padx=25, pady=8, cursor='hand2').pack(side='left', padx=5)
-        tk.Button(btn_frame, text="Save Student", command=save,
-                  font=('Segoe UI', 10, 'bold'),
-                  bg=self.COLORS['primary'], fg='white',
-                  bd=0, padx=25, pady=8, cursor='hand2').pack(side='left', padx=5)
 
     def view_student_details(self):
         selection = self.students_tree.selection()
@@ -777,6 +1049,12 @@ class DisciplinaryPortal:
                   bg=self.COLORS['accent'], fg='white',
                   bd=0, padx=20, pady=8, cursor='hand2').pack(side='right', padx=5)
 
+        tk.Button(action_bar, text="🔄 Refresh",
+                  command=self.refresh_incidents,
+                  font=('Segoe UI', 10),
+                  bg=self.COLORS['text_light'], fg='white',
+                  bd=0, padx=20, pady=8, cursor='hand2').pack(side='right', padx=5)
+
         tree_frame = tk.Frame(self.content, bg=self.COLORS['card'])
         tree_frame.pack(fill='both', expand=True, padx=30, pady=10)
 
@@ -847,8 +1125,9 @@ class DisciplinaryPortal:
                  bg=self.COLORS['primary'], fg='white').pack(side='left', padx=25, pady=15)
 
         severity_color = {
-            'Minor': '#48bb78', 'Moderate': '#ecc94b',
-            'Serious': '#ed8936', 'Severe': '#e53e3e'
+            'Minor':    '#48bb78',
+            'Major':    '#ed8936',
+            'Critical': '#e53e3e',
         }.get(incident[4], '#718096')
 
         severity_badge = tk.Label(hdr, text=f"  {incident[4]}  ",
@@ -927,6 +1206,33 @@ class DisciplinaryPortal:
                   font=('Segoe UI', 9, 'bold'),
                   bg=self.COLORS['primary'], fg='white',
                   bd=0, padx=15, pady=5, cursor='hand2').pack(side='right')
+
+        # Show the misconduct escalation only for academic-flavoured
+        # offence types. For property damage, substance abuse, etc.
+        # the link is noise.
+        academic_types = {
+            'Academic Misconduct', 'Plagiarism', 'Cheating',
+            'Code of Conduct Violation',
+        }
+        if (incident[3] or '') in academic_types:
+            existing_case = self.db.find_misconduct_case_for_record(
+                incident_id)
+            if existing_case:
+                btn_label = f"🎓 Open Misconduct Case ({existing_case})"
+
+                def _action(eid=existing_case):
+                    self.open_academic_misconduct(prefill_case_id=eid)
+            else:
+                btn_label = "🎓 Escalate to Academic Misconduct Case"
+
+                def _action(rid=incident_id, p=dialog):
+                    self._escalate_incident(rid, p)
+            tk.Button(action_header, text=btn_label,
+                      command=_action,
+                      font=('Segoe UI', 9, 'bold'),
+                      bg=self.COLORS['accent'], fg='white',
+                      bd=0, padx=15, pady=5, cursor='hand2').pack(
+                          side='right', padx=(0, 8))
 
         if actions:
             for action in actions:
@@ -1150,8 +1456,28 @@ class DisciplinaryPortal:
             )
 
             incident_id = self.db.add_incident(data)
-            messagebox.showinfo("Success",
-                                f"Incident #{incident_id} reported successfully")
+
+            # Auto-escalate when the offence is academic in nature, so
+            # the case appears in the Academic Misconduct Panel without
+            # the admin having to repeat the data entry there.
+            academic_types = {
+                'Academic Misconduct', 'Plagiarism', 'Cheating',
+                'Code of Conduct Violation',
+            }
+            extra = ""
+            if type_combo.get() in academic_types:
+                try:
+                    case_id = self.db.escalate_to_misconduct(
+                        incident_id, imposed_by=self.current_user)
+                    extra = (f"\n\nAlso filed as Academic Misconduct "
+                             f"case {case_id}.")
+                except sqlite3.Error:
+                    extra = ("\n\nNote: failed to auto-file as an "
+                             "Academic Misconduct case (see logs).")
+
+            messagebox.showinfo(
+                "Success",
+                f"Incident #{incident_id} reported successfully.{extra}")
             self.show_incidents()
 
         # Submit buttons

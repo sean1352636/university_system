@@ -33,6 +33,18 @@ def set_auth(auth_instance):
         set_shared_auth(auth_instance)
     except Exception as e:
         logger.warning(f"Failed to set auth in shared_context: {e}")
+    # Bootstrap the disciplinary↔misconduct bridge schema once per
+    # session. Idempotent and cheap; running it here means subprocess
+    # surfaces (Disciplinary Portal etc.) inherit a DB that already
+    # has the columns + sync triggers in place. Safe to no-op on
+    # failure — the per-surface call still fires as a safety net.
+    try:
+        from education_system.university_system.modules.domain.legal.disciplinary._db_init import (  # noqa: E501
+            ensure_disciplinary_schema,
+        )
+        ensure_disciplinary_schema()
+    except Exception:
+        logger.exception("disciplinary schema bootstrap failed at login")
 
 
 def init_gui(session_user=None):
@@ -892,6 +904,7 @@ UnifiedManagementGUI.show_clearing_adjustment_gui = show_clearing_adjustment_gui
 
 import subprocess  # noqa: E402
 import sys  # noqa: E402
+import os  # noqa: E402
 import importlib.util  # noqa: E402
 
 
@@ -974,9 +987,30 @@ def _launch_new_feature_module(self, module_dotted: str, label: str) -> None:
         except Exception:
             pass
         return
+    # Propagate the logged-in user through the env so subprocesses
+    # that need it (e.g. the Disciplinary Portal handing off to the
+    # Academic Misconduct Panel) can rebuild a global auth shim. The
+    # in-process global auth instance doesn't survive across processes.
+    env = os.environ.copy()
+    try:
+        cu = (self.auth.current_user
+              if getattr(self, 'auth', None) else None) or {}
+        if cu:
+            env['EDU_AUTH_USER_ID']     = str(cu.get('id', '') or cu.get('user_id', ''))
+            env['EDU_AUTH_USERNAME']    = str(cu.get('username', '') or '')
+            env['EDU_AUTH_ROLE']        = str(cu.get('role', '') or '')
+            env['EDU_AUTH_EMAIL']       = str(cu.get('email', '') or '')
+            perms = cu.get('permissions') or []
+            if isinstance(perms, (list, tuple, set)):
+                env['EDU_AUTH_PERMISSIONS'] = ','.join(str(p) for p in perms)
+    except Exception:
+        # Don't block the launch on env-prep failures.
+        logger.exception("failed to build auth env for %s", label)
+
     try:
         subprocess.Popen([sys.executable, origin],
-                         cwd=str(__import__("pathlib").Path(origin).parent))
+                         cwd=str(__import__("pathlib").Path(origin).parent),
+                         env=env)
         logger.info("launched %s -> %s", label, origin)
     except Exception as e:
         logger.exception("Popen failed for %s", label)

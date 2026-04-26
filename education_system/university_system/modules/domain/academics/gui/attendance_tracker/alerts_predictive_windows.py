@@ -157,19 +157,65 @@ class AttendanceAlertsWindow:
         ttk.Button(self.window, text=_("common.close"), command=self.window.destroy, style='Danger.TButton').pack(pady=10)
 
     def load_alerts(self):
-        # Clear existing items
+        # Replaces the old hardcoded sample list. Each row is the most
+        # recent student_risk_assessment entry per student — i.e. the
+        # output the absence tracker's risk feed writes.
         for item in self.alerts_tree.get_children():
             self.alerts_tree.delete(item)
 
-        # Sample alerts data
-        sample_alerts = [
-            ("ALT001", "S001", "John Doe", "CS101", "Low Attendance", "High", "Pending", "2024-12-20"),
-            ("ALT002", "S003", "Bob Wilson", "CS102", "Consecutive Absences", "Critical", "Pending", "2024-12-19"),
-            ("ALT003", "S007", "Alice Brown", "CS101", "Late Pattern", "Medium", "Acknowledged", "2024-12-18"),
-        ]
+        sf = (self.severity_filter_var.get()
+              if hasattr(self, 'severity_filter_var') else "All")
+        st_filter = (self.status_filter_var.get()
+                     if hasattr(self, 'status_filter_var') else "All")
 
-        for alert in sample_alerts:
-            self.alerts_tree.insert('', 'end', values=alert)
+        rows = []
+        try:
+            if MAIN_DB_AVAILABLE:
+                conn = get_db_connection()
+            else:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cur = conn.cursor()
+            cur.execute("""
+                SELECT r.id, r.student_id,
+                       COALESCE(NULLIF(TRIM(s.first_name || ' ' || s.last_name), ''),
+                                r.student_id) AS name,
+                       COALESCE(r.prediction_model, 'risk_feed') AS model,
+                       r.risk_level, r.risk_score, r.assessment_date
+                FROM student_risk_assessment r
+                LEFT JOIN students s ON s.student_id = r.student_id
+                WHERE r.id = (SELECT MAX(id) FROM student_risk_assessment
+                              WHERE student_id = r.student_id)
+                ORDER BY
+                    CASE LOWER(COALESCE(r.risk_level, ''))
+                        WHEN 'high' THEN 0
+                        WHEN 'medium' THEN 1
+                        ELSE 2 END,
+                    r.risk_score DESC
+            """)
+            rows = cur.fetchall()
+            conn.close()
+        except Exception:
+            logger.exception("load_alerts: risk feed query failed")
+
+        sev_map = {"high": "High", "medium": "Medium", "low": "Low"}
+        # Status column has no backing field in the feed schema yet;
+        # treat every feed row as Pending so the existing filter UI
+        # still behaves predictably.
+        status = "Pending"
+        for (rid, sid, name, model, level, score, asof) in rows:
+            level_l = (level or "").lower()
+            sev = sev_map.get(level_l, (level or "Unknown").title())
+            if level_l == "high" and score is not None and score >= 70:
+                sev = "Critical"
+            if sf != "All" and sf != sev:
+                continue
+            if st_filter != "All" and st_filter != status:
+                continue
+            self.alerts_tree.insert(
+                '', 'end',
+                values=(f"R{rid}", sid, name, "—",
+                        f"Attendance risk ({model})",
+                        sev, status, asof or ""))
 
     def create_alert(self):
         CreateAlertWindow(self.window, self.load_alerts)
@@ -379,8 +425,11 @@ class PredictiveAnalyticsWindow:
                   command=self.single_prediction, style='Warning.TButton').grid(row=0, column=1, padx=5)
         ttk.Button(controls_grid, text="Batch Analysis",
                   command=self.batch_analysis, style='Success.TButton').grid(row=0, column=2, padx=5)
+        ttk.Button(controls_grid, text="Load from Risk Feed",
+                  command=self.load_from_risk_feed,
+                  style='Success.TButton').grid(row=0, column=3, padx=5)
         ttk.Button(controls_grid, text="Model Info",
-                  command=self.show_model_info, style='Primary.TButton').grid(row=0, column=3, padx=5)
+                  command=self.show_model_info, style='Primary.TButton').grid(row=0, column=4, padx=5)
 
         # Results notebook
         self.results_notebook = ttk.Notebook(self.window)
@@ -540,6 +589,85 @@ class PredictiveAnalyticsWindow:
         except Exception as e:
             logger.exception("alerts_predictive_windows.py:535 %s", 'except Exception as e')
             messagebox.showerror("Error", f"Failed to load predictions: {e}")
+
+    def load_from_risk_feed(self):
+        """Populate the predictions tree from the persisted risk feed.
+
+        Reads the most recent student_risk_assessment row per student
+        (what the absence-tracker's Risk Feed writes) instead of
+        recomputing from raw attendance. Lets you see exactly what the
+        downstream consumers are seeing, including the score the feed's
+        blended model produced.
+        """
+        for item in self.predictions_tree.get_children():
+            self.predictions_tree.delete(item)
+
+        try:
+            if MAIN_DB_AVAILABLE:
+                conn = get_db_connection()
+            else:
+                conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            cursor = conn.cursor()
+            cursor.execute("""
+                SELECT r.student_id,
+                       COALESCE(NULLIF(TRIM(s.first_name || ' ' || s.last_name), ''),
+                                r.student_id) AS name,
+                       r.risk_level, r.risk_score, r.confidence,
+                       r.assessment_date, r.prediction_model
+                FROM student_risk_assessment r
+                LEFT JOIN students s ON s.student_id = r.student_id
+                WHERE r.id = (SELECT MAX(id) FROM student_risk_assessment
+                              WHERE student_id = r.student_id)
+                ORDER BY
+                    CASE LOWER(COALESCE(r.risk_level, ''))
+                        WHEN 'high' THEN 0
+                        WHEN 'medium' THEN 1
+                        ELSE 2 END,
+                    r.risk_score DESC
+            """)
+            rows = cursor.fetchall()
+            conn.close()
+        except Exception as e:
+            logger.exception("load_from_risk_feed query failed")
+            messagebox.showerror("Error",
+                                 f"Failed to load risk feed: {e}")
+            return
+
+        if not rows:
+            messagebox.showinfo(
+                "Info",
+                "No persisted risk assessments yet — run "
+                "'Risk Feed' from the Absence Tracker (#33) first.")
+            return
+
+        level_label = {"high": "High Risk", "medium": "Medium Risk",
+                       "low": "Low Risk"}
+        for (sid, name, level, score, conf, asof, model) in rows:
+            level_l = (level or "").lower()
+            label = level_label.get(level_l, (level or "Unknown").title())
+            score_v = score if score is not None else 0.0
+            # Module column is N/A for the feed (it's per-student, not
+            # per-module); show ALL.
+            factors = (f"score={score_v:.1f} as of {asof or '—'} "
+                       f"({model or 'risk_feed'})")
+            confidence_str = f"{conf:.2f}" if conf is not None else "—"
+            item = self.predictions_tree.insert(
+                '', 'end',
+                values=(sid, name, "ALL", label, confidence_str,
+                        f"{score_v:.1f}", factors))
+            if level_l == "high":
+                self.predictions_tree.set(item, "Risk Level",
+                                          "🔴 " + label)
+            elif level_l == "medium":
+                self.predictions_tree.set(item, "Risk Level",
+                                          "🟡 " + label)
+            else:
+                self.predictions_tree.set(item, "Risk Level",
+                                          "🟢 " + label)
+
+        messagebox.showinfo(
+            "Loaded",
+            f"Loaded {len(rows)} student(s) from the risk feed.")
 
     def update_predictions(self, prediction_data):
         # Add new prediction to the tree

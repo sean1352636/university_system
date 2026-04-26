@@ -1,13 +1,82 @@
 """Case dialogs (create, view, delete, edit) for the Academic Misconduct Panel."""
 
+import logging
+
 from education_system.shared.academic_misconduct._imports import (
     tk, ttk, messagebox, scrolledtext, _t, datetime,
     sqlite3, DEFAULT_DB_PATH, EMAIL_AVAILABLE, queue_email,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class MisconductCaseDialogsMixin:
     """Mixin providing case create/view/delete/edit dialogs."""
+
+    def _mirror_case_to_disciplinary(self, new_case):
+        """Create a parallel row in disciplinary_records + back-link.
+
+        Mirrors the misconduct case into the Disciplinary Portal's
+        canonical store so both surfaces show the same incident, then
+        sets the misconduct case's ``source_record_id`` to the new
+        disciplinary record id so navigation between panels works.
+        Idempotently ensures the back-link column exists on first run.
+        """
+        db_path = self._get_db_path()
+        today = datetime.now().strftime('%Y-%m-%d')
+
+        # Resolve a "reported by" string from the live auth.
+        reporter = ''
+        try:
+            if getattr(self, 'auth', None) and self.auth.current_user:
+                cu = self.auth.current_user
+                reporter = (cu.get('username')
+                            or cu.get('email') or '')
+        except Exception:
+            pass
+
+        # The Disciplinary Portal's DatabaseManager normally bootstraps
+        # the bridge schema on first run, but the misconduct panel can
+        # be the very first surface to touch the DB — call the same
+        # central helper to make sure the back-link column + status
+        # sync triggers exist before we INSERT.
+        try:
+            from education_system.university_system.modules.domain.legal.disciplinary._db_init import (  # noqa: E501
+                ensure_disciplinary_schema,
+            )
+            ensure_disciplinary_schema(db_path)
+        except Exception:
+            pass  # not running under university_system — skip
+
+        conn = sqlite3.connect(db_path)
+        try:
+            cur = conn.cursor()
+
+            cur.execute(
+                "INSERT INTO disciplinary_records "
+                "(user_id, offense_type, severity, description, "
+                " date_occurred, date_reported, reported_by, status) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, 'Under Review')",
+                (new_case['student_id'], new_case['type'],
+                 new_case['severity'],
+                 (f"Filed via Academic Misconduct Panel "
+                  f"(case {new_case['id']}).\n\n"
+                  + (new_case.get('notes') or '')),
+                 new_case['date_filed'], today, reporter))
+            record_id = cur.lastrowid
+
+            cur.execute(
+                "UPDATE academic_misconduct_cases "
+                "SET source_record_id = ? "
+                "WHERE case_id = ?",
+                (record_id, new_case['id']))
+            conn.commit()
+            return record_id
+        except sqlite3.Error:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
 
     def new_case(self):
         """Create a new case."""
@@ -520,6 +589,20 @@ class MisconductCaseDialogsMixin:
                 if self.save_case_to_db(new_case):
                     # Add to case history
                     self.add_case_history(new_case['id'], f"Case created: {new_case['type']} violation", 'info')
+
+                    # Mirror the new case into the Disciplinary Portal's
+                    # disciplinary_records so the same incident shows up
+                    # in both surfaces. We back-link via source_record_id
+                    # on the misconduct case so navigation works both
+                    # directions. Failure here is non-fatal — the
+                    # misconduct case still saves.
+                    try:
+                        self._mirror_case_to_disciplinary(new_case)
+                    except Exception as _e:
+                        logger.warning(
+                            "Could not mirror misconduct case %s into "
+                            "disciplinary_records: %s",
+                            new_case.get('id'), _e)
 
                     self.load_cases_from_db()
                     self.populate_tree()

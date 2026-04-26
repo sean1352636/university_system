@@ -323,11 +323,14 @@ class MisconductCaseListMixin:
             if filter_severity != "All" and case['severity'] != filter_severity:
                 continue
 
-            # Apply search filter (search in multiple fields)
+            # Apply search filter (search in multiple fields, including
+            # student_id so launching the panel with a student_id
+            # prefill actually narrows to that student's cases).
             if search_text:
                 searchable_text = (
                     case['id'].lower() + " " +
                     case['student'].lower() + " " +
+                    str(case.get('student_id', '')).lower() + " " +
                     case['type'].lower()
                 )
                 if search_text not in searchable_text:

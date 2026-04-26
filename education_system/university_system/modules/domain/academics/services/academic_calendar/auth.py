@@ -23,17 +23,19 @@ class AuthenticationManager:
     def check_permission(self, permission: str) -> bool:
         """Check if current user has specific permission using main auth system"""
         # Get the global auth instance
-        from education_system.university_system.infrastructure.auth import _current_auth_instance
-        if _current_auth_instance and _current_auth_instance.current_user:
-            return _current_auth_instance.check_permission(permission)
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        global_auth = get_global_auth()
+        if global_auth and getattr(global_auth, "current_user", None):
+            return global_auth.check_permission(permission)
         return False
 
     def _load_permissions(self):
         """Load permissions from main auth system"""
-        from education_system.university_system.infrastructure.auth import _current_auth_instance
-        if _current_auth_instance and _current_auth_instance.current_user:
-            self.current_user = _current_auth_instance.current_user
-            self.permissions_cache = set(_current_auth_instance.current_user.get('permissions', []))
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        global_auth = get_global_auth()
+        if global_auth and getattr(global_auth, "current_user", None):
+            self.current_user = global_auth.current_user
+            self.permissions_cache = set(global_auth.current_user.get('permissions', []))
 
     def _create_session(self):
         """Create user session"""

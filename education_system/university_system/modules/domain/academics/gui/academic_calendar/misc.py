@@ -127,10 +127,11 @@ def integrate_with_main_system() -> Optional[CalendarGUI]:
         A :class:`CalendarGUI` instance if launched, otherwise ``None``.
     """
     try:
-        from education_system.university_system.infrastructure.auth import _current_auth_instance  # type: ignore
-        if _current_auth_instance and getattr(_current_auth_instance, "current_user", None):
+        from education_system.university_system.infrastructure.auth import get_global_auth  # type: ignore
+        global_auth = get_global_auth()
+        if global_auth and getattr(global_auth, "current_user", None):
             # User is authenticated, launch the GUI with their context
-            return run_gui_calendar(_current_auth_instance)
+            return run_gui_calendar(global_auth)
         else:
             # No authentication present; prompt user
             root = tk.Tk()

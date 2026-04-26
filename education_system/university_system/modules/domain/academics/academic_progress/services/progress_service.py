@@ -1154,6 +1154,51 @@ class ProgressService:
                     ]
                 })
 
+            # Predictive risk model (from the absence-tracker's risk feed).
+            # Surfaces the same blended-signal verdict admins see in
+            # student_risk_assessment, with the same warning-record
+            # ack/resolve workflow as every other warning. Wrapped in
+            # try/except so a missing table on a fresh DB doesn't break
+            # the whole scan.
+            try:
+                feed_row = conn.execute(
+                    """SELECT risk_score, risk_level, assessment_date,
+                              prediction_model
+                       FROM student_risk_assessment
+                       WHERE student_id = ?
+                       ORDER BY assessment_date DESC, id DESC
+                       LIMIT 1""",
+                    (student_id,)).fetchone()
+            except Exception:
+                feed_row = None
+
+            if feed_row is not None:
+                score = feed_row['risk_score']
+                level = (feed_row['risk_level'] or '')
+                level_l = level.lower()
+                if level_l in ('high', 'medium'):
+                    sev = 'High' if level_l == 'high' else 'Medium'
+                    asof = feed_row['assessment_date'] or '—'
+                    model = feed_row['prediction_model'] or 'risk_feed'
+                    score_v = float(score) if score is not None else 0.0
+                    warnings.append({
+                        'type': 'Predictive Risk',
+                        'severity': sev,
+                        'message': (
+                            f"Predictive risk model flags you as "
+                            f"{level.upper()} (score {score_v:.1f}/100, "
+                            f"model={model}, as of {asof})."),
+                        'metric': 'Risk Score',
+                        'value': score_v,
+                        'recommendations': [
+                            'Review your attendance and recent grades',
+                            'Speak to your academic advisor about an '
+                            'action plan',
+                            'Resolve any pending absence requests so '
+                            'they stop counting against you',
+                        ],
+                    })
+
             # Clear stale warnings that no longer apply, then save new ones
             self._refresh_warning_records(student_id, warnings)
 

@@ -724,9 +724,10 @@ class AcademicCalendarManager:
                 return set()
 
             # Get permissions from the main auth system
-            from education_system.university_system.infrastructure.auth import _current_auth_instance
-            if _current_auth_instance and _current_auth_instance.current_user:
-                user_permissions = _current_auth_instance.current_user.get('permissions', [])
+            from education_system.university_system.infrastructure.auth import get_global_auth
+            global_auth = get_global_auth()
+            if global_auth and getattr(global_auth, "current_user", None):
+                user_permissions = global_auth.current_user.get('permissions', [])
                 return set(user_permissions)
 
             return set()

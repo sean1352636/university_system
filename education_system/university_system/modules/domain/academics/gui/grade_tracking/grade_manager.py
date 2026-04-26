@@ -597,8 +597,14 @@ class GradeManager:
         except Exception as e:
             print(f"Grade notification email failed: {e}")
 
-    def add_grade_dialog(self):
-        """Open dialog to add a new grade — shows student's submitted assignments"""
+    def add_grade_dialog(self, prefill_student_id=None,
+                         prefill_module_code=None, prefill_comments=None):
+        """Open dialog to add a new grade — shows student's submitted assignments.
+
+        Optional kwargs let callers (e.g. the absence tracker's grade-penalty
+        workflow) jump straight to the right student/module with a pre-filled
+        comment. Pass None for any to leave it blank.
+        """
         dialog = tk.Toplevel(self.root)
         dialog.title("Add Grade")
         dialog.geometry("550x650")
@@ -843,6 +849,37 @@ class GradeManager:
                 messagebox.showerror("Database Error", f"Error saving grade: {e}", parent=dialog)
 
         ttk.Button(dialog, text="Save Grade", command=save_grade).grid(row=7, column=0, columnspan=2, pady=15)
+
+        # Prefill: pick student, load their assessments, optionally filter
+        # by module, and seed the comments field. Done last so all combos
+        # and bound handlers exist.
+        if prefill_student_id:
+            try:
+                match = next(
+                    (v for v in student_combo['values']
+                     if v.startswith(f"{prefill_student_id} - ")),
+                    None)
+                if match:
+                    student_var.set(match)
+                    on_student_selected()
+                    if prefill_module_code and assessments:
+                        filtered = [
+                            f"{a[0]} - {a[1]} ({a[3]}) [{a[5]}] - Max: {a[2]}"
+                            for a in assessments
+                            if str(a[3]) == str(prefill_module_code)
+                        ]
+                        if filtered:
+                            assessment_combo['values'] = filtered
+                            assessment_combo.set(filtered[0])
+                            update_max_points()
+            except Exception:
+                pass
+        if prefill_comments:
+            try:
+                comments_text.delete('1.0', 'end')
+                comments_text.insert('1.0', prefill_comments)
+            except Exception:
+                pass
 
     def edit_grade_dialog(self):
         """Open dialog to edit selected grade (supports both grades and assignment_submissions)"""
