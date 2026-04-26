@@ -365,6 +365,25 @@ class StudentUnionGUI:
     open_election_security_dialog = _open_election_security_dialog
     open_vote_integrity_dialog = _open_vote_integrity_dialog
 
+    def open_election_voting_portal(self):
+        """Launch the merged Tk voting GUI in a Toplevel.
+
+        This is the polished card-based voting interface; the other
+        ``Elections & Voting`` entries above are the per-feature CLI
+        dialogs that wrap the underlying service layer.
+        """
+        try:
+            from education_system.university_system.modules.domain.student_affairs.student_union.elections.election_gui import (  # noqa: E501
+                open_in_toplevel,
+            )
+            open_in_toplevel(self.root, getattr(self, 'auth', None))
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror(
+                "Election Voting Portal",
+                f"Could not launch the voting portal:\n{e}",
+                parent=getattr(self, 'root', None))
+
     # Bind volunteer functions
     open_volunteer_opportunities_dialog = _open_volunteer_opportunities_dialog
     open_community_service_hours_dialog = _open_community_service_hours_dialog
@@ -794,6 +813,8 @@ class StudentUnionGUI:
         # Elections & Voting
         self.add_sidebar_separator()
         self.add_sidebar_header("🗳️ Elections & Voting", "")
+        self.add_sidebar_button("Election Voting Portal",
+                                self.open_election_voting_portal, "🎨")
         self.add_sidebar_button("Student Council", self.open_student_council_dialog, "🏛️")
         self.add_sidebar_button("Elections & Voting", self.open_elections_dialog, "🗳️")
         self.add_sidebar_button("Candidate Profiles", self.open_candidate_profiles_dialog, "👤")
