@@ -1,1 +1,0 @@
-CREATE TABLE IF NOT EXISTS document_requests (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id TEXT, document_type TEXT, status TEXT DEFAULT 'pending', requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);
