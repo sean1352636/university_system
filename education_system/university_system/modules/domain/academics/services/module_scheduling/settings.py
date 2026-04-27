@@ -9,14 +9,14 @@ class SettingsMixin:
 
         cursor.execute('''
         UPDATE scheduling_system_settings
-        SET value = ?, last_modified = CURRENT_TIMESTAMP
-        WHERE key = ?
+        SET setting_value = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE setting_key = ?
         ''', (value, key))
 
         if cursor.rowcount == 0:
             # Setting doesn't exist, create it
             cursor.execute('''
-            INSERT INTO scheduling_system_settings (key, value, description)
+            INSERT INTO scheduling_system_settings (setting_key, setting_value, description)
             VALUES (?, ?, ?)
             ''', (key, value, f"Custom setting: {key}"))
 
@@ -30,7 +30,7 @@ class SettingsMixin:
         conn = get_connection(self.db_path, row_factory=False)
         cursor = conn.cursor()
 
-        cursor.execute('SELECT value FROM scheduling_system_settings WHERE key = ?', (key,))
+        cursor.execute('SELECT setting_value FROM scheduling_system_settings WHERE setting_key = ?', (key,))
         result = cursor.fetchone()
         conn.close()
 
@@ -42,9 +42,9 @@ class SettingsMixin:
         cursor = conn.cursor()
 
         cursor.execute('''
-        SELECT key, value, description, last_modified
+        SELECT setting_key, setting_value, description, updated_at
         FROM scheduling_system_settings
-        ORDER BY key
+        ORDER BY setting_key
         ''')
 
         settings = cursor.fetchall()

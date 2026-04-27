@@ -123,7 +123,6 @@ class DocumentSubmissionDialog:
             cursor.execute("""
                 SELECT module_code, module_name
                 FROM modules
-                WHERE is_active = 1
                 ORDER BY module_code
             """)
 

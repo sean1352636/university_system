@@ -935,12 +935,12 @@ class LMSTabMixin:
                     SELECT c.lms_course_id, c.module_code, c.instructor_id,
                            c.enrollment_limit,
                            (SELECT COUNT(*) FROM lms_student_enrollment e
-                            WHERE e.lms_course_id = c.lms_course_id AND e.is_active = 1) as enrolled
+                            WHERE e.lms_course_id = c.lms_course_id) as enrolled
                     FROM lms_courses c
                     WHERE c.is_published = 1
                       AND c.lms_course_id NOT IN (
                           SELECT lms_course_id FROM lms_student_enrollment
-                          WHERE student_id = ? AND is_active = 1)
+                          WHERE student_id = ?)
                     ORDER BY c.module_code
                 ''', (self._lms_user_id,))
                 for row in cursor.fetchall():
@@ -973,7 +973,7 @@ class LMSTabMixin:
                     cursor.execute("SELECT enrollment_limit FROM lms_courses WHERE lms_course_id = ?", (lms_cid,))
                     limit_row = cursor.fetchone()
                     if limit_row and limit_row[0] and limit_row[0] > 0:
-                        cursor.execute("SELECT COUNT(*) FROM lms_student_enrollment WHERE lms_course_id = ? AND is_active = 1", (lms_cid,))
+                        cursor.execute("SELECT COUNT(*) FROM lms_student_enrollment WHERE lms_course_id = ?", (lms_cid,))
                         if cursor.fetchone()[0] >= limit_row[0]:
                             messagebox.showwarning("Course Full", "This course has reached its enrollment limit."); return
                     cursor.execute('INSERT INTO lms_student_enrollment (lms_course_id, student_id) VALUES (?, ?)',
@@ -997,11 +997,11 @@ class LMSTabMixin:
                 cursor = conn.cursor()
                 cursor.execute('''
                     SELECT e.lms_course_id, c.module_code, c.instructor_id,
-                           e.progress_percentage, e.last_accessed
+                           e.progress_percent, e.last_accessed
                     FROM lms_student_enrollment e
                     JOIN lms_courses c ON e.lms_course_id = c.lms_course_id
-                    WHERE e.student_id = ? AND e.is_active = 1 AND c.is_published = 1
-                    ORDER BY e.enrollment_date DESC
+                    WHERE e.student_id = ? AND c.is_published = 1
+                    ORDER BY e.enrolled_at DESC
                 ''', (self._lms_user_id,))
                 for row in cursor.fetchall():
                     self.lms_student_courses_tree.insert('', tk.END, values=tuple(row))

@@ -133,14 +133,28 @@ class ModuleScheduler(
             )
             ''')
 
+            # Use the canonical column names that ship in the central
+            # schemas (setting_key/setting_value/updated_at). Older
+            # deployments may already have this table — add the missing
+            # `description` column in place if so.
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS scheduling_system_settings (
-                key TEXT PRIMARY KEY,
-                value TEXT,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                setting_key TEXT UNIQUE,
+                setting_value TEXT,
                 description TEXT,
-                last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
             ''')
+            existing = {r[1] for r in cursor.execute(
+                "PRAGMA table_info(scheduling_system_settings)").fetchall()}
+            if "description" not in existing:
+                try:
+                    cursor.execute(
+                        "ALTER TABLE scheduling_system_settings ADD COLUMN description TEXT"
+                    )
+                except Exception:
+                    pass
 
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS schedule_conflicts (
@@ -191,17 +205,17 @@ class ModuleScheduler(
             ''')
 
             # Initialize default settings
-            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (key, value, description) VALUES (?, ?, ?)',
+            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (setting_key, setting_value, description) VALUES (?, ?, ?)',
                           ('institution_name', 'University', 'Name of the institution'))
-            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (key, value, description) VALUES (?, ?, ?)',
+            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (setting_key, setting_value, description) VALUES (?, ?, ?)',
                           ('semester_start', '', 'Semester start date'))
-            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (key, value, description) VALUES (?, ?, ?)',
+            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (setting_key, setting_value, description) VALUES (?, ?, ?)',
                           ('semester_end', '', 'Semester end date'))
-            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (key, value, description) VALUES (?, ?, ?)',
+            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (setting_key, setting_value, description) VALUES (?, ?, ?)',
                           ('default_session_duration', '60', 'Default session duration in minutes'))
-            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (key, value, description) VALUES (?, ?, ?)',
+            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (setting_key, setting_value, description) VALUES (?, ?, ?)',
                           ('email_notifications', 'False', 'Enable email notifications'))
-            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (key, value, description) VALUES (?, ?, ?)',
+            cursor.execute('INSERT OR IGNORE INTO scheduling_system_settings (setting_key, setting_value, description) VALUES (?, ?, ?)',
                           ('auto_backup', 'True', 'Enable automatic backups'))
 
     def _migrate_database(self):
