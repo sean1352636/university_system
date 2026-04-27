@@ -214,11 +214,20 @@ def display_student_detail(student):
 
         # Module Information
         cursor.execute('''
-        SELECT module_type, module_code, module_name, grade, enrollment_date
-        FROM student_modules
-        WHERE student_id = ?
-        ORDER BY module_type, module_name
-        ''', (student[0],))
+        SELECT sm.module_type, sm.module_code, sm.module_name,
+               COALESCE(sm.grade, sub.avg_grade) AS grade,
+               sm.enrollment_date
+        FROM student_modules sm
+        LEFT JOIN (
+            SELECT a.module_code, AVG(s.grade) AS avg_grade
+            FROM assignment_submissions s
+            JOIN assignments a ON s.assignment_id = a.id
+            WHERE s.student_id = ? AND s.grade IS NOT NULL
+            GROUP BY a.module_code
+        ) sub ON sub.module_code = sm.module_code
+        WHERE sm.student_id = ?
+        ORDER BY sm.module_type, sm.module_name
+        ''', (student[0], student[0]))
 
         modules = cursor.fetchall()
 
@@ -231,7 +240,12 @@ def display_student_detail(student):
 
             for module in modules:
                 module_type, code, name, grade, enrolled_date = module
-                grade_display = grade if grade else "In Progress"
+                if grade is None:
+                    grade_display = "In Progress"
+                elif isinstance(grade, (int, float)):
+                    grade_display = f"{grade:.1f}"
+                else:
+                    grade_display = str(grade)
                 enrolled_display = enrolled_date[:10] if enrolled_date else "N/A"
                 print(f"{module_type:<15} {code:<10} {name:<30} {grade_display:<8} {enrolled_display:<12}")
         else:

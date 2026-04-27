@@ -1065,13 +1065,20 @@ def load_student_modules(self, student_id, text_widget):
         SELECT sm.module_type,
                sm.module_code,
                COALESCE(m.module_name, sm.module_name, sm.module_code) as module_name,
-               sm.grade,
+               COALESCE(sm.grade, sub.avg_grade) as grade,
                sm.enrollment_date
         FROM student_modules sm
         LEFT JOIN modules m ON sm.module_code = m.module_code
+        LEFT JOIN (
+            SELECT a.module_code, AVG(s.grade) AS avg_grade
+            FROM assignment_submissions s
+            JOIN assignments a ON s.assignment_id = a.id
+            WHERE s.student_id = ? AND s.grade IS NOT NULL
+            GROUP BY a.module_code
+        ) sub ON sub.module_code = sm.module_code
         WHERE sm.student_id = ?
         ORDER BY sm.module_type, module_name
-        ''', (student_id,))
+        ''', (student_id, student_id))
 
         modules = cursor.fetchall()
         conn.close()
@@ -1087,7 +1094,12 @@ def load_student_modules(self, student_id, text_widget):
                 module_type = module_type or "N/A"
                 code = code or "N/A"
                 name = name or "N/A"
-                grade_display = grade if grade else "In Progress"
+                if grade is None:
+                    grade_display = "In Progress"
+                elif isinstance(grade, (int, float)):
+                    grade_display = f"{grade:.1f}"
+                else:
+                    grade_display = str(grade)
                 text_widget.insert(tk.END, f"{module_type:<15} {code:<10} {name:<25} {grade_display:<8}\n")
         else:
             text_widget.insert(tk.END, "No modules enrolled.")
