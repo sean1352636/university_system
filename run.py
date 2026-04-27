@@ -232,8 +232,20 @@ def _apply_quiet_mode():
     logging.getLogger().setLevel(logging.WARNING)
 
 
+def _run_alembic_upgrade():
+    """Apply pending Alembic migrations to student_records.db at startup."""
+    try:
+        from alembic.config import Config
+        from alembic import command
+        cfg = Config(os.path.join(os.path.dirname(os.path.abspath(__file__)), "alembic.ini"))
+        command.upgrade(cfg, "head")
+    except Exception as e:
+        logger.warning("Alembic upgrade skipped: %s", e)
+
+
 def main():
     _apply_quiet_mode()
+    _run_alembic_upgrade()
 
     from education_system.launcher.auth import gui_universal_login, cli_universal_login
     from education_system.launcher.systems import (
