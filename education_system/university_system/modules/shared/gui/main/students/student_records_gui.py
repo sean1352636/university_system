@@ -576,10 +576,14 @@ def _load_academic_data(self, student_id, modules_tree, grades_tree,
         grades = cursor.fetchall()
 
         cursor.execute('''
-            SELECT module_code, date, status, notes
-            FROM attendance_records
-            WHERE student_id = ?
-            ORDER BY date DESC
+            SELECT s.module_code,
+                   COALESCE(s.session_date, ar.check_in_time) AS att_date,
+                   ar.status,
+                   ar.notes
+            FROM attendance_records ar
+            LEFT JOIN attendance_sessions s ON ar.session_id = s.session_id
+            WHERE ar.student_id = ?
+            ORDER BY att_date DESC
             LIMIT 10
         ''', (student_id,))
         attendance = cursor.fetchall()

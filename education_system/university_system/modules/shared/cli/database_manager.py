@@ -1603,7 +1603,10 @@ def init_db():
 
             # Create student record
             cursor.execute(
-                'INSERT INTO students VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                '''INSERT INTO students (
+                    student_id, email_address, title, first_name, middle_name, last_name,
+                    gender, dob, age, course, registration_datetime, status, enrollment_date
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
                 (
                     'S12345', 'student@example.com', 'Mr', 'Default', 'lucas', 'Student',
                     'male', dob.strftime('%Y-%m-%d'), age, 'CS', registration_time,

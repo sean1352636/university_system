@@ -590,7 +590,7 @@ def initialize_default_data(cursor):
             ]
 
             cursor.executemany('''
-                INSERT INTO menu_items VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO menu_items (item_id, name, description, price, category, allergens, vegetarian, vegan, available, creation_date, calories, protein, carbs, fat, prep_time, cost_price, image_path, popularity_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ''', default_items)
 
         # Initialize default restaurant_tables
@@ -604,7 +604,7 @@ def initialize_default_data(cursor):
                 ('T005', 2, 'Available', None, 'Patio', 'Outdoor', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
             ]
 
-            cursor.executemany('INSERT INTO restaurant_tables VALUES (?, ?, ?, ?, ?, ?, ?)', default_tables)
+            cursor.executemany('INSERT INTO restaurant_tables (table_id, capacity, status, current_order_id, location, table_type, last_cleaned) VALUES (?, ?, ?, ?, ?, ?, ?)', default_tables)
 
         # Initialize system settings
         cursor.execute('SELECT COUNT(*) FROM restaurant_system_settings')
