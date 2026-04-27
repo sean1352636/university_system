@@ -176,6 +176,7 @@ def init_db():
                                      ('is_active', 'INTEGER DEFAULT 1'),
                                      ('capacity', 'INTEGER DEFAULT 5'),
                                      ('updated_at', 'TEXT')],
+                    'rooms':        [('building', 'TEXT')],  # denormalized for module_scheduling GUI
                 }
                 for table, cols_to_add in add_col_migrations.items():
                     existing = {row[1] for row in conn.execute(
@@ -200,6 +201,41 @@ def init_db():
                 except Exception:
                     pass
 
+                # Backfill rooms.building from buildings.building_name.
+                # Triggers keep it synced for future inserts/updates so the
+                # denormalized column doesn't drift.
+                try:
+                    conn.execute("""
+                        UPDATE rooms SET building = (
+                            SELECT building_name FROM buildings
+                            WHERE buildings.building_id = rooms.building_id
+                        ) WHERE building IS NULL AND building_id IS NOT NULL
+                    """)
+                    conn.execute("""
+                        CREATE TRIGGER IF NOT EXISTS rooms_building_sync_ins
+                        AFTER INSERT ON rooms
+                        WHEN NEW.building_id IS NOT NULL AND NEW.building IS NULL
+                        BEGIN
+                            UPDATE rooms SET building = (
+                                SELECT building_name FROM buildings
+                                WHERE building_id = NEW.building_id
+                            ) WHERE rowid = NEW.rowid;
+                        END
+                    """)
+                    conn.execute("""
+                        CREATE TRIGGER IF NOT EXISTS rooms_building_sync_upd
+                        AFTER UPDATE OF building_id ON rooms
+                        WHEN NEW.building_id IS NOT NULL
+                        BEGIN
+                            UPDATE rooms SET building = (
+                                SELECT building_name FROM buildings
+                                WHERE building_id = NEW.building_id
+                            ) WHERE rowid = NEW.rowid;
+                        END
+                    """)
+                except Exception:
+                    pass
+
                 # Virtual generated columns to alias drifted column names
                 # (table has X, code wants Y → expose Y as X). Each alias
                 # is a no-op if the source column doesn't exist or the
@@ -214,6 +250,7 @@ def init_db():
                     ('session_participants', 'attendance_status',  'TEXT',
                      "CASE WHEN is_present THEN 'present' ELSE 'absent' END"),
                     ('study_groups',         'group_id',           'INTEGER', 'study_group_id'),
+                    ('rooms',                'id',                 'INTEGER', 'room_id'),
                 ]
                 for table, alias_col, alias_type, source_expr in alias_migrations:
                     existing = {row[1] for row in conn.execute(
