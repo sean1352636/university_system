@@ -163,10 +163,18 @@ def init_db():
         try:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
+                # Plain column adds. Aliases via GENERATED ALWAYS AS … VIRTUAL
+                # are handled separately below — they need both columns to
+                # exist before the alias can be created.
                 add_col_migrations = {
-                    'modules':    [('instructor', 'TEXT'), ('department', 'TEXT')],
-                    'grades':     [('graded_by', 'TEXT')],
-                    'assignments': [('status', "TEXT DEFAULT 'active'")],
+                    'modules':      [('instructor', 'TEXT'), ('department', 'TEXT'),
+                                     ('is_active', 'BOOLEAN DEFAULT 1')],
+                    'grades':       [('graded_by', 'TEXT')],
+                    'assignments':  [('status', "TEXT DEFAULT 'active'")],
+                    'office_hours': [('instructor_id', 'TEXT'),
+                                     ('is_active', 'INTEGER DEFAULT 1'),
+                                     ('capacity', 'INTEGER DEFAULT 5'),
+                                     ('updated_at', 'TEXT')],
                 }
                 for table, cols_to_add in add_col_migrations.items():
                     existing = {row[1] for row in conn.execute(
@@ -180,6 +188,45 @@ def init_db():
                                 logging.info("Added missing column %s.%s", table, col)
                             except Exception as e:
                                 logging.debug("ALTER TABLE %s skipped: %s", table, e)
+                # Backfill office_hours.instructor_id from the legacy
+                # `instructor` column on older deployments where both shapes
+                # coexist.
+                try:
+                    conn.execute(
+                        "UPDATE office_hours SET instructor_id = instructor "
+                        "WHERE instructor_id IS NULL AND instructor IS NOT NULL"
+                    )
+                except Exception:
+                    pass
+
+                # Virtual generated columns to alias drifted column names
+                # (table has X, code wants Y → expose Y as X). Each alias
+                # is a no-op if the source column doesn't exist or the
+                # alias already exists.
+                alias_migrations = [
+                    ('virtual_sessions',     'start_time',         'TEXT',    'scheduled_start'),
+                    ('virtual_sessions',     'end_time',           'TEXT',    'scheduled_end'),
+                    ('virtual_sessions',     'actual_start_time',  'TEXT',    'actual_start'),
+                    ('virtual_recordings',   'created_at',         'TEXT',    'recorded_at'),
+                    ('session_participants', 'join_time',          'TEXT',    'joined_at'),
+                    ('session_participants', 'leave_time',         'TEXT',    'left_at'),
+                    ('session_participants', 'attendance_status',  'TEXT',
+                     "CASE WHEN is_present THEN 'present' ELSE 'absent' END"),
+                    ('study_groups',         'group_id',           'INTEGER', 'study_group_id'),
+                ]
+                for table, alias_col, alias_type, source_expr in alias_migrations:
+                    existing = {row[1] for row in conn.execute(
+                        f"PRAGMA table_info({table})").fetchall()}
+                    if not existing or alias_col in existing:
+                        continue
+                    try:
+                        conn.execute(
+                            f"ALTER TABLE {table} ADD COLUMN {alias_col} {alias_type} "
+                            f"GENERATED ALWAYS AS ({source_expr}) VIRTUAL"
+                        )
+                        logging.info("Added alias column %s.%s -> %s", table, alias_col, source_expr)
+                    except Exception as e:
+                        logging.debug("Alias %s.%s skipped: %s", table, alias_col, e)
                 conn.execute('''
                     CREATE TABLE IF NOT EXISTS office_hours (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
