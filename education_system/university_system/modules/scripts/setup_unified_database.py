@@ -352,11 +352,13 @@ def create_unified_database():
     # Parking lots
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS parking_lots (
-        lot_id INTEGER PRIMARY KEY AUTOINCREMENT,
+        lot_id TEXT PRIMARY KEY,
         lot_name TEXT NOT NULL,
         location TEXT,
         total_spaces INTEGER DEFAULT 0,
         available_spaces INTEGER DEFAULT 0,
+        zone TEXT,
+        hours_of_operation TEXT,
         hourly_rate DECIMAL(5,2) DEFAULT 0.00,
         daily_rate DECIMAL(5,2) DEFAULT 0.00,
         monthly_rate DECIMAL(5,2) DEFAULT 0.00,

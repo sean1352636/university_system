@@ -156,7 +156,7 @@ def init_db():
                 ('L005','Central Campus Lot','Central Campus',50,50,'H','24/7')
             ]
             cursor.executemany(
-                'INSERT INTO parking_lots VALUES (?,?,?,?,?,?,?)',
+                'INSERT INTO parking_lots (lot_id, lot_name, location, total_spaces, available_spaces, zone, hours_of_operation) VALUES (?, ?, ?, ?, ?, ?, ?)',
                 lot_data
             )
             logging.info("Default parking lots created")
