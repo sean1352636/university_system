@@ -168,8 +168,7 @@ def init_db():
                 # exist before the alias can be created.
                 add_col_migrations = {
                     'modules':      [('instructor', 'TEXT'), ('department', 'TEXT'),
-                                     ('is_active', 'BOOLEAN DEFAULT 1'),
-                                     ('credits', 'INTEGER DEFAULT 20')],
+                                     ('is_active', 'BOOLEAN DEFAULT 1')],
                     'grades':       [('graded_by', 'TEXT')],
                     'assignments':  [('status', "TEXT DEFAULT 'active'")],
                     'office_hours': [('instructor_id', 'TEXT'),
