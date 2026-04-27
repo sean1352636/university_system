@@ -201,32 +201,6 @@ def init_db():
                 except Exception:
                     pass
 
-                # Seed the two core courses (CS, DS) the degree-audit GUI
-                # and several other tabs key off. Idempotent: only inserts
-                # if a row with the same code doesn't exist.
-                try:
-                    from datetime import datetime as _dt
-                    _now = _dt.now().strftime('%Y-%m-%d %H:%M:%S')
-                    for cid, code, name in [
-                        ('CS_BSc', 'CS', 'Computer Science'),
-                        ('DS_BSc', 'DS', 'Data Science'),
-                    ]:
-                        exists = conn.execute(
-                            "SELECT 1 FROM courses WHERE code = ?", (code,)
-                        ).fetchone()
-                        if not exists:
-                            conn.execute('''
-                                INSERT INTO courses
-                                    (id, code, name, credits, department, status, date_added,
-                                     course_code, course_name, level, credit_hours,
-                                     course_type, max_enrollment, current_enrollment,
-                                     created_at, updated_at)
-                                VALUES (?, ?, ?, 360, 'Computing', 'active', ?, ?, ?,
-                                        'Undergraduate', 360, 'Core', 30, 0, ?, ?)
-                            ''', (cid, code, name, _now, code, name, _now, _now))
-                except Exception:
-                    logging.debug("Skipped CS/DS course seeding")
-
                 # Backfill rooms.building from buildings.building_name.
                 # Triggers keep it synced for future inserts/updates so the
                 # denormalized column doesn't drift.
