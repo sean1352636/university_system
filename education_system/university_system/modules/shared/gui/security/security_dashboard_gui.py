@@ -806,14 +806,14 @@ class SecurityDashboard(tk.Toplevel):
             cursor.execute("""
                 SELECT COUNT(*) FROM security_events
                 WHERE event_type = 'failed_login'
-                  AND created_at > datetime('now', '-1 day')
+                  AND event_time > datetime('now', '-1 day')
             """)
             self.overview_stats['failed_logins_24h'].config(text=str(cursor.fetchone()[0]))
 
             # Security events (24h)
             cursor.execute("""
                 SELECT COUNT(*) FROM security_events
-                WHERE created_at > datetime('now', '-1 day')
+                WHERE event_time > datetime('now', '-1 day')
             """)
             self.overview_stats['security_events_24h'].config(text=str(cursor.fetchone()[0]))
 
@@ -842,17 +842,17 @@ class SecurityDashboard(tk.Toplevel):
 
             # Recent alerts
             cursor.execute("""
-                SELECT event_type, severity, details, created_at
+                SELECT event_type, severity, details, event_time
                 FROM security_events
                 WHERE severity IN ('high', 'critical')
-                ORDER BY created_at DESC
+                ORDER BY event_time DESC
                 LIMIT 20
             """)
 
             self.alerts_text.delete('1.0', tk.END)
             for row in cursor.fetchall():
-                event_type, severity, details, created_at = row
-                self.alerts_text.insert(tk.END, f"[{created_at[:19]}] [{severity.upper()}] {event_type}\n", severity)
+                event_type, severity, details, event_time = row
+                self.alerts_text.insert(tk.END, f"[{event_time[:19]}] [{severity.upper()}] {event_type}\n", severity)
 
             self.alerts_text.tag_config('high', foreground='orange')
             self.alerts_text.tag_config('critical', foreground='red', font=('Courier', 9, 'bold'))
@@ -1012,19 +1012,19 @@ class SecurityDashboard(tk.Toplevel):
             cursor = conn.cursor()
 
             cursor.execute("""
-                SELECT se.created_at, COALESCE(u.username, 'System') as username,
+                SELECT se.event_time, COALESCE(u.username, 'System') as username,
                        se.event_type, se.severity, se.details
                 FROM security_events se
                 LEFT JOIN users u ON se.user_id = u.id
-                ORDER BY se.created_at DESC
+                ORDER BY se.event_time DESC
                 LIMIT 500
             """)
 
             for row in cursor.fetchall():
-                created_at, username, event_type, severity, details = row
+                event_time, username, event_type, severity, details = row
 
                 # Format timestamp
-                time_str = created_at[:19] if created_at else 'N/A'
+                time_str = event_time[:19] if event_time else 'N/A'
 
                 # Truncate details for display
                 details_short = (details[:80] + '...') if details and len(details) > 80 else (details or '')

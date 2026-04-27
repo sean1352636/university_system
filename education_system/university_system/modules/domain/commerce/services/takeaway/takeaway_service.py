@@ -77,9 +77,7 @@ def init_takeaway_db() -> bool:
         )
         ''')
 
-        # Products table (unified) for takeaway menu items. Shared with
-        # other commerce sub-systems, so add takeaway-specific columns
-        # if missing on the existing table.
+        # Products table (unified) for takeaway menu items
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -89,7 +87,7 @@ def init_takeaway_db() -> bool:
             name TEXT NOT NULL,
             description TEXT,
             category TEXT,
-            price REAL,
+            price REAL NOT NULL,
             is_available BOOLEAN DEFAULT 1,
             is_vegetarian BOOLEAN DEFAULT 0,
             is_vegan BOOLEAN DEFAULT 0,
@@ -97,24 +95,10 @@ def init_takeaway_db() -> bool:
             calories INTEGER,
             allergens TEXT,
             image_url TEXT,
-            created_at TEXT
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (restaurant_id) REFERENCES takeaway_restaurants (restaurant_id)
         )
         ''')
-        existing_cols = {row[1] for row in cursor.execute("PRAGMA table_info(products)").fetchall()}
-        for col, ddl in (
-            ("restaurant_id", "TEXT"),
-            ("is_available", "BOOLEAN DEFAULT 1"),
-            ("is_vegetarian", "BOOLEAN DEFAULT 0"),
-            ("is_vegan", "BOOLEAN DEFAULT 0"),
-            ("is_gluten_free", "BOOLEAN DEFAULT 0"),
-            ("calories", "INTEGER"),
-            ("allergens", "TEXT"),
-        ):
-            if col not in existing_cols:
-                try:
-                    cursor.execute(f"ALTER TABLE products ADD COLUMN {col} {ddl}")
-                except Exception:
-                    pass
 
         # Orders table (unified) for takeaway orders
         cursor.execute('''

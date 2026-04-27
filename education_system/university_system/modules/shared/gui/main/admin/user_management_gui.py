@@ -329,12 +329,9 @@ def show_edit_user(self):
             # Fallback to direct DB access
             conn = get_db_connection()
             cursor = conn.cursor()
-            # is_active lives on user_accounts (auth state), not on users.
             cursor.execute('''
-                SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.role,
-                       COALESCE(ua.is_active, 1), u.student_id
+                SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.role, u.is_active, u.student_id
                 FROM users u
-                LEFT JOIN user_accounts ua ON ua.user_id = u.id
                 WHERE u.username = ?
             ''', (username,))
             result = cursor.fetchone()
@@ -424,22 +421,17 @@ def show_edit_user(self):
 
                 cursor.execute('''
                     UPDATE users
-                    SET email = ?, first_name = ?, last_name = ?, role = ?, updated_at = ?
+                    SET email = ?, first_name = ?, last_name = ?, role = ?, is_active = ?, updated_at = ?
                     WHERE username = ?
                 ''', (
                     new_email,
                     new_first_name,
                     new_last_name,
                     new_role,
+                    1 if new_active else 0,
                     timestamp,
                     username
                 ))
-                # is_active belongs to user_accounts, updated separately
-                cursor.execute('''
-                    UPDATE user_accounts
-                    SET is_active = ?, updated_at = ?
-                    WHERE username = ?
-                ''', (1 if new_active else 0, timestamp, username))
                 conn.commit()
                 conn.close()
 

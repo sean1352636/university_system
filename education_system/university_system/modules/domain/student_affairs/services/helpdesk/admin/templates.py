@@ -30,7 +30,7 @@ def view_ticket_templates():
 
     cursor.execute('''
     SELECT template_id, name, category, default_priority, is_active
-    FROM helpdesk_ticket_templates
+    FROM ticket_templates
     ORDER BY category, name
     ''')
 
@@ -89,7 +89,7 @@ def create_ticket_template(auth):
 
     try:
         cursor.execute('''
-        INSERT INTO helpdesk_ticket_templates
+        INSERT INTO ticket_templates
         (name, description, category, subject_template, message_template,
          default_priority, default_impact, default_urgency, created_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -119,7 +119,7 @@ def edit_ticket_template(auth):
         cursor = conn.cursor()
 
         cursor.execute('''
-        SELECT * FROM helpdesk_ticket_templates WHERE template_id = ?
+        SELECT * FROM ticket_templates WHERE template_id = ?
         ''', (template_id,))
 
         template = cursor.fetchone()
@@ -147,7 +147,7 @@ def edit_ticket_template(auth):
         if updates:
             params.append(template_id)
             cursor.execute(
-                'UPDATE helpdesk_ticket_templates SET ' + ", ".join(updates) + ' WHERE template_id = ?',
+                'UPDATE ticket_templates SET ' + ", ".join(updates) + ' WHERE template_id = ?',
                 params)
 
             conn.commit()
@@ -173,7 +173,7 @@ def toggle_ticket_template(auth):
         cursor = conn.cursor()
 
         cursor.execute('''
-        SELECT name, is_active FROM helpdesk_ticket_templates WHERE template_id = ?
+        SELECT name, is_active FROM ticket_templates WHERE template_id = ?
         ''', (template_id,))
 
         result = cursor.fetchone()
@@ -186,7 +186,7 @@ def toggle_ticket_template(auth):
         new_status = not is_active
 
         cursor.execute('''
-        UPDATE helpdesk_ticket_templates SET is_active = ? WHERE template_id = ?
+        UPDATE ticket_templates SET is_active = ? WHERE template_id = ?
         ''', (new_status, template_id))
 
         conn.commit()

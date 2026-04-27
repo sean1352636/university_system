@@ -218,24 +218,13 @@ class StudentIntegrationMixin:
                 tree.heading(col, text=col)
                 tree.column(col, width=120)
 
-            # Populate with results. `log` may be a sqlite3.Row, dict, or
-            # tuple depending on which log manager backend is active — coerce
-            # to a dict-like access via a small helper.
-            def _g(row, key):
-                if isinstance(row, dict):
-                    return row.get(key) or ''
-                try:
-                    return row[key] or ''
-                except (KeyError, IndexError, TypeError):
-                    return ''
-
+            # Populate with results
             for log in results:
-                timestamp = (_g(log, 'timestamp') or '')[:19]
-                user = _g(log, 'username')
-                action = _g(log, 'action')
-                details_full = _g(log, 'details')
-                details = (details_full[:50] + "...") if len(details_full) > 50 else details_full
-                status = _g(log, 'status')
+                timestamp = log.get('timestamp', '')[:19]
+                user = log.get('username', '')
+                action = log.get('action', '')
+                details = log.get('details', '')[:50] + "..." if len(log.get('details', '')) > 50 else log.get('details', '')
+                status = log.get('status', '')
 
                 tree.insert("", "end", values=(timestamp, user, action, details, status))
 

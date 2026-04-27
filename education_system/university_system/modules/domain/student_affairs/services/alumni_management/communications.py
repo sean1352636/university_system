@@ -25,7 +25,7 @@ def create_newsletter():
     print("========================")
 
     # Get available templates
-    cursor.execute('SELECT template_id, template_name FROM alumni_email_templates WHERE template_type = "newsletter"')
+    cursor.execute('SELECT template_id, template_name FROM email_templates WHERE template_type = "newsletter"')
     templates = cursor.fetchall()
 
     if templates:
@@ -38,7 +38,7 @@ def create_newsletter():
             template_choice = int(input("Select template: "))
             if 1 <= template_choice <= len(templates):
                 template_id = templates[template_choice - 1][0]
-                cursor.execute('SELECT template_content FROM alumni_email_templates WHERE template_id = ?', (template_id,))
+                cursor.execute('SELECT template_content FROM email_templates WHERE template_id = ?', (template_id,))
                 base_content = cursor.fetchone()[0]
             else:
                 template_id = None

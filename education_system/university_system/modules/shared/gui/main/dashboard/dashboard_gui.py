@@ -184,12 +184,12 @@ def create_stats_tab(self, parent):
             row = conn.execute("SELECT COUNT(*) as cnt FROM students").fetchone()
             total_students = row['cnt'] if row else 0
 
-            row = conn.execute("SELECT COUNT(*) as cnt FROM modules").fetchone()
+            row = conn.execute("SELECT COUNT(*) as cnt FROM modules WHERE is_active = 1").fetchone()
             active_courses = row['cnt'] if row else 0
 
             try:
                 row = conn.execute(
-                    "SELECT COUNT(*) as cnt FROM assignments WHERE due_date >= date('now') AND is_active = 1"
+                    "SELECT COUNT(*) as cnt FROM assignments WHERE due_date >= date('now') AND status = 'active'"
                 ).fetchone()
                 pending_assignments = row['cnt'] if row else 0
             except Exception:

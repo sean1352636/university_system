@@ -189,7 +189,7 @@ def init_alumni_db():
         ''')
 
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS alumni_email_templates (
+        CREATE TABLE IF NOT EXISTS email_templates (
             template_id INTEGER PRIMARY KEY AUTOINCREMENT,
             template_name TEXT,
             template_content TEXT,
@@ -566,7 +566,7 @@ def init_default_enhanced_data(cursor):
 
     for name, content, template_type in default_templates:
         cursor.execute('''
-            INSERT OR IGNORE INTO alumni_email_templates (template_name, template_content, template_type, created_date, created_by)
+            INSERT OR IGNORE INTO email_templates (template_name, template_content, template_type, created_date, created_by)
             VALUES (?, ?, ?, ?, ?)
         ''', (name, content, template_type, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 'system'))
 

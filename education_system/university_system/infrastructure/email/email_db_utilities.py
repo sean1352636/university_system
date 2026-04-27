@@ -60,9 +60,7 @@ def _get_db_path() -> str:
 
 
 def _ensure_migrations_table(cursor) -> None:
-    """Ensure the schema_migrations table exists with all required columns.
-    Older deployments may have a leaner version (id/migration_name/applied_at
-    only); add missing columns in place via ALTER TABLE."""
+    """Ensure the schema_migrations table exists."""
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS schema_migrations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -74,18 +72,6 @@ def _ensure_migrations_table(cursor) -> None:
         rollback_sql TEXT
     )
     ''')
-    existing = {row[1] for row in cursor.execute("PRAGMA table_info(schema_migrations)").fetchall()}
-    for col, ddl in (
-        ("version", "INTEGER"),
-        ("status", "TEXT DEFAULT 'success'"),
-        ("error_message", "TEXT"),
-        ("rollback_sql", "TEXT"),
-    ):
-        if col not in existing:
-            try:
-                cursor.execute(f"ALTER TABLE schema_migrations ADD COLUMN {col} {ddl}")
-            except Exception as e:
-                logger.warning(f"Could not add schema_migrations.{col}: {e}")
 
 
 def get_schema_version(cursor) -> int:
@@ -848,13 +834,6 @@ def initialize_email_db():
 
     result = execute_db_operation(_init_tables)
 
-    # Heal older deployments where email_log was created with a leaner
-    # column set (sent_at instead of sent_date, missing tracking columns).
-    try:
-        migrate_email_log_table()
-    except Exception as e:
-        log_event('warning', f"email_log migration during init skipped: {e}")
-
     if result:
         log_event('info', "Email database initialized successfully")
     else:
@@ -874,14 +853,8 @@ def migrate_email_log_table():
             columns = cursor.fetchall()
             existing_columns = [column[1] for column in columns]
 
-            # List of columns that should exist. `sent_date` and `message`
-            # are present in the canonical schema but missing on older
-            # deployments that only have `sent_at`/`body`.
+            # List of columns that should exist
             required_columns = [
-                ('sent_date', 'TEXT'),
-                ('message', 'TEXT'),
-                ('related_to', 'TEXT'),
-                ('student_id', 'TEXT'),
                 ('sender_email', 'TEXT'),
                 ('sender_name', 'TEXT'),
                 ('cc_recipients', 'TEXT'),
@@ -901,57 +874,6 @@ def migrate_email_log_table():
                         log_event('warning', f"Invalid column definition for {column_name}: {e}")
                     except Exception as e:
                         log_event('warning', f"Could not add column {column_name}: {e}")
-
-            # Rebuild the table if any legacy NOT NULL constraints survive on
-            # columns the canonical writers don't populate (body/sent_at were
-            # superseded by message/sent_date). SQLite can't relax a NOT NULL
-            # in place, so copy → drop → rename.
-            cursor.execute("PRAGMA table_info(email_log)")
-            cols = cursor.fetchall()
-            problem_nn = {row[1] for row in cols
-                          if row[1] in ('body', 'sent_at') and row[3]}
-            if problem_nn:
-                col_names = [row[1] for row in cols]
-                col_list = ", ".join(col_names)
-                cursor.execute("ALTER TABLE email_log RENAME TO email_log_old")
-                cursor.execute(f'''
-                    CREATE TABLE email_log (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        recipient TEXT,
-                        subject TEXT,
-                        body TEXT,
-                        sent_at TEXT,
-                        status TEXT,
-                        error_message TEXT,
-                        opened_at TEXT,
-                        clicked_at TEXT,
-                        delivery_status TEXT,
-                        bounce_reason TEXT,
-                        sent_date TEXT,
-                        message TEXT,
-                        related_to TEXT,
-                        student_id TEXT,
-                        sender_email TEXT,
-                        sender_name TEXT,
-                        cc_recipients TEXT,
-                        bcc_recipients TEXT,
-                        attachment_info TEXT,
-                        template_name TEXT,
-                        template_vars TEXT
-                    )
-                ''')
-                shared = [c for c in col_names if c in (
-                    'id','recipient','subject','body','sent_at','status','error_message',
-                    'opened_at','clicked_at','delivery_status','bounce_reason','sent_date',
-                    'message','related_to','student_id','sender_email','sender_name',
-                    'cc_recipients','bcc_recipients','attachment_info','template_name','template_vars')]
-                shared_list = ", ".join(shared)
-                cursor.execute(
-                    f"INSERT INTO email_log ({shared_list}) SELECT {shared_list} FROM email_log_old"
-                )
-                cursor.execute("DROP TABLE email_log_old")
-                log_event('info',
-                    f"Rebuilt email_log to drop legacy NOT NULL on {sorted(problem_nn)}")
 
             log_event('info', "Email log table migration completed")
             return True

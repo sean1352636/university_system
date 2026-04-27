@@ -199,7 +199,6 @@ class FallbackDatabase:
         """Search logs with filters"""
         try:
             conn = sqlite3.connect(self.db_path)
-            conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
 
             query = "SELECT * FROM activity_log"
@@ -229,7 +228,7 @@ class FallbackDatabase:
             query += f" ORDER BY timestamp DESC LIMIT {limit}"
 
             cursor.execute(query, params)
-            results = [dict(row) for row in cursor.fetchall()]
+            results = cursor.fetchall()
             conn.close()
 
             return results

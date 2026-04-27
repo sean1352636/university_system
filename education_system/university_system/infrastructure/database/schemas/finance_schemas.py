@@ -133,47 +133,11 @@ def init_finance_system_db():
         )
         ''')
 
-        # Unified `transactions` ledger — historically referenced as a generic table
-        # by multiple domains (student finance ledger entries, inventory movements
-        # for cafe/bar/charity shop, betting deposits, taxi refunds, etc.). All
-        # columns are nullable because individual call sites populate different
-        # subsets. See finance_integration.py, betting_shop_cli, cafe_system_cli,
-        # charity_shop_gui, equipment_checkout for the writers.
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS transactions (
-            transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            source_type TEXT,
-            source_transaction_id TEXT,
-            reference_id TEXT,
-            reference_type TEXT,
-            reference_number TEXT,
-            account_id INTEGER,
-            student_id TEXT,
-            customer_id TEXT,
-            transaction_type TEXT,
-            amount DECIMAL(10,2),
-            total_amount DECIMAL(10,2),
-            quantity_change INTEGER,
-            balance_before DECIMAL(10,2),
-            balance_after DECIMAL(10,2),
-            description TEXT,
-            notes TEXT,
-            payment_method TEXT,
-            payment_date TEXT,
-            status TEXT,
-            processed_by TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-        ''')
-
         # Create indexes for student finance tables
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_accounts_student ON student_finance_accounts(student_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_transactions_account ON student_finance_transactions(account_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_transactions_student ON student_finance_transactions(student_id)')
         cursor.execute('CREATE INDEX IF NOT EXISTS idx_student_finance_transactions_date ON student_finance_transactions(created_at)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_source ON transactions(source_type)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_student ON transactions(student_id)')
-        cursor.execute('CREATE INDEX IF NOT EXISTS idx_transactions_created ON transactions(created_at)')
 
         conn.commit()
         conn.close()

@@ -334,29 +334,13 @@ def create_student_dialog(self):
                 course_picks = random.sample(course_pool, 2)
                 selected_modules.extend([m['code'] for m in course_picks])
 
-            # Ensure rows exist in `modules` so the academic-data JOIN
-            # (modules.module_code = student_modules.module_code) returns
-            # the freshly enrolled modules. Without this seeding the
-            # student detail view shows "No modules enrolled".
-            module_catalog = (
-                [compulsory_module_1, compulsory_module_2,
-                 optional_module_1, optional_module_2, optional_module_3, optional_module_4,
-                 CS_optional_module_1, CS_optional_module_2, CS_optional_module_3, CS_optional_module_4,
-                 DS_optional_module_1, DS_optional_module_2, DS_optional_module_3, DS_optional_module_4]
-            )
-            cursor.executemany(
-                'INSERT OR IGNORE INTO modules (module_code, module_name, module_type) VALUES (?, ?, ?)',
-                [(m['code'], m['name'], 'Standard') for m in module_catalog]
-            )
-
-            # Insert modules. student_modules.module_id is a legacy NOT NULL
-            # column kept alongside module_code; populate both from the same value.
+            # Insert modules
             module_data = [
-                (student_id, module_code, module_code)
+                (student_id, module_code)
                 for module_code in selected_modules
             ]
             cursor.executemany(
-                'INSERT INTO student_modules (student_id, module_id, module_code) VALUES (?, ?, ?)',
+                'INSERT INTO student_modules (student_id, module_code) VALUES (?, ?)',
                 module_data
             )
 
@@ -1590,11 +1574,10 @@ def view_student_attendance(self, student_id, email, first_name, last_name):
 
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT s.session_date, s.module_code, r.status, r.notes
-            FROM attendance_records r
-            JOIN attendance_sessions s ON r.session_id = s.session_id
-            WHERE r.student_id = ?
-            ORDER BY s.session_date DESC
+            SELECT date, module_code, status, notes
+            FROM attendance_records
+            WHERE student_id = ?
+            ORDER BY date DESC
         """, (student_id,))
 
         attendance_records = cursor.fetchall()

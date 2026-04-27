@@ -261,7 +261,7 @@ def init_calendar_database(db_path: Optional[str] = None) -> DatabaseManager:
         with db.transaction() as conn:
             # Calendar events table
             conn.execute("""
-                CREATE TABLE IF NOT EXISTS academic_calendar_events (
+                CREATE TABLE IF NOT EXISTS calendar_events (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     title TEXT NOT NULL,
                     description TEXT,
@@ -310,7 +310,7 @@ def init_calendar_database(db_path: Optional[str] = None) -> DatabaseManager:
                     feedback_comment TEXT,
                     qr_code TEXT,
                     cpd_credits REAL DEFAULT 0.0,
-                    FOREIGN KEY (event_id) REFERENCES academic_calendar_events(id) ON DELETE CASCADE
+                    FOREIGN KEY (event_id) REFERENCES calendar_events(id) ON DELETE CASCADE
                 )
             """)
 
@@ -353,8 +353,8 @@ def init_calendar_database(db_path: Optional[str] = None) -> DatabaseManager:
             """)
 
             # Create indexes for performance
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_events_date ON academic_calendar_events(date)")
-            conn.execute("CREATE INDEX IF NOT EXISTS idx_events_type ON academic_calendar_events(event_type)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_events_date ON calendar_events(date)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_events_type ON calendar_events(event_type)")
             conn.execute("CREATE INDEX IF NOT EXISTS idx_sessions_token ON user_sessions(session_token)")
 
         gui_logger.info("Calendar database initialized successfully")

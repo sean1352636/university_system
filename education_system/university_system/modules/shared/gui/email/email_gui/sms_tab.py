@@ -483,43 +483,22 @@ def get_recipients_for_group_or_role(self, recipient_type, value):
 # Bind method to EmailManagerGUI
 EmailManagerGUI.get_recipients_for_group_or_role = get_recipients_for_group_or_role
 
-def _ensure_sms_schema(conn):
-    """Ensure sms_messages has the columns this GUI expects. Older deployments
-    have a leaner schema (recipient_phone only); add missing columns in place."""
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS sms_messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sender_username TEXT,
-            recipient_name TEXT,
-            phone_number TEXT,
-            message TEXT,
-            status TEXT,
-            sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    existing = {row[1] for row in conn.execute("PRAGMA table_info(sms_messages)").fetchall()}
-    for col, ddl in (
-        ("sender_username", "TEXT"),
-        ("recipient_name", "TEXT"),
-        ("phone_number", "TEXT"),
-        ("message", "TEXT"),
-        ("status", "TEXT"),
-        ("sent_at", "TIMESTAMP"),
-    ):
-        if col not in existing:
-            conn.execute(f"ALTER TABLE sms_messages ADD COLUMN {col} {ddl}")
-    if "recipient_phone" in existing and "phone_number" in (existing | {"phone_number"}):
-        conn.execute(
-            "UPDATE sms_messages SET phone_number = recipient_phone "
-            "WHERE phone_number IS NULL AND recipient_phone IS NOT NULL"
-        )
-
-
 def store_sms(self, phone, recipient_name, message, status):
     """Store SMS in database"""
     try:
+        # Create SMS table if not exists
         with transaction() as conn:
-            _ensure_sms_schema(conn)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS sms_messages (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    sender_username TEXT,
+                    recipient_name TEXT,
+                    phone_number TEXT,
+                    message TEXT,
+                    status TEXT,
+                    sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
 
             # Insert SMS record
             conn.execute("""
@@ -749,7 +728,25 @@ def refresh_sms_history(self):
 
         # Load SMS history
         with get_db_connection() as conn:
-            _ensure_sms_schema(conn)
+            # Check if table exists
+            cursor = conn.execute("""
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='sms_messages'
+            """)
+            if not cursor.fetchone():
+                # Table doesn't exist yet, create it
+                conn.execute("""
+                    CREATE TABLE IF NOT EXISTS sms_messages (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        sender_username TEXT,
+                        recipient_name TEXT,
+                        phone_number TEXT,
+                        message TEXT,
+                        status TEXT,
+                        sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    )
+                """)
+                return
 
             query = """
                 SELECT id, sent_at, recipient_name, phone_number, message, status
@@ -833,7 +830,14 @@ def sms_statistics(self):
     """Show SMS statistics"""
     try:
         with get_db_connection() as conn:
-            _ensure_sms_schema(conn)
+            # Check if table exists
+            cursor = conn.execute("""
+                SELECT name FROM sqlite_master
+                WHERE type='table' AND name='sms_messages'
+            """)
+            if not cursor.fetchone():
+                messagebox.showinfo("Statistics", "No SMS data available yet.")
+                return
 
             # Get statistics
             cursor = conn.execute("""

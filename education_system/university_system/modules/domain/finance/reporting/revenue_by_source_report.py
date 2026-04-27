@@ -55,10 +55,10 @@ def get_revenue_by_source(
         if not include_external:
             external_filter = " AND student_id != 'EXTERNAL'"
 
-        # All revenue sources are tagged via `payments.notes` (e.g. "[Library] ...");
-        # there is no unified `transactions` table, so we classify everything from `payments`.
+        # Query combining central payments table with service-specific transaction tables
         query = f'''
         WITH all_transactions AS (
+            -- Central payments table
             SELECT
                 CASE
                     WHEN notes LIKE '[Library]%' THEN 'Library'
@@ -91,6 +91,96 @@ def get_revenue_by_source(
                 payment_date as trans_date
             FROM payments
             WHERE status = 'completed' {external_filter}
+
+            UNION ALL
+
+            -- Gym transactions (not in central payments)
+            SELECT 'Gym' as source, amount, created_at as trans_date
+            FROM transactions
+            WHERE source_type = 'gym' AND transaction_id NOT IN (
+                SELECT DISTINCT SUBSTR(notes, INSTR(notes, 'Ref: ') + 5)
+                FROM payments WHERE notes LIKE 'Gym:%'
+            )
+
+            UNION ALL
+
+            -- Dentist transactions (not in central payments)
+            SELECT 'Dentist' as source, amount, created_at as trans_date
+            FROM transactions
+            WHERE source_type = 'dentist' AND transaction_id NOT IN (
+                SELECT DISTINCT SUBSTR(notes, INSTR(notes, 'Ref: ') + 5)
+                FROM payments WHERE notes LIKE 'Dental:%'
+            )
+
+            UNION ALL
+
+            -- Grocery transactions (not in central payments)
+            SELECT 'Grocery' as source, total_amount as amount, created_at as trans_date
+            FROM transactions
+            WHERE source_type = 'grocery' AND source_transaction_id NOT IN (
+                SELECT DISTINCT SUBSTR(notes, INSTR(notes, 'Ref: ') + 5)
+                FROM payments WHERE notes LIKE '[Grocery]%'
+            )
+
+            UNION ALL
+
+            -- Betting transactions
+            SELECT 'Betting' as source, amount, created_at as trans_date
+            FROM transactions
+            WHERE source_type = 'betting' AND status = 'completed'
+
+            UNION ALL
+
+            -- Shop transactions (not in central payments)
+            SELECT 'Shop' as source, total_amount as amount, created_at as trans_date
+            FROM transactions
+            WHERE source_type = 'shop' AND status = 'completed'
+            AND source_transaction_id NOT IN (
+                SELECT DISTINCT SUBSTR(notes, INSTR(notes, 'Ref: ') + 5)
+                FROM payments WHERE notes LIKE '[Shop]%'
+            )
+
+            UNION ALL
+
+            -- Butcher transactions
+            SELECT 'Butcher' as source, amount, created_at as trans_date
+            FROM transactions
+            WHERE source_type = 'butcher' AND status = 'completed'
+
+            UNION ALL
+
+            -- Barber transactions
+            SELECT 'Barber' as source, amount, created_at as trans_date
+            FROM transactions
+            WHERE source_type = 'barber' AND status = 'completed'
+
+            UNION ALL
+
+            -- NailBar transactions
+            SELECT 'NailBar' as source, amount, created_at as trans_date
+            FROM transactions
+            WHERE source_type = 'nail_bar' AND status = 'completed'
+
+            UNION ALL
+
+            -- CarRental transactions
+            SELECT 'CarRental' as source, amount, created_at as trans_date
+            FROM transactions
+            WHERE source_type = 'car_rental' AND status = 'completed'
+
+            UNION ALL
+
+            -- PhoneShop transactions
+            SELECT 'PhoneShop' as source, amount, created_at as trans_date
+            FROM transactions
+            WHERE source_type = 'phone_shop' AND status = 'completed'
+
+            UNION ALL
+
+            -- MusicShop transactions
+            SELECT 'MusicShop' as source, amount, created_at as trans_date
+            FROM transactions
+            WHERE source_type = 'music_shop' AND status = 'completed'
         )
         SELECT
             source,

@@ -112,19 +112,13 @@ def init_db():
                 logging.info("Database missing tables %s. Running schema setup...", missing)
 
         if db_needs_setup:
-            # Run the comprehensive database setup (only on first init)
+            # Run the comprehensive database setup
             create_unified_database()
 
-        # Always run schema init — every CREATE TABLE uses IF NOT EXISTS, so
-        # this is idempotent and ensures any newly-added domain tables
-        # (or tables missing from older deployments) get created.
-        from education_system.university_system.infrastructure.database.schemas.misc_schemas import initialize_all_schemas
-        try:
+            # Initialize all schemas from centralized schema file
+            from education_system.university_system.infrastructure.database.schemas.misc_schemas import initialize_all_schemas
             initialize_all_schemas()
-        except Exception as schema_err:
-            logging.warning("Some schemas failed to initialize: %s", schema_err)
 
-        if db_needs_setup:
             # Seed default staff profiles (may fail if staff_profiles table
             # was not created by the active schema set — that's OK)
             try:
@@ -156,47 +150,6 @@ def init_db():
                 conn.close()
         except Exception:
             logging.debug("student_modules migration check skipped")
-
-        # Add columns the instructor portal and admin tools query against,
-        # and create the office_hours table they expect. Without these,
-        # several Quick Overview sections silently disappear.
-        try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            try:
-                add_col_migrations = {
-                    'modules':    [('instructor', 'TEXT'), ('department', 'TEXT')],
-                    'grades':     [('graded_by', 'TEXT')],
-                    'assignments': [('status', "TEXT DEFAULT 'active'")],
-                }
-                for table, cols_to_add in add_col_migrations.items():
-                    existing = {row[1] for row in conn.execute(
-                        f"PRAGMA table_info({table})").fetchall()}
-                    if not existing:
-                        continue
-                    for col, ddl in cols_to_add:
-                        if col not in existing:
-                            try:
-                                conn.execute(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}")
-                                logging.info("Added missing column %s.%s", table, col)
-                            except Exception as e:
-                                logging.debug("ALTER TABLE %s skipped: %s", table, e)
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS office_hours (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        instructor TEXT,
-                        day_of_week TEXT,
-                        start_time TEXT,
-                        end_time TEXT,
-                        location TEXT,
-                        notes TEXT,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
-                    )
-                ''')
-                conn.commit()
-            finally:
-                conn.close()
-        except Exception:
-            logging.debug("instructor-portal schema migration check skipped")
 
         if not db_needs_setup:
             logging.info(f"Database already initialized with {len(tables)} tables")
