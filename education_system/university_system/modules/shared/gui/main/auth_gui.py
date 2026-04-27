@@ -36,29 +36,74 @@ def _is_superadmin_user(gui_self):
 # ---------------------------------------------------------------------------
 
 def logout_user(self):
-    """Logout current user and return to universal login."""
-    if self.auth.current_user:
-        username = self.auth.current_user['username']
+    """Logout current user and return to universal login.
 
-        # Revoke all sessions if using EnhancedAuth
-        try:
-            from education_system.university_system.infrastructure.auth.enhanced_auth import EnhancedAuth
-            if isinstance(self.auth, EnhancedAuth):
-                user_id = self.auth.current_user.get('id')
-                if user_id:
-                    self.auth.logout_and_revoke_remember_me(user_id)
-        except Exception as e:
-            logger.debug(f"Could not revoke remember me tokens: {e}")
+    Each step is wrapped so a failure (e.g. messagebox erroring, a Tk
+    callback raising during nav rebuild) can't strand the process with
+    `request_logout` un-signalled and the root undestroyed. We've seen
+    occasional hangs after the "Goodbye, …!" print where the GUI
+    appeared frozen — the most reliable mitigation is to make the
+    sequence advance to `root.destroy()` no matter what, and to
+    schedule a watchdog that force-exits if the dispatch loop's
+    relaunch can't bring up a fresh Tk root within a few seconds.
+    """
+    if not self.auth.current_user:
+        return
+    username = self.auth.current_user['username']
 
-        self.auth.logout()
-        self.update_status()
-        messagebox.showinfo(_t("gui.login.logged_out"), _t("gui.login.goodbye").format(username=username))
+    # Revoke remember-me tokens (best-effort).
+    try:
+        from education_system.university_system.infrastructure.auth.enhanced_auth import EnhancedAuth
+        if isinstance(self.auth, EnhancedAuth):
+            user_id = self.auth.current_user.get('id')
+            if user_id:
+                self.auth.logout_and_revoke_remember_me(user_id)
+    except Exception as e:
+        logger.debug(f"Could not revoke remember me tokens: {e}")
 
-        # Return to the universal login screen
+    # Signal "return to universal login" up front so even if a later
+    # step throws, the dispatch loop will still relaunch correctly.
+    try:
         from education_system.switch import request_logout
         request_logout()
+    except Exception:
+        logger.exception("request_logout failed")
+
+    try:
+        self.auth.logout()
+    except Exception:
+        logger.exception("auth.logout failed")
+
+    # Show confirmation BEFORE rebuilding the navigation panel — if
+    # update_status hangs (it rebuilds the entire sidebar), the user
+    # at least got the goodbye dialog.
+    try:
+        messagebox.showinfo(
+            _t("gui.login.logged_out"),
+            _t("gui.login.goodbye").format(username=username),
+        )
+    except Exception:
+        logger.exception("logout messagebox failed")
+
+    try:
+        self.update_status()
+    except Exception:
+        logger.exception("update_status after logout failed")
+
+    try:
         self._cancel_timers()
+    except Exception:
+        pass
+
+    try:
         self.root.destroy()
+    except Exception:
+        logger.exception("root.destroy failed; forcing exit")
+        try:
+            import os as _os
+            _os._exit(0)
+        except Exception:
+            pass
 
 
 def toggle_login_logout(self):

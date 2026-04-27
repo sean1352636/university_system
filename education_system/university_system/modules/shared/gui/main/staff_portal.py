@@ -182,6 +182,8 @@ class StaffPortalGUI:
         self._add_heading("Communication")
         self._add_button("Communication Hub", self._launch('show_communication_dashboard_gui'))
         self._add_button("Email Manager", self._launch('show_email_manager'))
+        self._add_button("Complaints Portal",
+                         self._launch('show_new_feature_complaints_portal'))
 
         # Analytics & Reports
         self._add_heading("Analytics & Reports")

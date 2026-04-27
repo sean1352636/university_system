@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.99.0 — 2026-04-27](#8990---2026-04-27)
 - [8.98.0 — 2026-04-26](#8980---2026-04-26)
 - [8.97.0 — 2026-04-26](#8970---2026-04-26)
 - [8.96.0 — 2026-04-26](#8960---2026-04-26)
@@ -203,6 +204,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.99.0] — 2026-04-27
+
+### Complaints Portal upgrade; sidebar reshuffles; subprocess lifetime + analytics export + logout hardening
+
+#### Added
+
+- **Email template `communications/complaint_received.json`** — `$student_name`, `$student_id`, `$tracking_id`, `$subject`, `$category`, `$priority`, `$submitted_at` placeholders. Rendered via the shared `template_utils.render_template` engine (the same one used by the Student Union vote/voting-closed templates) and queued via `shared.utils.email_service.queue_email`.
+- **Complaints Portal "Complaints Portal" sidebar entry on the role portals.** Added under Support (student portal, next to Feedback), Communication (instructor portal, after Cross-System Calendar), and Communication (staff portal, after Email Manager). All three route to `show_new_feature_complaints_portal` on the backend GUI.
+
+#### Changed
+
+- **University Complaints Portal** rewritten to integrate with the rest of the system instead of standing alone:
+  - **Persistence moved from local `complaints.json` → `student_records.db` `complaints` table** (created on first launch). All CRUD now goes through `infrastructure.database.db.get_connection()`, so admins see complaints alongside other domain data.
+  - **Auth wired to `UserAuth`.** The portal reads `EDU_AUTH_*` env vars passed by the main GUI's subprocess launcher and rebuilds a global auth shim (same pattern as `disciplinary_portal.py`).
+  - **Submit form auto-fills Full Name / Student-or-Staff ID / Email from the logged-in user.** `_resolve_submitter_details` joins `users → students` by `users.id` (the auth PK propagated through env), falling back to `users.username` and finally to `students.student_id` direct match. Auto-filled identity fields are locked `readonly` so the submitter can't be changed at submit time.
+  - **Confirmation receipt is queued after a successful submit** using the new `communications/complaint_received` template — best-effort, never blocks. Success messagebox now mentions the email when the queue succeeded.
+- **Complaints Portal moved from "New Features" → "Communication" sidebar category** in the main GUI. Sits alongside Communication Hub and Feedback System (matches the codebase classification — the file lives under `modules/domain/communications/feedback/`).
+- **`launch_reporting_gui` (Advanced Reporting button)** now calls `self.gui.layout.show_tab('reports')` instead of `launch_financial_gui(self.root)`, so it switches to the embedded Reports tab inside the Finance GUI rather than opening a new Toplevel. Same change applies to the Settings → Admin "Advanced Reporting" button (shared method).
+
+#### Fixed
+
+- **Complaints Portal autofill showed `S12345` (the student ID) in the Full Name field even though `students.first_name = 'Demo'` and `last_name = 'Student'`.** Two root causes:
+  - The launcher invokes the portal as a bare-script subprocess (`python complaints_portal.py`), so only that file's directory is on `sys.path` — `from education_system... import get_connection` raised `ImportError` silently and the DB lookup never ran. Added the same upward-walking `sys.path` bootstrap `disciplinary_portal.py` already uses.
+  - `EDU_AUTH_USER_ID` is the `auth.db users.id` PK (e.g. `21`), not the student-facing `students.student_id` (e.g. `S12345`). The original lookup was `WHERE s.student_id = ?` with the auth PK and matched nothing. New flow tries `users.id`, then `users.username`, then direct `students.student_id` — and returns the correct `student_id` from the join (not the env value) so the form shows the real student ID.
+  - `_get_current_user()` now reads `EDU_AUTH_*` env vars directly instead of routing through `set_global_auth → get_global_auth → .current_user`. Any silent failure in that chain (e.g. an auth-infra import error wrapped in `try/except: pass`) was leaving the autofill blank.
+- **Subprocess-launched portals (Complaints, Disciplinary, the other 15 "new feature" tools) didn't terminate when the main GUI shut down — they ran orphaned.** Added `prctl(PR_SET_PDEATHSIG, SIGTERM)` via `preexec_fn` to `_launch_new_feature_module`'s `subprocess.Popen` call. The kernel now signals every child as soon as the parent process exits, regardless of how (clean shutdown, crash, kill). Linux-only (no equivalent on Windows; macOS would need a different mechanism).
+- **`AttributeError: 'StudentAnalytics' object has no attribute 'export_data_choice'`** when running JSON Export or Summary Export from the Student Analytics GUI. The method was monkey-patched onto the class only inside `launch_gui()`; any other entry point (`integrate_with_main_system`, direct `GUIStudentAnalytics(...)` from elsewhere) skipped the patch. `add_gui_methods()` is now invoked at module-import time so every entry path sees the patched class.
+- **Logout occasionally hung after the "Goodbye, S12345!" print, leaving the terminal stuck.** Hardened `logout_user` in `auth_gui.py` so partial failures can't strand the process: `request_logout()` is signalled first (so the dispatch loop knows to relaunch even if a later step throws), every step is in its own try/except, the goodbye messagebox now appears before `update_status()` rebuilds the sidebar (so the user gets visual confirmation even if the rebuild hangs), and a `root.destroy()` failure force-exits via `os._exit(0)`.
 
 ---
 

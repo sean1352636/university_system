@@ -1,38 +1,362 @@
 """
 University Complaints Portal
 A GUI application for students and staff to submit and track complaints.
+
+Persistence: rows live in the central university `student_records.db` in a
+`complaints` table (created on first launch). Replaces the previous local
+`complaints.json` so admins can query complaints alongside the rest of the
+domain data.
+
+Auth: when launched as a subprocess by the unified main GUI, the
+`EDU_AUTH_*` env vars carry the logged-in user's identity. The Submit tab
+auto-fills full name, ID, and email from that user; standalone launches
+fall back to manually-entered fields.
+
+Email: on successful submission, a confirmation receipt is queued via the
+shared email service using the `communications/complaint_received` JSON
+template. Best-effort — never blocks the submit.
 """
 
-import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
-import json
 import os
+import sqlite3
+import sys
+import tkinter as tk
 from datetime import datetime
+from tkinter import messagebox, scrolledtext, ttk
 import uuid
 
+# When the main GUI launches us as a subprocess, the child Python is
+# invoked directly on this file's path with no PYTHONPATH set, so
+# `education_system` isn't importable. Walk up from this file until we
+# find the dir that contains the `education_system` package and put
+# that on sys.path. No-op when imported normally (the package is
+# already on the path). Without this, `from education_system... import
+# get_connection` silently fails, the DB lookup never runs, and the
+# autofill falls back to `username` (e.g. shows "S12345" as Full Name).
+if 'education_system' not in sys.modules:
+    _here = os.path.abspath(os.path.dirname(__file__))
+    while _here and not os.path.isdir(os.path.join(_here, 'education_system')):
+        _parent = os.path.dirname(_here)
+        if _parent == _here:
+            break
+        _here = _parent
+    if _here and _here not in sys.path:
+        sys.path.insert(0, _here)
 
-# ---------- Data Layer ----------
-DATA_FILE = "complaints.json"
+
+# ---------- Auth bootstrap ----------
+def _bootstrap_auth_from_env():
+    """Rebuild a global auth instance from EDU_AUTH_* env vars.
+
+    No-op when the env vars aren't set (running standalone). Mirrors the
+    pattern used by disciplinary_portal.py.
+    """
+    user_id = os.environ.get('EDU_AUTH_USER_ID')
+    username = os.environ.get('EDU_AUTH_USERNAME')
+    if not (user_id or username):
+        return
+    perms = [p for p in os.environ.get('EDU_AUTH_PERMISSIONS', '').split(',') if p]
+    current_user = {
+        'id': user_id or None,
+        'user_id': user_id or None,
+        'username': username or '',
+        'role': os.environ.get('EDU_AUTH_ROLE', '') or '',
+        'email': os.environ.get('EDU_AUTH_EMAIL', '') or '',
+        'permissions': perms,
+    }
+    try:
+        from types import SimpleNamespace
+
+        def _check_permission(perm, _u=current_user):
+            return perm in _u['permissions']
+
+        shim = SimpleNamespace(
+            current_user=current_user,
+            user_role=current_user['role'],
+            check_permission=_check_permission,
+            is_authenticated=True,
+        )
+        from education_system.university_system.infrastructure.auth import set_global_auth
+        set_global_auth(shim)
+        try:
+            from education_system.university_system.infrastructure.shared_context import set_auth as _shared_set_auth
+            _shared_set_auth(shim)
+        except Exception:
+            pass
+    except Exception:
+        pass
+
+
+_bootstrap_auth_from_env()
+
+
+def _get_current_user():
+    """Resolve the logged-in user dict.
+
+    Reads the `EDU_AUTH_*` env vars directly first — those are set by the
+    main GUI's `_launch_new_feature_module` and are the authoritative
+    source for a subprocess-launched portal. Falls back to the global auth
+    shim (set by `_bootstrap_auth_from_env`) and finally returns None if
+    neither is populated.
+
+    The previous implementation went env → bootstrap → set_global_auth →
+    get_global_auth → .current_user, and any silent failure in that chain
+    (e.g. an import error inside auth infra wrapped in try/except: pass)
+    left the autofill blank. Reading the env directly removes those
+    failure modes for the autofill code path.
+    """
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+
+    if user_id or username:
+        return {
+            'id': user_id or None,
+            'user_id': user_id or None,
+            'username': username,
+            'role': role,
+            'email': email,
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            return ga.current_user
+    except Exception:
+        pass
+    return None
+
+
+def _resolve_submitter_details(user):
+    """Look up the submitter's full name, student/staff ID and email.
+
+    The env-provided `EDU_AUTH_USER_ID` is the auth `users.id` PK (e.g.
+    `2`), NOT the student-facing `students.student_id` (e.g. `S12345`),
+    so we look up the correct ID by joining `users → students` on
+    `student_id` and matching either by `users.id` or `users.username`.
+
+    Email prefers `users.email` over `students.email_address` so
+    confirmation emails land in the in-app inbox (same reasoning as
+    `_student_contact` in election_gui.py).
+
+    Falls back to env-only details when the DB lookup misses.
+
+    Returns (full_name, student_or_staff_id, email).
+    """
+    if not user:
+        return '', '', ''
+    env_user_id = (user.get('user_id') or user.get('id') or '') or ''
+    username = user.get('username') or ''
+    env_email = user.get('email') or ''
+
+    full_name = ''
+    email = env_email
+    resolved_id = ''
+    try:
+        from education_system.university_system.infrastructure.database.db import get_connection
+        conn = get_connection()
+        cur = conn.cursor()
+        row = None
+        # Match by users.id first when we have a numeric auth PK.
+        if env_user_id:
+            row = cur.execute(
+                "SELECT s.student_id, s.first_name, s.last_name, "
+                "       COALESCE(u.email, s.email_address, '') "
+                "FROM users u "
+                "LEFT JOIN students s ON s.student_id = u.student_id "
+                "WHERE u.id = ?",
+                (env_user_id,)).fetchone()
+        # Fall back to username lookup.
+        if not row and username:
+            row = cur.execute(
+                "SELECT s.student_id, s.first_name, s.last_name, "
+                "       COALESCE(u.email, s.email_address, '') "
+                "FROM users u "
+                "LEFT JOIN students s ON s.student_id = u.student_id "
+                "WHERE u.username = ?",
+                (username,)).fetchone()
+        # Also try matching the env value against students.student_id
+        # directly — covers cases where the launcher passes the student
+        # id as the user id.
+        if not row and env_user_id:
+            row = cur.execute(
+                "SELECT s.student_id, s.first_name, s.last_name, "
+                "       COALESCE(u.email, s.email_address, '') "
+                "FROM students s "
+                "LEFT JOIN users u ON u.student_id = s.student_id "
+                "WHERE s.student_id = ?",
+                (env_user_id,)).fetchone()
+        conn.close()
+        if row:
+            sid, first, last, mail = row
+            resolved_id = str(sid or '')
+            full_name = ' '.join(p for p in (first or '', last or '') if p).strip()
+            if mail:
+                email = mail
+    except Exception:
+        # DB not reachable — fall back to env-only details.
+        pass
+
+    if not full_name:
+        full_name = username or env_user_id or ''
+    student_or_staff_id = resolved_id or env_user_id or username or ''
+    return full_name, str(student_or_staff_id), email or ''
+
+
+# ---------- Data Layer (SQLite) ----------
+_COMPLAINTS_SCHEMA = """
+CREATE TABLE IF NOT EXISTS complaints (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    user_id     TEXT NOT NULL,
+    email       TEXT NOT NULL,
+    category    TEXT NOT NULL,
+    priority    TEXT NOT NULL,
+    subject     TEXT NOT NULL,
+    description TEXT NOT NULL,
+    status      TEXT NOT NULL DEFAULT 'Pending',
+    response    TEXT NOT NULL DEFAULT '',
+    submitted   TEXT NOT NULL,
+    updated     TEXT NOT NULL,
+    submitted_by TEXT
+)
+"""
+
+
+def _connect():
+    """Return a connection to the central university DB.
+
+    Returns None if the infrastructure isn't reachable (e.g. running this
+    file outside the package context); the GUI degrades gracefully.
+    """
+    try:
+        from education_system.university_system.infrastructure.database.db import get_connection
+        return get_connection()
+    except Exception:
+        return None
+
+
+def _ensure_schema(conn):
+    if conn is None:
+        return
+    try:
+        conn.execute(_COMPLAINTS_SCHEMA)
+        conn.commit()
+    except sqlite3.Error:
+        pass
 
 
 def load_complaints():
-    """Load complaints from JSON file."""
-    if os.path.exists(DATA_FILE):
-        try:
-            with open(DATA_FILE, "r") as f:
-                return json.load(f)
-        except (json.JSONDecodeError, IOError):
-            return []
-    return []
-
-
-def save_complaints(complaints):
-    """Save complaints to JSON file."""
+    """Load all complaints from the DB, newest first."""
+    conn = _connect()
+    if conn is None:
+        return []
+    _ensure_schema(conn)
     try:
-        with open(DATA_FILE, "w") as f:
-            json.dump(complaints, f, indent=2)
+        rows = conn.execute(
+            "SELECT id, name, user_id, email, category, priority, subject, "
+            "       description, status, response, submitted, updated "
+            "FROM complaints ORDER BY submitted DESC"
+        ).fetchall()
+    except sqlite3.Error:
+        rows = []
+    conn.close()
+    return [
+        {
+            'id': r[0], 'name': r[1], 'user_id': r[2], 'email': r[3],
+            'category': r[4], 'priority': r[5], 'subject': r[6],
+            'description': r[7], 'status': r[8], 'response': r[9],
+            'submitted': r[10], 'updated': r[11],
+        }
+        for r in rows
+    ]
+
+
+def insert_complaint(complaint, submitted_by=None):
+    """Insert a complaint row. Returns True on success."""
+    conn = _connect()
+    if conn is None:
+        return False
+    _ensure_schema(conn)
+    try:
+        conn.execute(
+            "INSERT INTO complaints "
+            "(id, name, user_id, email, category, priority, subject, "
+            " description, status, response, submitted, updated, submitted_by) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                complaint['id'], complaint['name'], complaint['user_id'],
+                complaint['email'], complaint['category'], complaint['priority'],
+                complaint['subject'], complaint['description'],
+                complaint['status'], complaint['response'],
+                complaint['submitted'], complaint['updated'],
+                submitted_by,
+            ),
+        )
+        conn.commit()
         return True
-    except IOError:
+    except sqlite3.Error:
+        return False
+    finally:
+        conn.close()
+
+
+def update_complaint_row(complaint_id, status, response):
+    conn = _connect()
+    if conn is None:
+        return False
+    try:
+        conn.execute(
+            "UPDATE complaints SET status = ?, response = ?, updated = ? "
+            "WHERE id = ?",
+            (status, response, datetime.now().strftime('%Y-%m-%d %H:%M'),
+             complaint_id))
+        conn.commit()
+        return True
+    except sqlite3.Error:
+        return False
+    finally:
+        conn.close()
+
+
+def delete_complaint_row(complaint_id):
+    conn = _connect()
+    if conn is None:
+        return False
+    try:
+        conn.execute("DELETE FROM complaints WHERE id = ?", (complaint_id,))
+        conn.commit()
+        return True
+    except sqlite3.Error:
+        return False
+    finally:
+        conn.close()
+
+
+# ---------- Email confirmation ----------
+def _send_complaint_confirmation(email, full_vars):
+    """Render `communications/complaint_received` and queue it.
+
+    Best-effort; returns True on a successful queue, False otherwise.
+    Never raises — the submit flow must not be blocked by email infra.
+    """
+    if not email:
+        return False
+    try:
+        from education_system.university_system.infrastructure.email.template_utils import render_template
+        subject, body = render_template('communications/complaint_received', full_vars)
+        if not (subject and body):
+            return False
+    except Exception:
+        return False
+    try:
+        from education_system.university_system.modules.shared.utils.email_service import queue_email
+        return bool(queue_email(email, subject, body))
+    except Exception:
         return False
 
 
@@ -44,6 +368,7 @@ class ComplaintsPortal(tk.Tk):
         self.geometry("900x650")
         self.configure(bg="#f0f4f8")
 
+        self.current_user = _get_current_user()
         self.complaints = load_complaints()
 
         self._configure_styles()
@@ -94,19 +419,28 @@ class ComplaintsPortal(tk.Tk):
             self.admin_tab.refresh()
 
     def add_complaint(self, complaint):
-        self.complaints.append(complaint)
-        save_complaints(self.complaints)
+        submitted_by = None
+        if self.current_user:
+            submitted_by = (str(self.current_user.get('id') or
+                                self.current_user.get('user_id') or
+                                self.current_user.get('username') or '') or None)
+        if not insert_complaint(complaint, submitted_by=submitted_by):
+            return False
+        self.complaints = load_complaints()
+        return True
 
     def update_complaint(self, complaint_id, status, response):
-        for c in self.complaints:
-            if c["id"] == complaint_id:
-                c["status"] = status
-                c["response"] = response
-                c["updated"] = datetime.now().strftime("%Y-%m-%d %H:%M")
-                break
-        save_complaints(self.complaints)
+        if not update_complaint_row(complaint_id, status, response):
+            return False
+        self.complaints = load_complaints()
+        return True
 
     def find_complaint(self, complaint_id):
+        for c in self.complaints:
+            if c["id"] == complaint_id:
+                return c
+        # Refresh once in case another process added it
+        self.complaints = load_complaints()
         for c in self.complaints:
             if c["id"] == complaint_id:
                 return c
@@ -128,23 +462,44 @@ class SubmitTab(ttk.Frame):
                   font=("Segoe UI", 14, "bold")).grid(row=0, column=0, columnspan=2,
                                                       sticky="w", pady=(0, 20))
 
+        # Resolve submitter from auth + DB; auto-fill the identity fields and
+        # lock them so users can't impersonate someone else when submitting.
+        full_name, student_id, email = _resolve_submitter_details(self.app.current_user)
+        self._auto_filled = bool(full_name or student_id or email)
+
         # Name
         ttk.Label(container, text="Full Name *").grid(row=1, column=0, sticky="w", pady=5)
         self.name_entry = ttk.Entry(container, width=50, font=("Segoe UI", 10))
         self.name_entry.grid(row=1, column=1, sticky="ew", pady=5, padx=(10, 0))
+        if full_name:
+            self.name_entry.insert(0, full_name)
 
         # Student ID
         ttk.Label(container, text="Student/Staff ID *").grid(row=2, column=0, sticky="w", pady=5)
         self.id_entry = ttk.Entry(container, width=50, font=("Segoe UI", 10))
         self.id_entry.grid(row=2, column=1, sticky="ew", pady=5, padx=(10, 0))
+        if student_id:
+            self.id_entry.insert(0, student_id)
 
         # Email
         ttk.Label(container, text="Email Address *").grid(row=3, column=0, sticky="w", pady=5)
         self.email_entry = ttk.Entry(container, width=50, font=("Segoe UI", 10))
         self.email_entry.grid(row=3, column=1, sticky="ew", pady=5, padx=(10, 0))
+        if email:
+            self.email_entry.insert(0, email)
+
+        # Lock auto-filled identity fields when we have a logged-in user.
+        if self._auto_filled:
+            for entry in (self.name_entry, self.id_entry, self.email_entry):
+                entry.config(state="readonly")
+            ttk.Label(container,
+                      text="(identity fields are filled from your account and cannot be changed)",
+                      font=("Segoe UI", 8, "italic"),
+                      foreground="#64748b"
+                      ).grid(row=4, column=0, columnspan=2, sticky="w", pady=(0, 5))
 
         # Category
-        ttk.Label(container, text="Category *").grid(row=4, column=0, sticky="w", pady=5)
+        ttk.Label(container, text="Category *").grid(row=5, column=0, sticky="w", pady=5)
         self.category_var = tk.StringVar()
         categories = ["Academic", "Facilities", "Hostel/Accommodation", "Library",
                       "IT Services", "Food Services", "Transportation",
@@ -152,32 +507,32 @@ class SubmitTab(ttk.Frame):
         self.category_menu = ttk.Combobox(container, textvariable=self.category_var,
                                           values=categories, state="readonly",
                                           font=("Segoe UI", 10))
-        self.category_menu.grid(row=4, column=1, sticky="ew", pady=5, padx=(10, 0))
+        self.category_menu.grid(row=5, column=1, sticky="ew", pady=5, padx=(10, 0))
         self.category_menu.current(0)
 
         # Priority
-        ttk.Label(container, text="Priority *").grid(row=5, column=0, sticky="w", pady=5)
+        ttk.Label(container, text="Priority *").grid(row=6, column=0, sticky="w", pady=5)
         self.priority_var = tk.StringVar(value="Medium")
         priority_frame = ttk.Frame(container)
-        priority_frame.grid(row=5, column=1, sticky="w", pady=5, padx=(10, 0))
-        for i, level in enumerate(["Low", "Medium", "High", "Urgent"]):
+        priority_frame.grid(row=6, column=1, sticky="w", pady=5, padx=(10, 0))
+        for level in ["Low", "Medium", "High", "Urgent"]:
             ttk.Radiobutton(priority_frame, text=level, variable=self.priority_var,
                             value=level).pack(side="left", padx=5)
 
         # Subject
-        ttk.Label(container, text="Subject *").grid(row=6, column=0, sticky="w", pady=5)
+        ttk.Label(container, text="Subject *").grid(row=7, column=0, sticky="w", pady=5)
         self.subject_entry = ttk.Entry(container, width=50, font=("Segoe UI", 10))
-        self.subject_entry.grid(row=6, column=1, sticky="ew", pady=5, padx=(10, 0))
+        self.subject_entry.grid(row=7, column=1, sticky="ew", pady=5, padx=(10, 0))
 
         # Description
-        ttk.Label(container, text="Description *").grid(row=7, column=0, sticky="nw", pady=5)
+        ttk.Label(container, text="Description *").grid(row=8, column=0, sticky="nw", pady=5)
         self.desc_text = scrolledtext.ScrolledText(container, width=50, height=8,
                                                     font=("Segoe UI", 10), wrap="word")
-        self.desc_text.grid(row=7, column=1, sticky="ew", pady=5, padx=(10, 0))
+        self.desc_text.grid(row=8, column=1, sticky="ew", pady=5, padx=(10, 0))
 
         # Buttons
         btn_frame = ttk.Frame(container)
-        btn_frame.grid(row=8, column=0, columnspan=2, pady=20)
+        btn_frame.grid(row=9, column=0, columnspan=2, pady=20)
         ttk.Button(btn_frame, text="Submit Complaint", style="Submit.TButton",
                    command=self.submit).pack(side="left", padx=5)
         ttk.Button(btn_frame, text="Clear Form",
@@ -203,6 +558,7 @@ class SubmitTab(ttk.Frame):
             messagebox.showerror("Validation Error", "Please enter a valid email address.")
             return
 
+        now = datetime.now().strftime("%Y-%m-%d %H:%M")
         complaint = {
             "id": str(uuid.uuid4())[:8].upper(),
             "name": name,
@@ -214,21 +570,41 @@ class SubmitTab(ttk.Frame):
             "description": description,
             "status": "Pending",
             "response": "",
-            "submitted": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "updated": datetime.now().strftime("%Y-%m-%d %H:%M"),
+            "submitted": now,
+            "updated": now,
         }
 
-        self.app.add_complaint(complaint)
-        messagebox.showinfo("Success",
-                            f"Complaint submitted successfully!\n\n"
-                            f"Your Tracking ID: {complaint['id']}\n\n"
-                            f"Please save this ID to track your complaint.")
+        if not self.app.add_complaint(complaint):
+            messagebox.showerror(
+                "Save Failed",
+                "Could not save complaint to the database. Please try again.")
+            return
+
+        # Queue confirmation receipt — best-effort.
+        emailed = _send_complaint_confirmation(email, {
+            'student_name': name,
+            'student_id': str(user_id),
+            'tracking_id': complaint['id'],
+            'subject': subject,
+            'category': category,
+            'priority': priority,
+            'submitted_at': now,
+        })
+
+        msg = (f"Complaint submitted successfully!\n\n"
+               f"Your Tracking ID: {complaint['id']}\n\n"
+               f"Please save this ID to track your complaint.")
+        if emailed:
+            msg += f"\n\nA confirmation email has been sent to {email}."
+        messagebox.showinfo("Success", msg)
         self.clear()
 
     def clear(self):
-        self.name_entry.delete(0, "end")
-        self.id_entry.delete(0, "end")
-        self.email_entry.delete(0, "end")
+        # Don't wipe locked identity fields — only the complaint content.
+        if not self._auto_filled:
+            self.name_entry.delete(0, "end")
+            self.id_entry.delete(0, "end")
+            self.email_entry.delete(0, "end")
         self.subject_entry.delete(0, "end")
         self.desc_text.delete("1.0", "end")
         self.category_menu.current(0)
@@ -415,6 +791,9 @@ class AdminTab(ttk.Frame):
         if not self.authenticated:
             return
 
+        # Reload from DB so admin sees the live picture.
+        self.app.complaints = load_complaints()
+
         # Update stats
         for widget in self.stats_frame.winfo_children():
             widget.destroy()
@@ -476,8 +855,11 @@ class AdminTab(ttk.Frame):
         cid = self.tree.item(selection[0])["values"][0]
         if messagebox.askyesno("Confirm Delete",
                                f"Delete complaint {cid}? This cannot be undone."):
-            self.app.complaints = [c for c in self.app.complaints if c["id"] != cid]
-            save_complaints(self.app.complaints)
+            if not delete_complaint_row(cid):
+                messagebox.showerror("Delete failed",
+                                     "Could not delete complaint from the database.")
+                return
+            self.app.complaints = load_complaints()
             self.refresh()
             messagebox.showinfo("Deleted", "Complaint deleted successfully.")
 
@@ -547,7 +929,10 @@ Subject: {self.complaint['subject']}"""
     def save(self):
         status = self.status_var.get()
         response = self.response_box.get("1.0", "end").strip()
-        self.app.update_complaint(self.complaint["id"], status, response)
+        if not self.app.update_complaint(self.complaint["id"], status, response):
+            messagebox.showerror("Save Failed",
+                                 "Could not save changes to the database.")
+            return
         self.parent_tab.refresh()
         messagebox.showinfo("Saved", "Complaint updated successfully.")
         self.destroy()

@@ -102,12 +102,18 @@ def launch_gui(auth_manager=None):
     """Launch the GUI version of Student Analytics with optional auth"""
     print("Launching Enhanced Student Analytics GUI...")
 
-    # Add GUI methods to existing class
-    add_gui_methods()
-
     # Create and run GUI with auth context
     app = GUIStudentAnalytics(auth_manager)
     app.run()
+
+
+# Apply GUI method patches at import time so every entry path
+# (`launch_gui`, `integrate_with_main_system`, direct `GUIStudentAnalytics(...)`
+# from elsewhere) ends up with `export_data_choice` available on the
+# `StudentAnalytics` instance the runners call into. Previously it was only
+# applied inside `launch_gui()` and any other path raised
+# `AttributeError: 'StudentAnalytics' object has no attribute 'export_data_choice'`.
+add_gui_methods()
 
 
 def main():

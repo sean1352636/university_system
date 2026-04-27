@@ -501,6 +501,11 @@ def create_navigation_panel(self, parent):
     communication_buttons_data = [
         ('communication_hub', _t('nav.buttons.communication_hub'), self.show_email_sms_gui),
         ('feedback_system', _t('nav.buttons.feedback_system'), self.show_feedback_system_gui),
+        # Complaints Portal lives here (feedback/communication surface)
+        # rather than under "New Features" — it's a permanent grievance
+        # channel sitting alongside Feedback System.
+        ('new_feature_complaints_portal', 'Complaints Portal',
+            self.show_new_feature_complaints_portal),
     ]
 
     if any(name in visible_buttons for name, _, _ in communication_buttons_data):
@@ -639,8 +644,8 @@ def create_navigation_panel(self, parent):
     # launches in its own subprocess via UnifiedManagementGUI._launch_
     # new_feature_module so it can't collide with the main GUI's Tk root.
     new_features_buttons_data = [
-        ('new_feature_complaints_portal',       'Complaints Portal',
-            self.show_new_feature_complaints_portal),
+        # Complaints Portal moved to "Communication" — kept out of
+        # "New Features" since it's a permanent grievance channel.
         ('new_feature_course_evaluation_system','Course Evaluation',
             self.show_new_feature_course_evaluation_system),
         ('new_feature_lecturer_evaluation',     'Lecturer Evaluation',

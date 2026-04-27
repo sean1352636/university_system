@@ -1007,10 +1007,30 @@ def _launch_new_feature_module(self, module_dotted: str, label: str) -> None:
         # Don't block the launch on env-prep failures.
         logger.exception("failed to build auth env for %s", label)
 
+    # On Linux, ask the kernel to SIGTERM the child when the parent
+    # (this main GUI process) dies. Without this, closing the main
+    # window leaves Tk subprocesses (Complaints Portal, Disciplinary
+    # Portal, etc.) running orphaned. Best-effort: silently no-op on
+    # non-Linux platforms or if libc/prctl is unavailable.
+    def _set_pdeathsig():
+        try:
+            import ctypes
+            import signal
+            libc = ctypes.CDLL("libc.so.6", use_errno=True)
+            PR_SET_PDEATHSIG = 1
+            libc.prctl(PR_SET_PDEATHSIG, signal.SIGTERM, 0, 0, 0)
+        except Exception:
+            pass
+
+    popen_kwargs = {
+        "cwd": str(__import__("pathlib").Path(origin).parent),
+        "env": env,
+    }
+    if sys.platform.startswith("linux"):
+        popen_kwargs["preexec_fn"] = _set_pdeathsig
+
     try:
-        subprocess.Popen([sys.executable, origin],
-                         cwd=str(__import__("pathlib").Path(origin).parent),
-                         env=env)
+        subprocess.Popen([sys.executable, origin], **popen_kwargs)
         logger.info("launched %s -> %s", label, origin)
     except Exception as e:
         logger.exception("Popen failed for %s", label)
