@@ -846,6 +846,37 @@ def seed_health(cursor: sqlite3.Cursor) -> int:
 # Main
 # ---------------------------------------------------------------------------
 
+def seed_s12345_modules(cursor: sqlite3.Cursor) -> int:
+    """Enrol demo student S12345 (course=CS) in 2 compulsory + 2 optional + 2 CS modules.
+
+    Idempotent — uses INSERT OR IGNORE on (student_id, module_code).
+    Assumes the module catalog has been seeded by Alembic migration d1bde3fa4179.
+    """
+    enrolments = [
+        ("CIS0001", "python programming", "compulsory"),
+        ("CIS0002", "data structures and algorithms", "compulsory"),
+        ("CIS1001", "Computational Thinking", "optional"),
+        ("CIS1002", "Design Patterns", "optional"),
+        ("CIS2001", "software quality assurance principles", "course"),
+        ("CIS2002", "software reliabilities", "course"),
+    ]
+
+    cursor.execute(
+        "UPDATE students SET course = 'CS' "
+        "WHERE student_id = 'S12345' AND (course IS NULL OR course = '')"
+    )
+    inserted = 0
+    for code, name, mtype in enrolments:
+        cursor.execute(
+            "INSERT OR IGNORE INTO student_modules "
+            "(student_id, module_code, module_id, module_name, module_type, status, enrollment_date) "
+            "VALUES ('S12345', ?, ?, ?, ?, 'enrolled', date('now'))",
+            (code, code, name, mtype),
+        )
+        inserted += cursor.rowcount
+    return inserted
+
+
 def run_seed(db_path: str = None):
     """Run all seed functions inside a single transaction."""
     path = db_path or DB_PATH
@@ -879,6 +910,11 @@ def run_seed(db_path: str = None):
 
         print("  Seeding health services data...")
         n = seed_health(cursor)
+        print(f"    -> {n} rows")
+        total += n
+
+        print("  Enroling S12345 in demo modules...")
+        n = seed_s12345_modules(cursor)
         print(f"    -> {n} rows")
         total += n
 
