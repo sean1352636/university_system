@@ -70,18 +70,22 @@ def init_grocery_db() -> bool:
         )
         ''')
 
-        # Products table (unified) for grocery products
+        # Products table (unified) for grocery products. The unified
+        # `products` table is shared with other commerce sub-systems
+        # (shop, takeaway, musicshop), so the table itself may already
+        # exist with a different column set. Add any grocery-specific
+        # columns that are missing.
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             source_type TEXT NOT NULL DEFAULT 'grocery',
             source_product_id TEXT,
-            category_id TEXT NOT NULL,
+            category_id TEXT,
             name TEXT NOT NULL,
             description TEXT,
             brand TEXT,
             unit TEXT DEFAULT 'each',
-            price REAL NOT NULL,
+            price REAL,
             cost_price REAL,
             stock_quantity INTEGER DEFAULT 0,
             min_stock_level INTEGER DEFAULT 5,
@@ -90,11 +94,26 @@ def init_grocery_db() -> bool:
             is_perishable BOOLEAN DEFAULT 0,
             expiry_date TEXT,
             discount_percentage REAL DEFAULT 0,
-            created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            FOREIGN KEY (category_id) REFERENCES grocery_categories (category_id)
+            created_at TEXT,
+            updated_at TEXT
         )
         ''')
+        existing_cols = {row[1] for row in cursor.execute("PRAGMA table_info(products)").fetchall()}
+        for col, ddl in (
+            ("category_id", "TEXT"),
+            ("brand", "TEXT"),
+            ("unit", "TEXT DEFAULT 'each'"),
+            ("barcode", "TEXT"),
+            ("is_available", "BOOLEAN DEFAULT 1"),
+            ("is_perishable", "BOOLEAN DEFAULT 0"),
+            ("expiry_date", "TEXT"),
+            ("discount_percentage", "REAL DEFAULT 0"),
+        ):
+            if col not in existing_cols:
+                try:
+                    cursor.execute(f"ALTER TABLE products ADD COLUMN {col} {ddl}")
+                except Exception:
+                    pass
 
         # NOTE: grocery transactions now use the unified 'transactions' table
         # with source_type = 'grocery'

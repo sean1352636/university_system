@@ -52,13 +52,51 @@ import hashlib
 import json
 import logging
 import os
+import sqlite3
 import threading
+from contextlib import closing, contextmanager
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from education_system.university_system.infrastructure.database.db import get_connection, transaction
-
 logger = logging.getLogger(__name__)
+
+
+def _audit_db_path() -> str:
+    """Path to the dedicated audit database (shared across systems).
+
+    Kept separate from the main student_records DB so audit writes don't
+    contend with domain transactions for the BEGIN IMMEDIATE write lock."""
+    shared_root = Path(__file__).resolve().parents[3] / "shared" / "data" / "db_files"
+    shared_root.mkdir(parents=True, exist_ok=True)
+    return str(shared_root / "audit.db")
+
+
+def _audit_connect() -> sqlite3.Connection:
+    conn = sqlite3.connect(_audit_db_path(), timeout=30)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    conn.execute("PRAGMA busy_timeout=30000")
+    return conn
+
+
+@contextmanager
+def _audit_transaction():
+    """Write-transaction context manager scoped to the audit DB."""
+    conn = _audit_connect()
+    try:
+        conn.execute("BEGIN IMMEDIATE")
+        yield conn
+        conn.commit()
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        raise
+    finally:
+        conn.close()
 
 
 class ImmutableAuditLog:
@@ -122,7 +160,7 @@ class ImmutableAuditLog:
     def _ensure_table_exists(self) -> None:
         """Create immutable audit log table if it doesn't exist."""
         try:
-            with transaction() as conn:
+            with _audit_transaction() as conn:
                 # Create the immutable audit log table
                 conn.execute("""
                     CREATE TABLE IF NOT EXISTS immutable_audit_log (
@@ -271,58 +309,66 @@ class ImmutableAuditLog:
         Raises:
             Exception: If entry creation fails
         """
-        try:
-            with transaction() as conn:
-                # Get the hash of the previous entry (or genesis hash if first entry)
-                previous = conn.execute("""
-                    SELECT current_hash FROM immutable_audit_log
-                    ORDER BY id DESC LIMIT 1
-                """).fetchone()
+        # Audit DB is dedicated, so contention is rare — but keep a small
+        # retry loop in case multiple subsystems write concurrently.
+        import time as _time
+        last_err = None
+        for attempt in range(5):
+            try:
+                with _audit_transaction() as conn:
+                    previous = conn.execute("""
+                        SELECT current_hash FROM immutable_audit_log
+                        ORDER BY id DESC LIMIT 1
+                    """).fetchone()
+                    previous_hash = previous['current_hash'] if previous else '0' * 64
 
-                # Genesis hash (64 zeros) for the first entry
-                previous_hash = previous['current_hash'] if previous else '0' * 64
+                    timestamp = datetime.utcnow().isoformat() + 'Z'
+                    details_json = json.dumps(details or {}, sort_keys=True, separators=(',', ':'))
 
-                # Create entry data
-                timestamp = datetime.utcnow().isoformat() + 'Z'
-                details_json = json.dumps(details or {}, sort_keys=True, separators=(',', ':'))
+                    current_hash = self._calculate_hash(
+                        previous_hash=previous_hash,
+                        timestamp=timestamp,
+                        user_id=user_id,
+                        action=action,
+                        resource_type=resource_type,
+                        resource_id=resource_id,
+                        details_json=details_json,
+                        ip_address=ip_address,
+                        user_agent=user_agent,
+                        session_id=session_id,
+                    )
 
-                # Calculate the cryptographic hash
-                current_hash = self._calculate_hash(
-                    previous_hash=previous_hash,
-                    timestamp=timestamp,
-                    user_id=user_id,
-                    action=action,
-                    resource_type=resource_type,
-                    resource_id=resource_id,
-                    details_json=details_json,
-                    ip_address=ip_address,
-                    user_agent=user_agent,
-                    session_id=session_id,
-                )
+                    hmac_data = f"{current_hash}|{timestamp}|{action}"
+                    hmac_signature = self._calculate_hmac(hmac_data)
 
-                # Calculate HMAC signature for the entire entry
-                hmac_data = f"{current_hash}|{timestamp}|{action}"
-                hmac_signature = self._calculate_hmac(hmac_data)
+                    conn.execute("""
+                        INSERT INTO immutable_audit_log
+                        (timestamp, user_id, action, resource_type, resource_id,
+                         details, ip_address, user_agent, session_id,
+                         previous_hash, current_hash, hmac_signature)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """, (
+                        timestamp, user_id, action, resource_type, resource_id,
+                        details_json, ip_address, user_agent, session_id,
+                        previous_hash, current_hash, hmac_signature
+                    ))
 
-                # Insert the entry
-                conn.execute("""
-                    INSERT INTO immutable_audit_log
-                    (timestamp, user_id, action, resource_type, resource_id,
-                     details, ip_address, user_agent, session_id,
-                     previous_hash, current_hash, hmac_signature)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                """, (
-                    timestamp, user_id, action, resource_type, resource_id,
-                    details_json, ip_address, user_agent, session_id,
-                    previous_hash, current_hash, hmac_signature
-                ))
+                    logger.debug(f"Audit log entry added: action={action}, hash={current_hash[:16]}...")
+                    return current_hash
 
-                logger.debug(f"Audit log entry added: action={action}, hash={current_hash[:16]}...")
-                return current_hash
+            except sqlite3.OperationalError as e:
+                last_err = e
+                if "locked" in str(e).lower() or "busy" in str(e).lower():
+                    _time.sleep(0.05 * (2 ** attempt))  # 50, 100, 200, 400, 800 ms
+                    continue
+                logger.error(f"Failed to add audit log entry: {e}")
+                raise
+            except Exception as e:
+                logger.error(f"Failed to add audit log entry: {e}")
+                raise
 
-        except Exception as e:
-            logger.error(f"Failed to add audit log entry: {e}")
-            raise
+        logger.error(f"Failed to add audit log entry after retries: {last_err}")
+        raise last_err
 
     def verify_integrity(self, limit: Optional[int] = None) -> Dict[str, Any]:
         """
@@ -347,7 +393,7 @@ class ImmutableAuditLog:
             }
         """
         try:
-            with get_connection() as conn:
+            with closing(_audit_connect()) as conn:
                 # Query entries in order
                 query = "SELECT * FROM immutable_audit_log ORDER BY id ASC"
                 if limit:
@@ -464,7 +510,7 @@ class ImmutableAuditLog:
             List of audit log entries as dictionaries
         """
         try:
-            with get_connection() as conn:
+            with closing(_audit_connect()) as conn:
                 query = "SELECT * FROM immutable_audit_log WHERE 1=1"
                 params = []
 
@@ -519,7 +565,7 @@ class ImmutableAuditLog:
     def get_entry_count(self) -> int:
         """Get total number of entries in the audit log."""
         try:
-            with get_connection() as conn:
+            with closing(_audit_connect()) as conn:
                 result = conn.execute(
                     "SELECT COUNT(*) as count FROM immutable_audit_log"
                 ).fetchone()
@@ -531,7 +577,7 @@ class ImmutableAuditLog:
     def get_latest_hash(self) -> Optional[str]:
         """Get the hash of the most recent entry (chain head)."""
         try:
-            with get_connection() as conn:
+            with closing(_audit_connect()) as conn:
                 result = conn.execute("""
                     SELECT current_hash FROM immutable_audit_log
                     ORDER BY id DESC LIMIT 1

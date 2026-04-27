@@ -150,6 +150,14 @@ def init_shop_db() -> bool:
 
         # Shop cart uses unified cart table with source_type='shop'
 
+        # Ensure shop-specific columns exist on the unified products table.
+        existing_cols = {row[1] for row in cursor.execute("PRAGMA table_info(products)").fetchall()}
+        if "tax_rate" not in existing_cols:
+            try:
+                cursor.execute("ALTER TABLE products ADD COLUMN tax_rate REAL DEFAULT 0")
+            except Exception:
+                pass
+
         # Sample products (if no products exist)
         cursor.execute("SELECT COUNT(*) FROM products WHERE source_type = 'shop'")
         if cursor.fetchone()[0] == 0:

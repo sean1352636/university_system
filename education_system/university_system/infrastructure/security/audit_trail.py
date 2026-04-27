@@ -107,8 +107,13 @@ class AuditLogger:
     TABLE_NAME = 'audit_trail'
 
     def _init_db(self) -> None:
-        """Initialize audit trail tables."""
-        # TABLE_NAME is a class constant, not user input, but use bracket quoting for consistency
+        """Initialize audit trail tables.
+
+        On older deployments an `audit_trail` table may already exist with a
+        leaner shape (audit_id PK, no username/details/function_name/etc.).
+        ALTER in any missing columns so the readers and writers in this
+        module work against both new and old DBs.
+        """
         with get_connection(self.db_path) as conn:
             conn.execute(f'''
                 CREATE TABLE IF NOT EXISTS [{self.TABLE_NAME}] (
@@ -128,6 +133,24 @@ class AuditLogger:
                     data_hash TEXT
                 )
             ''')
+            existing = {row[1] for row in conn.execute(
+                f"PRAGMA table_info([{self.TABLE_NAME}])"
+            ).fetchall()}
+            for col, ddl in (
+                ("username", "TEXT"),
+                ("details", "TEXT"),
+                ("function_name", "TEXT"),
+                ("module_name", "TEXT"),
+                ("data_hash", "TEXT"),
+                ("timestamp", "TEXT"),
+            ):
+                if col not in existing:
+                    try:
+                        conn.execute(
+                            f"ALTER TABLE [{self.TABLE_NAME}] ADD COLUMN {col} {ddl}"
+                        )
+                    except Exception:
+                        pass
             conn.execute(f'''
                 CREATE INDEX IF NOT EXISTS idx_audit_trail_timestamp
                 ON [{self.TABLE_NAME}](timestamp DESC)

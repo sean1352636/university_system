@@ -490,9 +490,13 @@ class StaffPortalGUI:
                 cursor.execute("SELECT COUNT(*) FROM students")
                 total_students = cursor.fetchone()[0]
 
-                # Total staff
+                # Total staff (no dedicated `staff` table — count non-student
+                # users instead).
                 try:
-                    cursor.execute("SELECT COUNT(*) FROM staff")
+                    cursor.execute(
+                        "SELECT COUNT(*) FROM users WHERE role IN "
+                        "('staff','instructor','admin','superadmin','lecturer','professor','tutor')"
+                    )
                     total_staff = cursor.fetchone()[0]
                 except Exception:
                     total_staff = "N/A"

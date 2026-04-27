@@ -28,7 +28,7 @@ def create_ticket_enhanced(auth):
     # Show available templates
     cursor.execute('''
     SELECT template_id, name, description, category
-    FROM ticket_templates
+    FROM helpdesk_ticket_templates
     WHERE is_active = 1
     ORDER BY category, name
     ''')
@@ -59,7 +59,7 @@ def create_ticket_from_template(auth, template_id):
 
     # Get template details
     cursor.execute('''
-    SELECT * FROM ticket_templates WHERE template_id = ?
+    SELECT * FROM helpdesk_ticket_templates WHERE template_id = ?
     ''', (template_id,))
     template = cursor.fetchone()
 

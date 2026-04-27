@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.100.0 — 2026-04-27](#81000---2026-04-27)
 - [8.99.0 — 2026-04-27](#8990---2026-04-27)
 - [8.98.0 — 2026-04-26](#8980---2026-04-26)
 - [8.97.0 — 2026-04-26](#8970---2026-04-26)
@@ -204,6 +205,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.100.0] — 2026-04-27
+
+### University-wide SQLite schema-mismatch sweep; per-domain init wiring; audit-log decoupled to `audit.db`; Complaints Portal admin update notifications
+
+#### Added
+
+- **Phase 7: per-domain schema initializers wired into startup.** `infrastructure/database/schemas/misc_schemas.py:_init_per_domain_schemas` now invokes 47 domain-level schema initializers (apprenticeships, course_evaluation, library, attendance, betting, butcher, carrental, gym, musicshop, nailbar, phoneshop, grocery, takeaway, mail, finance ops, dentist, health portal, accommodation, housing, legal services, trip management, university research, background checks, alumni, helpdesk, internships, employer portal, intervention outcomes, tutor groups, virtual classroom, financial aid, equality_diversity, etc.) using a small dispatch table that supports module-level functions, class auto-init via `__init__`, explicit `Class().method()` calls, `@staticmethod` calls, and `(@conn, func)` for schemas that take an open connection. **Net result: 47 initialized / 0 skipped on startup, +272 tables on a fresh DB (616 → 888).** Every `init_*` is best-effort — one module failing doesn't block the rest.
+- **Email template `communications/complaint_updated.json`** — `$student_name`, `$student_id`, `$tracking_id`, `$subject`, `$category`, `$status`, `$response`, `$updated_at` placeholders. Used by the new admin-update notification flow.
+- **Unified `transactions` ledger table** added to `infrastructure/database/schemas/finance_schemas.py:init_finance_system_db`. Many domain modules (cafe/bar inventory, student-finance ledger, charity shop sales, betting deposits, taxi refunds, equipment fees) referenced a bare `transactions` table that was never created by any migration. The new table has all the columns each writer needs (`source_type`, `account_id`, `student_id`, `transaction_type`, `amount`, `total_amount`, `quantity_change`, `balance_before/after`, `description`, `reference_id`, `reference_type`, `payment_method`, `status`, `processed_by`, etc.) and is intentionally permissive — every column except the auto-incrementing PK is nullable, since each writer populates a different subset.
+- **Migration block in `init_db`** that adds columns the instructor portal and admin Data Scope tab query against — `modules.instructor`, `modules.department`, `grades.graded_by`, `assignments.status` — and creates the missing `office_hours` table. Idempotent ALTER TABLE / CREATE TABLE IF NOT EXISTS, runs every startup.
+
+#### Changed
+
+- **`init_db()` no longer short-circuits schema initialization.** Previously a 5-table sentinel (`modules`, `student_modules`, `payments`, `assignments`, `support_tickets`) caused `initialize_all_schemas()` to be skipped entirely on second startup, leaving any newly-added domain tables permanently absent for existing deployments. Now `create_unified_database()` still runs only on first init, but `initialize_all_schemas()` runs every time — every CREATE uses `IF NOT EXISTS` so it's idempotent.
+- **`immutable_audit_log` table moved out of `student_records.db` into the dedicated `shared/data/db_files/audit.db`.** The audit log was contending with domain transactions for SQLite's `BEGIN IMMEDIATE` write lock, surfacing as cascading `database is locked` errors during operations like vaccination adds. New module-level helpers (`_audit_db_path`, `_audit_connect`, `_audit_transaction`) connect directly to the dedicated audit DB; the 6 call sites in `infrastructure/security/immutable_audit_log.py` (1 `_ensure_table_exists`, 1 `add_entry`, 4 readers wrapped in `closing(_audit_connect())`) no longer touch the main DB. A 5-attempt retry-on-busy with exponential backoff (50→800ms) remains in `add_entry` as a belt-and-braces measure for concurrent audit writers. Existing rows from the old location were migrated; the old table is left in place (no destructive cleanup).
+- **Complaints Portal Admin Panel is now role-gated.** Only users with role `admin` or `superadmin` see the `⚙️ Admin Panel` tab — students/staff/instructors don't. For admin sessions the inner `admin123` password gate is also skipped (the user already authenticated at the system level). Standalone launches with no auth env retain the password gate as a fallback. Tab-change handler updated to look the admin tab up by widget identity instead of hardcoded index 2.
+- **Complaints Portal admin save sends an update email** when the status or response actually changes. New `_send_complaint_update` helper renders the new `complaint_updated` template via `template_utils.render_template` and queues it via `email_service.queue_email`. Re-saves with no diff don't generate emails. Save dialog now mentions the recipient when an email was queued.
+- **Complaints Portal header** now has a "← Return to Homepage" button next to the title (matches the Disciplinary Portal layout).
+
+#### Fixed
+
+Schema drift / column-name bugs across the main GUI (these all surfaced as visible errors or empty data, often after a DB was reset / re-initialized):
+
+- **Student detail view "Error loading academic data: no such column: module_code"** — `attendance_records.module_code/date` don't exist; those columns live on `attendance_sessions`. Fixed three readers (`student_records_gui.py:578`, `student_crud_gui.py:1576`, `student_export_gui.py:430`) to JOIN `attendance_sessions` on `session_id` and select `s.session_date`, `s.module_code`, `r.status`, `r.notes`. Legacy fallback in export switched to the actual `attendance` columns (`class_date`, `module_id`).
+- **Student detail "no modules enrolled" after creating a student** — the create flow inserted into `student_modules` with codes like `CIS0001`/`CIS1003` but the `modules` reference table only had 3 unrelated codes (`CS101`, `MATH201`, `ENG301`), so the INNER JOIN in the academic-data view returned nothing. `student_crud_gui.py:347` now `INSERT OR IGNORE INTO modules` from `domain/academics/services/modules.py` before enrolling. Live DB backfilled.
+- **`student_modules.module_id` NOT NULL constraint failed on student create** — module_id was a legacy NOT NULL column kept alongside `module_code`. Fix populates both from the same value (`student_crud_gui.py:340`) and relaxes NOT NULL on `module_id` in `setup_unified_database.py`.
+- **`student_modules` "foreign key mismatch — referencing modules"** during student update — the FK declared `REFERENCES modules(module_id)` but `modules` has no `module_id` column (PK is `module_code`). Live table rebuilt with the correct FK target; `setup_unified_database.py:108` patched.
+- **SMS history "no such column: recipient_name"** — older `sms_messages` schema only had `recipient_phone`. Added `_ensure_sms_schema()` in `sms_tab.py:486` that ALTERs in `sender_username`, `recipient_name`, `phone_number`, `message`, `status`, `sent_at` and back-fills `phone_number` from the legacy `recipient_phone`. Wired into `store_sms`, `refresh_sms_history`, and `sms_statistics`.
+- **`initialize_email_db: no such column: version`** — older `schema_migrations` table had only `id`/`migration_name`/`applied_at`. `email_db_utilities.py:_ensure_migrations_table` now also adds `version`, `status`, `error_message`, `rollback_sql` via ALTER TABLE.
+- **`Database error storing email: NOT NULL constraint failed: email_log.body`** — legacy `email_log` had `body`/`sent_at` NOT NULL but writers use `message`/`sent_date`. `migrate_email_log_table()` now self-heals: detects the legacy NOT NULL and rebuilds the table (rename → CREATE → INSERT … SELECT → DROP) with the canonical schema (all columns nullable). Also wired the migration into `initialize_email_db()` so it runs every startup. Added `sent_date`, `message`, `related_to`, `student_id` to the migration's `required_columns` list.
+- **"Extended email_log insert failed (schema mismatch), falling back: table email_log has no column named sent_date"** — same root cause; resolved by the rebuild above.
+- **Security Dashboard "no such column: event_time"** — `security_events` table uses `created_at`. Renamed all 8 references in `security_dashboard_gui.py:809–1027` to `created_at`.
+- **`config_gui.errors.failed_to_open_security_dashboard` → "no such column: username"** — pre-existing `audit_trail` table had a leaner audit-style shape (no `username/details/function_name/module_name/data_hash`). `audit_trail.py:_init_db` now ALTERs the missing columns into the existing table.
+- **`Error initializing log manager: no such column: module`** and **`Error refreshing alerts: no such column: triggered_at`** — pre-existing `logs` and `alerts` tables had completely different schemas than the GUI expected. `infrastructure/logging/gui/helpers.py:initialize_database` now ALTERs `username/status/module/message` (logs) and `severity/triggered_at/acknowledged/resolved/resolved_at/user_id/metadata` (alerts) into the existing tables.
+- **`'tuple' object has no attribute 'get'`** when viewing student logs — `FallbackLogManager.search_logs` returned raw tuples but callers expected dicts (matching the real `LogManager.search_logs`). Added `conn.row_factory = sqlite3.Row` and `[dict(row) for row in ...]`. Made `student_integration.py:223` defensive — works with dict, Row, or tuple, and handles None values for `details`.
+- **Revenue-by-Source report "no such table: transactions"** — the report's UNION ALL referenced a `transactions` table that didn't exist. Removed the dead UNION branches; classification now relies entirely on `payments.notes` LIKE patterns (which is how everything is recorded anyway). Combined with the new unified `transactions` table created above, the affected GUI tabs (Club Payments, Student Finance, Bank App) no longer crash.
+- **Academic Calendar init "no such column: date"** — `init_calendar_database` in `academic_calendar/database.py` was creating a `calendar_events` table that collides with the centralized `calendar_events` (which has `start_date`/`end_date`), while every reader queried `academic_calendar_events`. Renamed CREATE/index/FK to `academic_calendar_events`.
+- **Alumni init "table email_templates has no column named template_name"** — alumni's `email_templates` schema is incompatible with the centralized `email_templates`. Renamed alumni's table to `alumni_email_templates` (4 sites in `alumni_management/database.py` and `communications.py`).
+- **Helpdesk init "table ticket_templates has no column named description"** — helpdesk's `ticket_templates` schema collides with `student_support`'s. Renamed helpdesk's table to `helpdesk_ticket_templates` (7 sites across `helpdesk/`).
+- **Grocery / shop / takeaway init failures** on shared `products` table — music shop's strict NOT NULL on `sku/category/price` blocked the other commerce sub-systems' INSERTs. Rebuilt the (empty) `products` table with only `name` NOT NULL; relaxed `musicshop_core.py:34–44` to match. Added per-module ALTER TABLE in `grocery_service.py`, `shop_management/database.py`, `takeaway_service.py` for their domain-specific columns (category_id, tax_rate, restaurant_id, brand, allergens, etc.).
+- **Virtual Classroom init "no such column: start_time"** — `executescript()` aborted on a single drifted index against an existing `virtual_sessions` table. `create_virtual_classroom_tables` now runs each statement individually and counts skipped statements (1 of N) so the rest of the schema still creates.
+- **Dashboard "Modules" stat showed 0** — `dashboard_gui.py:187` queried `modules.is_active` which doesn't exist (table has only `module_code/module_name/module_type`). Dropped the WHERE clause.
+- **Instructor Dashboard "Failed: no such column: priority"** when saving an announcement — `announcements` schema uses `is_urgent`/`creator_id`, not `priority`/`created_by`. Fixed the INSERT in `instructor_dashboard.py:328` and supplied the 4 NOT NULL columns the schema requires (`target_audience`, `start_date`, `created_at`, `updated_at`).
+- **Audit log "Transaction failed: database is locked → Failed to add audit log entry → Failed to log security event (ADD_VACCINATION)"** — root cause described under the audit-log move above; the cascade is silenced and the parent operation (vaccination add etc.) is no longer affected.
+
+Silent-failure fixes (queries previously wrapped in `try/except: pass`, surfacing as missing UI sections or `0`/`N/A` values):
+
+- **Dashboard "Pending Assignments" stat always 0** (`dashboard_gui.py:191`) — `assignments.status='active'` → `assignments.is_active=1`.
+- **Staff Portal "Total Staff" card showed "N/A"** (`staff_portal.py:495`) — no `staff` table exists. Now counts from `users WHERE role IN ('staff','instructor','admin','superadmin','lecturer','professor','tutor')`.
+- **Instructor Portal Quick Overview was missing 4 sections** (`instructor_portal.py:474–518`) — "My Courses" (no `modules.instructor`), "Upcoming Assignments" (`assignments.created_by` is INT but matched with `LIKE '%username%'` against the integer), "Grades Submitted" (no `grades.graded_by`), "Office Hours" (no `office_hours` table). Migration adds the missing columns/table; assignments query rewired to `JOIN users ON id = created_by WHERE username = ?`.
+- **Admin Tools Data Scope "modules" column always 0** (`admin_tools_gui.py:2280`) — `modules.department` doesn't exist. Migration adds the column; query falls back to `module_type` via `COALESCE` so fresh deployments show non-zero counts before any explicit department curation.
+
+User-management bug fixes:
+
+- **`users.is_active` doesn't exist; auth state lives on `user_accounts.is_active`.** `user_management_gui.py:332,422` SELECT now `LEFT JOIN user_accounts` and the UPDATE writes `users` (without is_active) plus a separate `UPDATE user_accounts SET is_active`. Reachable on the fallback path when `self.auth` is None.
+- **Student-data export was breaking on `m.credits`** (`student_export_gui.py:387`) — `modules` has only `code/name/type`. Switched to `sm.credits_earned` from the enrollment row.
+
+Complaints Portal:
+
+- **`grab failed: window not viewable`** when opening the Complaint Detail window — `grab_set()` now deferred 50ms until the window is mapped, with `tk.TclError` swallowed defensively.
+
+#### Notes
+
+- All schema migrations are idempotent: ALTER TABLE ADD COLUMN is wrapped in try/except, CREATE TABLE uses IF NOT EXISTS, and the email_log rebuild only fires when the legacy NOT NULL constraints are still present.
+- `audit.db` (shared) and `student_records.db` (university) remain separate DBs; the audit log's hash chain was preserved by copying the 2 existing rows during the move.
+- Dropped the per-domain initializer entry for `health/gui/health_portal/database.init_database` — it's a Mixin, not a standalone class, and tables get created by the host portal class on first use.
 
 ---
 

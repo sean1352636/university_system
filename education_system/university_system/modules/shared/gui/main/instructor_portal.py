@@ -485,10 +485,15 @@ class InstructorPortalGUI:
 
                 # Upcoming assignments
                 try:
+                    # assignments.created_by is an INTEGER user id; resolve
+                    # via users.username instead of LIKE-matching the int.
                     cursor.execute(
-                        "SELECT title, due_date FROM assignments "
-                        "WHERE created_by LIKE ? ORDER BY due_date ASC LIMIT 5",
-                        (f"%{username}%",))
+                        "SELECT a.title, a.due_date "
+                        "FROM assignments a "
+                        "JOIN users u ON u.id = a.created_by "
+                        "WHERE u.username = ? "
+                        "ORDER BY a.due_date ASC LIMIT 5",
+                        (username,))
                     assignments = cursor.fetchall()
                     if assignments:
                         ttk.Label(info_frame, text="\nUpcoming Assignments:",

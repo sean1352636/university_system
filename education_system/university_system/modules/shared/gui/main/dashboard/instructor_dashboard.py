@@ -323,11 +323,18 @@ def create_instructor_dashboard(parent_frame, auth, service):
                 return
             try:
                 from education_system.university_system.infrastructure.database.db import transaction
+                from datetime import datetime as _dt
                 with transaction() as conn:
+                    is_urgent = 1 if prio_var.get() in ("urgent", "high") else 0
+                    now = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
+                    today = _dt.now().strftime("%Y-%m-%d")
                     conn.execute(
-                        "INSERT INTO announcements (title, content, priority, created_by) "
-                        "VALUES (?, ?, ?, ?)",
-                        (title, content, prio_var.get(), instructor_id)
+                        "INSERT INTO announcements "
+                        "(title, content, is_urgent, creator_id, target_audience, "
+                        " start_date, created_at, updated_at) "
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                        (title, content, is_urgent, instructor_id,
+                         "all", today, now, now)
                     )
                 messagebox.showinfo("Created", "Announcement created.", parent=dialog)
                 dialog.destroy()

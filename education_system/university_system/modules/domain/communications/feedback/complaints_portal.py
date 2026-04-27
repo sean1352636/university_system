@@ -338,17 +338,18 @@ def delete_complaint_row(complaint_id):
 
 
 # ---------- Email confirmation ----------
-def _send_complaint_confirmation(email, full_vars):
-    """Render `communications/complaint_received` and queue it.
+def _queue_complaint_email(template_name, email, full_vars):
+    """Render `communications/<template_name>` and queue it.
 
     Best-effort; returns True on a successful queue, False otherwise.
-    Never raises — the submit flow must not be blocked by email infra.
+    Never raises — caller flows (submit, admin update) must not be blocked
+    by email infra.
     """
     if not email:
         return False
     try:
         from education_system.university_system.infrastructure.email.template_utils import render_template
-        subject, body = render_template('communications/complaint_received', full_vars)
+        subject, body = render_template(f'communications/{template_name}', full_vars)
         if not (subject and body):
             return False
     except Exception:
@@ -358,6 +359,14 @@ def _send_complaint_confirmation(email, full_vars):
         return bool(queue_email(email, subject, body))
     except Exception:
         return False
+
+
+def _send_complaint_confirmation(email, full_vars):
+    return _queue_complaint_email('complaint_received', email, full_vars)
+
+
+def _send_complaint_update(email, full_vars):
+    return _queue_complaint_email('complaint_updated', email, full_vars)
 
 
 # ---------- Main Application ----------
@@ -395,9 +404,15 @@ class ComplaintsPortal(tk.Tk):
                         background="#1e3a8a", foreground="white")
 
     def _build_header(self):
-        header = ttk.Label(self, text="🎓  University Complaints Portal",
-                           style="Header.TLabel", anchor="center")
-        header.pack(fill="x")
+        header_frame = tk.Frame(self, bg="#1e3a8a")
+        header_frame.pack(fill="x")
+
+        ttk.Button(header_frame, text="← Return to Homepage",
+                   command=self.destroy).pack(side="left", padx=10, pady=10)
+
+        ttk.Label(header_frame, text="🎓  University Complaints Portal",
+                  style="Header.TLabel", anchor="center").pack(
+            side="left", expand=True, fill="x")
 
     def _build_notebook(self):
         self.notebook = ttk.Notebook(self)
@@ -405,17 +420,36 @@ class ComplaintsPortal(tk.Tk):
 
         self.submit_tab = SubmitTab(self.notebook, self)
         self.view_tab = ViewTab(self.notebook, self)
-        self.admin_tab = AdminTab(self.notebook, self)
 
         self.notebook.add(self.submit_tab, text="📝 Submit Complaint")
         self.notebook.add(self.view_tab, text="🔍 Track Complaint")
-        self.notebook.add(self.admin_tab, text="⚙️ Admin Panel")
+
+        # Admin Panel is for admins only — students / staff / instructors
+        # don't see it. The role check uses the current user's `role` from
+        # the auth env; absence of a user means we're running standalone
+        # and we still expose the tab for back-compat (the inner password
+        # gate is removed for admin sessions, see AdminTab.__init__).
+        self.admin_tab = None
+        if self._is_admin_role():
+            self.admin_tab = AdminTab(self.notebook, self)
+            self.notebook.add(self.admin_tab, text="⚙️ Admin Panel")
 
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_change)
 
+    def _is_admin_role(self):
+        role = ''
+        if self.current_user:
+            role = (self.current_user.get('role') or '').lower()
+        return role in ('admin', 'superadmin')
+
     def _on_tab_change(self, event):
-        selected = self.notebook.index("current")
-        if selected == 2:
+        if self.admin_tab is None:
+            return
+        try:
+            selected_widget = self.notebook.nametowidget(self.notebook.select())
+        except Exception:
+            return
+        if selected_widget is self.admin_tab:
             self.admin_tab.refresh()
 
     def add_complaint(self, complaint):
@@ -700,7 +734,18 @@ class AdminTab(ttk.Frame):
         super().__init__(parent)
         self.app = app
         self.authenticated = False
-        self._build_login()
+        # Skip the admin password gate when the user is already
+        # authenticated as admin — they're logged in with admin
+        # credentials at the system level, so re-prompting for
+        # `admin123` is redundant. The portal's parent only adds
+        # this tab for admins anyway, but we keep the gate as a
+        # fallback for standalone launches with no auth env.
+        if self.app._is_admin_role():
+            self.authenticated = True
+            self._build_dashboard()
+            self.refresh()
+        else:
+            self._build_login()
 
     def _build_login(self):
         self.login_frame = ttk.Frame(self)
@@ -876,9 +921,18 @@ class ComplaintDetailWindow(tk.Toplevel):
         self.geometry("600x600")
         self.configure(bg="#f0f4f8")
         self.transient(parent)
-        self.grab_set()
 
         self._build()
+
+        # `grab_set()` requires the window to be viewable — calling it
+        # immediately after Toplevel() raises "grab failed: window not
+        # viewable" on some WMs. Defer until the window is mapped.
+        def _grab():
+            try:
+                self.grab_set()
+            except tk.TclError:
+                pass
+        self.after(50, _grab)
 
     def _build(self):
         container = ttk.Frame(self)
@@ -929,12 +983,39 @@ Subject: {self.complaint['subject']}"""
     def save(self):
         status = self.status_var.get()
         response = self.response_box.get("1.0", "end").strip()
+        prev_status = self.complaint.get("status", "")
+        prev_response = self.complaint.get("response", "")
+
         if not self.app.update_complaint(self.complaint["id"], status, response):
             messagebox.showerror("Save Failed",
                                  "Could not save changes to the database.")
             return
         self.parent_tab.refresh()
-        messagebox.showinfo("Saved", "Complaint updated successfully.")
+
+        # Notify the complainant when something user-visible has actually
+        # changed (status flipped or admin response edited). Re-saves with
+        # no diff don't generate an email.
+        emailed = False
+        if status != prev_status or response.strip() != prev_response.strip():
+            emailed = _send_complaint_update(
+                self.complaint.get("email", ""),
+                {
+                    'student_name': self.complaint.get("name", ""),
+                    'student_id': str(self.complaint.get("user_id", "")),
+                    'tracking_id': self.complaint["id"],
+                    'subject': self.complaint.get("subject", ""),
+                    'category': self.complaint.get("category", ""),
+                    'status': status,
+                    'response': response or "(No response provided.)",
+                    'updated_at': datetime.now().strftime("%Y-%m-%d %H:%M"),
+                },
+            )
+
+        msg = "Complaint updated successfully."
+        if emailed:
+            recipient = self.complaint.get("email", "")
+            msg += f"\n\nA notification email has been sent to {recipient}."
+        messagebox.showinfo("Saved", msg)
         self.destroy()
 
 

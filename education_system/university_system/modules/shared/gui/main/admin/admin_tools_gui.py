@@ -2277,11 +2277,14 @@ def show_department_isolation(self):
             # Module counts (try modules table)
             module_counts = {}
             try:
+                # Fall back to module_type when department is unset, so the
+                # Data Scope tab shows non-zero counts on fresh deployments
+                # before any module-to-department curation has happened.
                 mcursor = conn.execute("""
-                    SELECT department, COUNT(*) as cnt
+                    SELECT COALESCE(department, module_type) AS department, COUNT(*) as cnt
                     FROM modules
-                    WHERE department IS NOT NULL
-                    GROUP BY department
+                    WHERE COALESCE(department, module_type) IS NOT NULL
+                    GROUP BY COALESCE(department, module_type)
                 """)
                 module_counts = {r['department'] if isinstance(r, dict) else r[0]: r['cnt'] if isinstance(r, dict) else r[1]
                                 for r in mcursor.fetchall()}

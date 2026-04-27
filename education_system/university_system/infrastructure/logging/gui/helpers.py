@@ -117,6 +117,36 @@ def initialize_database():
             )
         ''')
 
+        # Heal older deployments where `logs` and `alerts` already exist with
+        # a different (audit-style) schema, and CREATE TABLE IF NOT EXISTS
+        # left them as-is. Add any missing columns this GUI needs.
+        for table, missing_cols in (
+            ("logs", [
+                ("username", "TEXT"),
+                ("status", "TEXT"),
+                ("module", "TEXT"),
+                ("message", "TEXT"),
+            ]),
+            ("alerts", [
+                ("severity", "TEXT DEFAULT 'medium'"),
+                ("triggered_at", "DATETIME"),
+                ("acknowledged", "BOOLEAN DEFAULT 0"),
+                ("resolved", "BOOLEAN DEFAULT 0"),
+                ("resolved_at", "DATETIME"),
+                ("user_id", "TEXT"),
+                ("metadata", "TEXT"),
+            ]),
+        ):
+            existing = {row[1] for row in cursor.execute(
+                f"PRAGMA table_info({table})"
+            ).fetchall()}
+            for col, ddl in missing_cols:
+                if col not in existing:
+                    try:
+                        cursor.execute(f"ALTER TABLE {table} ADD COLUMN {col} {ddl}")
+                    except Exception:
+                        pass
+
         # Create saved_searches table
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS saved_searches (

@@ -92,7 +92,7 @@ def create_unified_database():
     CREATE TABLE IF NOT EXISTS student_modules (
         enrollment_id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id TEXT NOT NULL,
-        module_id TEXT NOT NULL,
+        module_id TEXT,
         module_code TEXT,
         module_name TEXT,
         module_type TEXT DEFAULT 'Standard',
@@ -105,7 +105,7 @@ def create_unified_database():
         year TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (student_id) REFERENCES students (student_id),
-        FOREIGN KEY (module_id) REFERENCES modules (module_id)
+        FOREIGN KEY (module_code) REFERENCES modules (module_code)
     )
     ''')
 

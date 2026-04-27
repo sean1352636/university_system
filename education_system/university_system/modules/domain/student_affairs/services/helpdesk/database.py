@@ -100,9 +100,9 @@ def init_helpdesk_db() -> bool:
         )
         ''')
 
-        # Create ticket_templates table
+        # Create helpdesk_ticket_templates table
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ticket_templates (
+        CREATE TABLE IF NOT EXISTS helpdesk_ticket_templates (
             template_id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
             description TEXT,
@@ -323,7 +323,7 @@ def init_default_data():
                 ''', sla + (timestamp,))
 
         # Insert default ticket templates
-        cursor.execute("SELECT COUNT(*) FROM ticket_templates")
+        cursor.execute("SELECT COUNT(*) FROM helpdesk_ticket_templates")
         if cursor.fetchone()[0] == 0:
             default_templates = [
                 ('Password Reset Request', 'Template for password reset requests', 'Account Access',
@@ -342,7 +342,7 @@ def init_default_data():
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             for template in default_templates:
                 cursor.execute('''
-                INSERT INTO ticket_templates
+                INSERT INTO helpdesk_ticket_templates
                 (name, description, category, subject_template, message_template,
                  default_priority, default_impact, default_urgency, form_fields, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

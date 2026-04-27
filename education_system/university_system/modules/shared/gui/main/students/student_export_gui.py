@@ -383,9 +383,11 @@ def export_individual_student_data(self, student_id, first_name, last_name):
             cursor.execute("SELECT * FROM students WHERE student_id = ?", (student_id,))
             data_sections['student_info'] = cursor.fetchone()
 
-            # 2. Enrolled Modules
+            # 2. Enrolled Modules. modules has only code/name/type — credits
+            # come from student_modules.credits_earned per enrollment.
             cursor.execute("""
-                SELECT sm.module_code, m.module_name, m.credits, sm.enrollment_date, sm.status
+                SELECT sm.module_code, m.module_name, sm.credits_earned,
+                       sm.enrollment_date, sm.status
                 FROM student_modules sm
                 LEFT JOIN modules m ON sm.module_code = m.module_code
                 WHERE sm.student_id = ?
@@ -428,10 +430,11 @@ def export_individual_student_data(self, student_id, first_name, last_name):
             # fall back to legacy `attendance` table for older deployments.
             try:
                 cursor.execute("""
-                    SELECT date, module_code, status, notes AS reason
-                    FROM attendance_records
-                    WHERE student_id = ?
-                    ORDER BY date DESC, recorded_at DESC
+                    SELECT s.session_date, s.module_code, r.status, r.notes AS reason
+                    FROM attendance_records r
+                    JOIN attendance_sessions s ON r.session_id = s.session_id
+                    WHERE r.student_id = ?
+                    ORDER BY s.session_date DESC, r.check_in_time DESC
                 """, (student_id,))
                 data_sections['attendance'] = cursor.fetchall()
             except Exception:
@@ -439,10 +442,10 @@ def export_individual_student_data(self, student_id, first_name, last_name):
             if not data_sections['attendance']:
                 try:
                     cursor.execute("""
-                        SELECT date, module_code, status, reason
+                        SELECT class_date, module_id, status, notes AS reason
                         FROM attendance
                         WHERE student_id = ?
-                        ORDER BY date DESC
+                        ORDER BY class_date DESC
                     """, (student_id,))
                     data_sections['attendance'] = cursor.fetchall()
                 except Exception:

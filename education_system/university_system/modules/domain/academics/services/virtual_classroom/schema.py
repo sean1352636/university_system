@@ -167,11 +167,26 @@ CREATE INDEX IF NOT EXISTS idx_virtual_chat_session
 """
 
 def create_virtual_classroom_tables(conn):
-    """Create all virtual classroom tables"""
+    """Create all virtual classroom tables.
+
+    Statements are run individually (not via executescript) so a single
+    statement failing — e.g. an index referencing a column that diverged
+    in an existing table on an older deployment — doesn't abort the rest.
+    """
+    import re
     cursor = conn.cursor()
-    cursor.executescript(VIRTUAL_CLASSROOM_SCHEMA)
+    statements = [s.strip() for s in re.split(r";\s*\n", VIRTUAL_CLASSROOM_SCHEMA) if s.strip()]
+    skipped = 0
+    for stmt in statements:
+        try:
+            cursor.execute(stmt)
+        except Exception:
+            skipped += 1
     conn.commit()
-    print("Virtual Classroom tables created successfully")
+    if skipped:
+        print(f"Virtual Classroom tables created (skipped {skipped} statement(s) due to schema drift)")
+    else:
+        print("Virtual Classroom tables created successfully")
 
 if __name__ == "__main__":
     from education_system.university_system.infrastructure.database.db import sqlite3
