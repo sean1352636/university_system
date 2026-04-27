@@ -1,117 +1,234 @@
 """
 University Course Evaluation System
-A GUI application for students to evaluate courses and instructors.
-Built with Tkinter and SQLite for data persistence.
+
+Students rate courses across 5 fixed criteria
+(teaching quality, course content, workload, communication, overall).
+
+Auth: piggybacks on the main university auth — when launched as a
+subprocess from the unified main GUI, EDU_AUTH_* env vars carry the
+logged-in user's identity. The Student ID is auto-filled from that
+identity; there is no in-app login screen.
+
+Persistence: rows live in the central university `student_records.db`.
+The course catalog is read from the existing `modules` table; individual
+responses are stored in the existing `evaluations` table — its column
+set (teaching_quality / course_content / workload / communication /
+overall / comments / submitted_at) matches the criteria here exactly.
+
+Note on `evaluations.course_id` — the column is declared INTEGER for a
+legacy `courses` table that has since been replaced by `modules`. We
+store the textual `module_code` in that column; SQLite's flexible
+typing keeps the value as TEXT and equality comparisons against the
+same string still match. This file is the only reader/writer of the
+table, so the convention is local to this module.
 """
 
-import tkinter as tk
-from tkinter import ttk, messagebox
+import logging
+import os
 import sqlite3
+import sys
+import tkinter as tk
 from datetime import datetime
+from tkinter import ttk, messagebox
+
+logger = logging.getLogger(__name__)
 
 
-# ---------- Database Setup ----------
+# When the main GUI launches us as a subprocess, the child Python is
+# invoked directly on this file's path with no PYTHONPATH set, so
+# `education_system` isn't importable. Walk up from this file until we
+# find the dir that contains the `education_system` package and put
+# that on sys.path. No-op when imported normally.
+if 'education_system' not in sys.modules:
+    _here = os.path.abspath(os.path.dirname(__file__))
+    while _here and not os.path.isdir(os.path.join(_here, 'education_system')):
+        _parent = os.path.dirname(_here)
+        if _parent == _here:
+            break
+        _here = _parent
+    if _here and _here not in sys.path:
+        sys.path.insert(0, _here)
+
+
+# ---------------------------------------------------------------------------
+# AUTH BOOTSTRAP
+# ---------------------------------------------------------------------------
+def _get_current_user():
+    """Resolve the logged-in user dict from EDU_AUTH_* env vars."""
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+
+    if user_id or username:
+        return {
+            'id': user_id or None,
+            'user_id': user_id or None,
+            'username': username,
+            'role': role,
+            'email': email,
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            return ga.current_user
+    except Exception:
+        logger.debug("get_global_auth fallback failed", exc_info=True)
+    return None
+
+
+def _is_admin_user(user):
+    if not user:
+        return False
+    return (user.get('role') or '').lower() in ('admin', 'administrator', 'superadmin')
+
+
+def _resolve_student_identity(user):
+    """Return (display_name, student_id) for the logged-in user."""
+    if not user:
+        return '', ''
+    env_user_id = (user.get('user_id') or user.get('id') or '') or ''
+    username = user.get('username') or ''
+    full_name = ''
+    resolved_sid = ''
+    try:
+        from education_system.university_system.infrastructure.database.db import get_connection
+        conn = get_connection()
+        cur = conn.cursor()
+        row = None
+        if env_user_id:
+            row = cur.execute(
+                "SELECT s.student_id, s.first_name, s.last_name "
+                "FROM users u LEFT JOIN students s ON s.student_id = u.student_id "
+                "WHERE u.id = ?", (env_user_id,)).fetchone()
+        if not row and username:
+            row = cur.execute(
+                "SELECT s.student_id, s.first_name, s.last_name "
+                "FROM users u LEFT JOIN students s ON s.student_id = u.student_id "
+                "WHERE u.username = ?", (username,)).fetchone()
+        if not row and env_user_id:
+            row = cur.execute(
+                "SELECT student_id, first_name, last_name FROM students WHERE student_id = ?",
+                (env_user_id,)).fetchone()
+        conn.close()
+        if row:
+            sid, first, last = row
+            resolved_sid = str(sid or '')
+            full_name = ' '.join(p for p in (first or '', last or '') if p).strip()
+    except Exception:
+        logger.debug("Student identity lookup failed", exc_info=True)
+
+    if not full_name:
+        full_name = username or env_user_id or 'Unknown User'
+    return full_name, resolved_sid or env_user_id or username or ''
+
+
+# ---------------------------------------------------------------------------
+# DATA LAYER
+# ---------------------------------------------------------------------------
 class Database:
-    def __init__(self, db_name="course_evaluations.db"):
-        self.conn = sqlite3.connect(db_name)
-        self.cursor = self.conn.cursor()
-        self.create_tables()
-        self.seed_data()
+    """Thin wrapper around the central student_records.db.
 
-    def create_tables(self):
-        self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS courses (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                code TEXT UNIQUE NOT NULL,
-                name TEXT NOT NULL,
-                instructor TEXT NOT NULL,
-                department TEXT NOT NULL
-            )
-        """)
-        self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS evaluations (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                course_id INTEGER NOT NULL,
-                student_id TEXT NOT NULL,
-                teaching_quality INTEGER NOT NULL,
-                course_content INTEGER NOT NULL,
-                workload INTEGER NOT NULL,
-                communication INTEGER NOT NULL,
-                overall INTEGER NOT NULL,
-                comments TEXT,
-                submitted_at TEXT NOT NULL,
-                FOREIGN KEY (course_id) REFERENCES courses(id)
-            )
-        """)
-        self.conn.commit()
+    Reuses the existing `modules` table for the catalog and the existing
+    `evaluations` table for response storage — no schema changes.
+    """
 
-    def seed_data(self):
-        self.cursor.execute("SELECT COUNT(*) FROM courses")
-        if self.cursor.fetchone()[0] == 0:
-            sample = [
-                ("CS101", "Introduction to Computer Science", "Dr. Sarah Chen", "Computer Science"),
-                ("CS202", "Data Structures and Algorithms", "Prof. Michael Rodriguez", "Computer Science"),
-                ("MATH201", "Linear Algebra", "Dr. Emily Watson", "Mathematics"),
-                ("PHYS101", "Classical Mechanics", "Prof. David Kim", "Physics"),
-                ("ENG105", "Academic Writing", "Dr. Jessica Brown", "English"),
-                ("BUS220", "Principles of Management", "Prof. Robert Taylor", "Business"),
-            ]
-            self.cursor.executemany(
-                "INSERT INTO courses (code, name, instructor, department) VALUES (?, ?, ?, ?)",
-                sample,
-            )
-            self.conn.commit()
+    def __init__(self):
+        try:
+            from education_system.university_system.infrastructure.database.db import get_connection
+            self._connect = get_connection
+        except Exception:
+            logger.exception("Could not import shared get_connection")
+            raise
 
     def get_courses(self):
-        self.cursor.execute("SELECT id, code, name, instructor, department FROM courses ORDER BY code")
-        return self.cursor.fetchall()
-
-    def get_course_by_id(self, course_id):
-        self.cursor.execute("SELECT id, code, name, instructor, department FROM courses WHERE id=?", (course_id,))
-        return self.cursor.fetchone()
+        """Return [(module_code, module_code, module_name, instructor_or_blank,
+        department_or_blank)] — shape mirrors what the UI expected from
+        the legacy local `courses` table.
+        """
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT module_code, module_name, "
+                "       COALESCE(instructor, ''), "
+                "       COALESCE(department, '') "
+                "FROM modules WHERE COALESCE(is_active, 1) = 1 "
+                "ORDER BY module_code"
+            ).fetchall()
+        finally:
+            conn.close()
+        # Repeat module_code as both the "id" and the "code" so existing
+        # call sites that index [0] for id and [1] for code still work.
+        return [(code, code, name, instr, dept)
+                for code, name, instr, dept in rows]
 
     def submit_evaluation(self, data):
-        self.cursor.execute("""
-            INSERT INTO evaluations
-            (course_id, student_id, teaching_quality, course_content,
-             workload, communication, overall, comments, submitted_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, data)
-        self.conn.commit()
+        """Insert an evaluation row.
+
+        `data` is the 9-tuple expected by the existing `evaluations`
+        schema: (course_id, student_id, teaching_quality, course_content,
+        workload, communication, overall, comments, submitted_at).
+
+        `evaluations.course_id` has a FK to `courses.id`, so before
+        inserting we mirror the module into `courses` (idempotent —
+        `courses.id` is the PK, INSERT OR IGNORE handles the dedup).
+        We also fill the NOT NULL columns (`code`, `name`, `date_added`).
+        """
+        conn = self._connect()
+        try:
+            module_code = data[0]
+            row = conn.execute(
+                "SELECT module_name FROM modules WHERE module_code = ?",
+                (module_code,)).fetchone()
+            module_name = (row[0] if row else module_code) or module_code
+            conn.execute(
+                "INSERT OR IGNORE INTO courses (id, code, name, date_added) "
+                "VALUES (?, ?, ?, ?)",
+                (module_code, module_code, module_name,
+                 datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+            conn.execute("""
+                INSERT INTO evaluations
+                (course_id, student_id, teaching_quality, course_content,
+                 workload, communication, overall, comments, submitted_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, data)
+            conn.commit()
+            logger.info("Submitted course evaluation course=%s student=%s",
+                        data[0], data[1])
+        finally:
+            conn.close()
 
     def get_evaluation_stats(self, course_id):
-        self.cursor.execute("""
-            SELECT COUNT(*),
-                   AVG(teaching_quality), AVG(course_content),
-                   AVG(workload), AVG(communication), AVG(overall)
-            FROM evaluations WHERE course_id=?
-        """, (course_id,))
-        return self.cursor.fetchone()
+        conn = self._connect()
+        try:
+            return conn.execute("""
+                SELECT COUNT(*),
+                       AVG(teaching_quality), AVG(course_content),
+                       AVG(workload), AVG(communication), AVG(overall)
+                FROM evaluations WHERE course_id=?
+            """, (course_id,)).fetchone()
+        finally:
+            conn.close()
 
     def get_evaluations(self, course_id):
-        self.cursor.execute("""
-            SELECT student_id, teaching_quality, course_content, workload,
-                   communication, overall, comments, submitted_at
-            FROM evaluations WHERE course_id=? ORDER BY submitted_at DESC
-        """, (course_id,))
-        return self.cursor.fetchall()
-
-    def add_course(self, code, name, instructor, department):
+        conn = self._connect()
         try:
-            self.cursor.execute(
-                "INSERT INTO courses (code, name, instructor, department) VALUES (?, ?, ?, ?)",
-                (code, name, instructor, department),
-            )
-            self.conn.commit()
-            return True
-        except sqlite3.IntegrityError:
-            return False
-
-    def close(self):
-        self.conn.close()
+            return conn.execute("""
+                SELECT student_id, teaching_quality, course_content, workload,
+                       communication, overall, comments, submitted_at
+                FROM evaluations WHERE course_id=? ORDER BY submitted_at DESC
+            """, (course_id,)).fetchall()
+        finally:
+            conn.close()
 
 
-# ---------- Main Application ----------
+# ---------------------------------------------------------------------------
+# UI
+# ---------------------------------------------------------------------------
 class CourseEvaluationApp:
     def __init__(self, root):
         self.root = root
@@ -119,23 +236,45 @@ class CourseEvaluationApp:
         self.root.geometry("900x650")
         self.root.configure(bg="#f0f4f8")
 
+        self.user = _get_current_user()
+        self.is_admin = _is_admin_user(self.user)
+        self.full_name, self.student_id = _resolve_student_identity(self.user)
         self.db = Database()
-        self.current_ratings = {}
 
         self.setup_styles()
         self.create_header()
+
+        if not self.user:
+            self._show_no_auth()
+            return
+
+        logger.info("Course Evaluation starting user=%s admin=%s",
+                    self.full_name, self.is_admin)
         self.create_notebook()
 
-        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+    def _show_no_auth(self):
+        body = ttk.Frame(self.root)
+        body.pack(fill="both", expand=True, padx=40, pady=60)
+        ttk.Label(body, text="🔒 Authentication Required",
+                  style="Header.TLabel",
+                  font=("Arial", 16, "bold")).pack(pady=(40, 10))
+        ttk.Label(body,
+                  text="Please launch this module from the main\n"
+                       "University System after signing in.",
+                  justify="center").pack(pady=10)
+        ttk.Button(body, text="Close",
+                   command=self.root.destroy).pack(pady=20)
 
     def setup_styles(self):
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("TNotebook", background="#f0f4f8", borderwidth=0)
-        style.configure("TNotebook.Tab", padding=[20, 10], font=("Arial", 10, "bold"))
+        style.configure("TNotebook.Tab", padding=[20, 10],
+                        font=("Arial", 10, "bold"))
         style.configure("TFrame", background="#f0f4f8")
         style.configure("TLabel", background="#f0f4f8", font=("Arial", 10))
-        style.configure("Header.TLabel", font=("Arial", 11, "bold"), foreground="#1a365d")
+        style.configure("Header.TLabel", font=("Arial", 11, "bold"),
+                        foreground="#1a365d")
         style.configure("TButton", font=("Arial", 10, "bold"), padding=8)
         style.configure("Treeview", font=("Arial", 9), rowheight=25)
         style.configure("Treeview.Heading", font=("Arial", 10, "bold"))
@@ -144,10 +283,14 @@ class CourseEvaluationApp:
         header = tk.Frame(self.root, bg="#1a365d", height=70)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(
-            header, text="🎓 University Course Evaluation System",
-            font=("Arial", 18, "bold"), bg="#1a365d", fg="white"
-        ).pack(pady=18)
+        tk.Label(header, text="🎓 University Course Evaluation System",
+                 font=("Arial", 18, "bold"), bg="#1a365d", fg="white"
+                 ).pack(side="left", padx=20, pady=18)
+        if self.user:
+            tk.Label(header,
+                     text=f"👤 {self.full_name}  ({self.student_id})",
+                     font=("Arial", 10), bg="#1a365d", fg="white"
+                     ).pack(side="right", padx=20, pady=22)
 
     def create_notebook(self):
         self.notebook = ttk.Notebook(self.root)
@@ -155,34 +298,40 @@ class CourseEvaluationApp:
 
         self.eval_frame = ttk.Frame(self.notebook)
         self.results_frame = ttk.Frame(self.notebook)
-        self.admin_frame = ttk.Frame(self.notebook)
 
         self.notebook.add(self.eval_frame, text="  Submit Evaluation  ")
         self.notebook.add(self.results_frame, text="  View Results  ")
-        self.notebook.add(self.admin_frame, text="  Manage Courses  ")
 
         self.build_eval_tab()
         self.build_results_tab()
-        self.build_admin_tab()
 
     # ---------- Evaluation Tab ----------
     def build_eval_tab(self):
         container = ttk.Frame(self.eval_frame)
         container.pack(fill="both", expand=True, padx=20, pady=20)
 
-        # Student ID
-        ttk.Label(container, text="Student ID:", style="Header.TLabel").grid(row=0, column=0, sticky="w", pady=5)
-        self.student_id_entry = ttk.Entry(container, width=30, font=("Arial", 10))
-        self.student_id_entry.grid(row=0, column=1, sticky="w", pady=5, padx=10)
+        # Identity row — read-only, sourced from the logged-in user.
+        ttk.Label(container, text="Submitting as:",
+                  style="Header.TLabel").grid(row=0, column=0, sticky="w", pady=5)
+        ttk.Label(container,
+                  text=f"{self.full_name}  ({self.student_id})"
+                       if self.student_id
+                       else self.full_name,
+                  font=("Arial", 10)).grid(row=0, column=1, sticky="w",
+                                            pady=5, padx=10)
 
         # Course selection
-        ttk.Label(container, text="Select Course:", style="Header.TLabel").grid(row=1, column=0, sticky="w", pady=5)
-        self.course_combo = ttk.Combobox(container, width=50, font=("Arial", 10), state="readonly")
+        ttk.Label(container, text="Select Course:",
+                  style="Header.TLabel").grid(row=1, column=0, sticky="w", pady=5)
+        self.course_combo = ttk.Combobox(container, width=50,
+                                          font=("Arial", 10), state="readonly")
         self.course_combo.grid(row=1, column=1, sticky="w", pady=5, padx=10)
         self.refresh_course_combo()
 
         # Rating section
-        ratings_frame = ttk.LabelFrame(container, text=" Rate the Course (1 = Poor, 5 = Excellent) ", padding=15)
+        ratings_frame = ttk.LabelFrame(
+            container, text=" Rate the Course (1 = Poor, 5 = Excellent) ",
+            padding=15)
         ratings_frame.grid(row=2, column=0, columnspan=2, sticky="ew", pady=15)
 
         self.rating_vars = {}
@@ -194,59 +343,61 @@ class CourseEvaluationApp:
             ("overall", "Overall Satisfaction"),
         ]
         for i, (key, label) in enumerate(categories):
-            ttk.Label(ratings_frame, text=label + ":").grid(row=i, column=0, sticky="w", pady=6)
+            ttk.Label(ratings_frame, text=label + ":").grid(
+                row=i, column=0, sticky="w", pady=6)
             var = tk.IntVar(value=3)
             self.rating_vars[key] = var
             scale_frame = ttk.Frame(ratings_frame)
             scale_frame.grid(row=i, column=1, sticky="w", padx=20)
             for val in range(1, 6):
-                ttk.Radiobutton(scale_frame, text=str(val), variable=var, value=val).pack(side="left", padx=5)
+                ttk.Radiobutton(scale_frame, text=str(val), variable=var,
+                                value=val).pack(side="left", padx=5)
 
-        # Comments
-        ttk.Label(container, text="Comments (optional):", style="Header.TLabel").grid(row=3, column=0, sticky="nw", pady=5)
-        self.comments_text = tk.Text(container, width=55, height=5, font=("Arial", 10), wrap="word")
+        ttk.Label(container, text="Comments (optional):",
+                  style="Header.TLabel").grid(row=3, column=0, sticky="nw",
+                                                pady=5)
+        self.comments_text = tk.Text(container, width=55, height=5,
+                                     font=("Arial", 10), wrap="word")
         self.comments_text.grid(row=3, column=1, sticky="w", pady=5, padx=10)
 
-        # Buttons
         btn_frame = ttk.Frame(container)
         btn_frame.grid(row=4, column=0, columnspan=2, pady=20)
-        submit_btn = tk.Button(
-            btn_frame, text="Submit Evaluation", command=self.submit_evaluation,
-            bg="#2c7a3e", fg="white", font=("Arial", 11, "bold"),
-            padx=25, pady=8, cursor="hand2", relief="flat"
-        )
-        submit_btn.pack(side="left", padx=10)
-
-        clear_btn = tk.Button(
-            btn_frame, text="Clear Form", command=self.clear_form,
-            bg="#718096", fg="white", font=("Arial", 11, "bold"),
-            padx=25, pady=8, cursor="hand2", relief="flat"
-        )
-        clear_btn.pack(side="left", padx=10)
+        tk.Button(btn_frame, text="Submit Evaluation",
+                  command=self.submit_evaluation,
+                  bg="#2c7a3e", fg="white", font=("Arial", 11, "bold"),
+                  padx=25, pady=8, cursor="hand2", relief="flat"
+                  ).pack(side="left", padx=10)
+        tk.Button(btn_frame, text="Clear Form", command=self.clear_form,
+                  bg="#718096", fg="white", font=("Arial", 11, "bold"),
+                  padx=25, pady=8, cursor="hand2", relief="flat"
+                  ).pack(side="left", padx=10)
 
     def refresh_course_combo(self):
         courses = self.db.get_courses()
-        self.course_map = {f"{c[1]} - {c[2]} ({c[3]})": c[0] for c in courses}
+        self.course_map = {f"{c[1]} - {c[2]}"
+                            + (f" ({c[3]})" if c[3] else ""): c[0]
+                           for c in courses}
         self.course_combo["values"] = list(self.course_map.keys())
         if courses:
             self.course_combo.current(0)
 
     def submit_evaluation(self):
-        student_id = self.student_id_entry.get().strip()
         course_selection = self.course_combo.get()
-
-        if not student_id:
-            messagebox.showwarning("Missing Info", "Please enter your Student ID.")
-            return
         if not course_selection:
             messagebox.showwarning("Missing Info", "Please select a course.")
+            return
+        if not self.student_id:
+            messagebox.showerror(
+                "Identity Error",
+                "Could not determine your student ID from the logged-in user. "
+                "Please relaunch from the main system.")
             return
 
         course_id = self.course_map[course_selection]
         comments = self.comments_text.get("1.0", "end-1c").strip()
 
         data = (
-            course_id, student_id,
+            course_id, self.student_id,
             self.rating_vars["teaching_quality"].get(),
             self.rating_vars["course_content"].get(),
             self.rating_vars["workload"].get(),
@@ -255,13 +406,17 @@ class CourseEvaluationApp:
             comments,
             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         )
-        self.db.submit_evaluation(data)
-        messagebox.showinfo("Success", "Thank you! Your evaluation has been submitted.")
+        try:
+            self.db.submit_evaluation(data)
+        except sqlite3.Error as e:
+            messagebox.showerror("Save Error", f"Could not save evaluation: {e}")
+            return
+        messagebox.showinfo("Success",
+                            "Thank you! Your evaluation has been submitted.")
         self.clear_form()
         self.refresh_results()
 
     def clear_form(self):
-        self.student_id_entry.delete(0, "end")
         self.comments_text.delete("1.0", "end")
         for var in self.rating_vars.values():
             var.set(3)
@@ -273,24 +428,32 @@ class CourseEvaluationApp:
 
         top = ttk.Frame(container)
         top.pack(fill="x", pady=5)
-        ttk.Label(top, text="Select Course:", style="Header.TLabel").pack(side="left")
-        self.results_combo = ttk.Combobox(top, width=50, font=("Arial", 10), state="readonly")
+        ttk.Label(top, text="Select Course:",
+                  style="Header.TLabel").pack(side="left")
+        self.results_combo = ttk.Combobox(top, width=50,
+                                           font=("Arial", 10), state="readonly")
         self.results_combo.pack(side="left", padx=10)
-        self.results_combo.bind("<<ComboboxSelected>>", lambda e: self.show_course_results())
-        ttk.Button(top, text="Refresh", command=self.refresh_results).pack(side="left", padx=5)
+        self.results_combo.bind("<<ComboboxSelected>>",
+                                lambda e: self.show_course_results())
+        ttk.Button(top, text="Refresh",
+                   command=self.refresh_results).pack(side="left", padx=5)
 
-        # Stats display
-        self.stats_frame = ttk.LabelFrame(container, text=" Statistics ", padding=15)
+        self.stats_frame = ttk.LabelFrame(container, text=" Statistics ",
+                                          padding=15)
         self.stats_frame.pack(fill="x", pady=10)
-        self.stats_label = ttk.Label(self.stats_frame, text="Select a course to view statistics.", font=("Arial", 10))
+        self.stats_label = ttk.Label(self.stats_frame,
+                                     text="Select a course to view statistics.",
+                                     font=("Arial", 10))
         self.stats_label.pack(anchor="w")
 
-        # Evaluations list
-        list_frame = ttk.LabelFrame(container, text=" Individual Evaluations ", padding=10)
+        list_frame = ttk.LabelFrame(container,
+                                    text=" Individual Evaluations ", padding=10)
         list_frame.pack(fill="both", expand=True, pady=5)
 
-        columns = ("student", "teaching", "content", "workload", "comm", "overall", "date")
-        self.tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=10)
+        columns = ("student", "teaching", "content", "workload", "comm",
+                   "overall", "date")
+        self.tree = ttk.Treeview(list_frame, columns=columns,
+                                 show="headings", height=10)
         headings = [
             ("student", "Student ID", 100),
             ("teaching", "Teaching", 80),
@@ -304,14 +467,17 @@ class CourseEvaluationApp:
             self.tree.heading(col, text=label)
             self.tree.column(col, width=width, anchor="center")
 
-        scroll = ttk.Scrollbar(list_frame, orient="vertical", command=self.tree.yview)
+        scroll = ttk.Scrollbar(list_frame, orient="vertical",
+                                command=self.tree.yview)
         self.tree.configure(yscrollcommand=scroll.set)
         self.tree.pack(side="left", fill="both", expand=True)
         scroll.pack(side="right", fill="y")
         self.tree.bind("<<TreeviewSelect>>", self.show_comment)
 
-        # Comment display
-        self.comment_label = ttk.Label(container, text="Click a row to view comments.", font=("Arial", 9, "italic"), wraplength=800)
+        self.comment_label = ttk.Label(container,
+                                       text="Click a row to view comments.",
+                                       font=("Arial", 9, "italic"),
+                                       wraplength=800)
         self.comment_label.pack(fill="x", pady=5)
 
         self.refresh_results()
@@ -320,9 +486,9 @@ class CourseEvaluationApp:
         courses = self.db.get_courses()
         self.results_map = {f"{c[1]} - {c[2]}": c[0] for c in courses}
         self.results_combo["values"] = list(self.results_map.keys())
-        if courses:
-            if not self.results_combo.get():
-                self.results_combo.current(0)
+        if courses and not self.results_combo.get():
+            self.results_combo.current(0)
+        if self.results_combo.get():
             self.show_course_results()
 
     def show_course_results(self):
@@ -334,7 +500,8 @@ class CourseEvaluationApp:
         stats = self.db.get_evaluation_stats(course_id)
         count = stats[0]
         if count == 0:
-            self.stats_label.config(text="No evaluations submitted yet for this course.")
+            self.stats_label.config(
+                text="No evaluations submitted yet for this course.")
         else:
             text = (
                 f"Total Evaluations: {count}\n"
@@ -351,7 +518,9 @@ class CourseEvaluationApp:
 
         self.evaluations_cache = self.db.get_evaluations(course_id)
         for ev in self.evaluations_cache:
-            self.tree.insert("", "end", values=(ev[0], ev[1], ev[2], ev[3], ev[4], ev[5], ev[7]))
+            self.tree.insert("", "end",
+                             values=(ev[0], ev[1], ev[2], ev[3],
+                                     ev[4], ev[5], ev[7]))
 
     def show_comment(self, event):
         selection = self.tree.selection()
@@ -364,78 +533,6 @@ class CourseEvaluationApp:
                 self.comment_label.config(text=f"💬 Comment: {comment}")
             else:
                 self.comment_label.config(text="💬 No comment provided.")
-
-    # ---------- Admin Tab ----------
-    def build_admin_tab(self):
-        container = ttk.Frame(self.admin_frame)
-        container.pack(fill="both", expand=True, padx=20, pady=20)
-
-        # Add course form
-        form = ttk.LabelFrame(container, text=" Add New Course ", padding=15)
-        form.pack(fill="x", pady=5)
-
-        fields = [("Course Code:", "code"), ("Course Name:", "name"),
-                  ("Instructor:", "instructor"), ("Department:", "department")]
-        self.admin_entries = {}
-        for i, (label, key) in enumerate(fields):
-            ttk.Label(form, text=label).grid(row=i, column=0, sticky="w", pady=5)
-            entry = ttk.Entry(form, width=45, font=("Arial", 10))
-            entry.grid(row=i, column=1, sticky="w", pady=5, padx=10)
-            self.admin_entries[key] = entry
-
-        tk.Button(
-            form, text="Add Course", command=self.add_course,
-            bg="#1a365d", fg="white", font=("Arial", 10, "bold"),
-            padx=20, pady=6, cursor="hand2", relief="flat"
-        ).grid(row=4, column=1, sticky="w", pady=10, padx=10)
-
-        # Existing courses list
-        list_frame = ttk.LabelFrame(container, text=" Existing Courses ", padding=10)
-        list_frame.pack(fill="both", expand=True, pady=10)
-
-        columns = ("code", "name", "instructor", "department")
-        self.admin_tree = ttk.Treeview(list_frame, columns=columns, show="headings", height=10)
-        for col, label, width in [("code", "Code", 100), ("name", "Course Name", 280),
-                                    ("instructor", "Instructor", 200), ("department", "Department", 180)]:
-            self.admin_tree.heading(col, text=label)
-            self.admin_tree.column(col, width=width)
-
-        scroll = ttk.Scrollbar(list_frame, orient="vertical", command=self.admin_tree.yview)
-        self.admin_tree.configure(yscrollcommand=scroll.set)
-        self.admin_tree.pack(side="left", fill="both", expand=True)
-        scroll.pack(side="right", fill="y")
-
-        self.refresh_admin_list()
-
-    def add_course(self):
-        code = self.admin_entries["code"].get().strip().upper()
-        name = self.admin_entries["name"].get().strip()
-        instructor = self.admin_entries["instructor"].get().strip()
-        department = self.admin_entries["department"].get().strip()
-
-        if not all([code, name, instructor, department]):
-            messagebox.showwarning("Missing Info", "Please fill in all fields.")
-            return
-
-        if self.db.add_course(code, name, instructor, department):
-            messagebox.showinfo("Success", f"Course {code} added successfully.")
-            for entry in self.admin_entries.values():
-                entry.delete(0, "end")
-            self.refresh_admin_list()
-            self.refresh_course_combo()
-            self.refresh_results()
-        else:
-            messagebox.showerror("Error", f"Course code '{code}' already exists.")
-
-    def refresh_admin_list(self):
-        for item in self.admin_tree.get_children():
-            self.admin_tree.delete(item)
-        for course in self.db.get_courses():
-            self.admin_tree.insert("", "end", values=(course[1], course[2], course[3], course[4]))
-
-    def on_close(self):
-        self.db.close()
-        self.root.destroy()
 
 
 if __name__ == "__main__":

@@ -300,6 +300,14 @@ def create_navigation_panel(self, parent):
         ('ai_study', _t("nav.buttons.ai_study"), self.show_ai_study_gui),
         ('study_matching_gui', _t("nav.buttons.study_matching"), self.show_study_matching_gui),
         ('office_hours', _t("nav.buttons.office_hours"), self.show_office_hours_gui),
+        # Evaluation tools — moved here from "New Features" so they sit
+        # alongside the rest of the academic-management workflow.
+        ('new_feature_course_evaluation_system', 'Course Evaluation',
+            self.show_new_feature_course_evaluation_system),
+        ('new_feature_module_evaluation_portal', 'Module Evaluation',
+            self.show_new_feature_module_evaluation_portal),
+        ('new_feature_lecturer_evaluation', 'Lecturer Evaluation',
+            self.show_new_feature_lecturer_evaluation),
         ('study_recommendations', 'Study Recommendations', self.show_study_recommendations_gui),
     ]
     if VIRTUAL_CLASSROOM_AVAILABLE:
@@ -646,12 +654,9 @@ def create_navigation_panel(self, parent):
     new_features_buttons_data = [
         # Complaints Portal moved to "Communication" — kept out of
         # "New Features" since it's a permanent grievance channel.
-        ('new_feature_course_evaluation_system','Course Evaluation',
-            self.show_new_feature_course_evaluation_system),
-        ('new_feature_lecturer_evaluation',     'Lecturer Evaluation',
-            self.show_new_feature_lecturer_evaluation),
-        ('new_feature_module_evaluation_portal','Module Evaluation',
-            self.show_new_feature_module_evaluation_portal),
+        # Course / Module / Lecturer Evaluation moved to "Academic
+        # Management" — they belong with course_management and
+        # grade_tracking rather than this standalone-apps bucket.
         # Disciplinary Portal moved to "Family & Legal" — kept out of
         # "New Features" since it's a permanent admin tool.
         ('new_feature_risk_management',         'Risk Management',

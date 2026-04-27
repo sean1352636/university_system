@@ -17,6 +17,7 @@ shared email service using the `communications/complaint_received` JSON
 template. Best-effort — never blocks the submit.
 """
 
+import logging
 import os
 import sqlite3
 import sys
@@ -24,6 +25,8 @@ import tkinter as tk
 from datetime import datetime
 from tkinter import messagebox, scrolledtext, ttk
 import uuid
+
+logger = logging.getLogger(__name__)
 
 # When the main GUI launches us as a subprocess, the child Python is
 # invoked directly on this file's path with no PYTHONPATH set, so
@@ -82,9 +85,11 @@ def _bootstrap_auth_from_env():
             from education_system.university_system.infrastructure.shared_context import set_auth as _shared_set_auth
             _shared_set_auth(shim)
         except Exception:
-            pass
+            logger.debug("shared_context.set_auth unavailable", exc_info=True)
+        logger.info("Auth bootstrapped from env for user=%s role=%s",
+                    username or user_id, current_user['role'])
     except Exception:
-        pass
+        logger.warning("Failed to bootstrap auth from env", exc_info=True)
 
 
 _bootstrap_auth_from_env()
@@ -127,8 +132,16 @@ def _get_current_user():
         if ga and getattr(ga, 'current_user', None):
             return ga.current_user
     except Exception:
-        pass
+        logger.debug("get_global_auth fallback failed", exc_info=True)
     return None
+
+
+def _is_admin_user(user):
+    """Return True if `user` has an admin/superadmin role."""
+    if not user:
+        return False
+    role = (user.get('role') or '').lower()
+    return role in ('admin', 'administrator', 'superadmin')
 
 
 def _resolve_submitter_details(user):
@@ -237,6 +250,7 @@ def _connect():
         from education_system.university_system.infrastructure.database.db import get_connection
         return get_connection()
     except Exception:
+        logger.error("Could not open DB connection for complaints portal", exc_info=True)
         return None
 
 
@@ -247,7 +261,7 @@ def _ensure_schema(conn):
         conn.execute(_COMPLAINTS_SCHEMA)
         conn.commit()
     except sqlite3.Error:
-        pass
+        logger.exception("Failed to ensure complaints schema")
 
 
 def load_complaints():
@@ -263,8 +277,10 @@ def load_complaints():
             "FROM complaints ORDER BY submitted DESC"
         ).fetchall()
     except sqlite3.Error:
+        logger.exception("Failed to load complaints")
         rows = []
     conn.close()
+    logger.debug("Loaded %d complaints", len(rows))
     return [
         {
             'id': r[0], 'name': r[1], 'user_id': r[2], 'email': r[3],
@@ -298,8 +314,12 @@ def insert_complaint(complaint, submitted_by=None):
             ),
         )
         conn.commit()
+        logger.info("Inserted complaint id=%s category=%s priority=%s by=%s",
+                    complaint['id'], complaint.get('category'),
+                    complaint.get('priority'), submitted_by)
         return True
     except sqlite3.Error:
+        logger.exception("Failed to insert complaint id=%s", complaint.get('id'))
         return False
     finally:
         conn.close()
@@ -316,8 +336,10 @@ def update_complaint_row(complaint_id, status, response):
             (status, response, datetime.now().strftime('%Y-%m-%d %H:%M'),
              complaint_id))
         conn.commit()
+        logger.info("Updated complaint id=%s status=%s", complaint_id, status)
         return True
     except sqlite3.Error:
+        logger.exception("Failed to update complaint id=%s", complaint_id)
         return False
     finally:
         conn.close()
@@ -330,8 +352,10 @@ def delete_complaint_row(complaint_id):
     try:
         conn.execute("DELETE FROM complaints WHERE id = ?", (complaint_id,))
         conn.commit()
+        logger.info("Deleted complaint id=%s", complaint_id)
         return True
     except sqlite3.Error:
+        logger.exception("Failed to delete complaint id=%s", complaint_id)
         return False
     finally:
         conn.close()
@@ -350,13 +374,52 @@ def _send_complaint_confirmation(email, full_vars):
         from education_system.university_system.infrastructure.email.template_utils import render_template
         subject, body = render_template('communications/complaint_received', full_vars)
         if not (subject and body):
+            logger.warning("Empty complaint_received template render for %s", email)
             return False
     except Exception:
+        logger.exception("Failed to render complaint_received template")
         return False
     try:
         from education_system.university_system.modules.shared.utils.email_service import queue_email
-        return bool(queue_email(email, subject, body))
+        ok = bool(queue_email(email, subject, body))
+        if ok:
+            logger.info("Queued complaint confirmation email to %s", email)
+        else:
+            logger.warning("queue_email returned falsy for %s", email)
+        return ok
     except Exception:
+        logger.exception("Failed to queue complaint confirmation email")
+        return False
+
+
+def _send_complaint_status_update(email, full_vars):
+    """Render `communications/complaint_status_update` and queue it.
+
+    Best-effort; sent to the original submitter when an admin changes the
+    status of or posts a response to their complaint. Never raises.
+    """
+    if not email:
+        return False
+    try:
+        from education_system.university_system.infrastructure.email.template_utils import render_template
+        subject, body = render_template('communications/complaint_status_update', full_vars)
+        if not (subject and body):
+            logger.warning("Empty complaint_status_update render for %s", email)
+            return False
+    except Exception:
+        logger.exception("Failed to render complaint_status_update template")
+        return False
+    try:
+        from education_system.university_system.modules.shared.utils.email_service import queue_email
+        ok = bool(queue_email(email, subject, body))
+        if ok:
+            logger.info("Queued complaint status update email to %s tracking_id=%s status=%s",
+                        email, full_vars.get('tracking_id'), full_vars.get('status'))
+        else:
+            logger.warning("queue_email returned falsy for status update to %s", email)
+        return ok
+    except Exception:
+        logger.exception("Failed to queue complaint status update email")
         return False
 
 
@@ -369,11 +432,29 @@ class ComplaintsPortal(tk.Tk):
         self.configure(bg="#f0f4f8")
 
         self.current_user = _get_current_user()
-        self.complaints = load_complaints()
+        self.is_admin = _is_admin_user(self.current_user)
+        logger.info("ComplaintsPortal starting user=%s role=%s admin=%s",
+                    (self.current_user or {}).get('username') or
+                    (self.current_user or {}).get('user_id') or '<anonymous>',
+                    (self.current_user or {}).get('role') or '<none>',
+                    self.is_admin)
+        # Defer the initial DB read until after the window paints — the
+        # Submit tab (the default) doesn't need it, so blocking the UI on
+        # load_complaints() here just delays first paint.
+        self.complaints = []
 
         self._configure_styles()
         self._build_header()
         self._build_notebook()
+
+        self.after_idle(self._lazy_load_complaints)
+
+    def _lazy_load_complaints(self):
+        t0 = datetime.now()
+        self.complaints = load_complaints()
+        logger.debug("Lazy-loaded %d complaints in %.0fms",
+                     len(self.complaints),
+                     (datetime.now() - t0).total_seconds() * 1000)
 
     def _configure_styles(self):
         style = ttk.Style(self)
@@ -405,17 +486,24 @@ class ComplaintsPortal(tk.Tk):
 
         self.submit_tab = SubmitTab(self.notebook, self)
         self.view_tab = ViewTab(self.notebook, self)
-        self.admin_tab = AdminTab(self.notebook, self)
 
         self.notebook.add(self.submit_tab, text="📝 Submit Complaint")
         self.notebook.add(self.view_tab, text="🔍 Track Complaint")
-        self.notebook.add(self.admin_tab, text="⚙️ Admin Panel")
+
+        if self.is_admin:
+            self.admin_tab = AdminTab(self.notebook, self)
+            self.notebook.add(self.admin_tab, text="⚙️ Admin Panel")
+            self._admin_tab_index = self.notebook.index(self.admin_tab)
+        else:
+            self.admin_tab = None
+            self._admin_tab_index = None
+            logger.info("Admin tab hidden — current user is not an admin")
 
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_change)
 
     def _on_tab_change(self, event):
         selected = self.notebook.index("current")
-        if selected == 2:
+        if self.admin_tab is not None and selected == self._admin_tab_index:
             self.admin_tab.refresh()
 
     def add_complaint(self, complaint):
@@ -453,6 +541,33 @@ class SubmitTab(ttk.Frame):
         super().__init__(parent)
         self.app = app
         self._build_form()
+        self.after_idle(self._autofill_identity)
+
+    def _autofill_identity(self):
+        """Resolve and apply submitter identity after first paint.
+
+        The lookup hits the DB; running it during `_build_form` blocks
+        the window from appearing. Doing it via `after_idle` lets the
+        form paint immediately, then fills the identity fields once the
+        query returns (typically <200ms later).
+        """
+        try:
+            full_name, student_id, email = _resolve_submitter_details(self.app.current_user)
+        except Exception:
+            logger.exception("Submitter identity autofill failed")
+            return
+        self._auto_filled = bool(full_name or student_id or email)
+        if full_name:
+            self.name_entry.insert(0, full_name)
+        if student_id:
+            self.id_entry.insert(0, student_id)
+        if email:
+            self.email_entry.insert(0, email)
+        if self._auto_filled:
+            for entry in (self.name_entry, self.id_entry, self.email_entry):
+                entry.config(state="readonly")
+            self._autofill_notice.config(
+                text="(identity fields are filled from your account and cannot be changed)")
 
     def _build_form(self):
         container = ttk.Frame(self)
@@ -462,41 +577,32 @@ class SubmitTab(ttk.Frame):
                   font=("Segoe UI", 14, "bold")).grid(row=0, column=0, columnspan=2,
                                                       sticky="w", pady=(0, 20))
 
-        # Resolve submitter from auth + DB; auto-fill the identity fields and
-        # lock them so users can't impersonate someone else when submitting.
-        full_name, student_id, email = _resolve_submitter_details(self.app.current_user)
-        self._auto_filled = bool(full_name or student_id or email)
+        # Identity fields are autofilled in the background — see
+        # `_autofill_identity` — to keep first paint snappy. Until that
+        # runs we leave them empty and start unlocked; once filled, they
+        # get marked readonly.
+        self._auto_filled = False
 
         # Name
         ttk.Label(container, text="Full Name *").grid(row=1, column=0, sticky="w", pady=5)
         self.name_entry = ttk.Entry(container, width=50, font=("Segoe UI", 10))
         self.name_entry.grid(row=1, column=1, sticky="ew", pady=5, padx=(10, 0))
-        if full_name:
-            self.name_entry.insert(0, full_name)
 
         # Student ID
         ttk.Label(container, text="Student/Staff ID *").grid(row=2, column=0, sticky="w", pady=5)
         self.id_entry = ttk.Entry(container, width=50, font=("Segoe UI", 10))
         self.id_entry.grid(row=2, column=1, sticky="ew", pady=5, padx=(10, 0))
-        if student_id:
-            self.id_entry.insert(0, student_id)
 
         # Email
         ttk.Label(container, text="Email Address *").grid(row=3, column=0, sticky="w", pady=5)
         self.email_entry = ttk.Entry(container, width=50, font=("Segoe UI", 10))
         self.email_entry.grid(row=3, column=1, sticky="ew", pady=5, padx=(10, 0))
-        if email:
-            self.email_entry.insert(0, email)
 
-        # Lock auto-filled identity fields when we have a logged-in user.
-        if self._auto_filled:
-            for entry in (self.name_entry, self.id_entry, self.email_entry):
-                entry.config(state="readonly")
-            ttk.Label(container,
-                      text="(identity fields are filled from your account and cannot be changed)",
-                      font=("Segoe UI", 8, "italic"),
-                      foreground="#64748b"
-                      ).grid(row=4, column=0, columnspan=2, sticky="w", pady=(0, 5))
+        # Placeholder for the autofill notice; populated by _autofill_identity.
+        self._autofill_notice = ttk.Label(
+            container, text="", font=("Segoe UI", 8, "italic"),
+            foreground="#64748b")
+        self._autofill_notice.grid(row=4, column=0, columnspan=2, sticky="w", pady=(0, 5))
 
         # Category
         ttk.Label(container, text="Category *").grid(row=5, column=0, sticky="w", pady=5)
@@ -550,11 +656,13 @@ class SubmitTab(ttk.Frame):
         description = self.desc_text.get("1.0", "end").strip()
 
         if not all([name, user_id, email, subject, description]):
+            logger.warning("Complaint submit blocked — missing required field(s)")
             messagebox.showerror("Validation Error",
                                  "Please fill in all required fields (*)")
             return
 
         if "@" not in email or "." not in email:
+            logger.warning("Complaint submit blocked — invalid email %r", email)
             messagebox.showerror("Validation Error", "Please enter a valid email address.")
             return
 
@@ -575,6 +683,7 @@ class SubmitTab(ttk.Frame):
         }
 
         if not self.app.add_complaint(complaint):
+            logger.error("add_complaint failed for tracking_id=%s", complaint['id'])
             messagebox.showerror(
                 "Save Failed",
                 "Could not save complaint to the database. Please try again.")
@@ -646,6 +755,7 @@ class ViewTab(ttk.Frame):
             return
 
         complaint = self.app.find_complaint(cid)
+        logger.info("Track lookup id=%s found=%s", cid, bool(complaint))
         self.result_text.config(state="normal")
         self.result_text.delete("1.0", "end")
 
@@ -699,39 +809,15 @@ class AdminTab(ttk.Frame):
     def __init__(self, parent, app):
         super().__init__(parent)
         self.app = app
-        self.authenticated = False
-        self._build_login()
-
-    def _build_login(self):
-        self.login_frame = ttk.Frame(self)
-        self.login_frame.pack(fill="both", expand=True, padx=40, pady=60)
-
-        ttk.Label(self.login_frame, text="🔒 Admin Authentication",
-                  font=("Segoe UI", 14, "bold")).pack(pady=10)
-        ttk.Label(self.login_frame,
-                  text="(Default password: admin123)",
-                  font=("Segoe UI", 9, "italic"),
-                  foreground="#64748b").pack()
-
-        pw_frame = ttk.Frame(self.login_frame)
-        pw_frame.pack(pady=20)
-        ttk.Label(pw_frame, text="Password:").pack(side="left", padx=5)
-        self.pw_entry = ttk.Entry(pw_frame, show="*", width=25, font=("Segoe UI", 10))
-        self.pw_entry.pack(side="left", padx=5)
-        self.pw_entry.bind("<Return>", lambda e: self.authenticate())
-
-        ttk.Button(self.login_frame, text="Login", style="Submit.TButton",
-                   command=self.authenticate).pack(pady=5)
-
-    def authenticate(self):
-        if self.pw_entry.get() == "admin123":
-            self.authenticated = True
-            self.login_frame.destroy()
-            self._build_dashboard()
-            self.refresh()
-        else:
-            messagebox.showerror("Access Denied", "Incorrect password.")
-            self.pw_entry.delete(0, "end")
+        # Admin tab is only constructed for admin users (gated in
+        # ComplaintsPortal._build_notebook), so the logged-in session is
+        # already authenticated — no separate password prompt needed.
+        self.authenticated = True
+        logger.info("AdminTab opened by user=%s role=%s",
+                    (app.current_user or {}).get('username') or
+                    (app.current_user or {}).get('user_id') or '<unknown>',
+                    (app.current_user or {}).get('role') or '<none>')
+        self._build_dashboard()
 
     def _build_dashboard(self):
         container = ttk.Frame(self)
@@ -844,7 +930,10 @@ class AdminTab(ttk.Frame):
         cid = self.tree.item(selection[0])["values"][0]
         complaint = self.app.find_complaint(cid)
         if complaint:
+            logger.info("Admin opening complaint id=%s", cid)
             ComplaintDetailWindow(self, self.app, complaint)
+        else:
+            logger.warning("Admin tried to open missing complaint id=%s", cid)
 
     def delete_complaint(self):
         selection = self.tree.selection()
@@ -855,6 +944,9 @@ class AdminTab(ttk.Frame):
         cid = self.tree.item(selection[0])["values"][0]
         if messagebox.askyesno("Confirm Delete",
                                f"Delete complaint {cid}? This cannot be undone."):
+            actor = ((self.app.current_user or {}).get('username') or
+                     (self.app.current_user or {}).get('user_id') or '<unknown>')
+            logger.info("Admin %s deleting complaint id=%s", actor, cid)
             if not delete_complaint_row(cid):
                 messagebox.showerror("Delete failed",
                                      "Could not delete complaint from the database.")
@@ -876,9 +968,11 @@ class ComplaintDetailWindow(tk.Toplevel):
         self.geometry("600x600")
         self.configure(bg="#f0f4f8")
         self.transient(parent)
-        self.grab_set()
 
         self._build()
+
+        self.wait_visibility()
+        self.grab_set()
 
     def _build(self):
         container = ttk.Frame(self)
@@ -929,12 +1023,39 @@ Subject: {self.complaint['subject']}"""
     def save(self):
         status = self.status_var.get()
         response = self.response_box.get("1.0", "end").strip()
+        actor = ((self.app.current_user or {}).get('username') or
+                 (self.app.current_user or {}).get('user_id') or '<unknown>')
+        prev_status = self.complaint.get('status', '')
+        prev_response = self.complaint.get('response', '') or ''
+        logger.info("Admin %s saving complaint id=%s status=%s response_len=%d",
+                    actor, self.complaint['id'], status, len(response))
         if not self.app.update_complaint(self.complaint["id"], status, response):
             messagebox.showerror("Save Failed",
                                  "Could not save changes to the database.")
             return
+
+        # Notify the submitter if the status changed or a response was
+        # added/edited. Best-effort — don't block the admin save flow.
+        emailed = False
+        if status != prev_status or response != prev_response:
+            updated = self.app.find_complaint(self.complaint['id']) or self.complaint
+            emailed = _send_complaint_status_update(updated.get('email', ''), {
+                'student_name': updated.get('name', ''),
+                'student_id': str(updated.get('user_id', '')),
+                'tracking_id': updated.get('id', ''),
+                'subject': updated.get('subject', ''),
+                'category': updated.get('category', ''),
+                'priority': updated.get('priority', ''),
+                'status': status,
+                'response': response or '(no admin response provided)',
+                'updated_at': updated.get('updated', ''),
+            })
+
         self.parent_tab.refresh()
-        messagebox.showinfo("Saved", "Complaint updated successfully.")
+        msg = "Complaint updated successfully."
+        if emailed:
+            msg += f"\n\nA status update email has been sent to {self.complaint.get('email', 'the submitter')}."
+        messagebox.showinfo("Saved", msg)
         self.destroy()
 
 
