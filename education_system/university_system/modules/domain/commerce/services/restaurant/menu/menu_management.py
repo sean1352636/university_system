@@ -296,7 +296,7 @@ def create_menu_item():
 
         # Insert into database
         cursor.execute('''
-            INSERT INTO menu_items (item_id, name, description, price, category, allergens, vegetarian, vegan, available, creation_date, calories, protein, carbs, fat, prep_time, cost_price, image_path, popularity_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO menu_items VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             item_id, name, description, price, category, allergens,
             int(vegetarian), int(vegan), int(available), creation_date,
@@ -689,7 +689,7 @@ def import_menu_csv():
                         continue
 
                     cursor.execute('''
-                        INSERT INTO menu_items (item_id, name, description, price, category, allergens, vegetarian, vegan, available, creation_date, calories, protein, carbs, fat, prep_time, cost_price, image_path, popularity_score) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        INSERT INTO menu_items VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ''', (
                         row['Item ID'], row['Name'], row['Description'],
                         float(row['Price']), row['Category'], row['Allergens'],

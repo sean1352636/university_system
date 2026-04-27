@@ -1342,13 +1342,11 @@ def init_commerce_tables():
         # Create restaurant_tables table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS restaurant_tables (
-                        table_id TEXT PRIMARY KEY,
+                        table_id INTEGER PRIMARY KEY AUTOINCREMENT,
                         capacity INTEGER NOT NULL,
                         status TEXT DEFAULT 'Available',
-                        current_order_id TEXT,
                         location TEXT,
-                        table_type TEXT DEFAULT 'Standard',
-                        last_cleaned TEXT
+                        table_type TEXT DEFAULT 'Standard'
                     )
         ''')
 

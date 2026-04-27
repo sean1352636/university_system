@@ -92,7 +92,7 @@ def create_unified_database():
     CREATE TABLE IF NOT EXISTS student_modules (
         enrollment_id INTEGER PRIMARY KEY AUTOINCREMENT,
         student_id TEXT NOT NULL,
-        module_id TEXT,
+        module_id TEXT NOT NULL,
         module_code TEXT,
         module_name TEXT,
         module_type TEXT DEFAULT 'Standard',
@@ -450,25 +450,13 @@ def create_unified_database():
     cursor.execute('''
     CREATE TABLE IF NOT EXISTS menu_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        item_id TEXT,
         name TEXT NOT NULL,
         description TEXT,
         price REAL NOT NULL,
         category TEXT NOT NULL,
-        allergens TEXT,
-        vegetarian INTEGER DEFAULT 0,
-        vegan INTEGER DEFAULT 0,
         available BOOLEAN DEFAULT 1,
         ingredients TEXT,
-        creation_date TEXT,
-        calories INTEGER,
-        protein REAL,
-        carbs REAL,
-        fat REAL,
-        prep_time INTEGER,
-        cost_price REAL,
-        image_path TEXT,
-        popularity_score INTEGER DEFAULT 0,
+        allergens TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
