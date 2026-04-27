@@ -332,13 +332,12 @@ class FacilityApprovalDialog:
             conn = student_union_cli.get_connection()
             cursor = conn.cursor()
 
-            # facility_bookings stores facility_name directly (no
-            # facility_id FK) and booker_id is the auth users.id PK.
             cursor.execute('''
-            SELECT fb.booking_id, fb.facility_name, u.username, fb.booking_date,
+            SELECT fb.booking_id, f.facility_name, u.username, fb.booking_date,
                    fb.start_time || '-' || fb.end_time, fb.purpose, fb.status
             FROM facility_bookings fb
-            LEFT JOIN users u ON fb.booker_id = u.id
+            JOIN union_facilities f ON fb.facility_id = f.facility_id
+            JOIN users u ON fb.student_id = u.student_id
             WHERE fb.status = 'pending'
             ORDER BY fb.booking_date, fb.start_time
             ''')
@@ -809,9 +808,10 @@ def submit_booking_request(self):
         cursor = conn.cursor()
 
         cursor.execute('''
-            INSERT INTO facility_bookings (facility_name, booker_id, booking_date, start_time, end_time, purpose, status)
-            VALUES (?, ?, ?, ?, ?, ?, 'pending')
-        ''', (facility, self.current_user['id'], date, start_time, end_time, purpose))
+            INSERT INTO facility_bookings (facility_name, user_id, booking_date, start_time, end_time, purpose, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (facility, self.current_user['id'], date, start_time, end_time, purpose,
+              datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
 
         conn.commit()
         messagebox.showinfo("Success", f"Booking request for {facility} submitted successfully!")
@@ -864,7 +864,7 @@ def refresh_my_bookings(self):
             SELECT booking_id, facility_name, booking_date,
                    start_time || '-' || end_time as time_slot, status, purpose
             FROM facility_bookings
-            WHERE booker_id = ?
+            WHERE user_id = ?
             ORDER BY booking_date DESC
         ''', (self.current_user['id'],))
 
