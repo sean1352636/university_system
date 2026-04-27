@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS equipment_items (
+                    item_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    item_code TEXT UNIQUE NOT NULL,
+                    name TEXT NOT NULL,
+                    description TEXT,
+                    category TEXT NOT NULL,
+                    brand TEXT,
+                    model TEXT,
+                    serial_number TEXT,
+                    daily_rate DECIMAL(10,2) NOT NULL,
+                    hourly_rate DECIMAL(10,2),
+                    deposit_required DECIMAL(10,2) DEFAULT 0,
+                    quantity_total INTEGER DEFAULT 1,
+                    quantity_available INTEGER DEFAULT 1,
+                    condition TEXT DEFAULT 'good',
+                    location TEXT,
+                    image_path TEXT,
+                    notes TEXT,
+                    requires_training INTEGER DEFAULT 0,
+                    is_active INTEGER DEFAULT 1,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );

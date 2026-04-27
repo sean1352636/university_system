@@ -250,6 +250,20 @@ def _ensure_university_tables():
     except Exception as exc:
         logger.debug("Skipping auto-create of university tables: %s", exc)
 
+    # Apply per-table schema snapshots — covers the long tail of GUI-only
+    # tables that aren't created by any aggregator-level init.
+    try:
+        from education_system.university_system.scripts.sync_schema_from_files import (
+            sync_schema,
+        )
+        snap = sync_schema(dry_run=False)
+        if snap.created:
+            logger.info("Loaded %d table snapshots", len(snap.created))
+        if snap.failed:
+            logger.debug("Snapshot load failures: %s", snap.failed[:5])
+    except Exception as exc:
+        logger.debug("Skipping schema-snapshot load: %s", exc)
+
 
 def main():
     _apply_quiet_mode()

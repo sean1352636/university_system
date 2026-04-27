@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS campus_buildings (
+                    building_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    building_code TEXT UNIQUE NOT NULL,
+                    building_name TEXT NOT NULL,
+                    building_type TEXT NOT NULL,
+                    description TEXT,
+                    latitude REAL NOT NULL,
+                    longitude REAL NOT NULL,
+                    address TEXT,
+                    floors INTEGER DEFAULT 1,
+                    is_accessible BOOLEAN DEFAULT 1,
+                    has_elevator BOOLEAN DEFAULT 0,
+                    has_ramp BOOLEAN DEFAULT 0,
+                    has_automatic_doors BOOLEAN DEFAULT 0,
+                    operating_hours TEXT,
+                    amenities TEXT,
+                    image_url TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                );

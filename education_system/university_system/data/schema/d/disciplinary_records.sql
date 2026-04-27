@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS disciplinary_records (
+                    record_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    reference_number TEXT UNIQUE,
+                    user_id TEXT NOT NULL,
+                    offense_type TEXT NOT NULL,
+                    offense_category TEXT,
+                    severity TEXT DEFAULT 'minor',
+                    description TEXT NOT NULL,
+                    date_occurred TEXT NOT NULL,
+                    date_reported TEXT,
+                    reported_by TEXT,
+                    witnesses TEXT,
+                    evidence_path TEXT,
+                    status TEXT DEFAULT 'under_review',
+                    investigation_notes TEXT,
+                    is_confidential BOOLEAN DEFAULT 1,
+                    previous_warnings INTEGER DEFAULT 0,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+                );

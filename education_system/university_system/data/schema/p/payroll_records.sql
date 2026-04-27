@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS payroll_records (
+                    record_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    period_id INTEGER NOT NULL,
+                    user_id TEXT NOT NULL,
+                    contract_id INTEGER,
+                    basic_salary REAL DEFAULT 0,
+                    overtime_pay REAL DEFAULT 0,
+                    allowances_total REAL DEFAULT 0,
+                    gross_pay REAL DEFAULT 0,
+                    tax_deduction REAL DEFAULT 0,
+                    ni_deduction REAL DEFAULT 0,
+                    pension_deduction REAL DEFAULT 0,
+                    student_loan_deduction REAL DEFAULT 0,
+                    other_deductions REAL DEFAULT 0,
+                    net_pay REAL DEFAULT 0,
+                    payment_status TEXT DEFAULT 'pending',
+                    payment_reference TEXT,
+                    notes TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (period_id) REFERENCES payroll_periods(period_id)
+                );

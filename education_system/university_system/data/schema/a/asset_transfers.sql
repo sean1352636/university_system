@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS asset_transfers (
+                transfer_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                asset_id INTEGER NOT NULL,
+                from_location TEXT,
+                from_department TEXT,
+                from_user_id TEXT,
+                to_location TEXT,
+                to_department TEXT,
+                to_user_id TEXT,
+                transfer_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                transfer_reason TEXT,
+                transferred_by TEXT NOT NULL,
+                transferred_by_name TEXT,
+                received_by TEXT,
+                received_date TEXT,
+                condition_at_transfer TEXT,
+                status TEXT DEFAULT 'pending',
+                notes TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (asset_id) REFERENCES assets(asset_id)
+            );

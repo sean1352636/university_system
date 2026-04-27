@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS academic_misconduct_cases (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            case_id TEXT UNIQUE NOT NULL,
+            student_name TEXT NOT NULL,
+            student_id TEXT NOT NULL,
+            student_email TEXT,
+            course TEXT NOT NULL,
+            violation_type TEXT NOT NULL,
+            status TEXT DEFAULT 'Under Review',
+            date_filed TEXT NOT NULL,
+            severity TEXT NOT NULL,
+            notes TEXT,
+            hearing_date TEXT,
+            hearing_time TEXT,
+            hearing_location TEXT,
+            ruling TEXT,
+            ruling_rationale TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        , system_key TEXT NOT NULL DEFAULT 'university');

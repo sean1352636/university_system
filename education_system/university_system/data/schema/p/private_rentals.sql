@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS private_rentals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            customer_name TEXT NOT NULL,
+            customer_email TEXT NOT NULL,
+            customer_phone TEXT,
+            screen_number INTEGER NOT NULL,
+            rental_date TEXT NOT NULL,
+            start_time TEXT NOT NULL,
+            end_time TEXT NOT NULL,
+            guest_count INTEGER DEFAULT 0,
+            movie_id INTEGER,
+            custom_content TEXT,
+            catering_notes TEXT,
+            base_price REAL NOT NULL,
+            extras_price REAL DEFAULT 0,
+            total_price REAL NOT NULL,
+            deposit_paid REAL DEFAULT 0,
+            payment_status TEXT DEFAULT 'pending',
+            status TEXT DEFAULT 'pending',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (movie_id) REFERENCES movies(id)
+        );

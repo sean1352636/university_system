@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS maintenance_requests (
+                request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                location_type TEXT NOT NULL,
+                building_id INTEGER,
+                room_id INTEGER,
+                request_type TEXT NOT NULL,
+                priority TEXT NOT NULL,
+                description TEXT NOT NULL,
+                reported_by TEXT NOT NULL,
+                reported_date TEXT DEFAULT CURRENT_TIMESTAMP,
+                assigned_to TEXT,
+                assigned_date TEXT,
+                scheduled_date TEXT,
+                completion_date TEXT,
+                status TEXT DEFAULT 'open',
+                cost REAL,
+                notes TEXT,
+                FOREIGN KEY (building_id) REFERENCES buildings (building_id),
+                FOREIGN KEY (room_id) REFERENCES rooms (id)
+            );

@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS lab_equipment (
+                    equipment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    category_id INTEGER,
+                    location TEXT,
+                    building TEXT,
+                    room_number TEXT,
+                    serial_number TEXT,
+                    model TEXT,
+                    manufacturer TEXT,
+                    status TEXT DEFAULT 'available',
+                    max_booking_hours INTEGER DEFAULT 8,
+                    min_booking_hours INTEGER DEFAULT 1,
+                    requires_approval INTEGER DEFAULT 0,
+                    requires_training INTEGER DEFAULT 0,
+                    description TEXT,
+                    image_url TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (category_id) REFERENCES equipment_categories(category_id)
+                );

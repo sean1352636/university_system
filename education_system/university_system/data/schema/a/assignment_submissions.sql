@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS assignment_submissions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            assignment_id INTEGER NOT NULL,
+            student_id TEXT NOT NULL,
+            submission_date TIMESTAMP NOT NULL,
+            file_path TEXT,
+            file_name TEXT NOT NULL,
+            file_size INTEGER,
+            file_hash TEXT,
+            status TEXT DEFAULT 'submitted',
+            grade REAL,
+            feedback TEXT,
+            late_submission BOOLEAN DEFAULT 0,
+            late_days INTEGER DEFAULT 0,
+            version_number INTEGER DEFAULT 1,
+            is_final_submission BOOLEAN DEFAULT 1,
+            graded_by INTEGER,
+            graded_date TIMESTAMP, group_id INTEGER, ip_address TEXT,
+            FOREIGN KEY (assignment_id) REFERENCES assignments (id),
+            FOREIGN KEY (student_id) REFERENCES students (student_id),
+            FOREIGN KEY (graded_by) REFERENCES users (id)
+        );

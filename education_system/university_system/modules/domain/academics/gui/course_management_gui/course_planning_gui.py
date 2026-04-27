@@ -182,6 +182,8 @@ class CoursePlanningGUI:
         dialog.title("Select Student for Course Planning")
         dialog.geometry("600x500")
         dialog.transient(self.root)
+        dialog.update_idletasks()
+        dialog.wait_visibility()
         dialog.grab_set()
 
         selected_student_id = None

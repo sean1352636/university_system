@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS student_job_performance (
+                        review_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        employment_id INTEGER NOT NULL,
+                        student_id TEXT NOT NULL,
+                        reviewer_id INTEGER NOT NULL,
+                        review_date TEXT NOT NULL,
+                        review_period_start TEXT,
+                        review_period_end TEXT,
+                        attendance_rating INTEGER CHECK(attendance_rating BETWEEN 1 AND 5),
+                        quality_rating INTEGER CHECK(quality_rating BETWEEN 1 AND 5),
+                        initiative_rating INTEGER CHECK(initiative_rating BETWEEN 1 AND 5),
+                        teamwork_rating INTEGER CHECK(teamwork_rating BETWEEN 1 AND 5),
+                        overall_rating REAL,
+                        strengths TEXT,
+                        areas_for_improvement TEXT,
+                        supervisor_comments TEXT,
+                        student_comments TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (employment_id) REFERENCES student_employment(employment_id),
+                        FOREIGN KEY (student_id) REFERENCES students(student_id),
+                        FOREIGN KEY (reviewer_id) REFERENCES users(id)
+                    );

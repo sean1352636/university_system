@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS exam_portal_attempts (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    exam_id         INTEGER NOT NULL,
+    student_id      TEXT    NOT NULL,
+    student_name    TEXT,
+    access_token    TEXT    UNIQUE,
+    status          TEXT    NOT NULL DEFAULT 'in_progress',
+    started_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+    submitted_at    TEXT,
+    auto_submitted  INTEGER DEFAULT 0,
+    time_remaining  INTEGER,
+    ip_address      TEXT,
+    integrity_flags INTEGER DEFAULT 0,
+    score           REAL,
+    percentage      REAL,
+    passed          INTEGER,
+    graded_at       TEXT,
+    graded_by       TEXT,
+    FOREIGN KEY (exam_id) REFERENCES exam_portal_exams(id)
+);

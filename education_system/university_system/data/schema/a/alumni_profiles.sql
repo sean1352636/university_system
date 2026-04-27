@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS alumni_profiles (
+            alumni_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student_id TEXT NOT NULL UNIQUE,
+            graduation_year INTEGER NOT NULL,
+            degree_earned TEXT NOT NULL,
+            major TEXT,
+            current_employer TEXT,
+            current_position TEXT,
+            current_industry TEXT,
+            current_location TEXT,
+            linkedin_url TEXT,
+            personal_website TEXT,
+            biography TEXT,
+            willing_to_mentor BOOLEAN DEFAULT 0,
+            willing_to_recruit BOOLEAN DEFAULT 0,
+            privacy_level TEXT DEFAULT 'public',
+            profile_updated_at TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (student_id) REFERENCES students (student_id)
+        );

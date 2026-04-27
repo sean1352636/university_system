@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS exam_portal_exams (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    title           TEXT    NOT NULL,
+    description     TEXT,
+    module_code     TEXT,
+    created_by      TEXT    NOT NULL,
+    status          TEXT    NOT NULL DEFAULT 'draft',
+    duration_minutes INTEGER NOT NULL DEFAULT 60,
+    start_time      TEXT,
+    end_time        TEXT,
+    pass_mark       REAL    DEFAULT 50.0,
+    total_marks     REAL    DEFAULT 100.0,
+    shuffle_questions INTEGER DEFAULT 0,
+    shuffle_answers   INTEGER DEFAULT 0,
+    show_results    TEXT    DEFAULT 'after_submit',
+    max_attempts    INTEGER DEFAULT 1,
+    allow_review    INTEGER DEFAULT 1,
+    auto_submit     INTEGER DEFAULT 1,
+    instructions    TEXT,
+    created_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+    published_at    TEXT
+);

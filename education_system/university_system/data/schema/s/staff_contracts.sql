@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS staff_contracts (
+                    contract_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    contract_type TEXT NOT NULL DEFAULT 'permanent',
+                    start_date TEXT NOT NULL,
+                    end_date TEXT,
+                    salary REAL,
+                    salary_currency TEXT DEFAULT 'GBP',
+                    pay_frequency TEXT DEFAULT 'monthly',
+                    terms TEXT,
+                    status TEXT DEFAULT 'active',
+                    renewal_date TEXT,
+                    probation_end_date TEXT,
+                    notice_period_days INTEGER DEFAULT 30,
+                    working_hours_per_week REAL DEFAULT 37.5,
+                    department TEXT,
+                    job_title TEXT,
+                    manager_id TEXT,
+                    document_path TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    created_by TEXT
+                );

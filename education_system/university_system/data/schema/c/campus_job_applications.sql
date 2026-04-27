@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS campus_job_applications (
+                        application_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        job_id INTEGER NOT NULL,
+                        student_id TEXT NOT NULL,
+                        cover_letter TEXT,
+                        resume_url TEXT,
+                        availability TEXT,
+                        expected_hours_per_week INTEGER,
+                        reference_contacts TEXT,
+                        application_date TEXT DEFAULT (date('now')),
+                        status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'reviewed', 'interview', 'offered', 'accepted', 'rejected', 'withdrawn')),
+                        reviewed_by INTEGER,
+                        reviewed_date TEXT,
+                        notes TEXT,
+                        interview_date TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (job_id) REFERENCES campus_job_postings(job_id),
+                        FOREIGN KEY (student_id) REFERENCES students(student_id),
+                        FOREIGN KEY (reviewed_by) REFERENCES users(id)
+                    );

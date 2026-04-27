@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS probation_reviews (
+                    review_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT NOT NULL,
+                    contract_id INTEGER,
+                    review_date TEXT NOT NULL,
+                    reviewer_id TEXT NOT NULL,
+                    review_type TEXT DEFAULT 'mid-probation',
+                    outcome TEXT,
+                    performance_rating INTEGER,
+                    strengths TEXT,
+                    areas_for_improvement TEXT,
+                    comments TEXT,
+                    objectives_met TEXT,
+                    recommendation TEXT,
+                    next_review_date TEXT,
+                    probation_extended BOOLEAN DEFAULT 0,
+                    extension_reason TEXT,
+                    extension_end_date TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (contract_id) REFERENCES staff_contracts(contract_id)
+                );

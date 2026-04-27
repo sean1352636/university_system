@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS attendance_appeals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            appeal_id TEXT UNIQUE,
+            student_id TEXT,
+            module_code TEXT,
+            attendance_record_id INTEGER,
+            original_status TEXT,
+            requested_status TEXT,
+            reason TEXT,
+            evidence_files TEXT,
+            submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            reviewed_by TEXT,
+            reviewed_at TEXT,
+            decision TEXT,
+            decision_reason TEXT,
+            status TEXT DEFAULT 'pending',
+            FOREIGN KEY (student_id) REFERENCES students (student_id),
+            FOREIGN KEY (module_code) REFERENCES modules (module_code),
+            FOREIGN KEY (attendance_record_id) REFERENCES attendance_records (id)
+        );

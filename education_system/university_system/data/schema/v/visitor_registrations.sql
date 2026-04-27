@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS visitor_registrations (
+                visitor_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                visitor_name TEXT NOT NULL,
+                visitor_email TEXT,
+                visitor_phone TEXT,
+                visitor_company TEXT,
+                host_id TEXT NOT NULL,
+                host_name TEXT,
+                host_department TEXT,
+                visit_purpose TEXT,
+                scheduled_date TEXT,
+                scheduled_time TEXT,
+                check_in_time TEXT,
+                check_out_time TEXT,
+                badge_number TEXT,
+                vehicle_registration TEXT,
+                status TEXT DEFAULT 'scheduled',
+                notes TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );

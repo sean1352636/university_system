@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS bookings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            booking_ref TEXT UNIQUE NOT NULL,
+            customer_name TEXT NOT NULL,
+            customer_email TEXT,
+            customer_phone TEXT,
+            screening_id INTEGER NOT NULL,
+            ticket_types TEXT,
+            subtotal REAL NOT NULL,
+            discount_amount REAL DEFAULT 0,
+            promo_code TEXT,
+            snacks_total REAL DEFAULT 0,
+            snacks_items TEXT,
+            total_amount REAL NOT NULL,
+            payment_status TEXT DEFAULT 'pending',
+            payment_method TEXT,
+            booking_time TEXT NOT NULL,
+            status TEXT DEFAULT 'active',
+            notes TEXT, group_discount REAL DEFAULT 0, early_bird_discount REAL DEFAULT 0, dynamic_pricing_applied REAL DEFAULT 0, season_pass_id INTEGER, corporate_id INTEGER, qr_code TEXT, snack_pickup_time TEXT,
+            FOREIGN KEY (screening_id) REFERENCES screenings(id)
+        );

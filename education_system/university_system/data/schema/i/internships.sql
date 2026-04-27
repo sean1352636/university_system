@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS internships (
+            internship_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            company TEXT NOT NULL,
+            location TEXT,
+            description TEXT,
+            requirements TEXT,
+            start_date TEXT,
+            end_date TEXT,
+            is_paid BOOLEAN,
+            salary TEXT,
+            hours_per_week INTEGER,
+            posted_date TEXT,
+            deadline_date TEXT,
+            status TEXT DEFAULT 'active',
+            contact_email TEXT,
+            course_relevance TEXT,
+            created_by TEXT,
+            created_date TEXT
+        );

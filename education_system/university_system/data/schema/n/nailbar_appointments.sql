@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS nailbar_appointments (
+                appointment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                booking_reference TEXT UNIQUE NOT NULL,
+                customer_id TEXT NOT NULL,
+                customer_name TEXT NOT NULL,
+                customer_email TEXT,
+                customer_phone TEXT,
+                technician_id INTEGER,
+                technician_name TEXT,
+                appointment_date TEXT NOT NULL,
+                appointment_time TEXT NOT NULL,
+                status TEXT DEFAULT 'booked',
+                total_amount DECIMAL(10,2) DEFAULT 0.00,
+                payment_status TEXT DEFAULT 'pending',
+                payment_method TEXT,
+                special_requests TEXT,
+                notes TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (technician_id) REFERENCES nailbar_technicians(technician_id)
+            );

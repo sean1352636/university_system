@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS budget_requests (
+                request_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                department TEXT NOT NULL,
+                requested_by TEXT NOT NULL,
+                requested_by_name TEXT,
+                request_title TEXT NOT NULL,
+                request_description TEXT,
+                amount_requested REAL NOT NULL,
+                budget_category TEXT,
+                justification TEXT,
+                expected_benefits TEXT,
+                supporting_docs TEXT,
+                status TEXT DEFAULT 'pending',
+                reviewed_by TEXT,
+                reviewed_by_name TEXT,
+                review_date TEXT,
+                review_comments TEXT,
+                approved_amount REAL,
+                fiscal_year TEXT,
+                priority TEXT DEFAULT 'normal',
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );

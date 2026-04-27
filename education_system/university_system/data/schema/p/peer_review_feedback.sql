@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS peer_review_feedback (
+                    feedback_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    assignment_id INTEGER NOT NULL,
+                    submission_id INTEGER NOT NULL,
+                    reviewer_id TEXT NOT NULL,
+                    overall_rating INTEGER,
+                    content_quality INTEGER,
+                    clarity INTEGER,
+                    alignment_with_outcomes INTEGER,
+                    engagement_potential INTEGER,
+                    strengths TEXT,
+                    improvements TEXT,
+                    detailed_comments TEXT,
+                    recommendation TEXT DEFAULT 'approve',
+                    is_confidential INTEGER DEFAULT 0,
+                    submitted_date TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (assignment_id) REFERENCES peer_review_assignments(assignment_id),
+                    FOREIGN KEY (submission_id) REFERENCES peer_review_submissions(submission_id)
+                );

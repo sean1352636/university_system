@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS appraisal_records (
+                    appraisal_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cycle_id INTEGER NOT NULL,
+                    user_id TEXT NOT NULL,
+                    reviewer_id TEXT,
+                    self_rating REAL,
+                    manager_rating REAL,
+                    final_rating REAL,
+                    self_comments TEXT,
+                    manager_comments TEXT,
+                    strengths TEXT,
+                    areas_for_improvement TEXT,
+                    development_plan TEXT,
+                    status TEXT DEFAULT 'pending',
+                    self_submitted_date TEXT,
+                    manager_submitted_date TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (cycle_id) REFERENCES appraisal_cycles(cycle_id),
+                    UNIQUE(cycle_id, user_id)
+                );

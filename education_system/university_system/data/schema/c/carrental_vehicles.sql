@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS carrental_vehicles (
+                    vehicle_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    registration_number TEXT UNIQUE NOT NULL,
+                    make TEXT NOT NULL,
+                    model TEXT NOT NULL,
+                    year INTEGER NOT NULL,
+                    category TEXT NOT NULL,
+                    color TEXT,
+                    seats INTEGER DEFAULT 5,
+                    transmission TEXT DEFAULT 'automatic',
+                    fuel_type TEXT DEFAULT 'petrol',
+                    daily_rate DECIMAL(10,2) NOT NULL,
+                    mileage INTEGER DEFAULT 0,
+                    status TEXT DEFAULT 'available',
+                    image_path TEXT,
+                    features TEXT,
+                    insurance_info TEXT,
+                    last_service_date TEXT,
+                    next_service_date TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );

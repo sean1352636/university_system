@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS placement_reviews (
+                    review_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    placement_id INTEGER NOT NULL,
+                    review_date TEXT NOT NULL,
+                    review_type TEXT DEFAULT 'monthly',
+                    status TEXT DEFAULT 'scheduled',
+                    on_track INTEGER,
+                    competency_progress TEXT,
+                    hours_logged REAL,
+                    employer_feedback TEXT,
+                    student_feedback TEXT,
+                    supervisor_feedback TEXT,
+                    actions TEXT,
+                    next_review_date TEXT,
+                    employer_signed INTEGER DEFAULT 0,
+                    student_signed INTEGER DEFAULT 0,
+                    supervisor_signed INTEGER DEFAULT 0,
+                    created_at TEXT DEFAULT (datetime('now')),
+                    updated_at TEXT DEFAULT (datetime('now')),
+                    FOREIGN KEY (placement_id) REFERENCES internship_placements (placement_id)
+                );

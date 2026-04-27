@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS staff_profiles (
+                profile_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT UNIQUE NOT NULL,
+                employee_id TEXT UNIQUE,
+                department TEXT,
+                job_title TEXT,
+                employment_type TEXT DEFAULT 'full-time',
+                hire_date TEXT,
+                contract_end_date TEXT,
+                manager_id TEXT,
+                office_location TEXT,
+                phone_extension TEXT,
+                emergency_contact_name TEXT,
+                emergency_contact_phone TEXT,
+                emergency_contact_relationship TEXT,
+                bio TEXT,
+                expertise_areas TEXT,
+                qualifications TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+            );
