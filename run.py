@@ -243,9 +243,48 @@ def _run_alembic_upgrade():
         logger.warning("Alembic upgrade skipped: %s", e)
 
 
+def _seed_demo_if_fresh():
+    """Re-seed demo student S12345's modules when the DB has been rebuilt.
+
+    Triggers when S12345 has zero enrolments (i.e. the DB was deleted
+    and just regenerated from migrations, which only seed the catalog).
+    Idempotent: re-running is a no-op once enrolments are in place.
+    """
+    try:
+        import sqlite3
+        db = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "education_system/university_system/data/db_files/student_records.db",
+        )
+        if not os.path.exists(db):
+            return
+        conn = sqlite3.connect(db)
+        n = conn.execute(
+            "SELECT COUNT(*) FROM student_modules WHERE student_id = 'S12345'"
+        ).fetchone()[0]
+        if n > 0:
+            conn.close()
+            return
+        conn.execute(
+            "INSERT OR IGNORE INTO students (student_id, first_name, last_name) "
+            "VALUES ('S12345', 'Demo', 'Student')"
+        )
+        from education_system.university_system.modules.scripts.seed_demo_data import (
+            seed_s12345_modules,
+        )
+        cur = conn.cursor()
+        seed_s12345_modules(cur)
+        conn.commit()
+        conn.close()
+        logger.info("Re-seeded demo modules for S12345 (fresh DB detected).")
+    except Exception as e:
+        logger.warning("Demo re-seed skipped: %s", e)
+
+
 def main():
     _apply_quiet_mode()
     _run_alembic_upgrade()
+    _seed_demo_if_fresh()
 
     from education_system.launcher.auth import gui_universal_login, cli_universal_login
     from education_system.launcher.systems import (
