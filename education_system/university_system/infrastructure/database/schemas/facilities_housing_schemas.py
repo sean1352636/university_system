@@ -476,13 +476,11 @@ def init_parking_tables():
         # Create parking_lots table
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS parking_lots (
-            lot_id TEXT PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             lot_name TEXT NOT NULL,
             location TEXT,
             total_spaces INTEGER DEFAULT 0,
             available_spaces INTEGER DEFAULT 0,
-            zone TEXT,
-            hours_of_operation TEXT,
             hourly_rate DECIMAL(5,2) DEFAULT 0.00,
             daily_rate DECIMAL(5,2) DEFAULT 0.00,
             monthly_rate DECIMAL(5,2) DEFAULT 0.00,

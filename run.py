@@ -232,25 +232,6 @@ def _apply_quiet_mode():
     logging.getLogger().setLevel(logging.WARNING)
 
 
-def _ensure_university_tables():
-    """Best-effort: create any production university tables that exist in
-    source CREATE statements but are missing from student_records.db.
-
-    Silent on success, logs at debug on failure — must never block startup.
-    """
-    try:
-        from education_system.university_system.scripts.create_missing_tables import (
-            create_missing_tables,
-        )
-        result = create_missing_tables(dry_run=False)
-        if result.created:
-            logger.info("Auto-created %d missing university tables", len(result.created))
-        if result.failed:
-            logger.debug("Auto-create failures: %s", result.failed)
-    except Exception as exc:
-        logger.debug("Skipping auto-create of university tables: %s", exc)
-
-
 def main():
     _apply_quiet_mode()
 
@@ -288,8 +269,6 @@ def main():
     sys_group.add_argument("--primary", action="store_true", help="Primary school system")
 
     args = parser.parse_args()
-
-    _ensure_university_tables()
 
     # Resolve mode from flags
     mode = None
