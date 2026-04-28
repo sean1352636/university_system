@@ -19,6 +19,7 @@ except ImportError:
     HAS_DB = False
 
 from education_system.university_system.modules.domain.academics.gui.exam_management import conflicts as conflict_utils
+from education_system.university_system.modules.domain.academics.gui.exam_management import accommodations as accommodations_service
 
 logger = logging.getLogger(__name__)
 
@@ -167,6 +168,15 @@ class DeferredExamTabMixin:
                     return False
                 (mod, mname, orig_date, st, et, room, instr_id, instr_name) = original
 
+                # Pull this student's active accommodations from
+                # student-support so the resit reflects extended-time and
+                # other arrangements without manual data entry.
+                acc = accommodations_service.get_active_accommodations(
+                    student_id, exam_id=exam_id)
+                resit_end = accommodations_service.compute_extended_end_time(
+                    st, et, acc)
+                acc_bullets = accommodations_service.summarize_accommodations(acc)
+
                 existing = conn.execute(
                     """SELECT id, enrolled_student_ids, students_enrolled, date
                        FROM exams
@@ -204,11 +214,17 @@ class DeferredExamTabMixin:
                                WHERE id = ?""",
                             (json.dumps(ids), (current_n or 0) + 1, existing_id))
                         conn.commit()
-                        messagebox.showinfo(
-                            "Resit",
-                            f"Added student {student_id} to existing resit "
-                            f"on {resit_date} (exam #{existing_id}).",
-                            parent=self.root)
+                        # Carry the student's exam-specific accommodations
+                        # across to the existing resit row.
+                        accommodations_service.clone_exam_accommodation(
+                            student_id, exam_id, existing_id)
+
+                        msg = (f"Added student {student_id} to existing "
+                               f"resit on {resit_date} (exam #{existing_id}).")
+                        if acc_bullets:
+                            msg += "\n\nAccommodations applied:\n  • " + \
+                                "\n  • ".join(acc_bullets)
+                        messagebox.showinfo("Resit", msg, parent=self.root)
                         self._refresh_exams_views()
                         return True
                     # No → fall through to schedule a separate sitting
@@ -223,8 +239,10 @@ class DeferredExamTabMixin:
                                     + timedelta(days=DEFAULT_RESIT_OFFSET_DAYS)
                                     ).isoformat()
 
+                # Use the accommodation-extended end time when picking the
+                # slot so conflict checks reflect the true finish time.
                 resit_date = self._prompt_for_resit_date(
-                    mod, st, et, room, instr_id, default_date)
+                    mod, st, resit_end, room, instr_id, default_date)
                 if resit_date is None:
                     return False
 
@@ -239,16 +257,27 @@ class DeferredExamTabMixin:
                         parent_exam_id, created_at, updated_at)
                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?,
                                CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)""",
-                    (mod, resit_name, resit_date, st, et, room,
+                    (mod, resit_name, resit_date, st, resit_end, room,
                      instr_id, instr_name,
                      json.dumps([str(student_id)]), exam_id))
                 conn.commit()
                 new_id = cur.lastrowid
-                messagebox.showinfo(
-                    "Resit",
-                    f"Resit scheduled: {mod} on {resit_date} {st}–{et} "
-                    f"in {room or '(no room)'} (exam #{new_id}).",
-                    parent=self.root)
+
+                # Carry the student's exam-specific arrangements to the
+                # new resit (separate room, scribe, assistive tech, etc.).
+                accommodations_service.clone_exam_accommodation(
+                    student_id, exam_id, new_id)
+
+                msg = (f"Resit scheduled: {mod} on {resit_date} "
+                       f"{st}–{resit_end} in {room or '(no room)'} "
+                       f"(exam #{new_id}).")
+                if resit_end != et:
+                    msg += f"\n\nEnd time extended from {et} to {resit_end} "
+                    msg += "for student accommodations."
+                if acc_bullets:
+                    msg += "\n\nAccommodations applied:\n  • " + \
+                        "\n  • ".join(acc_bullets)
+                messagebox.showinfo("Resit", msg, parent=self.root)
                 self._refresh_exams_views()
                 return True
         except Exception as exc:
