@@ -500,22 +500,12 @@ def init_documents_tables():
                     )
         ''')
 
-        # Create workflow_instances table
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS workflow_instances (
-                    instance_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    workflow_id INTEGER NOT NULL,
-                    entity_type TEXT NOT NULL, -- 'refund', 'payment_plan', 'scholarship', etc.
-                    entity_id INTEGER NOT NULL,
-                    current_step INTEGER DEFAULT 1,
-                    status TEXT DEFAULT 'pending', -- pending, in_progress, completed, cancelled
-                    assigned_to TEXT,
-                    started_at TEXT,
-                    completed_at TEXT,
-                    metadata TEXT, -- JSON with instance-specific data
-                    FOREIGN KEY (workflow_id) REFERENCES workflows (workflow_id)
-                )
-        ''')
+        # `workflow_instances` is owned by infrastructure/workflows/
+        # database.py (the generic workflow engine, with TEXT keys
+        # and JSON columns). Its previous CREATE here defined a
+        # different-shaped table that no code ever queried — left in
+        # place it would clobber the engine's schema on a fresh DB,
+        # so the dead block has been removed.
 
         # Create workflows table
         cursor.execute('''
@@ -2015,6 +2005,7 @@ def init_other_tables():
                             student_id TEXT,
                             description TEXT,
                             created_at TEXT NOT NULL,
+                            last_updated TEXT,
                             FOREIGN KEY (course_id) REFERENCES courses (id),
                             FOREIGN KEY (student_id) REFERENCES students (student_id)
                         )

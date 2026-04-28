@@ -858,21 +858,13 @@ def init_enhanced_finance_db():
         )
         ''')
 
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS workflow_instances (
-            instance_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            workflow_id INTEGER NOT NULL,
-            entity_type TEXT NOT NULL, -- 'refund', 'payment_plan', 'scholarship', etc.
-            entity_id INTEGER NOT NULL,
-            current_step INTEGER DEFAULT 1,
-            status TEXT DEFAULT 'pending', -- pending, in_progress, completed, cancelled
-            assigned_to TEXT,
-            started_at TEXT,
-            completed_at TEXT,
-            metadata TEXT, -- JSON with instance-specific data
-            FOREIGN KEY (workflow_id) REFERENCES workflows (workflow_id)
-        )
-        ''')
+        # `workflow_instances` is owned by infrastructure/workflows/
+        # database.py (the generic workflow engine, with TEXT keys,
+        # context_json, step_history_json, etc.). The finance schema
+        # used to create a different-shaped table with the same name
+        # but no finance code ever queried it — leaving the dead
+        # CREATE here would clobber the generic engine's table on a
+        # fresh DB. Removed.
 
         # Initialize default data
         init_default_enhanced_data(cursor)

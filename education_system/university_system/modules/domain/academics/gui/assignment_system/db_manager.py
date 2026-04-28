@@ -642,7 +642,7 @@ class DatabaseManager:
             submission_id INTEGER NOT NULL,
             student_id TEXT NOT NULL,
             assignment_title TEXT,
-            submitted_at TEXT NOT NULL,
+            submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
             receipt_hash TEXT,
             email_sent INTEGER DEFAULT 0,
             confirmation_code TEXT,

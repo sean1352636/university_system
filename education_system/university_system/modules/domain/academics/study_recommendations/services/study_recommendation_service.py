@@ -14,18 +14,18 @@ class StudyRecommendationService:
 
     def _ensure_tables_exist(self):
         with transaction() as conn:
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS study_profiles (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    student_id TEXT UNIQUE NOT NULL,
-                    learning_style TEXT DEFAULT 'reading',
-                    study_hours_per_week REAL DEFAULT 0,
-                    preferred_times TEXT,
-                    strengths TEXT,
-                    weaknesses TEXT,
-                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
+            # `study_profiles` is owned by
+            # modules/domain/academics/study_matching/services/study_matching_service.py
+            # — its schema (study_style, preferred_time, interests_json,
+            # ...) is what this service's runtime SELECT/INSERT/UPDATE
+            # queries below actually use; the per-recommendation
+            # concepts (`learning_style`, `study_hours_per_week`,
+            # `strengths`, `weaknesses`) are mapped onto the matching
+            # schema's columns at read time. The redundant CREATE that
+            # used to live here defined a different shape that never
+            # won the `CREATE TABLE IF NOT EXISTS` race anyway, so it
+            # has been removed to make the cross-service contract
+            # explicit.
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS study_recommendations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,

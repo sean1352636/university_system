@@ -26,15 +26,18 @@ class AdminToolsManager:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             cursor = conn.cursor()
 
+            # Must match the canonical definition in db_manager.py
+            # (synced_by is FK to users.id which is INTEGER).
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS sis_sync_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    sync_type TEXT NOT NULL,
+                    sync_type TEXT,
                     records_synced INTEGER DEFAULT 0,
                     records_failed INTEGER DEFAULT 0,
-                    synced_by TEXT,
-                    synced_at TEXT DEFAULT (datetime('now')),
-                    details_json TEXT
+                    synced_by INTEGER,
+                    synced_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    details_json TEXT,
+                    FOREIGN KEY (synced_by) REFERENCES users (id)
                 )
             ''')
 
@@ -69,32 +72,42 @@ class AdminToolsManager:
                 )
             ''')
 
+            # Must match the canonical definitions in db_manager.py.
+            # approved_by / assigned_by / user_id are FKs to users.id
+            # which is INTEGER (not TEXT), and the role enum has all
+            # four values from the canonical schema.
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS student_accommodations (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     student_id TEXT NOT NULL,
-                    accommodation_type TEXT NOT NULL CHECK(accommodation_type IN ('extended_time','alt_format','screen_reader','large_text','other')),
+                    accommodation_type TEXT DEFAULT 'other' CHECK (accommodation_type IN ('extended_time', 'alt_format', 'screen_reader', 'large_text', 'other')),
                     details TEXT,
                     time_multiplier REAL DEFAULT 1.0,
                     is_active INTEGER DEFAULT 1,
-                    approved_by TEXT,
-                    created_at TEXT DEFAULT (datetime('now')),
-                    expires_at TEXT
+                    approved_by INTEGER,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TEXT,
+                    FOREIGN KEY (student_id) REFERENCES students (student_id),
+                    FOREIGN KEY (approved_by) REFERENCES users (id)
                 )
             ''')
 
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS ta_assignments (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    user_id TEXT NOT NULL,
+                    user_id INTEGER NOT NULL,
                     section_id TEXT,
                     module_code TEXT,
-                    role TEXT NOT NULL DEFAULT 'ta' CHECK(role IN ('ta','co_instructor')),
-                    can_grade INTEGER DEFAULT 0,
+                    role TEXT DEFAULT 'ta' CHECK (role IN ('ta', 'lead_ta', 'grader', 'co_instructor')),
+                    hours_per_week REAL DEFAULT 0,
+                    can_grade INTEGER DEFAULT 1,
                     can_create_assignments INTEGER DEFAULT 0,
-                    can_view_analytics INTEGER DEFAULT 0,
-                    assigned_by TEXT,
-                    assigned_at TEXT DEFAULT (datetime('now'))
+                    can_view_analytics INTEGER DEFAULT 1,
+                    assigned_by INTEGER,
+                    assigned_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (user_id) REFERENCES users (id),
+                    FOREIGN KEY (module_code) REFERENCES modules (module_code),
+                    FOREIGN KEY (assigned_by) REFERENCES users (id)
                 )
             ''')
 
@@ -1623,14 +1636,20 @@ class AdminToolsManager:
                 f"Module: {ta_data.get('module_code', '')}  |  Role: {ta_data.get('role', '')}")
 
             # Load existing module-level permissions from ta_permissions table
+            # Must match the canonical definition in
+            # modules/domain/academics/services/assignments/admin_tools/ta_service.py
+            # (granted_by NOT NULL; FK to teaching_assistants;
+            # UNIQUE(ta_id, permission_type, module_code)).
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS ta_permissions (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     ta_id INTEGER NOT NULL,
-                    module_code TEXT NOT NULL,
                     permission_type TEXT NOT NULL,
-                    granted_by TEXT,
-                    granted_at TEXT DEFAULT CURRENT_TIMESTAMP
+                    module_code TEXT NOT NULL,
+                    granted_by TEXT NOT NULL,
+                    granted_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (ta_id) REFERENCES teaching_assistants (id),
+                    UNIQUE (ta_id, permission_type, module_code)
                 )
             ''')
             conn.commit()

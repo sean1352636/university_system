@@ -1235,27 +1235,33 @@ def init_additional_missing_tables():
         ''')
 
         # renewal_requirements
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS renewal_requirements (
-            requirement_id INTEGER PRIMARY KEY AUTOINCREMENT,
-            scholarship_id INTEGER NOT NULL,
-            requirement_type TEXT NOT NULL,
-            min_gpa REAL,
-            min_credits INTEGER,
-            description TEXT,
-            FOREIGN KEY (scholarship_id) REFERENCES scholarships(scholarship_id)
-        )
-        ''')
+        # `renewal_requirements` is owned by
+        # modules/domain/finance/services/financial_aid/schema.py
+        # (13-column schema: award_id, academic_year, gpa_required,
+        # credit_hours_required, enrollment_status_required,
+        # service_hours_required, other_requirements,
+        # verification_deadline, is_met, verified_by, verified_date,
+        # notes). The 6-column stub previously created here had
+        # different columns entirely (scholarship_id /
+        # requirement_type / min_gpa / min_credits) and the runtime
+        # `scholarship_manager.SELECT * FROM renewal_requirements`
+        # would have failed against this table on a fresh DB. Removed.
 
         # revoked_credentials
         cursor.execute('''
+        -- Must match the canonical definition in
+        -- infrastructure/database/remaining_features_schema.py:
+        -- revoked_by is nullable (some revocations are automated and
+        -- have no user attached) and the blockchain_revocation_hash
+        -- column is required by the blockchain credentials code.
         CREATE TABLE IF NOT EXISTS revoked_credentials (
             revocation_id INTEGER PRIMARY KEY AUTOINCREMENT,
             credential_id INTEGER,
             badge_issuance_id INTEGER,
-            revoked_by INTEGER NOT NULL,
             revoked_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             reason TEXT NOT NULL,
+            revoked_by INTEGER,
+            blockchain_revocation_hash TEXT,
             FOREIGN KEY (credential_id) REFERENCES blockchain_credentials(credential_id),
             FOREIGN KEY (badge_issuance_id) REFERENCES badge_issuances(issuance_id)
         )
@@ -1713,18 +1719,20 @@ def init_additional_missing_tables():
         )
         ''')
 
-        # vulnerability_scan_results
+        # vulnerability_scan_results — must match the canonical
+        # definition in infrastructure/security/init_security_tables.py
+        # (and the columns the security dashboard CLI/GUI read/write).
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS vulnerability_scan_results (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             scan_type TEXT NOT NULL,
-            target TEXT NOT NULL,
-            vulnerability_name TEXT,
+            target TEXT,
             severity TEXT,
-            description TEXT,
-            remediation TEXT,
-            scan_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            status TEXT DEFAULT 'open'
+            vulnerable INTEGER DEFAULT 0,
+            details TEXT,
+            scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            fixed INTEGER DEFAULT 0,
+            fixed_at TIMESTAMP
         )
         ''')
 

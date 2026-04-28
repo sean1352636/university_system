@@ -39,6 +39,7 @@ class MultiStageManager:
                         created_at TEXT NOT NULL DEFAULT (datetime('now'))
                     )
                 ''')
+                # Must match the canonical definition in db_manager.py.
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS stage_submissions (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,11 +47,12 @@ class MultiStageManager:
                         student_id TEXT NOT NULL,
                         content TEXT,
                         file_path TEXT,
-                        status TEXT NOT NULL DEFAULT 'draft',
+                        status TEXT DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'reviewed', 'approved')),
                         feedback TEXT,
-                        submitted_at TEXT,
+                        submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
                         reviewed_at TEXT,
-                        FOREIGN KEY (stage_id) REFERENCES assignment_stages(id)
+                        FOREIGN KEY (stage_id) REFERENCES assignment_stages (id) ON DELETE CASCADE,
+                        FOREIGN KEY (student_id) REFERENCES students (student_id)
                     )
                 ''')
                 cursor.execute('''

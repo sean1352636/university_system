@@ -119,7 +119,7 @@ def test_db():
         cursor.execute("DROP TABLE IF EXISTS integration_logs")
         cursor.execute("DROP TABLE IF EXISTS security_incidents")
         cursor.execute("DROP TABLE IF EXISTS encryption_keys")
-        cursor.execute("DROP TABLE IF EXISTS security_policies")
+        cursor.execute("DROP TABLE IF EXISTS data_privacy_settings")
         cursor.execute("DROP TABLE IF EXISTS roles")
         cursor.execute("DROP TABLE IF EXISTS permissions")
         cursor.execute("DROP TABLE IF EXISTS role_permissions")
@@ -173,7 +173,7 @@ class TestSchemaManagement:
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
         tables = [row[0] for row in cursor.fetchall()]
 
-        assert 'security_policies' in tables
+        assert 'data_privacy_settings' in tables
         assert 'encryption_keys' in tables
         assert 'security_incidents' in tables
 
@@ -257,7 +257,7 @@ class TestSecurityPolicies:
         # Add test policy
         cursor = test_db.cursor()
         cursor.execute('''
-        INSERT OR IGNORE INTO security_policies (policy_key, value, updated_at)
+        INSERT OR IGNORE INTO data_privacy_settings (policy_key, value, updated_at)
         VALUES ('test_policy', 'enabled', ?)
         ''', (datetime.now().strftime('%Y-%m-%d %H:%M:%S'),))
         test_db.commit()

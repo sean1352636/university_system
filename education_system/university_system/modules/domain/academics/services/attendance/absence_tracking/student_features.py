@@ -2199,10 +2199,21 @@ class SocialService:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     module_code TEXT, name TEXT,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP)""")
+            # Must match the canonical definition in
+            # modules/domain/academics/study_matching/services/study_matching_service.py
+            # — this stub previously created a 3-column table that
+            # masked the real 7-column schema (membership_id PK,
+            # role, joined_at, contribution_score, attendance_count).
             self.ctx.db.cur.execute(
                 """CREATE TABLE IF NOT EXISTS study_group_members (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    group_id INTEGER, student_id TEXT,
+                    membership_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    group_id INTEGER NOT NULL,
+                    student_id TEXT NOT NULL,
+                    role TEXT DEFAULT 'Member',
+                    joined_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    contribution_score INTEGER DEFAULT 0,
+                    attendance_count INTEGER DEFAULT 0,
+                    FOREIGN KEY (group_id) REFERENCES study_groups(group_id) ON DELETE CASCADE,
                     UNIQUE(group_id, student_id))""")
             rows = self.ctx.db.cur.execute(
                 "SELECT id, name FROM study_groups WHERE module_code=?",

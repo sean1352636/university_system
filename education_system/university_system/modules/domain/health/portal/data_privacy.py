@@ -193,7 +193,7 @@ def ensure_security_schema():
 
         # ----- Core security tables -----
         c.execute("""
-            CREATE TABLE IF NOT EXISTS security_policies (
+            CREATE TABLE IF NOT EXISTS data_privacy_settings (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 policy_key TEXT UNIQUE NOT NULL,
                 value TEXT,
@@ -240,15 +240,15 @@ def ensure_security_schema():
         if not {"name", "permission_name", "permission", "code", "label"} & pcols:
             c.execute("ALTER TABLE permissions ADD COLUMN name TEXT")
 
-        # ----- Compatibility columns for security_policies -----
-        spcols = cols_of("security_policies")
+        # ----- Compatibility columns for data_privacy_settings -----
+        spcols = cols_of("data_privacy_settings")
         if "policy_name" not in spcols:
-            c.execute("ALTER TABLE security_policies ADD COLUMN policy_name TEXT")
-            c.execute("UPDATE security_policies SET policy_name = policy_key WHERE policy_name IS NULL")
+            c.execute("ALTER TABLE data_privacy_settings ADD COLUMN policy_name TEXT")
+            c.execute("UPDATE data_privacy_settings SET policy_name = policy_key WHERE policy_name IS NULL")
         if "status" not in spcols:
-            c.execute("ALTER TABLE security_policies ADD COLUMN status TEXT")
+            c.execute("ALTER TABLE data_privacy_settings ADD COLUMN status TEXT")
             c.execute("""
-                UPDATE security_policies
+                UPDATE data_privacy_settings
                    SET status = CASE
                                  WHEN LOWER(COALESCE(value, '')) IN ('1','true','on','enabled','enable') THEN 'enabled'
                                  WHEN LOWER(COALESCE(value, '')) IN ('0','false','off','disabled','disable') THEN 'disabled'
@@ -257,8 +257,8 @@ def ensure_security_schema():
                  WHERE status IS NULL
             """)
         if "last_updated" not in spcols:
-            c.execute("ALTER TABLE security_policies ADD COLUMN last_updated TEXT")
-            c.execute("UPDATE security_policies SET last_updated = updated_at WHERE last_updated IS NULL")
+            c.execute("ALTER TABLE data_privacy_settings ADD COLUMN last_updated TEXT")
+            c.execute("UPDATE data_privacy_settings SET last_updated = updated_at WHERE last_updated IS NULL")
 
         # ----- Compatibility columns for encryption_keys -----
         ekcols = cols_of("encryption_keys")
@@ -544,12 +544,12 @@ def security_policy_configuration(auth):
     try:
         c = conn.cursor()
 
-        policy_name = _first_existing_column(conn, "security_policies", ["policy_name", "policy_key", "name", "key"])
-        status_col  = _first_existing_column(conn, "security_policies", ["status", "value", "enabled"])
-        updated_col = _first_existing_column(conn, "security_policies", ["last_updated", "updated_at", "modified_at", "timestamp"])
+        policy_name = _first_existing_column(conn, "data_privacy_settings", ["policy_name", "policy_key", "name", "key"])
+        status_col  = _first_existing_column(conn, "data_privacy_settings", ["status", "value", "enabled"])
+        updated_col = _first_existing_column(conn, "data_privacy_settings", ["last_updated", "updated_at", "modified_at", "timestamp"])
 
         sql = ("SELECT [" + policy_name + "], [" + status_col + "], [" + updated_col + "]"
-               " FROM [security_policies] ORDER BY [" + policy_name + "]")
+               " FROM [data_privacy_settings] ORDER BY [" + policy_name + "]")
         rows = c.execute(sql).fetchall()
 
         print("\nSecurity Policies:")

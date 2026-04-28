@@ -297,17 +297,21 @@ def run_migration(db_path=None):
 
         # ========== VULNERABILITY SCANNING ==========
 
-        # 17. Vulnerability Scan Results
+        # 17. Vulnerability Scan Results — must match the canonical
+        # definition in infrastructure/security/init_security_tables.py
+        # (column names `target` / `vulnerable` not `scan_target` /
+        # `vulnerability_found`, since that's what the security dashboard
+        # CLI + GUI read/write).
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS vulnerability_scan_results (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 scan_type TEXT NOT NULL,  -- 'sql_injection', 'xss', 'dependency', etc.
-                scan_target TEXT NOT NULL,
-                vulnerability_found BOOLEAN DEFAULT 0,
+                target TEXT,
                 severity TEXT,  -- 'low', 'medium', 'high', 'critical'
+                vulnerable INTEGER DEFAULT 0,
                 details TEXT,  -- JSON
                 scanned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                fixed BOOLEAN DEFAULT 0,
+                fixed INTEGER DEFAULT 0,
                 fixed_at TIMESTAMP
             )
         """)

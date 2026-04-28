@@ -30,24 +30,27 @@ class StudentExperienceManager:
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
             try:
                 cursor = conn.cursor()
+                # Must match the canonical definition in db_manager.py.
+                # student_id is FK to students.student_id which is TEXT
+                # (not INTEGER), and timestamps are TEXT.
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS submission_drafts (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         assignment_id INTEGER NOT NULL,
-                        student_id INTEGER NOT NULL,
+                        student_id TEXT NOT NULL,
                         content TEXT,
                         version INTEGER DEFAULT 1,
                         file_path TEXT,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
                     )
                 """)
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS submission_receipts (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
                         submission_id INTEGER NOT NULL,
-                        student_id INTEGER NOT NULL,
+                        student_id TEXT NOT NULL,
                         assignment_title TEXT,
-                        submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        submitted_at TEXT DEFAULT CURRENT_TIMESTAMP,
                         receipt_hash TEXT,
                         email_sent INTEGER DEFAULT 0,
                         confirmation_code TEXT

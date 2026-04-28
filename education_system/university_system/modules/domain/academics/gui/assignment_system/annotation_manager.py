@@ -46,19 +46,24 @@ class AnnotationManager:
         """Ensure annotation tables exist in the database"""
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
+        # Must match the canonical definition in
+        # modules/domain/academics/gui/assignment_system/db_manager.py
+        # (reviewer_id is FK to users.id which is INTEGER; TEXT
+        # timestamps to match the rest of the codebase; CHECK
+        # constraint on category to match canonical schema).
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS submission_annotations (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 submission_id INTEGER NOT NULL,
-                reviewer_id TEXT NOT NULL,
-                line_number INTEGER NOT NULL,
-                position_start INTEGER DEFAULT 0,
-                position_end INTEGER DEFAULT 0,
+                reviewer_id INTEGER NOT NULL,
+                line_number INTEGER,
+                position_start INTEGER,
+                position_end INTEGER,
                 comment TEXT NOT NULL,
-                category TEXT NOT NULL DEFAULT 'suggestion',
+                category TEXT DEFAULT 'suggestion' CHECK (category IN ('praise', 'suggestion', 'correction', 'question')),
                 student_response TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         cursor.execute('''

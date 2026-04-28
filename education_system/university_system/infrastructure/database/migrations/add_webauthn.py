@@ -23,37 +23,47 @@ def run_migration(db_path=None):
     cursor = conn.cursor()
 
     try:
-        # 1. WebAuthn Credentials Table
+        # 1. WebAuthn Credentials Table — must match the canonical
+        # definition in infrastructure/auth/webauthn_service.py.
+        # Runtime callers (webauthn_service + webauthn_manager) use
+        # `device_name` not `credential_name`, and store `user_id` as
+        # TEXT (not INTEGER), so this migration was previously
+        # creating a table that the runtime code couldn't read from.
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS webauthn_credentials (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                credential_id TEXT UNIQUE NOT NULL,
+                credential_id TEXT NOT NULL UNIQUE,
+                user_id TEXT NOT NULL,
                 public_key BLOB NOT NULL,
                 sign_count INTEGER DEFAULT 0,
-                credential_name TEXT DEFAULT 'Security Key',
+                device_name TEXT DEFAULT 'Security Key',
+                transports TEXT DEFAULT '[]',
                 aaguid TEXT,
-                transports TEXT,
-                is_discoverable BOOLEAN DEFAULT 0,
-                is_active BOOLEAN DEFAULT 1,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_used_at TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                created_at TEXT NOT NULL,
+                last_used_at TEXT,
+                is_active INTEGER DEFAULT 1,
+                attestation_format TEXT,
+                credential_type TEXT DEFAULT 'public-key',
+                backup_eligible INTEGER DEFAULT 0,
+                backup_state INTEGER DEFAULT 0
             )
         """)
 
-        # 2. WebAuthn Challenges Table
+        # 2. WebAuthn Challenges Table — matches webauthn_service.py.
+        # The runtime expects columns `consumed`, `consumed_at`, and
+        # an explicit `created_at TEXT NOT NULL` rather than the
+        # earlier `is_used` / TIMESTAMP defaults.
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS webauthn_challenges (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                challenge TEXT UNIQUE NOT NULL,
                 session_id TEXT NOT NULL,
-                challenge_type TEXT NOT NULL CHECK(challenge_type IN ('registration', 'authentication')),
-                user_id INTEGER,
-                expires_at TIMESTAMP NOT NULL,
-                is_used BOOLEAN DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                challenge TEXT NOT NULL,
+                challenge_type TEXT NOT NULL,
+                user_id TEXT,
+                created_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                consumed INTEGER DEFAULT 0,
+                consumed_at TEXT
             )
         """)
 

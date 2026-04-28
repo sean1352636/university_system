@@ -39,15 +39,16 @@ class AIAssistantManager:
                         completed_at TEXT
                     )
                 ''')
+                # Must match the canonical definition in db_manager.py.
                 cursor.execute('''
                     CREATE TABLE IF NOT EXISTS practice_questions (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        module_code TEXT NOT NULL,
+                        module_code TEXT,
                         source_material TEXT,
                         question_text TEXT NOT NULL,
                         answer TEXT,
-                        question_type TEXT NOT NULL,
-                        generated_at TEXT NOT NULL
+                        question_type TEXT DEFAULT 'mcq',
+                        generated_at TEXT DEFAULT CURRENT_TIMESTAMP
                     )
                 ''')
                 cursor.execute('''

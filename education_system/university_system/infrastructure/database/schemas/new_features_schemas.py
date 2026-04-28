@@ -104,18 +104,22 @@ def get_new_features_tables():
                 created_at TEXT DEFAULT (datetime('now'))
             )
         """,
+        # Must match the canonical definition in
+        # modules/domain/student_affairs/student_id/services/student_id_service.py.
+        # The runtime INSERTs only supply (student_id, card_number,
+        # expiry_date, qr_data), so any extra columns must be nullable
+        # or have defaults. The earlier schema with `full_name NOT NULL`
+        # would have rejected every insert from the actual service.
         "student_id_cards": """
             CREATE TABLE IF NOT EXISTS student_id_cards (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_id TEXT NOT NULL,
-                card_number TEXT UNIQUE NOT NULL,
-                full_name TEXT NOT NULL,
-                photo_path TEXT,
-                qr_data TEXT,
-                issue_date TEXT NOT NULL,
-                expiry_date TEXT NOT NULL,
+                card_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_id TEXT NOT NULL UNIQUE,
+                card_number TEXT NOT NULL,
+                issue_date TEXT DEFAULT (date('now')),
+                expiry_date TEXT,
                 status TEXT DEFAULT 'active',
-                created_at TEXT DEFAULT (datetime('now'))
+                photo_path TEXT DEFAULT '',
+                qr_data TEXT DEFAULT ''
             )
         """,
         "lms_modules": """CREATE TABLE IF NOT EXISTS lms_modules (id INTEGER PRIMARY KEY AUTOINCREMENT, course_id TEXT, title TEXT NOT NULL, description TEXT, order_index INTEGER DEFAULT 0, published INTEGER DEFAULT 0, created_by TEXT, created_at TEXT DEFAULT (datetime('now')))""",

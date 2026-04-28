@@ -224,9 +224,15 @@ class ForecastingMixin:
             conn = get_connection()
             cursor = conn.cursor()
 
-            # Ensure purchase_orders table exists
+            # `purchase_orders` is owned by the restaurant inventory
+            # module (modules/domain/commerce/.../inventory/purchase_orders.py)
+            # which has a 15-column schema with supplier_id, po_number,
+            # tax_amount, etc. Finance forecasting needs a different,
+            # smaller shape for its own department-level expense
+            # projections, so we use a renamed table here to avoid
+            # clobbering the restaurant schema on a fresh DB.
             cursor.execute('''
-                CREATE TABLE IF NOT EXISTS purchase_orders (
+                CREATE TABLE IF NOT EXISTS finance_purchase_orders (
                     order_id INTEGER PRIMARY KEY AUTOINCREMENT,
                     order_date TEXT,
                     total_amount REAL,
@@ -244,7 +250,7 @@ class ForecastingMixin:
             cursor.execute('''
                 SELECT strftime('%Y-%m', order_date) as month,
                        SUM(total_amount) as total_expense
-                FROM purchase_orders
+                FROM finance_purchase_orders
                 WHERE status IN ('approved', 'completed', 'paid')
                   AND order_date >= date('now', '-12 months')
                 GROUP BY month

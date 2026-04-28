@@ -395,14 +395,20 @@ CREATE TABLE IF NOT EXISTS violation_appeals (
     FOREIGN KEY (violation_id) REFERENCES parking_violations(violation_id)
 );
 
--- Shuttle Routes
+-- Shuttle Routes — must match the canonical definition in
+-- infrastructure/database/schemas/aggregators.py (separate
+-- start_time/end_time/frequency_minutes columns instead of a single
+-- JSON `schedule` blob; per-stop data moved to a sibling
+-- shuttle_stops table).
 CREATE TABLE IF NOT EXISTS shuttle_routes (
-    route_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     route_name TEXT NOT NULL,
     description TEXT,
-    schedule TEXT,  -- JSON
-    stops TEXT,  -- JSON array
-    is_active BOOLEAN DEFAULT 1
+    start_time TEXT,
+    end_time TEXT,
+    frequency_minutes INTEGER DEFAULT 15,
+    is_active INTEGER DEFAULT 1,
+    created_at TEXT
 );
 
 -- Shuttle Buses
