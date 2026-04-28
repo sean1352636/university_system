@@ -215,7 +215,24 @@ def get_module_attendance(module_code):
 
 
 def record_attendance(module_code, date, attendance_data, recorded_by="System"):
-    """Record attendance for multiple students"""
+    """Record attendance for multiple students.
+
+    Find-or-creates an ``attendance_sessions`` row from ``module_schedule``
+    for the given (module, date) so each ``attendance_records`` row is
+    stamped with a ``session_id``. If no module_schedule slot exists for
+    the date, the records are still written (without a session_id) so
+    ad-hoc / makeup sessions don't fail.
+    """
+    session_id = None
+    try:
+        from education_system.university_system.modules.domain.academics.services.course_management.attendance_sessions_sync import (
+            find_or_create_session,
+        )
+        session_id = find_or_create_session(module_code, date)
+    except Exception as _exc:
+        # Best-effort — don't block recording on session resolution.
+        pass
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -223,10 +240,11 @@ def record_attendance(module_code, date, attendance_data, recorded_by="System"):
         for student_id, status, notes in attendance_data:
             cursor.execute('''
             INSERT OR REPLACE INTO attendance_records
-            (student_id, module_code, date, status, notes, recorded_by, recorded_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            (student_id, module_code, date, status, notes, recorded_by,
+             recorded_at, session_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (student_id, module_code, date, status, notes, recorded_by,
-                  datetime.datetime.now().isoformat()))
+                  datetime.datetime.now().isoformat(), session_id))
 
         conn.commit()
         conn.close()
