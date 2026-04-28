@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.104.0 — 2026-04-28](#81040---2026-04-28)
 - [8.103.0 — 2026-04-28](#81030---2026-04-28)
 - [8.102.0 — 2026-04-28](#81020---2026-04-28)
 - [8.101.0 — 2026-04-28](#81010---2026-04-28)
@@ -208,6 +209,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.104.0] — 2026-04-28
+
+### Module scheduling ↔ rest-of-university integrations
+
+#### Added
+
+- **Derived student / instructor timetables.** New `course_management/timetable_sync.py`: `sync_for_module_schedule` rebuilds `instructor_schedules` and `student_timetables` rows for one slot's natural key (idempotent, handles rename/move). `sync_for_student_enrolment` / `clear_for_student_drop` handle the per-student side. `unsync_for_module_schedule` cleans up before a slot is deleted. `_mirror_to_module_schedule` returns the new module_schedule ids and tears down derived rows for old rows (via `parent_schedule_id` lookup) before the DELETE/INSERT cycle so a Mon→Wed edit doesn't leak stale Monday rows. New `_sync_derived_timetables` post-commit helper in `scheduling.py`. All four enrolment writers (`student_crud_gui.py` add + course-change, `db_operations.py` process/update/bulk, `batch_updates.py` mixin) now call `sync_for_student_enrolment` / `clear_for_student_drop` alongside finance + library.
+- **Attendance sessions materialised from module_schedule.** New `course_management/attendance_sessions_sync.py`: `find_or_create_session(module_code, date)` keys an `attendance_sessions` row off `(module, date, start_time)` using a deterministic `MS-*` id, populated from the matching module_schedule slot. Multi-slot days picked by earliest start_time. `generate_sessions_for_module(module_code, start, end)` is the batch counterpart. `get_canonical_roster(module_code)` returns the `student_modules` enrolment so an attendance UI knows who should be present. `attendance/records.record_attendance` now resolves the `session_id` from module_schedule before inserting and stamps it on each `attendance_records` row. Falls back to `NULL` session_id when no slot matches (ad-hoc / makeup sessions still record).
+- **Schedule-change notifications fan out to enrolled students.** New `_push_in_app_notification` + `_notify_schedule_change` helpers in `course_management/scheduling.py`. Looks up enrolment from `student_modules + students`, sends each student a templated email (using the existing `user_management/schedule_notification` template) and pushes a `high`-priority (or `normal` on Created) in-app notification through `NotificationsService` — same pattern the exam scheduler uses (`channel="academic"`, `source_system="course_management"`). `create_course_schedule` fires `Created` notifications after the existing instructor email; `update_schedule` fires `Updated` with the change_details so students see what actually changed. All paths best-effort try/except; an FK / SMTP / NotificationsService failure logs and continues, never blocks the schedule write.
+- **Recurring lectures on the academic calendar.** New `course_management/calendar_lecture_sync.py`: `sync_lecture_to_calendar(module_schedule_id)` upserts one `academic_calendar_events` row per slot (deterministic id `LEC-{id}`, event_type `Lecture`). Computes the span by resolving the slot's `(semester, year)` to a `semesters` row (handles `"2099"`, `"2099-2100"`, `"2099/2100"` id shapes), then snapping start/end to the first/last occurrence of the slot's `day_of_week` within that window. Falls back to a 16-week window from today when no semester row matches. Description names the recurrence: `"Weekly Wednesday 14:00–16:00 in LectureRoom — Fall 2099"`. `remove_lecture_from_calendar` cleans up. Wired into `_sync_derived_timetables` for create/update and `_mirror_to_module_schedule`'s teardown for Mon→Wed-style edits.
 
 ---
 

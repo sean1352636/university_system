@@ -20,6 +20,8 @@ from education_system.university_system.modules.domain.academics.services.course
 def _sync_derived_timetables(module_schedule_ids):
     """Fire :func:`timetable_sync.sync_for_module_schedule` for each id
     after the parent transaction commits. Best-effort — failures log.
+    Also mirrors each lecture onto the academic calendar so recurring
+    slots appear alongside exams, semester boundaries, and holidays.
     """
     if not module_schedule_ids:
         return
@@ -31,6 +33,15 @@ def _sync_derived_timetables(module_schedule_ids):
             sync_for_module_schedule(int(ms_id))
     except Exception as exc:
         print(f"Note: could not sync derived timetables: {exc}")
+
+    try:
+        from education_system.university_system.modules.domain.academics.services.course_management.calendar_lecture_sync import (
+            sync_lecture_to_calendar,
+        )
+        for ms_id in module_schedule_ids:
+            sync_lecture_to_calendar(int(ms_id))
+    except Exception as exc:
+        print(f"Note: could not mirror lectures to calendar: {exc}")
 
 
 def _mirror_to_module_schedule(cursor, schedule_id):
@@ -75,6 +86,14 @@ def _mirror_to_module_schedule(cursor, schedule_id):
                     unsync_for_module_schedule(int(_id))
             except Exception as _exc:
                 print(f"Note: could not clear old derived timetables: {_exc}")
+            try:
+                from education_system.university_system.modules.domain.academics.services.course_management.calendar_lecture_sync import (
+                    remove_lecture_from_calendar,
+                )
+                for _id in old_ids:
+                    remove_lecture_from_calendar(int(_id))
+            except Exception as _exc:
+                print(f"Note: could not clear stale lecture calendar rows: {_exc}")
         cursor.execute(
             "DELETE FROM module_schedule WHERE parent_schedule_id = ?",
             (schedule_id,),
