@@ -314,7 +314,7 @@ class EquipmentRentalGUI:
 
         # Cost display
         row += 1
-        self.rental_cost_var = tk.StringVar(value="$0.00")
+        self.rental_cost_var = tk.StringVar(value="£0.00")
         ttk.Label(right_frame, text=_t("equipment.labels.estimated_cost") + ":").grid(row=row, column=0, sticky=tk.W, pady=5)
         ttk.Label(right_frame, textvariable=self.rental_cost_var, font=('Helvetica', 12, 'bold')).grid(row=row, column=1, pady=5)
 
@@ -470,7 +470,7 @@ class EquipmentRentalGUI:
             if category == 'All' or item['category'] == category:
                 self.inventory_tree.insert('', tk.END, values=(
                     item['item_id'], item['item_code'], item['name'],
-                    item['category'], f"${item['daily_rate']:.2f}",
+                    item['category'], f"£{item['daily_rate']:.2f}",
                     f"{item['quantity_available']}/{item['quantity_total']}",
                     item['condition']
                 ))
@@ -486,7 +486,7 @@ class EquipmentRentalGUI:
                 item['item_id'],
                 f"{item['name']} ({item['item_code']})",
                 item['category'],
-                f"${item['daily_rate']:.2f}",
+                f"£{item['daily_rate']:.2f}",
                 item['quantity_available']
             ))
 
@@ -501,7 +501,7 @@ class EquipmentRentalGUI:
         for r in rentals:
             self.active_rentals_tree.insert('', tk.END, values=(
                 r['rental_id'], r['rental_number'], r['borrower_name'],
-                r['item_name'], r['due_date'], f"${r['total_amount']:.2f}"
+                r['item_name'], r['due_date'], f"£{r['total_amount']:.2f}"
             ))
 
     def add_item(self):
@@ -625,7 +625,7 @@ class EquipmentRentalGUI:
             quantity = int(self.rental_entries['quantity'].get() or 1)
 
             total = item['daily_rate'] * days * quantity
-            self.rental_cost_var.set(f"${total:.2f} ({days} days x {quantity})")
+            self.rental_cost_var.set(f"£{total:.2f} ({days} days x {quantity})")
         except Exception:
             pass
 
@@ -636,7 +636,7 @@ class EquipmentRentalGUI:
         self.rental_purpose.delete(1.0, tk.END)
         self.selected_item_id = None
         self.selected_item_var.set("")
-        self.rental_cost_var.set("$0.00")
+        self.rental_cost_var.set("£0.00")
 
         # Reset defaults
         self.rental_entries['quantity'].insert(0, '1')
@@ -775,13 +775,13 @@ class EquipmentRentalGUI:
         fees_frame = ttk.Frame(dialog, padding="10")
         fees_frame.pack(fill=tk.X, padx=20)
 
-        ttk.Label(fees_frame, text=f"Base Rental: ${base_amount:.2f}").pack(anchor=tk.W)
+        ttk.Label(fees_frame, text=f"Base Rental: £{base_amount:.2f}").pack(anchor=tk.W)
         if late_fee > 0:
-            ttk.Label(fees_frame, text=f"Late Fee: ${late_fee:.2f}").pack(anchor=tk.W)
+            ttk.Label(fees_frame, text=f"Late Fee: £{late_fee:.2f}").pack(anchor=tk.W)
         if damage_fee > 0:
-            ttk.Label(fees_frame, text=f"Damage Fee: ${damage_fee:.2f}").pack(anchor=tk.W)
+            ttk.Label(fees_frame, text=f"Damage Fee: £{damage_fee:.2f}").pack(anchor=tk.W)
 
-        ttk.Label(fees_frame, text=f"TOTAL: ${total_amount:.2f}", font=('Helvetica', 12, 'bold')).pack(anchor=tk.W, pady=(10, 0))
+        ttk.Label(fees_frame, text=f"TOTAL: £{total_amount:.2f}", font=('Helvetica', 12, 'bold')).pack(anchor=tk.W, pady=(10, 0))
 
         # Payment method
         ttk.Separator(dialog, orient=tk.HORIZONTAL).pack(fill=tk.X, padx=20, pady=10)
@@ -848,7 +848,7 @@ class EquipmentRentalGUI:
             self.send_receipt_email(rental_id)
 
             messagebox.showinfo(_t("common.success"),
-                f"Equipment returned and payment of ${total_amount:.2f} processed successfully!")
+                f"Equipment returned and payment of £{total_amount:.2f} processed successfully!")
             dialog.destroy()
             self.refresh_all_data()
 
@@ -910,7 +910,7 @@ class EquipmentRentalGUI:
         dialog.transient(self.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text=f"Amount: ${amount:.2f}", font=('Helvetica', 12, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=f"Amount: £{amount:.2f}", font=('Helvetica', 12, 'bold')).pack(pady=10)
 
         # Check student finance account balance if available
         borrower_id = rental.get('borrower_id')
@@ -989,7 +989,7 @@ class EquipmentRentalGUI:
                 created_by=self.current_user.get('username')
             )
             if payment_id:
-                logger.info(f"Revenue recorded to finance: ${amount:.2f} for rental {rental.get('rental_number')}")
+                logger.info(f"Revenue recorded to finance: £{amount:.2f} for rental {rental.get('rental_number')}")
             return payment_id
         except Exception as e:
             logger.error(f"Failed to record revenue to finance: {e}")
@@ -1268,10 +1268,10 @@ REVENUE REPORT
 ==============
 
 Total Rentals: {total_rentals}
-Total Revenue: ${total_revenue:.2f}
-Average Rental Value: ${avg_rental_value:.2f}
-Late Fees Collected: ${total_late_fees:.2f}
-Damage Fees Collected: ${total_damage_fees:.2f}
+Total Revenue: £{total_revenue:.2f}
+Average Rental Value: £{avg_rental_value:.2f}
+Late Fees Collected: £{total_late_fees:.2f}
+Damage Fees Collected: £{total_damage_fees:.2f}
 
 Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
@@ -1283,7 +1283,7 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
         for i, item in enumerate(items, 1):
             report += f"{i}. {item['name']} ({item['category']})\n"
-            report += f"   Rentals: {item['rental_count']} | Revenue: ${item['total_revenue'] or 0:.2f}\n\n"
+            report += f"   Rentals: {item['rental_count']} | Revenue: £{item['total_revenue'] or 0:.2f}\n\n"
 
         report += f"\nGenerated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
         return report
@@ -1298,7 +1298,7 @@ Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             report += f"Borrower: {r['borrower_name']}\n"
             report += f"Item: {r['item_name']}\n"
             report += f"Due Date: {r['due_date']}\n"
-            report += f"Amount: ${r['total_amount']:.2f}\n"
+            report += f"Amount: £{r['total_amount']:.2f}\n"
             report += "-" * 30 + "\n"
 
         report += f"\nGenerated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
@@ -1333,10 +1333,10 @@ REVENUE REPORT
 ==============
 
 Total Rentals: {total_rentals}
-Total Revenue: ${total_revenue:.2f}
-Average Rental Value: ${avg_rental_value:.2f}
-Late Fees Collected: ${total_late_fees:.2f}
-Damage Fees Collected: ${total_damage_fees:.2f}
+Total Revenue: £{total_revenue:.2f}
+Average Rental Value: £{avg_rental_value:.2f}
+Late Fees Collected: £{total_late_fees:.2f}
+Damage Fees Collected: £{total_damage_fees:.2f}
 """
         self.report_text.delete(1.0, tk.END)
         self.report_text.insert(tk.END, report)
@@ -1348,7 +1348,7 @@ Damage Fees Collected: ${total_damage_fees:.2f}
 
         for i, item in enumerate(items, 1):
             report += f"{i}. {item['name']} ({item['category']})\n"
-            report += f"   Rentals: {item['rental_count']} | Revenue: ${item['total_revenue'] or 0:.2f}\n\n"
+            report += f"   Rentals: {item['rental_count']} | Revenue: £{item['total_revenue'] or 0:.2f}\n\n"
 
         self.report_text.delete(1.0, tk.END)
         self.report_text.insert(tk.END, report)
@@ -1363,7 +1363,7 @@ Damage Fees Collected: ${total_damage_fees:.2f}
             report += f"Borrower: {r['borrower_name']}\n"
             report += f"Item: {r['item_name']}\n"
             report += f"Due Date: {r['due_date']}\n"
-            report += f"Amount: ${r['total_amount']:.2f}\n"
+            report += f"Amount: £{r['total_amount']:.2f}\n"
             report += "-" * 30 + "\n"
 
         self.report_text.delete(1.0, tk.END)

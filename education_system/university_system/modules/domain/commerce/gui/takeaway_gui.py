@@ -372,8 +372,8 @@ class TakeawayGUI:
                 r['name'],
                 r['cuisine_type'],
                 rating,
-                f"${r['delivery_fee']:.2f}",
-                f"${r['min_order_amount']:.2f}",
+                f"£{r['delivery_fee']:.2f}",
+                f"£{r['min_order_amount']:.2f}",
                 f"{r['estimated_delivery_time']} min",
                 status
             ), tags=(r['restaurant_id'],))
@@ -485,7 +485,7 @@ class TakeawayGUI:
         action_frame = ttk.Frame(item_frame)
         action_frame.pack(side=tk.RIGHT)
 
-        ttk.Label(action_frame, text=f"${item['price']:.2f}", font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
+        ttk.Label(action_frame, text=f"£{item['price']:.2f}", font=('Arial', 10, 'bold')).pack(side=tk.LEFT, padx=10)
 
         qty_var = tk.StringVar(value="1")
         qty_spinbox = ttk.Spinbox(action_frame, from_=1, to=10, width=3, textvariable=qty_var)
@@ -550,7 +550,7 @@ class TakeawayGUI:
 
             line_total = item['price'] * item['quantity']
             ttk.Label(item_frame, text=f"{item['name']} x{item['quantity']}").pack(side=tk.LEFT)
-            ttk.Label(item_frame, text=f"${line_total:.2f}").pack(side=tk.RIGHT)
+            ttk.Label(item_frame, text=f"£{line_total:.2f}").pack(side=tk.RIGHT)
 
         # Totals
         ttk.Separator(main_frame, orient='horizontal').pack(fill=tk.X, pady=5)
@@ -559,17 +559,17 @@ class TakeawayGUI:
         totals_frame.pack(fill=tk.X)
 
         ttk.Label(totals_frame, text=_t("takeaway.subtotal")).pack(side=tk.LEFT)
-        ttk.Label(totals_frame, text=f"${subtotal:.2f}").pack(side=tk.RIGHT)
+        ttk.Label(totals_frame, text=f"£{subtotal:.2f}").pack(side=tk.RIGHT)
 
         fee_frame = ttk.Frame(main_frame)
         fee_frame.pack(fill=tk.X)
         ttk.Label(fee_frame, text=_t("takeaway.delivery_fee")).pack(side=tk.LEFT)
-        ttk.Label(fee_frame, text=f"${delivery_fee:.2f}").pack(side=tk.RIGHT)
+        ttk.Label(fee_frame, text=f"£{delivery_fee:.2f}").pack(side=tk.RIGHT)
 
         total_frame = ttk.Frame(main_frame)
         total_frame.pack(fill=tk.X, pady=5)
         ttk.Label(total_frame, text=_t("takeaway.total"), font=('Arial', 11, 'bold')).pack(side=tk.LEFT)
-        ttk.Label(total_frame, text=f"${subtotal + delivery_fee:.2f}", font=('Arial', 11, 'bold')).pack(side=tk.RIGHT)
+        ttk.Label(total_frame, text=f"£{subtotal + delivery_fee:.2f}", font=('Arial', 11, 'bold')).pack(side=tk.RIGHT)
 
         if subtotal < min_order:
             ttk.Label(main_frame, text=_t("takeaway.min_order_warning", min_order=min_order, needed=(min_order - subtotal)),
@@ -851,7 +851,7 @@ class TakeawayGUI:
                 order['order_id'],
                 order['restaurant_name'],
                 order['order_date'],
-                f"${order['total_amount']:.2f}",
+                f"£{order['total_amount']:.2f}",
                 order['order_status'].upper()
             ))
 

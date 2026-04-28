@@ -159,8 +159,8 @@ class TemplateEditor:
         preview_body = body
 
         for var, value in sample_vars.items():
-            preview_subject = preview_subject.replace(f'${var}', str(value))
-            preview_body = preview_body.replace(f'${var}', str(value))
+            preview_subject = preview_subject.replace(f'£{var}', str(value))
+            preview_body = preview_body.replace(f'£{var}', str(value))
 
         # Show preview
         preview_dialog = tk.Toplevel(self.dialog)

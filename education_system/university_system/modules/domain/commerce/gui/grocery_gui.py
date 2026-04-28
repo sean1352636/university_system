@@ -299,7 +299,7 @@ class GroceryGUI:
         totals_frame = ttk.Frame(parent)
         totals_frame.pack(fill=tk.X, pady=10)
 
-        self.subtotal_label = ttk.Label(totals_frame, text=_t("grocery.subtotal") + ": $0.00", font=('Arial', 11, 'bold'))
+        self.subtotal_label = ttk.Label(totals_frame, text=_t("grocery.subtotal") + ": £0.00", font=('Arial', 11, 'bold'))
         self.subtotal_label.pack()
 
         # Cart buttons
@@ -331,10 +331,10 @@ class GroceryGUI:
         products = get_products(category_id, search)
 
         for p in products:
-            price_display = f"${p['price']:.2f}"
+            price_display = f"£{p['price']:.2f}"
             if p['discount_percentage'] > 0:
                 discounted = p['price'] * (1 - p['discount_percentage'] / 100)
-                price_display = f"${discounted:.2f}"
+                price_display = f"£{discounted:.2f}"
 
             stock_display = str(p['stock_quantity'])
             if p['stock_quantity'] <= 0:
@@ -418,11 +418,11 @@ class GroceryGUI:
             self.cart_tree.insert('', tk.END, values=(
                 item['name'][:20],
                 item['quantity'],
-                f"${price:.2f}",
-                f"${total:.2f}"
+                f"£{price:.2f}",
+                f"£{total:.2f}"
             ), tags=(item['product_id'],))
 
-        self.subtotal_label.config(text=f"{_t('grocery.subtotal')}: ${subtotal:.2f}")
+        self.subtotal_label.config(text=f"{_t('grocery.subtotal')}: £{subtotal:.2f}")
 
     def remove_from_cart(self):
         """Remove selected item from cart"""
@@ -626,7 +626,7 @@ class GroceryGUI:
             item_frame.pack(fill=tk.X)
             ttk.Label(item_frame, text=f"{item['product_name']}").pack(side=tk.LEFT)
             ttk.Label(item_frame, text=f"x{item['quantity']}").pack(side=tk.LEFT, padx=10)
-            ttk.Label(item_frame, text=f"${item['subtotal']:.2f}").pack(side=tk.RIGHT)
+            ttk.Label(item_frame, text=f"£{item['subtotal']:.2f}").pack(side=tk.RIGHT)
 
         ttk.Separator(main_frame, orient='horizontal').pack(fill=tk.X, pady=5)
 
@@ -634,7 +634,7 @@ class GroceryGUI:
         total_frame = ttk.Frame(main_frame)
         total_frame.pack(fill=tk.X)
         ttk.Label(total_frame, text=_t("grocery.total").upper() + ":", font=('Arial', 11, 'bold')).pack(side=tk.LEFT)
-        ttk.Label(total_frame, text=f"${transaction['total_amount']:.2f}",
+        ttk.Label(total_frame, text=f"£{transaction['total_amount']:.2f}",
                  font=('Arial', 11, 'bold')).pack(side=tk.RIGHT)
 
         ttk.Label(main_frame, text="\n" + _t("grocery.payment").format(method=transaction['payment_method'].title())).pack(anchor='w')
@@ -683,7 +683,7 @@ class GroceryGUI:
             tree.insert('', tk.END, values=(
                 t['receipt_number'],
                 t['transaction_date'],
-                f"${t['total_amount']:.2f}",
+                f"£{t['total_amount']:.2f}",
                 t['payment_method'].title(),
                 t['payment_status'].title()
             ), tags=(t['transaction_id'],))

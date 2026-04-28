@@ -34,7 +34,7 @@ def generate_alumni_report():
         cursor.execute('SELECT COUNT(*), SUM(amount) FROM alumni_donations')
         donation_stats = cursor.fetchone()
         print(f"Total Donations: {donation_stats[0]}")
-        print(f"Total Amount Donated: ${donation_stats[1] or 0:.2f}")
+        print(f"Total Amount Donated: £{donation_stats[1] or 0:.2f}")
 
         # Mentorships
         cursor.execute('SELECT COUNT(*) FROM alumni_mentorships WHERE status = "active"')
@@ -45,7 +45,7 @@ def generate_alumni_report():
         try:
             cursor.execute('SELECT COALESCE(SUM(amount), 0) FROM donations WHERE is_gift_aided = 1')
             gift_aid_total = cursor.fetchone()[0]
-            print(f"Gift Aid Eligible: ${gift_aid_total:,.2f}")
+            print(f"Gift Aid Eligible: £{gift_aid_total:,.2f}")
         except Exception:
             pass
 

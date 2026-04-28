@@ -40,7 +40,7 @@ def record_donation():
             notes=f'Alumni donation for {purpose}'
         )
 
-        print(f"Donation of ${amount:.2f} recorded successfully. Thank you for your generosity!")
+        print(f"Donation of £{amount:.2f} recorded successfully. Thank you for your generosity!")
         if finance_payment_id:
             print(f"Finance System Payment ID: {finance_payment_id}")
 
@@ -106,10 +106,10 @@ def view_donations():
         print(f"{'ID':<10} {'Amount':<12} {'Purpose':<20} {'Date':<20} {'Status':<15}")
         print("-" * 80)
         for donation in donations:
-            print(f"{donation[0]:<10} ${donation[1]:<11.2f} {donation[2]:<20} {donation[3]:<20} {donation[4]:<15}")
+            print(f"{donation[0]:<10} £{donation[1]:<11.2f} {donation[2]:<20} {donation[3]:<20} {donation[4]:<15}")
 
         total = sum(d[1] for d in donations)
-        print(f"\nTotal donations: ${total:.2f}")
+        print(f"\nTotal donations: £{total:.2f}")
     except Exception as e:
         print(f"Error viewing donations: {e}")
 
@@ -162,7 +162,7 @@ def manage_campaigns():
             print("-" * 95)
             for campaign in campaigns:
                 progress = (campaign[3] / campaign[2] * 100) if campaign[2] > 0 else 0
-                print(f"{campaign[0]:<15} {campaign[1]:<25} ${campaign[2]:<11.2f} ${campaign[3]:<11.2f} {campaign[4]:<15} {campaign[5]:<12}")
+                print(f"{campaign[0]:<15} {campaign[1]:<25} £{campaign[2]:<11.2f} £{campaign[3]:<11.2f} {campaign[4]:<15} {campaign[5]:<12}")
 
         elif choice == '3':
             campaign_id = input("Enter campaign ID to update: ")
@@ -190,8 +190,8 @@ def manage_campaigns():
                 progress = (campaign[2] / campaign[1] * 100) if campaign[1] > 0 else 0
                 print(f"\n--- Campaign Progress ---")
                 print(f"Name: {campaign[0]}")
-                print(f"Goal: ${campaign[1]:.2f}")
-                print(f"Current Amount: ${campaign[2]:.2f}")
+                print(f"Goal: £{campaign[1]:.2f}")
+                print(f"Current Amount: £{campaign[2]:.2f}")
                 print(f"Progress: {progress:.1f}%")
                 print(f"End Date: {campaign[3]}")
                 print(f"Status: {campaign[4]}")
@@ -304,7 +304,7 @@ def create_fundraising_campaign():
 
     print(f"\nFundraising campaign created successfully!")
     print(f"Campaign ID: {campaign_id}")
-    print(f"Goal: ${goal_amount:,.2f}")
+    print(f"Goal: £{goal_amount:,.2f}")
     print(f"Duration: {start_date} to {end_date}")
 
 def view_fundraising_campaigns():
@@ -371,7 +371,7 @@ def view_fundraising_campaigns():
             progress_percentage = (campaign[4] / campaign[3] * 100) if campaign[3] > 0 else 0
 
             print(f"Campaign: {campaign[1]}")
-            print(f"Goal: ${campaign[3]:,.2f} | Raised: ${campaign[4]:,.2f} ({progress_percentage:.1f}%)")
+            print(f"Goal: £{campaign[3]:,.2f} | Raised: £{campaign[4]:,.2f} ({progress_percentage:.1f}%)")
             print(f"Period: {campaign[5]} to {campaign[6]}")
             print(f"Category: {campaign[9]} | Status: {campaign[8]}")
             if campaign[10]:  # is_featured
@@ -414,13 +414,13 @@ def view_campaign_performance(cursor):
         progress = (current / goal * 100) if goal > 0 else 0
 
         print(f"\nCampaign: {name}")
-        print(f"Progress: ${current:,.2f} / ${goal:,.2f} ({progress:.1f}%)")
+        print(f"Progress: £{current:,.2f} / £{goal:,.2f} ({progress:.1f}%)")
         print(f"Total Donations: {total_donations}")
         print(f"Unique Donors: {unique_donors}")
         if avg_donation:
-            print(f"Average Donation: ${avg_donation:.2f}")
+            print(f"Average Donation: £{avg_donation:.2f}")
         if largest:
-            print(f"Largest Donation: ${largest:.2f}")
+            print(f"Largest Donation: £{largest:.2f}")
 
         # Progress bar
         bar_length = 40
@@ -468,7 +468,7 @@ def manage_donor_recognition():
             print("-" * 70)
             for rec in recognitions:
                 name = f"{rec[5]} {rec[6]}"
-                print(f"{name}: {rec[2]} (${rec[3]:,.2f} total)")
+                print(f"{name}: {rec[2]} (£{rec[3]:,.2f} total)")
                 if rec[4]:  # benefits
                     print(f"  Benefits: {rec[4]}")
                 print("-" * 70)
@@ -556,9 +556,9 @@ def generate_recognition_report(cursor):
         for level, count, amount in report_data:
             total_donors += count
             total_amount += amount
-            print(f"{level}: {count} donors (${amount:,.2f})")
+            print(f"{level}: {count} donors (£{amount:,.2f})")
 
         print("-" * 40)
-        print(f"Total: {total_donors} donors (${total_amount:,.2f})")
+        print(f"Total: {total_donors} donors (£{total_amount:,.2f})")
     else:
         print("No recognition data available.")

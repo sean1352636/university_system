@@ -225,7 +225,7 @@ class ExpenseApprovalDialog:
                 self.expenses_tree.insert('', 'end', values=(
                     req_id,
                     category or na_text,
-                    f"${amount:.2f}",
+                    f"£{amount:.2f}",
                     (desc or na_text)[:30],
                     submitted_by or na_text,
                     sub_date or na_text,

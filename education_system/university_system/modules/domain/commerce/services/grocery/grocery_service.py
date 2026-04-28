@@ -598,7 +598,7 @@ def checkout(user_id: int, payment_method: str = 'card') -> Optional[str]:
         conn.commit()
         conn.close()
 
-        log_activity('create', 'grocery_transaction', details=f'Transaction {transaction_id} for ${total:.2f}')
+        log_activity('create', 'grocery_transaction', details=f'Transaction {transaction_id} for £{total:.2f}')
 
         return transaction_id
 
@@ -903,10 +903,10 @@ def browse_category_products(user_id: int, category: Optional[Dict]):
         print(f"{'=' * 50}")
 
         for i, product in enumerate(page_products, start + 1):
-            price_str = f"${product['price']:.2f}"
+            price_str = f"£{product['price']:.2f}"
             if product['discount_percentage'] > 0:
                 discounted = product['price'] * (1 - product['discount_percentage'] / 100)
-                price_str = f"${discounted:.2f} (was ${product['price']:.2f})"
+                price_str = f"£{discounted:.2f} (was £{product['price']:.2f})"
 
             stock_status = "In Stock" if product['stock_quantity'] > 0 else "Out of Stock"
             if 0 < product['stock_quantity'] <= 5:
@@ -969,10 +969,10 @@ def search_products(user_id: int):
     print(f"{'=' * 50}")
 
     for i, product in enumerate(products, 1):
-        price_str = f"${product['price']:.2f}"
+        price_str = f"£{product['price']:.2f}"
         if product['discount_percentage'] > 0:
             discounted = product['price'] * (1 - product['discount_percentage'] / 100)
-            price_str = f"${discounted:.2f} (was ${product['price']:.2f})"
+            price_str = f"£{discounted:.2f} (was £{product['price']:.2f})"
 
         print(f"\n{i}. {product['name']} ({product['category_name']})")
         if product['brand']:
@@ -1020,12 +1020,12 @@ def view_and_manage_cart(user_id: int):
             print(f"\n{i}. {item['name']}")
             if item['brand']:
                 print(f"   Brand: {item['brand']}")
-            print(f"   Qty: {item['quantity']} x ${price:.2f} = ${line_total:.2f}")
+            print(f"   Qty: {item['quantity']} x £{price:.2f} = £{line_total:.2f}")
             if item['discount_percentage'] > 0:
                 print(f"   ({item['discount_percentage']}% discount applied)")
 
         print("-" * 40)
-        print(f"Subtotal: ${subtotal:.2f}")
+        print(f"Subtotal: £{subtotal:.2f}")
 
         print("\n1. Checkout")
         print("2. Update Quantities")
@@ -1078,7 +1078,7 @@ def process_checkout(user_id: int):
     print("       CHECKOUT")
     print("=" * 40)
 
-    print(f"\nTotal: ${subtotal:.2f}")
+    print(f"\nTotal: £{subtotal:.2f}")
 
     print("\nPayment Method:")
     print("1. Card")
@@ -1104,10 +1104,10 @@ def process_checkout(user_id: int):
 
         for item in items:
             print(f"{item['product_name']} x{item['quantity']}")
-            print(f"   ${item['subtotal']:.2f}")
+            print(f"   £{item['subtotal']:.2f}")
 
         print("-" * 40)
-        print(f"Total: ${transaction['total_amount']:.2f}")
+        print(f"Total: £{transaction['total_amount']:.2f}")
         print(f"Payment: {transaction['payment_method'].title()}")
         print(f"\nThank you for shopping with us!")
     else:
@@ -1130,7 +1130,7 @@ def view_purchase_history(user_id: int):
         for i, t in enumerate(transactions, 1):
             print(f"\n{i}. {t['receipt_number']}")
             print(f"   Date: {t['transaction_date']}")
-            print(f"   Total: ${t['total_amount']:.2f}")
+            print(f"   Total: £{t['total_amount']:.2f}")
 
         print(f"\n{len(transactions) + 1}. Back")
 
@@ -1155,9 +1155,9 @@ def view_purchase_history(user_id: int):
 
                 print("\nItems:")
                 for item in items:
-                    print(f"  - {item['product_name']} x{item['quantity']} = ${item['subtotal']:.2f}")
+                    print(f"  - {item['product_name']} x{item['quantity']} = £{item['subtotal']:.2f}")
 
-                print(f"\nTotal: ${transaction['total_amount']:.2f}")
+                print(f"\nTotal: £{transaction['total_amount']:.2f}")
 
                 input("\nPress Enter to continue...")
 
@@ -1265,7 +1265,7 @@ def view_all_transactions():
 
         for t in transactions:
             print(f"\n{t['receipt_number']} | {t['transaction_date']}")
-            print(f"   Total: ${t['total_amount']:.2f} | Payment: {t['payment_method']}")
+            print(f"   Total: £{t['total_amount']:.2f} | Payment: {t['payment_method']}")
             print(f"   Status: {t['payment_status']}")
 
         input("\nPress Enter to continue...")
@@ -1306,7 +1306,7 @@ def generate_reports():
             print("\nDaily Sales (Last 30 days):")
             print("-" * 50)
             for row in results:
-                print(f"{row[0]}: {row[1]} transactions, ${row[2]:.2f} revenue")
+                print(f"{row[0]}: {row[1]} transactions, £{row[2]:.2f} revenue")
 
         elif choice == '2':
             cursor.execute('''
@@ -1323,7 +1323,7 @@ def generate_reports():
             print("\nSales by Category:")
             print("-" * 50)
             for row in results:
-                print(f"{row[0]}: {row[1]} items, ${row[2]:.2f}")
+                print(f"{row[0]}: {row[1]} items, £{row[2]:.2f}")
 
         elif choice == '3':
             cursor.execute('''
@@ -1339,7 +1339,7 @@ def generate_reports():
             print("\nTop 20 Best Sellers:")
             print("-" * 50)
             for i, row in enumerate(results, 1):
-                print(f"{i}. {row[0]}: {row[1]} sold, ${row[2]:.2f}")
+                print(f"{i}. {row[0]}: {row[1]} sold, £{row[2]:.2f}")
 
         elif choice == '4':
             cursor.execute('''
@@ -1355,9 +1355,9 @@ def generate_reports():
             print("\nRevenue Summary:")
             print("-" * 50)
             print(f"Total Transactions: {result[0]}")
-            print(f"Gross Revenue: ${result[1]:.2f}")
-            print(f"Total Discounts: ${result[2]:.2f}")
-            print(f"Net Revenue: ${result[3]:.2f}")
+            print(f"Gross Revenue: £{result[1]:.2f}")
+            print(f"Total Discounts: £{result[2]:.2f}")
+            print(f"Net Revenue: £{result[3]:.2f}")
 
         conn.close()
         input("\nPress Enter to continue...")

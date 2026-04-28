@@ -100,19 +100,19 @@ class EventFinancesDialog:
         summary_grid.pack(fill='x', padx=10, pady=10)
 
         ttk.Label(summary_grid, text="Budget:", font=('Arial', 10, 'bold')).grid(row=0, column=0, sticky='w', padx=5)
-        self.budget_label = ttk.Label(summary_grid, text="$0.00")
+        self.budget_label = ttk.Label(summary_grid, text="£0.00")
         self.budget_label.grid(row=0, column=1, sticky='w', padx=5)
 
         ttk.Label(summary_grid, text="Expenses:", font=('Arial', 10, 'bold')).grid(row=0, column=2, sticky='w', padx=5)
-        self.expenses_label = ttk.Label(summary_grid, text="$0.00")
+        self.expenses_label = ttk.Label(summary_grid, text="£0.00")
         self.expenses_label.grid(row=0, column=3, sticky='w', padx=5)
 
         ttk.Label(summary_grid, text="Revenue:", font=('Arial', 10, 'bold')).grid(row=1, column=0, sticky='w', padx=5)
-        self.revenue_label = ttk.Label(summary_grid, text="$0.00")
+        self.revenue_label = ttk.Label(summary_grid, text="£0.00")
         self.revenue_label.grid(row=1, column=1, sticky='w', padx=5)
 
         ttk.Label(summary_grid, text="Balance:", font=('Arial', 10, 'bold')).grid(row=1, column=2, sticky='w', padx=5)
-        self.balance_label = ttk.Label(summary_grid, text="$0.00")
+        self.balance_label = ttk.Label(summary_grid, text="£0.00")
         self.balance_label.grid(row=1, column=3, sticky='w', padx=5)
 
         # Transactions list
@@ -212,19 +212,19 @@ class EventFinancesDialog:
                     total_expenses += amount
                     trans_type = "Expense"
                     category = expense_type
-                    display_amount = f"-${amount:.2f}"
+                    display_amount = f"-£{amount:.2f}"
                 elif revenue_type and revenue_type.strip():
                     # This is revenue
                     total_revenue += amount
                     trans_type = "Revenue"
                     category = revenue_type
-                    display_amount = f"+${amount:.2f}"
+                    display_amount = f"+£{amount:.2f}"
                 else:
                     # Unknown type, treat as expense
                     total_expenses += amount
                     trans_type = "Other"
                     category = "Uncategorized"
-                    display_amount = f"${amount:.2f}"
+                    display_amount = f"£{amount:.2f}"
 
                 self.trans_tree.insert('', 'end', values=(
                     date_recorded or "N/A",
@@ -238,15 +238,15 @@ class EventFinancesDialog:
             balance = total_revenue - total_expenses
 
             # Update summary labels
-            self.budget_label.config(text=f"${total_revenue:.2f}")
-            self.expenses_label.config(text=f"${total_expenses:.2f}")
-            self.revenue_label.config(text=f"${total_revenue:.2f}")
+            self.budget_label.config(text=f"£{total_revenue:.2f}")
+            self.expenses_label.config(text=f"£{total_expenses:.2f}")
+            self.revenue_label.config(text=f"£{total_revenue:.2f}")
 
             # Color-code the balance
             if balance >= 0:
-                self.balance_label.config(text=f"${balance:.2f}", foreground="green")
+                self.balance_label.config(text=f"£{balance:.2f}", foreground="green")
             else:
-                self.balance_label.config(text=f"-${abs(balance):.2f}", foreground="red")
+                self.balance_label.config(text=f"-£{abs(balance):.2f}", foreground="red")
 
             conn.close()
 
@@ -448,9 +448,9 @@ class EventFinancesDialog:
 
                 writer.writerow([])
                 writer.writerow(['Summary'])
-                writer.writerow(['Total Income', f"${total_income:.2f}"])
-                writer.writerow(['Total Expenses', f"${total_expenses:.2f}"])
-                writer.writerow(['Net Balance', f"${(total_income - total_expenses):.2f}"])
+                writer.writerow(['Total Income', f"£{total_income:.2f}"])
+                writer.writerow(['Total Expenses', f"£{total_expenses:.2f}"])
+                writer.writerow(['Net Balance', f"£{(total_income - total_expenses):.2f}"])
 
             messagebox.showinfo("Success", f"Report exported successfully to:\n{file_path}")
 

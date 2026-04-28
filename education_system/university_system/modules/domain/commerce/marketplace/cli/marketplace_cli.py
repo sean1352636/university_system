@@ -414,7 +414,7 @@ class MarketplaceCLI:
         print(f"\nID: {listing.get('listing_id')}")
         print(f"Title: {listing.get('title')}")
         print(f"Category: {listing.get('category')}")
-        print(f"Price: ${listing.get('price', 0):.2f}" if listing.get('price') else "FREE")
+        print(f"Price: £{listing.get('price', 0):.2f}" if listing.get('price') else "FREE")
         print(f"Condition: {listing.get('condition_status', 'N/A')}")
         print(f"Location: {listing.get('location', 'Not specified')}")
         print(f"\nDescription:\n{listing.get('description')}")
@@ -665,7 +665,7 @@ class MarketplaceCLI:
             title = listing.get('title', 'No title')[:28]
             category = listing.get('category', 'N/A')[:13]
             price = listing.get('price', 0)
-            price_str = f"${price:.2f}" if price else "FREE"
+            price_str = f"£{price:.2f}" if price else "FREE"
             status = listing.get('status', 'Unknown')[:8]
 
             print(f"{listing_id:<6} {title:<30} {category:<15} {price_str:<10} {status:<10}")

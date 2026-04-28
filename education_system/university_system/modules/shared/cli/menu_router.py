@@ -1503,7 +1503,7 @@ def _finaid_manage_scholarships(auth):
             scholarships = sm.get_available_scholarships()
             if scholarships:
                 for s in scholarships:
-                    print(f"  ID: {s['id']}, Name: {s.get('name', 'N/A')}, Amount: ${s.get('amount', 0):.2f}, Type: {s.get('scholarship_type', 'N/A')}")
+                    print(f"  ID: {s['id']}, Name: {s.get('name', 'N/A')}, Amount: £{s.get('amount', 0):.2f}, Type: {s.get('scholarship_type', 'N/A')}")
             else:
                 print("No scholarships available.")
         elif sub == '3':
@@ -1556,7 +1556,7 @@ def _finaid_disbursement_management(auth):
             pending = aid_mgr.get_pending_disbursements(academic_term=term)
             if pending:
                 for d in pending:
-                    print(f"  ID: {d['id']}, Student: {d.get('student_id')}, Amount: ${d.get('amount', 0):.2f}, Type: {d.get('disbursement_type', 'N/A')}")
+                    print(f"  ID: {d['id']}, Student: {d.get('student_id')}, Amount: £{d.get('amount', 0):.2f}, Type: {d.get('disbursement_type', 'N/A')}")
             else:
                 print("No pending disbursements.")
         elif sub == '3':
@@ -1717,7 +1717,7 @@ def display_financial_aid_menu(auth):
                     if awards:
                         print(f"\n--- Scholarship Awards for Student {student_id} ---")
                         for a in awards:
-                            print(f"  ID: {a.get('id', 'N/A')}, Name: {a.get('scholarship_name', a.get('name', 'N/A'))}, Amount: ${a.get('amount', 0):.2f}, Year: {a.get('academic_year', 'N/A')}")
+                            print(f"  ID: {a.get('id', 'N/A')}, Name: {a.get('scholarship_name', a.get('name', 'N/A'))}, Amount: £{a.get('amount', 0):.2f}, Year: {a.get('academic_year', 'N/A')}")
                     else:
                         print("No scholarship awards found.")
                     aid_mgr = FinancialAidManager()
@@ -1725,7 +1725,7 @@ def display_financial_aid_menu(auth):
                     if pending:
                         print(f"\n--- Pending Disbursements ---")
                         for d in pending:
-                            print(f"  ID: {d['id']}, Student: {d.get('student_id')}, Amount: ${d.get('amount', 0):.2f}, Type: {d.get('disbursement_type', 'N/A')}")
+                            print(f"  ID: {d['id']}, Student: {d.get('student_id')}, Amount: £{d.get('amount', 0):.2f}, Type: {d.get('disbursement_type', 'N/A')}")
                     else:
                         print("No pending disbursements.")
                 except (ValueError, TypeError, ValidationError) as e:

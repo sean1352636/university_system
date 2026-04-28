@@ -127,7 +127,7 @@ class CreateCompetitionDialog:
         ttk.Label(main_frame, text="Prizes:").pack(anchor='w', pady=(10, 5))
         self.prizes_entry = ttk.Entry(main_frame, width=60)
         self.prizes_entry.pack(fill='x', pady=(0, 10))
-        self.prizes_entry.insert(0, "1st: Trophy + $500, 2nd: $300, 3rd: $100")
+        self.prizes_entry.insert(0, "1st: Trophy + £500, 2nd: £300, 3rd: £100")
 
         # Rules
         ttk.Label(main_frame, text="Rules & Criteria:").pack(anchor='w', pady=(0, 5))

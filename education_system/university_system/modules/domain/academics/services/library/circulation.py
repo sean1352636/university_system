@@ -95,10 +95,10 @@ def check_loan_eligibility(cursor, user_id: str, user_type: str) -> Dict:
                 'max_loans': max_loans
             }
 
-        if outstanding_fines > 10.00:  # $10 fine limit
+        if outstanding_fines > 10.00:  # £10 fine limit
             return {
                 'eligible': False,
-                'reason': f'Outstanding fines: ${outstanding_fines:.2f} (limit: $10.00)',
+                'reason': f'Outstanding fines: £{outstanding_fines:.2f} (limit: £10.00)',
                 'current_loans': current_loans,
                 'max_loans': max_loans
             }
@@ -1040,10 +1040,10 @@ def view_overdue_books():
             fine_amount = fine if fine else 0
             total_fines += fine_amount
 
-            print(f"{user_id:<12} {book_id:<10} {title_display:<30} {due_date[:10]:<12} {int(days_overdue):<10} ${fine_amount:.2f}")
+            print(f"{user_id:<12} {book_id:<10} {title_display:<30} {due_date[:10]:<12} {int(days_overdue):<10} £{fine_amount:.2f}")
 
         print("-" * 90)
-        print(f"Total Outstanding Fines: ${total_fines:.2f}")
+        print(f"Total Outstanding Fines: £{total_fines:.2f}")
         print("=" * 90)
 
     except sqlite3.Error as e:

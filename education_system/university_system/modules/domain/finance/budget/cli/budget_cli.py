@@ -283,10 +283,10 @@ class BudgetTrackerCLI:
                     print(f"   Budget ID: {budget['budget_id']}")
                     print(f"   Type: {budget['budget_type'].capitalize()}")
                     print(f"   Period: {budget['start_date']} to {budget['end_date']}")
-                    print(f"   Total Budget: ${budget['total_budget']:.2f}")
-                    print(f"   Spent: ${budget['spent_amount']:.2f}")
+                    print(f"   Total Budget: £{budget['total_budget']:.2f}")
+                    print(f"   Spent: £{budget['spent_amount']:.2f}")
                     remaining = budget['total_budget'] - budget['spent_amount']
-                    print(f"   Remaining: ${remaining:.2f}")
+                    print(f"   Remaining: £{remaining:.2f}")
                     print(f"   Created: {budget['created_at']}")
 
         except Exception as e:
@@ -323,10 +323,10 @@ class BudgetTrackerCLI:
             print(f"\nType: {summary['budget_type'].capitalize()}")
             print(f"Period: {summary['start_date']} to {summary['end_date']}")
             print(f"\nFinancial Summary:")
-            print(f"  Total Budget: ${summary['total_budget']:.2f}")
-            print(f"  Allocated: ${summary['allocated_amount']:.2f}")
-            print(f"  Spent: ${summary['spent_amount']:.2f}")
-            print(f"  Remaining: ${summary['remaining_budget']:.2f}")
+            print(f"  Total Budget: £{summary['total_budget']:.2f}")
+            print(f"  Allocated: £{summary['allocated_amount']:.2f}")
+            print(f"  Spent: £{summary['spent_amount']:.2f}")
+            print(f"  Remaining: £{summary['remaining_budget']:.2f}")
             print(f"  Budget Utilization: {summary['budget_utilization_pct']:.1f}%")
 
             print(f"\nTime Analysis:")
@@ -334,7 +334,7 @@ class BudgetTrackerCLI:
             print(f"  Elapsed Days: {summary['elapsed_days']}")
             print(f"  Remaining Days: {summary['remaining_days']}")
             print(f"  Time Progress: {summary['days_progress_pct']:.1f}%")
-            print(f"  Recommended Daily Spending: ${summary['recommended_daily_spending']:.2f}")
+            print(f"  Recommended Daily Spending: £{summary['recommended_daily_spending']:.2f}")
 
             if summary['categories']:
                 print("\n" + "-" * 60)
@@ -345,9 +345,9 @@ class BudgetTrackerCLI:
                     remaining = cat['allocated_amount'] - cat['spent_amount']
                     status = "✓" if spent_pct <= 100 else "⚠"
                     print(f"\n{status} {cat['category_name']} ({cat['category_type']})")
-                    print(f"  Allocated: ${cat['allocated_amount']:.2f}")
-                    print(f"  Spent: ${cat['spent_amount']:.2f} ({spent_pct:.1f}%)")
-                    print(f"  Remaining: ${remaining:.2f}")
+                    print(f"  Allocated: £{cat['allocated_amount']:.2f}")
+                    print(f"  Spent: £{cat['spent_amount']:.2f} ({spent_pct:.1f}%)")
+                    print(f"  Remaining: £{remaining:.2f}")
 
         except Exception as e:
             print(f"\n✗ Error retrieving budget summary: {e}")
@@ -518,12 +518,12 @@ class BudgetTrackerCLI:
                 print("\nNo expenses found for the selected period.")
             else:
                 total = sum(e['amount'] for e in expenses)
-                print(f"\n{len(expenses)} expenses found | Total: ${total:.2f}")
+                print(f"\n{len(expenses)} expenses found | Total: £{total:.2f}")
                 print("-" * 60)
 
                 for expense in expenses[:20]:  # Show first 20
                     cat_name = expense.get('category_name', 'Uncategorized')
-                    print(f"\n{expense['expense_date']} | ${expense['amount']:.2f}")
+                    print(f"\n{expense['expense_date']} | £{expense['amount']:.2f}")
                     print(f"  {expense['description']}")
                     if expense['merchant_name']:
                         print(f"  Merchant: {expense['merchant_name']}")
@@ -638,16 +638,16 @@ class BudgetTrackerCLI:
             else:
                 total = sum(cat['total_amount'] for cat in breakdown)
                 print(f"\nPeriod: {start_date} to {end_date}")
-                print(f"Total Spending: ${total:.2f}")
+                print(f"Total Spending: £{total:.2f}")
                 print("-" * 60)
 
                 for cat in breakdown:
                     pct = (cat['total_amount'] / total * 100) if total > 0 else 0
                     print(f"\n{cat['category_name']} ({cat['category_type'] or 'N/A'})")
-                    print(f"  Total: ${cat['total_amount']:.2f} ({pct:.1f}%)")
+                    print(f"  Total: £{cat['total_amount']:.2f} ({pct:.1f}%)")
                     print(f"  Transactions: {cat['transaction_count']}")
-                    print(f"  Average: ${cat['average_amount']:.2f}")
-                    print(f"  Range: ${cat['min_amount']:.2f} - ${cat['max_amount']:.2f}")
+                    print(f"  Average: £{cat['average_amount']:.2f}")
+                    print(f"  Range: £{cat['min_amount']:.2f} - £{cat['max_amount']:.2f}")
 
         except Exception as e:
             print(f"\n✗ Error retrieving spending breakdown: {e}")
@@ -673,16 +673,16 @@ class BudgetTrackerCLI:
             print(f"\nPeriod: {trends['start_date']} to {trends['end_date']} ({trends['period_days']} days)")
             print("-" * 60)
             print("\nOverall Statistics:")
-            print(f"  Total Spent: ${stats['total_spent']:.2f}")
+            print(f"  Total Spent: £{stats['total_spent']:.2f}")
             print(f"  Total Transactions: {stats['total_transactions']}")
-            print(f"  Average Transaction: ${stats['average_transaction']:.2f}")
-            print(f"  Average Daily Spending: ${stats['average_daily_spending']:.2f}")
-            print(f"  Transaction Range: ${stats['min_transaction']:.2f} - ${stats['max_transaction']:.2f}")
+            print(f"  Average Transaction: £{stats['average_transaction']:.2f}")
+            print(f"  Average Daily Spending: £{stats['average_daily_spending']:.2f}")
+            print(f"  Transaction Range: £{stats['min_transaction']:.2f} - £{stats['max_transaction']:.2f}")
 
             if trends['daily_spending']:
                 print("\nDaily Spending (Last 7 days):")
                 for day in trends['daily_spending'][-7:]:
-                    print(f"  {day['expense_date']}: ${day['daily_total']:.2f}")
+                    print(f"  {day['expense_date']}: £{day['daily_total']:.2f}")
 
         except Exception as e:
             print(f"\n✗ Error retrieving spending trends: {e}")
@@ -777,11 +777,11 @@ class BudgetTrackerCLI:
                 print("\nNo income records found for the selected period.")
             else:
                 total = sum(i['amount'] for i in income_records)
-                print(f"\n{len(income_records)} income records found | Total: ${total:.2f}")
+                print(f"\n{len(income_records)} income records found | Total: £{total:.2f}")
                 print("-" * 60)
 
                 for income in income_records:
-                    print(f"\n{income['income_date']} | ${income['amount']:.2f}")
+                    print(f"\n{income['income_date']} | £{income['amount']:.2f}")
                     print(f"  Source: {income['source']}")
                     print(f"  Type: {income['income_type']}")
                     if income['description']:
@@ -953,9 +953,9 @@ class BudgetTrackerCLI:
 
                 if status['total_dollars'] > 0:
                     print(f"\nDollars:")
-                    print(f"  Total: ${status['total_dollars']:.2f}")
-                    print(f"  Used: ${status['used_dollars']:.2f}")
-                    print(f"  Remaining: ${status['remaining_dollars']:.2f}")
+                    print(f"  Total: £{status['total_dollars']:.2f}")
+                    print(f"  Used: £{status['used_dollars']:.2f}")
+                    print(f"  Remaining: £{status['remaining_dollars']:.2f}")
                     print(f"  Usage: {status['dollars_used_pct']:.1f}%")
                     print(f"  Pace: {status['dollars_pace'].upper()}")
 
@@ -967,13 +967,13 @@ class BudgetTrackerCLI:
                     print(f"\nProjections:")
                     print(f"  Recommended meals/day: {status['projected_meals_per_day']:.1f}")
                 if status.get('projected_dollars_per_day'):
-                    print(f"  Recommended $/day: ${status['projected_dollars_per_day']:.2f}")
+                    print(f"  Recommended $/day: £{status['projected_dollars_per_day']:.2f}")
 
                 if status.get('weekly_average_meals'):
                     print(f"\nAverages:")
                     print(f"  Meals/week: {status['weekly_average_meals']:.1f}")
                 if status.get('daily_average_dollars'):
-                    print(f"  Dollars/day: ${status['daily_average_dollars']:.2f}")
+                    print(f"  Dollars/day: £{status['daily_average_dollars']:.2f}")
 
         except Exception as e:
             print(f"\n✗ Error retrieving meal plan status: {e}")
@@ -1007,7 +1007,7 @@ class BudgetTrackerCLI:
                     if txn['meals_used'] > 0:
                         print(f"  Meals: {txn['meals_used']}")
                     if txn['dollars_used'] > 0:
-                        print(f"  Dollars: ${txn['dollars_used']:.2f}")
+                        print(f"  Dollars: £{txn['dollars_used']:.2f}")
                     if txn['description']:
                         print(f"  Note: {txn['description']}")
 
@@ -1056,13 +1056,13 @@ class BudgetTrackerCLI:
                     print(f"  ISBN: {listing['isbn']}")
                     print(f"  Vendor: {listing['vendor']}")
                     print(f"  Condition: {listing['condition']}")
-                    print(f"  Price: ${listing['price']:.2f} + ${listing['shipping_cost']:.2f} shipping = ${total_cost:.2f}")
+                    print(f"  Price: £{listing['price']:.2f} + £{listing['shipping_cost']:.2f} shipping = £{total_cost:.2f}")
                     print(f"  Availability: {listing['availability']}")
 
                     if listing['rental_option']:
-                        print(f"  Rental: ${listing['rental_price']:.2f} ({listing['rental_period_days']} days)")
+                        print(f"  Rental: £{listing['rental_price']:.2f} ({listing['rental_period_days']} days)")
                     if listing['digital_option']:
-                        print(f"  Digital: ${listing['digital_price']:.2f}")
+                        print(f"  Digital: £{listing['digital_price']:.2f}")
 
         except Exception as e:
             print(f"\n✗ Error comparing textbook prices: {e}")
@@ -1135,7 +1135,7 @@ class BudgetTrackerCLI:
                 print("\nNo textbook purchases found.")
             else:
                 total_spent = sum(t['price_paid'] for t in textbooks)
-                print(f"\n{len(textbooks)} textbooks | Total spent: ${total_spent:.2f}")
+                print(f"\n{len(textbooks)} textbooks | Total spent: £{total_spent:.2f}")
                 print("-" * 60)
 
                 for book in textbooks:
@@ -1146,7 +1146,7 @@ class BudgetTrackerCLI:
                     print(f"  Purchased: {book['purchase_date']}")
                     print(f"  Vendor: {book['vendor']}")
                     print(f"  Type: {book['purchase_type']}")
-                    print(f"  Price: ${book['price_paid']:.2f}")
+                    print(f"  Price: £{book['price_paid']:.2f}")
                     if book['rental_due_date']:
                         print(f"  Rental Due: {book['rental_due_date']}")
 
@@ -1173,19 +1173,19 @@ class BudgetTrackerCLI:
             else:
                 print(f"\nCourse: {deals['course_code']}")
                 print(f"Books Required: {len(deals['books'])}")
-                print(f"Total Cost (All New): ${deals['total_cost_new']:.2f}")
-                print(f"Total Cost (Best Deals): ${deals['total_cost_best_deals']:.2f}")
-                print(f"Potential Savings: ${deals['potential_savings']:.2f}")
+                print(f"Total Cost (All New): £{deals['total_cost_new']:.2f}")
+                print(f"Total Cost (Best Deals): £{deals['total_cost_best_deals']:.2f}")
+                print(f"Potential Savings: £{deals['potential_savings']:.2f}")
                 print("-" * 60)
 
                 for book in deals['books']:
                     print(f"\n{book['title']}")
                     print(f"  ISBN: {book['isbn']}")
-                    print(f"  Best New: ${book['best_new']:.2f}" if book['best_new'] else "  Best New: N/A")
-                    print(f"  Best Used: ${book['best_used']:.2f}" if book['best_used'] else "  Best Used: N/A")
-                    print(f"  Best Rental: ${book['best_rental']:.2f}" if book['best_rental'] else "  Best Rental: N/A")
-                    print(f"  Best Digital: ${book['best_digital']:.2f}" if book['best_digital'] else "  Best Digital: N/A")
-                    print(f"  ★ RECOMMENDED: {book['recommended_option']} - ${book['recommended_price']:.2f}")
+                    print(f"  Best New: £{book['best_new']:.2f}" if book['best_new'] else "  Best New: N/A")
+                    print(f"  Best Used: £{book['best_used']:.2f}" if book['best_used'] else "  Best Used: N/A")
+                    print(f"  Best Rental: £{book['best_rental']:.2f}" if book['best_rental'] else "  Best Rental: N/A")
+                    print(f"  Best Digital: £{book['best_digital']:.2f}" if book['best_digital'] else "  Best Digital: N/A")
+                    print(f"  ★ RECOMMENDED: {book['recommended_option']} - £{book['recommended_price']:.2f}")
 
         except Exception as e:
             print(f"\n✗ Error retrieving best deals: {e}")
@@ -1255,7 +1255,7 @@ class BudgetTrackerCLI:
                 return
 
             for i, goal in enumerate(goals, 1):
-                print(f"{i}. {goal['goal_name']} - ${goal['current_amount']:.2f} / ${goal['target_amount']:.2f} ({goal['progress_pct']:.1f}%)")
+                print(f"{i}. {goal['goal_name']} - £{goal['current_amount']:.2f} / £{goal['target_amount']:.2f} ({goal['progress_pct']:.1f}%)")
 
             choice = input("\nSelect goal: ").strip()
             if not choice.isdigit() or not (1 <= int(choice) <= len(goals)):
@@ -1272,7 +1272,7 @@ class BudgetTrackerCLI:
 
             success = SavingsGoalManager.update_goal_progress(goal_id, amount)
             if success:
-                print(f"\n✓ Goal progress updated! Added ${amount:.2f}")
+                print(f"\n✓ Goal progress updated! Added £{amount:.2f}")
 
                 # Check if goal completed
                 updated_goals = SavingsGoalManager.get_student_goals(student_id, active_only=False)
@@ -1305,9 +1305,9 @@ class BudgetTrackerCLI:
                     status_icon = "✓" if goal['status'] == 'completed' else "⏳"
                     print(f"\n{status_icon} {goal['goal_name']} [{goal['priority'].upper()}]")
                     print(f"   Goal ID: {goal['goal_id']}")
-                    print(f"   Target: ${goal['target_amount']:.2f}")
-                    print(f"   Saved: ${goal['current_amount']:.2f}")
-                    print(f"   Remaining: ${goal['remaining_amount']:.2f}")
+                    print(f"   Target: £{goal['target_amount']:.2f}")
+                    print(f"   Saved: £{goal['current_amount']:.2f}")
+                    print(f"   Remaining: £{goal['remaining_amount']:.2f}")
                     print(f"   Progress: {goal['progress_pct']:.1f}%")
 
                     if goal.get('target_date'):
@@ -1315,7 +1315,7 @@ class BudgetTrackerCLI:
                         if goal.get('days_remaining'):
                             print(f"   Days Remaining: {goal['days_remaining']}")
                         if goal.get('required_daily_savings'):
-                            print(f"   Required Daily Savings: ${goal['required_daily_savings']:.2f}")
+                            print(f"   Required Daily Savings: £{goal['required_daily_savings']:.2f}")
 
                     if goal['category']:
                         print(f"   Category: {goal['category']}")
@@ -1344,9 +1344,9 @@ class BudgetTrackerCLI:
 
                 print("\nCurrent Budget:")
                 print(f"  {summary['budget_name']} ({summary['budget_type']})")
-                print(f"  Total: ${summary['total_budget']:.2f}")
-                print(f"  Spent: ${summary['spent_amount']:.2f}")
-                print(f"  Remaining: ${summary['remaining_budget']:.2f}")
+                print(f"  Total: £{summary['total_budget']:.2f}")
+                print(f"  Spent: £{summary['spent_amount']:.2f}")
+                print(f"  Remaining: £{summary['remaining_budget']:.2f}")
                 print(f"  Utilization: {summary['budget_utilization_pct']:.1f}%")
 
             # Recent expenses
@@ -1355,9 +1355,9 @@ class BudgetTrackerCLI:
             if recent_expenses:
                 total_expenses = sum(e['amount'] for e in recent_expenses)
                 print(f"\nRecent Expenses (30 days):")
-                print(f"  Total: ${total_expenses:.2f}")
+                print(f"  Total: £{total_expenses:.2f}")
                 print(f"  Transactions: {len(recent_expenses)}")
-                print(f"  Average: ${total_expenses / len(recent_expenses):.2f}")
+                print(f"  Average: £{total_expenses / len(recent_expenses):.2f}")
 
             # Recent income
             recent_income = IncomeManager.get_student_income(student_id,
@@ -1365,13 +1365,13 @@ class BudgetTrackerCLI:
             if recent_income:
                 total_income = sum(i['amount'] for i in recent_income)
                 print(f"\nRecent Income (30 days):")
-                print(f"  Total: ${total_income:.2f}")
+                print(f"  Total: £{total_income:.2f}")
                 print(f"  Sources: {len(recent_income)}")
 
                 # Net income
                 if recent_expenses:
                     net = total_income - total_expenses
-                    print(f"\nNet Income (30 days): ${net:.2f}")
+                    print(f"\nNet Income (30 days): £{net:.2f}")
 
             # Savings goals
             goals = SavingsGoalManager.get_student_goals(student_id, active_only=True)
@@ -1380,9 +1380,9 @@ class BudgetTrackerCLI:
                 total_goal_saved = sum(g['current_amount'] for g in goals)
                 print(f"\nSavings Goals:")
                 print(f"  Active Goals: {len(goals)}")
-                print(f"  Total Target: ${total_goal_target:.2f}")
-                print(f"  Total Saved: ${total_goal_saved:.2f}")
-                print(f"  Remaining: ${total_goal_target - total_goal_saved:.2f}")
+                print(f"  Total Target: £{total_goal_target:.2f}")
+                print(f"  Total Saved: £{total_goal_saved:.2f}")
+                print(f"  Remaining: £{total_goal_target - total_goal_saved:.2f}")
 
             # Meal plan
             meal_status = MealPlanManager.get_meal_plan_status(student_id)
@@ -1391,7 +1391,7 @@ class BudgetTrackerCLI:
                 if meal_status.get('remaining_meals'):
                     print(f"  Meals Remaining: {meal_status['remaining_meals']}")
                 if meal_status.get('remaining_dollars'):
-                    print(f"  Dollars Remaining: ${meal_status['remaining_dollars']:.2f}")
+                    print(f"  Dollars Remaining: £{meal_status['remaining_dollars']:.2f}")
 
         except Exception as e:
             print(f"\n✗ Error generating financial summary: {e}")
@@ -1426,9 +1426,9 @@ class BudgetTrackerCLI:
             print("=" * 60)
 
             print(f"\nOverall Performance:")
-            print(f"  Budgeted: ${summary['total_budget']:.2f}")
-            print(f"  Spent: ${summary['spent_amount']:.2f}")
-            print(f"  Variance: ${summary['remaining_budget']:.2f}")
+            print(f"  Budgeted: £{summary['total_budget']:.2f}")
+            print(f"  Spent: £{summary['spent_amount']:.2f}")
+            print(f"  Variance: £{summary['remaining_budget']:.2f}")
             print(f"  Utilization: {summary['budget_utilization_pct']:.1f}%")
 
             print(f"\nTime Progress: {summary['days_progress_pct']:.1f}%")
@@ -1452,12 +1452,12 @@ class BudgetTrackerCLI:
 
                     status = "✓" if spent_pct <= 100 else "⚠"
                     print(f"\n{status} {cat['category_name']}")
-                    print(f"  Budgeted: ${cat['allocated_amount']:.2f}")
-                    print(f"  Spent: ${cat['spent_amount']:.2f} ({spent_pct:.1f}%)")
-                    print(f"  Variance: ${variance:.2f}")
+                    print(f"  Budgeted: £{cat['allocated_amount']:.2f}")
+                    print(f"  Spent: £{cat['spent_amount']:.2f} ({spent_pct:.1f}%)")
+                    print(f"  Variance: £{variance:.2f}")
 
                     if spent_pct > 100:
-                        print(f"  ⚠ OVER BUDGET by ${-variance:.2f}")
+                        print(f"  ⚠ OVER BUDGET by £{-variance:.2f}")
                     elif spent_pct > 90:
                         print(f"  ⚠ Near limit")
 

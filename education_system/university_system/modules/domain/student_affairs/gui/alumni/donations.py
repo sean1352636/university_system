@@ -123,9 +123,9 @@ class DonationsMixin:
                         progress_pct = (total_raised / goal * 100) if goal > 0 else 0
 
                         # Update labels
-                        self.performance_labels['Total Raised'].config(text=f"${total_raised:,.2f}")
+                        self.performance_labels['Total Raised'].config(text=f"£{total_raised:,.2f}")
                         self.performance_labels['Number of Donors'].config(text=str(donor_count))
-                        self.performance_labels['Average Donation'].config(text=f"${avg_donation:,.2f}")
+                        self.performance_labels['Average Donation'].config(text=f"£{avg_donation:,.2f}")
                         self.performance_labels['Goal Progress'].config(text=f"{progress_pct:.1f}%")
 
                         # Load recent donations
@@ -143,7 +143,7 @@ class DonationsMixin:
 
                         for donation in donations:
                             formatted = list(donation)
-                            formatted[1] = f"${formatted[1]:,.2f}"
+                            formatted[1] = f"£{formatted[1]:,.2f}"
                             self.campaign_donations_tree.insert('', tk.END, values=formatted)
 
                         self.update_status(f"Loaded performance for: {campaign_name}")
@@ -170,8 +170,8 @@ class DonationsMixin:
 
                     for level in levels:
                         formatted = list(level)
-                        formatted[1] = f"${formatted[1]:,.2f}" if formatted[1] else "N/A"
-                        formatted[2] = f"${formatted[2]:,.2f}" if formatted[2] else "No limit"
+                        formatted[1] = f"£{formatted[1]:,.2f}" if formatted[1] else "N/A"
+                        formatted[2] = f"£{formatted[2]:,.2f}" if formatted[2] else "No limit"
                         self.recognition_tree.insert('', tk.END, values=formatted)
 
                     self.update_status(f"Loaded {len(levels)} recognition level(s)")
@@ -264,11 +264,11 @@ class DonationsMixin:
 
                 # Sample donations data
                 sample_donations = [
-                    ('2025-08-15', 'Sarah Johnson', 'A000001', '$500.00', 'Annual Fund', 'Credit Card', 'Completed'),
-                    ('2025-08-12', 'Michael Chen', 'A000002', '$250.00', 'Scholarship Fund', 'Check', 'Completed'),
-                    ('2025-08-10', 'Emily Davis', 'A000003', '$100.00', 'Annual Fund', 'Online', 'Completed'),
-                    ('2025-08-08', 'John Smith', 'A000004', '$1000.00', 'Building Fund', 'Bank Transfer', 'Completed'),
-                    ('2025-08-05', 'Lisa Brown', 'A000005', '$75.00', 'Annual Fund', 'Credit Card', 'Completed')
+                    ('2025-08-15', 'Sarah Johnson', 'A000001', '£500.00', 'Annual Fund', 'Credit Card', 'Completed'),
+                    ('2025-08-12', 'Michael Chen', 'A000002', '£250.00', 'Scholarship Fund', 'Check', 'Completed'),
+                    ('2025-08-10', 'Emily Davis', 'A000003', '£100.00', 'Annual Fund', 'Online', 'Completed'),
+                    ('2025-08-08', 'John Smith', 'A000004', '£1000.00', 'Building Fund', 'Bank Transfer', 'Completed'),
+                    ('2025-08-05', 'Lisa Brown', 'A000005', '£75.00', 'Annual Fund', 'Credit Card', 'Completed')
                 ]
 
                 for donation in sample_donations:
@@ -311,7 +311,7 @@ class DonationsMixin:
             campaigns_content = """Active Fundraising Campaigns:
 
     🎯 Annual Alumni Fund 2025
-    Goal: $100,000 | Raised: $67,500 (67.5%)
+    Goal: £100,000 | Raised: £67,500 (67.5%)
     Duration: January 1, 2025 - December 31, 2025
     Category: Annual Fund
     Status: Active
@@ -321,15 +321,15 @@ class DonationsMixin:
 
     Progress: ████████████████████████████████████████████████████░░░░░░░░░░
 
-    Donors: 245 | Average Donation: $275
-    Recent Donors: Sarah Johnson ($500), Michael Chen ($250), Emily Davis ($100)
+    Donors: 245 | Average Donation: £275
+    Recent Donors: Sarah Johnson (£500), Michael Chen (£250), Emily Davis (£100)
 
     [Donate Now] [View Details] [Share Campaign]
 
     ---
 
     🏫 New Library Building Fund
-    Goal: $250,000 | Raised: $89,750 (35.9%)
+    Goal: £250,000 | Raised: £89,750 (35.9%)
     Duration: March 1, 2025 - February 28, 2026
     Category: Building Fund
     Status: Active
@@ -339,15 +339,15 @@ class DonationsMixin:
 
     Progress: ████████████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 
-    Donors: 67 | Average Donation: $1,340
-    Major Donors: Anonymous ($25,000), John Smith Foundation ($15,000)
+    Donors: 67 | Average Donation: £1,340
+    Major Donors: Anonymous (£25,000), John Smith Foundation (£15,000)
 
     [Donate Now] [View Details] [Share Campaign]
 
     ---
 
     🎓 Emergency Student Support Fund
-    Goal: $50,000 | Raised: $31,200 (62.4%)
+    Goal: £50,000 | Raised: £31,200 (62.4%)
     Duration: June 1, 2025 - August 31, 2025
     Category: Student Support
     Status: Active
@@ -357,7 +357,7 @@ class DonationsMixin:
 
     Progress: ████████████████████████████████████████████████████████████░░░░░░░░░░░░░░░░
 
-    Donors: 156 | Average Donation: $200
+    Donors: 156 | Average Donation: £200
     Recent Impact: Helped 23 students with emergency expenses
 
     [Donate Now] [View Details] [Share Campaign]
@@ -392,32 +392,32 @@ class DonationsMixin:
 
             recognition_content = """Current Donor Recognition Levels:
 
-        🥉 Bronze Supporter ($100+)
+        🥉 Bronze Supporter (£100+)
         - Newsletter subscription
         - Alumni directory access
         - 15 active donors
 
-        🥈 Silver Supporter ($500+)
+        🥈 Silver Supporter (£500+)
         - Event invitations
         - Recognition in publications
         - 8 active donors
 
-        🥇 Gold Supporter ($1,000+)
+        🥇 Gold Supporter (£1,000+)
         - VIP event access
         - Annual appreciation dinner
         - 5 active donors
 
-        💎 Platinum Supporter ($5,000+)
+        💎 Platinum Supporter (£5,000+)
         - Board meeting invitations
         - Naming opportunities
         - 2 active donors
 
-        💍 Diamond Supporter ($10,000+)
+        💍 Diamond Supporter (£10,000+)
         - Personal meetings with leadership
         - Legacy society membership
         - 1 active donor
 
-        🏆 Benefactor ($25,000+)
+        🏆 Benefactor (£25,000+)
         - Permanent recognition
         - Advisory board invitation
         - 0 active donors
@@ -650,7 +650,7 @@ class DonationsMixin:
             total_donations = 5
             avg_donation = total_amount / total_donations
 
-            summary_text = f"Total Donations: {total_donations} | Total Amount: ${total_amount:,.2f} | Average: ${avg_donation:.2f}"
+            summary_text = f"Total Donations: {total_donations} | Total Amount: £{total_amount:,.2f} | Average: £{avg_donation:.2f}"
             self.donation_summary.set(summary_text)
 
         def update_donor_recognition_levels(self):
@@ -732,7 +732,7 @@ class DonationsMixin:
                         ORDER BY start_date DESC
                     """)
                     campaigns = cursor.fetchall()
-                    campaign_options = [f"{c[1]} (${c[2]:,.2f} goal) - {c[3]} (ID: {c[0]})" for c in campaigns]
+                    campaign_options = [f"{c[1]} (£{c[2]:,.2f} goal) - {c[3]} (ID: {c[0]})" for c in campaigns]
             except sqlite3.Error:
                 pass  # Silently handle database errors
 

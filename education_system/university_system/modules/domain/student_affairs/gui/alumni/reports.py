@@ -212,9 +212,9 @@ class ReportsMixin:
 
     FINANCIAL OVERVIEW
     Report Period: January 1, 2025 - December 6, 2025
-    Total Donations: $234,750
+    Total Donations: £234,750
     Number of Donors: 156
-    Average Donation: $1,505
+    Average Donation: £1,505
     Growth vs. Previous Year: +18%
 
     DONATION STATISTICS
@@ -223,17 +223,17 @@ class ReportsMixin:
     - Recurring donations: 64 (21.5%)
 
     CAMPAIGN PERFORMANCE
-    Annual Alumni Fund: $156,750 (66.8%) - Goal: 156.8%
-    Scholarship Fund: $45,600 (19.4%) - Goal: 91.2%
-    Building Fund: $23,400 (10.0%) - Goal: 93.6%
-    Emergency Fund: $9,000 (3.8%) - Goal: 60.0%
+    Annual Alumni Fund: £156,750 (66.8%) - Goal: 156.8%
+    Scholarship Fund: £45,600 (19.4%) - Goal: 91.2%
+    Building Fund: £23,400 (10.0%) - Goal: 93.6%
+    Emergency Fund: £9,000 (3.8%) - Goal: 60.0%
 
-    MAJOR DONORS (>$1,000)
-    1. Anonymous: $25,000 (Building Fund)
-    2. Johnson Family Foundation: $15,000 (Scholarship)
-    3. Tech Innovations Inc.: $10,000 (Annual Fund)
-    4. Dr. Martinez: $7,500 (Emergency Fund)
-    5. Chen Financial Group: $5,000 (Annual Fund)
+    MAJOR DONORS (>£1,000)
+    1. Anonymous: £25,000 (Building Fund)
+    2. Johnson Family Foundation: £15,000 (Scholarship)
+    3. Tech Innovations Inc.: £10,000 (Annual Fund)
+    4. Dr. Martinez: £7,500 (Emergency Fund)
+    5. Chen Financial Group: £5,000 (Annual Fund)
 
     Overall Grade: A- (Strong Performance)
     Fundraising Health: Excellent
@@ -456,16 +456,16 @@ class ReportsMixin:
 
             if 'donations' in selected_sections:
                 custom_report += """💰 DONATION ANALYSIS
-    Total Donations: $234,750
+    Total Donations: £234,750
     Number of Donors: 156
-    Average Donation: $1,505
+    Average Donation: £1,505
     Donor Participation Rate: 12.5%
 
     Campaign Performance:
-    • Annual Fund: $156,750 (66.8%)
-    • Scholarship Fund: $45,600 (19.4%)
-    • Building Fund: $23,400 (10.0%)
-    • Emergency Fund: $9,000 (3.8%)
+    • Annual Fund: £156,750 (66.8%)
+    • Scholarship Fund: £45,600 (19.4%)
+    • Building Fund: £23,400 (10.0%)
+    • Emergency Fund: £9,000 (3.8%)
 
     Payment Methods:
     • Credit Card: 66.8%
@@ -539,16 +539,16 @@ class ReportsMixin:
 
     💰 FINANCIAL OVERVIEW
     Report Period: January 1, 2025 - August 19, 2025
-    Total Donations: $234,750
+    Total Donations: £234,750
     Number of Donors: 156
-    Average Donation: $1,505
+    Average Donation: £1,505
     Growth vs. Previous Year: +18%
 
     📊 DONATION STATISTICS
     Total Transactions: 298
     • One-time donations: 234 (78.5%)
     • Recurring donations: 64 (21.5%)
-    • Average transaction: $788
+    • Average transaction: £788
 
     Donor Participation:
     • Total Alumni: 1,247
@@ -557,85 +557,85 @@ class ReportsMixin:
     • New Donors: 89 (57.0%)
 
     💵 DONATION RANGES
-    $1 - $50: 89 donations (29.9%) - $2,340
-    $51 - $100: 67 donations (22.5%) - $5,670
-    $101 - $500: 78 donations (26.2%) - $23,450
-    $501 - $1,000: 34 donations (11.4%) - $25,600
-    $1,001 - $5,000: 23 donations (7.7%) - $67,800
-    $5,000+: 7 donations (2.3%) - $109,890
+    £1 - £50: 89 donations (29.9%) - £2,340
+    £51 - £100: 67 donations (22.5%) - £5,670
+    £101 - £500: 78 donations (26.2%) - £23,450
+    £501 - £1,000: 34 donations (11.4%) - £25,600
+    £1,001 - £5,000: 23 donations (7.7%) - £67,800
+    £5,000+: 7 donations (2.3%) - £109,890
 
     🎯 CAMPAIGN PERFORMANCE
-    Annual Alumni Fund: $156,750 (66.8%)
-    • Goal: $100,000 | Achievement: 156.8%
+    Annual Alumni Fund: £156,750 (66.8%)
+    • Goal: £100,000 | Achievement: 156.8%
     • Donors: 123
-    • Average: $1,275
+    • Average: £1,275
 
-    Scholarship Fund: $45,600 (19.4%)
-    • Goal: $50,000 | Achievement: 91.2%
+    Scholarship Fund: £45,600 (19.4%)
+    • Goal: £50,000 | Achievement: 91.2%
     • Donors: 34
-    • Average: $1,341
+    • Average: £1,341
 
-    Building Fund: $23,400 (10.0%)
-    • Goal: $25,000 | Achievement: 93.6%
+    Building Fund: £23,400 (10.0%)
+    • Goal: £25,000 | Achievement: 93.6%
     • Donors: 18
-    • Average: $1,300
+    • Average: £1,300
 
-    Emergency Fund: $9,000 (3.8%)
-    • Goal: $15,000 | Achievement: 60.0%
+    Emergency Fund: £9,000 (3.8%)
+    • Goal: £15,000 | Achievement: 60.0%
     • Donors: 15
-    • Average: $600
+    • Average: £600
 
     📈 MONTHLY TRENDS
-    January: $18,450 (67 donations)
-    February: $23,670 (45 donations)
-    March: $34,560 (89 donations) ← Peak
-    April: $28,900 (34 donations)
-    May: $31,240 (56 donations)
-    June: $25,780 (23 donations)
-    July: $29,650 (45 donations)
-    August: $42,500 (39 donations) ← Strong finish
+    January: £18,450 (67 donations)
+    February: £23,670 (45 donations)
+    March: £34,560 (89 donations) ← Peak
+    April: £28,900 (34 donations)
+    May: £31,240 (56 donations)
+    June: £25,780 (23 donations)
+    July: £29,650 (45 donations)
+    August: £42,500 (39 donations) ← Strong finish
 
     🎓 DONOR DEMOGRAPHICS
     By Graduation Decade:
-    • 2020s: $45,600 (19.4%) - 67 donors
-    • 2010s: $109,890 (46.8%) - 56 donors
-    • 2000s: $67,800 (28.9%) - 23 donors
-    • 1990s: $11,460 (4.9%) - 10 donors
+    • 2020s: £45,600 (19.4%) - 67 donors
+    • 2010s: £109,890 (46.8%) - 56 donors
+    • 2000s: £67,800 (28.9%) - 23 donors
+    • 1990s: £11,460 (4.9%) - 10 donors
 
     By Industry:
-    • Technology: $89,750 (38.2%) - 45 donors
-    • Healthcare: $45,600 (19.4%) - 23 donors
-    • Finance: $34,560 (14.7%) - 18 donors
-    • Education: $23,400 (10.0%) - 12 donors
-    • Other: $41,440 (17.7%) - 58 donors
+    • Technology: £89,750 (38.2%) - 45 donors
+    • Healthcare: £45,600 (19.4%) - 23 donors
+    • Finance: £34,560 (14.7%) - 18 donors
+    • Education: £23,400 (10.0%) - 12 donors
+    • Other: £41,440 (17.7%) - 58 donors
 
     💳 PAYMENT METHODS
-    Credit Card: $156,750 (66.8%)
-    Bank Transfer: $45,600 (19.4%)
-    Check: $23,400 (10.0%)
-    Online Payment: $9,000 (3.8%)
+    Credit Card: £156,750 (66.8%)
+    Bank Transfer: £45,600 (19.4%)
+    Check: £23,400 (10.0%)
+    Online Payment: £9,000 (3.8%)
 
     🔄 RECURRING DONATIONS
-    Total Recurring: $67,800 (28.9%)
-    Monthly: $34,560 (43 donors)
-    Quarterly: $23,400 (18 donors)
-    Annual: $9,840 (3 donors)
+    Total Recurring: £67,800 (28.9%)
+    Monthly: £34,560 (43 donors)
+    Quarterly: £23,400 (18 donors)
+    Annual: £9,840 (3 donors)
     Retention Rate: 87%
 
-    🏆 MAJOR DONORS (>$1,000)
-    1. Anonymous: $25,000 (Building Fund)
-    2. Johnson Family Foundation: $15,000 (Scholarship)
-    3. Tech Innovations Inc.: $10,000 (Annual Fund)
-    4. Dr. Martinez: $7,500 (Emergency Fund)
-    5. Chen Financial Group: $5,000 (Annual Fund)
+    🏆 MAJOR DONORS (>£1,000)
+    1. Anonymous: £25,000 (Building Fund)
+    2. Johnson Family Foundation: £15,000 (Scholarship)
+    3. Tech Innovations Inc.: £10,000 (Annual Fund)
+    4. Dr. Martinez: £7,500 (Emergency Fund)
+    5. Chen Financial Group: £5,000 (Annual Fund)
 
     📍 GEOGRAPHIC GIVING
-    San Francisco Bay Area: $78,900 (33.6%)
-    New York Metro: $56,700 (24.2%)
-    Los Angeles: $34,200 (14.6%)
-    Boston: $23,100 (9.8%)
-    International: $18,450 (7.9%)
-    Other US: $23,400 (9.9%)
+    San Francisco Bay Area: £78,900 (33.6%)
+    New York Metro: £56,700 (24.2%)
+    Los Angeles: £34,200 (14.6%)
+    Boston: £23,100 (9.8%)
+    International: £18,450 (7.9%)
+    Other US: £23,400 (9.9%)
 
     🎯 INSIGHTS & TRENDS
     Positive Indicators:
@@ -718,7 +718,7 @@ class ReportsMixin:
     Giving & Donations: 178 activities (6.3%)
     • Donations made: 156
     • Campaign interactions: 22
-    • Average donation: $275
+    • Average donation: £275
 
     Other Activities: 589 activities (20.7%)
     • Profile updates: 234
@@ -828,9 +828,9 @@ class ReportsMixin:
 
     💰 REVENUE EVENTS
     Paid Events: 8 events
-    • Total Revenue: $23,450
-    • Average Ticket Price: $32
-    • Revenue per Attendee: $48
+    • Total Revenue: £23,450
+    • Average Ticket Price: £32
+    • Revenue per Attendee: £48
 
     Free Events: 16 events
     • Registration Rate: 89%
@@ -930,15 +930,15 @@ class ReportsMixin:
             report_content = """DONOR RECOGNITION LEVEL REPORT
         ==============================
 
-        Bronze Supporter: 15 donors ($7,500.00)
-        Silver Supporter: 8 donors ($12,000.00)
-        Gold Supporter: 5 donors ($15,000.00)
-        Platinum Supporter: 2 donors ($18,000.00)
-        Diamond Supporter: 1 donor ($15,000.00)
-        Benefactor: 0 donors ($0.00)
+        Bronze Supporter: 15 donors (£7,500.00)
+        Silver Supporter: 8 donors (£12,000.00)
+        Gold Supporter: 5 donors (£15,000.00)
+        Platinum Supporter: 2 donors (£18,000.00)
+        Diamond Supporter: 1 donor (£15,000.00)
+        Benefactor: 0 donors (£0.00)
 
         ----------------------------------------
-        Total: 31 donors ($67,500.00)
+        Total: 31 donors (£67,500.00)
 
         Recent Upgrades:
         - 3 donors upgraded to Silver level this month

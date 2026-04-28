@@ -232,11 +232,11 @@ def create_parking_permit():
             # Visitors can only use Visitor and Metered zones
             visitor_zones = {'V': PARKING_ZONES['V'], 'M': PARKING_ZONES['M']}
             for zone_code, zone_info in visitor_zones.items():
-                print(f"{zone_code}: {zone_info['name']} - Hourly Rate: ${zone_info['hourly_rate']}")
+                print(f"{zone_code}: {zone_info['name']} - Hourly Rate: £{zone_info['hourly_rate']}")
         else:
             # Regular users can use any zone
             for zone_code, zone_info in PARKING_ZONES.items():
-                print(f"{zone_code}: {zone_info['name']} - Annual Fee: ${zone_info['annual_fee']}, Hourly Rate: ${zone_info['hourly_rate']}")
+                print(f"{zone_code}: {zone_info['name']} - Annual Fee: £{zone_info['annual_fee']}, Hourly Rate: £{zone_info['hourly_rate']}")
 
         # Get zone with validation
         while True:
@@ -339,7 +339,7 @@ def create_parking_permit():
             elif permit_type == 'Temporary':
                 fee = PARKING_ZONES[zone]['hourly_rate'] * 8 * days if PARKING_ZONES[zone]['hourly_rate'] > 0 else 10 * days
 
-            print(f"Fee: ${fee:.2f}")
+            print(f"Fee: £{fee:.2f}")
 
             if user_id is None:
                 print("\n" + _t("parking.msg.visitor_permit_note"))

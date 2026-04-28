@@ -197,7 +197,7 @@ def create_search_filter_bar(parent, on_search_callback, filters: Optional[List[
 
 def format_currency(amount: float) -> str:
     """Format amount as currency"""
-    return f"${amount:,.2f}"
+    return f"£{amount:,.2f}"
 
 
 def format_date(date_obj: Any) -> str:

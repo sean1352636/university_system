@@ -124,7 +124,7 @@ def view_events():
                name_display = name[:29] if name else "N/A"
                location_display = location[:19] if location else "N/A"
                event_type_display = event_type[:9] if event_type else "N/A"
-               fee_display = f"${fee:.2f}" if fee and fee > 0 else "Free"
+               fee_display = f"£{fee:.2f}" if fee and fee > 0 else "Free"
                reg_req_display = "Yes" if reg_req else "No"
 
                # Check if event is in the past
@@ -270,7 +270,7 @@ def search_events(cursor):
                event_id, name, date, location, fee, event_type = event
                name_display = name[:29] if name else "N/A"
                location_display = location[:19] if location else "N/A"
-               fee_display = f"${fee:.2f}" if fee and fee > 0 else "Free"
+               fee_display = f"£{fee:.2f}" if fee and fee > 0 else "Free"
 
                print(f"{event_id:<5} {name_display:<30} {date:<19} {location_display:<20} {fee_display:<10}")
 
@@ -334,7 +334,7 @@ def view_event_details(event_id, cursor):
 
        print(f"\nPayment Information:")
        if event_data[7]:  # payment_required
-           print(f"Event Fee: ${event_data[6]:.2f}")
+           print(f"Event Fee: £{event_data[6]:.2f}")
            print("Payment Required: Yes")
        else:
            print("Event Fee: Free")
@@ -616,7 +616,7 @@ def create_enhanced_event():
     print(f"\nEnhanced event created successfully with ID: {event_id}")
     print(f"Event Type: {event_type}")
     if payment_required:
-        print(f"Event Fee: ${event_fee:.2f}")
+        print(f"Event Fee: £{event_fee:.2f}")
     if virtual_link:
         print(f"Virtual Link: {virtual_link}")
 
@@ -720,9 +720,9 @@ def send_enhanced_event_invitation(alumni_id, email, first_name, event_id, event
         # Build payment section
         payment_section = ""
         if payment_required and event_fee:
-            payment_section = f"Registration Fee: ${event_fee}\nPayment Required: Yes\nPlease complete payment through the Alumni Portal to confirm your registration."
+            payment_section = f"Registration Fee: £{event_fee}\nPayment Required: Yes\nPlease complete payment through the Alumni Portal to confirm your registration."
         elif event_fee:
-            payment_section = f"Registration Fee: ${event_fee}"
+            payment_section = f"Registration Fee: £{event_fee}"
         else:
             payment_section = "Registration: Free"
 

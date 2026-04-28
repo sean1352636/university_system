@@ -95,9 +95,9 @@ class RecommendationsMixin:
                 return
 
             for rec in recommendations:
-                award_range = f"${rec['award_amount_min']:,.0f}"
+                award_range = f"£{rec['award_amount_min']:,.0f}"
                 if rec.get('award_amount_max'):
-                    award_range += f"-${rec['award_amount_max']:,.0f}"
+                    award_range += f"-£{rec['award_amount_max']:,.0f}"
 
                 self.rec_tree.insert('', 'end', values=(
                     rec['scholarship_name'][:40],
@@ -173,9 +173,9 @@ class RecommendationsMixin:
 
         self.rec_details_text.insert(tk.END, f"\n{get_text('financial_aid.student_portal.recommendations.organization_label', 'Organization: {org}', org=scholarship['organization'])}\n")
 
-        award_range = f"${scholarship['award_amount_min']:,.0f}"
+        award_range = f"£{scholarship['award_amount_min']:,.0f}"
         if scholarship.get('award_amount_max'):
-            award_range += f" - ${scholarship['award_amount_max']:,.0f}"
+            award_range += f" - £{scholarship['award_amount_max']:,.0f}"
         self.rec_details_text.insert(tk.END, f"{get_text('financial_aid.student_portal.recommendations.award_label', 'Award: {amount}', amount=award_range)}\n")
 
         self.rec_details_text.insert(tk.END, f"{get_text('financial_aid.student_portal.recommendations.deadline_label', 'Deadline: {date}', date=scholarship['application_deadline'])}\n\n")

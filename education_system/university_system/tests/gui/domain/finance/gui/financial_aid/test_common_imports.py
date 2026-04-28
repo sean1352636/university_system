@@ -165,9 +165,9 @@ class TestFormatting:
 
     def test_format_currency(self):
         """Test format_currency formats numbers correctly"""
-        assert format_currency(1000) == "$1,000.00"
-        assert format_currency(1000.50) == "$1,000.50"
-        assert format_currency(0) == "$0.00"
+        assert format_currency(1000) == "£1,000.00"
+        assert format_currency(1000.50) == "£1,000.50"
+        assert format_currency(0) == "£0.00"
         assert format_currency(-500) == "$-500.00"
 
     def test_format_date_datetime_object(self):

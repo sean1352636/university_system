@@ -107,7 +107,7 @@ class PayrollGUI:
         for key, label in [('gross', 'Gross YTD'), ('tax', 'Tax YTD'), ('net', 'Net YTD')]:
             frame = ttk.Frame(summary_frame)
             frame.pack(side=tk.LEFT, padx=30, pady=10)
-            self.ytd_labels[key] = ttk.Label(frame, text="$0.00", font=('Arial', 18, 'bold'))
+            self.ytd_labels[key] = ttk.Label(frame, text="£0.00", font=('Arial', 18, 'bold'))
             self.ytd_labels[key].pack()
             ttk.Label(frame, text=label).pack()
 
@@ -156,19 +156,19 @@ class PayrollGUI:
             self.payslips_tree.insert('', tk.END, values=(
                 r.get('period_name', ''),
                 r.get('payment_date', r.get('period_end', '')),
-                f"${r.get('basic_salary', 0):.2f}",
-                f"${r.get('overtime_pay', 0):.2f}",
-                f"${r.get('allowances', 0):.2f}",
-                f"${r.get('gross_pay', 0):.2f}",
-                f"${r.get('tax', 0):.2f}",
-                f"${r.get('national_insurance', 0):.2f}",
-                f"${r.get('pension', 0):.2f}",
-                f"${r.get('net_pay', 0):.2f}",
+                f"£{r.get('basic_salary', 0):.2f}",
+                f"£{r.get('overtime_pay', 0):.2f}",
+                f"£{r.get('allowances', 0):.2f}",
+                f"£{r.get('gross_pay', 0):.2f}",
+                f"£{r.get('tax', 0):.2f}",
+                f"£{r.get('national_insurance', 0):.2f}",
+                f"£{r.get('pension', 0):.2f}",
+                f"£{r.get('net_pay', 0):.2f}",
             ))
 
-        self.ytd_labels['gross'].config(text=f"${ytd_gross:.2f}")
-        self.ytd_labels['tax'].config(text=f"${ytd_tax:.2f}")
-        self.ytd_labels['net'].config(text=f"${ytd_net:.2f}")
+        self.ytd_labels['gross'].config(text=f"£{ytd_gross:.2f}")
+        self.ytd_labels['tax'].config(text=f"£{ytd_tax:.2f}")
+        self.ytd_labels['net'].config(text=f"£{ytd_net:.2f}")
 
     # ==================== TAB 2: OVERTIME ====================
 
@@ -514,7 +514,7 @@ class PayrollGUI:
                 a.get('allowance_id'),
                 a.get('user_id', ''),
                 a.get('allowance_type', ''),
-                f"${a.get('amount', 0):.2f}",
+                f"£{a.get('amount', 0):.2f}",
                 a.get('frequency', ''),
                 'Active' if is_active else 'Inactive'
             ), tags=(tag,))
@@ -722,8 +722,8 @@ class PayrollGUI:
 
             summary = (
                 f"Payroll Complete: {result.get('total_records', 0)} records | "
-                f"Gross: ${result.get('total_gross', 0):.2f} | "
-                f"Net: ${result.get('total_net', 0):.2f}"
+                f"Gross: £{result.get('total_gross', 0):.2f} | "
+                f"Net: £{result.get('total_net', 0):.2f}"
             )
             self.payroll_result_label.config(text=summary)
             messagebox.showinfo("Success", summary)
@@ -812,16 +812,16 @@ class PayrollGUI:
 
         for b in brackets:
             upper = b.get('upper_limit')
-            upper_display = f"${upper:,.2f}" if upper else 'Unlimited'
+            upper_display = f"£{upper:,.2f}" if upper else 'Unlimited'
 
             self.tax_tree.insert('', tk.END, values=(
                 b.get('bracket_id', b.get('id', '')),
                 b.get('tax_year', ''),
                 b.get('bracket_name', ''),
-                f"${b.get('lower_limit', 0):,.2f}",
+                f"£{b.get('lower_limit', 0):,.2f}",
                 upper_display,
                 f"{(b.get('rate', 0) or 0) * 100:.1f}%",
-                f"${b.get('personal_allowance', 0):,.2f}"
+                f"£{b.get('personal_allowance', 0):,.2f}"
             ))
 
     def _add_tax_bracket(self):
@@ -932,7 +932,7 @@ class PayrollGUI:
                            ('deductions', 'Total Deductions'), ('net', 'Total Net')]:
             frame = ttk.Frame(stats_frame)
             frame.pack(side=tk.LEFT, padx=25, pady=10)
-            self.report_stats[key] = ttk.Label(frame, text="0" if key == 'records' else "$0.00",
+            self.report_stats[key] = ttk.Label(frame, text="0" if key == 'records' else "£0.00",
                                                font=('Arial', 18, 'bold'))
             self.report_stats[key].pack()
             ttk.Label(frame, text=label).pack()
@@ -974,9 +974,9 @@ class PayrollGUI:
 
         if not period_id:
             self.report_stats['records'].config(text="0")
-            self.report_stats['gross'].config(text="$0.00")
-            self.report_stats['deductions'].config(text="$0.00")
-            self.report_stats['net'].config(text="$0.00")
+            self.report_stats['gross'].config(text="£0.00")
+            self.report_stats['deductions'].config(text="£0.00")
+            self.report_stats['net'].config(text="£0.00")
             for item in self.dept_tree.get_children():
                 self.dept_tree.delete(item)
             return
@@ -984,9 +984,9 @@ class PayrollGUI:
         summary = PayrollManager.get_payroll_summary(period_id)
 
         self.report_stats['records'].config(text=str(summary.get('total_records', 0)))
-        self.report_stats['gross'].config(text=f"${summary.get('total_gross', 0):.2f}")
-        self.report_stats['deductions'].config(text=f"${summary.get('total_deductions', 0):.2f}")
-        self.report_stats['net'].config(text=f"${summary.get('total_net', 0):.2f}")
+        self.report_stats['gross'].config(text=f"£{summary.get('total_gross', 0):.2f}")
+        self.report_stats['deductions'].config(text=f"£{summary.get('total_deductions', 0):.2f}")
+        self.report_stats['net'].config(text=f"£{summary.get('total_net', 0):.2f}")
 
         # Department breakdown
         for item in self.dept_tree.get_children():
@@ -996,6 +996,6 @@ class PayrollGUI:
             self.dept_tree.insert('', tk.END, values=(
                 dept,
                 data.get('record_count', 0),
-                f"${data.get('gross', 0):.2f}",
-                f"${data.get('net', 0):.2f}"
+                f"£{data.get('gross', 0):.2f}",
+                f"£{data.get('net', 0):.2f}"
             ))

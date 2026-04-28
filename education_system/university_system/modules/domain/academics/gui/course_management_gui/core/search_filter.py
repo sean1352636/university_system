@@ -141,7 +141,7 @@ class SearchFilterMixin:
         def money(i):
             v = course[i] if len(course) > i else None
             if isinstance(v, (int, float)):
-                return f"${v:,.2f}"
+                return f"£{v:,.2f}"
             return "N/A" if v in (None, "") else str(v)
 
         def yesno(i):

@@ -101,8 +101,8 @@ Total Fines Issued:       {total_fines or 0}
 Total Paid:               {total_paid or 0}
 Total Waived:             {total_waived or 0}
 Total Outstanding:        {total_outstanding or 0}
-Outstanding Amount:       ${outstanding_amt or 0:.2f}
-Average Outstanding Fine: ${avg_fine or 0:.2f}
+Outstanding Amount:       £{outstanding_amt or 0:.2f}
+Average Outstanding Fine: £{avg_fine or 0:.2f}
 
 Recent Activity (30 days): {recent_activity} fine transactions
 
@@ -115,7 +115,7 @@ TOP 10 USERS WITH OUTSTANDING FINES
                 report_content += f"{'User ID':<20} {'Total Owed':>12} {'Fine Count':>12}\n"
                 report_content += "-" * 55 + "\n"
                 for user_id, total_owed, fine_count in top_defaulters:
-                    report_content += f"{user_id:<20} ${total_owed:>11.2f} {fine_count:>12}\n"
+                    report_content += f"{user_id:<20} £{total_owed:>11.2f} {fine_count:>12}\n"
             else:
                 report_content += "No outstanding fines found.\n"
 
@@ -207,7 +207,7 @@ def export_fines_to_csv(self):
                 writer.writerow([])
                 writer.writerow(['SUMMARY'])
                 writer.writerow(['Total Outstanding Fines:', len(fines_data)])
-                writer.writerow(['Total Amount:', f'${sum(row[6] for row in fines_data):.2f}'])
+                writer.writerow(['Total Amount:', f'£{sum(row[6] for row in fines_data):.2f}'])
 
             messagebox.showinfo(_("common.success"),
                 f"Fines exported successfully!\n\n"

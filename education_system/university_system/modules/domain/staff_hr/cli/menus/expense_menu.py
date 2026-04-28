@@ -79,7 +79,7 @@ def _submit_claim(user_id: str) -> None:
 
     print("\nAvailable Categories:")
     for i, cat in enumerate(categories, 1):
-        max_info = f" (max: ${cat['max_amount']:.2f})" if cat.get('max_amount') else ""
+        max_info = f" (max: £{cat['max_amount']:.2f})" if cat.get('max_amount') else ""
         receipt_info = " [Receipt Required]" if cat.get('requires_receipt') else ""
         print(f"  {i}. {cat['name']}{max_info}{receipt_info}")
 
@@ -101,7 +101,7 @@ def _submit_claim(user_id: str) -> None:
 
     # Check category limit
     if category.get('max_amount') and amount > category['max_amount']:
-        print(f"\nWarning: Amount exceeds category limit of ${category['max_amount']:.2f}")
+        print(f"\nWarning: Amount exceeds category limit of £{category['max_amount']:.2f}")
         if not get_confirmation("Continue anyway?"):
             print("Cancelled.")
             return
@@ -171,14 +171,14 @@ def _view_my_claims(user_id: str) -> None:
             }.get(c.get('status', ''), '?')
 
             print(f"\n{status_icon} Claim #{c.get('claim_id')}")
-            print(f"   Amount: ${c.get('amount', 0):.2f}")
+            print(f"   Amount: £{c.get('amount', 0):.2f}")
             print(f"   Category: {c.get('category_name', 'N/A')}")
             print(f"   Date: {c.get('expense_date')} | Status: {c.get('status')}")
             print(f"   Description: {c.get('description', '')[:50]}")
             if c.get('status') == 'approved':
                 total += c.get('amount', 0)
 
-        print(f"\nTotal Approved: ${total:.2f}")
+        print(f"\nTotal Approved: £{total:.2f}")
 
     input("\nPress Enter to continue...")
 
@@ -193,7 +193,7 @@ def _view_pending_claims(user_id: str) -> None:
         print(f"\n--- {len(claims)} Pending Claims ---")
         for c in claims:
             print(f"\n⏳ Claim #{c.get('claim_id')}")
-            print(f"   Amount: ${c.get('amount', 0):.2f}")
+            print(f"   Amount: £{c.get('amount', 0):.2f}")
             print(f"   Submitted: {c.get('submitted_date')}")
             print(f"   Description: {c.get('description', '')[:50]}")
 
@@ -210,18 +210,18 @@ def _view_reimbursement_status(user_id: str) -> None:
     pending_amount = sum(c.get('amount', 0) for c in claims)
     reimbursed_amount = sum(c.get('amount', 0) for c in reimbursed)
 
-    print(f"\nPending Reimbursement: ${pending_amount:.2f} ({len(claims)} claims)")
-    print(f"Total Reimbursed: ${reimbursed_amount:.2f} ({len(reimbursed)} claims)")
+    print(f"\nPending Reimbursement: £{pending_amount:.2f} ({len(claims)} claims)")
+    print(f"Total Reimbursed: £{reimbursed_amount:.2f} ({len(reimbursed)} claims)")
 
     if claims:
         print("\n--- Awaiting Reimbursement ---")
         for c in claims:
-            print(f"  Claim #{c.get('claim_id')}: ${c.get('amount', 0):.2f} - {c.get('description', '')[:30]}")
+            print(f"  Claim #{c.get('claim_id')}: £{c.get('amount', 0):.2f} - {c.get('description', '')[:30]}")
 
     if reimbursed:
         print("\n--- Recent Reimbursements ---")
         for c in reimbursed[:5]:
-            print(f"  Claim #{c.get('claim_id')}: ${c.get('amount', 0):.2f}")
+            print(f"  Claim #{c.get('claim_id')}: £{c.get('amount', 0):.2f}")
 
     input("\nPress Enter to continue...")
 
@@ -240,7 +240,7 @@ def _review_approvals(approver_id: str) -> None:
     for c in claims:
         print(f"\n{'=' * 40}")
         print(f"Claim #{c.get('claim_id')} - {c.get('user_id')}")
-        print(f"Amount: ${c.get('amount', 0):.2f}")
+        print(f"Amount: £{c.get('amount', 0):.2f}")
         print(f"Category: {c.get('category_name', 'N/A')}")
         print(f"Date: {c.get('expense_date')}")
         print(f"Description: {c.get('description')}")
@@ -333,9 +333,9 @@ def _search_claims() -> None:
         total = sum(c.get('amount', 0) for c in claims)
         for c in claims:
             print(f"\n#{c.get('claim_id')} - {c.get('user_id')}")
-            print(f"  ${c.get('amount', 0):.2f} | {c.get('status')} | {c.get('expense_date')}")
+            print(f"  £{c.get('amount', 0):.2f} | {c.get('status')} | {c.get('expense_date')}")
             print(f"  {c.get('description', '')[:50]}")
-        print(f"\nTotal: ${total:.2f}")
+        print(f"\nTotal: £{total:.2f}")
 
     input("\nPress Enter to continue...")
 
@@ -350,7 +350,7 @@ def _manage_categories() -> None:
             print("\nCurrent Categories:")
             for cat in categories:
                 status = "Active" if cat.get('is_active') else "Inactive"
-                max_amt = f"Max: ${cat['max_amount']:.2f}" if cat.get('max_amount') else "No limit"
+                max_amt = f"Max: £{cat['max_amount']:.2f}" if cat.get('max_amount') else "No limit"
                 receipt = "Receipt required" if cat.get('requires_receipt') else ""
                 print(f"  [{cat['category_id']}] {cat['name']} - {status} | {max_amt} {receipt}")
 
@@ -422,9 +422,9 @@ def _manage_policies() -> None:
                 print(f"\n  [{p['policy_id']}] {p['name']} ({status})")
                 print(f"      {p.get('description', '')[:60]}")
                 if p.get('max_single_expense'):
-                    print(f"      Max Single: ${p['max_single_expense']:.2f}")
+                    print(f"      Max Single: £{p['max_single_expense']:.2f}")
                 if p.get('max_monthly_total'):
-                    print(f"      Max Monthly: ${p['max_monthly_total']:.2f}")
+                    print(f"      Max Monthly: £{p['max_monthly_total']:.2f}")
 
         print("\nOptions:")
         print("  1. Add Policy")
@@ -494,10 +494,10 @@ def _process_reimbursements() -> None:
     print(f"\n--- {len(claims)} Claims Ready for Reimbursement ---")
 
     total = sum(c.get('amount', 0) for c in claims)
-    print(f"Total Amount: ${total:.2f}")
+    print(f"Total Amount: £{total:.2f}")
 
     for c in claims:
-        print(f"\n#{c.get('claim_id')} - {c.get('user_id')}: ${c.get('amount', 0):.2f}")
+        print(f"\n#{c.get('claim_id')} - {c.get('user_id')}: £{c.get('amount', 0):.2f}")
 
     print("\nOptions:")
     print("  1. Process All")
@@ -508,7 +508,7 @@ def _process_reimbursements() -> None:
 
     if choice == '1':
         payment_method = input("Payment Method (bank_transfer/check/cash): ").strip() or 'bank_transfer'
-        confirm = input(f"Process ${total:.2f} to {len(claims)} claims? (yes/no): ").strip().lower()
+        confirm = input(f"Process £{total:.2f} to {len(claims)} claims? (yes/no): ").strip().lower()
 
         if confirm == 'yes':
             for c in claims:
@@ -556,29 +556,29 @@ def _expense_reports() -> None:
         stats = ExpenseManager.get_expense_statistics()
         print("\n--- Expenses by Category ---")
         for cat, data in stats.get('by_category', {}).items():
-            print(f"  {cat}: ${data.get('total', 0):.2f} ({data.get('count', 0)} claims)")
+            print(f"  {cat}: £{data.get('total', 0):.2f} ({data.get('count', 0)} claims)")
 
     elif choice == '2':
         stats = ExpenseManager.get_expense_statistics()
         print("\n--- Expenses by Department ---")
         for dept, data in stats.get('by_department', {}).items():
-            print(f"  {dept}: ${data.get('total', 0):.2f} ({data.get('count', 0)} claims)")
+            print(f"  {dept}: £{data.get('total', 0):.2f} ({data.get('count', 0)} claims)")
 
     elif choice == '3':
         stats = ExpenseManager.get_expense_statistics()
         print("\n--- Monthly Expense Trend ---")
         for month, amount in stats.get('monthly_trend', {}).items():
-            print(f"  {month}: ${amount:.2f}")
+            print(f"  {month}: £{amount:.2f}")
 
     elif choice == '4':
         user_id = input("User ID: ").strip()
         summary = ExpenseManager.get_user_expense_summary(user_id)
         print(f"\n--- Expense Summary for {user_id} ---")
         print(f"Total Claims: {summary.get('total_claims', 0)}")
-        print(f"Total Amount: ${summary.get('total_amount', 0):.2f}")
-        print(f"Approved: ${summary.get('approved_amount', 0):.2f}")
-        print(f"Pending: ${summary.get('pending_amount', 0):.2f}")
-        print(f"Reimbursed: ${summary.get('reimbursed_amount', 0):.2f}")
+        print(f"Total Amount: £{summary.get('total_amount', 0):.2f}")
+        print(f"Approved: £{summary.get('approved_amount', 0):.2f}")
+        print(f"Pending: £{summary.get('pending_amount', 0):.2f}")
+        print(f"Reimbursed: £{summary.get('reimbursed_amount', 0):.2f}")
 
     elif choice == '5':
         print("\nChecking policy compliance...")

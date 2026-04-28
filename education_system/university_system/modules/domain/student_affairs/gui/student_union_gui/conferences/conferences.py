@@ -847,44 +847,44 @@ Feedback Categories:
 🏆 Best Overall Research
    Winner: "Renewable Energy Innovations"
    Researcher: Michael Green (Engineering)
-   Prize: $2,000 + Publication Support
+   Prize: £2,000 + Publication Support
 
 🥇 Best Oral Presentation
    Winner: "AI in Medical Diagnosis"
    Researcher: Sarah Chen (Computer Science)
-   Prize: $1,500
+   Prize: £1,500
 
 🥈 Best Poster Presentation
    Winner: "Quantum Entanglement Study"
    Researcher: Prof. Ahmed Hassan (Physics)
-   Prize: $1,000
+   Prize: £1,000
 
 🥉 People's Choice Award
    Winner: "Cognitive Psychology Research"
    Researcher: Emily Rodriguez (Psychology)
-   Prize: $500
+   Prize: £500
 
 CATEGORY AWARDS:
 
 Computer Science & AI
   🌟 "Deep Learning Image Recognition" - Alice Wang
-     $750 + Conference Travel Grant
+     £750 + Conference Travel Grant
 
 Engineering & Technology
   🌟 "IoT Smart Home Systems" - Carol Davis
-     $750 + Research Equipment Grant
+     £750 + Research Equipment Grant
 
 Life Sciences & Medicine
   🌟 "Cancer Biomarker Discovery" - Dr. Sarah Johnson
-     $750 + Lab Funding Support
+     £750 + Lab Funding Support
 
 Physical Sciences
   🌟 "Climate Modeling Research" - Prof. James Wilson
-     $750 + Computational Resources
+     £750 + Computational Resources
 
 Social Sciences & Humanities
   🌟 "Digital Humanities Projects" - Dr. Lisa Chen
-     $750 + Archival Access Grant
+     £750 + Archival Access Grant
 
 SPECIAL RECOGNITION:
 
@@ -899,7 +899,7 @@ AWARD CRITERIA:
 • Practical Impact (15%)
 • Peer Feedback (10%)
 
-Total Awards Distributed: $15,000
+Total Awards Distributed: £15,000
 Number of Winners: 15
 Selection Committee: 12 faculty members
 

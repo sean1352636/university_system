@@ -222,24 +222,24 @@ def load_overdue_books(self):
 
                 self.overdue_tree.insert('', 'end', values=(
                     user_id, book_id, title[:30], due_date[:10],
-                    int(days_overdue), f"${fine_amount:.2f}", contact
+                    int(days_overdue), f"£{fine_amount:.2f}", contact
                 ))
 
             # Update summary
-            summary_text = f"Total Overdue Items: {len(overdue_books)} | Total Fines: ${total_fines:.2f}"
+            summary_text = f"Total Overdue Items: {len(overdue_books)} | Total Fines: £{total_fines:.2f}"
             self.overdue_summary_label.config(text=summary_text)
 
         else:
             # Demo data
             demo_overdue = [
-                ("USER001", "B10001", "Sample Book 1", "2024-01-10", 5, "$2.50", "user1@email.com"),
-                ("USER002", "B10002", "Sample Book 2", "2024-01-08", 7, "$3.50", "user2@email.com"),
+                ("USER001", "B10001", "Sample Book 1", "2024-01-10", 5, "£2.50", "user1@email.com"),
+                ("USER002", "B10002", "Sample Book 2", "2024-01-08", 7, "£3.50", "user2@email.com"),
             ]
 
             for book in demo_overdue:
                 self.overdue_tree.insert('', 'end', values=book)
 
-            self.overdue_summary_label.config(text="Demo Mode: 2 overdue items | Total Fines: $6.00")
+            self.overdue_summary_label.config(text="Demo Mode: 2 overdue items | Total Fines: £6.00")
 
     except tk.TclError as e:
         messagebox.showerror(_("common.error"), f"Error loading overdue books: {str(e)}")
@@ -458,7 +458,7 @@ def create_overdue_export(self, file_path):
         df['Checkout Date'] = pd.to_datetime(df['Checkout Date']).dt.strftime('%Y-%m-%d')
         df['Due Date'] = pd.to_datetime(df['Due Date']).dt.strftime('%Y-%m-%d')
         df['Days Overdue'] = df['Days Overdue'].astype(int)
-        df['Fine Amount'] = df['Fine Amount'].apply(lambda x: f"${x:.2f}" if x else "$0.00")
+        df['Fine Amount'] = df['Fine Amount'].apply(lambda x: f"£{x:.2f}" if x else "£0.00")
 
         # Export based on file type
         if file_path.lower().endswith('.csv'):
@@ -512,7 +512,7 @@ def check_and_display_late_fees(self):
             notification_frame = ttk.Frame(self.master, style='Warning.TFrame')
             notification_frame.pack(fill=tk.X, padx=5, pady=(5,0))
 
-            message = f"⚠️ You have {overdue_count} overdue book(s) with ${total_fines:.2f} in late fees"
+            message = f"⚠️ You have {overdue_count} overdue book(s) with £{total_fines:.2f} in late fees"
             notification_label = ttk.Label(notification_frame, text=message,
                                          style='Warning.TLabel', font=('Arial', 10, 'bold'))
             notification_label.pack(side=tk.LEFT, padx=10, pady=5)

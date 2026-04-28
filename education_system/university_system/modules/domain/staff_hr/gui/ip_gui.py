@@ -681,7 +681,7 @@ class IPGUI:
         cost_to_date = patent.get('cost_to_date', 0) or 0
         ttk.Label(cost_frame, text="Cost to Date:", font=('Arial', 10, 'bold')).grid(
             row=0, column=0, sticky='e', padx=(10, 5), pady=4)
-        ttk.Label(cost_frame, text=f"${float(cost_to_date):,.2f}").grid(
+        ttk.Label(cost_frame, text=f"£{float(cost_to_date):,.2f}").grid(
             row=0, column=1, sticky='w', padx=(5, 10), pady=4)
 
         notes = patent.get('notes', '')
@@ -1213,7 +1213,7 @@ class IPGUI:
 
         # Total revenue
         total_revenue = summary.get('total_revenue', 0)
-        self.portfolio_stats['total_revenue'].config(text=f"${float(total_revenue):,.2f}")
+        self.portfolio_stats['total_revenue'].config(text=f"£{float(total_revenue):,.2f}")
 
         # Active licenses
         active_licenses = summary.get('active_licenses', 0)

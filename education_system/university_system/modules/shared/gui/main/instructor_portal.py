@@ -278,7 +278,7 @@ class InstructorPortalGUI:
             from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui import (
                 StudentUnionGUI,
             )
-            StudentUnionGUI(parent=tk.Toplevel(self.root))
+            StudentUnionGUI(parent=tk.Toplevel(self.root), auth=self.auth)
         except Exception as e:
             logger.error(f"Error opening student union: {e}")
             messagebox.showerror("Error", f"Failed to open Student Union: {e}")
@@ -298,7 +298,7 @@ class InstructorPortalGUI:
             from education_system.university_system.modules.domain.student_affairs.gui.student_union_gui import (
                 StudentUnionGUI,
             )
-            StudentUnionGUI(parent=tk.Toplevel(self.root))
+            StudentUnionGUI(parent=tk.Toplevel(self.root), auth=self.auth)
         except Exception as e:
             logger.error(f"Error opening clubs: {e}")
             messagebox.showerror("Error", f"Failed to open Clubs & Societies: {e}")

@@ -879,7 +879,7 @@ class LostFoundGUI:
             lines.append(f"Brand: {item['brand']}")
 
         if item_type == 'lost' and item.get('estimated_value'):
-            lines.append(f"Estimated Value: ${item['estimated_value']:.2f}")
+            lines.append(f"Estimated Value: £{item['estimated_value']:.2f}")
 
         if item_type == 'found':
             if item.get('current_location'):

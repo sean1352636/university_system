@@ -470,7 +470,7 @@ def place_order(user_id: int, delivery_address: str, delivery_type: str = 'deliv
         min_order = cart_items[0]['min_order_amount']
 
         if subtotal < min_order:
-            print(f"Minimum order amount is ${min_order:.2f}")
+            print(f"Minimum order amount is £{min_order:.2f}")
             conn.close()
             return None
 
@@ -522,7 +522,7 @@ def place_order(user_id: int, delivery_address: str, delivery_type: str = 'deliv
         conn.commit()
         conn.close()
 
-        log_activity('create', 'takeaway_order', details=f'Order {order_id} placed for ${total:.2f}')
+        log_activity('create', 'takeaway_order', details=f'Order {order_id} placed for £{total:.2f}')
 
         return order_id
 
@@ -747,7 +747,7 @@ def browse_restaurants(user_id: int):
             status = "OPEN" if r['is_open'] else "CLOSED"
             print(f"{i}. {r['name']} ({r['cuisine_type']})")
             print(f"   Rating: {'*' * int(r['rating'])} ({r['rating']:.1f})")
-            print(f"   Delivery: ${r['delivery_fee']:.2f} | Min order: ${r['min_order_amount']:.2f}")
+            print(f"   Delivery: £{r['delivery_fee']:.2f} | Min order: £{r['min_order_amount']:.2f}")
             print(f"   Est. delivery: {r['estimated_delivery_time']} mins | {status}")
             print()
 
@@ -805,7 +805,7 @@ def browse_menu(user_id: int, restaurant: Dict):
                     dietary.append('GF')
                 dietary_str = f" [{', '.join(dietary)}]" if dietary else ""
 
-                print(f"  {idx}. {item['name']} - ${item['price']:.2f}{dietary_str}")
+                print(f"  {idx}. {item['name']} - £{item['price']:.2f}{dietary_str}")
                 if item['description']:
                     print(f"      {item['description']}")
                 item_list.append(item)
@@ -859,17 +859,17 @@ def view_and_manage_cart(user_id: int):
 
         for i, item in enumerate(items, 1):
             line_total = item['price'] * item['quantity']
-            print(f"{i}. {item['name']} x{item['quantity']} - ${line_total:.2f}")
+            print(f"{i}. {item['name']} x{item['quantity']} - £{line_total:.2f}")
             if item['special_instructions']:
                 print(f"   Note: {item['special_instructions']}")
 
         print("-" * 40)
-        print(f"Subtotal: ${subtotal:.2f}")
-        print(f"Delivery Fee: ${delivery_fee:.2f}")
-        print(f"Total: ${subtotal + delivery_fee:.2f}")
+        print(f"Subtotal: £{subtotal:.2f}")
+        print(f"Delivery Fee: £{delivery_fee:.2f}")
+        print(f"Total: £{subtotal + delivery_fee:.2f}")
 
         if subtotal < min_order:
-            print(f"\n*** Minimum order: ${min_order:.2f} (add ${min_order - subtotal:.2f} more) ***")
+            print(f"\n*** Minimum order: £{min_order:.2f} (add £{min_order - subtotal:.2f} more) ***")
 
         print("\n1. Checkout")
         print("2. Clear Cart")
@@ -879,7 +879,7 @@ def view_and_manage_cart(user_id: int):
 
         if choice == '1':
             if subtotal < min_order:
-                print(f"Please add at least ${min_order - subtotal:.2f} more to order.")
+                print(f"Please add at least £{min_order - subtotal:.2f} more to order.")
                 continue
             checkout(user_id)
             break
@@ -940,7 +940,7 @@ def checkout(user_id: int):
             if order['delivery_address']:
                 print(f"Address: {order['delivery_address']}")
             print(f"Estimated: {order['estimated_delivery']}")
-            print(f"Total: ${order['total_amount']:.2f}")
+            print(f"Total: £{order['total_amount']:.2f}")
     else:
         print("Failed to place order. Please try again.")
 
@@ -961,7 +961,7 @@ def view_order_history(user_id: int):
         for i, order in enumerate(orders, 1):
             print(f"\n{i}. Order #{order['order_id']}")
             print(f"   {order['restaurant_name']} - {order['order_date']}")
-            print(f"   Total: ${order['total_amount']:.2f} | Status: {order['order_status'].upper()}")
+            print(f"   Total: £{order['total_amount']:.2f} | Status: {order['order_status'].upper()}")
             if order['rating']:
                 print(f"   Rating: {'*' * order['rating']}")
 
@@ -993,11 +993,11 @@ def view_order_history(user_id: int):
 
                 print("\nItems:")
                 for item in items:
-                    print(f"  - {item['item_name']} x{item['quantity']} = ${item['subtotal']:.2f}")
+                    print(f"  - {item['item_name']} x{item['quantity']} = £{item['subtotal']:.2f}")
 
-                print(f"\nSubtotal: ${order_detail['subtotal']:.2f}")
-                print(f"Delivery Fee: ${order_detail['delivery_fee']:.2f}")
-                print(f"Total: ${order_detail['total_amount']:.2f}")
+                print(f"\nSubtotal: £{order_detail['subtotal']:.2f}")
+                print(f"Delivery Fee: £{order_detail['delivery_fee']:.2f}")
+                print(f"Total: £{order_detail['total_amount']:.2f}")
 
                 if order_detail['order_status'] == 'delivered' and not order_detail['rating']:
                     rate = input("\nRate this order? (1-5, or skip): ").strip()
@@ -1050,7 +1050,7 @@ def view_all_orders():
 
         for order in orders:
             print(f"\n{order['order_id']} | {order['restaurant_name']}")
-            print(f"   Date: {order['order_date']} | Total: ${order['total_amount']:.2f}")
+            print(f"   Date: {order['order_date']} | Total: £{order['total_amount']:.2f}")
             print(f"   Status: {order['order_status']} | Payment: {order['payment_status']}")
 
         input("\nPress Enter to continue...")
@@ -1088,7 +1088,7 @@ def generate_reports():
             print("\nDaily Sales (Last 30 days):")
             print("-" * 40)
             for row in results:
-                print(f"{row[0]}: {row[1]} orders, ${row[2]:.2f} revenue")
+                print(f"{row[0]}: {row[1]} orders, £{row[2]:.2f} revenue")
 
         elif choice == '2':
             cursor.execute('''
@@ -1103,7 +1103,7 @@ def generate_reports():
             print("\nRestaurant Performance:")
             print("-" * 40)
             for row in results:
-                print(f"{row[0]}: Rating {row[1]:.1f}, {row[2]} orders, ${row[3]:.2f}")
+                print(f"{row[0]}: Rating {row[1]:.1f}, {row[2]} orders, £{row[3]:.2f}")
 
         elif choice == '3':
             cursor.execute('''
@@ -1118,7 +1118,7 @@ def generate_reports():
             print("\nTop 20 Popular Items:")
             print("-" * 40)
             for i, row in enumerate(results, 1):
-                print(f"{i}. {row[0]}: {row[1]} sold, ${row[2]:.2f}")
+                print(f"{i}. {row[0]}: {row[1]} sold, £{row[2]:.2f}")
 
         conn.close()
         input("\nPress Enter to continue...")

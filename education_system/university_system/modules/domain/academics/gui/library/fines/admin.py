@@ -51,7 +51,7 @@ def waive_all_fines(self):
             response = messagebox.askyesno(
                 "Confirm Waive Fines",
                 f"Are you sure you want to waive all fines for user {user_id}?\n\n"
-                f"Total amount to be waived: ${total_fines:.2f}\n\n"
+                f"Total amount to be waived: £{total_fines:.2f}\n\n"
                 f"This action cannot be undone."
             )
 
@@ -75,13 +75,13 @@ def waive_all_fines(self):
             # Log the action
             if ORIGINAL_LIBRARY_AVAILABLE:
                 log_audit_event(get_current_user_id(),
-                              f"GUI: Waived all fines (${total_fines:.2f}) for user {user_id}",
+                              f"GUI: Waived all fines (£{total_fines:.2f}) for user {user_id}",
                               "book_loans", user_id)
 
             messagebox.showinfo(_("common.success"),
                 f"All fines waived successfully!\n\n"
                 f"User ID: {user_id}\n"
-                f"Amount waived: ${total_fines:.2f}\n"
+                f"Amount waived: £{total_fines:.2f}\n"
                 f"Loans affected: {rows_affected}")
 
             # Refresh the fines display
@@ -150,7 +150,7 @@ def view_fine_history(self):
             stats_frame = ttk.Frame(history_window)
             stats_frame.pack(fill='x', padx=10, pady=5)
 
-            ttk.Label(stats_frame, text=f"Payments: {total_paid} | Waivers: {total_waived} | Outstanding: ${total_outstanding:.2f}",
+            ttk.Label(stats_frame, text=f"Payments: {total_paid} | Waivers: {total_waived} | Outstanding: £{total_outstanding:.2f}",
                      font=('Arial', 10)).pack()
 
             # Scrollable frame for transactions
@@ -176,7 +176,7 @@ def view_fine_history(self):
                 if returned:
                     info_text += f"Returned: {returned}\n"
                 if fine > 0:
-                    info_text += f"Current Fine: ${fine:.2f}\n"
+                    info_text += f"Current Fine: £{fine:.2f}\n"
                 if notes:
                     info_text += f"Notes: {notes}\n"
 
@@ -241,7 +241,7 @@ def adjust_fine_amount(self):
             loan_var = tk.StringVar()
             for loan_id, book_id, fine_amt in loans:
                 ttk.Radiobutton(loan_frame,
-                               text=f"Loan #{loan_id} - Book: {book_id} - Current Fine: ${fine_amt:.2f}",
+                               text=f"Loan #{loan_id} - Book: {book_id} - Current Fine: £{fine_amt:.2f}",
                                variable=loan_var,
                                value=f"{loan_id}:{fine_amt}").pack(anchor='w', pady=2)
 
@@ -308,14 +308,14 @@ def adjust_fine_amount(self):
                     # Log the action
                     if ORIGINAL_LIBRARY_AVAILABLE:
                         log_audit_event(get_current_user_id(),
-                                      f"GUI: Adjusted fine for loan {loan_id} from ${current_fine:.2f} to ${new_fine:.2f}. Reason: {reason}",
+                                      f"GUI: Adjusted fine for loan {loan_id} from £{current_fine:.2f} to £{new_fine:.2f}. Reason: {reason}",
                                       "book_loans", loan_id)
 
                     messagebox.showinfo(_("common.success"),
                         f"Fine adjusted successfully!\n\n"
                         f"Loan ID: {loan_id}\n"
-                        f"Previous amount: ${current_fine:.2f}\n"
-                        f"New amount: ${new_fine:.2f}")
+                        f"Previous amount: £{current_fine:.2f}\n"
+                        f"New amount: £{new_fine:.2f}")
 
                     adjust_dialog.destroy()
                     self.load_user_fines()

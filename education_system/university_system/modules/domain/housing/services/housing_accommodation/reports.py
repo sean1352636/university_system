@@ -128,8 +128,8 @@ def generate_financial_report():
 
         monthly_revenue = cursor.fetchone()[0] or 0
 
-        print(f"Current Monthly Revenue: ${monthly_revenue:,.2f}")
-        print(f"Projected Annual Revenue: ${monthly_revenue * 12:,.2f}")
+        print(f"Current Monthly Revenue: £{monthly_revenue:,.2f}")
+        print(f"Projected Annual Revenue: £{monthly_revenue * 12:,.2f}")
         print()
 
         # Payment statistics for current year
@@ -147,7 +147,7 @@ def generate_financial_report():
 
         print(f"Payments Collected This Year ({current_year}):")
         print(f"Number of Payments: {payment_count}")
-        print(f"Total Amount Collected: ${total_collected:,.2f}")
+        print(f"Total Amount Collected: £{total_collected:,.2f}")
         print()
 
         # Revenue by building
@@ -171,7 +171,7 @@ def generate_financial_report():
         for building in building_revenue:
             assignments = building[1] or 0
             revenue = building[2] or 0
-            print(f"{building[0]:<25} {assignments:<12} ${revenue:,.2f}")
+            print(f"{building[0]:<25} {assignments:<12} £{revenue:,.2f}")
 
         # Outstanding payments (simplified - would need more complex logic for real implementation)
         print("\nPayment Status Summary:")
@@ -187,7 +187,7 @@ def generate_financial_report():
 
         # This is a simplified view - in a real system you'd track payment due dates
         print(f"Active Housing Assignments: {active_count}")
-        print(f"Expected Monthly Collections: ${monthly_revenue:,.2f}")
+        print(f"Expected Monthly Collections: £{monthly_revenue:,.2f}")
 
         conn.close()
 
@@ -478,7 +478,7 @@ def search_housing_records():
 
                 for result in results:
                     print(f"Room {result[1]} in {result[2]}")
-                    print(f"Type: {result[3]} | Status: {result[4]} | Rent: ${result[5]}")
+                    print(f"Type: {result[3]} | Status: {result[4]} | Rent: £{result[5]}")
                     if result[6]:  # Has occupant
                         print(f"Occupant: {result[7]} {result[8]} ({result[6]})")
                     else:
@@ -628,7 +628,7 @@ def check_room_availability():
 
                 for room in available_rooms:
                     accessible = "Yes" if room[5] else "No"
-                    print(f"{room[0]:<8} {room[1]:<8} {room[2]:<12} {room[3]:<10} ${room[4]:<9.2f} {accessible:<12}")
+                    print(f"{room[0]:<8} {room[1]:<8} {room[2]:<12} {room[3]:<10} £{room[4]:<9.2f} {accessible:<12}")
 
                 print(f"\nTotal Available Rooms: {len(available_rooms)}")
             else:
@@ -672,7 +672,7 @@ def check_room_availability():
 
                 for room in available_rooms:
                     accessible = "Yes" if room[5] else "No"
-                    print(f"{room[0]:<8} {room[1]:<20} {room[2]:<8} {room[3]:<10} ${room[4]:<9.2f} {accessible:<12}")
+                    print(f"{room[0]:<8} {room[1]:<20} {room[2]:<8} {room[3]:<10} £{room[4]:<9.2f} {accessible:<12}")
 
                 print(f"\nTotal Available {room_type} Rooms: {len(available_rooms)}")
             else:
@@ -699,7 +699,7 @@ def check_room_availability():
 
                 for room in available_rooms:
                     accessible = "Yes" if room[6] else "No"
-                    print(f"{room[0]:<8} {room[1]:<20} {room[2]:<8} {room[3]:<12} {room[4]:<10} ${room[5]:<9.2f} {accessible:<12}")
+                    print(f"{room[0]:<8} {room[1]:<20} {room[2]:<8} {room[3]:<12} {room[4]:<10} £{room[5]:<9.2f} {accessible:<12}")
 
                 print(f"\nTotal Available Rooms: {len(available_rooms)}")
 
@@ -745,7 +745,7 @@ def check_room_availability():
                 for room in accessible_rooms:
                     if room[6] == 'Available':
                         available_count += 1
-                    print(f"{room[0]:<8} {room[1]:<20} {room[2]:<8} {room[3]:<12} {room[4]:<10} ${room[5]:<9.2f} {room[6]:<12}")
+                    print(f"{room[0]:<8} {room[1]:<20} {room[2]:<8} {room[3]:<12} {room[4]:<10} £{room[5]:<9.2f} {room[6]:<12}")
 
                 print(f"\nTotal Accessible Rooms: {len(accessible_rooms)}")
                 print(f"Available Accessible Rooms: {available_count}")

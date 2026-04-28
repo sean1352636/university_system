@@ -595,11 +595,11 @@ class AlumniCRUDMixin:
                 info_frame = tk.Frame(dialog, bg='white')
                 info_frame.pack(fill='x', padx=20, pady=10)
 
-                tk.Label(info_frame, text=f"Pending Amount: ${finance_status['pending_amount']:.2f}",
+                tk.Label(info_frame, text=f"Pending Amount: £{finance_status['pending_amount']:.2f}",
                         font=('Arial', 11), bg='white', fg='#34495e').pack(anchor='w')
-                tk.Label(info_frame, text=f"Overdue Amount: ${finance_status['overdue_amount']:.2f}",
+                tk.Label(info_frame, text=f"Overdue Amount: £{finance_status['overdue_amount']:.2f}",
                         font=('Arial', 11), bg='white', fg='#e74c3c').pack(anchor='w')
-                tk.Label(info_frame, text=f"Total Owed: ${finance_status['total_owed']:.2f}",
+                tk.Label(info_frame, text=f"Total Owed: £{finance_status['total_owed']:.2f}",
                         font=('Arial', 12, 'bold'), bg='white', fg='#e74c3c').pack(anchor='w', pady=(5, 0))
 
                 tk.Button(dialog, text="Open Finance System",
@@ -964,7 +964,7 @@ class AlumniCRUDMixin:
                     finance_status = self.check_finance_status(validation_result['student_id'], email)
                     if finance_status['has_debt']:
                         result = messagebox.askyesno("Outstanding Balance",
-                                                   f"You have an outstanding balance of ${finance_status['total_owed']:.2f}.\n\n"
+                                                   f"You have an outstanding balance of £{finance_status['total_owed']:.2f}.\n\n"
                                                    "Do you want to view your finance status before proceeding with registration?")
                         if result:
                             self.show_finance_status_dialog(finance_status, f"{first_name} {last_name}")

@@ -166,7 +166,7 @@ def create_payment_alerts_widget(parent, student_id):
                 ttk.Label(
                     frame,
                     text=f"  {p.get('description', 'Payment')} - "
-                         f"${p.get('amount', 0):.2f} (due {p.get('due_date', 'N/A')})",
+                         f"£{p.get('amount', 0):.2f} (due {p.get('due_date', 'N/A')})",
                     foreground="red",
                 ).pack(anchor="w")
 
@@ -178,14 +178,14 @@ def create_payment_alerts_widget(parent, student_id):
                 ttk.Label(
                     frame,
                     text=f"  {p.get('description', 'Payment')} - "
-                         f"${p.get('amount', 0):.2f} (due {p.get('due_date', 'N/A')})",
+                         f"£{p.get('amount', 0):.2f} (due {p.get('due_date', 'N/A')})",
                 ).pack(anchor="w")
 
         if not overdue and not upcoming:
             bal = data.get("balance", 0)
             ttk.Label(
                 frame,
-                text=f"Balance: ${bal:.2f}" if bal else "No outstanding payments.",
+                text=f"Balance: £{bal:.2f}" if bal else "No outstanding payments.",
             ).pack(anchor="w")
 
     except Exception as e:

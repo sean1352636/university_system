@@ -452,7 +452,7 @@ class ResearchGrantsGUI:
                         row['department'],
                         row['project_type'],
                         row['start_date'],
-                        f"${row['total_budget']:,.2f}" if row['total_budget'] else '$0.00',
+                        f"£{row['total_budget']:,.2f}" if row['total_budget'] else '£0.00',
                         row['status']
                     )
                     self.projects_tree.insert('', tk.END, values=values)
@@ -481,8 +481,8 @@ class ResearchGrantsGUI:
                         row['grant_name'],
                         row['funding_agency'],
                         row['principal_investigator_id'],
-                        f"${row['requested_amount']:,.2f}",
-                        f"${row['awarded_amount']:,.2f}" if row['awarded_amount'] else _("common.na"),
+                        f"£{row['requested_amount']:,.2f}",
+                        f"£{row['awarded_amount']:,.2f}" if row['awarded_amount'] else _("common.na"),
                         row['decision_status'],
                         row['application_deadline']
                     )
@@ -573,7 +573,7 @@ class ResearchGrantsGUI:
                         row['equipment_name'],
                         row['project_id'] or _("common.na"),
                         row['purchase_date'],
-                        f"${row['cost']:,.2f}" if row['cost'] else _("common.na"),
+                        f"£{row['cost']:,.2f}" if row['cost'] else _("common.na"),
                         row['location'] or _("common.na"),
                         row['status']
                     )

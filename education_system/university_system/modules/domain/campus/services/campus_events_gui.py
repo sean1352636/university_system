@@ -536,7 +536,7 @@ class CampusEventsGUI:
                         row['event_id'],
                         row['sponsor_name'],
                         row['sponsor_type'] or _t("campus_events.defaults.na"),
-                        f"${row['contribution_amount']:,.2f}" if row['contribution_amount'] else _t("campus_events.defaults.na"),
+                        f"£{row['contribution_amount']:,.2f}" if row['contribution_amount'] else _t("campus_events.defaults.na"),
                         row['website_url'] or _t("campus_events.defaults.na")
                     )
                     self.sponsors_tree.insert('', tk.END, values=values)

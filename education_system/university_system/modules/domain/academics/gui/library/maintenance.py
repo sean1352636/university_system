@@ -383,7 +383,7 @@ def calculate_fines(self):
                 conn.commit()
                 conn.close()
 
-                result = f"✅ Updated fines for {fine_count} overdue loans at ${fine_per_day:.2f} per day.\n"
+                result = f"✅ Updated fines for {fine_count} overdue loans at £{fine_per_day:.2f} per day.\n"
         else:
             result = "✅ Demo: Would calculate and update fines.\n"
 

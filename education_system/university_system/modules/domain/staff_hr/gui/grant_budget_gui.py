@@ -160,19 +160,19 @@ class GrantBudgetGUI:
         cards_frame = ttk.Frame(self.summary_frame)
         cards_frame.pack(fill=tk.X)
 
-        self.summary_allocated_label = ttk.Label(cards_frame, text="Allocated: $0.00",
+        self.summary_allocated_label = ttk.Label(cards_frame, text="Allocated: £0.00",
                                                   font=('Arial', 11, 'bold'))
         self.summary_allocated_label.pack(side=tk.LEFT, padx=20)
 
-        self.summary_spent_label = ttk.Label(cards_frame, text="Spent: $0.00",
+        self.summary_spent_label = ttk.Label(cards_frame, text="Spent: £0.00",
                                               font=('Arial', 11, 'bold'))
         self.summary_spent_label.pack(side=tk.LEFT, padx=20)
 
-        self.summary_committed_label = ttk.Label(cards_frame, text="Committed: $0.00",
+        self.summary_committed_label = ttk.Label(cards_frame, text="Committed: £0.00",
                                                    font=('Arial', 11, 'bold'))
         self.summary_committed_label.pack(side=tk.LEFT, padx=20)
 
-        self.summary_remaining_label = ttk.Label(cards_frame, text="Remaining: $0.00",
+        self.summary_remaining_label = ttk.Label(cards_frame, text="Remaining: £0.00",
                                                    font=('Arial', 11, 'bold'))
         self.summary_remaining_label.pack(side=tk.LEFT, padx=20)
 
@@ -213,10 +213,10 @@ class GrantBudgetGUI:
             self.overview_tree.delete(item)
 
         # Reset summary labels
-        self.summary_allocated_label.config(text="Allocated: $0.00")
-        self.summary_spent_label.config(text="Spent: $0.00")
-        self.summary_committed_label.config(text="Committed: $0.00")
-        self.summary_remaining_label.config(text="Remaining: $0.00")
+        self.summary_allocated_label.config(text="Allocated: £0.00")
+        self.summary_spent_label.config(text="Spent: £0.00")
+        self.summary_committed_label.config(text="Committed: £0.00")
+        self.summary_remaining_label.config(text="Remaining: £0.00")
 
         grant_id = self._get_selected_grant_id(self.overview_grant_combo)
         if not grant_id:
@@ -229,13 +229,13 @@ class GrantBudgetGUI:
 
         # Update summary cards
         self.summary_allocated_label.config(
-            text=f"Allocated: ${summary.get('total_allocated', 0):,.2f}")
+            text=f"Allocated: £{summary.get('total_allocated', 0):,.2f}")
         self.summary_spent_label.config(
-            text=f"Spent: ${summary.get('total_spent', 0):,.2f}")
+            text=f"Spent: £{summary.get('total_spent', 0):,.2f}")
         self.summary_committed_label.config(
-            text=f"Committed: ${summary.get('total_committed', 0):,.2f}")
+            text=f"Committed: £{summary.get('total_committed', 0):,.2f}")
         self.summary_remaining_label.config(
-            text=f"Remaining: ${summary.get('total_remaining', 0):,.2f}")
+            text=f"Remaining: £{summary.get('total_remaining', 0):,.2f}")
 
         # Populate per-category treeview
         categories = summary.get('categories', [])
@@ -260,10 +260,10 @@ class GrantBudgetGUI:
 
             self.overview_tree.insert('', tk.END, values=(
                 cat.get('category_name', ''),
-                f"${allocated:,.2f}",
-                f"${spent:,.2f}",
-                f"${committed:,.2f}",
-                f"${remaining:,.2f}",
+                f"£{allocated:,.2f}",
+                f"£{spent:,.2f}",
+                f"£{committed:,.2f}",
+                f"£{remaining:,.2f}",
                 f"{usage_pct:.1f}%"
             ), tags=(tag,))
 
@@ -466,7 +466,7 @@ class GrantBudgetGUI:
                 exp.get('expense_date', ''),
                 category_name,
                 (exp.get('description', '') or '')[:40],
-                f"${exp.get('amount', 0):,.2f}",
+                f"£{exp.get('amount', 0):,.2f}",
                 (exp.get('vendor', '') or '')[:25],
                 exp_status.replace('_', ' ').title()
             ), tags=(exp_status,))
@@ -509,7 +509,7 @@ class GrantBudgetGUI:
             ('Grant Application', expense.get('grant_application_id')),
             ('Category', category_name),
             ('Description', expense.get('description', '')),
-            ('Amount', f"${expense.get('amount', 0):,.2f}"),
+            ('Amount', f"£{expense.get('amount', 0):,.2f}"),
             ('Date', expense.get('expense_date', '')),
             ('Vendor', expense.get('vendor', '') or 'N/A'),
             ('Invoice #', expense.get('invoice_number', '') or 'N/A'),
@@ -920,7 +920,7 @@ class GrantBudgetGUI:
                 t.get('transfer_id'),
                 from_name,
                 to_name,
-                f"${t.get('amount', 0):,.2f}",
+                f"£{t.get('amount', 0):,.2f}",
                 (t.get('reason', '') or '')[:40],
                 status.replace('_', ' ').title()
             ), tags=(status,))
@@ -977,7 +977,7 @@ class GrantBudgetGUI:
             for a in allocations:
                 label = (f"{a.get('category_name', '')} "
                          f"(#{a.get('allocation_id')}) - "
-                         f"Remaining: ${a.get('remaining_amount', 0):,.2f}")
+                         f"Remaining: £{a.get('remaining_amount', 0):,.2f}")
                 alloc_values.append(label)
                 dialog_allocation_map[label] = a.get('allocation_id')
 
@@ -1214,7 +1214,7 @@ class GrantBudgetGUI:
                 exp.get('expense_id'),
                 exp.get('grant_application_id', ''),
                 (exp.get('description', '') or '')[:35],
-                f"${exp.get('amount', 0):,.2f}",
+                f"£{exp.get('amount', 0):,.2f}",
                 (exp.get('vendor', '') or '')[:20],
                 exp.get('submitted_by', ''),
                 exp.get('expense_date', '')
@@ -1374,7 +1374,7 @@ class GrantBudgetGUI:
                 t.get('grant_application_id', ''),
                 from_name,
                 to_name,
-                f"${t.get('amount', 0):,.2f}",
+                f"£{t.get('amount', 0):,.2f}",
                 (t.get('reason', '') or '')[:30],
                 t.get('requested_by', '')
             ))

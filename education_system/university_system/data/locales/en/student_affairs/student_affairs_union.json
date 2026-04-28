@@ -123,7 +123,19 @@
       "name_required": "Club name is required",
       "name_exists": "Club name already exists",
       "create_btn": "Create Club",
-      "create_failed": "Failed to create club: {error}"
+      "create_failed": "Failed to create club: {error}",
+      "club_name_label": "Club Name",
+      "category_label": "Category",
+      "members_label": "Members",
+      "status_label": "Status",
+      "created_label": "Created",
+      "officers_label": "Officers",
+      "president_label": "President",
+      "treasurer_label": "Treasurer",
+      "secretary_label": "Secretary",
+      "vacant": "Vacant",
+      "description_label": "Description",
+      "no_description": "No description available."
     },
     "profile": {
       "title": "User Profile",

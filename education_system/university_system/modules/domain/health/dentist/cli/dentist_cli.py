@@ -388,7 +388,7 @@ class DentistCLI:
         keys = list(TREATMENT_TYPES.keys())
         for i, key in enumerate(keys, 1):
             t = TREATMENT_TYPES[key]
-            print(f"    {i}. {t['name']} - {t['duration']} min - ${t['fee']:.2f}")
+            print(f"    {i}. {t['name']} - {t['duration']} min - £{t['fee']:.2f}")
 
         choice = input("\n  Select treatment type (number): ").strip()
         try:
@@ -479,7 +479,7 @@ class DentistCLI:
                 print(f"\nAppointment booked successfully!")
                 print(f"  Reference:     {result['appointment_ref']}")
                 print(f"  Appointment ID: {result['appointment_id']}")
-                print(f"  Estimated Fee: ${result['estimated_fee']:.2f}")
+                print(f"  Estimated Fee: £{result['estimated_fee']:.2f}")
             else:
                 print("\nFailed to book appointment. The slot may already be taken.")
         except ValueError:
@@ -900,7 +900,7 @@ class DentistCLI:
                 print(f"\nTreatment recorded successfully!")
                 print(f"  Treatment ID: {result['treatment_id']}")
                 print(f"  Type: {t_info.get('name', treatment_type)}")
-                print(f"  Fee: ${result['fee']:.2f}")
+                print(f"  Fee: £{result['fee']:.2f}")
             else:
                 print("\nFailed to record treatment.")
         except ValueError:
@@ -935,7 +935,7 @@ class DentistCLI:
                     t_name = t_info.get('name', t['treatment_type'])
                     print(f"  {t['treatment_id']:<6} {t['treatment_date']:<12} "
                           f"{t_name:<20} {t['dentist_name']:<22} "
-                          f"${t['fee']:<9.2f} {t['payment_status']:<10}")
+                          f"£{t['fee']:<9.2f} {t['payment_status']:<10}")
             else:
                 print("\nNo treatments found for this patient.")
         except ValueError:
@@ -959,14 +959,14 @@ class DentistCLI:
 
             if pending:
                 total = sum(t['fee'] for t in pending)
-                print(f"\n  Pending payments: {len(pending)}  |  Total: ${total:.2f}\n")
+                print(f"\n  Pending payments: {len(pending)}  |  Total: £{total:.2f}\n")
                 print(f"  {'TID':<6} {'Patient':<22} {'Date':<12} {'Type':<20} {'Fee':<10}")
                 print("  " + "-" * 68)
                 for t in pending:
                     t_info = TREATMENT_TYPES.get(t['treatment_type'], {})
                     t_name = t_info.get('name', t['treatment_type'])
                     print(f"  {t['treatment_id']:<6} {t.get('patient_name', 'N/A'):<22} "
-                          f"{t['treatment_date']:<12} {t_name:<20} ${t['fee']:<9.2f}")
+                          f"{t['treatment_date']:<12} {t_name:<20} £{t['fee']:<9.2f}")
             else:
                 print("\nNo pending payments found.")
         except ValueError:
@@ -985,7 +985,7 @@ class DentistCLI:
         print(f"\n  {'Type':<20} {'Name':<25} {'Duration':<12} {'Fee':<10}")
         print("  " + "-" * 65)
         for key, t in TREATMENT_TYPES.items():
-            print(f"  {key:<20} {t['name']:<25} {t['duration']} min{'':<6} ${t['fee']:.2f}")
+            print(f"  {key:<20} {t['name']:<25} {t['duration']} min{'':<6} £{t['fee']:.2f}")
 
         input("\nPress Enter to continue...")
 
@@ -1189,7 +1189,7 @@ class DentistCLI:
                 for t in pending:
                     t_info = TREATMENT_TYPES.get(t['treatment_type'], {})
                     t_name = t_info.get('name', t['treatment_type'])
-                    print(f"    Treatment #{t['treatment_id']}: {t_name} - ${t['fee']:.2f}")
+                    print(f"    Treatment #{t['treatment_id']}: {t_name} - £{t['fee']:.2f}")
 
             treatment_id_str = input("\n  Treatment ID (optional): ").strip()
             treatment_id = int(treatment_id_str) if treatment_id_str else None
@@ -1235,7 +1235,7 @@ class DentistCLI:
                 print(f"\nPayment recorded successfully!")
                 print(f"  Transaction ID: {result['transaction_id']}")
                 print(f"  Reference:      {result['reference']}")
-                print(f"  Amount:         ${result['amount']:.2f}")
+                print(f"  Amount:         £{result['amount']:.2f}")
             else:
                 print("\nFailed to record payment.")
         except ValueError:
@@ -1268,7 +1268,7 @@ class DentistCLI:
                 for t in transactions:
                     print(f"  {t.get('transaction_id', 'N/A'):<6} "
                           f"{t.get('reference_number', 'N/A'):<20} "
-                          f"${t.get('amount', 0):<11.2f} "
+                          f"£{t.get('amount', 0):<11.2f} "
                           f"{(t.get('payment_method') or 'N/A'):<15} "
                           f"{(t.get('created_at') or 'N/A'):<20}")
             else:
@@ -1331,7 +1331,7 @@ class DentistCLI:
                 print(f"  Total Appointments:      {report.get('total_appointments', 0)}")
                 print(f"  Completed Appointments:  {report.get('completed_appointments', 0)}")
                 print(f"  Treatments Performed:    {report.get('treatments_performed', 0)}")
-                print(f"  Revenue:                 ${report.get('revenue', 0):.2f}")
+                print(f"  Revenue:                 £{report.get('revenue', 0):.2f}")
             else:
                 print("\nNo report data available.")
         except Exception as e:
@@ -1357,7 +1357,7 @@ class DentistCLI:
                 print(f"\n  Period:              {report.get('year', 'N/A')}-{report.get('month', 'N/A'):02d}")
                 print(f"  Total Appointments:  {report.get('total_appointments', 0)}")
                 print(f"  New Patients:        {report.get('new_patients', 0)}")
-                print(f"  Total Revenue:       ${report.get('total_revenue', 0):.2f}")
+                print(f"  Total Revenue:       £{report.get('total_revenue', 0):.2f}")
 
                 by_type = report.get('treatments_by_type', {})
                 if by_type:
@@ -1367,7 +1367,7 @@ class DentistCLI:
                     for t_type, data in by_type.items():
                         t_info = TREATMENT_TYPES.get(t_type, {})
                         t_name = t_info.get('name', t_type)
-                        print(f"    {t_name:<20} {data['count']:<8} ${data['revenue']:.2f}")
+                        print(f"    {t_name:<20} {data['count']:<8} £{data['revenue']:.2f}")
             else:
                 print("\nNo report data available.")
         except ValueError:

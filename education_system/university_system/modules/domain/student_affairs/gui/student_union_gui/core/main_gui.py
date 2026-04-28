@@ -280,10 +280,10 @@ class StudentUnionGUI:
     _render_dashboard_tab = _render_dashboard_tab_func
     show_dashboard_tab = _show_dashboard_tab
 
-    # Bind utility functions as methods
-    _get_all_student_emails = _get_all_student_emails_func
-    _send_email_via_gui = _send_email_via_gui_func
-    _show_email_fallback = _show_email_fallback_func
+    # Bind utility functions as static methods (they don't take self)
+    _get_all_student_emails = staticmethod(_get_all_student_emails_func)
+    _send_email_via_gui = staticmethod(_send_email_via_gui_func)
+    _show_email_fallback = staticmethod(_show_email_fallback_func)
     send_event_notification_to_all_students = _DatabaseQueryDialog.send_event_notification_to_all_students
     send_new_club_announcement = _DatabaseQueryDialog.send_new_club_announcement
     send_club_join_confirmation = _DatabaseQueryDialog.send_club_join_confirmation
@@ -413,7 +413,7 @@ class StudentUnionGUI:
 
         try:
             open_elections_hub(self.root,
-                               auth=getattr(self, 'auth', None),
+                               auth=getattr(self, 'auth_manager', None) or getattr(self, 'auth', None),
                                tool_handlers=tools)
         except Exception as e:
             from tkinter import messagebox
@@ -477,7 +477,7 @@ class StudentUnionGUI:
     # Bind student council launcher
     open_student_council_dialog = _open_student_council_dialog
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, auth=None):
         if parent:
             self.root = parent
             self.master = parent  # Set master for consistency
@@ -511,8 +511,14 @@ class StudentUnionGUI:
         # Setup database
         self.setup_database()
 
-        # Get authenticated user from centralized auth
-        auth = get_auth()
+        # Get authenticated user: prefer the auth instance passed in by the
+        # parent portal (which holds the active session), fall back to the
+        # shared-context auth.
+        if auth is None:
+            try:
+                auth = get_auth()
+            except Exception:
+                auth = None
         if auth is None:
             auth = UserAuth()
         if not auth.current_user:

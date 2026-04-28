@@ -59,9 +59,9 @@ def create_admin_dashboard(parent_frame, auth, service):
 
     total_payments = data.get('financial_summary', {}).get('total_payments', 0)
     if isinstance(total_payments, (int, float)):
-        ttk.Label(stats_frame, text=f"Total Payments Received: ${total_payments:,.2f}").pack(anchor="w")
+        ttk.Label(stats_frame, text=f"Total Payments Received: £{total_payments:,.2f}").pack(anchor="w")
     else:
-        ttk.Label(stats_frame, text=f"Total Payments Received: ${0:,.2f}").pack(anchor="w")
+        ttk.Label(stats_frame, text=f"Total Payments Received: £{0:,.2f}").pack(anchor="w")
 
     # Recent Registrations
     reg_frame = ttk.LabelFrame(scrollable, text="Recent Student Registrations (Last 7 Days)", padding="10")

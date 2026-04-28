@@ -506,7 +506,7 @@ def process_application(application_id=None):
                 cursor.execute('SELECT building_name FROM housing_buildings WHERE building_id = ?', (building_id,))
                 building_name = cursor.fetchone()[0]
 
-                print(f"{i}. {get_text('housing.building.name_label')}: {building_name}, {get_text('housing.room.number_label')}: {room[2]}, {get_text('housing.room.floor_label')}: {room[3]}, {get_text('housing.room.type_label')}: {room[4]}, {get_text('housing.room.rent_label')}: ${room[5]}/{get_text('housing.common.month')}")
+                print(f"{i}. {get_text('housing.building.name_label')}: {building_name}, {get_text('housing.room.number_label')}: {room[2]}, {get_text('housing.room.floor_label')}: {room[3]}, {get_text('housing.room.type_label')}: {room[4]}, {get_text('housing.room.rent_label')}: £{room[5]}/{get_text('housing.common.month')}")
 
             while True:
                 try:
@@ -596,7 +596,7 @@ def process_application(application_id=None):
             print(f"{get_text('housing.room.number_label')}: {assignment[2]} {get_text('housing.common.in')} {assignment[3]}")
             print(f"{get_text('housing.assignment.move_in_label')}: {assignment[4]}")
             print(f"{get_text('housing.assignment.move_out_label')}: {assignment[5]}")
-            print(f"{get_text('housing.assignment.rent_label')}: ${assignment[6]}")
+            print(f"{get_text('housing.assignment.rent_label')}: £{assignment[6]}")
 
         conn.close()
 
@@ -851,7 +851,7 @@ def view_application():
             print(f"{get_text('housing.assignment.move_out_label')}: {assignment[5]}")
             if assignment[6]:
                 print(f"{get_text('housing.assignment.actual_move_out_label')}: {assignment[6]}")
-            print(f"{get_text('housing.assignment.rent_label')}: ${assignment[7]}")
+            print(f"{get_text('housing.assignment.rent_label')}: £{assignment[7]}")
             print(f"{get_text('housing.assignment.status_label')}: {assignment[8]}")
             print(f"{get_text('housing.assignment.assigned_by_label')}: {assignment[10]}")
             print(f"{get_text('housing.assignment.date_label')}: {assignment[11]}")

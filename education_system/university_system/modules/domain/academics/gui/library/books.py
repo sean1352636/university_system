@@ -1111,7 +1111,7 @@ def view_book_loan_history(self):
         ttk.Label(summary_frame, text=f"Total Loans: {total_loans}").pack(side=tk.LEFT, padx=10)
         ttk.Label(summary_frame, text=f"Active: {active_loans}").pack(side=tk.LEFT, padx=10)
         ttk.Label(summary_frame, text=f"Returned: {returned_loans}").pack(side=tk.LEFT, padx=10)
-        ttk.Label(summary_frame, text=f"Total Fines: ${total_fines:.2f}").pack(side=tk.LEFT, padx=10)
+        ttk.Label(summary_frame, text=f"Total Fines: £{total_fines:.2f}").pack(side=tk.LEFT, padx=10)
 
     except (tk.TclError, ValueError, TypeError) as e:
         messagebox.showerror(_("common.error"), f"Failed to load loan history: {str(e)}")

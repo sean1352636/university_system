@@ -227,7 +227,7 @@ def pay_fine_via_finance(self):
 
         if success:
             messagebox.showinfo(_("common.success"),
-                f"Library fine payment of ${amount:.2f} processed successfully!\n"
+                f"Library fine payment of £{amount:.2f} processed successfully!\n"
                 f"Payment has been charged to {first_name} {last_name}'s account.")
 
             # Send email confirmation
@@ -341,7 +341,7 @@ def open_finance_payment_for_user(self, user_id, amount):
         try:
             from education_system.university_system.modules.domain.finance.gui.finance import FinanceGUI
             finance_window = tk.Toplevel(self.master)
-            finance_window.title(f"Pay Library Fees - ${amount:.2f}")
+            finance_window.title(f"Pay Library Fees - £{amount:.2f}")
             finance_window.geometry("800x600")
 
             # Initialize finance GUI in payment mode

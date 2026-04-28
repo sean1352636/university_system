@@ -302,7 +302,7 @@ class CarRentalGUI:
 
         # Cost display
         row = len(rental_fields) + 2  # +2 for user info frame
-        self.rental_cost_var = tk.StringVar(value="$0.00")
+        self.rental_cost_var = tk.StringVar(value="£0.00")
         ttk.Label(right_frame, text=_t("carrental.labels.estimated_cost") + ":").grid(row=row, column=0, sticky=tk.W, pady=5)
         ttk.Label(right_frame, textvariable=self.rental_cost_var, font=('Helvetica', 12, 'bold')).grid(row=row, column=1, pady=5)
 
@@ -444,7 +444,7 @@ class CarRentalGUI:
             if category == 'All' or v['category'] == category:
                 self.vehicles_tree.insert('', tk.END, values=(
                     v['vehicle_id'], v['registration_number'], v['make'],
-                    v['model'], v['category'], f"${v['daily_rate']:.2f}", v['status']
+                    v['model'], v['category'], f"£{v['daily_rate']:.2f}", v['status']
                 ))
 
         # Also update available vehicles for rentals
@@ -461,7 +461,7 @@ class CarRentalGUI:
                 v['vehicle_id'],
                 f"{v['make']} {v['model']} ({v['registration_number']})",
                 v['category'],
-                f"${v['daily_rate']:.2f}"
+                f"£{v['daily_rate']:.2f}"
             ))
 
     def _load_rentals(self):
@@ -480,7 +480,7 @@ class CarRentalGUI:
             self.active_rentals_tree.insert('', tk.END, values=(
                 r['rental_id'], r['rental_number'], r['customer_name'],
                 f"{r['make']} {r['model']}", r['return_date'],
-                f"${r['total_amount']:.2f}"
+                f"£{r['total_amount']:.2f}"
             ))
 
     def add_vehicle(self):
@@ -596,7 +596,7 @@ class CarRentalGUI:
             days = max(1, (return_date - pickup_date).days)
 
             total = vehicle['daily_rate'] * days
-            self.rental_cost_var.set(f"${total:.2f} ({days} days)")
+            self.rental_cost_var.set(f"£{total:.2f} ({days} days)")
         except Exception:
             pass
 
@@ -606,7 +606,7 @@ class CarRentalGUI:
             entry.delete(0, tk.END)
         self.selected_vehicle_id = None
         self.selected_vehicle_var.set("")
-        self.rental_cost_var.set("$0.00")
+        self.rental_cost_var.set("£0.00")
 
         # Reset default dates
         today = datetime.now()
@@ -724,15 +724,15 @@ class CarRentalGUI:
         fees_frame = ttk.Frame(dialog, padding="10")
         fees_frame.pack(fill=tk.X, padx=20)
 
-        ttk.Label(fees_frame, text=f"Base Rental: ${base_amount:.2f}").pack(anchor=tk.W)
+        ttk.Label(fees_frame, text=f"Base Rental: £{base_amount:.2f}").pack(anchor=tk.W)
         if fuel_fee > 0:
-            ttk.Label(fees_frame, text=f"Fuel Fee: ${fuel_fee:.2f}").pack(anchor=tk.W)
+            ttk.Label(fees_frame, text=f"Fuel Fee: £{fuel_fee:.2f}").pack(anchor=tk.W)
         if late_fee > 0:
-            ttk.Label(fees_frame, text=f"Late Fee: ${late_fee:.2f}").pack(anchor=tk.W)
+            ttk.Label(fees_frame, text=f"Late Fee: £{late_fee:.2f}").pack(anchor=tk.W)
         if damage_fee > 0:
-            ttk.Label(fees_frame, text=f"Damage Fee: ${damage_fee:.2f}").pack(anchor=tk.W)
+            ttk.Label(fees_frame, text=f"Damage Fee: £{damage_fee:.2f}").pack(anchor=tk.W)
 
-        ttk.Label(fees_frame, text=f"TOTAL: ${total_amount:.2f}", font=('Helvetica', 12, 'bold')).pack(anchor=tk.W, pady=(10, 0))
+        ttk.Label(fees_frame, text=f"TOTAL: £{total_amount:.2f}", font=('Helvetica', 12, 'bold')).pack(anchor=tk.W, pady=(10, 0))
 
         # Payment method
         ttk.Separator(dialog, orient=tk.HORIZONTAL).pack(fill=tk.X, padx=20, pady=10)
@@ -806,7 +806,7 @@ class CarRentalGUI:
             self.send_receipt_email(rental_id)
 
             messagebox.showinfo(_t("common.success"),
-                f"Vehicle returned and payment of ${total_amount:.2f} processed successfully!")
+                f"Vehicle returned and payment of £{total_amount:.2f} processed successfully!")
             dialog.destroy()
             self.refresh_all_data()
 
@@ -880,7 +880,7 @@ class CarRentalGUI:
         dialog.transient(self.root)
         dialog.grab_set()
 
-        ttk.Label(dialog, text=f"Amount: ${amount:.2f}", font=('Helvetica', 12, 'bold')).pack(pady=10)
+        ttk.Label(dialog, text=f"Amount: £{amount:.2f}", font=('Helvetica', 12, 'bold')).pack(pady=10)
 
         # Check student finance account balance if available
         student_id = rental.get('customer_id')
@@ -959,7 +959,7 @@ class CarRentalGUI:
                 created_by=self.current_user.get('username')
             )
             if payment_id:
-                logger.info(f"Revenue recorded to finance: ${amount:.2f} for rental {rental.get('rental_number')}")
+                logger.info(f"Revenue recorded to finance: £{amount:.2f} for rental {rental.get('rental_number')}")
             return payment_id
         except Exception as e:
             logger.error(f"Failed to record revenue to finance: {e}")
@@ -1040,8 +1040,8 @@ REVENUE REPORT
 
 Total Rentals: {total_rentals}
 Completed Rentals: {completed_rentals}
-Total Revenue: ${total_revenue:.2f}
-Average Rental Value: ${avg_rental_value:.2f}
+Total Revenue: £{total_revenue:.2f}
+Average Rental Value: £{avg_rental_value:.2f}
 """
         self.report_text.delete(1.0, tk.END)
         self.report_text.insert(tk.END, report)
@@ -1053,7 +1053,7 @@ Average Rental Value: ${avg_rental_value:.2f}
 
         for i, v in enumerate(vehicles, 1):
             report += f"{i}. {v['make']} {v['model']} ({v['category']})\n"
-            report += f"   Rentals: {v['rental_count']} | Revenue: ${v['total_revenue'] or 0:.2f}\n\n"
+            report += f"   Rentals: {v['rental_count']} | Revenue: £{v['total_revenue'] or 0:.2f}\n\n"
 
         self.report_text.delete(1.0, tk.END)
         self.report_text.insert(tk.END, report)

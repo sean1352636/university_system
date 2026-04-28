@@ -419,9 +419,9 @@ class ScholarshipsMixin:
 
             text.insert(tk.END, f"\n{scholarship['organization']} ({scholarship['organization_type']})\n\n")
 
-            award_range = f"${scholarship['award_amount_min']:,.0f}"
+            award_range = f"£{scholarship['award_amount_min']:,.0f}"
             if scholarship.get('award_amount_max'):
-                award_range += f" - ${scholarship['award_amount_max']:,.0f}"
+                award_range += f" - £{scholarship['award_amount_max']:,.0f}"
             text.insert(tk.END, f"{get_text('financial_aid.student_portal.profile.detail_labels.award_amount', 'Award Amount: {amount} ({type})', amount=award_range, type=scholarship['award_type'])}\n")
 
             text.insert(tk.END, f"{get_text('financial_aid.student_portal.profile.detail_labels.deadline', 'Deadline: {date}', date=scholarship['application_deadline'])}\n\n")

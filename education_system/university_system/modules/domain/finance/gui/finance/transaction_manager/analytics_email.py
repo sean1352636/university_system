@@ -160,7 +160,7 @@ class AnalyticsEmailMixin:
                 for recipient in recipients:
                     display_text = f"{recipient['name']} ({recipient['email']})"
                     if 'balance' in recipient:
-                        display_text += f" - Balance: ${recipient['balance']:.2f}"
+                        display_text += f" - Balance: £{recipient['balance']:.2f}"
                     recipients_list.insert(tk.END, display_text)
 
                 ttk.Button(preview_window, text=_("finance_gui.transaction_manager.btn_close"),
@@ -300,7 +300,7 @@ class AnalyticsEmailMixin:
             for recipient in recipients:
                 personalized_message = message.replace("[Student Name]", recipient['name'])
                 if 'balance' in recipient:
-                    personalized_message = personalized_message.replace("[Balance]", f"${recipient['balance']:.2f}")
+                    personalized_message = personalized_message.replace("[Balance]", f"£{recipient['balance']:.2f}")
 
                 send_email(
                     recipient_email=recipient['email'],
@@ -339,7 +339,7 @@ class AnalyticsEmailMixin:
         for recipient in recipients:
             email_details += f"  - {recipient['name']} ({recipient['email']})"
             if 'balance' in recipient:
-                email_details += f" - Balance: ${recipient['balance']:.2f}"
+                email_details += f" - Balance: £{recipient['balance']:.2f}"
             email_details += "\n"
         email_details += f"\nMessage:\n{message}"
 

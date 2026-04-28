@@ -380,10 +380,10 @@ def get_overdue_report_data(self):
                 total_fines += fine_amount
                 title_display = title[:27] + "..." if len(title) > 30 else title
 
-                report += f"{user_id:<12} {book_id:<10} {int(days_overdue):<5} ${fine_amount:<7.2f} {title_display:<30}\n"
+                report += f"{user_id:<12} {book_id:<10} {int(days_overdue):<5} £{fine_amount:<7.2f} {title_display:<30}\n"
 
             report += "-"*70 + "\n"
-            report += f"Total Outstanding Fines: ${total_fines:.2f}\n"
+            report += f"Total Outstanding Fines: £{total_fines:.2f}\n"
 
         return report
 
@@ -460,12 +460,12 @@ def generate_fine_report(self):
             if email:
                 lines.append(f"Contact: {email}")
             lines.append(f"Outstanding Items: {item_count}")
-            lines.append(f"Total Due: ${amount:.2f}")
+            lines.append(f"Total Due: £{amount:.2f}")
             lines.append(f"Most Recent Due Date: {latest_due or 'N/A'}")
             lines.append("-")
 
         lines.append("")
-        lines.append(f"Grand Total Outstanding Fines: ${grand_total:.2f}")
+        lines.append(f"Grand Total Outstanding Fines: £{grand_total:.2f}")
 
         self.report_text.delete("1.0", tk.END)
         self.report_text.insert(tk.END, "\n".join(lines))
@@ -613,7 +613,7 @@ def generate_health_report(self):
         lines.append(f"Active Loans: {active_loans}")
         lines.append(f"Overdue Loans: {overdue_loans} ({overdue_rate:.1f}%)")
         lines.append(f"Active Reservations: {active_reservations}")
-        lines.append(f"Outstanding Fines: ${outstanding_fines:.2f}")
+        lines.append(f"Outstanding Fines: £{outstanding_fines:.2f}")
         lines.append("")
         lines.append("=" * 60)
         lines.append("RECOMMENDATIONS")
@@ -1199,7 +1199,7 @@ Total Loans:        {stats[0]:,}
 Active Loans:       {stats[1]:,}
 Returned Loans:     {stats[2]:,}
 Overdue Loans:      {stats[3]:,}
-Total Fines:        ${stats[4]:,.2f}
+Total Fines:        £{stats[4]:,.2f}
 
 """
 

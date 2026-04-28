@@ -417,7 +417,7 @@ def export_violations(format_type):
                     violation[1],  # License Plate
                     violation[2][:15] + '...' if len(violation[2]) > 15 else violation[2],  # Type (truncated)
                     violation[3][:10],  # Date only
-                    f"${violation[4]:.2f}",  # Fine
+                    f"£{violation[4]:.2f}",  # Fine
                     violation[5],  # Status
                     violation[6][:20] + '...' if len(violation[6]) > 20 else violation[6]  # Location (truncated)
                 ])
@@ -461,7 +461,7 @@ def export_violations(format_type):
                     txtfile.write(f"License Plate: {violation[1]}\n")
                     txtfile.write(f"Type: {violation[2]}\n")
                     txtfile.write(f"Date/Time: {violation[3]}\n")
-                    txtfile.write(f"Fine Amount: ${violation[4]:.2f}\n")
+                    txtfile.write(f"Fine Amount: £{violation[4]:.2f}\n")
                     txtfile.write(f"Payment Status: {violation[5]}\n")
                     txtfile.write(f"Location: {violation[6]}\n")
                     txtfile.write(f"Officer: {violation[8]}\n")
@@ -477,9 +477,9 @@ def export_violations(format_type):
                 txtfile.write("\nSUMMARY\n")
                 txtfile.write("=" * 60 + "\n")
                 txtfile.write(f"Total Violations: {len(violations)}\n")
-                txtfile.write(f"Total Fines: ${total_fines:.2f}\n")
-                txtfile.write(f"Paid Fines: ${paid_fines:.2f}\n")
-                txtfile.write(f"Unpaid Fines: ${unpaid_fines:.2f}\n")
+                txtfile.write(f"Total Fines: £{total_fines:.2f}\n")
+                txtfile.write(f"Paid Fines: £{paid_fines:.2f}\n")
+                txtfile.write(f"Unpaid Fines: £{unpaid_fines:.2f}\n")
 
             print(f"Violations exported to {file_path}")
 
@@ -807,7 +807,7 @@ def export_users(format_type):
                     user[6],  # Permits
                     user[7],  # Vehicles
                     user[8],  # Violations
-                    f"${user[9]:.2f}" if user[9] else "$0.00"  # Unpaid fines
+                    f"£{user[9]:.2f}" if user[9] else "£0.00"  # Unpaid fines
                 ])
 
             # Create table
@@ -854,7 +854,7 @@ def export_users(format_type):
                     txtfile.write(f"Active Permits: {user[6]}\n")
                     txtfile.write(f"Registered Vehicles: {user[7]}\n")
                     txtfile.write(f"Total Violations: {user[8]}\n")
-                    txtfile.write(f"Unpaid Fines: ${user[9]:.2f}\n")
+                    txtfile.write(f"Unpaid Fines: £{user[9]:.2f}\n")
                     txtfile.write("-" * 60 + "\n")
 
                     total_permits += user[6]
@@ -869,7 +869,7 @@ def export_users(format_type):
                 txtfile.write(f"Total Permits: {total_permits}\n")
                 txtfile.write(f"Total Vehicles: {total_vehicles}\n")
                 txtfile.write(f"Total Violations: {total_violations}\n")
-                txtfile.write(f"Total Unpaid Fines: ${total_unpaid:.2f}\n")
+                txtfile.write(f"Total Unpaid Fines: £{total_unpaid:.2f}\n")
 
             print(f"Users exported to {file_path}")
 

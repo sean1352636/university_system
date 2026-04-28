@@ -193,7 +193,7 @@ def _view_item():
     print(f"  Category:    {item['category']}")
     print(f"  Brand:       {item.get('brand', 'N/A')}")
     print(f"  Model:       {item.get('model', 'N/A')}")
-    print(f"  Daily Rate:  ${item['daily_rate']:.2f}")
+    print(f"  Daily Rate:  £{item['daily_rate']:.2f}")
     print(f"  Condition:   {item.get('condition', 'N/A')}")
     print(f"  Location:    {item.get('location', 'N/A')}")
     print(f"  Total Qty:   {item['quantity_total']}")
@@ -213,7 +213,7 @@ def _list_all_items():
     for item in items:
         print(
             f"{item['item_id']:<6}{item['item_code']:<15}{item['name']:<25}"
-            f"{item['category']:<18}${item['daily_rate']:<9.2f}{item['quantity_available']:<8}"
+            f"{item['category']:<18}£{item['daily_rate']:<9.2f}{item['quantity_available']:<8}"
         )
 
 
@@ -232,7 +232,7 @@ def _list_available_items():
     for item in items:
         print(
             f"{item['item_id']:<6}{item['name']:<25}"
-            f"{item['category']:<18}${item['daily_rate']:<9.2f}{item['quantity_available']:<8}"
+            f"{item['category']:<18}£{item['daily_rate']:<9.2f}{item['quantity_available']:<8}"
         )
 
 
@@ -248,7 +248,7 @@ def _create_rental():
         print("Item not available.")
         return
 
-    print(f"Item: {item['name']} | Rate: ${item['daily_rate']:.2f}/day")
+    print(f"Item: {item['name']} | Rate: £{item['daily_rate']:.2f}/day")
 
     borrower_id = input("Borrower ID: ").strip()
     borrower_name = input("Borrower name: ").strip()
@@ -286,9 +286,9 @@ def _view_rental():
     print(f"  Checkout:      {rental['checkout_date']} {rental['checkout_time']}")
     print(f"  Due:           {rental['due_date']} {rental['due_time']}")
     print(f"  Status:        {rental['status']}")
-    print(f"  Daily Rate:    ${rental['daily_rate']:.2f}")
+    print(f"  Daily Rate:    £{rental['daily_rate']:.2f}")
     print(f"  Total Days:    {rental['total_days']}")
-    print(f"  Total Amount:  ${rental['total_amount']:.2f}")
+    print(f"  Total Amount:  £{rental['total_amount']:.2f}")
     print(f"  Payment:       {rental['payment_status']}")
     if rental.get('actual_return_date'):
         print(f"  Returned:      {rental['actual_return_date']} {rental.get('actual_return_time', '')}")
@@ -409,7 +409,7 @@ def _view_transactions():
         print(
             f"  [{t.get('transaction_id')}] Ref: {t.get('reference_number', 'N/A')} | "
             f"Type: {t.get('transaction_type', 'N/A')} | "
-            f"Amount: ${t.get('amount', 0):.2f} | "
+            f"Amount: £{t.get('amount', 0):.2f} | "
             f"Status: {t.get('status', 'N/A')}"
         )
 
@@ -438,10 +438,10 @@ def _revenue_report():
         print("No data available.")
         return
     print(f"  Total Rentals:     {report.get('total_rentals', 0)}")
-    print(f"  Total Revenue:     ${report.get('total_revenue', 0):.2f}")
-    print(f"  Avg Rental Value:  ${report.get('avg_rental_value', 0):.2f}")
-    print(f"  Late Fees:         ${report.get('total_late_fees', 0):.2f}")
-    print(f"  Damage Fees:       ${report.get('total_damage_fees', 0):.2f}")
+    print(f"  Total Revenue:     £{report.get('total_revenue', 0):.2f}")
+    print(f"  Avg Rental Value:  £{report.get('avg_rental_value', 0):.2f}")
+    print(f"  Late Fees:         £{report.get('total_late_fees', 0):.2f}")
+    print(f"  Damage Fees:       £{report.get('total_damage_fees', 0):.2f}")
 
 
 def _popular_items():
@@ -458,7 +458,7 @@ def _popular_items():
         print(
             f"  {i}. {item['name']} ({item['category']}) - "
             f"{item.get('rental_count', 0)} rentals, "
-            f"${item.get('total_revenue', 0):.2f} revenue"
+            f"£{item.get('total_revenue', 0):.2f} revenue"
         )
 
 

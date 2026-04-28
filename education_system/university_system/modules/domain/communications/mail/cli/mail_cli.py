@@ -124,7 +124,7 @@ def _receive_package():
     print(f"Package types: {', '.join(PACKAGE_TYPES)}")
     print("Storage fees:")
     for ptype, fee in STORAGE_FEES.items():
-        print(f"  {ptype}: ${fee:.2f}")
+        print(f"  {ptype}: £{fee:.2f}")
     package_type = input("Package type: ").strip()
     if package_type not in PACKAGE_TYPES:
         print("Invalid package type.")
@@ -147,7 +147,7 @@ def _receive_package():
         print(f"\nPackage received successfully!")
         print(f"  Package ID:       {result['package_id']}")
         print(f"  Tracking Number:  {result['tracking_number']}")
-        print(f"  Storage Fee:      ${result['storage_fee']:.2f}")
+        print(f"  Storage Fee:      £{result['storage_fee']:.2f}")
     else:
         print("Failed to receive package.")
 
@@ -182,8 +182,8 @@ def _view_package():
     print(f"  Status:           {package['status']}")
     print(f"  Storage Location: {package.get('storage_location', 'N/A')}")
     print(f"  Received:         {package.get('received_date', 'N/A')}")
-    print(f"  Storage Fee:      ${package.get('storage_fee', 0):.2f}")
-    print(f"  Total Charges:    ${package.get('total_charges', 0):.2f}")
+    print(f"  Storage Fee:      £{package.get('storage_fee', 0):.2f}")
+    print(f"  Total Charges:    £{package.get('total_charges', 0):.2f}")
     print(f"  Payment Status:   {package.get('payment_status', 'N/A')}")
     if package.get('collected_date'):
         print(f"  Collected:        {package['collected_date']} by {package.get('collected_by', 'N/A')}")
@@ -280,7 +280,7 @@ def _calculate_storage_fees():
     package_id = int(input("Package ID: ").strip())
 
     fees = PackageManager.calculate_storage_fees(package_id)
-    print(f"Current storage fees: ${fees:.2f}")
+    print(f"Current storage fees: £{fees:.2f}")
 
 
 def _available_po_boxes():
@@ -296,7 +296,7 @@ def _available_po_boxes():
     for b in boxes:
         print(
             f"{b['box_id']:<6}{b['box_number']:<12}{b['size']:<12}"
-            f"${b['monthly_fee']:.2f}"
+            f"£{b['monthly_fee']:.2f}"
         )
 
 
@@ -314,7 +314,7 @@ def _rent_po_box():
     if result:
         print(f"\nPO box rented successfully!")
         print(f"  Box Number:  {result['box_number']}")
-        print(f"  Rental Fee:  ${result['rental_fee']:.2f}")
+        print(f"  Rental Fee:  £{result['rental_fee']:.2f}")
         print(f"  Start Date:  {result['start_date']}")
         print(f"  End Date:    {result['end_date']}")
     else:
@@ -335,7 +335,7 @@ def _view_user_po_box():
     print(f"  Box Number:   {box['box_number']}")
     print(f"  Holder:       {box.get('holder_name', 'N/A')}")
     print(f"  Size:         {box['size']}")
-    print(f"  Monthly Fee:  ${box['monthly_fee']:.2f}")
+    print(f"  Monthly Fee:  £{box['monthly_fee']:.2f}")
     print(f"  Rental Start: {box.get('rental_start', 'N/A')}")
     print(f"  Rental End:   {box.get('rental_end', 'N/A')}")
     print(f"  Auto-Renew:   {'Yes' if box.get('auto_renew') else 'No'}")
@@ -365,7 +365,7 @@ def _setup_forwarding():
 
     print("Forwarding types and fees:")
     for ftype, fee in FORWARDING_FEES.items():
-        print(f"  {ftype}: ${fee:.2f}")
+        print(f"  {ftype}: £{fee:.2f}")
     forward_type = input("Type (domestic/international): ").strip() or "domestic"
 
     start_date = input("Start date (YYYY-MM-DD, Enter for today): ").strip() or None
@@ -378,7 +378,7 @@ def _setup_forwarding():
     if result:
         print(f"\nForwarding set up successfully!")
         print(f"  Forwarding ID: {result['forwarding_id']}")
-        print(f"  Fee:           ${result['fee']:.2f}")
+        print(f"  Fee:           £{result['fee']:.2f}")
     else:
         print("Failed to set up forwarding.")
 
@@ -399,7 +399,7 @@ def _view_user_forwarding():
     print(f"  Type:          {forwarding['forward_type']}")
     print(f"  Start Date:    {forwarding['start_date']}")
     print(f"  End Date:      {forwarding.get('end_date', 'N/A')}")
-    print(f"  Fee:           ${forwarding.get('fee', 0):.2f}")
+    print(f"  Fee:           £{forwarding.get('fee', 0):.2f}")
     print(f"  Status:        {forwarding['status']}")
 
 
@@ -436,7 +436,7 @@ def _record_payment():
         print(f"\nPayment recorded!")
         print(f"  Transaction ID: {result['transaction_id']}")
         print(f"  Reference:      {result['reference']}")
-        print(f"  Amount:         ${result['amount']:.2f}")
+        print(f"  Amount:         £{result['amount']:.2f}")
     else:
         print("Failed to record payment.")
 
@@ -454,7 +454,7 @@ def _view_transactions():
     for t in transactions:
         print(
             f"  [{t.get('transaction_id')}] Type: {t.get('transaction_type', 'N/A')} | "
-            f"Amount: ${t.get('amount', 0):.2f} | "
+            f"Amount: £{t.get('amount', 0):.2f} | "
             f"Method: {t.get('payment_method', 'N/A')} | "
             f"Ref: {t.get('reference_number', 'N/A')}"
         )
@@ -473,8 +473,8 @@ def _daily_report():
     print(f"  Date:               {report.get('date', 'N/A')}")
     print(f"  Packages Received:  {report.get('packages_received', 0)}")
     print(f"  Packages Collected: {report.get('packages_collected', 0)}")
-    print(f"  Storage Fees:       ${report.get('storage_fees', 0):.2f}")
-    print(f"  Total Revenue:      ${report.get('total_revenue', 0):.2f}")
+    print(f"  Storage Fees:       £{report.get('storage_fees', 0):.2f}")
+    print(f"  Total Revenue:      £{report.get('total_revenue', 0):.2f}")
 
 
 def _monthly_summary():
@@ -492,14 +492,14 @@ def _monthly_summary():
         return
 
     print(f"  Period:            {report.get('year', '')}-{report.get('month', ''):02d}")
-    print(f"  Total Revenue:     ${report.get('total_revenue', 0):.2f}")
+    print(f"  Total Revenue:     £{report.get('total_revenue', 0):.2f}")
     print(f"  Active PO Boxes:   {report.get('active_po_boxes', 0)}")
 
     by_type = report.get('packages_by_type', {})
     if by_type:
         print("\n  Packages by Type:")
         for ptype, info in by_type.items():
-            print(f"    {ptype}: {info['count']} packages, ${info['revenue']:.2f}")
+            print(f"    {ptype}: {info['count']} packages, £{info['revenue']:.2f}")
 
 
 def _pending_notifications():

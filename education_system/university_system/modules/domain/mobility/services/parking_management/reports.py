@@ -480,7 +480,7 @@ def generate_violation_report():
 
             for violation in violations:
                 # Format data for table
-                fine = f"${violation[5]:.2f}"
+                fine = f"£{violation[5]:.2f}"
 
                 data.append([
                     violation[0],  # Violation ID
@@ -523,7 +523,7 @@ def generate_violation_report():
             unpaid_violations = sum(1 for v in violations if v[6] == 'Unpaid')
 
             elements.append(Paragraph(f"Total Violations: {total_violations}", styles['Normal']))
-            elements.append(Paragraph(f"Total Fines: ${total_fines:.2f}", styles['Normal']))
+            elements.append(Paragraph(f"Total Fines: £{total_fines:.2f}", styles['Normal']))
             elements.append(Paragraph(f"Paid Violations: {paid_violations}", styles['Normal']))
             elements.append(Paragraph(f"Unpaid Violations: {unpaid_violations}", styles['Normal']))
 
@@ -680,7 +680,7 @@ def generate_compliance_report():
         repeat_offenders = cursor.fetchall()
 
         print(f"⏰ Old Unpaid Violations (90+ days): {old_unpaid}")
-        print(f"💰 High-Value Unpaid ($100+): {high_value_unpaid}")
+        print(f"💰 High-Value Unpaid (£100+): {high_value_unpaid}")
         print(f"🔄 Repeat Offenders (5+ violations): {len(repeat_offenders)}")
 
         if repeat_offenders:
@@ -753,13 +753,13 @@ def generate_compliance_report():
 
         debt_aging = cursor.fetchall()
 
-        print(f"💸 Total Outstanding Debt: ${total_debt:,.2f}")
+        print(f"💸 Total Outstanding Debt: £{total_debt:,.2f}")
         print("\n" + _t("parking.section.debt_aging_analysis") + ":")
         print(f"{'Age Group':<15} {'Count':<8} {'Amount':<15}")
         print("-" * 40)
 
         for age, count, amount in debt_aging:
-            print(f"{age:<15} {count:<8} ${amount:<14.2f}")
+            print(f"{age:<15} {count:<8} £{amount:<14.2f}")
         print()
 
         # 6. Audit Trail
@@ -888,7 +888,7 @@ def generate_compliance_report():
             print("-" * 50)
             print(f"Active Permits: {active_permits}")
             print(f"Unpaid Violations: {unpaid_violations}")
-            print(f"Total Unpaid Fines: ${unpaid_fines:.2f}")
+            print(f"Total Unpaid Fines: £{unpaid_fines:.2f}")
 
             # Usage by role
             cursor.execute('''
@@ -1019,10 +1019,10 @@ def generate_analytics_dashboard():
         available_spaces = space_data[1] or 0
         occupancy_rate = ((total_spaces - available_spaces) / total_spaces * 100) if total_spaces > 0 else 0
 
-        print(f"💰 Total Revenue: ${total_revenue:,.2f}")
+        print(f"💰 Total Revenue: £{total_revenue:,.2f}")
         print(f"🎫 Active Permits: {active_permits:,}")
         print(f"⚠️  Unpaid Violations: {unpaid_violations:,}")
-        print(f"💸 Outstanding Fines: ${unpaid_fines:,.2f}")
+        print(f"💸 Outstanding Fines: £{unpaid_fines:,.2f}")
         print(f"🏠 Parking Occupancy: {occupancy_rate:.1f}%")
         print()
 
@@ -1078,7 +1078,7 @@ def generate_analytics_dashboard():
             print(f"{'Violation Type':<20} {'Count':<8} {'Total Fines':<15}")
             print("-" * 45)
             for vtype, count, fines in top_violations:
-                print(f"{vtype:<20} {count:<8} ${fines:<14.2f}")
+                print(f"{vtype:<20} {count:<8} £{fines:<14.2f}")
         else:
             print(_t("parking.report.no_violation_data"))
         print()
@@ -1234,10 +1234,10 @@ def generate_revenue_report():
                 total_fee = unit_fee * count
                 total_revenue += total_fee
 
-                print(f"{zone:<6} {permit_type:<10} {count:<8} ${unit_fee:<9.2f} ${total_fee:<14.2f}")
+                print(f"{zone:<6} {permit_type:<10} {count:<8} £{unit_fee:<9.2f} £{total_fee:<14.2f}")
 
             print("-" * 100)
-            print(f"{'TOTAL REVENUE':<35} ${total_revenue:.2f}")
+            print(f"{'TOTAL REVENUE':<35} £{total_revenue:.2f}")
 
         elif choice == '2':
             # Violation Revenue Report
@@ -1267,7 +1267,7 @@ def generate_revenue_report():
             print("-" * 100)
 
             for vtype, status, count, total in violation_data:
-                print(f"{vtype:<20} {status:<10} {count:<8} ${total:<14.2f}")
+                print(f"{vtype:<20} {status:<10} {count:<8} £{total:<14.2f}")
 
                 total_fines += total
                 if status == 'Paid':
@@ -1276,9 +1276,9 @@ def generate_revenue_report():
                     unpaid_fines += total
 
             print("-" * 100)
-            print(f"{'Total Fines:':<40} ${total_fines:.2f}")
-            print(f"{'Paid Fines:':<40} ${paid_fines:.2f}")
-            print(f"{'Unpaid Fines:':<40} ${unpaid_fines:.2f}")
+            print(f"{'Total Fines:':<40} £{total_fines:.2f}")
+            print(f"{'Paid Fines:':<40} £{paid_fines:.2f}")
+            print(f"{'Unpaid Fines:':<40} £{unpaid_fines:.2f}")
             print(f"{'Collection Rate:':<40} {(paid_fines/total_fines*100) if total_fines > 0 else 0:.1f}%")
 
         elif choice == '3':
@@ -1317,10 +1317,10 @@ def generate_revenue_report():
 
             print(f"{'Revenue Source':<30} {'Amount':<15}")
             print("-" * 50)
-            print(f"{'Parking Permits:':<30} ${permit_revenue:.2f}")
-            print(f"{'Paid Violations:':<30} ${violation_revenue:.2f}")
+            print(f"{'Parking Permits:':<30} £{permit_revenue:.2f}")
+            print(f"{'Paid Violations:':<30} £{violation_revenue:.2f}")
             print("-" * 50)
-            print(f"{'TOTAL REVENUE:':<30} ${permit_revenue + violation_revenue:.2f}")
+            print(f"{'TOTAL REVENUE:':<30} £{permit_revenue + violation_revenue:.2f}")
 
         elif choice == '4':
             # Revenue by Zone
@@ -1377,10 +1377,10 @@ def generate_revenue_report():
                 total_permit_rev += permits
                 total_violation_rev += violations
 
-                print(f"{zone:<6} {zone_name['name']:<20} ${permits:<14.2f} ${violations:<17.2f} ${total:<14.2f}")
+                print(f"{zone:<6} {zone_name['name']:<20} £{permits:<14.2f} £{violations:<17.2f} £{total:<14.2f}")
 
             print("-" * 80)
-            print(f"{'TOTAL':<27} ${total_permit_rev:<14.2f} ${total_violation_rev:<17.2f} ${total_permit_rev + total_violation_rev:<14.2f}")
+            print(f"{'TOTAL':<27} £{total_permit_rev:<14.2f} £{total_violation_rev:<17.2f} £{total_permit_rev + total_violation_rev:<14.2f}")
 
         elif choice == '5':
             # Revenue by Month
@@ -1449,10 +1449,10 @@ def generate_revenue_report():
                 total_permits += permits
                 total_violations += violations
 
-                print(f"{month:<10} ${permits:<14.2f} ${violations:<17.2f} ${total:<14.2f}")
+                print(f"{month:<10} £{permits:<14.2f} £{violations:<17.2f} £{total:<14.2f}")
 
             print("-" * 60)
-            print(f"{'TOTAL':<10} ${total_permits:<14.2f} ${total_violations:<17.2f} ${total_permits + total_violations:<14.2f}")
+            print(f"{'TOTAL':<10} £{total_permits:<14.2f} £{total_violations:<17.2f} £{total_permits + total_violations:<14.2f}")
 
         else:
             print(_t("common.invalid_choice"))
@@ -1609,7 +1609,7 @@ def generate_user_activity_report():
             violations = cursor.fetchall()
             if violations:
                 for violation in violations:
-                    print(f"Violation: {violation[0]} - {violation[1]} - {violation[2]} - {violation[3]} - ${violation[4]:.2f} - {violation[5]}")
+                    print(f"Violation: {violation[0]} - {violation[1]} - {violation[2]} - {violation[3]} - £{violation[4]:.2f} - {violation[5]}")
             else:
                 print(_t("parking.msg.no_violations_found"))
 
@@ -1658,12 +1658,12 @@ def generate_user_activity_report():
                 print(f"{'Officer':<25} {'Violations':<12} {'Total Fines':<15} {'First':<12} {'Last':<12}")
                 print("-" * 80)
                 for officer in officers:
-                    print(f"{officer[0]:<25} {officer[1]:<12} ${officer[2]:<14.2f} {officer[3]:<12} {officer[4]:<12}")
+                    print(f"{officer[0]:<25} {officer[1]:<12} £{officer[2]:<14.2f} {officer[3]:<12} {officer[4]:<12}")
             else:
                 print(f"{'Officer':<25} {'ID':<8} {'Violations':<12} {'Total Fines':<15} {'First':<12} {'Last':<12}")
                 print("-" * 100)
                 for officer in officers:
-                    print(f"{officer[0]:<25} {officer[1]:<8} {officer[2]:<12} ${officer[3]:<14.2f} {officer[4]:<12} {officer[5]:<12}")
+                    print(f"{officer[0]:<25} {officer[1]:<8} {officer[2]:<12} £{officer[3]:<14.2f} {officer[4]:<12} {officer[5]:<12}")
 
         elif choice == '3':
             # Most Active Users
@@ -1755,7 +1755,7 @@ def generate_user_activity_report():
                     print("-" * 100)
 
                     for v in violations:
-                        print(f"{v[1]:<15} {v[2]:<12} {v[3]:<20} {v[4]:<12} ${v[5]:<9.2f} {v[6]:<10}")
+                        print(f"{v[1]:<15} {v[2]:<12} {v[3]:<20} {v[4]:<12} £{v[5]:<9.2f} {v[6]:<10}")
                 else:
                     print(_t("parking.msg.no_violations_for_user"))
 
@@ -1783,7 +1783,7 @@ def generate_user_activity_report():
                 print("-" * 100)
 
                 for user in users:
-                    print(f"{user[0]:<8} {user[1]:<25} {user[2]:<12} ${user[3]:<11.2f} ${user[4]:<11.2f} ${user[5]:<11.2f}")
+                    print(f"{user[0]:<8} {user[1]:<25} {user[2]:<12} £{user[3]:<11.2f} £{user[4]:<11.2f} £{user[5]:<11.2f}")
 
         elif choice == '5':
             # System Usage Statistics
@@ -1832,7 +1832,7 @@ def generate_user_activity_report():
             print("-" * 50)
             print(f"Active Permits: {active_permits}")
             print(f"Unpaid Violations: {unpaid_violations}")
-            print(f"Total Unpaid Fines: ${unpaid_fines:.2f}")
+            print(f"Total Unpaid Fines: £{unpaid_fines:.2f}")
 
             # Usage by role
             cursor.execute('''

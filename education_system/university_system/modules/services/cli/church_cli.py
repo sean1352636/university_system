@@ -443,19 +443,19 @@ def donations_menu():
                 print(f"  {'ID':<6} {'Donor':<25} {'Amount':<12} {'Type':<15} {'Date':<12}")
                 print("  " + "-" * 80)
                 for d in donations:
-                    print(f"  {d[0]:<6} {d[1]:<25} ${d[2]:<11.2f} {d[3]:<15} {d[6]:<12}")
+                    print(f"  {d[0]:<6} {d[1]:<25} £{d[2]:<11.2f} {d[3]:<15} {d[6]:<12}")
             else:
                 print("\n  No donations found.")
 
         elif choice == '3':
             stats = get_donation_stats()
-            print(f"\n  Total Donations: ${stats['total_amount']:.2f}")
+            print(f"\n  Total Donations: £{stats['total_amount']:.2f}")
             print(f"  Total Count: {stats['total_count']}")
 
             if stats['by_type']:
                 print("\n  By Type:")
                 for dtype, amount, count in stats['by_type']:
-                    print(f"    {dtype}: ${amount:.2f} ({count} donations)")
+                    print(f"    {dtype}: £{amount:.2f} ({count} donations)")
 
         elif choice == '0':
             break

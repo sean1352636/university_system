@@ -605,7 +605,7 @@ Status: {status.upper()}"""
 
                 if is_overdue:
                     loan_info += f"\n⚠️ OVERDUE by {days_overdue} days"
-                    loan_info += f"\nFine Amount: ${fine_amount:.2f}"
+                    loan_info += f"\nFine Amount: £{fine_amount:.2f}"
 
                 self.return_loan_info.config(state=tk.NORMAL)
                 self.return_loan_info.delete("1.0", tk.END)
@@ -1012,7 +1012,7 @@ def enhanced_return_book_gui(self):
                     calculated_fine = 0.0
 
                 results_tree.insert('', 'end', values=(
-                    loan_id, book_id, title, user_id, due_date[:10], f"${calculated_fine:.2f}"
+                    loan_id, book_id, title, user_id, due_date[:10], f"£{calculated_fine:.2f}"
                 ))
 
             conn.close()
@@ -1042,7 +1042,7 @@ def enhanced_return_book_gui(self):
             confirm = messagebox.askyesno("Confirm Return",
                 f"Return this book?\n\nLoan ID: {loan_id}\n" +
                 f"Book ID: {book_id}\n" +
-                f"Fine: ${fine_amount:.2f}\n\n" +
+                f"Fine: £{fine_amount:.2f}\n\n" +
                 f"Fine must be paid before return is complete.")
             if not confirm:
                 return
@@ -1076,7 +1076,7 @@ def enhanced_return_book_gui(self):
             messagebox.showinfo(_("common.success"),
                 f"Book returned successfully!\n\n" +
                 f"Loan ID: {loan_id}\n" +
-                (f"Fine: ${fine_amount:.2f}" if fine_amount > 0 else "No fine"))
+                (f"Fine: £{fine_amount:.2f}" if fine_amount > 0 else "No fine"))
 
             # Refresh search
             search_loans()

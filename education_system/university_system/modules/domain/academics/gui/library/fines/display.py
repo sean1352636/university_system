@@ -158,11 +158,11 @@ def load_user_fines(self):
                     total_fines += fine_amount
 
                     self.fines_tree.insert('', 'end', values=(
-                        loan_id, book_id, title[:20], int(days_overdue), f"${fine_amount:.2f}"
+                        loan_id, book_id, title[:20], int(days_overdue), f"£{fine_amount:.2f}"
                     ))
 
                 # Update user info with total
-                updated_info = info_text + f"\nTotal Outstanding Fines: ${total_fines:.2f}"
+                updated_info = info_text + f"\nTotal Outstanding Fines: £{total_fines:.2f}"
                 self.user_info_text.config(state=tk.NORMAL)
                 self.user_info_text.delete("1.0", tk.END)
                 self.user_info_text.insert("1.0", updated_info)
@@ -171,14 +171,14 @@ def load_user_fines(self):
                 conn.close()
         else:
             # Demo mode
-            info_text = f"User ID: {user_id}\nName: Demo User\nTotal Fines: $5.00"
+            info_text = f"User ID: {user_id}\nName: Demo User\nTotal Fines: £5.00"
             self.user_info_text.config(state=tk.NORMAL)
             self.user_info_text.delete("1.0", tk.END)
             self.user_info_text.insert("1.0", info_text)
             self.user_info_text.config(state=tk.DISABLED)
 
             # Demo fine data
-            self.fines_tree.insert('', 'end', values=(1, "B10001", "Demo Book", 5, "$5.00"))
+            self.fines_tree.insert('', 'end', values=(1, "B10001", "Demo Book", 5, "£5.00"))
 
     except tk.TclError as e:
         messagebox.showerror(_("common.error"), f"Error loading fines: {str(e)}")

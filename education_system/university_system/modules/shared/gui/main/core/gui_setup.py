@@ -181,49 +181,49 @@ def create_navigation_panel(self, parent):
             return True
         return False
 
-    # Helper to create category window with buttons
-    def open_category_window(category_title, buttons_data):
-        """Open a window showing all buttons for a category
+    # Helper to open a grouped category window. Each "group" is a list of
+    # (section_label, [(button_name, label, command), ...]) tuples; the
+    # section header is rendered above its buttons when there is more than
+    # one visible section. Sections with no visible buttons are dropped.
+    def open_grouped_category_window(group_title, sections):
+        visible_sections = []
+        for section_label, buttons_data in sections:
+            visible_btns = [
+                (name, text, cmd) for name, text, cmd in buttons_data
+                if name in visible_buttons
+            ]
+            if visible_btns:
+                visible_sections.append((section_label, visible_btns))
 
-        Args:
-            category_title: Title for the window
-            buttons_data: List of tuples (button_name, button_text, command)
-        """
-        # Filter only visible buttons
-        visible_category_buttons = [
-            (name, text, cmd) for name, text, cmd in buttons_data
-            if name in visible_buttons
-        ]
-
-        if not visible_category_buttons:
-            messagebox.showinfo(_t("common.info"), _t("gui.nav.no_features_available").format(category=category_title))
+        if not visible_sections:
+            messagebox.showinfo(
+                _t("common.info"),
+                _t("gui.nav.no_features_available").format(category=group_title),
+            )
             return
 
-        # Create category window — sized for 4-column grid
         cols = 4
         cat_window = tk.Toplevel(self.root)
-        cat_window.title(category_title)
-        cat_window.geometry("820x500")
+        cat_window.title(group_title)
+        cat_window.geometry("900x600")
         cat_window.transient(self.root)
 
-        # Header
         header = tk.Frame(cat_window, bg='#2c3e50', height=50)
         header.pack(fill='x')
         header.pack_propagate(False)
+        tk.Label(header, text=group_title, font=('Arial', 16, 'bold'),
+                 bg='#2c3e50', fg='white').pack(expand=True)
 
-        tk.Label(header, text=category_title, font=('Arial', 16, 'bold'),
-                bg='#2c3e50', fg='white').pack(expand=True)
-
-        # Scrollable button area
         canvas = tk.Canvas(cat_window, highlightthickness=0)
         scrollbar = ttk.Scrollbar(cat_window, orient="vertical", command=canvas.yview)
         scrollable = ttk.Frame(canvas)
-
-        scrollable.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        scrollable.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all")),
+        )
         canvas_win = canvas.create_window((0, 0), window=scrollable, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
-        # Keep inner frame width matched to canvas
         def _resize_inner(event):
             canvas.itemconfig(canvas_win, width=event.width)
         canvas.bind('<Configure>', _resize_inner)
@@ -231,29 +231,40 @@ def create_navigation_panel(self, parent):
         canvas.pack(side="left", fill="both", expand=True, padx=10, pady=10)
         scrollbar.pack(side="right", fill="y")
 
-        # Configure grid columns to expand equally
         for c in range(cols):
             scrollable.columnconfigure(c, weight=1)
 
-        # Add buttons in a 4-column grid
-        for idx, (name, text, cmd) in enumerate(visible_category_buttons):
-            def make_command(command, window):
-                def wrapped_cmd():
-                    window.destroy()
-                    command()
-                return wrapped_cmd
+        def make_command(command, window):
+            def wrapped_cmd():
+                window.destroy()
+                command()
+            return wrapped_cmd
 
-            row = idx // cols
-            col = idx % cols
-            btn = ttk.Button(scrollable, text=text,
-                           command=make_command(cmd, cat_window),
-                           style='Large.TButton')
-            btn.grid(row=row, column=col, padx=4, pady=4, sticky='nsew')
+        show_section_headers = len(visible_sections) > 1
+        row = 0
+        for section_label, btns in visible_sections:
+            if show_section_headers:
+                tk.Label(
+                    scrollable, text=section_label,
+                    font=('Arial', 11, 'bold'), anchor='w',
+                ).grid(row=row, column=0, columnspan=cols,
+                       sticky='ew', padx=4, pady=(12, 4))
+                row += 1
 
-        # Close button
-        close_btn = ttk.Button(cat_window, text=_t("common.close"),
-                              command=cat_window.destroy)
-        close_btn.pack(pady=10)
+            for idx, (name, text, cmd) in enumerate(btns):
+                col = idx % cols
+                btn_row = row + (idx // cols)
+                ttk.Button(
+                    scrollable, text=text,
+                    command=make_command(cmd, cat_window),
+                    style='Large.TButton',
+                ).grid(row=btn_row, column=col, padx=4, pady=4, sticky='nsew')
+
+            row += (len(btns) + cols - 1) // cols
+
+        ttk.Button(
+            cat_window, text=_t("common.close"), command=cat_window.destroy,
+        ).pack(pady=10)
 
     # ---------- Authentication ----------
     authentication_buttons_data = [
@@ -263,12 +274,6 @@ def create_navigation_panel(self, parent):
         ('security_questions', "Security Questions", self.show_security_questions),
         ('toggle_verification', _t("nav.buttons.toggle_verification"), self.toggle_login_verification),
     ]
-
-    if any(name in visible_buttons for name, _, _ in authentication_buttons_data):
-        authentication_btn = ttk.Button(scrollable_frame, text=_t("nav.categories.authentication") + " ▶",
-                                   command=lambda: open_category_window(_t("nav.categories.authentication"), authentication_buttons_data),
-                                   style='Large.TButton')
-        authentication_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- Student Management ----------
     student_mgmt_buttons_data = [
@@ -283,12 +288,6 @@ def create_navigation_panel(self, parent):
         ('batch_operations', _t("nav.buttons.batch_operations"), self.show_batch_operations_gui),
     ])
 
-    if any(name in visible_buttons for name, _, _ in student_mgmt_buttons_data):
-        student_mgmt_btn = ttk.Button(scrollable_frame, text=_t("nav.categories.student_management") + " ▶",
-                                      command=lambda: open_category_window(_t("nav.categories.student_management"), student_mgmt_buttons_data),
-                                      style='Large.TButton')
-        student_mgmt_btn.pack(fill=tk.X, pady=2, padx=5)
-
     # ---------- Academic Management ----------
     academic_buttons_data = [
         ('course_management', _t("nav.buttons.course_management"), self.show_course_management),
@@ -300,30 +299,16 @@ def create_navigation_panel(self, parent):
         ('ai_study', _t("nav.buttons.ai_study"), self.show_ai_study_gui),
         ('study_matching_gui', _t("nav.buttons.study_matching"), self.show_study_matching_gui),
         ('office_hours', _t("nav.buttons.office_hours"), self.show_office_hours_gui),
-        # Evaluation tools — moved here from "New Features" so they sit
-        # alongside the rest of the academic-management workflow.
-        ('new_feature_course_evaluation_system', 'Course Evaluation',
-            self.show_new_feature_course_evaluation_system),
-        ('new_feature_module_evaluation_portal', 'Module Evaluation',
-            self.show_new_feature_module_evaluation_portal),
-        ('new_feature_lecturer_evaluation', 'Lecturer Evaluation',
-            self.show_new_feature_lecturer_evaluation),
-        ('new_feature_lesson_planner', 'Lesson Planner',
-            self.show_new_feature_lesson_planner),
-        ('new_feature_tutor_groups', 'Tutor Groups',
-            self.show_new_feature_tutor_groups),
-        ('new_feature_university_research', 'Research Portal',
-            self.show_new_feature_university_research),
+        ('new_feature_course_evaluation_system', 'Course Evaluation', self.show_new_feature_course_evaluation_system),
+        ('new_feature_module_evaluation_portal', 'Module Evaluation', self.show_new_feature_module_evaluation_portal),
+        ('new_feature_lecturer_evaluation', 'Lecturer Evaluation', self.show_new_feature_lecturer_evaluation),
+        ('new_feature_lesson_planner', 'Lesson Planner', self.show_new_feature_lesson_planner),
+        ('new_feature_tutor_groups', 'Tutor Groups', self.show_new_feature_tutor_groups),
+        ('new_feature_university_research', 'Research Portal', self.show_new_feature_university_research),
         ('study_recommendations', 'Study Recommendations', self.show_study_recommendations_gui),
     ]
     if VIRTUAL_CLASSROOM_AVAILABLE:
         academic_buttons_data.append(('virtual_classroom', _t("nav.buttons.virtual_classroom"), self.show_virtual_classroom_gui))
-
-    if any(name in visible_buttons for name, _, _ in academic_buttons_data):
-        academic_btn = ttk.Button(scrollable_frame, text=_t("nav.categories.academic") + " ▶",
-                                  command=lambda: open_category_window(_t("nav.categories.academic"), academic_buttons_data),
-                                  style='Large.TButton')
-        academic_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- Scheduling & Attendance ----------
     sched_buttons_data = [
@@ -334,48 +319,23 @@ def create_navigation_panel(self, parent):
         ('exam_portal', "Exam Management", self.show_exam_portal),
     ]
 
-    if any(name in visible_buttons for name, _, _ in sched_buttons_data):
-        sched_btn = ttk.Button(scrollable_frame, text=_t("nav.categories.scheduling") + " ▶",
-                              command=lambda: open_category_window(_t("nav.categories.scheduling"), sched_buttons_data),
-                              style='Large.TButton')
-        sched_btn.pack(fill=tk.X, pady=2, padx=5)
-
     # ---------- Finance ----------
     finance_buttons_data = [
         ('finance_management', _t("nav.buttons.finance_management"), self.show_finance_management),
         ('my_finance', _t("nav.buttons.my_finance"), self.show_student_finance_account),
     ]
 
-    if any(name in visible_buttons for name, _, _ in finance_buttons_data):
-        finance_btn = ttk.Button(scrollable_frame, text=_t("nav.categories.finance") + " ▶",
-                                command=lambda: open_category_window(_t("nav.categories.finance"), finance_buttons_data),
-                                style='Large.TButton')
-        finance_btn.pack(fill=tk.X, pady=2, padx=5)
-
     # ---------- Health & Wellness ----------
     health_buttons_data = [
         ('health_portal', _t("nav.buttons.health_portal"), self.open_health_portal_gui),
-        ('new_feature_first_aid_portal', 'First Aid Portal',
-            self.show_new_feature_first_aid_portal),
+        ('new_feature_first_aid_portal', 'First Aid Portal', self.show_new_feature_first_aid_portal),
         ('gym', "Gym", self.show_gym_gui),
     ]
-
-    if any(name in visible_buttons for name, _, _ in health_buttons_data):
-        health_btn = ttk.Button(scrollable_frame, text=_t("nav.categories.health") + " ▶",
-                               command=lambda: open_category_window(_t("nav.categories.health"), health_buttons_data),
-                               style='Large.TButton')
-        health_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- Accommodation ----------
     accommodation_buttons_data = [
         ('housing_accommodations', _t("nav.buttons.housing_accommodation"), self.show_housing_accommodations),
     ]
-
-    if any(name in visible_buttons for name, _, _ in accommodation_buttons_data):
-        accommodation_btn = ttk.Button(scrollable_frame, text=_t("nav.categories.accommodation") + " ▶",
-                                      command=lambda: open_category_window(_t("nav.categories.accommodation"), accommodation_buttons_data),
-                                      style='Large.TButton')
-        accommodation_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- Campus Life ----------
     campus_buttons_data = [
@@ -383,16 +343,9 @@ def create_navigation_panel(self, parent):
         ('campus_events', _t("nav.buttons.campus_events"), self.show_campus_events_gui),
         ('events_discovery', _t("nav.buttons.events_discovery"), self.show_events_discovery_gui),
         ('facilities_management', _t("nav.buttons.facilities"), self.show_facilities_management_gui),
-        ('new_feature_room_booking', 'Room Booking',
-            self.show_new_feature_room_booking),
+        ('new_feature_room_booking', 'Room Booking', self.show_new_feature_room_booking),
         ('equipment', _t("nav.buttons.equipment"), self.show_equipment_gui),
     ]
-
-    if any(name in visible_buttons for name, _, _ in campus_buttons_data):
-        campus_btn = ttk.Button(scrollable_frame, text=_t("nav.categories.campus") + " ▶",
-                                command=lambda: open_category_window(_t("nav.categories.campus"), campus_buttons_data),
-                                style='Large.TButton')
-        campus_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- Dining & Food ----------
     dining_buttons_data = [
@@ -401,15 +354,8 @@ def create_navigation_panel(self, parent):
         ('takeaway_system', _t("nav.buttons.takeaway"), self.show_takeaway_system),
         ('bar', _t("nav.buttons.bar"), self.show_bar),
         ('butcher', _t("nav.buttons.butcher"), self.show_butcher_gui),
-        ('new_feature_bakery_shop', 'Bakery Shop',
-            self.show_new_feature_bakery_shop),
+        ('new_feature_bakery_shop', 'Bakery Shop', self.show_new_feature_bakery_shop),
     ]
-
-    if any(name in visible_buttons for name, _, _ in dining_buttons_data):
-        dining_btn = ttk.Button(scrollable_frame, text=_t("nav.categories.dining") + " ▶",
-                               command=lambda: open_category_window(_t("nav.categories.dining"), dining_buttons_data),
-                               style='Large.TButton')
-        dining_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- Shops & Retail ----------
     shops_buttons_data = [
@@ -420,23 +366,11 @@ def create_navigation_panel(self, parent):
         ('grocery_shop', _t("nav.buttons.grocery_shop"), self.show_grocery_shop),
     ]
 
-    if any(name in visible_buttons for name, _, _ in shops_buttons_data):
-        shops_btn = ttk.Button(scrollable_frame, text=_t("nav.categories.shops") + " ▶",
-                              command=lambda: open_category_window(_t("nav.categories.shops"), shops_buttons_data),
-                              style='Large.TButton')
-        shops_btn.pack(fill=tk.X, pady=2, padx=5)
-
     # ---------- Personal Services ----------
     personal_buttons_data = [
         ('barber', _t("nav.buttons.barber"), self.show_barber_gui),
         ('nailbar', _t("nav.buttons.nailbar"), self.show_nailbar_gui),
     ]
-
-    if any(name in visible_buttons for name, _, _ in personal_buttons_data):
-        personal_btn = ttk.Button(scrollable_frame, text=_t("nav.categories.personal_services") + " ▶",
-                                 command=lambda: open_category_window(_t("nav.categories.personal_services"), personal_buttons_data),
-                                 style='Large.TButton')
-        personal_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- Transportation ----------
     transport_buttons_data = [
@@ -447,79 +381,40 @@ def create_navigation_panel(self, parent):
         ('trip_management', _t("nav.buttons.trip_management"), self.show_trip_management_gui),
     ]
 
-    if any(name in visible_buttons for name, _, _ in transport_buttons_data):
-        transport_btn = ttk.Button(scrollable_frame, text=_t("nav.categories.transportation") + " ▶",
-                                   command=lambda: open_category_window(_t("nav.categories.transportation"), transport_buttons_data),
-                                   style='Large.TButton')
-        transport_btn.pack(fill=tk.X, pady=2, padx=5)
-
     # ---------- Student Services ----------
     student_services_buttons_data = [
         ('student_dashboard', _t('nav.buttons.student_dashboard'), self.show_student_dashboard_gui),
         ('student_support', _t('nav.buttons.student_support'), self.open_student_support_portal_gui),
         ('helpdesk', _t('nav.buttons.helpdesk'), self.open_helpdesk_gui),
         ('early_warning_system', _t('nav.buttons.early_warning'), self.show_early_warning_gui),
-        ('new_feature_intervention_support', 'Intervention Support',
-            self.show_new_feature_intervention_support),
-        ('new_feature_intervention_outcomes', 'Intervention Outcomes',
-            self.show_new_feature_intervention_outcomes),
-        ('new_feature_safeguarding_system', 'Safeguarding',
-            self.show_new_feature_safeguarding_system),
-        ('new_feature_mentoring_matching', 'Peer Mentoring Matching',
-            self.show_new_feature_mentoring_matching),
+        ('new_feature_intervention_support', 'Intervention Support', self.show_new_feature_intervention_support),
+        ('new_feature_intervention_outcomes', 'Intervention Outcomes', self.show_new_feature_intervention_outcomes),
+        ('new_feature_safeguarding_system', 'Safeguarding', self.show_new_feature_safeguarding_system),
+        ('new_feature_mentoring_matching', 'Peer Mentoring Matching', self.show_new_feature_mentoring_matching),
         ('accessibility', _t('nav.buttons.accessibility'), self.show_accessibility_portal_gui),
-        # Equality & Diversity is an inclusivity service alongside
-        # Accessibility — moved here from Cross-System where it sat
-        # awkwardly next to operational tools like Bulk Transfer.
         ('equality_diversity', 'Equality & Diversity', self.show_equality_diversity_gui),
         ('portfolio', _t('nav.buttons.portfolio'), self.show_portfolio_system_gui),
         ('advising_portal', _t('nav.buttons.advising_portal'), self.show_advising_portal_gui),
     ]
 
-    if any(name in visible_buttons for name, _, _ in student_services_buttons_data):
-        student_services_btn = ttk.Button(scrollable_frame, text=_t('nav.categories.services') + " ▶",
-                                   command=lambda: open_category_window(_t('nav.categories.services'), student_services_buttons_data),
-                                   style='Large.TButton')
-        student_services_btn.pack(fill=tk.X, pady=2, padx=5)
-
     # ---------- Career & Alumni ----------
     career_and_alumni_buttons_data = [
         ('career_services', _t('nav.buttons.career_services'), self.show_career_services_gui),
         ('internship_portal', _t('nav.buttons.internship_portal'), self.open_internship_portal_gui),
-        ('new_feature_apprenticeship_system', 'Apprenticeships',
-            self.show_new_feature_apprenticeship_system),
-        ('new_feature_placement_tracker', 'Placement Hours',
-            self.show_new_feature_placement_tracker),
-        ('new_feature_employer_portal', 'Employer Portal',
-            self.show_new_feature_employer_portal),
+        ('new_feature_apprenticeship_system', 'Apprenticeships', self.show_new_feature_apprenticeship_system),
+        ('new_feature_placement_tracker', 'Placement Hours', self.show_new_feature_placement_tracker),
+        ('new_feature_employer_portal', 'Employer Portal', self.show_new_feature_employer_portal),
         ('student_jobs', _t('nav.buttons.student_jobs'), self.show_student_jobs_gui),
         ('alumni_management', _t('nav.buttons.alumni'), self.open_alumni_portal_gui),
     ]
-
-    if any(name in visible_buttons for name, _, _ in career_and_alumni_buttons_data):
-        career_and_alumni_btn = ttk.Button(scrollable_frame, text=_t('nav.categories.career_alumni') + " ▶",
-                                   command=lambda: open_category_window(_t('nav.categories.career_alumni'), career_and_alumni_buttons_data),
-                                   style='Large.TButton')
-        career_and_alumni_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- Family & Legal ----------
     family_and_legal_buttons_data = [
         ('parent_portal', _t('nav.buttons.family_portal'), self.open_parent_portal_gui),
         ('legal_services', _t('nav.buttons.legal_services'), self.show_legal_services_gui),
-        # Disciplinary Portal lives here (legal/conduct surface) rather
-        # than under "New Features" — it's a permanent admin tool, not
-        # an experimental add-on.
-        ('new_feature_disciplinary_portal', 'Disciplinary Portal',
-            self.show_new_feature_disciplinary_portal),
-        ('new_feature_risk_management', 'Risk Management',
-            self.show_new_feature_risk_management),
+        ('new_feature_disciplinary_portal', 'Disciplinary Portal', self.show_new_feature_disciplinary_portal),
+        ('new_feature_risk_management', 'Risk Management', self.show_new_feature_risk_management),
     ]
-
-    if any(name in visible_buttons for name, _, _ in family_and_legal_buttons_data):
-        family_and_legal_btn = ttk.Button(scrollable_frame, text=_t('nav.categories.family_legal') + " ▶",
-                                   command=lambda: open_category_window(_t('nav.categories.family_legal'), family_and_legal_buttons_data),
-                                   style='Large.TButton')
-        family_and_legal_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- Entertainment ----------
     entertainment_buttons_data = [
@@ -527,42 +422,19 @@ def create_navigation_panel(self, parent):
         ('betting_shop', _t('nav.buttons.betting_shop'), self.show_betting_shop_gui),
     ]
 
-    if any(name in visible_buttons for name, _, _ in entertainment_buttons_data):
-        entertainment_btn = ttk.Button(scrollable_frame, text=_t('nav.categories.entertainment') + " ▶",
-                                   command=lambda: open_category_window(_t('nav.categories.entertainment'), entertainment_buttons_data),
-                                   style='Large.TButton')
-        entertainment_btn.pack(fill=tk.X, pady=2, padx=5)
-
     # ---------- Communication ----------
     communication_buttons_data = [
         ('communication_hub', _t('nav.buttons.communication_hub'), self.show_email_sms_gui),
         ('feedback_system', _t('nav.buttons.feedback_system'), self.show_feedback_system_gui),
-        # Complaints Portal lives here (feedback/communication surface)
-        # rather than under "New Features" — it's a permanent grievance
-        # channel sitting alongside Feedback System.
-        ('new_feature_complaints_portal', 'Complaints Portal',
-            self.show_new_feature_complaints_portal),
+        ('new_feature_complaints_portal', 'Complaints Portal', self.show_new_feature_complaints_portal),
     ]
-
-    if any(name in visible_buttons for name, _, _ in communication_buttons_data):
-        communication_btn = ttk.Button(scrollable_frame, text=_t('nav.categories.communication') + " ▶",
-                                   command=lambda: open_category_window(_t('nav.categories.communication'), communication_buttons_data),
-                                   style='Large.TButton')
-        communication_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- Analytics & Reporting ----------
     analytics_and_reporting_buttons_data = [
         ('integrated_dashboard', _t('nav.buttons.dashboard'), self.show_integrated_dashboard),
         ('analytics', _t('nav.buttons.analytics'), self.show_analytics),
-        ('new_feature_kpi_dashboard', 'KPI Dashboard',
-            self.show_new_feature_kpi_dashboard),
+        ('new_feature_kpi_dashboard', 'KPI Dashboard', self.show_new_feature_kpi_dashboard),
     ]
-
-    if any(name in visible_buttons for name, _, _ in analytics_and_reporting_buttons_data):
-        analytics_and_reporting_btn = ttk.Button(scrollable_frame, text=_t('nav.categories.analytics') + " ▶",
-                                   command=lambda: open_category_window(_t('nav.categories.analytics'), analytics_and_reporting_buttons_data),
-                                   style='Large.TButton')
-        analytics_and_reporting_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- Documents & Export ----------
     documents_and_export_buttons_data = [
@@ -571,12 +443,6 @@ def create_navigation_panel(self, parent):
         ('backup_gui', _t('nav.buttons.data_backup'), self.show_data_backup_gui),
         ('pdf_export', _t('nav.buttons.pdf_export'), self.show_pdf_export_gui),
     ]
-
-    if any(name in visible_buttons for name, _, _ in documents_and_export_buttons_data):
-        documents_and_export_btn = ttk.Button(scrollable_frame, text=_t('nav.categories.documents') + " ▶",
-                                   command=lambda: open_category_window(_t('nav.categories.documents'), documents_and_export_buttons_data),
-                                   style='Large.TButton')
-        documents_and_export_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- AI & Advanced Tools ----------
     ai_and_advanced_tools_buttons_data = [
@@ -587,34 +453,16 @@ def create_navigation_panel(self, parent):
         ('todo_app', _t('nav.buttons.todo_app'), self.show_todo_app_gui),
     ]
 
-    if any(name in visible_buttons for name, _, _ in ai_and_advanced_tools_buttons_data):
-        ai_and_advanced_tools_btn = ttk.Button(scrollable_frame, text=_t('nav.categories.tools') + " ▶",
-                                   command=lambda: open_category_window(_t('nav.categories.tools'), ai_and_advanced_tools_buttons_data),
-                                   style='Large.TButton')
-        ai_and_advanced_tools_btn.pack(fill=tk.X, pady=2, padx=5)
-
     # ---------- Security & Safety ----------
     security_and_safety_buttons_data = [
         ('security_desk', _t('nav.buttons.security_desk'), self.show_security_desk_gui),
         ('police_station', _t('nav.buttons.police_station'), self.show_police_station_gui),
     ]
 
-    if any(name in visible_buttons for name, _, _ in security_and_safety_buttons_data):
-        security_and_safety_btn = ttk.Button(scrollable_frame, text=_t('nav.categories.security_safety') + " ▶",
-                                   command=lambda: open_category_window(_t('nav.categories.security_safety'), security_and_safety_buttons_data),
-                                   style='Large.TButton')
-        security_and_safety_btn.pack(fill=tk.X, pady=2, padx=5)
-
     # ---------- Community Services ----------
     community_services_buttons_data = [
         ('church_management', _t('nav.buttons.church_management'), self.show_church_management_gui),
     ]
-
-    if any(name in visible_buttons for name, _, _ in community_services_buttons_data):
-        community_services_btn = ttk.Button(scrollable_frame, text=_t('nav.categories.community') + " ▶",
-                                   command=lambda: open_category_window(_t('nav.categories.community'), community_services_buttons_data),
-                                   style='Large.TButton')
-        community_services_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- Human Resources ----------
     human_resources_buttons_data = [
@@ -625,21 +473,13 @@ def create_navigation_panel(self, parent):
         ('staff_hr', _t('nav.buttons.staff_hr'), self.show_staff_hr_gui),
     ]
 
-    if any(name in visible_buttons for name, _, _ in human_resources_buttons_data):
-        human_resources_btn = ttk.Button(scrollable_frame, text=_t('nav.categories.human_resources') + " ▶",
-                                   command=lambda: open_category_window(_t('nav.categories.human_resources'), human_resources_buttons_data),
-                                   style='Large.TButton')
-        human_resources_btn.pack(fill=tk.X, pady=2, padx=5)
-
     # ---------- Administration ----------
     administration_buttons_data = [
         ('user_management', _t('nav.buttons.user_management'), self.show_user_management),
         ('system_admin_gui', _t('nav.buttons.system_admin'), self.show_system_administration_gui),
         ('security_dashboard', _t('nav.buttons.security'), self.show_security_dashboard),
-        ('new_feature_health_safety_portal', 'Health & Safety',
-            self.show_new_feature_health_safety_portal),
-        ('new_feature_background_checker', 'Background Checker',
-            self.show_new_feature_background_checker),
+        ('new_feature_health_safety_portal', 'Health & Safety', self.show_new_feature_health_safety_portal),
+        ('new_feature_background_checker', 'Background Checker', self.show_new_feature_background_checker),
         ('integration_marketplace', _t('nav.buttons.integration_marketplace'), self.show_integration_marketplace_gui),
         ('admissions_crm', _t('nav.buttons.admissions_crm'), self.show_admissions_crm_gui),
         ('usage_adoption_reports', _t('nav.buttons.usage_reports'), self.show_usage_adoption_reports),
@@ -647,12 +487,6 @@ def create_navigation_panel(self, parent):
         ('hesa_export', 'HESA Data Export', self.show_hesa_export_gui),
         ('clearing_adjustment', 'Clearing & Adjustment', self.show_clearing_adjustment_gui),
     ]
-
-    if any(name in visible_buttons for name, _, _ in administration_buttons_data):
-        administration_btn = ttk.Button(scrollable_frame, text=_t('nav.categories.administration') + " ▶",
-                                   command=lambda: open_category_window(_t('nav.categories.administration'), administration_buttons_data),
-                                   style='Large.TButton')
-        administration_btn.pack(fill=tk.X, pady=2, padx=5)
 
     # ---------- Cross-System ----------
     cross_system_buttons_data = [
@@ -667,19 +501,71 @@ def create_navigation_panel(self, parent):
         ('cross_system_calendar', 'Cross-System Calendar', self.show_cross_system_calendar_gui),
         ('central_admin_portal', 'Central Admin Portal', self.show_central_admin_gui),
         ('gdpr_compliance', 'GDPR Compliance', self.show_gdpr_compliance_gui),
-        # Equality & Diversity moved → Student Services (alongside
-        # Accessibility) where it fits its inclusivity-service nature
-        # better than this operational/cross-system bucket.
         ('shared_documents', 'Shared Documents', self.show_shared_documents_gui),
         ('student_self_service', 'Student Self-Service', self.show_student_self_service_gui),
         ('certificates', 'Certificates', self.show_certificates_gui),
     ]
 
-    if any(name in visible_buttons for name, _, _ in cross_system_buttons_data):
-        cross_system_btn = ttk.Button(scrollable_frame, text="Cross-System" + " \u25b6",
-                                   command=lambda: open_category_window("Cross-System", cross_system_buttons_data),
-                                   style='Large.TButton')
-        cross_system_btn.pack(fill=tk.X, pady=2, padx=5)
+    # 8 top-level groups (was 25 flat categories). Each group's category
+    # window shows the listed sub-sections with bold section headers when
+    # more than one section is visible to the current role. Ordered by
+    # use frequency: classroom-first, life/services in the middle,
+    # admin tooling last.
+    top_level_groups = [
+        ("Academics", [
+            (_t("nav.categories.academic"), academic_buttons_data),
+            (_t("nav.categories.scheduling"), sched_buttons_data),
+        ]),
+        ("People", [
+            (_t("nav.categories.student_management"), student_mgmt_buttons_data),
+            (_t("nav.categories.human_resources"), human_resources_buttons_data),
+        ]),
+        ("Finance", [
+            (_t("nav.categories.finance"), finance_buttons_data),
+        ]),
+        ("Student Life", [
+            (_t("nav.categories.health"), health_buttons_data),
+            (_t("nav.categories.accommodation"), accommodation_buttons_data),
+            (_t("nav.categories.campus"), campus_buttons_data),
+            (_t("nav.categories.dining"), dining_buttons_data),
+            (_t("nav.categories.shops"), shops_buttons_data),
+            (_t("nav.categories.personal_services"), personal_buttons_data),
+            (_t("nav.categories.transportation"), transport_buttons_data),
+            (_t("nav.categories.entertainment"), entertainment_buttons_data),
+            (_t("nav.categories.community"), community_services_buttons_data),
+        ]),
+        ("Support & Wellbeing", [
+            (_t("nav.categories.services"), student_services_buttons_data),
+            (_t("nav.categories.career_alumni"), career_and_alumni_buttons_data),
+            (_t("nav.categories.family_legal"), family_and_legal_buttons_data),
+            (_t("nav.categories.communication"), communication_buttons_data),
+        ]),
+        ("Reports & Data", [
+            (_t("nav.categories.analytics"), analytics_and_reporting_buttons_data),
+            (_t("nav.categories.documents"), documents_and_export_buttons_data),
+            (_t("nav.categories.tools"), ai_and_advanced_tools_buttons_data),
+        ]),
+        ("Administration", [
+            (_t("nav.categories.administration"), administration_buttons_data),
+            (_t("nav.categories.security_safety"), security_and_safety_buttons_data),
+            ("Cross-System", cross_system_buttons_data),
+        ]),
+        ("Account", [
+            (_t("nav.categories.authentication"), authentication_buttons_data),
+        ]),
+    ]
+
+    for group_label, sections in top_level_groups:
+        if not any(name in visible_buttons
+                   for _, btns in sections for name, _, _ in btns):
+            continue
+        ttk.Button(
+            scrollable_frame,
+            text=group_label + " ▶",
+            command=(lambda gl=group_label, secs=sections:
+                     open_grouped_category_window(gl, secs)),
+            style='Large.TButton',
+        ).pack(fill=tk.X, pady=2, padx=5)
 
     # The "New Features" sidebar bucket has been retired. Every
     # standalone Tk app it used to host has been redistributed into

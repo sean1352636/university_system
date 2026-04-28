@@ -160,7 +160,7 @@ class PDFExportManager:
                     style="Stats",
                 )
                 pdf.add_text(
-                    f"Total Scholarship Value: ${finance_stats.get('scholarship_total', 0):,.2f}",
+                    f"Total Scholarship Value: £{finance_stats.get('scholarship_total', 0):,.2f}",
                     style="Stats",
                 )
                 pdf.add_spacer(0.25)

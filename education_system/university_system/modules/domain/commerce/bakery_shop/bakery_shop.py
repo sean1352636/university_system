@@ -547,7 +547,7 @@ class BakeryShop:
         # Price
         tk.Label(
             card,
-            text=f"${info['price']:.2f}",
+            text=f"£{info['price']:.2f}",
             font=("Arial", 12, "bold"),
             bg=self.colors["card"],
             fg=self.colors["secondary"],
@@ -610,7 +610,7 @@ class BakeryShop:
 
         self.subtotal_label = tk.Label(
             summary_frame,
-            text="Subtotal: $0.00",
+            text="Subtotal: £0.00",
             font=("Arial", 12),
             bg=self.colors["primary"],
             fg="white",
@@ -619,7 +619,7 @@ class BakeryShop:
 
         self.discount_label = tk.Label(
             summary_frame,
-            text="Discount: $0.00",
+            text="Discount: £0.00",
             font=("Arial", 12),
             bg=self.colors["primary"],
             fg="white",
@@ -628,7 +628,7 @@ class BakeryShop:
 
         self.total_label = tk.Label(
             summary_frame,
-            text="Total: $0.00",
+            text="Total: £0.00",
             font=("Arial", 14, "bold"),
             bg=self.colors["primary"],
             fg=self.colors["accent"],
@@ -732,7 +732,7 @@ class BakeryShop:
 
         tk.Label(
             row,
-            text=f"${price:.2f}",
+            text=f"£{price:.2f}",
             font=("Arial", 11),
             bg=self.colors["card"],
             fg=self.colors["text"],
@@ -779,7 +779,7 @@ class BakeryShop:
 
         tk.Label(
             row,
-            text=f"${price * qty:.2f}",
+            text=f"£{price * qty:.2f}",
             font=("Arial", 11, "bold"),
             bg=self.colors["card"],
             fg=self.colors["secondary"],
@@ -887,11 +887,11 @@ class BakeryShop:
         discount = subtotal * discount_rate
         total = subtotal - discount
 
-        self.subtotal_label.config(text=f"Subtotal: ${subtotal:.2f}")
+        self.subtotal_label.config(text=f"Subtotal: £{subtotal:.2f}")
         self.discount_label.config(
-            text=f"Discount ({self.user_type}): ${discount:.2f}"
+            text=f"Discount ({self.user_type}): £{discount:.2f}"
         )
-        self.total_label.config(text=f"Total: ${total:.2f}")
+        self.total_label.config(text=f"Total: £{total:.2f}")
 
     def checkout(self):
         """Finalize the order, decrement stock, and save."""
@@ -954,9 +954,9 @@ class BakeryShop:
         for item, qty in order["items"].items():
             receipt += f"  • {item} x {qty}\n"
         receipt += (
-            f"\nSubtotal: ${order['subtotal']:.2f}\n"
-            f"Discount: ${order['discount']:.2f}\n"
-            f"Total: ${order['total']:.2f}\n\n"
+            f"\nSubtotal: £{order['subtotal']:.2f}\n"
+            f"Discount: £{order['discount']:.2f}\n"
+            f"Total: £{order['total']:.2f}\n\n"
             f"Thank you for your purchase! 🎉"
         )
 
@@ -1034,7 +1034,7 @@ class BakeryShop:
                     order["timestamp"],
                     f"{order['user']} ({order['user_type']})",
                     f"{item_count} items",
-                    f"${order['total']:.2f}",
+                    f"£{order['total']:.2f}",
                 ),
             )
 
@@ -1059,9 +1059,9 @@ class BakeryShop:
         for item, qty in order["items"].items():
             details += f"  • {item} x {qty}\n"
         details += (
-            f"\nSubtotal: ${order['subtotal']:.2f}\n"
-            f"Discount: ${order['discount']:.2f}\n"
-            f"Total: ${order['total']:.2f}"
+            f"\nSubtotal: £{order['subtotal']:.2f}\n"
+            f"Discount: £{order['discount']:.2f}\n"
+            f"Total: £{order['total']:.2f}"
         )
 
         messagebox.showinfo(f"Order {order['order_id']}", details)
@@ -1111,7 +1111,7 @@ class BakeryShop:
 
         stats = [
             ("Total Orders", str(total_orders), self.colors["primary"]),
-            ("Total Revenue", f"${total_revenue:.2f}", self.colors["success"]),
+            ("Total Revenue", f"£{total_revenue:.2f}", self.colors["success"]),
             ("Items Sold", str(total_items), self.colors["secondary"]),
         ]
 
@@ -1150,7 +1150,7 @@ class BakeryShop:
                 inv_tree.insert(
                     "",
                     "end",
-                    values=(category, name, f"${info['price']:.2f}", info["stock"], status),
+                    values=(category, name, f"£{info['price']:.2f}", info["stock"], status),
                 )
 
         scroll = ttk.Scrollbar(inv_frame, orient="vertical", command=inv_tree.yview)
@@ -1213,7 +1213,7 @@ class BakeryShop:
 
                 total_revenue = sum(o["total"] for o in self.orders)
                 f.write(f"Total Orders: {len(self.orders)}\n")
-                f.write(f"Total Revenue: ${total_revenue:.2f}\n\n")
+                f.write(f"Total Revenue: £{total_revenue:.2f}\n\n")
                 f.write("-" * 60 + "\n")
                 f.write("ORDER DETAILS\n")
                 f.write("-" * 60 + "\n\n")
@@ -1225,7 +1225,7 @@ class BakeryShop:
                     f.write("Items:\n")
                     for item, qty in order["items"].items():
                         f.write(f"  - {item} x {qty}\n")
-                    f.write(f"Total: ${order['total']:.2f}\n")
+                    f.write(f"Total: £{order['total']:.2f}\n")
                     f.write("-" * 40 + "\n")
 
             messagebox.showinfo("Export Complete", f"Sales report saved as:\n{filename}")

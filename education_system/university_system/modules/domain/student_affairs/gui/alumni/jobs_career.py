@@ -213,7 +213,7 @@ class JobsCareerMixin:
     Posted by: Sarah Johnson (Class of 2015)
     Location: San Francisco, CA (Remote available)
     Type: Full-time | Experience: Mid-Senior Level
-    Salary: $120,000 - $150,000
+    Salary: £120,000 - £150,000
 
     Description: Join our growing team developing cutting-edge web applications.
     Looking for experienced developers with React, Node.js, and cloud experience.
@@ -236,7 +236,7 @@ class JobsCareerMixin:
     Posted by: Michael Chen (Class of 2018)
     Location: New York, NY
     Type: Full-time | Experience: Entry-Mid Level
-    Salary: $70,000 - $90,000
+    Salary: £70,000 - £90,000
 
     Description: Seeking detail-oriented financial analyst to join our investment team.
     Great opportunity for recent graduates or career changers.
@@ -259,7 +259,7 @@ class JobsCareerMixin:
     Posted by: Lisa Brown (Class of 2016)
     Location: Boston, MA (Hybrid)
     Type: Full-time | Experience: Mid Level
-    Salary: $80,000 - $100,000
+    Salary: £80,000 - £100,000
 
     Description: Lead marketing initiatives for B2B software company.
     Manage campaigns, content strategy, and team development.

@@ -330,7 +330,7 @@ def view_assignment():
         if assignment[14]:
             print(f"{get_text('housing.assignment.actual_move_out_label')}: {assignment[14]}")
         print(f"{get_text('housing.assignment.contract_label')}: {assignment[15]}")
-        print(f"{get_text('housing.assignment.rent_label')}: ${assignment[16]}")
+        print(f"{get_text('housing.assignment.rent_label')}: £{assignment[16]}")
         print(f"{get_text('housing.assignment.status_label')}: {assignment[17]}")
         print(f"{get_text('housing.assignment.assigned_by_label')}: {assignment[18]}")
         print(f"{get_text('housing.assignment.date_label')}: {assignment[19]}")

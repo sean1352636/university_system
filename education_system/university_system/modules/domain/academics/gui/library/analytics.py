@@ -287,7 +287,7 @@ Total Loans: {stats[0]:,}
 Active Loans: {stats[1]:,}
 Returned Loans: {stats[2]:,}
 Overdue Loans: {stats[3]:,}
-Total Fines: ${stats[4]:.2f}
+Total Fines: £{stats[4]:.2f}
 """
 
         text_widget = ScrolledText(parent, height=30, width=80, font=('Courier', 11))

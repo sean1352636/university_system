@@ -628,14 +628,14 @@ REVENUE SUMMARY
 ---------------
 Total Rentals: {revenue.get('total_rentals', 0)}
 Completed Rentals: {revenue.get('completed_rentals', 0)}
-Total Revenue: ${revenue.get('total_revenue', 0):.2f}
-Average Rental Value: ${revenue.get('avg_rental_value', 0):.2f}
+Total Revenue: £{revenue.get('total_revenue', 0):.2f}
+Average Rental Value: £{revenue.get('avg_rental_value', 0):.2f}
 
 TOP 5 VEHICLES BY RENTALS
 -------------------------
 """
             for i, v in enumerate(popular, 1):
-                report += f"{i}. {v['make']} {v['model']} - {v['rental_count']} rentals (${v['total_revenue'] or 0:.2f})\n"
+                report += f"{i}. {v['make']} {v['model']} - {v['rental_count']} rentals (£{v['total_revenue'] or 0:.2f})\n"
 
             return report
         except Exception as e:

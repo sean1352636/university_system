@@ -583,7 +583,7 @@ class RoommateFinderGUI:
                 other_profile = self.service.get_profile(other_profile_id)
 
                 if other_profile:
-                    budget = f"${other_profile['budget_min']}-${other_profile['budget_max']}"
+                    budget = f"£{other_profile['budget_min']}-£{other_profile['budget_max']}"
                     self.matches_tree.insert('', tk.END, values=(
                         match['match_id'],
                         match['display_name'],
@@ -635,7 +635,7 @@ class RoommateFinderGUI:
                     details += f"Bio: {other_profile['bio'] or 'Not provided'}\n"
                     details += f"Major: {other_profile['major'] or 'Not specified'}\n"
                     details += f"Year: {other_profile['year_of_study'] or 'Not specified'}\n"
-                    details += f"Budget: ${other_profile['budget_min']}-${other_profile['budget_max']}/month\n"
+                    details += f"Budget: £{other_profile['budget_min']}-£{other_profile['budget_max']}/month\n"
                     details += f"Move-in: {other_profile['move_in_date'] or 'Flexible'}\n"
                     details += f"Gender Preference: {other_profile['preferred_gender']}\n"
                     details += f"Smoking: {other_profile['smoking_preference']}\n"

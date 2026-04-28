@@ -169,7 +169,7 @@ class TravelGUI:
                 r.get('destination', ''),
                 r.get('departure_date', ''),
                 r.get('return_date', ''),
-                f"${r.get('estimated_budget', 0):.2f}",
+                f"£{r.get('estimated_budget', 0):.2f}",
                 display_status
             ), tags=(req_status,))
 
@@ -220,7 +220,7 @@ class TravelGUI:
             ('Destination', request.get('destination', '')),
             ('Departure Date', request.get('departure_date', '')),
             ('Return Date', request.get('return_date', '')),
-            ('Estimated Budget', f"${request.get('estimated_budget', 0):.2f}"),
+            ('Estimated Budget', f"£{request.get('estimated_budget', 0):.2f}"),
             ('Funding Source', request.get('funding_source', '').title()),
             ('Department', request.get('department', 'N/A')),
             ('Created', request.get('created_at', '')),
@@ -262,7 +262,7 @@ class TravelGUI:
                 for b_item in breakdown:
                     budget_tree.insert('', tk.END, values=(
                         b_item.get('item', ''),
-                        f"${b_item.get('amount', 0):.2f}"
+                        f"£{b_item.get('amount', 0):.2f}"
                     ))
                 budget_tree.pack(fill=tk.X)
 
@@ -294,7 +294,7 @@ class TravelGUI:
                     leg.get('departure_datetime', ''),
                     leg.get('arrival_datetime', ''),
                     leg.get('carrier', ''),
-                    f"${leg.get('cost', 0):.2f}"
+                    f"£{leg.get('cost', 0):.2f}"
                 ))
             itin_tree.pack(fill=tk.X)
 
@@ -386,7 +386,7 @@ class TravelGUI:
         ttk.Button(budget_btn_frame, text="Add Item", command=self._add_budget_item).pack(side=tk.LEFT, padx=5)
         ttk.Button(budget_btn_frame, text="Remove Selected", command=self._remove_budget_item).pack(side=tk.LEFT, padx=5)
 
-        self.budget_total_label = ttk.Label(budget_btn_frame, text="Total: $0.00", font=('Arial', 10, 'bold'))
+        self.budget_total_label = ttk.Label(budget_btn_frame, text="Total: £0.00", font=('Arial', 10, 'bold'))
         self.budget_total_label.pack(side=tk.RIGHT, padx=10)
 
         # Submit buttons
@@ -427,7 +427,7 @@ class TravelGUI:
                 show_validation_error(e, dialog)
                 return
 
-            self.budget_tree.insert('', tk.END, values=(item_name, f"${amount:.2f}"))
+            self.budget_tree.insert('', tk.END, values=(item_name, f"£{amount:.2f}"))
             self._update_budget_total()
             dialog.destroy()
 
@@ -458,7 +458,7 @@ class TravelGUI:
                 total += float(amount_str)
             except (ValueError, IndexError):
                 pass
-        self.budget_total_label.config(text=f"Total: ${total:.2f}")
+        self.budget_total_label.config(text=f"Total: £{total:.2f}")
 
     def _get_budget_breakdown(self):
         """Get budget breakdown as list of dicts and total."""
@@ -660,7 +660,7 @@ class TravelGUI:
                 c.get('location', ''),
                 c.get('start_date', ''),
                 c.get('end_date', ''),
-                f"${c.get('registration_fee', 0):.2f}",
+                f"£{c.get('registration_fee', 0):.2f}",
                 presenting,
                 status
             ))
@@ -885,7 +885,7 @@ class TravelGUI:
                 a.get('purpose', '')[:35],
                 a.get('destination', ''),
                 dates,
-                f"${a.get('estimated_budget', 0):.2f}",
+                f"£{a.get('estimated_budget', 0):.2f}",
                 level,
                 a.get('status', '').title()
             ), tags=('pending',))
@@ -1074,7 +1074,7 @@ class TravelGUI:
         for exp in expenses:
             self.travel_expense_tree.insert('', tk.END, values=(
                 exp.get('claim_id'),
-                f"${exp.get('amount', 0):.2f}",
+                f"£{exp.get('amount', 0):.2f}",
                 exp.get('claim_status', '').title(),
                 exp.get('expense_date', '')
             ))
@@ -1149,7 +1149,7 @@ class TravelGUI:
         total_budget = stats.get('total_budget', 0)
 
         self.travel_stats['total_requests'].config(text=str(total_requests))
-        self.travel_stats['total_budget'].config(text=f"${total_budget:.2f}")
+        self.travel_stats['total_budget'].config(text=f"£{total_budget:.2f}")
 
         # By department
         for item in self.dept_stats_tree.get_children():
@@ -1160,7 +1160,7 @@ class TravelGUI:
             self.dept_stats_tree.insert('', tk.END, values=(
                 dept,
                 data.get('count', 0),
-                f"${data.get('budget', 0):.2f}"
+                f"£{data.get('budget', 0):.2f}"
             ))
 
 

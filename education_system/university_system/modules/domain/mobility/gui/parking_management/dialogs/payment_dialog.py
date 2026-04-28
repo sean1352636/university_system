@@ -46,7 +46,7 @@ class PaymentDialog:
             ("License Plate:", self.violation_data[1]),
             ("Date:", self.violation_data[3]),
             ("Location:", self.violation_data[6]),
-            ("Fine Amount:", f"${float(self.violation_data[4]):.2f}"),
+            ("Fine Amount:", f"£{float(self.violation_data[4]):.2f}"),
             ("Status:", self.violation_data[5])
         ]
 
@@ -79,9 +79,9 @@ class PaymentDialog:
             balance_frame = ttk.Frame(method_frame)
             balance_frame.pack(fill=tk.X, pady=(0, 10))
 
-            ttk.Label(balance_frame, text=f"Current Student Account Balance: ${current_balance:.2f}",
+            ttk.Label(balance_frame, text=f"Current Student Account Balance: £{current_balance:.2f}",
                      foreground='blue', font=('Arial', 10)).pack()
-            ttk.Label(balance_frame, text=f"New Balance After Payment: ${new_balance:.2f}",
+            ttk.Label(balance_frame, text=f"New Balance After Payment: £{new_balance:.2f}",
                      foreground='green' if new_balance >= 0 else 'red',
                      font=('Arial', 10)).pack()
 
@@ -150,7 +150,7 @@ class PaymentDialog:
         self.payment_method = method
 
         if not messagebox.askyesno("Confirm Payment",
-                                   f"Process payment of ${float(self.violation_data[4]):.2f} via {method.replace('_', ' ').title()}?"):
+                                   f"Process payment of £{float(self.violation_data[4]):.2f} via {method.replace('_', ' ').title()}?"):
             return
 
         self.result = {

@@ -324,7 +324,7 @@ class StudentJobsGUI:
         summary_frame = ttk.LabelFrame(hours_tab, text="Summary", padding=10)
         summary_frame.pack(fill=tk.X, padx=10, pady=5)
 
-        self.hours_summary_label = ttk.Label(summary_frame, text="Total Hours: 0.00 | Total Earnings: $0.00")
+        self.hours_summary_label = ttk.Label(summary_frame, text="Total Hours: 0.00 | Total Earnings: £0.00")
         self.hours_summary_label.pack()
 
         # Buttons
@@ -527,10 +527,10 @@ class StudentJobsGUI:
                 self.ws_info_text.insert(tk.END, f"Position: {job['position_title']}\n")
                 self.ws_info_text.insert(tk.END, f"Employer: {job['employer_name']}\n")
                 self.ws_info_text.insert(tk.END, f"Location: {job['location']}\n")
-                self.ws_info_text.insert(tk.END, f"\nWork-Study Allocation: ${job['work_study_allocation']:.2f}\n")
-                self.ws_info_text.insert(tk.END, f"Amount Used: ${job['work_study_used']:.2f}\n")
+                self.ws_info_text.insert(tk.END, f"\nWork-Study Allocation: £{job['work_study_allocation']:.2f}\n")
+                self.ws_info_text.insert(tk.END, f"Amount Used: £{job['work_study_used']:.2f}\n")
                 remaining = job['work_study_allocation'] - job['work_study_used']
-                self.ws_info_text.insert(tk.END, f"Remaining: ${remaining:.2f}\n")
+                self.ws_info_text.insert(tk.END, f"Remaining: £{remaining:.2f}\n")
 
                 if job['hourly_rate']:
                     remaining_hours = remaining / job['hourly_rate']
@@ -557,7 +557,7 @@ class StudentJobsGUI:
                 job['employer_name'][:20],
                 job['job_category'][:15],
                 job['employment_type'],
-                f"${job['hourly_rate']:.2f}",
+                f"£{job['hourly_rate']:.2f}",
                 job['location'][:20],
                 f"{available}/{job['total_positions']}",
                 job.get('application_deadline', 'N/A')
@@ -574,7 +574,7 @@ class StudentJobsGUI:
                 app['application_id'],
                 app['job_title'][:35],
                 app['employer_name'][:25],
-                f"${app['hourly_rate']:.2f}",
+                f"£{app['hourly_rate']:.2f}",
                 app['application_date'],
                 app['status'].upper()
             )
@@ -593,7 +593,7 @@ class StudentJobsGUI:
                 job['employment_id'],
                 job['position_title'][:25],
                 job['employer_name'][:20],
-                f"${job['hourly_rate']:.2f}",
+                f"£{job['hourly_rate']:.2f}",
                 job['max_hours_per_week'],
                 job['start_date'],
                 job['employment_status'].upper()
@@ -616,7 +616,7 @@ class StudentJobsGUI:
                 record['clock_in_time'],
                 record['clock_out_time'] or 'Active',
                 f"{record['total_hours'] or 0:.2f}",
-                f"${record['earnings'] or 0:.2f}",
+                f"£{record['earnings'] or 0:.2f}",
                 record['status'].upper()
             )
             self.hours_tree.insert('', tk.END, values=values)
@@ -630,7 +630,7 @@ class StudentJobsGUI:
         total_earnings = sum(h['earnings'] or 0 for h in self.hours_list)
 
         self.hours_summary_label.config(
-            text=f"Total Hours: {total_hours:.2f} | Total Earnings: ${total_earnings:.2f}"
+            text=f"Total Hours: {total_hours:.2f} | Total Earnings: £{total_earnings:.2f}"
         )
 
     def update_skills_tree(self):
@@ -736,7 +736,7 @@ class StudentJobsGUI:
             text.insert(tk.END, f"Employer: {job['employer_name']}\n")
             text.insert(tk.END, f"Category: {job['job_category']}\n")
             text.insert(tk.END, f"Type: {job['employment_type']}\n")
-            text.insert(tk.END, f"Hourly Rate: ${job['hourly_rate']:.2f}\n")
+            text.insert(tk.END, f"Hourly Rate: £{job['hourly_rate']:.2f}\n")
 
             if job.get('hours_per_week'):
                 text.insert(tk.END, f"Hours per Week: {job['hours_per_week']}\n")
@@ -898,7 +898,7 @@ class StudentJobsGUI:
         text.insert(tk.END, f"Application ID: {app['application_id']}\n")
         text.insert(tk.END, f"Job: {app['job_title']}\n")
         text.insert(tk.END, f"Employer: {app['employer_name']}\n")
-        text.insert(tk.END, f"Rate: ${app['hourly_rate']:.2f}/hour\n")
+        text.insert(tk.END, f"Rate: £{app['hourly_rate']:.2f}/hour\n")
         text.insert(tk.END, f"Location: {app['location']}\n")
         text.insert(tk.END, f"Applied: {app['application_date']}\n")
         text.insert(tk.END, f"Status: {app['status'].upper()}\n")
@@ -1086,10 +1086,10 @@ class StudentJobsGUI:
             text.insert(tk.END, f"Total Hours: {summary['total_hours'] or 0:.2f}\n")
             text.insert(tk.END, f"Approved Hours: {summary['approved_hours'] or 0:.2f}\n")
             text.insert(tk.END, f"Pending Hours: {summary['pending_hours'] or 0:.2f}\n")
-            text.insert(tk.END, f"Total Earnings: ${summary['total_earnings'] or 0:.2f}\n")
+            text.insert(tk.END, f"Total Earnings: £{summary['total_earnings'] or 0:.2f}\n")
 
             if summary.get('total_work_study'):
-                text.insert(tk.END, f"Work-Study Deduction: ${summary['total_work_study']:.2f}\n")
+                text.insert(tk.END, f"Work-Study Deduction: £{summary['total_work_study']:.2f}\n")
 
             text.config(state=tk.DISABLED)
 
@@ -1203,7 +1203,7 @@ class StudentJobsGUI:
                     f"{job['match_percentage']:.1f}%",
                     job['job_title'],
                     job['employer_name'],
-                    f"${job['hourly_rate']:.2f}",
+                    f"£{job['hourly_rate']:.2f}",
                     f"{job['required_skills_matched']}/{job['total_required_skills']}"
                 )
                 tree.insert('', tk.END, values=values)
@@ -1247,7 +1247,7 @@ class StudentJobsGUI:
             text.insert(tk.END, f"Employer: {job['employer_name']}\n")
             text.insert(tk.END, f"Category: {job['job_category']}\n")
             text.insert(tk.END, f"Type: {job['employment_type']}\n")
-            text.insert(tk.END, f"Rate: ${job['hourly_rate']:.2f}/hour\n")
+            text.insert(tk.END, f"Rate: £{job['hourly_rate']:.2f}/hour\n")
             text.insert(tk.END, f"Location: {job['location']}\n\n")
             text.insert(tk.END, f"Description:\n{job['job_description']}\n")
 

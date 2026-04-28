@@ -163,11 +163,11 @@ class OverviewMixin:
             total = cursor.fetchone()[0]
             conn.close()
             if total and float(total) > 0:
-                return f"${float(total):.2f}"
-            return "$0.00"
+                return f"£{float(total):.2f}"
+            return "£0.00"
         except Exception as exc:
             logger.debug("Could not fetch outstanding fines: %s", exc)
-            return "$0.00"
+            return "£0.00"
 
     # ------------------------------------------------------------------
     # Today's schedule

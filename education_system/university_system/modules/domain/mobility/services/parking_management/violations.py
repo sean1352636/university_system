@@ -97,7 +97,7 @@ def record_violation():
         fine_amount = fine_amounts.get(violation_type, 50.00)
 
         # Allow officer to override the fine amount
-        override = input(f"Default fine amount is ${fine_amount:.2f}. Override? (y/n): ")
+        override = input(f"Default fine amount is £{fine_amount:.2f}. Override? (y/n): ")
         if override.lower() == 'y':
             try:
                 new_amount = float(input("Enter new fine amount: $"))
@@ -137,7 +137,7 @@ def record_violation():
         print(f"Type: {violation_type}")
         print(f"Location: {location}")
         print(f"Date/Time: {violation_date}")
-        print(f"Fine Amount: ${fine_amount:.2f}")
+        print(f"Fine Amount: £{fine_amount:.2f}")
         print(f"Status: {payment_status}")
 
         logging.info(f"Violation {violation_id} recorded for license plate {license_plate} by {auth.current_user['username']}")
@@ -484,7 +484,7 @@ def update_violation():
                     (new_amount, violation_id)
                 )
 
-                print(f"Fine amount updated to: ${new_amount:.2f}")
+                print(f"Fine amount updated to: £{new_amount:.2f}")
 
             except ValueError:
                 print(_t("parking.error.invalid_amount_no_changes"))
@@ -627,7 +627,7 @@ def display_violation_details(violation):
     print(f"License Plate: {violation[2]}")
     print(f"Type: {violation[3]}")
     print(f"Date/Time: {violation[4]}")
-    print(f"Fine Amount: ${violation[5]:.2f}")
+    print(f"Fine Amount: £{violation[5]:.2f}")
     print(f"Status: {violation[6]}")
     print(f"Location: {violation[7]}")
 

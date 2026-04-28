@@ -263,7 +263,7 @@ OVERDUE NOTICE
 Book: {title} ({book_id})
 Due Date: {due_date}
 Days Overdue: {days_overdue}
-Current Fine: ${total_fine:.2f}
+Current Fine: £{total_fine:.2f}
 
 Please return this book as soon as possible to avoid additional fines.
 

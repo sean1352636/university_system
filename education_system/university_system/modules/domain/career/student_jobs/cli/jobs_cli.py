@@ -580,7 +580,7 @@ class StudentJobsCLI:
 
             if record['total_hours']:
                 print(f"Hours: {record['total_hours']}")
-                print(f"Earnings: ${record['earnings']:.2f}")
+                print(f"Earnings: £{record['earnings']:.2f}")
                 print(f"Status: {record['status']}")
                 total_hours += record['total_hours']
                 total_earnings += record['earnings']
@@ -590,7 +590,7 @@ class StudentJobsCLI:
 
         print(f"\n{'=' * 60}")
         print(f"Total Hours: {total_hours:.2f}")
-        print(f"Total Earnings: ${total_earnings:.2f}")
+        print(f"Total Earnings: £{total_earnings:.2f}")
 
     def view_weekly_summary(self):
         """View weekly hours summary"""
@@ -614,10 +614,10 @@ class StudentJobsCLI:
         print(f"Total Hours: {summary['total_hours'] or 0:.2f}")
         print(f"Approved Hours: {summary['approved_hours'] or 0:.2f}")
         print(f"Pending Hours: {summary['pending_hours'] or 0:.2f}")
-        print(f"Total Earnings: ${summary['total_earnings'] or 0:.2f}")
+        print(f"Total Earnings: £{summary['total_earnings'] or 0:.2f}")
 
         if summary['total_work_study']:
-            print(f"Work-Study Deduction: ${summary['total_work_study']:.2f}")
+            print(f"Work-Study Deduction: £{summary['total_work_study']:.2f}")
 
     def skills_matching_menu(self):
         """Manage skills and view matching jobs"""
@@ -759,7 +759,7 @@ class StudentJobsCLI:
             print(f"\nJob ID: {job['job_id']} | Match: {job['match_percentage']}%")
             print(f"Title: {job['job_title']}")
             print(f"Employer: {job['employer_name']}")
-            print(f"Rate: ${job['hourly_rate']:.2f}/hour")
+            print(f"Rate: £{job['hourly_rate']:.2f}/hour")
             print(f"Skills Matched: {job['required_skills_matched']}/{job['total_required_skills']} required")
 
             if job['preferred_skills_matched']:
@@ -822,10 +822,10 @@ class StudentJobsCLI:
         for job in work_study_jobs:
             print(f"\n{job['position_title']} at {job['employer_name']}")
             print("-" * 60)
-            print(f"Allocation: ${job['work_study_allocation']:.2f}")
-            print(f"Used: ${job['work_study_used']:.2f}")
+            print(f"Allocation: £{job['work_study_allocation']:.2f}")
+            print(f"Used: £{job['work_study_used']:.2f}")
             remaining = job['work_study_allocation'] - job['work_study_used']
-            print(f"Remaining: ${remaining:.2f}")
+            print(f"Remaining: £{remaining:.2f}")
 
             if job['hourly_rate']:
                 remaining_hours = remaining / job['hourly_rate']
@@ -1003,7 +1003,7 @@ class StudentJobsCLI:
         if new_title:
             updates['job_title'] = new_title
 
-        new_rate = input(f"New hourly rate [${job['hourly_rate']}]: ").strip()
+        new_rate = input(f"New hourly rate [£{job['hourly_rate']}]: ").strip()
         if new_rate and new_rate.replace('.', '').isdigit():
             updates['hourly_rate'] = float(new_rate)
 
@@ -1157,7 +1157,7 @@ class StudentJobsCLI:
             print(f"Title: {app['job_title']}")
             print(f"Employer: {app['employer_name']}")
             print(f"Location: {app.get('location', 'N/A')}")
-            print(f"Rate: ${app.get('hourly_rate', 0):.2f}/hour")
+            print(f"Rate: £{app.get('hourly_rate', 0):.2f}/hour")
 
             print(f"\n--- Applicant Information ---")
             print(f"Student ID: {app['student_id']}")
@@ -1420,7 +1420,7 @@ class StudentJobsCLI:
             print(f"Student: {record['student_id']}")
             print(f"Date: {record['work_date']}")
             print(f"Hours: {record['total_hours']}")
-            print(f"Earnings: ${record['earnings']:.2f}")
+            print(f"Earnings: £{record['earnings']:.2f}")
 
         log_id = input("\nEnter Log ID to approve (or 'all' for all pending): ").strip()
 
@@ -1455,7 +1455,7 @@ class StudentJobsCLI:
         print(f"Employer: {job['employer_name']}")
         print(f"Category: {job['job_category']}")
         print(f"Type: {job['employment_type']}")
-        print(f"Rate: ${job['hourly_rate']:.2f}/hour")
+        print(f"Rate: £{job['hourly_rate']:.2f}/hour")
 
         if job.get('hours_per_week'):
             print(f"Hours/week: {job['hours_per_week']}")
@@ -1478,7 +1478,7 @@ class StudentJobsCLI:
         print(f"Employer: {job['employer_name']}")
         print(f"Category: {job['job_category']}")
         print(f"Type: {job['employment_type']}")
-        print(f"Rate: ${job['hourly_rate']:.2f}/hour")
+        print(f"Rate: £{job['hourly_rate']:.2f}/hour")
 
         if job.get('hours_per_week'):
             print(f"Hours per week: {job['hours_per_week']}")
@@ -1522,7 +1522,7 @@ class StudentJobsCLI:
         print(f"\n{'=' * 60}")
         print(f"Application ID: {app['application_id']}")
         print(f"Job: {app['job_title']} at {app['employer_name']}")
-        print(f"Rate: ${app['hourly_rate']:.2f}/hour")
+        print(f"Rate: £{app['hourly_rate']:.2f}/hour")
         print(f"Location: {app['location']}")
         print(f"Applied: {app['application_date']}")
         print(f"Status: {app['status'].upper()}")
@@ -1568,7 +1568,7 @@ class StudentJobsCLI:
         print(f"Employer: {job['employer_name']}")
         print(f"Location: {job['location']}")
         print(f"Status: {job['employment_status'].upper()}")
-        print(f"Rate: ${job['hourly_rate']:.2f}/hour")
+        print(f"Rate: £{job['hourly_rate']:.2f}/hour")
         print(f"Max hours/week: {job['max_hours_per_week']}")
         print(f"Start Date: {job['start_date']}")
 
@@ -1577,8 +1577,8 @@ class StudentJobsCLI:
 
         if job.get('is_work_study'):
             print(f"Work-Study: Yes")
-            print(f"Allocation: ${job['work_study_allocation']:.2f}")
-            print(f"Used: ${job['work_study_used']:.2f}")
+            print(f"Allocation: £{job['work_study_allocation']:.2f}")
+            print(f"Used: £{job['work_study_used']:.2f}")
 
         if job.get('performance_rating'):
             print(f"Performance Rating: {job['performance_rating']:.2f}/5")

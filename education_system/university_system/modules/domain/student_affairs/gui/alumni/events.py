@@ -151,7 +151,7 @@ class EventsMixin:
                         # Format the fee
                         formatted = list(event)
                         if formatted[4]:  # fee column
-                            formatted[4] = f"${formatted[4]:.2f}"
+                            formatted[4] = f"£{formatted[4]:.2f}"
                         else:
                             formatted[4] = "Free"
 
@@ -227,9 +227,9 @@ class EventsMixin:
 
                 # Sample events data
                 sample_events = [
-                    ('Annual Alumni Gala', '2025-09-15 18:00', 'Grand Ballroom', 'In-Person', '$75.00', '45/200', 'Open'),
+                    ('Annual Alumni Gala', '2025-09-15 18:00', 'Grand Ballroom', 'In-Person', '£75.00', '45/200', 'Open'),
                     ('Tech Industry Networking', '2025-08-25 19:00', 'Virtual', 'Virtual', 'Free', '23/100', 'Open'),
-                    ('Class of 2020 Reunion', '2025-10-10 15:00', 'Campus Center', 'In-Person', '$50.00', '67/150', 'Open'),
+                    ('Class of 2020 Reunion', '2025-10-10 15:00', 'Campus Center', 'In-Person', '£50.00', '67/150', 'Open'),
                     ('Career Workshop', '2025-08-30 14:00', 'Virtual', 'Virtual', 'Free', '12/50', 'Open')
                 ]
 

@@ -77,33 +77,43 @@ def join_selected_club(self):
             cursor.execute('SELECT club_id FROM student_clubs WHERE club_name = ? AND status = "active"', (club_name,))
             club = cursor.fetchone()
 
-            if club:
-                club_id = club[0]
-                # Get current user's student_id
-                cursor.execute('SELECT s.student_id FROM students s JOIN users u ON s.student_id = u.username WHERE u.id = ?', (self.current_user['id'],))
-                student = cursor.fetchone()
-
-                if student:
-                    student_id = student[0]
-                    # Insert membership
-                    cursor.execute('INSERT INTO club_members (club_id, student_id, join_date) VALUES (?, ?, ?)',
-                                   (club_id, student_id, datetime.now().strftime('%Y-%m-%d')))
-                    # Update member count
-                    cursor.execute('UPDATE student_clubs SET member_count = member_count + 1 WHERE club_id = ?', (club_id,))
-                    conn.commit()
-                    # Get user details for email
-                    cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (student_id,))
-                    user_result = cursor.fetchone()
-                    conn.close()  # Close connection before sending email
-                    # Send confirmation email
-                    if user_result:
-                        first_name, last_name, email = user_result
-                        if email:
-                            self.send_club_join_confirmation(club_name, email, f"{first_name} {last_name}")
-                    self.update_status(_t("student_union.clubs.join_requested", name=club_name))
-                    messagebox.showinfo(_t("common.success"), _t("student_union.clubs.join_success", name=club_name))
-                    # Show club integration buttons
-                    self.add_integration_buttons_to_club_view(club_name)
+            if not club:
+                messagebox.showerror(_t("common.error"), _t("student_union.clubs.join_failed", error=f"Club '{club_name}' not found"))
+                return
+            club_id = club[0]
+            # Get current user's student_id
+            cursor.execute('SELECT student_id FROM users WHERE id = ?', (self.current_user['id'],))
+            row = cursor.fetchone()
+            student_id = row[0] if row else None
+            if not student_id:
+                messagebox.showerror(_t("common.error"), _t("student_union.clubs.join_failed", error="Current user is not linked to a student record"))
+                return
+            # Prevent duplicate membership
+            cursor.execute('SELECT 1 FROM club_members WHERE club_id = ? AND student_id = ?', (club_id, student_id))
+            if cursor.fetchone():
+                messagebox.showinfo(_t("common.success"), f"You are already a member of '{club_name}'")
+                return
+            # Insert membership
+            cursor.execute('INSERT INTO club_members (club_id, student_id, join_date) VALUES (?, ?, ?)',
+                           (club_id, student_id, datetime.now().strftime('%Y-%m-%d')))
+            # Update member count
+            cursor.execute('UPDATE student_clubs SET member_count = COALESCE(member_count, 0) + 1 WHERE club_id = ?', (club_id,))
+            conn.commit()
+            # Get user details for email
+            cursor.execute('SELECT first_name, last_name, email_address FROM students WHERE student_id = ?', (student_id,))
+            user_result = cursor.fetchone()
+            conn.close()  # Close connection before sending email
+            # Send confirmation email
+            if user_result:
+                first_name, last_name, email = user_result
+                if email:
+                    self.send_club_join_confirmation(club_name, email, f"{first_name} {last_name}")
+            self.update_status(_t("student_union.clubs.join_requested", name=club_name))
+            messagebox.showinfo(_t("common.success"), _t("student_union.clubs.join_success", name=club_name))
+            # Show club integration buttons (defined on DatabaseQueryDialog;
+            # only available when invoked from that dialog flow).
+            if hasattr(self, 'add_integration_buttons_to_club_view'):
+                self.add_integration_buttons_to_club_view(club_name)
 
         except sqlite3.Error as e:
             messagebox.showerror(_t("common.error"), _t("student_union.clubs.join_failed", error=str(e)))

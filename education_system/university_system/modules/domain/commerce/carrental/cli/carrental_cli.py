@@ -458,7 +458,7 @@ class CarRentalCLI:
         for t in transactions:
             print(f"{t.get('transaction_id', ''):<6}"
                   f"{t.get('transaction_type', ''):<12}"
-                  f"${t.get('amount', 0):<10.2f}"
+                  f"£{t.get('amount', 0):<10.2f}"
                   f"{t.get('payment_method', ''):<12}"
                   f"{t.get('status', ''):<12}"
                   f"{t.get('created_at', '')}")
@@ -518,8 +518,8 @@ class CarRentalCLI:
         print("\n--- Revenue Report ---")
         print(f"Total Rentals: {revenue.get('total_rentals', 0)}")
         print(f"Completed Rentals: {revenue.get('completed_rentals', 0)}")
-        print(f"Total Revenue: ${(revenue.get('total_revenue') or 0):.2f}")
-        print(f"Average Rental Value: ${(revenue.get('avg_rental_value') or 0):.2f}")
+        print(f"Total Revenue: £{(revenue.get('total_revenue') or 0):.2f}")
+        print(f"Average Rental Value: £{(revenue.get('avg_rental_value') or 0):.2f}")
 
     def _popular_vehicles(self):
         """Show popular vehicles."""
@@ -533,7 +533,7 @@ class CarRentalCLI:
         print("-" * 55)
         for i, v in enumerate(vehicles, 1):
             print(f"{i:<4}{v['make']:<12}{v['model']:<12}{v['category']:<10}"
-                  f"{v['rental_count']:<10}${(v['total_revenue'] or 0):.2f}")
+                  f"{v['rental_count']:<10}£{(v['total_revenue'] or 0):.2f}")
 
     def _admin_report(self):
         """Generate admin report."""

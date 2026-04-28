@@ -49,7 +49,7 @@ def record_payment():
 
         for i, asn in enumerate(assignments, 1):
             print(f"{i}. {asn[2]} {asn[3]} ({asn[1]}) - Room {asn[4]} in {asn[5]}")
-            print(f"   Monthly Rent: ${asn[6]}")
+            print(f"   Monthly Rent: £{asn[6]}")
             print()
 
         while True:
@@ -69,7 +69,7 @@ def record_payment():
 
         # Get payment details
         print(f"\nRecording Payment for {student_name}")
-        print(f"Regular Monthly Rent: ${monthly_rent}")
+        print(f"Regular Monthly Rent: £{monthly_rent}")
 
         while True:
             try:
@@ -169,7 +169,7 @@ def record_payment():
         )
 
         print(f"\nPayment recorded successfully with ID: {payment_id}")
-        print(f"Amount: ${payment_amount} | Method: {payment_method}")
+        print(f"Amount: £{payment_amount} | Method: {payment_method}")
         print(f"Period: {period_start} to {period_end}")
         if finance_payment_id:
             print(f"Finance System Payment ID: {finance_payment_id}")
@@ -241,7 +241,7 @@ def view_payment_history():
             print("============================")
 
             for i, payment in enumerate(payments, 1):
-                print(f"{i}. ${payment[2]} - Paid on {payment[3]} via {payment[4]}")
+                print(f"{i}. £{payment[2]} - Paid on {payment[3]} via {payment[4]}")
                 print(f"   Room {payment[8]} in {payment[9]}")
                 print(f"   Period: {payment[5]} to {payment[6]} | Status: {payment[7]}")
                 print()
@@ -257,7 +257,7 @@ def view_payment_history():
 
             print("\nPayment Summary:")
             print(f"Total Payments: {total[1]}")
-            print(f"Total Amount Paid: ${total[0]}")
+            print(f"Total Amount Paid: £{total[0]}")
 
         else:
             # Admin/staff can view any payment history
@@ -308,7 +308,7 @@ def view_payment_history():
                 print("=" * 60)
 
                 for i, payment in enumerate(payments, 1):
-                    print(f"{i}. ${payment[2]} - Paid on {payment[3]} via {payment[4]}")
+                    print(f"{i}. £{payment[2]} - Paid on {payment[3]} via {payment[4]}")
                     print(f"   Room {payment[8]} in {payment[9]}")
                     print(f"   Period: {payment[5]} to {payment[6]} | Status: {payment[7]}")
                     print()
@@ -324,7 +324,7 @@ def view_payment_history():
 
                 print("\nPayment Summary:")
                 print(f"Total Payments: {total[1]}")
-                print(f"Total Amount Paid: ${total[0]}")
+                print(f"Total Amount Paid: £{total[0]}")
 
             elif filter_choice == '2':
                 # View by building
@@ -377,7 +377,7 @@ def view_payment_history():
                 print("=" * 60)
 
                 for i, payment in enumerate(payments, 1):
-                    print(f"{i}. {payment[2]} {payment[3]} ({payment[1]}) - ${payment[4]}")
+                    print(f"{i}. {payment[2]} {payment[3]} ({payment[1]}) - £{payment[4]}")
                     print(f"   Room: {payment[10]} | Paid on: {payment[5]} via {payment[6]}")
                     print(f"   Period: {payment[7]} to {payment[8]} | Status: {payment[9]}")
                     print()
@@ -395,7 +395,7 @@ def view_payment_history():
 
                 print("\nPayment Summary:")
                 print(f"Total Payments: {total[1]}")
-                print(f"Total Amount Paid: ${total[0]}")
+                print(f"Total Amount Paid: £{total[0]}")
 
             elif filter_choice == '3':
                 # View by date range
@@ -441,7 +441,7 @@ def view_payment_history():
                 print("=" * 60)
 
                 for i, payment in enumerate(payments, 1):
-                    print(f"{i}. {payment[2]} {payment[3]} ({payment[1]}) - ${payment[4]}")
+                    print(f"{i}. {payment[2]} {payment[3]} ({payment[1]}) - £{payment[4]}")
                     print(f"   Paid on: {payment[5]} via {payment[6]}")
                     print(f"   Room: {payment[7]} in {payment[8]} | Status: {payment[9]}")
                     print()
@@ -457,7 +457,7 @@ def view_payment_history():
 
                 print("\nPayment Summary:")
                 print(f"Total Payments: {total[1]}")
-                print(f"Total Amount Paid: ${total[0]}")
+                print(f"Total Amount Paid: £{total[0]}")
 
             elif filter_choice == '4':
                 # View recent payments (last 30 days)
@@ -488,7 +488,7 @@ def view_payment_history():
                 print("=" * 60)
 
                 for i, payment in enumerate(payments, 1):
-                    print(f"{i}. {payment[2]} {payment[3]} ({payment[1]}) - ${payment[4]}")
+                    print(f"{i}. {payment[2]} {payment[3]} ({payment[1]}) - £{payment[4]}")
                     print(f"   Paid on: {payment[5]} via {payment[6]}")
                     print(f"   Room: {payment[7]} in {payment[8]} | Status: {payment[9]}")
                     print()
@@ -504,7 +504,7 @@ def view_payment_history():
 
                 print("\nPayment Summary:")
                 print(f"Total Payments: {total[1]}")
-                print(f"Total Amount Paid: ${total[0]}")
+                print(f"Total Amount Paid: £{total[0]}")
 
             else:
                 print("Invalid choice.")

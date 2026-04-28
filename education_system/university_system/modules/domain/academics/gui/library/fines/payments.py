@@ -80,8 +80,8 @@ def process_fine_payment(self):
             if amount > total_fines:
                 response = messagebox.askyesno(
                     "Payment Exceeds Fines",
-                    f"Payment amount (${amount:.2f}) exceeds total fines (${total_fines:.2f}).\n\n"
-                    f"Do you want to process payment of ${total_fines:.2f} (full balance) instead?"
+                    f"Payment amount (£{amount:.2f}) exceeds total fines (£{total_fines:.2f}).\n\n"
+                    f"Do you want to process payment of £{total_fines:.2f} (full balance) instead?"
                 )
                 if response:
                     amount = total_fines
@@ -144,11 +144,11 @@ def process_fine_payment(self):
             # Log the action
             if ORIGINAL_LIBRARY_AVAILABLE:
                 log_audit_event(get_current_user_id(),
-                              f"GUI: Processed manual fine payment ${amount:.2f} for user {user_id}",
+                              f"GUI: Processed manual fine payment £{amount:.2f} for user {user_id}",
                               "book_loans", user_id)
 
             success_msg = (
-                f"Payment of ${amount:.2f} processed successfully!\n\n"
+                f"Payment of £{amount:.2f} processed successfully!\n\n"
                 f"Payment Method: Manual (Cash/Card at Desk)\n"
                 f"User ID: {user_id}\n"
                 f"Remaining balance will be shown in the refreshed list."
@@ -169,7 +169,7 @@ def process_fine_payment(self):
 
         else:
             # Demo mode
-            messagebox.showinfo(_("common.demo"), f"Demo: Payment of ${amount:.2f} processed for {user_id}")
+            messagebox.showinfo(_("common.demo"), f"Demo: Payment of £{amount:.2f} processed for {user_id}")
 
     except tk.TclError as e:
         messagebox.showerror(_("common.error"), f"Failed to process payment: {str(e)}")
@@ -456,7 +456,7 @@ def process_fine_payment_gui(self):
 
             for fine in fines:
                 fines_tree.insert('', 'end', values=(
-                    fine[0], fine[1][:40], fine[2], f"${fine[3]:.2f}", fine[4]
+                    fine[0], fine[1][:40], fine[2], f"£{fine[3]:.2f}", fine[4]
                 ))
 
             if not fines:
@@ -490,7 +490,7 @@ def process_fine_payment_gui(self):
         info_frame.pack(fill=tk.X)
 
         ttk.Label(info_frame, text=f"Loan ID: {loan_id}").pack(anchor=tk.W, pady=2)
-        ttk.Label(info_frame, text=f"Fine Amount: ${fine_amount:.2f}",
+        ttk.Label(info_frame, text=f"Fine Amount: £{fine_amount:.2f}",
                  font=('Arial', 11, 'bold')).pack(anchor=tk.W, pady=2)
 
         payment_method_var = tk.StringVar(value="cash")
@@ -603,7 +603,7 @@ def process_fine_payment_gui(self):
                 conn.close()
 
                 log_audit_event(get_current_user_id(),
-                              f"Processed fine payment: ${fine_amount:.2f} for loan {loan_id} via {payment_method}",
+                              f"Processed fine payment: £{fine_amount:.2f} for loan {loan_id} via {payment_method}",
                               "payments")
 
                 # Generate receipt
@@ -615,7 +615,7 @@ def process_fine_payment_gui(self):
                     messagebox.showinfo(_("common.success"),
                         f"Payment processed successfully!\n\nAmount: \u00a3{fine_amount:.2f}\nNew Balance: \u00a3{new_balance:.2f}")
                 else:
-                    messagebox.showinfo(_("common.success"), f"Payment processed successfully!\n\nAmount: ${fine_amount:.2f}")
+                    messagebox.showinfo(_("common.success"), f"Payment processed successfully!\n\nAmount: £{fine_amount:.2f}")
 
                 search_fines()  # Refresh list
 

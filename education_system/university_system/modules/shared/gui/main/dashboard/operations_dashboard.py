@@ -262,9 +262,9 @@ def _build_financial_aid(parent, data):
         totals_cards.columnconfigure(i, weight=1)
 
     _create_stat_card(totals_cards, "Total Awarded",
-                      f"${awarded:,.2f}" if isinstance(awarded, (int, float)) else "$0.00", 0, 0)
+                      f"£{awarded:,.2f}" if isinstance(awarded, (int, float)) else "£0.00", 0, 0)
     _create_stat_card(totals_cards, "Total Disbursed",
-                      f"${disbursed:,.2f}" if isinstance(disbursed, (int, float)) else "$0.00", 0, 1)
+                      f"£{disbursed:,.2f}" if isinstance(disbursed, (int, float)) else "£0.00", 0, 1)
 
     # Funnel visualization
     funnel_frame = ttk.LabelFrame(container, text="Application Pipeline", padding="15")

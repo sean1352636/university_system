@@ -167,8 +167,8 @@ class ClubFinancialReportsDialog:
             report += "-" * 80 + "\n"
             if budgets:
                 for budget in budgets:
-                    report += f"  {budget[1]}: ${budget[0]:,.2f}\n"
-                report += f"\nTotal Budget: ${total_budget:,.2f}\n\n"
+                    report += f"  {budget[1]}: £{budget[0]:,.2f}\n"
+                report += f"\nTotal Budget: £{total_budget:,.2f}\n\n"
             else:
                 report += "  No budget set for this club.\n\n"
 
@@ -187,8 +187,8 @@ class ClubFinancialReportsDialog:
             report += "-" * 80 + "\n"
             if expenses:
                 for expense in expenses:
-                    report += f"  {expense[1]}: ${expense[0]:,.2f}\n"
-                report += f"\nTotal Expenses: ${total_expenses:,.2f}\n\n"
+                    report += f"  {expense[1]}: £{expense[0]:,.2f}\n"
+                report += f"\nTotal Expenses: £{total_expenses:,.2f}\n\n"
             else:
                 report += "  No expenses recorded for this period.\n\n"
 
@@ -207,22 +207,22 @@ class ClubFinancialReportsDialog:
             report += "-" * 80 + "\n"
             if income:
                 for inc in income:
-                    report += f"  {inc[1]}: ${inc[0]:,.2f}\n"
-                report += f"\nTotal Income: ${total_income:,.2f}\n\n"
+                    report += f"  {inc[1]}: £{inc[0]:,.2f}\n"
+                report += f"\nTotal Income: £{total_income:,.2f}\n\n"
             else:
                 report += "  No income recorded for this period.\n\n"
 
             # Summary
             report += "FINANCIAL SUMMARY:\n"
             report += "=" * 80 + "\n"
-            report += f"Total Income:    ${total_income:,.2f}\n"
-            report += f"Total Expenses:  ${total_expenses:,.2f}\n"
-            report += f"Net Position:    ${(total_income - total_expenses):,.2f}\n"
+            report += f"Total Income:    £{total_income:,.2f}\n"
+            report += f"Total Expenses:  £{total_expenses:,.2f}\n"
+            report += f"Net Position:    £{(total_income - total_expenses):,.2f}\n"
 
             if total_budget > 0:
                 budget_used_pct = (total_expenses / total_budget) * 100
                 report += f"\nBudget Utilization: {budget_used_pct:.1f}%\n"
-                report += f"Remaining Budget: ${(total_budget - total_expenses):,.2f}\n"
+                report += f"Remaining Budget: £{(total_budget - total_expenses):,.2f}\n"
 
                 if budget_used_pct > 90:
                     report += "\n⚠️ WARNING: Budget utilization is high!\n"
@@ -244,7 +244,7 @@ class ClubFinancialReportsDialog:
             recent = cursor.fetchall()
             if recent:
                 for trans in recent:
-                    report += f"{trans[0][:10]:<12} {trans[1]:<15} {trans[2]:<30} ${trans[3]:>10,.2f}\n"
+                    report += f"{trans[0][:10]:<12} {trans[1]:<15} {trans[2]:<30} £{trans[3]:>10,.2f}\n"
             else:
                 report += "No recent transactions.\n"
 
@@ -398,10 +398,10 @@ class ClubBudgetDialog:
                     total_allocated += amount
                     total_spent += spent
 
-                    budget_display += f"{category:<20} ${amount:<14,.2f} ${spent:<14,.2f} ${remaining:<14,.2f} {status:<10}\n"
+                    budget_display += f"{category:<20} £{amount:<14,.2f} £{spent:<14,.2f} £{remaining:<14,.2f} {status:<10}\n"
 
                 budget_display += "-" * 80 + "\n"
-                budget_display += f"{'TOTAL':<20} ${total_allocated:<14,.2f} ${total_spent:<14,.2f} ${(total_allocated - total_spent):<14,.2f}\n\n"
+                budget_display += f"{'TOTAL':<20} £{total_allocated:<14,.2f} £{total_spent:<14,.2f} £{(total_allocated - total_spent):<14,.2f}\n\n"
 
                 # Calculate utilization percentage
                 if total_allocated > 0:
@@ -517,7 +517,7 @@ class ClubBudgetDialog:
         total_frame = ttk.Frame(frame)
         total_frame.pack(fill='x', pady=(10, 10))
         ttk.Label(total_frame, text="Total Budget:", font=('Arial', 10, 'bold')).pack(side='left', padx=(0, 10))
-        total_label = ttk.Label(total_frame, text="$0.00", font=('Arial', 10))
+        total_label = ttk.Label(total_frame, text="£0.00", font=('Arial', 10))
         total_label.pack(side='left')
 
         def calculate_total(*args):
@@ -528,7 +528,7 @@ class ClubBudgetDialog:
                     total += amount
                 except ValueError:
                     pass
-            total_label.config(text=f"${total:,.2f}")
+            total_label.config(text=f"£{total:,.2f}")
 
         # Bind calculation to all entries
         for entry in budget_entries.values():

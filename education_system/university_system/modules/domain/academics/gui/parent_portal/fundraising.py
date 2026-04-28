@@ -268,7 +268,7 @@ def show_donations_history(self):
                     dtype = donation[5] or 'general'
 
                     tree.insert('', tk.END, values=(
-                        f"${amount:.2f}",
+                        f"£{amount:.2f}",
                         date,
                         campaign,
                         payment,

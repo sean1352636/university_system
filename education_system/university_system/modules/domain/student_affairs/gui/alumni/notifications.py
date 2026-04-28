@@ -184,7 +184,7 @@ class NotificationsMixin:
             items_list = ""
             total_amount = 0
             for item in invoice_data.get('items', []):
-                items_list += f"- {item['description']}: ${item['amount']}\n"
+                items_list += f"- {item['description']}: £{item['amount']}\n"
                 total_amount += float(item['amount'])
 
             template_vars = {

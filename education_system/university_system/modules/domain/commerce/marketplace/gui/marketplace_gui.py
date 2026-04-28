@@ -302,7 +302,7 @@ class MarketplaceGUI:
             title = listing.get('title', 'No Title')
             category = listing.get('category', 'N/A')
             price = listing.get('price', 0)
-            price_str = f"${price:.2f}" if price else "FREE"
+            price_str = f"£{price:.2f}" if price else "FREE"
             condition = listing.get('condition_status', 'N/A')
             status = listing.get('status', 'Unknown')
             views = listing.get('view_count', 0)
@@ -408,7 +408,7 @@ class MarketplaceGUI:
         details = [
             ("Listing ID:", listing.get('listing_id')),
             ("Category:", listing.get('category')),
-            ("Price:", f"${listing.get('price', 0):.2f}" if listing.get('price') else "FREE"),
+            ("Price:", f"£{listing.get('price', 0):.2f}" if listing.get('price') else "FREE"),
             ("Condition:", listing.get('condition_status', 'N/A')),
             ("Location:", listing.get('location', 'Not specified')),
             ("Status:", listing.get('status')),

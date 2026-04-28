@@ -627,7 +627,7 @@ def process_fine_payment(fine_id: int = None, user_id: str = None,
         payment_amount = amount if amount else total_fines
 
         if payment_amount < total_fines and not fine_id:
-            result['message'] = f'Partial payment not allowed. Total fines: ${total_fines:.2f}'
+            result['message'] = f'Partial payment not allowed. Total fines: £{total_fines:.2f}'
             return result
 
         # Process payment
@@ -661,7 +661,7 @@ def process_fine_payment(fine_id: int = None, user_id: str = None,
         conn.close()
 
         result['success'] = True
-        result['message'] = f'Payment of ${payment_amount:.2f} processed successfully'
+        result['message'] = f'Payment of £{payment_amount:.2f} processed successfully'
         result['amount_paid'] = payment_amount
         result['receipt_id'] = receipt_id
 
@@ -720,7 +720,7 @@ def generate_fine_receipt(receipt_id: str = None, payment_info: Dict = None) -> 
                         f"Date: {date}",
                         f"User ID: {user_id}",
                         "-" * 50,
-                        f"Amount Paid: ${amount:.2f}",
+                        f"Amount Paid: £{amount:.2f}",
                         f"Payment Method: {method.title()}",
                         "-" * 50,
                         "",
@@ -733,7 +733,7 @@ def generate_fine_receipt(receipt_id: str = None, payment_info: Dict = None) -> 
                 f"Date: {payment_info.get('date', datetime.now().strftime('%Y-%m-%d %H:%M:%S'))}",
                 f"User ID: {payment_info.get('user_id', 'N/A')}",
                 "-" * 50,
-                f"Amount Paid: ${payment_info.get('amount', 0):.2f}",
+                f"Amount Paid: £{payment_info.get('amount', 0):.2f}",
                 f"Payment Method: {payment_info.get('method', 'N/A').title()}",
                 "-" * 50,
                 "",

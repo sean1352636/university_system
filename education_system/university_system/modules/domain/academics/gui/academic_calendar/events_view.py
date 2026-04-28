@@ -291,7 +291,7 @@ class EventsViewMixin:
                         'date_start': fee[1],
                         'date_end': fee[1],
                         'event_type': 'Payment',
-                        'description': f"Payment due: {fee_name} - ${fee[2]:.2f} ({fee[3]} {fee[4]})",
+                        'description': f"Payment due: {fee_name} - £{fee[2]:.2f} ({fee[3]} {fee[4]})",
                         'source': 'finance'
                     })
 
@@ -312,7 +312,7 @@ class EventsViewMixin:
                             'date_start': scholarship[1],
                             'date_end': scholarship[1],
                             'event_type': 'Finance',
-                            'description': f"Scholarship deadline: {scholarship[0]} - ${scholarship[2]:.2f}",
+                            'description': f"Scholarship deadline: {scholarship[0]} - £{scholarship[2]:.2f}",
                             'source': 'finance'
                         })
                 except Exception as e:
@@ -336,7 +336,7 @@ class EventsViewMixin:
                             'date_start': aid_type[1],
                             'date_end': aid_type[1],
                             'event_type': 'Finance',
-                            'description': f"Financial aid application deadline: {aid_type[0]} - Max ${aid_type[2]:.2f}",
+                            'description': f"Financial aid application deadline: {aid_type[0]} - Max £{aid_type[2]:.2f}",
                             'source': 'finance'
                         })
                 except Exception as e:
@@ -363,7 +363,7 @@ class EventsViewMixin:
                             'date_start': aid[2],
                             'date_end': aid[2],
                             'event_type': 'Finance',
-                            'description': f"{aid[1]} approved for {aid[4]} {aid[5]} - ${aid[3]:.2f} (Status: {aid[6]})",
+                            'description': f"{aid[1]} approved for {aid[4]} {aid[5]} - £{aid[3]:.2f} (Status: {aid[6]})",
                             'source': 'finance'
                         })
                 except Exception as e:

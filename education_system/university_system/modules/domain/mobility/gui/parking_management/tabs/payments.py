@@ -90,7 +90,7 @@ class PaymentsMixin:
                 values = (
                     payment[0],
                     payment[1],
-                    f"${float(payment[2]):.2f}",
+                    f"£{float(payment[2]):.2f}",
                     payment[3].replace('_', ' ').title(),
                     payment[4],
                     payment[5],
@@ -171,7 +171,7 @@ class PaymentsMixin:
 Violation ID: {payment[1]}
 License Plate: {payment[10]}
 Violation Type: {payment[11]}
-Amount: ${float(payment[2]):.2f}
+Amount: £{float(payment[2]):.2f}
 Payment Method: {payment[3].replace('_', ' ').title()}
 Payment Reference: {payment[4]}
 Payment Date: {payment[5]}
@@ -356,7 +356,7 @@ This confirms your parking fine payment has been processed successfully.
 
 Payment Details:
 - Violation ID: {violation_id}
-- Amount Paid: ${amount:.2f}
+- Amount Paid: £{amount:.2f}
 - Payment Method: {payment_method.replace('_', ' ').title()}
 - Payment Reference: {payment_ref}
 - Payment Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}
@@ -502,7 +502,7 @@ University Parking Management
                 cursor.execute("SELECT balance FROM student_finance_accounts WHERE student_id = ?", (student_id,))
                 balance_result = cursor.fetchone()
                 if balance_result:
-                    balance_text = f"\nYour new student account balance is: ${balance_result[0]:.2f}\n"
+                    balance_text = f"\nYour new student account balance is: £{balance_result[0]:.2f}\n"
 
             conn.close()
 
@@ -528,7 +528,7 @@ This confirms your parking fine refund has been processed successfully.
 
 Refund Details:
 - Violation ID: {violation_id}
-- Refund Amount: ${amount:.2f}
+- Refund Amount: £{amount:.2f}
 - Refund Method: {refund_method.replace('_', ' ').title()}
 - Refund Reference: {refund_ref}
 - Refund Date: {datetime.now().strftime('%Y-%m-%d %H:%M')}

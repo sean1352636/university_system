@@ -686,10 +686,10 @@ class ReportsMixin:
                 need_distribution = conn.execute("""
                     SELECT
                         CASE
-                            WHEN sfa.awarded_amount < 2000 THEN 'Low Need (< $2,000)'
-                            WHEN sfa.awarded_amount < 5000 THEN 'Moderate Need ($2,000-$5,000)'
-                            WHEN sfa.awarded_amount < 10000 THEN 'High Need ($5,000-$10,000)'
-                            ELSE 'Very High Need (> $10,000)'
+                            WHEN sfa.awarded_amount < 2000 THEN 'Low Need (< £2,000)'
+                            WHEN sfa.awarded_amount < 5000 THEN 'Moderate Need (£2,000-£5,000)'
+                            WHEN sfa.awarded_amount < 10000 THEN 'High Need (£5,000-£10,000)'
+                            ELSE 'Very High Need (> £10,000)'
                         END as need_category,
                         COUNT(DISTINCT sfa.student_id) as student_count,
                         SUM(sfa.awarded_amount) as total_awarded,

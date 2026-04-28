@@ -361,7 +361,7 @@ class FeedbackCLI:
             if impact['satisfaction_increase']:
                 print(f"Satisfaction Increase: {impact['satisfaction_increase']}%")
             if impact['cost_savings']:
-                print(f"Cost Savings: ${impact['cost_savings']:.2f}")
+                print(f"Cost Savings: £{impact['cost_savings']:.2f}")
             print(f"Description: {impact['description']}")
 
         # Vote option

@@ -388,7 +388,7 @@ class WorkflowTemplates:
         1. Department review
         2. Finance office review
         3. Budget committee approval
-        4. CFO approval (if > $50k)
+        4. CFO approval (if > £50k)
         5. Process budget allocation
         """
         def process_budget(context: Dict[str, Any]) -> Dict[str, Any]:

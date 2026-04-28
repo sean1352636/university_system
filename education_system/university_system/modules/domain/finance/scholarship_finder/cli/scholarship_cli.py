@@ -188,9 +188,9 @@ class ScholarshipFinderCLI:
         print(f"{'=' * 80}")
 
         for i, sch in enumerate(scholarships[:20], 1):  # Show first 20
-            award_range = f"${sch['award_amount_min']:,.0f}"
+            award_range = f"£{sch['award_amount_min']:,.0f}"
             if sch['award_amount_max']:
-                award_range += f" - ${sch['award_amount_max']:,.0f}"
+                award_range += f" - £{sch['award_amount_max']:,.0f}"
 
             print(f"\n{i}. [{sch['scholarship_id']}] {sch['scholarship_name']}")
             print(f"   Organization: {sch['organization']} ({sch['organization_type']})")
@@ -242,9 +242,9 @@ class ScholarshipFinderCLI:
         print(f"{'=' * 90}")
 
         for i, rec in enumerate(recommendations, 1):
-            award_range = f"${rec['award_amount_min']:,.0f}"
+            award_range = f"£{rec['award_amount_min']:,.0f}"
             if rec['award_amount_max']:
-                award_range += f" - ${rec['award_amount_max']:,.0f}"
+                award_range += f" - £{rec['award_amount_max']:,.0f}"
 
             # Match score bar
             score = rec['match_score']
@@ -376,7 +376,7 @@ class ScholarshipFinderCLI:
         print(f"  Study Abroad Interest: {'Yes' if profile['study_abroad_interest'] else 'No'}")
         print(f"  Research Interest: {'Yes' if profile['research_interest'] else 'No'}")
         print(f"  Preferred Scholarship Types: {profile['preferred_scholarship_types'] or 'No preference'}")
-        print(f"  Minimum Award Amount: ${profile['minimum_award_amount'] or 0:,.0f}")
+        print(f"  Minimum Award Amount: £{profile['minimum_award_amount'] or 0:,.0f}")
         print(f"  Willing to Write Essays: {'Yes' if profile['willing_to_write_essays'] else 'No'}")
         print(f"  Max Recommendation Letters: {profile['max_recommendation_letters']}")
 
@@ -932,9 +932,9 @@ class ScholarshipFinderCLI:
 
         print(f"\nOrganization: {scholarship['organization']} ({scholarship['organization_type']})")
 
-        award_range = f"${scholarship['award_amount_min']:,.0f}"
+        award_range = f"£{scholarship['award_amount_min']:,.0f}"
         if scholarship['award_amount_max']:
-            award_range += f" - ${scholarship['award_amount_max']:,.0f}"
+            award_range += f" - £{scholarship['award_amount_max']:,.0f}"
         print(f"Award Amount: {award_range} ({scholarship['award_type']})")
 
         print(f"\nDeadline: {scholarship['application_deadline']}")

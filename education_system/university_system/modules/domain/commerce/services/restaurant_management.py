@@ -218,7 +218,7 @@ def view_menu():
                 print("-" * 40)
 
             status = "Available" if item[5] else "Unavailable"
-            print(f"{item[0]:>3}. {item[1]:<20} ${item[3]:>6.2f} [{status}]")
+            print(f"{item[0]:>3}. {item[1]:<20} £{item[3]:>6.2f} [{status}]")
             if item[2]:
                 print(f"     {item[2]}")
 
@@ -339,7 +339,7 @@ def view_all_orders():
         print("-" * 70)
 
         for order in orders:
-            print(f"{order[0]:<5} {order[1]:<15} ${order[2]:<9.2f} {order[3]:<12} {order[4]:<19}")
+            print(f"{order[0]:<5} {order[1]:<15} £{order[2]:<9.2f} {order[3]:<12} {order[4]:<19}")
 
     except Exception as e:
         print(f"Error viewing orders: {e}")
@@ -368,7 +368,7 @@ def view_pending_orders():
         print(f"\n--- Pending Orders ({len(orders)} total) ---")
         for order in orders:
             print(f"\nOrder #{order[0]} - Customer: {order[1]}")
-            print(f"Amount: ${order[2]:.2f} - Ordered: {order[3]}")
+            print(f"Amount: £{order[2]:.2f} - Ordered: {order[3]}")
             if order[4]:
                 print(f"Special Instructions: {order[4]}")
 
@@ -432,9 +432,9 @@ def sales_reports(auth):
 
         print(f"\n--- Sales Summary ---")
         print(f"Today's Orders: {today_stats[0] or 0}")
-        print(f"Today's Revenue: ${today_stats[1] or 0:.2f}")
+        print(f"Today's Revenue: £{today_stats[1] or 0:.2f}")
         print(f"Weekly Orders: {week_stats[0] or 0}")
-        print(f"Weekly Revenue: ${week_stats[1] or 0:.2f}")
+        print(f"Weekly Revenue: £{week_stats[1] or 0:.2f}")
         print(f"Total Orders: {total_orders}")
 
     except Exception as e:
@@ -526,7 +526,7 @@ def view_order_details():
         print(f"\n--- Order #{order[0]} Details ---")
         print(f"Customer: {order[1]}")
         print(f"Items: {order[2]}")
-        print(f"Total Amount: ${order[3]:.2f}")
+        print(f"Total Amount: £{order[3]:.2f}")
         print(f"Status: {order[4]}")
         print(f"Order Date: {order[5]}")
         if order[6]:
@@ -567,11 +567,11 @@ def daily_order_summary():
         total_revenue = 0
 
         for status, count, amount in summary:
-            print(f"{status.capitalize()}: {count} orders, ${amount or 0:.2f}")
+            print(f"{status.capitalize()}: {count} orders, £{amount or 0:.2f}")
             total_orders += count
             total_revenue += amount or 0
 
-        print(f"\nTotal: {total_orders} orders, ${total_revenue:.2f}")
+        print(f"\nTotal: {total_orders} orders, £{total_revenue:.2f}")
 
     except Exception as e:
         print(f"Error generating daily summary: {e}")
@@ -597,7 +597,7 @@ def update_menu_item():
         print(f"\nCurrent item details:")
         print(f"Name: {item[1]}")
         print(f"Description: {item[2]}")
-        print(f"Price: ${item[3]:.2f}")
+        print(f"Price: £{item[3]:.2f}")
         print(f"Category: {item[4]}")
         print(f"Available: {'Yes' if item[5] else 'No'}")
 

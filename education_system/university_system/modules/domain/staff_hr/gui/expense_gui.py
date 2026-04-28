@@ -187,7 +187,7 @@ class ExpenseGUI:
         # Check category limit
         if category.get('max_amount') and amount > category['max_amount']:
             if not messagebox.askyesno("Warning",
-                f"Amount exceeds category limit of ${category['max_amount']:.2f}. Continue?"):
+                f"Amount exceeds category limit of £{category['max_amount']:.2f}. Continue?"):
                 return
 
         # Check receipt requirement
@@ -235,7 +235,7 @@ class ExpenseGUI:
                 c.get('claim_id'),
                 c.get('expense_date', ''),
                 c.get('category_name', ''),
-                f"${c.get('amount', 0):.2f}",
+                f"£{c.get('amount', 0):.2f}",
                 c.get('status', '').title()
             ))
 
@@ -267,7 +267,7 @@ class ExpenseGUI:
         for key, label in [('pending', 'Pending'), ('approved', 'Approved'), ('reimbursed', 'Reimbursed')]:
             frame = ttk.Frame(summary_frame)
             frame.pack(side=tk.LEFT, padx=20)
-            self.summary_labels[key] = ttk.Label(frame, text="$0.00", font=('Arial', 14, 'bold'))
+            self.summary_labels[key] = ttk.Label(frame, text="£0.00", font=('Arial', 14, 'bold'))
             self.summary_labels[key].pack()
             ttk.Label(frame, text=label).pack()
 
@@ -317,14 +317,14 @@ class ExpenseGUI:
                 c.get('claim_id'),
                 c.get('expense_date', ''),
                 c.get('category_name', ''),
-                f"${c.get('amount', 0):.2f}",
+                f"£{c.get('amount', 0):.2f}",
                 c.get('description', '')[:40],
                 c.get('status', '').title(),
                 c.get('submitted_date', '')
             ), tags=(claim_status,))
 
         for key, total in totals.items():
-            self.summary_labels[key].config(text=f"${total:.2f}")
+            self.summary_labels[key].config(text=f"£{total:.2f}")
 
     def _create_approvals_tab(self):
         """Create approvals tab (admin)."""
@@ -374,7 +374,7 @@ class ExpenseGUI:
                 c.get('user_id'),
                 c.get('expense_date', ''),
                 c.get('category_name', ''),
-                f"${c.get('amount', 0):.2f}",
+                f"£{c.get('amount', 0):.2f}",
                 c.get('description', '')[:40],
                 'Yes' if c.get('receipt_path') else 'No'
             ))
@@ -461,7 +461,7 @@ class ExpenseGUI:
                 c.get('category_id'),
                 c.get('name'),
                 c.get('description', '')[:40],
-                f"${c['max_amount']:.2f}" if c.get('max_amount') else 'No limit',
+                f"£{c['max_amount']:.2f}" if c.get('max_amount') else 'No limit',
                 'Yes' if c.get('requires_receipt') else 'No',
                 'Active' if c.get('is_active', True) else 'Inactive'
             ), tags=(tag,))
@@ -537,7 +537,7 @@ class ExpenseGUI:
         for key, label in [('total', 'Total Claims'), ('pending', 'Pending'), ('approved', 'Approved')]:
             frame = ttk.Frame(stats_frame)
             frame.pack(side=tk.LEFT, padx=30, pady=10)
-            self.expense_stats[key] = ttk.Label(frame, text="$0", font=('Arial', 18, 'bold'))
+            self.expense_stats[key] = ttk.Label(frame, text="£0", font=('Arial', 18, 'bold'))
             self.expense_stats[key].pack()
             ttk.Label(frame, text=label).pack()
 
@@ -560,9 +560,9 @@ class ExpenseGUI:
         """Load expense statistics."""
         stats = ExpenseManager.get_expense_statistics()
 
-        self.expense_stats['total'].config(text=f"${stats.get('total_amount', 0):.2f}")
-        self.expense_stats['pending'].config(text=f"${stats.get('pending_amount', 0):.2f}")
-        self.expense_stats['approved'].config(text=f"${stats.get('approved_amount', 0):.2f}")
+        self.expense_stats['total'].config(text=f"£{stats.get('total_amount', 0):.2f}")
+        self.expense_stats['pending'].config(text=f"£{stats.get('pending_amount', 0):.2f}")
+        self.expense_stats['approved'].config(text=f"£{stats.get('approved_amount', 0):.2f}")
 
         # By category
         for item in self.cat_stats_tree.get_children():
@@ -575,8 +575,8 @@ class ExpenseGUI:
             self.cat_stats_tree.insert('', tk.END, values=(
                 cat,
                 count,
-                f"${total:.2f}",
-                f"${avg:.2f}"
+                f"£{total:.2f}",
+                f"£{avg:.2f}"
             ))
 
 

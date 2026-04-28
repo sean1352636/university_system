@@ -205,7 +205,7 @@ class ReportGenerator:
                 paying_students = row[0] if row else 0
 
                 # Estimate revenue (would come from actual payments table)
-                estimated_revenue = paying_students * 5000  # $5000 per student avg
+                estimated_revenue = paying_students * 5000  # £5000 per student avg
 
                 return {
                     'total_revenue': estimated_revenue,

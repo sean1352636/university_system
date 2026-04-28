@@ -611,7 +611,7 @@ def generate_html_analytics_report(data):
                     <td>{row[1]}</td>
                     <td>{row[2]}</td>
                     <td>{row[3]}</td>
-                    <td>${row[4]:.2f if row[4] else 0}</td>
+                    <td>£{row[4]:.2f if row[4] else 0}</td>
                 </tr>
         """
 
@@ -641,7 +641,7 @@ def generate_html_analytics_report(data):
                     <td>{row[0]}</td>
                     <td>{row[1]}</td>
                     <td>{row[2]:.1f}%</td>
-                    <td>${row[3]:.2f}</td>
+                    <td>£{row[3]:.2f}</td>
                 </tr>
         """
 
@@ -851,7 +851,7 @@ def generate_enhanced_reports():
             report_content += "=" * 80 + "\n\n"
             report_content += "OVERALL STATISTICS:\n"
             report_content += f"Total Books: {overall_stats[0]:,}\n"
-            report_content += f"Total Value: ${overall_stats[1]:,.2f}\n" if overall_stats[1] else "Total Value: Not calculated\n"
+            report_content += f"Total Value: £{overall_stats[1]:,.2f}\n" if overall_stats[1] else "Total Value: Not calculated\n"
             report_content += f"Publication Range: {overall_stats[2]} - {overall_stats[3]}\n\n"
 
             report_content += "CATEGORY BREAKDOWN:\n"
@@ -860,7 +860,7 @@ def generate_enhanced_reports():
 
             for row in collection_data:
                 category, total, available, checked_out, avg_cost, authors = row
-                avg_cost_str = f"${avg_cost:.2f}" if avg_cost else "N/A"
+                avg_cost_str = f"£{avg_cost:.2f}" if avg_cost else "N/A"
                 report_content += f"{category[:19]:<20} {total:<8} {available:<8} {checked_out:<8} {avg_cost_str:<10} {authors:<8}\n"
 
             filename = f"collection_analysis_{timestamp}.txt"
@@ -898,7 +898,7 @@ def generate_enhanced_reports():
 
             for row in user_data:
                 user_id, loans, returned, overdue, fines, progress = row
-                fines_str = f"${fines:.2f}" if fines else "$0.00"
+                fines_str = f"£{fines:.2f}" if fines else "£0.00"
                 progress_str = f"{progress:.1f}%" if progress else "N/A"
                 report_content += f"{user_id:<15} {loans:<8} {returned:<10} {overdue:<8} {fines_str:<10} {progress_str:<12}\n"
 
@@ -933,13 +933,13 @@ def generate_enhanced_reports():
             for row in overdue_data:
                 user_id, book_id, title, due_date, days_overdue, fine = row
                 title_display = title[:24] if len(title) > 25 else title
-                fine_str = f"${fine:.2f}" if fine else "$0.00"
+                fine_str = f"£{fine:.2f}" if fine else "£0.00"
                 total_fines += fine if fine else 0
 
                 report_content += f"{user_id:<15} {book_id:<10} {title_display:<25} {due_date[:10]:<12} {int(days_overdue):<6} {fine_str:<8}\n"
 
             report_content += "-" * 80 + "\n"
-            report_content += f"Total Outstanding Fines: ${total_fines:.2f}\n"
+            report_content += f"Total Outstanding Fines: £{total_fines:.2f}\n"
 
             filename = f"overdue_report_{timestamp}.txt"
 
@@ -1119,7 +1119,7 @@ def library_statistics_dashboard():
         print(f"Total Books: {total_books:,}")
         print(f"Unique Authors: {unique_authors:,}")
         print(f"Categories: {unique_categories}")
-        print(f"Collection Value: ${total_value:,.2f}")
+        print(f"Collection Value: £{total_value:,.2f}")
 
         # Circulation Statistics
         cursor.execute('SELECT COUNT(*) FROM book_loans WHERE status IN ("active", "overdue")')

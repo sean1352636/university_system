@@ -508,7 +508,7 @@ class LostFoundCLI:
                 print(f"Brand: {item['brand']}")
 
             if item_type == 'lost' and item.get('estimated_value'):
-                print(f"Estimated Value: ${item['estimated_value']:.2f}")
+                print(f"Estimated Value: £{item['estimated_value']:.2f}")
 
             if item_type == 'found':
                 if item.get('current_location'):

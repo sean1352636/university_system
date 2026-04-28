@@ -1620,7 +1620,7 @@ Description: {wo['description']}"""
                     }.get(row['building_type'], 1.0)
 
                     estimated_kwh = hours * row['total_capacity'] * 0.05 * energy_factor if hours > 0 else 0
-                    estimated_cost = estimated_kwh * 0.12  # $0.12 per kWh estimate
+                    estimated_cost = estimated_kwh * 0.12  # £0.12 per kWh estimate
 
                     report += f"\n{row['building_name']} ({row['building_type']}):\n"
                     report += f"  Floors: {row['total_floors'] or 0}\n"
@@ -1629,14 +1629,14 @@ Description: {wo['description']}"""
                     report += f"  Bookings (30 days): {row['total_bookings'] or 0}\n"
                     report += f"  Hours Utilized: {hours:.1f}\n"
                     report += f"  Est. Energy: {estimated_kwh:.1f} kWh\n"
-                    report += f"  Est. Cost: ${estimated_cost:.2f}\n"
+                    report += f"  Est. Cost: £{estimated_cost:.2f}\n"
 
                 total_estimated_kwh = total_hours * 10  # Simplified total estimate
                 total_estimated_cost = total_estimated_kwh * 0.12
 
                 report += "\n" + "="*70 + "\n"
                 report += f"TOTAL ESTIMATED ENERGY (30 days): {total_estimated_kwh:.1f} kWh\n"
-                report += f"TOTAL ESTIMATED COST: ${total_estimated_cost:.2f}\n\n"
+                report += f"TOTAL ESTIMATED COST: £{total_estimated_cost:.2f}\n\n"
 
                 report += "\nRECOMMENDATIONS:\n"
                 report += "• Install smart meters for accurate energy monitoring\n"

@@ -458,9 +458,9 @@ def show_meal_interface(self):
 
                     balance_val = float(meal_data[0]) if meal_data[0] else 0.0
                     balance_color = 'green' if balance_val > 0 else 'red'
-                    ttk.Label(balance_frame, text=f"Current Balance: ${balance_val:.2f}",
+                    ttk.Label(balance_frame, text=f"Current Balance: £{balance_val:.2f}",
                              font=('Arial', 14, 'bold'), foreground=balance_color).pack(anchor='w', pady=5)
-                    ttk.Label(balance_frame, text=f"Low Balance Alert: ${float(meal_data[1] or 10.0):.2f}",
+                    ttk.Label(balance_frame, text=f"Low Balance Alert: £{float(meal_data[1] or 10.0):.2f}",
                              font=('Arial', 10)).pack(anchor='w', pady=3)
                     ttk.Label(balance_frame, text=f"Last Updated: {meal_data[4] or 'N/A'}",
                              font=('Arial', 10)).pack(anchor='w', pady=3)
@@ -472,7 +472,7 @@ def show_meal_interface(self):
 
                         ttk.Label(topup_frame, text="Auto Top-Up: Enabled",
                                  font=('Arial', 10), foreground='green').pack(anchor='w', pady=3)
-                        ttk.Label(topup_frame, text=f"Top-Up Amount: ${float(meal_data[3] or 20.0):.2f}",
+                        ttk.Label(topup_frame, text=f"Top-Up Amount: £{float(meal_data[3] or 20.0):.2f}",
                                  font=('Arial', 10)).pack(anchor='w', pady=3)
 
                     # Recent transactions
@@ -568,12 +568,12 @@ def add_meal_funds(self, student_id):
         cursor.execute("""
         INSERT INTO transactions (source_type, student_id, amount, description, transaction_type)
         VALUES ('meal', ?, ?, ?, ?)
-        """, (student_id, amount, f"Funds added: ${amount:.2f}", "Credit"))
+        """, (student_id, amount, f"Funds added: £{amount:.2f}", "Credit"))
 
         conn.commit()
         conn.close()
 
-        messagebox.showinfo("Success", f"${amount:.2f} has been added to the meal account!")
+        messagebox.showinfo("Success", f"£{amount:.2f} has been added to the meal account!")
 
     except Exception as e:
         messagebox.showerror("Error", f"Failed to add funds: {str(e)}")

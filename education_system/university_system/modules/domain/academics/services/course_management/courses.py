@@ -304,7 +304,7 @@ def view_course_details(cursor, course_id):
     print(f"Status: {course[16]}")
     print(f"Lab Required: {'Yes' if course[12] else 'No'}")
     print(f"Online Available: {'Yes' if course[13] else 'No'}")
-    print(f"Course Fee: ${course[11]}")
+    print(f"Course Fee: £{course[11]}")
     print(f"Tags: {course[17] or 'None'}")
     print(f"Availability: {course[18]}")
 

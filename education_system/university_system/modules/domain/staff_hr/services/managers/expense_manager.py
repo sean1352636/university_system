@@ -750,7 +750,7 @@ class ExpenseManager:
                         'user_id': row['user_id'],
                         'claim_id': row['claim_id'],
                         'violation_type': 'Over single claim limit',
-                        'details': f"Claim ${row['amount']:.2f} exceeds limit of ${policy['max_single_claim']:.2f}"
+                        'details': f"Claim £{row['amount']:.2f} exceeds limit of £{policy['max_single_claim']:.2f}"
                     })
 
             # Check for high frequency claims
@@ -766,7 +766,7 @@ class ExpenseManager:
                 violations.append({
                     'user_id': row['user_id'],
                     'violation_type': 'High frequency/volume',
-                    'details': f"{row['claim_count']} claims totaling ${row['total']:.2f} in 30 days"
+                    'details': f"{row['claim_count']} claims totaling £{row['total']:.2f} in 30 days"
                 })
 
         return violations

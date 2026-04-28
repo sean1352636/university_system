@@ -324,7 +324,7 @@ class DashboardMixin:
                 response += f"  {title}\n"
                 response += f"    Author: {author or 'N/A'}  |  Due: {due or 'N/A'}  |  Status: {status}\n"
                 if fine and float(fine) > 0:
-                    response += f"    Fine: ${float(fine):.2f}\n"
+                    response += f"    Fine: £{float(fine):.2f}\n"
                 response += "\n"
 
             self.add_chat_message("Chatbot", response, "bot")

@@ -42,7 +42,7 @@ class RefundDialog:
         details = [
             ("Payment ID:", self.payment_data[0]),
             ("Violation ID:", self.payment_data[1]),
-            ("Amount:", f"${float(self.payment_data[2]):.2f}"),
+            ("Amount:", f"£{float(self.payment_data[2]):.2f}"),
             ("Payment Method:", self.payment_data[3].replace('_', ' ').title()),
             ("Payment Reference:", self.payment_data[4]),
             ("Payment Date:", self.payment_data[5])
@@ -73,9 +73,9 @@ class RefundDialog:
                     balance_frame = ttk.Frame(method_frame)
                     balance_frame.pack(fill=tk.X, pady=(0, 10))
 
-                    ttk.Label(balance_frame, text=f"Current Student Account Balance: ${current_balance:.2f}",
+                    ttk.Label(balance_frame, text=f"Current Student Account Balance: £{current_balance:.2f}",
                              foreground='blue', font=('Arial', 10)).pack()
-                    ttk.Label(balance_frame, text=f"New Balance After Refund: ${new_balance:.2f}",
+                    ttk.Label(balance_frame, text=f"New Balance After Refund: £{new_balance:.2f}",
                              foreground='green', font=('Arial', 10)).pack()
             except Exception as e:
                 logging.warning(f"Could not get student balance: {e}")
@@ -113,7 +113,7 @@ class RefundDialog:
         self.refund_method = method
 
         if not messagebox.askyesno("Confirm Refund",
-                                   f"Process refund of ${float(self.payment_data[2]):.2f} via {method.replace('_', ' ').title()}?"):
+                                   f"Process refund of £{float(self.payment_data[2]):.2f} via {method.replace('_', ' ').title()}?"):
             return
 
         self.result = {

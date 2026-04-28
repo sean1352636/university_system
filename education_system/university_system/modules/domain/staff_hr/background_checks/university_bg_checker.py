@@ -635,7 +635,7 @@ class BGCheckerApp(tk.Tk):
         ttk.Label(self, textvariable=self.status_var, relief=tk.SUNKEN, anchor="w").pack(fill=tk.X, side=tk.BOTTOM)
 
     def _apply_theme(self):
-        bg = "#222" if self.dark_mode else "SystemButtonFace"
+        bg = "#222" if self.dark_mode else "#f0f0f0"
         fg = "#eee" if self.dark_mode else "black"
         try:
             self.configure(bg=bg)

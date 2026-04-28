@@ -87,7 +87,7 @@ class PackagesMixin:
         row += 1
         ttk.Label(form_frame, text=get_text("financial_aid.admin_portal.labels.total_package", "Total Package:"), font=('Arial', 10, 'bold')).grid(
             row=row, column=0, sticky='w', pady=(20, 5))
-        total_label = ttk.Label(form_frame, text="$0.00", font=('Arial', 12, 'bold'), foreground='green')
+        total_label = ttk.Label(form_frame, text="£0.00", font=('Arial', 12, 'bold'), foreground='green')
         total_label.grid(row=row, column=1, sticky='w', padx=10)
 
         def update_total(*args):

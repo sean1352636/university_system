@@ -273,8 +273,8 @@ def _notify_datetime_change(recipients: list, module_info: dict, old_data: dict,
 
                 # Replace variables
                 for key, value in variables.items():
-                    subject = subject.replace(f'${key}', str(value))
-                    body = body.replace(f'${key}', str(value))
+                    subject = subject.replace(f'£{key}', str(value))
+                    body = body.replace(f'£{key}', str(value))
             else:
                 subject = f"Schedule Change - {module_info['module_code']}: Date/Time Updated"
                 body = f"Dear {recipient['name']},\n\nThe schedule for {module_info['module_code']} has changed.\n\nOld: {old_data.get('day_of_week')} at {old_data.get('start_time')}\nNew: {new_data.get('day_of_week')} at {new_data.get('start_time')}"
@@ -322,8 +322,8 @@ def _notify_instructor_change(recipients: list, module_info: dict, old_data: dic
                 body = template.get('body', 'An instructor change has occurred.')
 
                 for key, value in variables.items():
-                    subject = subject.replace(f'${key}', str(value))
-                    body = body.replace(f'${key}', str(value))
+                    subject = subject.replace(f'£{key}', str(value))
+                    body = body.replace(f'£{key}', str(value))
             else:
                 subject = f"Schedule Change - {module_info['module_code']}: Instructor Updated"
                 body = f"Dear {recipient['name']},\n\nThe instructor for {module_info['module_code']} has changed.\n\nOld: {old_instructor['name']}\nNew: {new_instructor['name']}"
@@ -367,8 +367,8 @@ def _notify_room_change(recipients: list, module_info: dict, old_data: dict, new
                 body = template.get('body', 'A room change has occurred.')
 
                 for key, value in variables.items():
-                    subject = subject.replace(f'${key}', str(value))
-                    body = body.replace(f'${key}', str(value))
+                    subject = subject.replace(f'£{key}', str(value))
+                    body = body.replace(f'£{key}', str(value))
             else:
                 subject = f"Schedule Change - {module_info['module_code']}: Room Updated"
                 body = f"Dear {recipient['name']},\n\nThe room for {module_info['module_code']} has changed.\n\nOld: {old_room}\nNew: {new_room}"
@@ -429,8 +429,8 @@ def _notify_new_instructor_assignment(instructor_id: int, module_info: dict, sch
             body = template.get('body', 'You have been assigned to teach a module.')
 
             for key, value in variables.items():
-                subject = subject.replace(f'${key}', str(value))
-                body = body.replace(f'${key}', str(value))
+                subject = subject.replace(f'£{key}', str(value))
+                body = body.replace(f'£{key}', str(value))
         else:
             subject = f"New Module Assignment - {module_info['module_code']}"
             body = f"Dear {instructor_info['name']},\n\nYou have been assigned to teach {module_info['module_code']} on {schedule_data.get('day_of_week')} at {schedule_data.get('start_time')}."

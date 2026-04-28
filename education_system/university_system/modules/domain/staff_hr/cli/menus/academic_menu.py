@@ -293,7 +293,7 @@ def _view_grants(user_id: str) -> None:
             status = g.get('status', 'active').upper()
             print(f"\n  [{status}] {g.get('title', 'N/A')}")
             print(f"    Funder: {g.get('funding_body', 'N/A')}")
-            print(f"    Amount: ${g.get('amount', 0):,.2f}")
+            print(f"    Amount: £{g.get('amount', 0):,.2f}")
             print(f"    Period: {g.get('start_date', 'N/A')} to {g.get('end_date', 'N/A')}")
             print(f"    Role: {g.get('role', 'PI')}")
     else:

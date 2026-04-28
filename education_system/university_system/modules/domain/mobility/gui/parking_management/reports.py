@@ -154,9 +154,9 @@ class ReportsMixin:
             output.append(f"  - Paid: {summary[1] or 0}")
             output.append(f"  - Unpaid: {summary[2] or 0}")
             output.append(f"  - Pending: {summary[3] or 0}")
-            output.append(f"Total Fines: ${summary[4] or 0:.2f}")
-            output.append(f"  - Collected: ${summary[5] or 0:.2f}")
-            output.append(f"  - Outstanding: ${summary[6] or 0:.2f}")
+            output.append(f"Total Fines: £{summary[4] or 0:.2f}")
+            output.append(f"  - Collected: £{summary[5] or 0:.2f}")
+            output.append(f"  - Outstanding: £{summary[6] or 0:.2f}")
 
             output.append("\n")
 
@@ -177,7 +177,7 @@ class ReportsMixin:
                 output.append(f"{'Type':<30} {'Count':<10} {'Total Fines':<15} {'Unpaid':<10}")
                 output.append("-" * 65)
                 for stat in type_stats:
-                    output.append(f"{stat[0]:<30} {stat[1]:<10} ${stat[2]:<14.2f} {stat[3]:<10}")
+                    output.append(f"{stat[0]:<30} {stat[1]:<10} £{stat[2]:<14.2f} {stat[3]:<10}")
             else:
                 output.append("No violation data available.")
 
@@ -200,7 +200,7 @@ class ReportsMixin:
                 output.append(f"{'ID':<12} {'Plate':<10} {'Type':<25} {'Date':<12} {'Fine':<10} {'Status':<10}")
                 output.append("-" * 80)
                 for violation in recent:
-                    output.append(f"{violation[0]:<12} {violation[1]:<10} {violation[2]:<25} {violation[3]:<12} ${violation[4]:<9.2f} {violation[5]:<10}")
+                    output.append(f"{violation[0]:<12} {violation[1]:<10} {violation[2]:<25} {violation[3]:<12} £{violation[4]:<9.2f} {violation[5]:<10}")
                 output.append(f"\nTotal Recent Violations: {len(recent)}")
             else:
                 output.append("No recent violations found.")
@@ -226,7 +226,7 @@ class ReportsMixin:
                 output.append(f"{'License Plate':<15} {'Violations':<12} {'Total Fines':<15} {'Outstanding':<15}")
                 output.append("-" * 57)
                 for violator in top_violators:
-                    output.append(f"{violator[0]:<15} {violator[1]:<12} ${violator[2]:<14.2f} ${violator[3]:<14.2f}")
+                    output.append(f"{violator[0]:<15} {violator[1]:<12} £{violator[2]:<14.2f} £{violator[3]:<14.2f}")
             else:
                 output.append("No repeat violators found.")
 
@@ -278,7 +278,7 @@ class ReportsMixin:
             output.append(f"Total Permits (All Time): {total_permits}")
             output.append(f"Registered Vehicles: {total_vehicles}")
             output.append(f"Unpaid Violations: {unpaid_violations}")
-            output.append(f"Unpaid Fines: ${unpaid_fines:.2f}")
+            output.append(f"Unpaid Fines: £{unpaid_fines:.2f}")
             output.append(f"Total Parking Spaces: {total_spaces}")
             output.append(f"Available Spaces: {available_spaces}")
             output.append(f"Occupied Spaces: {total_spaces - available_spaces}")
@@ -305,7 +305,7 @@ class ReportsMixin:
                 output.append(f"{'Month':<10} {'Violations':<15} {'Fines':<15}")
                 output.append("-" * 40)
                 for month in monthly:
-                    output.append(f"{month[0]:<10} {month[1]:<15} ${month[2]:<14.2f}")
+                    output.append(f"{month[0]:<10} {month[1]:<15} £{month[2]:<14.2f}")
             else:
                 output.append("No monthly data available.")
 
@@ -345,9 +345,9 @@ class ReportsMixin:
             ''')
             revenue = cursor.fetchone()
 
-            output.append(f"Total Fines Issued: ${revenue[0] or 0:.2f}")
-            output.append(f"Fines Collected: ${revenue[1] or 0:.2f}")
-            output.append(f"Outstanding Fines: ${revenue[2] or 0:.2f}")
+            output.append(f"Total Fines Issued: £{revenue[0] or 0:.2f}")
+            output.append(f"Fines Collected: £{revenue[1] or 0:.2f}")
+            output.append(f"Outstanding Fines: £{revenue[2] or 0:.2f}")
             output.append(f"Collection Rate: {((revenue[1] or 0) / (revenue[0] or 1) * 100) if (revenue[0] or 0) > 0 else 0:.1f}%")
 
             conn.close()
@@ -560,10 +560,10 @@ class ReportsMixin:
             ''')
             overall = cursor.fetchone()
 
-            output.append(f"Total Fines Issued: ${overall[0] or 0:.2f}")
-            output.append(f"  - Collected: ${overall[1] or 0:.2f}")
-            output.append(f"  - Outstanding: ${overall[2] or 0:.2f}")
-            output.append(f"  - Pending: ${overall[3] or 0:.2f}")
+            output.append(f"Total Fines Issued: £{overall[0] or 0:.2f}")
+            output.append(f"  - Collected: £{overall[1] or 0:.2f}")
+            output.append(f"  - Outstanding: £{overall[2] or 0:.2f}")
+            output.append(f"  - Pending: £{overall[3] or 0:.2f}")
             output.append(f"Total Violations: {overall[4]}")
             if overall[0] and overall[0] > 0:
                 output.append(f"Collection Rate: {(overall[1] / overall[0] * 100):.1f}%")
@@ -591,7 +591,7 @@ class ReportsMixin:
                 output.append(f"{'Month':<10} {'Violations':<12} {'Fines':<15} {'Collected':<15} {'Outstanding':<15}")
                 output.append("-" * 67)
                 for month in monthly:
-                    output.append(f"{month[0]:<10} {month[1]:<12} ${month[2]:<14.2f} ${month[3]:<14.2f} ${month[4]:<14.2f}")
+                    output.append(f"{month[0]:<10} {month[1]:<12} £{month[2]:<14.2f} £{month[3]:<14.2f} £{month[4]:<14.2f}")
             else:
                 output.append("No monthly revenue data available.")
 
@@ -617,7 +617,7 @@ class ReportsMixin:
                 output.append(f"{'Type':<30} {'Count':<8} {'Total':<15} {'Collected':<15} {'Avg Fine':<12}")
                 output.append("-" * 80)
                 for vtype in by_type:
-                    output.append(f"{vtype[0]:<30} {vtype[1]:<8} ${vtype[2]:<14.2f} ${vtype[3]:<14.2f} ${vtype[4]:<11.2f}")
+                    output.append(f"{vtype[0]:<30} {vtype[1]:<8} £{vtype[2]:<14.2f} £{vtype[3]:<14.2f} £{vtype[4]:<11.2f}")
             else:
                 output.append("No violation type data available.")
 
@@ -651,10 +651,10 @@ class ReportsMixin:
                         est_revenue = count * 200
 
                     total_permit_revenue += est_revenue
-                    output.append(f"{zone:<8} {ptype:<15} {count:<10} ${est_revenue:<14.2f}")
+                    output.append(f"{zone:<8} {ptype:<15} {count:<10} £{est_revenue:<14.2f}")
 
                 output.append("-" * 48)
-                output.append(f"{'TOTAL PERMIT REVENUE':<33} ${total_permit_revenue:<14.2f}")
+                output.append(f"{'TOTAL PERMIT REVENUE':<33} £{total_permit_revenue:<14.2f}")
             else:
                 output.append("No permit revenue data available.")
 
@@ -740,7 +740,7 @@ class ReportsMixin:
                 output.append(f"{'License Plate':<15} {'Violations':<12} {'Total Fines':<15} {'Unpaid':<15} {'Last Violation':<15}")
                 output.append("-" * 72)
                 for violator in violators:
-                    output.append(f"{violator[0]:<15} {violator[1]:<12} ${violator[2]:<14.2f} ${violator[3]:<14.2f} {violator[4]:<15}")
+                    output.append(f"{violator[0]:<15} {violator[1]:<12} £{violator[2]:<14.2f} £{violator[3]:<14.2f} {violator[4]:<15}")
             else:
                 output.append("No violation activity found.")
 

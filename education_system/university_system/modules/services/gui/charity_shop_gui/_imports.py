@@ -126,7 +126,7 @@ def render_email_template(template: dict, variables: dict) -> tuple:
 
     # Replace variables (using $variable_name format)
     for key, value in variables.items():
-        subject = subject.replace(f'${key}', str(value))
-        body = body.replace(f'${key}', str(value))
+        subject = subject.replace(f'£{key}', str(value))
+        body = body.replace(f'£{key}', str(value))
 
     return subject, body

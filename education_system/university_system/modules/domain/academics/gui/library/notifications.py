@@ -124,7 +124,7 @@ def _send_library_payment_confirmation_email(self, student_id, student_name, ema
         subject, message = render_template('library_fine_payment', {
             'student_name': student_name,
             'student_id': student_id,
-            'amount': f'${amount:.2f}',
+            'amount': f'£{amount:.2f}',
             'payment_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         })
 

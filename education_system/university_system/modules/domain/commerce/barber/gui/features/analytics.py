@@ -65,12 +65,12 @@ class AnalyticsMixin:
             report += f"  Completed: {stats['today']['completed'] or 0}\n"
             report += f"  Scheduled: {stats['today']['scheduled'] or 0}\n"
             report += f"  No-Shows: {stats['today']['no_shows'] or 0}\n"
-            report += f"  Revenue: ${(stats['today']['revenue'] or 0):.2f}\n"
-            report += f"  Tips: ${(stats['today']['tips'] or 0):.2f}\n\n"
+            report += f"  Revenue: £{(stats['today']['revenue'] or 0):.2f}\n"
+            report += f"  Tips: £{(stats['today']['tips'] or 0):.2f}\n\n"
             report += f"ACTIVE STAFF: {stats['active_staff'] or 0}\n\n"
             report += "THIS MONTH:\n"
             report += f"  Appointments: {stats['monthly']['appointments'] or 0}\n"
-            report += f"  Revenue: ${(stats['monthly']['revenue'] or 0):.2f}\n"
+            report += f"  Revenue: £{(stats['monthly']['revenue'] or 0):.2f}\n"
 
             self.dashboard_text.insert('1.0', report)
         except Exception as e:

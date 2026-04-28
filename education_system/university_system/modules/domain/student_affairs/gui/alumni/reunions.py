@@ -349,7 +349,7 @@ class ReunionsMixin:
     Date: October 10, 2025
     Location: Campus Alumni Center
     Organizer: Emily Davis
-    Registration Fee: $50.00
+    Registration Fee: £50.00
     Expected Attendees: 150
     Registration Deadline: September 25, 2025
     Status: Registration Open
@@ -365,7 +365,7 @@ class ReunionsMixin:
     Date: November 15, 2025
     Location: Grand Hotel Downtown
     Organizer: Sarah Johnson
-    Registration Fee: $75.00
+    Registration Fee: £75.00
     Expected Attendees: 200
     Registration Deadline: October 30, 2025
     Status: Planning Phase

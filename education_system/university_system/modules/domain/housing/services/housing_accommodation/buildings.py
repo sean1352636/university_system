@@ -366,7 +366,7 @@ def view_building():
             print("-" * 80)
 
             for room in rooms:
-                print(f"{room[1]:<8} {room[2]:<8} {room[3]:<10} {room[4]:<10} {room[5]:<10} {get_text('housing.common.yes') if room[6] else get_text('housing.common.no'):<12} {room[7]:<12} ${room[8]:<7.2f}")
+                print(f"{room[1]:<8} {room[2]:<8} {room[3]:<10} {room[4]:<10} {room[5]:<10} {get_text('housing.common.yes') if room[6] else get_text('housing.common.no'):<12} {room[7]:<12} £{room[8]:<7.2f}")
 
         conn.close()
 

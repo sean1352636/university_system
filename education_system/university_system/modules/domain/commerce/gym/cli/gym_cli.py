@@ -131,7 +131,7 @@ def _create_membership():
 
     print("Membership types:")
     for key, info in MEMBERSHIP_TYPES.items():
-        print(f"  {key}: {info['name']} - ${info['monthly_fee']:.2f}/month ({', '.join(info['features'])})")
+        print(f"  {key}: {info['name']} - £{info['monthly_fee']:.2f}/month ({', '.join(info['features'])})")
     membership_type = input("Membership type: ").strip()
 
     months_str = input("Number of months (default 1): ").strip()
@@ -150,7 +150,7 @@ def _create_membership():
     if result:
         print(f"\nMembership created successfully!")
         print(f"  Member Number: {result['member_number']}")
-        print(f"  Total Fee:     ${result['total_fee']:.2f}")
+        print(f"  Total Fee:     £{result['total_fee']:.2f}")
         print(f"  Start Date:    {result['start_date']}")
         print(f"  End Date:      {result['end_date']}")
     else:
@@ -186,7 +186,7 @@ def _view_membership():
     print(f"  Name:           {membership['user_name']}")
     print(f"  Email:          {membership.get('user_email', 'N/A')}")
     print(f"  Type:           {membership['membership_type']}")
-    print(f"  Monthly Fee:    ${membership['monthly_fee']:.2f}")
+    print(f"  Monthly Fee:    £{membership['monthly_fee']:.2f}")
     print(f"  Start Date:     {membership['start_date']}")
     print(f"  End Date:       {membership.get('end_date', 'N/A')}")
     print(f"  Status:         {membership['status']}")
@@ -223,7 +223,7 @@ def _renew_membership():
     if result:
         print(f"Membership renewed successfully!")
         print(f"  New End Date: {result['new_end_date']}")
-        print(f"  Total Fee:    ${result['total_fee']:.2f}")
+        print(f"  Total Fee:    £{result['total_fee']:.2f}")
     else:
         print("Failed to renew membership.")
 
@@ -343,7 +343,7 @@ def _book_pt_session():
 
     print("Session types and fees:")
     for stype, fee in PT_SESSION_FEES.items():
-        print(f"  {stype}: ${fee:.2f}")
+        print(f"  {stype}: £{fee:.2f}")
     session_type = input("Session type (default 'single'): ").strip() or "single"
 
     duration_str = input("Duration in minutes (default 60): ").strip()
@@ -357,7 +357,7 @@ def _book_pt_session():
         print(f"PT session booked successfully!")
         print(f"  Session ID:  {result['session_id']}")
         print(f"  Booking Ref: {result['booking_ref']}")
-        print(f"  Fee:         ${result['fee']:.2f}")
+        print(f"  Fee:         £{result['fee']:.2f}")
     else:
         print("Failed to book PT session.")
 
@@ -377,7 +377,7 @@ def _view_pt_sessions():
             f"  [{s['session_id']}] Trainer: {s['trainer_name']} | "
             f"Date: {s['session_date']} {s['session_time']} | "
             f"Duration: {s['duration_minutes']}min | "
-            f"Fee: ${s['fee']:.2f} | "
+            f"Fee: £{s['fee']:.2f} | "
             f"Status: {s['status']}"
         )
 
@@ -443,7 +443,7 @@ def _record_payment():
         print(f"Payment recorded successfully!")
         print(f"  Transaction ID: {result['transaction_id']}")
         print(f"  Reference:      {result['reference']}")
-        print(f"  Amount:         ${result['amount']:.2f}")
+        print(f"  Amount:         £{result['amount']:.2f}")
     else:
         print("Failed to record payment.")
 
@@ -461,7 +461,7 @@ def _view_transactions():
     for t in transactions:
         print(
             f"  [{t.get('transaction_id')}] Type: {t.get('transaction_type', 'N/A')} | "
-            f"Amount: ${t.get('amount', 0):.2f} | "
+            f"Amount: £{t.get('amount', 0):.2f} | "
             f"Method: {t.get('payment_method', 'N/A')} | "
             f"Date: {t.get('created_at', 'N/A')}"
         )
@@ -479,7 +479,7 @@ def _daily_attendance():
 
     print(f"  Date:       {report.get('date', 'N/A')}")
     print(f"  Check-ins:  {report.get('check_ins', 0)}")
-    print(f"  Revenue:    ${report.get('revenue', 0):.2f}")
+    print(f"  Revenue:    £{report.get('revenue', 0):.2f}")
 
 
 def _membership_stats():
@@ -493,7 +493,7 @@ def _membership_stats():
     print(f"  Total Active Members: {stats.get('total_active', 0)}")
     print("\n  By Type:")
     for mtype, info in stats.get('by_type', {}).items():
-        print(f"    {mtype}: {info['count']} members, ${info['revenue']:.2f}/month")
+        print(f"    {mtype}: {info['count']} members, £{info['revenue']:.2f}/month")
 
 
 def _monthly_summary():
@@ -511,7 +511,7 @@ def _monthly_summary():
         return
 
     print(f"  Period:          {report.get('year', '')}-{report.get('month', ''):02d}")
-    print(f"  Total Revenue:   ${report.get('total_revenue', 0):.2f}")
+    print(f"  Total Revenue:   £{report.get('total_revenue', 0):.2f}")
     print(f"  New Members:     {report.get('new_members', 0)}")
     print(f"  Class Bookings:  {report.get('class_bookings', 0)}")
 

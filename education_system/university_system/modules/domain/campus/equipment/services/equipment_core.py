@@ -688,10 +688,10 @@ Currently Rented: {inventory.get('rented_quantity', 0)}
 REVENUE SUMMARY
 ---------------
 Total Rentals: {revenue.get('total_rentals', 0)}
-Total Revenue: ${revenue.get('total_revenue', 0):.2f}
-Average Rental Value: ${revenue.get('avg_rental_value', 0):.2f}
-Late Fees Collected: ${revenue.get('total_late_fees', 0):.2f}
-Damage Fees Collected: ${revenue.get('total_damage_fees', 0):.2f}
+Total Revenue: £{revenue.get('total_revenue', 0):.2f}
+Average Rental Value: £{revenue.get('avg_rental_value', 0):.2f}
+Late Fees Collected: £{revenue.get('total_late_fees', 0):.2f}
+Damage Fees Collected: £{revenue.get('total_damage_fees', 0):.2f}
 
 TOP 5 MOST RENTED ITEMS
 -----------------------

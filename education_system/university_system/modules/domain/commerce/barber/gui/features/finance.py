@@ -233,11 +233,11 @@ class FinanceMixin:
                 summary = sales_data.get('summary', {})
                 report += "SUMMARY:\n"
                 report += f"  Total Appointments: {summary.get('total_appointments') or 0}\n"
-                report += f"  Service Revenue: ${(summary.get('service_revenue') or 0):.2f}\n"
-                report += f"  Total Tips: ${(summary.get('total_tips') or 0):.2f}\n"
-                report += f"  Avg Service Value: ${(summary.get('avg_service_value') or 0):.2f}\n"
+                report += f"  Service Revenue: £{(summary.get('service_revenue') or 0):.2f}\n"
+                report += f"  Total Tips: £{(summary.get('total_tips') or 0):.2f}\n"
+                report += f"  Avg Service Value: £{(summary.get('avg_service_value') or 0):.2f}\n"
                 total = (summary.get('service_revenue') or 0) + (summary.get('total_tips') or 0)
-                report += f"  TOTAL REVENUE: ${total:.2f}\n\n"
+                report += f"  TOTAL REVENUE: £{total:.2f}\n\n"
 
                 report += "REVENUE BY SERVICE:\n"
                 by_service = sales_data.get('by_service', [])
@@ -246,7 +246,7 @@ class FinanceMixin:
                         service_name = svc.get('service_name', 'Unknown')
                         count = svc.get('count') or 0
                         revenue = svc.get('revenue') or 0
-                        report += f"  {service_name}: {count} bookings, ${revenue:.2f}\n"
+                        report += f"  {service_name}: {count} bookings, £{revenue:.2f}\n"
                 else:
                     report += "  No service data available\n"
 
@@ -259,7 +259,7 @@ class FinanceMixin:
                         revenue = staff.get('revenue') or 0
                         tips = staff.get('tips') or 0
                         report += f"  {staff_name}: {appointments} appointments, "
-                        report += f"${revenue:.2f} revenue, ${tips:.2f} tips\n"
+                        report += f"£{revenue:.2f} revenue, £{tips:.2f} tips\n"
                 else:
                     report += "  No staff data available\n"
 

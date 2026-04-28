@@ -1184,7 +1184,7 @@ class CinemaService:
             if not salt:
                 # Legacy account: try bcrypt first (already migrated), then
                 # PBKDF2 for password hashes that haven't been migrated yet.
-                if stored_hash.startswith("$2b$"):
+                if stored_hash.startswith("£2b$"):
                     try:
                         if bcrypt.checkpw(password.encode(), stored_hash.encode()):
                             return staff
