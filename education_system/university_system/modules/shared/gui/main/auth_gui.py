@@ -164,7 +164,13 @@ def show_change_password(self):
             status_label.config(text=_t("gui.password.passwords_dont_match"))
             return
 
-        if self.auth.change_password(self.auth.current_user['username'], current, new):
+        try:
+            ok = self.auth.change_password(self.auth.current_user['username'], current, new)
+        except Exception as exc:
+            status_label.config(text=str(exc))
+            return
+
+        if ok:
             password_window.destroy()
             messagebox.showinfo(_t("common.success"), _t("gui.password.password_changed"))
         else:

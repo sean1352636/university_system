@@ -342,7 +342,8 @@ class ForgotPasswordService:
                 )
 
             conn.execute(
-                "UPDATE users SET password_hash = ?, password_changed_at = NULL, "
+                "UPDATE users SET password_hash = ?, legacy_salt = NULL, "
+                "password_changed_at = NULL, "
                 "failed_login_attempts = 0, locked_until = NULL, "
                 "updated_at = datetime('now') WHERE id = ?",
                 (pw_hash, user["id"]),

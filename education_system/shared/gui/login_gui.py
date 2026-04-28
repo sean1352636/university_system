@@ -619,20 +619,40 @@ class UniversalLoginWindow(tk.Tk):
                 pw_var.set(temp_pw)
                 reveal_btn.configure(text="Hide Password")
                 _revealed["state"] = True
+
+                def _auto_hide():
+                    try:
+                        if reveal_btn.winfo_exists():
+                            pw_var.set(masked)
+                            reveal_btn.configure(text="Show Password")
+                            _revealed.update(state=False, timer=None)
+                    except tk.TclError:
+                        pass
+
                 # Auto-hide after 30 seconds
-                _revealed["timer"] = self.after(
-                    30_000, lambda: (pw_var.set(masked),
-                                    reveal_btn.configure(text="Show Password"),
-                                    _revealed.update(state=False, timer=None)),
-                )
+                _revealed["timer"] = self.after(30_000, _auto_hide)
 
         def _copy_to_clipboard():
             self.clipboard_clear()
             self.clipboard_append(temp_pw)
             copy_btn.configure(text="Copied!")
-            self.after(2000, lambda: copy_btn.configure(text="Copy"))
+
+            def _restore_copy_label():
+                try:
+                    if copy_btn.winfo_exists():
+                        copy_btn.configure(text="Copy")
+                except tk.TclError:
+                    pass
+
+            self.after(2000, _restore_copy_label)
             # Auto-clear clipboard after 60 seconds for security
-            self.after(60_000, lambda: (self.clipboard_clear(), self.clipboard_append("")))
+            def _clear_clipboard():
+                try:
+                    self.clipboard_clear()
+                    self.clipboard_append("")
+                except tk.TclError:
+                    pass
+            self.after(60_000, _clear_clipboard)
 
         reveal_btn = ttk.Button(btn_row, text="Show Password", command=_toggle_reveal)
         reveal_btn.pack(side="left", padx=(0, 8))

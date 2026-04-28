@@ -1445,11 +1445,34 @@ class UserAuth:
         table for accounts that have not yet been migrated.
         """
         # ── Try shared auth first ────────────────────────────────────
+        # If the user authenticated via shared auth, a shared_auth_id is set;
+        # in that case any error from shared.change_password is the real
+        # error and must be propagated rather than masked by the legacy
+        # fallback (which would re-verify against a stale legacy hash and
+        # report a misleading "current password incorrect").
         if self._shared_auth is not None and self.current_user:
-            shared_id = self.current_user.get('shared_auth_id') or self.current_user.get('id')
+            shared_id = self.current_user.get('shared_auth_id')
             if shared_id is not None:
+                from education_system.shared.auth.exceptions import (
+                    AuthError as SharedAuthError,
+                )
                 try:
                     self._shared_auth.change_password(int(shared_id), old_password, new_password)
+                    return True
+                except SharedAuthError:
+                    raise
+                except Exception as exc:
+                    logger.warning(
+                        "Shared change_password unexpected error for user_id=%s: %s",
+                        shared_id, exc,
+                    )
+                    # Unexpected error — fall through to legacy as a best effort
+            elif self.current_user.get('id') is not None:
+                # No shared_auth_id — user authenticated via legacy path.
+                # Try shared opportunistically but treat failure as "not in shared".
+                try:
+                    self._shared_auth.change_password(int(self.current_user['id']),
+                                                      old_password, new_password)
                     return True
                 except Exception:
                     pass  # Fall through to legacy
