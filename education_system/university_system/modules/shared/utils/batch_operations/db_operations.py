@@ -124,6 +124,16 @@ class DbOperationsMixin:
                     except Exception:
                         pass
 
+                    # Materialise derived student timetables.
+                    try:
+                        from education_system.university_system.modules.domain.academics.services.course_management.timetable_sync import (
+                            sync_for_student_enrolment,
+                        )
+                        for _sid, _mod in module_data:
+                            sync_for_student_enrolment(_sid, _mod)
+                    except Exception:
+                        pass
+
                     result.successful_imports += 1
 
                 except Exception as e:
@@ -442,17 +452,30 @@ class DbOperationsMixin:
                 pass  # best-effort
 
             # Sync library holds: release dropped modules, place new.
+            new_codes = {m for _s, m in module_data}
             try:
                 from education_system.university_system.modules.domain.commerce.textbooks.services.library_holds import (
                     place_holds_for_enrolment,
                     release_holds_for_drop,
                 )
-                new_codes = {m for _s, m in module_data}
                 for code in actually_dropped:
                     if code not in new_codes:
                         release_holds_for_drop(student_id, code)
                 for _sid, code in module_data:
                     place_holds_for_enrolment(_sid, code)
+            except Exception:
+                pass
+
+            # Sync derived timetable rows.
+            try:
+                from education_system.university_system.modules.domain.academics.services.course_management.timetable_sync import (
+                    sync_for_student_enrolment, clear_for_student_drop,
+                )
+                for code in actually_dropped:
+                    if code not in new_codes:
+                        clear_for_student_drop(student_id, code)
+                for _sid, code in module_data:
+                    sync_for_student_enrolment(_sid, code)
             except Exception:
                 pass
 
@@ -663,9 +686,8 @@ class DbOperationsMixin:
                     if cursor.rowcount > 0:
                         success_count += 1
 
-                    # Mirror the change into finance + library (unpaid fee
-                    # / book hold on add, cancel both on remove).
-                    # Best-effort.
+                    # Mirror the change into finance + library +
+                    # derived timetable views.
                     if fee_op is not None:
                         try:
                             from education_system.university_system.modules.domain.finance.services.enrolment_fees import (
@@ -676,12 +698,18 @@ class DbOperationsMixin:
                                 place_holds_for_enrolment,
                                 release_holds_for_drop,
                             )
+                            from education_system.university_system.modules.domain.academics.services.course_management.timetable_sync import (
+                                sync_for_student_enrolment,
+                                clear_for_student_drop,
+                            )
                             if fee_op == 'assess':
                                 assess_module_enrolment_fee(student_id, module_code)
                                 place_holds_for_enrolment(student_id, module_code)
+                                sync_for_student_enrolment(student_id, module_code)
                             else:
                                 cancel_module_enrolment_fee(student_id, module_code)
                                 release_holds_for_drop(student_id, module_code)
+                                clear_for_student_drop(student_id, module_code)
                         except Exception:
                             pass
 

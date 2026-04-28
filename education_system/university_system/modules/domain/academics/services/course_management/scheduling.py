@@ -17,6 +17,22 @@ from education_system.university_system.modules.domain.academics.services.course
 # occupied by a lecture. Mirroring keeps both writers using their own
 # canonical table while sharing visibility.
 
+def _sync_derived_timetables(module_schedule_ids):
+    """Fire :func:`timetable_sync.sync_for_module_schedule` for each id
+    after the parent transaction commits. Best-effort — failures log.
+    """
+    if not module_schedule_ids:
+        return
+    try:
+        from education_system.university_system.modules.domain.academics.services.course_management.timetable_sync import (
+            sync_for_module_schedule,
+        )
+        for ms_id in module_schedule_ids:
+            sync_for_module_schedule(int(ms_id))
+    except Exception as exc:
+        print(f"Note: could not sync derived timetables: {exc}")
+
+
 def _mirror_to_module_schedule(cursor, schedule_id):
     """Write or refresh module_schedule rows that mirror a course_schedule
     row, one per day in days_of_week. Linked back to the source via
@@ -41,7 +57,24 @@ def _mirror_to_module_schedule(cursor, schedule_id):
          classroom, instructor_id, module_code) = cs
 
         # Always rebuild from scratch so updates (including day removals)
-        # are reflected.
+        # are reflected. Tear down any derived timetable rows that pointed
+        # at the old module_schedule rows *before* deleting them so the
+        # timetable cleanup can read their natural key.
+        old_ids = [
+            r[0] for r in cursor.execute(
+                "SELECT id FROM module_schedule WHERE parent_schedule_id = ?",
+                (schedule_id,),
+            ).fetchall()
+        ]
+        if old_ids:
+            try:
+                from education_system.university_system.modules.domain.academics.services.course_management.timetable_sync import (
+                    unsync_for_module_schedule,
+                )
+                for _id in old_ids:
+                    unsync_for_module_schedule(int(_id))
+            except Exception as _exc:
+                print(f"Note: could not clear old derived timetables: {_exc}")
         cursor.execute(
             "DELETE FROM module_schedule WHERE parent_schedule_id = ?",
             (schedule_id,),
@@ -63,6 +96,7 @@ def _mirror_to_module_schedule(cursor, schedule_id):
                 room_id = room_row[0]
 
         days = [d.strip() for d in days_csv.split(',') if d.strip()]
+        new_ids = []
         for day in days:
             cursor.execute(
                 """INSERT INTO module_schedule
@@ -74,9 +108,12 @@ def _mirror_to_module_schedule(cursor, schedule_id):
                 (module_code, day, start_time, end_time, room_id,
                  instructor_id, semester, year, schedule_id),
             )
+            new_ids.append(cursor.lastrowid)
+        return new_ids
     except sqlite3.Error as exc:
         # Don't bring down the parent write on a mirror failure.
         print(f"Note: could not mirror to module_schedule: {exc}")
+        return []
 
 
 def _unmirror_module_schedule(cursor, schedule_id):
@@ -449,7 +486,7 @@ def create_course_schedule(auth):
         # Mirror to module_schedule so the exam scheduler's conflict
         # detector and any other consumer of weekly lecture slots can
         # see the new booking immediately.
-        _mirror_to_module_schedule(cursor, cursor.lastrowid)
+        _new_ms_ids = _mirror_to_module_schedule(cursor, cursor.lastrowid)
 
         # Mirror the teaching commitment into HR's workload tables so
         # staff workload reports reflect this assignment automatically.
@@ -477,6 +514,10 @@ def create_course_schedule(auth):
             print(f"Note: could not sync teaching workload: {_exc}")
 
         conn.commit()
+
+        # Now that module_schedule rows are committed, fan out to the
+        # derived student / instructor timetable views.
+        _sync_derived_timetables(_new_ms_ids)
 
         print(f"\nSchedule created successfully for {semester} {year}!")
 
@@ -756,7 +797,7 @@ def update_schedule(auth):
 
         # Refresh the mirrored module_schedule rows (delete + re-insert)
         # so room/day changes propagate to the exam scheduler's view.
-        _mirror_to_module_schedule(cursor, schedule_id)
+        _new_ms_ids = _mirror_to_module_schedule(cursor, schedule_id)
 
         # Refresh HR workload allocations: clear the previous instructor's
         # entry if they're being replaced, then record the new assignment.
@@ -784,6 +825,8 @@ def update_schedule(auth):
             print(f"Note: could not sync teaching workload: {_exc}")
 
         conn.commit()
+
+        _sync_derived_timetables(_new_ms_ids)
 
         print(f"\nSchedule updated successfully!")
 

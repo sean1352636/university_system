@@ -237,6 +237,19 @@ class BatchUpdatesMixin:
             except Exception:
                 pass
 
+            # Sync derived timetable views.
+            try:
+                from education_system.university_system.modules.domain.academics.services.course_management.timetable_sync import (
+                    sync_for_student_enrolment, clear_for_student_drop,
+                )
+                for code in prior_modules:
+                    if code not in new_codes:
+                        clear_for_student_drop(student_id, code)
+                for code in new_codes:
+                    sync_for_student_enrolment(student_id, code)
+            except Exception:
+                pass
+
             logger.info(f"Updated modules for student {student_id} to {new_course} track")
 
         except Exception as e:

@@ -368,6 +368,17 @@ def create_student_dialog(self):
             except Exception as exc:
                 print(f"Note: could not place library holds: {exc}")
 
+            # Materialise the student's timetable from the module's
+            # current module_schedule rows.
+            try:
+                from education_system.university_system.modules.domain.academics.services.course_management.timetable_sync import (
+                    sync_for_student_enrolment,
+                )
+                for code in selected_modules:
+                    sync_for_student_enrolment(student_id, code)
+            except Exception as exc:
+                print(f"Note: could not sync student timetable: {exc}")
+
             # Update course enrollment count
             cursor.execute('''
                 UPDATE courses
@@ -955,6 +966,20 @@ def update_student_dialog(self, student_id):
                             place_holds_for_enrolment(student_id, code)
                     except Exception as exc:
                         print(f"Note: could not sync library holds: {exc}")
+
+                    # Sync derived timetable rows.
+                    try:
+                        from education_system.university_system.modules.domain.academics.services.course_management.timetable_sync import (
+                            sync_for_student_enrolment,
+                            clear_for_student_drop,
+                        )
+                        for code in dropped_modules:
+                            if code not in selected_modules:
+                                clear_for_student_drop(student_id, code)
+                        for code in selected_modules:
+                            sync_for_student_enrolment(student_id, code)
+                    except Exception as exc:
+                        print(f"Note: could not sync timetables: {exc}")
 
                 update_conn.commit()
 
