@@ -196,6 +196,13 @@ class ExamsTabMixin:
         self.students_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         students_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
+        # Refresh-roster button: re-pull current enrollments from
+        # student_modules without changing the selected module. Useful
+        # when editing an exam after new students have enrolled.
+        ttk.Button(students_frame, text="🔄 Refresh roster from enrolment",
+                   command=self.refresh_roster_from_module).pack(
+            anchor=tk.W, pady=(4, 0))
+
         # Store enrolled student IDs
         self.enrolled_student_ids = []
         current_row += 1
@@ -333,6 +340,42 @@ class ExamsTabMixin:
 
         self.students_count_var.set(_("exam_scheduler.labels.students_count", count=len(students)))
 
+    def _current_module_code(self) -> Optional[str]:
+        """Extract the module code currently selected in the form, or None."""
+        selection = self.module_var.get()
+        if not selection:
+            return None
+        return selection.split(' - ')[0].strip() or None
+
+    def _confirm_external_conflicts(self, conflicts) -> bool:
+        """Show overlapping bookings/lectures from other systems and ask
+        whether to proceed anyway. Returns True if the user accepts."""
+        if not conflicts:
+            return True
+        lines = "\n".join(f"  • {desc}  [{src}]" for src, desc in conflicts[:8])
+        more = "" if len(conflicts) <= 8 else f"\n  …and {len(conflicts) - 8} more"
+        return messagebox.askyesno(
+            _("exam_scheduler.dialogs.conflict"),
+            "This room is already booked at that time by another part of "
+            "the university:\n\n" + lines + more +
+            "\n\nProceed anyway?",
+        )
+
+    def refresh_roster_from_module(self):
+        """Re-pull the enrolled-students list from student_modules for the
+        currently selected module. Called from the form's refresh button
+        and implicitly at save time so the snapshot stored on the exam is
+        always the latest enrolment."""
+        module_code = self._current_module_code()
+        if not module_code:
+            messagebox.showinfo(
+                _("exam_scheduler.dialogs.warning"),
+                "Select a module first to load its enrolled students.",
+            )
+            return
+        students = self.data_manager.get_enrolled_students(module_code)
+        self.populate_students_list(students)
+
     # --- Selection helpers ---
 
     def get_selected_instructor_id(self) -> Optional[int]:
@@ -447,9 +490,21 @@ class ExamsTabMixin:
             messagebox.showerror(_("exam_scheduler.dialogs.conflict"), _("exam_scheduler.messages.scheduling_conflict"))
             return
 
+        # Cross-check shared room_bookings + recurring lecture timetable
+        external = self.data_manager.find_external_room_conflicts(
+            date, start, end, room_name)
+        if external and not self._confirm_external_conflicts(external):
+            return
+
         # Get instructor details
         instructor_id = self.get_selected_instructor_id()
         instructor_name = self.get_instructor_display_name()
+
+        # Re-derive the roster from student_modules so the snapshot stored
+        # on the exam matches the current enrolment (covers cases where
+        # students enrolled after the form was opened).
+        live_students = self.data_manager.get_enrolled_students(module_code)
+        roster_ids = [s['student_id'] for s in live_students]
 
         exam = Exam(
             id=self.data_manager.get_next_exam_id(),
@@ -461,8 +516,8 @@ class ExamsTabMixin:
             room=room_name,
             instructor_id=instructor_id,
             instructor_name=instructor_name,
-            students_enrolled=len(self.enrolled_student_ids),
-            enrolled_student_ids=self.enrolled_student_ids.copy()
+            students_enrolled=len(roster_ids),
+            enrolled_student_ids=roster_ids,
         )
 
         self.data_manager.add_exam(exam)
@@ -471,6 +526,10 @@ class ExamsTabMixin:
         calendar_added = False
         if HAS_CALENDAR:
             calendar_added = self.data_manager.add_exam_to_calendar(exam)
+
+        # Reserve the room in the shared room_bookings table so other
+        # systems (lectures, society events, facilities) see it as taken.
+        room_reserved = self.data_manager.reserve_room_for_exam(exam)
 
         # Automatically send email notifications
         email_success, email_failed = 0, 0
@@ -484,6 +543,8 @@ class ExamsTabMixin:
         msg = _("exam_scheduler.messages.exam_added")
         if calendar_added:
             msg += "\n\n✓ " + _("exam_scheduler.messages.added_to_calendar")
+        if room_reserved:
+            msg += "\n✓ Room reserved in shared bookings"
         if HAS_EMAIL:
             msg += f"\n✓ {_('exam_scheduler.messages.notifications_sent')}: {email_success}"
             if email_failed > 0:
@@ -515,9 +576,19 @@ class ExamsTabMixin:
             messagebox.showerror(_("exam_scheduler.dialogs.conflict"), _("exam_scheduler.messages.scheduling_conflict"))
             return
 
+        external = self.data_manager.find_external_room_conflicts(
+            date, start, end, room_name, self.selected_exam_id)
+        if external and not self._confirm_external_conflicts(external):
+            return
+
         # Get instructor details
         instructor_id = self.get_selected_instructor_id()
         instructor_name = self.get_instructor_display_name()
+
+        # Always refresh the roster on update so the snapshot tracks
+        # current enrolment in student_modules.
+        live_students = self.data_manager.get_enrolled_students(module_code)
+        roster_ids = [s['student_id'] for s in live_students]
 
         exam = Exam(
             id=self.selected_exam_id,
@@ -529,8 +600,8 @@ class ExamsTabMixin:
             room=room_name,
             instructor_id=instructor_id,
             instructor_name=instructor_name,
-            students_enrolled=len(self.enrolled_student_ids),
-            enrolled_student_ids=self.enrolled_student_ids.copy()
+            students_enrolled=len(roster_ids),
+            enrolled_student_ids=roster_ids,
         )
 
         self.data_manager.update_exam(exam)
@@ -540,6 +611,9 @@ class ExamsTabMixin:
         calendar_updated = False
         if HAS_CALENDAR:
             calendar_updated = self.data_manager.update_exam_in_calendar(exam)
+
+        # Refresh the shared room reservation (room or time may have changed).
+        room_reserved = self.data_manager.reserve_room_for_exam(exam)
 
         # Send email notifications about the update
         email_success, email_failed = 0, 0
@@ -553,6 +627,8 @@ class ExamsTabMixin:
         msg = _("exam_scheduler.messages.exam_updated")
         if calendar_updated:
             msg += "\n\n✓ " + _("exam_scheduler.messages.added_to_calendar")
+        if room_reserved:
+            msg += "\n✓ Shared room reservation updated"
         if HAS_EMAIL:
             msg += f"\n✓ {_('exam_scheduler.messages.update_notifications_sent')}: {email_success}"
             if email_failed > 0:
@@ -575,6 +651,7 @@ class ExamsTabMixin:
             self.data_manager.delete_exam(exam_id)
             if HAS_CALENDAR:
                 self.data_manager.remove_exam_from_calendar(exam_id)
+            self.data_manager.release_room_for_exam(exam_id)
 
             email_success = email_failed = 0
             if HAS_EMAIL and exam_obj is not None:

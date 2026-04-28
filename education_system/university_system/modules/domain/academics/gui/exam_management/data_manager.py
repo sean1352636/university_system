@@ -8,6 +8,7 @@ from typing import List, Dict, Optional, Tuple
 from education_system.university_system.modules.domain.academics.gui.exam_management.models import Exam, Room
 from education_system.university_system.modules.domain.academics.gui.exam_management import conflicts as conflict_utils
 from education_system.university_system.modules.domain.academics.gui.exam_management import notifications as notification_utils
+from education_system.university_system.modules.domain.academics.gui.exam_management import room_booking as room_booking_utils
 
 logger = logging.getLogger(__name__)
 
@@ -358,6 +359,30 @@ class DataManager:
     def remove_exam_from_calendar(self, exam_id) -> bool:
         """Remove the calendar event linked to *exam_id*."""
         return notification_utils.remove_exam_from_calendar(exam_id)
+
+    # --- Room booking integration ---
+
+    def reserve_room_for_exam(self, exam: Exam) -> bool:
+        """Reserve the room for *exam* in the shared room_bookings table.
+
+        Idempotent — calling again for the same exam updates the existing
+        reservation. Returns False if the room can't be matched in the
+        rooms catalog (e.g. free-text room name) or the DB is unavailable.
+        """
+        return room_booking_utils.reserve_room_for_exam(exam)
+
+    def release_room_for_exam(self, exam_id) -> bool:
+        """Release the shared room booking owned by *exam_id*."""
+        return room_booking_utils.release_room_for_exam(exam_id)
+
+    def find_external_room_conflicts(self, date: str, start_time: str,
+                                     end_time: str, room_name: str,
+                                     exclude_exam_id: Optional[int] = None
+                                     ) -> List[Tuple[str, str]]:
+        """Return external (non-exam) bookings that overlap this slot."""
+        return room_booking_utils.find_external_conflicts(
+            date, start_time, end_time, room_name, exclude_exam_id,
+        )
 
     # --- Data persistence ---
 
