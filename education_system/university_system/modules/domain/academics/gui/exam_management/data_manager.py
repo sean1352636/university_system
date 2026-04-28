@@ -341,9 +341,23 @@ class DataManager:
             exam, self.get_enrolled_students, self.get_instructor_by_id
         )
 
+    def send_exam_cancellation_notifications(self, exam: Exam) -> Tuple[int, int]:
+        """Email + in-app notify recipients that an exam was cancelled."""
+        return notification_utils.send_exam_cancellation_notifications(
+            exam, self.get_enrolled_students, self.get_instructor_by_id
+        )
+
     def add_exam_to_calendar(self, exam: Exam) -> bool:
-        """Add exam as an event to the academic calendar."""
+        """Add or update the calendar event for *exam* (idempotent upsert)."""
         return notification_utils.add_exam_to_calendar(exam)
+
+    def update_exam_in_calendar(self, exam: Exam) -> bool:
+        """Update the calendar event for *exam*. Same as add (upsert)."""
+        return notification_utils.add_exam_to_calendar(exam)
+
+    def remove_exam_from_calendar(self, exam_id) -> bool:
+        """Remove the calendar event linked to *exam_id*."""
+        return notification_utils.remove_exam_from_calendar(exam_id)
 
     # --- Data persistence ---
 

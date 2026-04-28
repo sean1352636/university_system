@@ -535,6 +535,12 @@ class ExamsTabMixin:
 
         self.data_manager.update_exam(exam)
 
+        # Mirror the change onto the academic calendar so students/staff
+        # see the updated time, room, and instructor.
+        calendar_updated = False
+        if HAS_CALENDAR:
+            calendar_updated = self.data_manager.update_exam_in_calendar(exam)
+
         # Send email notifications about the update
         email_success, email_failed = 0, 0
         if HAS_EMAIL:
@@ -545,8 +551,10 @@ class ExamsTabMixin:
 
         # Build success message with details
         msg = _("exam_scheduler.messages.exam_updated")
+        if calendar_updated:
+            msg += "\n\n✓ " + _("exam_scheduler.messages.added_to_calendar")
         if HAS_EMAIL:
-            msg += f"\n\n✓ {_('exam_scheduler.messages.update_notifications_sent')}: {email_success}"
+            msg += f"\n✓ {_('exam_scheduler.messages.update_notifications_sent')}: {email_success}"
             if email_failed > 0:
                 msg += f" ({_('exam_scheduler.messages.failed')}: {email_failed})"
 
@@ -559,10 +567,28 @@ class ExamsTabMixin:
             return
 
         if messagebox.askyesno(_("exam_scheduler.dialogs.confirm_delete"), _("exam_scheduler.messages.confirm_delete_exam")):
-            self.data_manager.delete_exam(self.selected_exam_id)
+            exam_id = self.selected_exam_id
+            # Capture the exam's details before deleting so cancellation
+            # emails can quote the original schedule.
+            exam_obj = next((e for e in self.data_manager.exams if e.id == exam_id), None)
+
+            self.data_manager.delete_exam(exam_id)
+            if HAS_CALENDAR:
+                self.data_manager.remove_exam_from_calendar(exam_id)
+
+            email_success = email_failed = 0
+            if HAS_EMAIL and exam_obj is not None:
+                email_success, email_failed = self.data_manager.send_exam_cancellation_notifications(exam_obj)
+
             self.refresh_exam_list()
             self.clear_exam_form()
-            messagebox.showinfo(_("exam_scheduler.dialogs.success"), _("exam_scheduler.messages.exam_deleted"))
+
+            msg = _("exam_scheduler.messages.exam_deleted")
+            if HAS_EMAIL and exam_obj is not None:
+                msg += f"\n\n✓ Cancellation notifications sent: {email_success}"
+                if email_failed > 0:
+                    msg += f" (failed: {email_failed})"
+            messagebox.showinfo(_("exam_scheduler.dialogs.success"), msg)
 
     def clear_exam_form(self):
         """Clear the exam form."""

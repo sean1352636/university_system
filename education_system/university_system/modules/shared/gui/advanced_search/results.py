@@ -1037,11 +1037,8 @@ def show_student_detail_window(self, student):
     modules_frame = ttk.LabelFrame(main_frame, text="Module Information", padding="10")
     modules_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
-    modules_text = tk.Text(modules_frame, height=8, wrap=tk.WORD)
-    modules_text.pack(fill=tk.BOTH, expand=True)
-
-    # Load module information
-    self.load_student_modules(student[0], modules_text)
+    # Load module information into a Treeview-based table
+    self.load_student_modules(student[0], modules_frame)
 
     # Buttons frame
     button_frame = ttk.Frame(main_frame)
@@ -1055,12 +1052,19 @@ def show_student_detail_window(self, student):
               command=detail_window.destroy).pack(side=tk.RIGHT)
 AdvancedSearchGUI.show_student_detail_window = show_student_detail_window
 
-def load_student_modules(self, student_id, text_widget):
-    """Load and display student module information"""
+def load_student_modules(self, student_id, parent):
+    """Load enrolled modules and render them as a Treeview table.
+
+    *parent* is the container frame the table is built inside. Existing
+    children are cleared first so this function can be called to refresh
+    the table.
+    """
+    for child in parent.winfo_children():
+        child.destroy()
+
     try:
         conn = get_connection()
         cursor = conn.cursor()
-
         cursor.execute('''
         SELECT sm.module_type,
                sm.module_code,
@@ -1079,33 +1083,74 @@ def load_student_modules(self, student_id, text_widget):
         WHERE sm.student_id = ?
         ORDER BY sm.module_type, module_name
         ''', (student_id, student_id))
-
         modules = cursor.fetchall()
         conn.close()
-
-        if modules:
-            text_widget.insert(tk.END, f"📚 ENROLLED MODULES ({len(modules)} total):\n")
-            text_widget.insert(tk.END, "-" * 60 + "\n")
-            text_widget.insert(tk.END, f"{'Type':<15} {'Code':<10} {'Name':<25} {'Grade':<8}\n")
-            text_widget.insert(tk.END, "-" * 60 + "\n")
-
-            for module in modules:
-                module_type, code, name, grade, enrolled_date = module
-                module_type = module_type or "N/A"
-                code = code or "N/A"
-                name = name or "N/A"
-                if grade is None:
-                    grade_display = "In Progress"
-                elif isinstance(grade, (int, float)):
-                    grade_display = f"{grade:.1f}"
-                else:
-                    grade_display = str(grade)
-                text_widget.insert(tk.END, f"{module_type:<15} {code:<10} {name:<25} {grade_display:<8}\n")
-        else:
-            text_widget.insert(tk.END, "No modules enrolled.")
-
     except Exception as e:
-        text_widget.insert(tk.END, f"Error loading modules: {str(e)}")
+        ttk.Label(parent, text=f"Error loading modules: {e}",
+                  foreground="red").pack(anchor="w", padx=4, pady=4)
+        return
+
+    header = ttk.Label(
+        parent,
+        text=f"📚 {len(modules)} module{'s' if len(modules) != 1 else ''} enrolled",
+        font=("Arial", 10, "bold"),
+    )
+    header.pack(anchor="w", padx=4, pady=(2, 6))
+
+    if not modules:
+        ttk.Label(parent, text="No modules enrolled.",
+                  foreground="#666").pack(anchor="w", padx=4)
+        return
+
+    table_frame = ttk.Frame(parent)
+    table_frame.pack(fill=tk.BOTH, expand=True)
+
+    columns = ("type", "code", "name", "grade", "enrolled")
+    tree = ttk.Treeview(
+        table_frame, columns=columns, show="headings",
+        height=min(max(len(modules), 4), 12),
+    )
+    tree.heading("type", text="Type")
+    tree.heading("code", text="Code")
+    tree.heading("name", text="Module")
+    tree.heading("grade", text="Grade")
+    tree.heading("enrolled", text="Enrolled")
+    tree.column("type", width=100, anchor="w")
+    tree.column("code", width=90, anchor="w")
+    tree.column("name", width=260, anchor="w")
+    tree.column("grade", width=90, anchor="center")
+    tree.column("enrolled", width=110, anchor="center")
+
+    # Zebra striping for readability
+    tree.tag_configure("odd", background="#f7f7f7")
+    tree.tag_configure("inprogress", foreground="#7f8c8d")
+
+    for idx, (module_type, code, name, grade, enrolled_date) in enumerate(modules):
+        if grade is None:
+            grade_display = "In Progress"
+            row_tags = ("inprogress",)
+        elif isinstance(grade, (int, float)):
+            grade_display = f"{grade:.1f}"
+            row_tags = ()
+        else:
+            grade_display = str(grade)
+            row_tags = ()
+
+        if idx % 2 == 1:
+            row_tags = row_tags + ("odd",)
+
+        tree.insert("", tk.END, values=(
+            (module_type or "N/A").title(),
+            code or "N/A",
+            name or "N/A",
+            grade_display,
+            enrolled_date or "—",
+        ), tags=row_tags)
+
+    vsb = ttk.Scrollbar(table_frame, orient="vertical", command=tree.yview)
+    tree.configure(yscrollcommand=vsb.set)
+    tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    vsb.pack(side=tk.RIGHT, fill=tk.Y)
 AdvancedSearchGUI.load_student_modules = load_student_modules
 
 def refresh_data(self):
