@@ -43,11 +43,17 @@ class SecurityQuestionsFrame(tk.Frame):
         self._refresh_status()
 
     def _resolve_user_id(self) -> int | None:
+        # `security_questions` is keyed on auth.db `users.id`.  In multi-system
+        # launchers (e.g. the university launcher) `current_user["user_id"]`
+        # is rewritten to a *system-local* legacy id and the real auth-db id
+        # is stashed under `shared_auth_id` — prefer that key when present.
+        def _from(d):
+            return d.get("shared_auth_id") or d.get("user_id") or d.get("id")
         if isinstance(self._auth, dict):
-            return self._auth.get("user_id") or self._auth.get("id")
+            return _from(self._auth)
         cu = getattr(self._auth, "current_user", None)
         if isinstance(cu, dict):
-            return cu.get("user_id") or cu.get("id")
+            return _from(cu)
         return None
 
     def _resolve_username(self) -> str | None:
@@ -65,12 +71,16 @@ class SecurityQuestionsFrame(tk.Frame):
     def _build_ui(self):
         self.configure(bg=_BG)
 
-        # Header
+        # Header — include username so the user can never be unsure
+        # which account these questions are being saved against.
         header = tk.Frame(self, bg=_HEADER_BG, height=50)
         header.pack(fill="x")
         header.pack_propagate(False)
+        title = "Security Questions"
+        if self._username:
+            title = f"Security Questions — {self._username} (id={self._user_id})"
         tk.Label(
-            header, text="Security Questions",
+            header, text=title,
             font=("Helvetica", 15, "bold"), bg=_HEADER_BG, fg="white",
         ).pack(side="left", padx=20, pady=10)
 
@@ -189,6 +199,8 @@ class _SecurityQuestionsDialog(tk.Toplevel):
         self.saved = False
 
         self.title("Set Security Questions")
+        # Track username for header / save-time logging
+        self._username = getattr(parent, "_username", None)
         self.geometry("550x700")
         self.minsize(500, 600)
         self.transient(parent)
@@ -206,8 +218,11 @@ class _SecurityQuestionsDialog(tk.Toplevel):
         main = tk.Frame(self, bg=_BG, padx=20, pady=15)
         main.pack(fill="both", expand=True)
 
+        heading = "Choose 3 questions and provide answers"
+        if self._username:
+            heading = f"Choose 3 questions for: {self._username}"
         tk.Label(
-            main, text="Choose 3 questions and provide answers",
+            main, text=heading,
             font=("Helvetica", 12, "bold"), bg=_BG,
         ).pack(pady=(0, 5))
         tk.Label(
@@ -280,6 +295,15 @@ class _SecurityQuestionsDialog(tk.Toplevel):
             chosen_qs.add(q)
             questions.append((q, a))
 
+        if not self._user_id:
+            self._error_var.set(
+                "Cannot save: no user is logged in. "
+                "Please re-login and try again.",
+            )
+            logger.error("SQ save aborted: _user_id is None (username=%s)",
+                         self._username)
+            return
+
         try:
             self._svc.set_security_questions(self._user_id, questions)
             self.saved = True
@@ -289,4 +313,5 @@ class _SecurityQuestionsDialog(tk.Toplevel):
             )
             self.destroy()
         except Exception as e:
+            logger.exception("SQ save failed for user_id=%s", self._user_id)
             self._error_var.set(str(e))

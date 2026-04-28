@@ -428,9 +428,9 @@ class HousingGUI:
 
         ttk.Label(card, text=f"Application {row['application_id']}",
                   font=('Arial', 10, 'bold')).grid(row=0, column=0, columnspan=2, sticky='w')
-        tk.Label(card, text=f"Status: {row['status'] or '—'}",
-                 fg=status_color, bg=card.cget('background'),
-                 font=('Arial', 11, 'bold')).grid(row=1, column=0, columnspan=2, sticky='w', pady=(2, 8))
+        ttk.Label(card, text=f"Status: {row['status'] or '—'}",
+                  foreground=status_color,
+                  font=('Arial', 11, 'bold')).grid(row=1, column=0, columnspan=2, sticky='w', pady=(2, 8))
 
         fields = [
             ("Applied", row['application_date']),

@@ -165,11 +165,19 @@ class MFASettingsFrame(tk.Frame):
         self._refresh_status()
 
     def _get_user_id(self):
-        """Get the current user's ID from auth context."""
+        """Get the current user's auth-db ID from auth context.
+
+        `mfa_secrets` is keyed on auth.db `users.id`.  The university
+        launcher rewrites `current_user["user_id"]` to a system-local
+        legacy id and stashes the real auth-db id under `shared_auth_id`
+        — prefer that key when present.
+        """
+        def _from(d):
+            return d.get("shared_auth_id") or d.get("user_id") or d.get("id")
         if isinstance(self._auth, dict):
-            return self._auth.get("user_id") or self._auth.get("id")
+            return _from(self._auth)
         if hasattr(self._auth, "current_user") and self._auth.current_user:
-            return self._auth.current_user.get("user_id") or self._auth.current_user.get("id")
+            return _from(self._auth.current_user)
         return None
 
     def _get_username(self):

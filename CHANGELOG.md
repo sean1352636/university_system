@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.101.0 — 2026-04-28](#81010---2026-04-28)
 - [8.100.0 — 2026-04-28](#81000---2026-04-28)
 - [8.99.0 — 2026-04-27](#8990---2026-04-27)
 - [8.98.0 — 2026-04-26](#8980---2026-04-26)
@@ -205,6 +206,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.101.0] — 2026-04-28
+
+### Currency localisation; sidebar reorganisation; auth-id mismatch fix; assorted Tk fixes
+
+#### Fixed
+
+- **Security questions / MFA were saved against the wrong account on the university system.** The university launcher (`launcher/systems.py:108-138`) and the legacy university auth (`infrastructure/auth/core.py:1304-1328`) rewrite `current_user["user_id"]` to a *system-local* legacy id (from `student_records.db.users`) and stash the real auth-db id under `shared_auth_id`. The shared `SecurityQuestionsFrame` and `MFASettingsFrame` were reading `user_id` and writing to auth.db tables (`security_questions`, `mfa_secrets`) under that wrong id — for `admin` (auth id 19, legacy id 1) every save was silently overwriting `superadmin`'s row. Symptom: setting up security questions appeared to succeed (Success toast + "Configured" status), but on the next forgot-password attempt the lookup found nothing for the typed username. Fix: `_resolve_user_id` / `_get_user_id` now prefer `shared_auth_id` over `user_id`/`id` when present. Also added a fail-loud check on save and a `Security Questions — <username> (id=<n>)` banner in the dialog header so identity confusion can be spotted visually. (`shared/gui/security_questions_gui.py`, `shared/gui/mfa_gui.py`)
+- **`_tkinter.TclError: unknown color name "SystemButtonFace"`** in `BGChecker._apply_theme` on Linux. `SystemButtonFace` is a Windows-only named colour. Replaced with the portable `#f0f0f0` light-mode default. (`modules/domain/staff_hr/background_checks/university_bg_checker.py:638`)
+- **`_tkinter.TclError: unknown option "-background"`** in the housing student dashboard when rendering the application status card. `card` is a `ttk.LabelFrame` and ttk widgets do not expose `-background` via `cget`. Switched the inner status label from `tk.Label(bg=card.cget('background'), …)` to `ttk.Label(foreground=status_color, …)` which inherits parent styling. (`modules/domain/housing/gui/housing_accommodation_gui/main_gui.py:431`)
+
+#### Changed
+
+- **University-system currency localised from USD `$` to GBP `£` across 111 files** — GUIs, services, reports, and infrastructure templates. Includes `format_currency` in `modules/domain/finance/gui/financial_aid/common_imports.py`. Excluded from the sweep: `infrastructure/auth/managers/mfa_manager.py` (uses `$` as the `salt$hash` separator), `tests/cli/shared/utils/test_sql_safety.py` (asserts SQL identifier rejection of `$`), and `tests/cli/shared/utils/test_input_validation.py` (validates that `validate_money` strips `$£€¥₹`).
+- **Main GUI sidebar reorganised: 25 flat categories → 8 top-level groups** — Academics, People, Finance, Student Life, Support & Wellbeing, Reports & Data, Administration, Account. The previous sidebar was overwhelming (Hick's law) and littered with single-button categories (Accommodation, Community Services). Each group's category window now renders bold sub-section headers above its blocks of buttons when more than one section is visible to the current role. New helper `open_grouped_category_window(group_title, sections)` replaces `open_category_window`. All existing `*_buttons_data` lists kept intact and referenced from a single `top_level_groups` mapping. Net: `gui_setup.py` shrinks from 1062 → 926 lines. (`modules/shared/gui/main/core/gui_setup.py`)
+- **`education_system/README.md` expanded** from a 47-line stub to a 143-line entry-point doc: subsystem table linking each per-stage README, quick-start invocations across `--gui` / `--api` / `--cli` / `--web`, the consistent 4-layer DDD layout used inside each subsystem, shared infrastructure grouped by purpose (Identity, API, Compliance, Cross-system, Data, Comms, Ops, Platform), `make` testing/tooling commands, and a "Cross-system features" section calling out `switch.py`, the unified API, bulk transfer, parent continuity, reverse lookup, and the GDPR portal.
 
 ---
 
