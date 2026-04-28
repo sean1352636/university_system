@@ -173,6 +173,15 @@ class BatchUpdatesMixin:
 
             compulsory_modules = [compulsory_module_1, compulsory_module_2]
 
+            # Capture currently-enrolled modules so finance can cancel
+            # unpaid fees for any that aren't being re-enrolled.
+            prior_modules = [
+                row[0] for row in cursor.execute(
+                    "SELECT module_code FROM student_modules "
+                    "WHERE student_id = ?", (student_id,)
+                ).fetchall()
+            ]
+
             # Remove existing module enrollments for this student
             cursor.execute(
                 "DELETE FROM student_modules WHERE student_id = ?",
@@ -196,6 +205,37 @@ class BatchUpdatesMixin:
                        VALUES (?, ?, ?, 'optional', 'enrolled')""",
                     (student_id, mod['code'], mod['name'])
                 )
+
+            # Sync finance: cancel unpaid fees for dropped modules,
+            # assess new ones. Best-effort.
+            new_codes = {m['code']
+                         for m in compulsory_modules + optional_modules}
+            try:
+                from education_system.university_system.modules.domain.finance.services.enrolment_fees import (
+                    assess_module_enrolment_fee,
+                    cancel_module_enrolment_fee,
+                )
+                for code in prior_modules:
+                    if code not in new_codes:
+                        cancel_module_enrolment_fee(student_id, code)
+                for code in new_codes:
+                    assess_module_enrolment_fee(student_id, code)
+            except Exception:
+                pass
+
+            # Sync library holds.
+            try:
+                from education_system.university_system.modules.domain.commerce.textbooks.services.library_holds import (
+                    place_holds_for_enrolment,
+                    release_holds_for_drop,
+                )
+                for code in prior_modules:
+                    if code not in new_codes:
+                        release_holds_for_drop(student_id, code)
+                for code in new_codes:
+                    place_holds_for_enrolment(student_id, code)
+            except Exception:
+                pass
 
             logger.info(f"Updated modules for student {student_id} to {new_course} track")
 

@@ -102,6 +102,28 @@ class DbOperationsMixin:
                     VALUES (?, ?)
                     ''', module_data)
 
+                    # Assess matching program_fees against the new enrolment
+                    # so finance picks up tuition for batch-imported students
+                    # without needing a separate sweep.
+                    try:
+                        from education_system.university_system.modules.domain.finance.services.enrolment_fees import (
+                            assess_module_enrolment_fee,
+                        )
+                        for _sid, _mod in module_data:
+                            assess_module_enrolment_fee(_sid, _mod)
+                    except Exception:
+                        pass  # best-effort; never block batch import
+
+                    # Auto-place library holds for required textbooks.
+                    try:
+                        from education_system.university_system.modules.domain.commerce.textbooks.services.library_holds import (
+                            place_holds_for_enrolment,
+                        )
+                        for _sid, _mod in module_data:
+                            place_holds_for_enrolment(_sid, _mod)
+                    except Exception:
+                        pass
+
                     result.successful_imports += 1
 
                 except Exception as e:
@@ -371,6 +393,17 @@ class DbOperationsMixin:
             ]
             placeholders = ','.join('?' * len(old_module_codes))
             assert all(c in '?,' for c in placeholders), "Invalid placeholder string"
+
+            # Capture which of the old course-specific modules the student
+            # was actually enrolled in so we can cancel their unpaid fees.
+            actually_dropped = [
+                row[0] for row in cursor.execute(
+                    f'SELECT module_code FROM student_modules '
+                    f'WHERE student_id = ? AND module_code IN ({placeholders})',
+                    [student_id] + old_module_codes,
+                ).fetchall()
+            ]
+
             cursor.execute(f'''
             DELETE FROM student_modules
             WHERE student_id = ? AND module_code IN ({placeholders})
@@ -392,6 +425,36 @@ class DbOperationsMixin:
             INSERT INTO student_modules (student_id, module_code)
             VALUES (?, ?)
             ''', module_data)
+
+            # Sync finance: cancel unpaid fees for the modules removed,
+            # assess the new ones.
+            try:
+                from education_system.university_system.modules.domain.finance.services.enrolment_fees import (
+                    assess_module_enrolment_fee,
+                    cancel_module_enrolment_fee,
+                )
+                for code in actually_dropped:
+                    if code not in {m for _s, m in module_data}:
+                        cancel_module_enrolment_fee(student_id, code)
+                for _sid, code in module_data:
+                    assess_module_enrolment_fee(_sid, code)
+            except Exception:
+                pass  # best-effort
+
+            # Sync library holds: release dropped modules, place new.
+            try:
+                from education_system.university_system.modules.domain.commerce.textbooks.services.library_holds import (
+                    place_holds_for_enrolment,
+                    release_holds_for_drop,
+                )
+                new_codes = {m for _s, m in module_data}
+                for code in actually_dropped:
+                    if code not in new_codes:
+                        release_holds_for_drop(student_id, code)
+                for _sid, code in module_data:
+                    place_holds_for_enrolment(_sid, code)
+            except Exception:
+                pass
 
         except Exception as e:
             logger.error(f"Error updating modules for student {student_id}: {e}")
@@ -580,20 +643,47 @@ class DbOperationsMixin:
 
             for student_id in student_ids:
                 try:
+                    fee_op = None
                     if operation == 'add':
                         cursor.execute('''
                         INSERT OR IGNORE INTO student_modules (student_id, module_code)
                         VALUES (?, ?)
                         ''', (student_id, module_code))
+                        if cursor.rowcount > 0:
+                            fee_op = 'assess'
 
                     elif operation == 'remove':
                         cursor.execute('''
                         DELETE FROM student_modules
                         WHERE student_id = ? AND module_code = ?
                         ''', (student_id, module_code))
+                        if cursor.rowcount > 0:
+                            fee_op = 'cancel'
 
                     if cursor.rowcount > 0:
                         success_count += 1
+
+                    # Mirror the change into finance + library (unpaid fee
+                    # / book hold on add, cancel both on remove).
+                    # Best-effort.
+                    if fee_op is not None:
+                        try:
+                            from education_system.university_system.modules.domain.finance.services.enrolment_fees import (
+                                assess_module_enrolment_fee,
+                                cancel_module_enrolment_fee,
+                            )
+                            from education_system.university_system.modules.domain.commerce.textbooks.services.library_holds import (
+                                place_holds_for_enrolment,
+                                release_holds_for_drop,
+                            )
+                            if fee_op == 'assess':
+                                assess_module_enrolment_fee(student_id, module_code)
+                                place_holds_for_enrolment(student_id, module_code)
+                            else:
+                                cancel_module_enrolment_fee(student_id, module_code)
+                                release_holds_for_drop(student_id, module_code)
+                        except Exception:
+                            pass
 
                 except sqlite3.Error as e:
                     logger.error(f"Error {operation}ing module for student {student_id}: {e}")

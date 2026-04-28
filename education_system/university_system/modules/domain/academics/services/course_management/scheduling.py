@@ -8,6 +8,90 @@ from education_system.university_system.modules.shared.utils.simple_activity_log
 from education_system.university_system.modules.domain.academics.services.course_management.validation import validate_time_format, validate_days_of_week
 
 
+# --- Cross-module integration: mirror to module_schedule -----------------
+#
+# The exam scheduler's room conflict detector queries module_schedule for
+# weekly recurring lectures (matched by day_of_week + time overlap on a
+# given room). Course management writes go to course_schedule, so without
+# this bridge an exam could be scheduled in a room that's actually
+# occupied by a lecture. Mirroring keeps both writers using their own
+# canonical table while sharing visibility.
+
+def _mirror_to_module_schedule(cursor, schedule_id):
+    """Write or refresh module_schedule rows that mirror a course_schedule
+    row, one per day in days_of_week. Linked back to the source via
+    module_schedule.parent_schedule_id.
+
+    Best-effort — failures are logged but do not block the parent write.
+    """
+    try:
+        cs = cursor.execute(
+            """SELECT cs.course_id, cs.semester, cs.year,
+                      cs.start_time, cs.end_time, cs.days_of_week,
+                      cs.classroom, cs.instructor_id,
+                      COALESCE(c.code, c.course_code) AS module_code
+               FROM course_schedule cs
+               JOIN courses c ON c.id = cs.course_id
+               WHERE cs.id = ?""",
+            (schedule_id,),
+        ).fetchone()
+        if not cs:
+            return
+        (_course_id, semester, year, start_time, end_time, days_csv,
+         classroom, instructor_id, module_code) = cs
+
+        # Always rebuild from scratch so updates (including day removals)
+        # are reflected.
+        cursor.execute(
+            "DELETE FROM module_schedule WHERE parent_schedule_id = ?",
+            (schedule_id,),
+        )
+
+        # Without a time/day, there's nothing to mirror.
+        if not (start_time and end_time and days_csv):
+            return
+
+        # Resolve the room label to rooms.id, if it matches.
+        room_id = None
+        if classroom:
+            room_row = cursor.execute(
+                "SELECT id FROM rooms WHERE room_number = ? OR room_name = ? "
+                "LIMIT 1",
+                (classroom, classroom),
+            ).fetchone()
+            if room_row:
+                room_id = room_row[0]
+
+        days = [d.strip() for d in days_csv.split(',') if d.strip()]
+        for day in days:
+            cursor.execute(
+                """INSERT INTO module_schedule
+                   (module_code, day_of_week, start_time, end_time,
+                    room_id, instructor_id, session_type, semester, year,
+                    status, recurrence, parent_schedule_id)
+                   VALUES (?, ?, ?, ?, ?, ?, 'lecture', ?, ?,
+                           'published', 'weekly', ?)""",
+                (module_code, day, start_time, end_time, room_id,
+                 instructor_id, semester, year, schedule_id),
+            )
+    except sqlite3.Error as exc:
+        # Don't bring down the parent write on a mirror failure.
+        print(f"Note: could not mirror to module_schedule: {exc}")
+
+
+def _unmirror_module_schedule(cursor, schedule_id):
+    """Remove module_schedule rows linked to *schedule_id*. Called from
+    delete-schedule paths; safe to call when the source row no longer
+    exists."""
+    try:
+        cursor.execute(
+            "DELETE FROM module_schedule WHERE parent_schedule_id = ?",
+            (schedule_id,),
+        )
+    except sqlite3.Error as exc:
+        print(f"Note: could not clean module_schedule: {exc}")
+
+
 # --- Shared helpers for create/update ---
 
 TIME_SLOTS = [f"{h:02d}:00" for h in range(9, 18)]  # 09:00 .. 17:00
@@ -362,6 +446,11 @@ def create_course_schedule(auth):
         ''', (course_id, semester, year, start_time or None, end_time or None,
               days or None, classroom or None, instructor_id, timestamp))
 
+        # Mirror to module_schedule so the exam scheduler's conflict
+        # detector and any other consumer of weekly lecture slots can
+        # see the new booking immediately.
+        _mirror_to_module_schedule(cursor, cursor.lastrowid)
+
         conn.commit()
 
         print(f"\nSchedule created successfully for {semester} {year}!")
@@ -639,6 +728,10 @@ def update_schedule(auth):
         SET start_time = ?, end_time = ?, days_of_week = ?, classroom = ?, instructor_id = ?
         WHERE id = ?
         """, (new_start, new_end, new_days, new_classroom, new_instructor_id, schedule_id))
+
+        # Refresh the mirrored module_schedule rows (delete + re-insert)
+        # so room/day changes propagate to the exam scheduler's view.
+        _mirror_to_module_schedule(cursor, schedule_id)
 
         conn.commit()
 

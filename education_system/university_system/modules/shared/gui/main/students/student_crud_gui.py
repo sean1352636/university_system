@@ -346,6 +346,28 @@ def create_student_dialog(self):
 
             print(f"Assigned {len(selected_modules)} modules to student {student_id} for course {course}: {selected_modules}")
 
+            # Assess any matching program_fees against this enrolment so
+            # tuition / lab / etc. land on the student's fee statement.
+            try:
+                from education_system.university_system.modules.domain.finance.services.enrolment_fees import (
+                    assess_module_enrolment_fee,
+                )
+                for code in selected_modules:
+                    assess_module_enrolment_fee(student_id, code)
+            except Exception as exc:
+                # Finance assessment is best-effort — never block enrolment.
+                print(f"Note: could not assess enrolment fees: {exc}")
+
+            # Auto-place library holds on each module's required textbooks.
+            try:
+                from education_system.university_system.modules.domain.commerce.textbooks.services.library_holds import (
+                    place_holds_for_enrolment,
+                )
+                for code in selected_modules:
+                    place_holds_for_enrolment(student_id, code)
+            except Exception as exc:
+                print(f"Note: could not place library holds: {exc}")
+
             # Update course enrollment count
             cursor.execute('''
                 UPDATE courses
@@ -868,6 +890,15 @@ def update_student_dialog(self, student_id):
                         DS_optional_module_1, DS_optional_module_2, DS_optional_module_3, DS_optional_module_4,
                     )
 
+                    # Capture the modules being dropped so we can cancel
+                    # any unpaid enrolment fees for them before reassessing.
+                    dropped_modules = [
+                        r[0] for r in update_cursor.execute(
+                            'SELECT module_code FROM student_modules '
+                            'WHERE student_id = ?', (student_id,)
+                        ).fetchall()
+                    ]
+
                     # Remove all existing modules for this student
                     update_cursor.execute('DELETE FROM student_modules WHERE student_id = ?', (student_id,))
 
@@ -894,6 +925,36 @@ def update_student_dialog(self, student_id):
                             INSERT INTO student_modules (student_id, module_code, enrollment_date, status)
                             VALUES (?, ?, ?, ?)
                         ''', (student_id, module_code, current_date, 'enrolled'))
+
+                    # Sync finance: cancel unpaid fees for dropped modules,
+                    # assess new ones.
+                    try:
+                        from education_system.university_system.modules.domain.finance.services.enrolment_fees import (
+                            cancel_module_enrolment_fee,
+                            assess_module_enrolment_fee,
+                        )
+                        for code in dropped_modules:
+                            if code not in selected_modules:
+                                cancel_module_enrolment_fee(student_id, code)
+                        for code in selected_modules:
+                            assess_module_enrolment_fee(student_id, code)
+                    except Exception as exc:
+                        print(f"Note: could not sync enrolment fees: {exc}")
+
+                    # Sync library holds: release for dropped modules,
+                    # place for newly-enrolled ones.
+                    try:
+                        from education_system.university_system.modules.domain.commerce.textbooks.services.library_holds import (
+                            place_holds_for_enrolment,
+                            release_holds_for_drop,
+                        )
+                        for code in dropped_modules:
+                            if code not in selected_modules:
+                                release_holds_for_drop(student_id, code)
+                        for code in selected_modules:
+                            place_holds_for_enrolment(student_id, code)
+                    except Exception as exc:
+                        print(f"Note: could not sync library holds: {exc}")
 
                 update_conn.commit()
 
