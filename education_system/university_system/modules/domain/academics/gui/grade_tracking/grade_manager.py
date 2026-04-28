@@ -488,6 +488,12 @@ class GradeManager:
         v_scrollbar.pack(side='right', fill='y')
         h_scrollbar.pack(side='bottom', fill='x')
 
+        # Double-click on an exam-source row ('E' prefix) hands off to
+        # the exam scheduler's Results dialog so re-grading goes through
+        # the canonical writeback (audit log, student_modules update,
+        # accommodations) instead of a generic UPDATE.
+        self.grades_tree.bind("<Double-1>", self._on_grade_row_double_click)
+
         # Load grades data
         self.refresh_grades()
 
@@ -1770,6 +1776,113 @@ class GradeManager:
         except sqlite3.Error as e:
             messagebox.showerror("Database Error", f"Error calculating statistics: {e}")
 
+    def _on_grade_row_double_click(self, _event):
+        """Hand exam-source rows off to the exam scheduler's Results
+        dialog. Other rows fall through to whatever default editing
+        path exists (currently none — leave them no-op rather than
+        opening the scheduler for the wrong source).
+        """
+        sel = self.grades_tree.selection()
+        if not sel:
+            return
+        values = self.grades_tree.item(sel[0]).get("values") or []
+        if not values:
+            return
+        grade_id = str(values[0])
+        if not grade_id.startswith("E"):
+            return  # non-exam row — let the existing Edit button handle it
+        try:
+            student_grades_id = int(grade_id[1:])
+        except ValueError:
+            return
+        self._open_exam_results_for_grade(student_grades_id)
+
+    def _open_exam_results_for_grade(self, student_grades_id: int):
+        """Look up the originating exam for a student_grades row and
+        open the exam scheduler's per-exam marks dialog."""
+        try:
+            cursor = self.get_safe_cursor()
+        except Exception:
+            return
+
+        # student_grades.assessment_name was written as
+        # "{module_code} Exam ({date})" by results.apply_exam_results,
+        # so we can recover the exam by matching module_code + date
+        # against the exams table.
+        try:
+            row = cursor.execute(
+                "SELECT module_code, assessment_date "
+                "FROM student_grades WHERE id = ?",
+                (student_grades_id,),
+            ).fetchone()
+        except sqlite3.Error:
+            row = None
+        if not row:
+            messagebox.showwarning(
+                "Exam grade",
+                "Couldn't locate the source row in student_grades.",
+            )
+            return
+        module_code, exam_date = row[0], row[1]
+
+        exam_row = None
+        try:
+            exam_row = cursor.execute(
+                "SELECT id, module_code, module_name, date, start_time, "
+                "       end_time, COALESCE(room,''), instructor_id, "
+                "       COALESCE(instructor_name,''), "
+                "       COALESCE(students_enrolled,0), "
+                "       COALESCE(enrolled_student_ids,'[]') "
+                "FROM exams "
+                "WHERE module_code = ? AND date = ? "
+                "ORDER BY id DESC LIMIT 1",
+                (module_code, exam_date),
+            ).fetchone()
+        except sqlite3.Error:
+            pass
+        if not exam_row:
+            messagebox.showinfo(
+                "Exam grade",
+                f"No matching exam found in the scheduler for "
+                f"{module_code} on {exam_date}. The exam may have been "
+                "deleted; the recorded grade remains visible here.",
+            )
+            return
+
+        try:
+            from education_system.university_system.modules.domain.academics.gui.exam_management.models import Exam
+            from education_system.university_system.modules.domain.academics.gui.exam_management.data_manager import DataManager
+            from education_system.university_system.modules.domain.academics.gui.exam_management.tabs.results_tab import ResultsEntryDialog
+        except Exception as exc:
+            messagebox.showerror(
+                "Exam grade",
+                f"Exam scheduler isn't available: {exc}",
+            )
+            return
+
+        try:
+            ids_blob = exam_row[10]
+            enrolled_ids = json.loads(ids_blob) if ids_blob else []
+        except (TypeError, ValueError):
+            enrolled_ids = []
+
+        exam_obj = Exam(
+            id=exam_row[0], module_code=exam_row[1], module_name=exam_row[2],
+            date=exam_row[3], start_time=exam_row[4], end_time=exam_row[5],
+            room=exam_row[6], instructor_id=exam_row[7],
+            instructor_name=exam_row[8], students_enrolled=exam_row[9],
+            enrolled_student_ids=enrolled_ids,
+        )
+
+        # ResultsEntryDialog needs a DataManager so it can read enrolled
+        # students and existing grades. Spin up a fresh one — it loads
+        # data lazily and shares the same DB.
+        data_manager = DataManager()
+        ResultsEntryDialog(
+            self.content_frame, exam_obj, data_manager,
+            on_saved=self.refresh_grades,
+        )
+
     def refresh_grades(self):
         """Refresh the grades list with current filters"""
         try:
@@ -1870,13 +1983,61 @@ class GradeManager:
                 query_part2 += " AND a.id = ?"
                 params2.append(assignment_id)
 
-            # Combine both queries
-            full_query = f"{query_part1} UNION ALL {query_part2} ORDER BY submission_date DESC, student_name"
+            # Part 3: Exam results from student_grades (written by the
+            # exam scheduler's results.apply_exam_results — assessment_type='exam').
+            # IDs are prefixed 'E' so they can be told apart from rows in
+            # `grades` ('grade_id' as int) and `assignment_submissions` ('S' + id).
+            query_part3 = """
+                SELECT
+                    'E' || sg.id as grade_id,
+                    s.first_name || ' ' || s.last_name as student_name,
+                    sg.assessment_name as assessment_name,
+                    ROUND(sg.percentage, 2) as score,
+                    100 as max_points,
+                    ROUND(sg.percentage, 2) as percentage,
+                    CASE
+                        WHEN sg.percentage >= 93 THEN 'A+'
+                        WHEN sg.percentage >= 90 THEN 'A'
+                        WHEN sg.percentage >= 87 THEN 'A-'
+                        WHEN sg.percentage >= 83 THEN 'B+'
+                        WHEN sg.percentage >= 80 THEN 'B'
+                        WHEN sg.percentage >= 77 THEN 'B-'
+                        WHEN sg.percentage >= 73 THEN 'C+'
+                        WHEN sg.percentage >= 70 THEN 'C'
+                        WHEN sg.percentage >= 67 THEN 'C-'
+                        WHEN sg.percentage >= 63 THEN 'D+'
+                        WHEN sg.percentage >= 60 THEN 'D'
+                        WHEN sg.percentage >= 57 THEN 'D-'
+                        ELSE 'F'
+                    END as letter_grade,
+                    COALESCE(sg.assessment_date, sg.grade_date) as submission_date,
+                    'exam' as source_type
+                FROM student_grades sg
+                JOIN students s ON sg.student_id = s.student_id
+                WHERE sg.assessment_type = 'exam'
+                  AND sg.percentage IS NOT NULL
+            """
+
+            params3 = []
+            if student_filter:
+                student_id = student_filter.split(' - ')[0]
+                query_part3 += " AND s.student_id = ?"
+                params3.append(student_id)
+            # Assessment filter: exam rows have prefix 'E'
+            if assessment_filter and assessment_filter.startswith('E'):
+                exam_assessment = assessment_filter.split(' - ', 1)[0][1:]
+                query_part3 += " AND sg.assessment_name = ?"
+                params3.append(exam_assessment)
+
+            # Combine all three queries
+            full_query = (f"{query_part1} UNION ALL {query_part2} "
+                          f"UNION ALL {query_part3} "
+                          "ORDER BY submission_date DESC, student_name")
 
             cursor = self.get_safe_cursor()
 
             # Execute with combined parameters
-            all_params = params1 + params2
+            all_params = params1 + params2 + params3
             cursor.execute(full_query, all_params)
             grades = cursor.fetchall()
 
@@ -1921,12 +2082,19 @@ class GradeManager:
         try:
             cursor = self.get_safe_cursor()
 
-            # Populate student filter
+            # Populate student filter — include students with rows in
+            # `grades`, `assignment_submissions`, or `student_grades`
+            # (the latter is where exam scheduler results land).
             if hasattr(self, 'grade_student_combo'):
                 cursor.execute("""
                     SELECT DISTINCT s.student_id, s.first_name, s.last_name
                     FROM students s
-                    JOIN grades g ON s.student_id = g.student_id
+                    WHERE EXISTS (SELECT 1 FROM grades g
+                                   WHERE g.student_id = s.student_id)
+                       OR EXISTS (SELECT 1 FROM assignment_submissions sub
+                                   WHERE sub.student_id = s.student_id)
+                       OR EXISTS (SELECT 1 FROM student_grades sg
+                                   WHERE sg.student_id = s.student_id)
                     ORDER BY s.last_name, s.first_name
                 """)
                 students = cursor.fetchall()
@@ -1958,8 +2126,27 @@ class GradeManager:
                 """)
                 assessments_from_assignments = cursor.fetchall()
 
-                # Combine both sources
-                all_assessments = list(assessments_from_assessments) + list(assessments_from_assignments)
+                # Query exam-source assessments from student_grades. The
+                # filter id uses an 'E' prefix + the assessment_name so
+                # refresh_grades can identify and route the filter.
+                cursor.execute("""
+                    SELECT DISTINCT sg.assessment_name,
+                           COALESCE(m.module_name, sg.module_code) AS module_name
+                    FROM student_grades sg
+                    LEFT JOIN modules m ON m.module_code = sg.module_code
+                    WHERE sg.assessment_type = 'exam'
+                      AND sg.assessment_name IS NOT NULL
+                    ORDER BY module_name, sg.assessment_name
+                """)
+                assessments_from_exams = [
+                    (f"E{name}", name, mod or "")
+                    for name, mod in cursor.fetchall()
+                ]
+
+                # Combine all three sources
+                all_assessments = (list(assessments_from_assessments)
+                                   + list(assessments_from_assignments)
+                                   + assessments_from_exams)
                 assessment_list = ["All Assessments"] + [f"{a[0]} - {a[1]} ({a[2]})" for a in all_assessments]
                 safe_combo_update(self, 'grade_assessment_combo', assessment_list)
 
