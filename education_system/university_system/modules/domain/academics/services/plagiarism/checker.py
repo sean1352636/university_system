@@ -415,6 +415,36 @@ class PlagiarismChecker:
 
                 doc_id, doc_title, doc_content, doc_hash, doc_author, doc_module = doc_data
 
+                # Per-course toggle: skip the check if the course owning
+                # this module has plagiarism detection disabled. Use the
+                # course-level threshold when no explicit one is passed.
+                try:
+                    from education_system.university_system.modules.domain.academics.services.course_management.integrity_settings import (
+                        get_course_integrity_settings,
+                    )
+                    settings = get_course_integrity_settings(doc_module or "")
+                    if not settings["plagiarism_enabled"]:
+                        return {
+                            "document_id": doc_id,
+                            "skipped": True,
+                            "reason": (
+                                f"Plagiarism check disabled for "
+                                f"course {doc_module}"
+                            ),
+                            "check_date": datetime.now().strftime(
+                                '%Y-%m-%d %H:%M:%S'),
+                        }
+                    # Caller's explicit threshold wins; otherwise use the
+                    # course's configured threshold.
+                    if threshold == 0.3 and settings["similarity_threshold"] != 0.3:
+                        threshold = settings["similarity_threshold"]
+                except Exception as _exc:
+                    logger.debug(
+                        "Integrity-settings lookup failed for "
+                        "module %s: %s — proceeding with default policy",
+                        doc_module, _exc,
+                    )
+
                 # First check for exact matches (excluding the document itself)
                 cursor.execute('''
                 SELECT id, title, content, author_id, submission_date

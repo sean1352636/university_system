@@ -873,12 +873,36 @@ class ExternalExaminersDialog(tk.Toplevel):
         self._role_var = tk.StringVar()
 
         examiners = data_manager.list_active_examiners()
+
+        # Find course-level appointed examiners for this exam's module so
+        # they surface at the top of the picker — saves admins re-picking
+        # the same examiner that's already appointed for the year.
+        appointed_ids: set = set()
+        try:
+            exam_obj = next(
+                (e for e in (data_manager.exams or [])
+                 if e.id == self._exam_id), None)
+            if exam_obj is not None:
+                from education_system.university_system.modules.domain.academics.services.course_management.examiner_assignments import (
+                    find_examiners_for_module,
+                )
+                for ex in find_examiners_for_module(exam_obj.module_code):
+                    appointed_ids.add(ex["examiner_id"])
+        except Exception:
+            pass
+
         self._examiner_lookup = {}
-        for e in examiners:
+        # Order: appointed first, then everyone else, both alphabetical.
+        def _sort_key(e):
+            ex_id = e.get("examiner_id") or e.get("id")
+            return (0 if ex_id in appointed_ids else 1,
+                    (e.get("name") or "").lower())
+        for e in sorted(examiners, key=_sort_key):
             ex_id = e.get("examiner_id") or e.get("id")
             if ex_id is None:
                 continue
-            label = f"{e.get('name','?')} — {e.get('institution','?')}"
+            prefix = "★ " if ex_id in appointed_ids else ""
+            label = f"{prefix}{e.get('name','?')} — {e.get('institution','?')}"
             self._examiner_lookup[label] = ex_id
         self._combo = ttk.Combobox(
             row, textvariable=self._examiner_var,

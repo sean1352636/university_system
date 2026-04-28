@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.103.0 — 2026-04-28](#81030---2026-04-28)
 - [8.102.0 — 2026-04-28](#81020---2026-04-28)
 - [8.101.0 — 2026-04-28](#81010---2026-04-28)
 - [8.100.0 — 2026-04-28](#81000---2026-04-28)
@@ -207,6 +208,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.103.0] — 2026-04-28
+
+### Course management ↔ rest-of-university integrations; exam grades surfaced in grade manager
+
+#### Added
+
+- **Exam grades surface in the grade-management GUI.** `refresh_grades` adds a third UNION branch reading from `student_grades` where `assessment_type='exam'`; row id is prefixed `'E'` to disambiguate from `grades.grade_id` (int) and assignment-source ids (`'S'`-prefixed). `populate_filter_combos` now ORs across `grades`, `assignment_submissions`, and `student_grades` so exam-only students appear, and the assessment dropdown adds an exam-source query. Double-clicking an `'E'` row hands off to the exam scheduler's `ResultsEntryDialog`, so re-grading routes through `apply_exam_results` (audit log + `student_modules` update + accommodations) instead of a generic UPDATE — single writer per channel. (`university_system/modules/domain/academics/gui/grade_tracking/grade_manager.py`)
+- **Course management → exam scheduler room conflict.** `course_management/scheduling.py` mirrors `course_schedule` writes into `module_schedule` (one row per `day_of_week`, linked back via `parent_schedule_id`) so the exam scheduler's existing conflict detector sees lectures created by course management without a schema change. `_unmirror_module_schedule` is the counterpart for delete paths.
+- **Enrolment fee assessment.** New `finance/services/enrolment_fees.py`: `assess_module_enrolment_fee` resolves a matching `program_fees` row (matched against `module_code` or the parent course's `code`/`course_code`, optional `academic_year`), inserts an `unpaid` `student_fees` row with the configured amount, currency, and due date. Idempotent on `(student, fee_type, academic_year)` — won't double-bill on duplicate enrolments but reactivates after a previous cancellation. `cancel_module_enrolment_fee` flips matching unpaid rows to `cancelled` on drop; paid rows are left for the refund flow.
+- **Library hold auto-placement.** New `commerce/textbooks/services/library_holds.py`: `place_holds_for_enrolment` joins `textbooks` (required = 1) to `books` by ISBN and inserts a `book_reservations` row with auto-computed priority (next-in-queue per book). Idempotent per (student, book). `release_holds_for_drop` cancels active reservations the student holds against a dropped module's required books; other students' holds are untouched.
+- **Course-level external examiner appointments.** New `course_management/examiner_assignments.py`: writes to the canonical `examiner_assignments` table so exam-scheduler per-exam panels and course-level year-long appointments share the same `external_examiners` master. `attach_examiner_to_course` is idempotent on `(examiner_id, course_code, year, type)`. `find_examiners_for_module` resolves through `courses` so module-level lookups pick up the parent course's appointees. The exam scheduler's `ExternalExaminersDialog` now sorts course-appointed examiners to the top of the picker and prefixes their labels with `★`.
+- **Teaching workload mirroring.** New `course_management/workload_sync.py`: `record_teaching_workload` upserts a `workload_allocations` row keyed on `(user_id, course_code, year, semester)` and recomputes the aggregate `staff_workload.teaching_hours` from the sum of weighted teaching allocations (default 1.5× weighting on contact time). `clear_teaching_workload` drops the allocation and refreshes the aggregate when an instructor is replaced. `_hours_per_week` derives weekly contact hours from session length × meetings.
+- **Academic calendar mirroring for years and semesters.** Three new helpers on `AcademicCalendarManager` (`_upsert_event`, `_sync_academic_year_to_calendar`, `_sync_semester_to_calendar`) push academic years and semester sub-windows onto `academic_calendar_events` with deterministic ids (`AY-{year}`, `SEM-{id}-PERIOD`, `SEM-{id}-REG`, `SEM-{id}-EXAMS`). Each gets a typed `event_type` (`Academic Year`, `Semester`, `Registration`, `Exam Period`) so calendar consumers can colour-code. `add_academic_year` and `add_semester` call the sync inside the same transaction as the INSERT.
+- **Per-course academic-integrity toggles.** New `course_management/integrity_settings.py` auto-creates `course_integrity_settings` (PK `module_code`, fields: `ai_detection_enabled`, `plagiarism_enabled`, `similarity_threshold`, `allow_collaboration`, `notes`). Service functions `get_course_integrity_settings`, `update_course_integrity_settings`, `is_plagiarism_enabled`, `is_ai_detection_enabled`, `get_similarity_threshold`. Defaults match the project-wide expectation (both enabled, 0.3 threshold). Wired into `plagiarism/checker.py:check_plagiarism` (returns `{skipped: True, reason}` when disabled; course-level threshold beats the default when caller didn't override) and `ai_detector/detector/core_analysis_mixin.py:analyze_text` (short-circuits with a `skipped` payload when disabled).
+
+#### Changed
+
+- **All four enrolment writers now sync to finance + library.** `student_crud_gui.py` (new student + course change), `batch_operations/db_operations.py` (`process_module_enrollments`, `update_student_modules`, bulk add/remove), and `gui/batch_operations/mixins/batch_updates.py` (course-change mixin) snapshot the prior `student_modules.module_code` list, run the inserts/deletes, then call `assess_module_enrolment_fee` / `cancel_module_enrolment_fee` and `place_holds_for_enrolment` / `release_holds_for_drop` for the right modules. All wrapped in best-effort `try/except` so a finance- or library-side failure logs and continues — never blocks the enrolment commit.
+- **Exam scheduler results "E"-prefixed rows are now editable from the grade manager** via double-click, opening the exam scheduler's `ResultsEntryDialog`. Edit / Delete buttons in the grade manager remain scoped to non-exam rows so the writeback path stays canonical.
 
 ---
 

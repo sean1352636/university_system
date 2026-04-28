@@ -22,6 +22,32 @@ class CoreAnalysisMixin:
         Basic text analysis method - wrapper for enhanced analysis
         This method provides backward compatibility and serves as the main entry point
         """
+        # Per-course toggle: skip AI detection entirely if the course
+        # owning this submission has it disabled. The plagiarism flow
+        # has its own equivalent guard.
+        if course_code:
+            try:
+                from education_system.university_system.modules.domain.academics.services.course_management.integrity_settings import (
+                    is_ai_detection_enabled,
+                )
+                if not is_ai_detection_enabled(course_code):
+                    logger.info(
+                        "AI detection disabled for course %s — skipping",
+                        course_code,
+                    )
+                    return {
+                        "skipped": True,
+                        "reason": (
+                            f"AI detection disabled for course {course_code}"
+                        ),
+                        "course_code": course_code,
+                    }
+            except Exception as exc:
+                logger.debug(
+                    "Integrity-settings lookup failed for %s: %s — "
+                    "proceeding with default policy", course_code, exc,
+                )
+
         try:
             # Call the enhanced analysis method
             result = self.analyze_text_enhanced(

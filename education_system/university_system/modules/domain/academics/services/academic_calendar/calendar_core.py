@@ -1470,6 +1470,100 @@ class AcademicCalendarManager:
         return [{'name': row['name'], 'due': row['due_date']} for row in rows]
 
     # Academic year and semester management
+    # ------------------------------------------------------------------
+    #  Calendar-event mirroring for academic years & semesters
+    # ------------------------------------------------------------------
+
+    def _upsert_event(self, event_id: str, name: str,
+                      date_start: str, date_end: str,
+                      description: str = "", event_type: str = "Academic"):
+        """Insert or update one academic_calendar_events row keyed on
+        the deterministic *event_id*. Used to mirror academic years and
+        semester sub-periods onto the calendar so they show up alongside
+        exams, holidays, and ad-hoc events."""
+        now = datetime.now().isoformat()
+        existing = self.db_manager.execute_query(
+            "SELECT id FROM academic_calendar_events WHERE id = ?",
+            (event_id,),
+        )
+        if existing:
+            self.db_manager.execute_update(
+                """UPDATE academic_calendar_events
+                   SET name = ?, date_start = ?, date_end = ?,
+                       description = ?, event_type = ?, last_modified = ?
+                   WHERE id = ?""",
+                (name, date_start, date_end, description, event_type, now,
+                 event_id),
+            )
+        else:
+            self.db_manager.execute_update(
+                """INSERT INTO academic_calendar_events
+                   (id, name, date_start, date_end, description,
+                    event_type, date_added, last_modified)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (event_id, name, date_start, date_end, description,
+                 event_type, now, now),
+            )
+
+    def _sync_academic_year_to_calendar(self, year_id: str,
+                                         start_date: str,
+                                         end_date: str) -> None:
+        """Push an academic year onto the calendar as one spanning event."""
+        try:
+            self._upsert_event(
+                event_id=f"AY-{year_id}",
+                name=f"Academic Year {year_id}",
+                date_start=start_date,
+                date_end=end_date,
+                description=f"Academic year {year_id}",
+                event_type="Academic Year",
+            )
+        except Exception as exc:
+            logger.warning("Failed to sync academic year to calendar: %s", exc)
+
+    def _sync_semester_to_calendar(self, semester_id: int, name: str,
+                                    start_date: str, end_date: str,
+                                    registration_start: Optional[str] = None,
+                                    registration_end: Optional[str] = None,
+                                    exams_start: Optional[str] = None,
+                                    exams_end: Optional[str] = None) -> None:
+        """Push a semester onto the calendar as up to three events:
+        the semester period, the registration window, and the final
+        exams window. Each gets a deterministic id so re-syncing
+        replaces rather than duplicates."""
+        try:
+            self._upsert_event(
+                event_id=f"SEM-{semester_id}-PERIOD",
+                name=f"{name} Semester",
+                date_start=start_date,
+                date_end=end_date,
+                description=f"{name} semester period",
+                event_type="Semester",
+            )
+            if registration_start and registration_end:
+                self._upsert_event(
+                    event_id=f"SEM-{semester_id}-REG",
+                    name=f"{name} Registration / Add-Drop",
+                    date_start=registration_start,
+                    date_end=registration_end,
+                    description=(
+                        f"Registration and add/drop window for {name} "
+                        "semester."
+                    ),
+                    event_type="Registration",
+                )
+            if exams_start and exams_end:
+                self._upsert_event(
+                    event_id=f"SEM-{semester_id}-EXAMS",
+                    name=f"{name} Final Exams",
+                    date_start=exams_start,
+                    date_end=exams_end,
+                    description=f"Final exam period for {name} semester.",
+                    event_type="Exam Period",
+                )
+        except Exception as exc:
+            logger.warning("Failed to sync semester to calendar: %s", exc)
+
     def add_academic_year(self, year: str, start_date: str, end_date: str) -> Tuple[bool, str]:
         """Add a new academic year to the calendar"""
         if not self.auth_manager.check_permission('manage_schedules'):
@@ -1507,6 +1601,11 @@ class AcademicCalendarManager:
                     new_values={'year': year, 'start_date': start_date, 'end_date': end_date},
                     user_id=user_id
                 )
+
+                # Mirror onto the calendar so the academic year shows up
+                # alongside exams, holidays and ad-hoc events.
+                self._sync_academic_year_to_calendar(
+                    year, start_date, end_date)
 
             logger.info(f"Academic year {year} added successfully")
             return True, f"Academic year {year} added successfully"
@@ -1555,6 +1654,28 @@ class AcademicCalendarManager:
                        VALUES (?, ?, ?, ?, ?)""",
                     (academic_year, semester_name, start_date, end_date, datetime.now().isoformat())
                 )
+
+                # Look up the new semester's id and mirror it onto the
+                # calendar (period plus registration/exam sub-windows
+                # if those dates have been set).
+                new_row = self.db_manager.execute_query(
+                    "SELECT id, registration_start, registration_end, "
+                    "       final_exams_start, final_exams_end "
+                    "FROM semesters WHERE academic_year_id = ? AND name = ?",
+                    (academic_year, semester_name),
+                )
+                if new_row:
+                    sem = dict(new_row[0])
+                    self._sync_semester_to_calendar(
+                        semester_id=sem["id"],
+                        name=semester_name,
+                        start_date=start_date,
+                        end_date=end_date,
+                        registration_start=sem.get("registration_start"),
+                        registration_end=sem.get("registration_end"),
+                        exams_start=sem.get("final_exams_start"),
+                        exams_end=sem.get("final_exams_end"),
+                    )
 
             logger.info(f"Semester {semester_name} added to academic year {academic_year}")
             return True, f"Semester {semester_name} added successfully to academic year {academic_year}"

@@ -451,6 +451,31 @@ def create_course_schedule(auth):
         # see the new booking immediately.
         _mirror_to_module_schedule(cursor, cursor.lastrowid)
 
+        # Mirror the teaching commitment into HR's workload tables so
+        # staff workload reports reflect this assignment automatically.
+        try:
+            from education_system.university_system.modules.domain.academics.services.course_management.workload_sync import (
+                record_teaching_workload,
+            )
+            cursor.execute(
+                "SELECT COALESCE(course_code, code) FROM courses WHERE id = ?",
+                (course_id,),
+            )
+            _row = cursor.fetchone()
+            _course_code = _row[0] if _row else None
+            if _course_code and instructor_id:
+                record_teaching_workload(
+                    instructor_id=instructor_id,
+                    course_code=_course_code,
+                    academic_year=str(year),
+                    semester=semester,
+                    start_time=start_time,
+                    end_time=end_time,
+                    days_of_week=days,
+                )
+        except Exception as _exc:
+            print(f"Note: could not sync teaching workload: {_exc}")
+
         conn.commit()
 
         print(f"\nSchedule created successfully for {semester} {year}!")
@@ -732,6 +757,31 @@ def update_schedule(auth):
         # Refresh the mirrored module_schedule rows (delete + re-insert)
         # so room/day changes propagate to the exam scheduler's view.
         _mirror_to_module_schedule(cursor, schedule_id)
+
+        # Refresh HR workload allocations: clear the previous instructor's
+        # entry if they're being replaced, then record the new assignment.
+        try:
+            from education_system.university_system.modules.domain.academics.services.course_management.workload_sync import (
+                record_teaching_workload,
+                clear_teaching_workload,
+            )
+            if instructor_id and instructor_id != new_instructor_id:
+                clear_teaching_workload(
+                    instructor_id, course_code,
+                    str(year), semester,
+                )
+            if new_instructor_id:
+                record_teaching_workload(
+                    instructor_id=new_instructor_id,
+                    course_code=course_code,
+                    academic_year=str(year),
+                    semester=semester,
+                    start_time=new_start,
+                    end_time=new_end,
+                    days_of_week=new_days,
+                )
+        except Exception as _exc:
+            print(f"Note: could not sync teaching workload: {_exc}")
 
         conn.commit()
 
