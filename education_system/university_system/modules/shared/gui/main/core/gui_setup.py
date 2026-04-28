@@ -308,6 +308,12 @@ def create_navigation_panel(self, parent):
             self.show_new_feature_module_evaluation_portal),
         ('new_feature_lecturer_evaluation', 'Lecturer Evaluation',
             self.show_new_feature_lecturer_evaluation),
+        ('new_feature_lesson_planner', 'Lesson Planner',
+            self.show_new_feature_lesson_planner),
+        ('new_feature_tutor_groups', 'Tutor Groups',
+            self.show_new_feature_tutor_groups),
+        ('new_feature_university_research', 'Research Portal',
+            self.show_new_feature_university_research),
         ('study_recommendations', 'Study Recommendations', self.show_study_recommendations_gui),
     ]
     if VIRTUAL_CLASSROOM_AVAILABLE:
@@ -349,6 +355,8 @@ def create_navigation_panel(self, parent):
     # ---------- Health & Wellness ----------
     health_buttons_data = [
         ('health_portal', _t("nav.buttons.health_portal"), self.open_health_portal_gui),
+        ('new_feature_first_aid_portal', 'First Aid Portal',
+            self.show_new_feature_first_aid_portal),
         ('gym', "Gym", self.show_gym_gui),
     ]
 
@@ -375,6 +383,8 @@ def create_navigation_panel(self, parent):
         ('campus_events', _t("nav.buttons.campus_events"), self.show_campus_events_gui),
         ('events_discovery', _t("nav.buttons.events_discovery"), self.show_events_discovery_gui),
         ('facilities_management', _t("nav.buttons.facilities"), self.show_facilities_management_gui),
+        ('new_feature_room_booking', 'Room Booking',
+            self.show_new_feature_room_booking),
         ('equipment', _t("nav.buttons.equipment"), self.show_equipment_gui),
     ]
 
@@ -391,6 +401,8 @@ def create_navigation_panel(self, parent):
         ('takeaway_system', _t("nav.buttons.takeaway"), self.show_takeaway_system),
         ('bar', _t("nav.buttons.bar"), self.show_bar),
         ('butcher', _t("nav.buttons.butcher"), self.show_butcher_gui),
+        ('new_feature_bakery_shop', 'Bakery Shop',
+            self.show_new_feature_bakery_shop),
     ]
 
     if any(name in visible_buttons for name, _, _ in dining_buttons_data):
@@ -447,6 +459,14 @@ def create_navigation_panel(self, parent):
         ('student_support', _t('nav.buttons.student_support'), self.open_student_support_portal_gui),
         ('helpdesk', _t('nav.buttons.helpdesk'), self.open_helpdesk_gui),
         ('early_warning_system', _t('nav.buttons.early_warning'), self.show_early_warning_gui),
+        ('new_feature_intervention_support', 'Intervention Support',
+            self.show_new_feature_intervention_support),
+        ('new_feature_intervention_outcomes', 'Intervention Outcomes',
+            self.show_new_feature_intervention_outcomes),
+        ('new_feature_safeguarding_system', 'Safeguarding',
+            self.show_new_feature_safeguarding_system),
+        ('new_feature_mentoring_matching', 'Peer Mentoring Matching',
+            self.show_new_feature_mentoring_matching),
         ('accessibility', _t('nav.buttons.accessibility'), self.show_accessibility_portal_gui),
         # Equality & Diversity is an inclusivity service alongside
         # Accessibility — moved here from Cross-System where it sat
@@ -466,6 +486,12 @@ def create_navigation_panel(self, parent):
     career_and_alumni_buttons_data = [
         ('career_services', _t('nav.buttons.career_services'), self.show_career_services_gui),
         ('internship_portal', _t('nav.buttons.internship_portal'), self.open_internship_portal_gui),
+        ('new_feature_apprenticeship_system', 'Apprenticeships',
+            self.show_new_feature_apprenticeship_system),
+        ('new_feature_placement_tracker', 'Placement Hours',
+            self.show_new_feature_placement_tracker),
+        ('new_feature_employer_portal', 'Employer Portal',
+            self.show_new_feature_employer_portal),
         ('student_jobs', _t('nav.buttons.student_jobs'), self.show_student_jobs_gui),
         ('alumni_management', _t('nav.buttons.alumni'), self.open_alumni_portal_gui),
     ]
@@ -485,6 +511,8 @@ def create_navigation_panel(self, parent):
         # an experimental add-on.
         ('new_feature_disciplinary_portal', 'Disciplinary Portal',
             self.show_new_feature_disciplinary_portal),
+        ('new_feature_risk_management', 'Risk Management',
+            self.show_new_feature_risk_management),
     ]
 
     if any(name in visible_buttons for name, _, _ in family_and_legal_buttons_data):
@@ -526,6 +554,8 @@ def create_navigation_panel(self, parent):
     analytics_and_reporting_buttons_data = [
         ('integrated_dashboard', _t('nav.buttons.dashboard'), self.show_integrated_dashboard),
         ('analytics', _t('nav.buttons.analytics'), self.show_analytics),
+        ('new_feature_kpi_dashboard', 'KPI Dashboard',
+            self.show_new_feature_kpi_dashboard),
     ]
 
     if any(name in visible_buttons for name, _, _ in analytics_and_reporting_buttons_data):
@@ -606,6 +636,10 @@ def create_navigation_panel(self, parent):
         ('user_management', _t('nav.buttons.user_management'), self.show_user_management),
         ('system_admin_gui', _t('nav.buttons.system_admin'), self.show_system_administration_gui),
         ('security_dashboard', _t('nav.buttons.security'), self.show_security_dashboard),
+        ('new_feature_health_safety_portal', 'Health & Safety',
+            self.show_new_feature_health_safety_portal),
+        ('new_feature_background_checker', 'Background Checker',
+            self.show_new_feature_background_checker),
         ('integration_marketplace', _t('nav.buttons.integration_marketplace'), self.show_integration_marketplace_gui),
         ('admissions_crm', _t('nav.buttons.admissions_crm'), self.show_admissions_crm_gui),
         ('usage_adoption_reports', _t('nav.buttons.usage_reports'), self.show_usage_adoption_reports),
@@ -647,63 +681,12 @@ def create_navigation_panel(self, parent):
                                    style='Large.TButton')
         cross_system_btn.pack(fill=tk.X, pady=2, padx=5)
 
-    # ---------- New Features ----------
-    # Standalone Tk apps recently homed under modules/domain/. Each
-    # launches in its own subprocess via UnifiedManagementGUI._launch_
-    # new_feature_module so it can't collide with the main GUI's Tk root.
-    new_features_buttons_data = [
-        # Complaints Portal moved to "Communication" — kept out of
-        # "New Features" since it's a permanent grievance channel.
-        # Course / Module / Lecturer Evaluation moved to "Academic
-        # Management" — they belong with course_management and
-        # grade_tracking rather than this standalone-apps bucket.
-        # Disciplinary Portal moved to "Family & Legal" — kept out of
-        # "New Features" since it's a permanent admin tool.
-        ('new_feature_risk_management',         'Risk Management',
-            self.show_new_feature_risk_management),
-        ('new_feature_first_aid_portal',        'First Aid Portal',
-            self.show_new_feature_first_aid_portal),
-        ('new_feature_health_safety_portal',    'Health & Safety',
-            self.show_new_feature_health_safety_portal),
-        ('new_feature_intervention_support',    'Intervention Support',
-            self.show_new_feature_intervention_support),
-        ('new_feature_safeguarding_system',     'Safeguarding',
-            self.show_new_feature_safeguarding_system),
-        ('new_feature_lesson_planner',          'Lesson Planner',
-            self.show_new_feature_lesson_planner),
-        ('new_feature_background_checker',      'Background Checker',
-            self.show_new_feature_background_checker),
-        ('new_feature_university_research',     'Research Portal',
-            self.show_new_feature_university_research),
-        # Cross-system ports added 2026-04
-        ('new_feature_employer_portal',         'Employer Portal',
-            self.show_new_feature_employer_portal),
-        ('new_feature_intervention_outcomes',   'Intervention Outcomes',
-            self.show_new_feature_intervention_outcomes),
-        ('new_feature_kpi_dashboard',           'KPI Dashboard',
-            self.show_new_feature_kpi_dashboard),
-        ('new_feature_bursary',                 'Bursary Management',
-            self.show_new_feature_bursary),
-        ('new_feature_mentoring_matching',      'Peer Mentoring Matching',
-            self.show_new_feature_mentoring_matching),
-        ('new_feature_room_booking',            'Room Booking',
-            self.show_new_feature_room_booking),
-        ('new_feature_tutor_groups',            'Tutor Groups',
-            self.show_new_feature_tutor_groups),
-        # Standalone Tk apps moved from /add 2026-04
-        ('new_feature_apprenticeship_system',   'Apprenticeships',
-            self.show_new_feature_apprenticeship_system),
-        ('new_feature_placement_tracker',       'Placement Hours',
-            self.show_new_feature_placement_tracker),
-        ('new_feature_bakery_shop',             'Bakery Shop',
-            self.show_new_feature_bakery_shop),
-    ]
-
-    if any(name in visible_buttons for name, _, _ in new_features_buttons_data):
-        new_features_btn = ttk.Button(scrollable_frame, text="\u2728 New Features" + " \u25b6",
-                                      command=lambda: open_category_window("New Features", new_features_buttons_data),
-                                      style='Large.TButton')
-        new_features_btn.pack(fill=tk.X, pady=2, padx=5)
+    # The "New Features" sidebar bucket has been retired. Every
+    # standalone Tk app it used to host has been redistributed into
+    # the appropriate topical category \u2014 see the move comments
+    # scattered through this file for the audit trail. Buttons are
+    # still launched as subprocesses via the same
+    # `UnifiedManagementGUI._launch_new_feature_module` plumbing.
 
     # Finalize scroll region
     scrollable_frame.update_idletasks()
@@ -844,7 +827,6 @@ def get_visible_buttons_for_role(self, role=None):
         'new_feature_employer_portal',
         'new_feature_intervention_outcomes',
         'new_feature_kpi_dashboard',
-        'new_feature_bursary',
         'new_feature_mentoring_matching',
         'new_feature_room_booking',
         'new_feature_tutor_groups',

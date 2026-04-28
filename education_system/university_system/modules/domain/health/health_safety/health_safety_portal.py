@@ -1,13 +1,278 @@
 """
 University Health and Safety Portal
 A comprehensive GUI application for managing health and safety at a university.
+
+Auth: piggybacks on the main university auth — when launched as a
+subprocess from the unified main GUI, EDU_AUTH_* env vars carry the
+logged-in user's identity. The portal has no in-app login screen.
+
+Persistence: incidents, hazards, and training records live in the
+central university `student_records.db` (tables `hs_incidents`,
+`hs_hazards`, `hs_training`), reached via
+`infrastructure.database.db.get_connection`. Legacy JSON sidecar files
+(`incidents.json`, `hazards.json`, `training.json`) and any stray
+SQLite files alongside this module are removed on startup.
+
+Logging: routed through the shared rotating `app.log` via
+`infrastructure.logging.log_config.configure_logging`.
 """
 
-import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
-from datetime import datetime
-import json
+import logging
 import os
+import sqlite3
+import sys
+import tkinter as tk
+from datetime import datetime
+from tkinter import ttk, messagebox, scrolledtext
+
+
+# When the main GUI launches us as a subprocess, the child Python is
+# invoked directly on this file's path with no PYTHONPATH set, so
+# `education_system` isn't importable. Walk up from this file until we
+# find the dir that contains the `education_system` package and put
+# that on sys.path. No-op when imported normally.
+if 'education_system' not in sys.modules:
+    _here = os.path.abspath(os.path.dirname(__file__))
+    while _here and not os.path.isdir(os.path.join(_here, 'education_system')):
+        _parent = os.path.dirname(_here)
+        if _parent == _here:
+            break
+        _here = _parent
+    if _here and _here not in sys.path:
+        sys.path.insert(0, _here)
+
+
+logger = logging.getLogger(__name__)
+
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    configure_logging(name=__name__)
+except Exception:
+    logger.debug("Central log config unavailable; falling back to default handlers", exc_info=True)
+
+
+# ---------------------------------------------------------------------------
+# AUTH BOOTSTRAP
+# ---------------------------------------------------------------------------
+def _get_current_user():
+    """Resolve the logged-in user dict from EDU_AUTH_* env vars, with a
+    fallback to the in-process global auth singleton."""
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+    department = os.environ.get('EDU_AUTH_DEPARTMENT') or ''
+
+    if user_id or username:
+        return {
+            'id': user_id or None,
+            'user_id': user_id or None,
+            'username': username,
+            'role': role or 'Staff',
+            'email': email,
+            'department': department or 'University',
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            u = dict(ga.current_user)
+            u.setdefault('role', 'Staff')
+            u.setdefault('department', 'University')
+            return u
+    except Exception:
+        logger.debug("get_global_auth fallback failed", exc_info=True)
+    return None
+
+
+# ---------------------------------------------------------------------------
+# DATA LAYER
+# ---------------------------------------------------------------------------
+class HSDatabase:
+    """Wraps the central `student_records.db` for incidents, hazards,
+    and training records. Tables are created on demand."""
+
+    def __init__(self):
+        from education_system.university_system.infrastructure.database.db import get_connection
+        self._connect = get_connection
+        self._ensure_schema()
+
+    def _connection(self):
+        conn = self._connect()
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _ensure_schema(self):
+        conn = self._connection()
+        try:
+            conn.executescript(
+                """
+                CREATE TABLE IF NOT EXISTS hs_incidents (
+                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ref             TEXT,
+                    incident_type   TEXT,
+                    location        TEXT,
+                    incident_date   TEXT,
+                    severity        TEXT,
+                    people_involved TEXT,
+                    description     TEXT,
+                    actions_taken   TEXT,
+                    reported_by     TEXT,
+                    department      TEXT,
+                    status          TEXT DEFAULT 'Open',
+                    reported_at     TEXT NOT NULL,
+                    updated_at      TEXT
+                );
+                CREATE TABLE IF NOT EXISTS hs_hazards (
+                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ref             TEXT,
+                    category        TEXT,
+                    location        TEXT,
+                    risk_level      TEXT,
+                    description     TEXT,
+                    mitigation      TEXT,
+                    reported_by     TEXT,
+                    department      TEXT,
+                    status          TEXT DEFAULT 'Active',
+                    reported_at     TEXT NOT NULL
+                );
+                CREATE TABLE IF NOT EXISTS hs_training (
+                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user            TEXT NOT NULL,
+                    module          TEXT NOT NULL,
+                    department      TEXT,
+                    completed_at    TEXT NOT NULL
+                );
+                """
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    # --- incidents ------------------------------------------------------
+    def list_incidents(self) -> list:
+        conn = self._connection()
+        try:
+            rows = conn.execute(
+                "SELECT * FROM hs_incidents ORDER BY id DESC"
+            ).fetchall()
+        finally:
+            conn.close()
+        return [dict(r) for r in rows]
+
+    def add_incident(self, data: dict) -> int:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn = self._connection()
+        try:
+            cur = conn.execute(
+                """INSERT INTO hs_incidents
+                   (ref, incident_type, location, incident_date, severity,
+                    people_involved, description, actions_taken,
+                    reported_by, department, status, reported_at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (data.get('ref'), data.get('incident_type'), data.get('location'),
+                 data.get('incident_date'), data.get('severity'),
+                 data.get('people_involved'), data.get('description'),
+                 data.get('actions_taken'), data.get('reported_by'),
+                 data.get('department'), data.get('status', 'Open'), now),
+            )
+            conn.commit()
+            return cur.lastrowid
+        finally:
+            conn.close()
+
+    def update_incident_status(self, incident_id: int, status: str):
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn = self._connection()
+        try:
+            conn.execute(
+                "UPDATE hs_incidents SET status=?, updated_at=? WHERE id=?",
+                (status, now, incident_id))
+            conn.commit()
+        finally:
+            conn.close()
+
+    # --- hazards --------------------------------------------------------
+    def list_hazards(self) -> list:
+        conn = self._connection()
+        try:
+            rows = conn.execute(
+                "SELECT * FROM hs_hazards ORDER BY id DESC"
+            ).fetchall()
+        finally:
+            conn.close()
+        return [dict(r) for r in rows]
+
+    def add_hazard(self, data: dict) -> int:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn = self._connection()
+        try:
+            cur = conn.execute(
+                """INSERT INTO hs_hazards
+                   (ref, category, location, risk_level, description,
+                    mitigation, reported_by, department, status, reported_at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?)""",
+                (data.get('ref'), data.get('category'), data.get('location'),
+                 data.get('risk_level'), data.get('description'),
+                 data.get('mitigation'), data.get('reported_by'),
+                 data.get('department'), data.get('status', 'Active'), now),
+            )
+            conn.commit()
+            return cur.lastrowid
+        finally:
+            conn.close()
+
+    # --- training -------------------------------------------------------
+    def list_training(self) -> list:
+        conn = self._connection()
+        try:
+            rows = conn.execute(
+                "SELECT * FROM hs_training ORDER BY id DESC"
+            ).fetchall()
+        finally:
+            conn.close()
+        return [dict(r) for r in rows]
+
+    def add_training(self, data: dict) -> int:
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        conn = self._connection()
+        try:
+            cur = conn.execute(
+                "INSERT INTO hs_training (user, module, department, completed_at) "
+                "VALUES (?,?,?,?)",
+                (data['user'], data['module'], data.get('department', ''), now))
+            conn.commit()
+            return cur.lastrowid
+        finally:
+            conn.close()
+
+
+def _remove_legacy_files():
+    """Delete sidecar JSON files and stray SQLite files left by earlier
+    iterations of this module. Data now lives in the central
+    `student_records.db`."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    legacy = ['incidents.json', 'hazards.json', 'training.json']
+    targets = [os.path.join(here, name) for name in legacy]
+    if os.path.isdir(here):
+        for fname in os.listdir(here):
+            if fname.endswith(('.db', '.db-wal', '.db-shm', '.db-journal')):
+                targets.append(os.path.join(here, fname))
+    # CWD-relative paths are where the JSON files actually got written
+    # in earlier runs, so sweep those too.
+    for name in legacy:
+        targets.append(os.path.abspath(name))
+    for path in set(targets):
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                logger.info("Removed legacy H&S data file: %s", path)
+            except OSError:
+                logger.warning("Could not remove legacy file %s", path,
+                               exc_info=True)
 
 
 class HealthSafetyPortal:
@@ -17,24 +282,34 @@ class HealthSafetyPortal:
         self.root.geometry("1100x700")
         self.root.configure(bg="#f0f4f8")
 
-        # Data storage files
-        self.incidents_file = "incidents.json"
-        self.hazards_file = "hazards.json"
-        self.training_file = "training.json"
+        # Auth — no in-app login; identity comes from EDU_AUTH_*
+        self.current_user = _get_current_user()
 
-        # Load existing data
-        self.incidents = self.load_data(self.incidents_file)
-        self.hazards = self.load_data(self.hazards_file)
-        self.training_records = self.load_data(self.training_file)
+        # Persistence
+        try:
+            self.db = HSDatabase()
+        except Exception:
+            self.db = None
+            logger.exception("H&S Portal starting without DB persistence")
 
-        # Current logged in user (simulated)
-        self.current_user = None
+        # In-memory mirrors so existing GUI code can iterate them.
+        # Refreshed from the DB before each list/dashboard render.
+        self.incidents = []
+        self.hazards = []
+        self.training_records = []
+
+        logger.info("H&S Portal starting user=%s role=%s db=%s",
+                    (self.current_user or {}).get('username') or 'guest',
+                    (self.current_user or {}).get('role') or 'none',
+                    'on' if self.db else 'off')
 
         # Setup styling
         self.setup_styles()
 
-        # Show login screen first
-        self.show_login()
+        if not self.current_user:
+            self.show_no_auth()
+        else:
+            self.show_dashboard()
 
     def setup_styles(self):
         """Configure ttk styles for a modern look."""
@@ -92,106 +367,63 @@ class HealthSafetyPortal:
                        background="#2c5282",
                        foreground="white")
 
-    def load_data(self, filename):
-        """Load data from JSON file."""
-        if os.path.exists(filename):
-            try:
-                with open(filename, "r") as f:
-                    return json.load(f)
-            except (json.JSONDecodeError, IOError):
-                return []
-        return []
-
-    def save_data(self, filename, data):
-        """Save data to JSON file."""
+    def _refresh_caches(self):
+        """Pull fresh copies of the three datasets from the DB and
+        attach the legacy-shaped keys (id/type/date/...) the existing
+        GUI render code already uses."""
+        if not self.db:
+            return
         try:
-            with open(filename, "w") as f:
-                json.dump(data, f, indent=2)
-        except IOError as e:
-            messagebox.showerror("Error", f"Could not save data: {e}")
+            incidents = self.db.list_incidents()
+            for r in incidents:
+                r['id'] = r.get('ref') or f"INC-{r['id']:04d}"
+                r['type'] = r.get('incident_type', '')
+                r['date'] = r.get('incident_date', '')
+            hazards = self.db.list_hazards()
+            for r in hazards:
+                r['id'] = r.get('ref') or f"HAZ-{r['id']:04d}"
+            training = self.db.list_training()
+            for r in training:
+                # match legacy key name
+                r['user'] = r.get('user', '')
+            self.incidents = incidents
+            self.hazards = hazards
+            self.training_records = training
+        except sqlite3.Error:
+            logger.exception("Failed to refresh H&S caches")
 
     def clear_window(self):
         """Clear all widgets from the window."""
         for widget in self.root.winfo_children():
             widget.destroy()
 
-    # ==================== LOGIN SCREEN ====================
-    def show_login(self):
-        """Display the login screen."""
+    # ==================== NO-AUTH FALLBACK ====================
+    def show_no_auth(self):
+        """Shown only if the portal was launched outside the main GUI
+        and EDU_AUTH_* env vars aren't set."""
         self.clear_window()
 
-        # Header frame
         header_frame = tk.Frame(self.root, bg="#1a365d", height=120)
         header_frame.pack(fill="x")
         header_frame.pack_propagate(False)
-
         tk.Label(header_frame,
                 text="🏥 University Health & Safety Portal",
                 font=("Segoe UI", 24, "bold"),
-                bg="#1a365d",
-                fg="white").pack(pady=30)
+                bg="#1a365d", fg="white").pack(pady=30)
 
-        # Login form
-        login_frame = tk.Frame(self.root, bg="#f0f4f8")
-        login_frame.pack(expand=True)
-
-        form_container = tk.Frame(login_frame, bg="white", padx=50, pady=40,
-                                  relief="ridge", bd=1)
-        form_container.pack(pady=50)
-
-        tk.Label(form_container, text="Sign In",
+        body = tk.Frame(self.root, bg="#f0f4f8")
+        body.place(relx=0.5, rely=0.5, anchor="center")
+        tk.Label(body, text="🔒 Authentication Required",
                 font=("Segoe UI", 18, "bold"),
-                bg="white", fg="#1a365d").grid(row=0, column=0, columnspan=2, pady=(0, 20))
-
-        tk.Label(form_container, text="Username:",
+                bg="#f0f4f8", fg="#1a365d").pack(pady=10)
+        tk.Label(body,
+                text="Please launch this portal from the main\n"
+                     "University System after signing in.",
                 font=("Segoe UI", 11),
-                bg="white").grid(row=1, column=0, sticky="w", pady=5)
-        self.username_entry = tk.Entry(form_container, font=("Segoe UI", 11), width=30)
-        self.username_entry.grid(row=1, column=1, pady=5, padx=10)
-
-        tk.Label(form_container, text="Role:",
-                font=("Segoe UI", 11),
-                bg="white").grid(row=2, column=0, sticky="w", pady=5)
-        self.role_var = tk.StringVar(value="Student")
-        role_combo = ttk.Combobox(form_container, textvariable=self.role_var,
-                                  values=["Student", "Staff", "Faculty", "H&S Officer", "Administrator"],
-                                  state="readonly", font=("Segoe UI", 11), width=28)
-        role_combo.grid(row=2, column=1, pady=5, padx=10)
-
-        tk.Label(form_container, text="Department:",
-                font=("Segoe UI", 11),
-                bg="white").grid(row=3, column=0, sticky="w", pady=5)
-        self.dept_var = tk.StringVar(value="Computer Science")
-        dept_combo = ttk.Combobox(form_container, textvariable=self.dept_var,
-                                  values=["Computer Science", "Chemistry", "Physics", "Biology",
-                                         "Engineering", "Medicine", "Arts", "Business", "Other"],
-                                  state="readonly", font=("Segoe UI", 11), width=28)
-        dept_combo.grid(row=3, column=1, pady=5, padx=10)
-
-        ttk.Button(form_container, text="Sign In",
-                  command=self.handle_login).grid(row=4, column=0, columnspan=2, pady=20, sticky="ew")
-
-        # Emergency button on login screen
-        emergency_frame = tk.Frame(self.root, bg="#f0f4f8")
-        emergency_frame.pack(pady=10)
-        tk.Label(emergency_frame,
-                text="🚨 In case of emergency, dial 999 or campus security: 01234-567890",
-                font=("Segoe UI", 10, "italic"),
-                bg="#f0f4f8", fg="#c53030").pack()
-
-    def handle_login(self):
-        """Process login."""
-        username = self.username_entry.get().strip()
-        if not username:
-            messagebox.showwarning("Login Error", "Please enter a username.")
-            return
-
-        self.current_user = {
-            "username": username,
-            "role": self.role_var.get(),
-            "department": self.dept_var.get()
-        }
-        self.show_dashboard()
+                bg="#f0f4f8", fg="#2d3748",
+                justify="center").pack(pady=10)
+        ttk.Button(body, text="Close",
+                  command=self.root.destroy).pack(pady=20)
 
     # ==================== DASHBOARD ====================
     def show_dashboard(self):
@@ -207,7 +439,9 @@ class HealthSafetyPortal:
                 font=("Segoe UI", 16, "bold"),
                 bg="#1a365d", fg="white").pack(side="left", padx=20, pady=20)
 
-        user_info = f"👤 {self.current_user['username']} ({self.current_user['role']}) | {self.current_user['department']}"
+        u = self.current_user or {}
+        uname = u.get('username') or u.get('email') or u.get('user_id') or 'Guest'
+        user_info = f"👤 {uname} ({u.get('role') or '—'}) | {u.get('department') or '—'}"
         tk.Label(header, text=user_info,
                 font=("Segoe UI", 10),
                 bg="#1a365d", fg="white").pack(side="right", padx=20, pady=25)
@@ -230,7 +464,6 @@ class HealthSafetyPortal:
             ("🎓 Training", self.show_training),
             ("📚 Resources", self.show_resources),
             ("🚨 Emergency Info", self.show_emergency),
-            ("🚪 Logout", self.show_login),
         ]
 
         for text, command in nav_buttons:
@@ -260,6 +493,7 @@ class HealthSafetyPortal:
     def show_dashboard_content(self):
         """Show dashboard overview with statistics."""
         self.clear_content()
+        self._refresh_caches()
 
         tk.Label(self.content_frame, text="Dashboard Overview",
                 font=("Segoe UI", 20, "bold"),
@@ -413,24 +647,41 @@ class HealthSafetyPortal:
                                      "Please fill in all required fields (marked with *).")
                 return
 
-            new_incident = {
-                "id": f"INC-{len(self.incidents) + 1:04d}",
-                "type": incident_type.get(),
-                "location": location_entry.get(),
-                "date": date_entry.get(),
-                "severity": severity.get(),
-                "people_involved": people_entry.get(),
-                "description": description.get("1.0", "end-1c"),
-                "actions_taken": actions.get("1.0", "end-1c"),
-                "reported_by": self.current_user["username"],
-                "department": self.current_user["department"],
-                "status": "Open",
-                "reported_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
-            self.incidents.append(new_incident)
-            self.save_data(self.incidents_file, self.incidents)
+            if not self.db:
+                messagebox.showerror("Database Unavailable",
+                                     "Cannot save — central database is not reachable.")
+                logger.error("Incident submit failed — DB unavailable")
+                return
+            u = self.current_user or {}
+            try:
+                new_id = self.db.add_incident({
+                    "incident_type": incident_type.get(),
+                    "location": location_entry.get(),
+                    "incident_date": date_entry.get(),
+                    "severity": severity.get(),
+                    "people_involved": people_entry.get(),
+                    "description": description.get("1.0", "end-1c"),
+                    "actions_taken": actions.get("1.0", "end-1c"),
+                    "reported_by": u.get('username') or u.get('user_id') or '',
+                    "department": u.get('department') or '',
+                })
+            except sqlite3.Error:
+                logger.exception("Incident submit failed — DB error")
+                messagebox.showerror("Save Error", "Could not save the incident.")
+                return
+            ref = f"INC-{new_id:04d}"
+            self.db._connection_close = None  # no-op; ensure cache rebuilt below
+            try:
+                conn = self.db._connection()
+                conn.execute("UPDATE hs_incidents SET ref=? WHERE id=?", (ref, new_id))
+                conn.commit()
+                conn.close()
+            except sqlite3.Error:
+                logger.debug("Could not stamp ref on incident", exc_info=True)
+            logger.info("Incident submitted ref=%s severity=%s reporter=%s",
+                        ref, severity.get(), u.get('username') or 'unknown')
             messagebox.showinfo("Success",
-                              f"Incident {new_incident['id']} has been reported successfully.\n"
+                              f"Incident {ref} has been reported successfully.\n"
                               f"The H&S team will review it shortly.")
             self.show_dashboard_content()
 
@@ -447,6 +698,7 @@ class HealthSafetyPortal:
     def show_incidents_list(self):
         """Display all incidents."""
         self.clear_content()
+        self._refresh_caches()
 
         tk.Label(self.content_frame, text="📋 All Incidents",
                 font=("Segoe UI", 20, "bold"),
@@ -527,7 +779,8 @@ class HealthSafetyPortal:
 
         ttk.Button(btn_frame, text="View Details",
                   command=lambda: view_details(None)).pack(side="left", padx=5)
-        if self.current_user["role"] in ["H&S Officer", "Administrator"]:
+        u = self.current_user or {}
+        if (u.get('role') or '').lower() in ['h&s officer', 'administrator', 'admin', 'staff']:
             ttk.Button(btn_frame, text="Update Status",
                       command=update_status).pack(side="left", padx=5)
 
@@ -604,12 +857,39 @@ class HealthSafetyPortal:
         status_combo.pack(pady=5)
 
         def save_status():
-            for incident in self.incidents:
-                if incident.get("id") == incident_id:
-                    incident["status"] = status_var.get()
-                    incident["updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    break
-            self.save_data(self.incidents_file, self.incidents)
+            if not self.db:
+                messagebox.showerror("Database Unavailable",
+                                     "Cannot update — central database is not reachable.")
+                return
+            # incident_id is the legacy ref string (e.g. "INC-0007"); map
+            # back to the integer primary key.
+            row = next((i for i in self.incidents if i.get("id") == incident_id), None)
+            if not row:
+                self._refresh_caches()
+                row = next((i for i in self.incidents if i.get("id") == incident_id), None)
+            if not row:
+                messagebox.showerror("Error", "Incident not found.")
+                return
+            try:
+                # `row` came from list_incidents() which keeps the
+                # original integer id under a fresh dict — but we
+                # overwrote 'id' in _refresh_caches. Re-fetch by ref.
+                conn = self.db._connection()
+                pk_row = conn.execute(
+                    "SELECT id FROM hs_incidents WHERE ref=?",
+                    (incident_id,)).fetchone()
+                conn.close()
+                if not pk_row:
+                    messagebox.showerror("Error", "Incident not found in DB.")
+                    return
+                self.db.update_incident_status(pk_row['id'], status_var.get())
+            except sqlite3.Error:
+                logger.exception("Failed to update incident status")
+                messagebox.showerror("Save Error", "Could not update status.")
+                return
+            logger.info("Incident %s status -> %s by %s",
+                        incident_id, status_var.get(),
+                        (self.current_user or {}).get('username') or 'unknown')
             messagebox.showinfo("Success", "Status updated successfully.")
             update_window.destroy()
             refresh_callback()
@@ -674,22 +954,35 @@ class HealthSafetyPortal:
                                      "Please fill in all required fields.")
                 return
 
-            new_hazard = {
-                "id": f"HAZ-{len(self.hazards) + 1:04d}",
-                "category": category.get(),
-                "location": location_entry.get(),
-                "risk_level": risk_level.get(),
-                "description": description.get("1.0", "end-1c"),
-                "mitigation": mitigation.get("1.0", "end-1c"),
-                "reported_by": self.current_user["username"],
-                "department": self.current_user["department"],
-                "status": "Active",
-                "reported_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            }
-            self.hazards.append(new_hazard)
-            self.save_data(self.hazards_file, self.hazards)
+            if not self.db:
+                messagebox.showerror("Database Unavailable",
+                                     "Cannot save — central database is not reachable.")
+                logger.error("Hazard submit failed — DB unavailable")
+                return
+            u = self.current_user or {}
+            try:
+                new_id = self.db.add_hazard({
+                    "category": category.get(),
+                    "location": location_entry.get(),
+                    "risk_level": risk_level.get(),
+                    "description": description.get("1.0", "end-1c"),
+                    "mitigation": mitigation.get("1.0", "end-1c"),
+                    "reported_by": u.get('username') or u.get('user_id') or '',
+                    "department": u.get('department') or '',
+                })
+                ref = f"HAZ-{new_id:04d}"
+                conn = self.db._connection()
+                conn.execute("UPDATE hs_hazards SET ref=? WHERE id=?", (ref, new_id))
+                conn.commit()
+                conn.close()
+            except sqlite3.Error:
+                logger.exception("Hazard submit failed — DB error")
+                messagebox.showerror("Save Error", "Could not save the hazard.")
+                return
+            logger.info("Hazard submitted ref=%s risk=%s reporter=%s",
+                        ref, risk_level.get(), u.get('username') or 'unknown')
             messagebox.showinfo("Success",
-                              f"Hazard {new_hazard['id']} has been reported successfully.")
+                              f"Hazard {ref} has been reported successfully.")
             self.show_dashboard_content()
 
         btn_frame = tk.Frame(form, bg="white")
@@ -704,6 +997,7 @@ class HealthSafetyPortal:
     def show_hazards_list(self):
         """Display all hazards."""
         self.clear_content()
+        self._refresh_caches()
 
         tk.Label(self.content_frame, text="📊 Reported Hazards",
                 font=("Segoe UI", 20, "bold"),
@@ -736,7 +1030,11 @@ class HealthSafetyPortal:
             ))
 
     # ==================== TRAINING ====================
-    def show_training(self):
+    def show_training(self, *_):
+        self._refresh_caches()
+        return self._render_training()
+
+    def _render_training(self):
         """Display training modules."""
         self.clear_content()
 
@@ -788,7 +1086,8 @@ class HealthSafetyPortal:
                     bg="white", fg="#4a5568", wraplength=700, justify="left").pack(anchor="w", padx=15, pady=(0, 5))
 
             # Check if completed
-            completed = any(t.get("user") == self.current_user["username"] and
+            uname = (self.current_user or {}).get('username') or ''
+            completed = any(t.get("user") == uname and
                           t.get("module") == title for t in self.training_records)
 
             btn_frame = tk.Frame(card, bg="white")
@@ -806,14 +1105,23 @@ class HealthSafetyPortal:
 
     def complete_training(self, module):
         """Mark a training module as completed."""
-        record = {
-            "user": self.current_user["username"],
-            "module": module,
-            "completed_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "department": self.current_user["department"]
-        }
-        self.training_records.append(record)
-        self.save_data(self.training_file, self.training_records)
+        if not self.db:
+            messagebox.showerror("Database Unavailable",
+                                 "Cannot save — central database is not reachable.")
+            return
+        u = self.current_user or {}
+        try:
+            self.db.add_training({
+                "user": u.get('username') or u.get('user_id') or '',
+                "module": module,
+                "department": u.get('department') or '',
+            })
+        except sqlite3.Error:
+            logger.exception("Training record save failed")
+            messagebox.showerror("Save Error", "Could not save the training record.")
+            return
+        logger.info("Training completed module=%r user=%s", module,
+                    u.get('username') or 'unknown')
         messagebox.showinfo("Success", f"Training '{module}' marked as completed!")
         self.show_training()
 
@@ -938,8 +1246,9 @@ class HealthSafetyPortal:
 
 
 def main():
+    _remove_legacy_files()
     root = tk.Tk()
-    app = HealthSafetyPortal(root)
+    HealthSafetyPortal(root)
     root.mainloop()
 
 

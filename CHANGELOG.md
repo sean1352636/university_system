@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.100.0 — 2026-04-28](#81000---2026-04-28)
 - [8.99.0 — 2026-04-27](#8990---2026-04-27)
 - [8.98.0 — 2026-04-26](#8980---2026-04-26)
 - [8.97.0 — 2026-04-26](#8970---2026-04-26)
@@ -204,6 +205,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.100.0] — 2026-04-28
+
+### Standalone-app sweep: 17 modules wired into central auth/DB/log; "New Features" sidebar bucket retired
+
+Seventeen Tk apps that previously stood alone (each with its own SQLite file, sidecar JSON, in-app login, or no logging) have been refactored to share the rest of the system's infrastructure. They now bootstrap identity from `EDU_AUTH_*` env vars (with `get_global_auth()` fallback), persist to the central `student_records.db`, and route logging through the shared rotating `app.log` via `infrastructure.logging.log_config.configure_logging`. Legacy local DB / log / JSON sidecar files are deleted on first launch.
+
+#### Changed
+
+- **Risk Management** (`modules/domain/legal/risk_management/university_risk_management.py`) — `university_risks.db` → canonical `risks` table in `student_records.db`. Added a header strip showing the signed-in user, role-gated edit/delete (admin/staff/lecturer/manager only), pre-filled owner from the current user, and INFO logs on all CRUD. Local DB file deleted.
+- **First Aid Portal** (`modules/domain/health/first_aid/first_aid_portal.py`) — incident reports moved from in-memory `self.incident_log = []` (lost every launch) to a new `first_aid_incidents` table. Reporter form now pre-fills from EDU_AUTH; "View Log" reads from the DB so reports survive across sessions and are visible across users.
+- **Health & Safety Portal** (`modules/domain/health/health_safety/health_safety_portal.py`) — three-table migration from `incidents.json` / `hazards.json` / `training.json` to `hs_incidents` / `hs_hazards` / `hs_training`. **In-app login screen removed** — `show_login` / `handle_login` and the role/department combo-form are gone; the Logout sidebar button is gone; if launched without `EDU_AUTH_*` a "🔒 Authentication Required" placeholder shows. Reference IDs (`INC-NNNN` / `HAZ-NNNN`) preserved by stamping a `ref` column from the DB auto-id. JSON sidecars + sweep of stray `*.db` files deleted on startup.
+- **Safeguarding System** (`modules/domain/student_affairs/safeguarding/safeguarding_system.py`) — local `users` + `submissions` tables collapsed to one `safeguarding_submissions` table with submitter identity recorded inline. **Login screen removed** — `LoginDialog`, `authenticate()`, `hash_pw()`, the demo-credentials hint, and the Sign-out button are gone. Routes to staff/student dashboard from `EDU_AUTH_ROLE`. WARNING logged on case escalation. `safeguarding.db` deleted from disk.
+- **Intervention Support** (`modules/domain/student_affairs/student_wellbeing/intervention_support.py`) — `intervention_data.json` → `intervention_records` table (PK student_id), with `updated_at` / `updated_by` audit columns stamped per write. INFO logs on add/update/delete/log-contact.
+- **Lesson Planner** (`modules/domain/academics/course_planning/lesson_planner.py`) — `lesson_planner_data.json` → two module-private tables `lesson_plans` and `lesson_courses` (kept module-private since these are pedagogical scheduling artefacts, distinct from the canonical `courses` table). Header shows signed-in user; INFO logs on lesson + course CRUD.
+- **Background Checker** (`modules/domain/staff_hr/background_checks/university_bg_checker.py`) — `background_checker.db` and the local `background_checker.log` retired. Tables prefixed `bgcheck_persons` / `bgcheck_audit_log` / `bgcheck_watchlist` / `bgcheck_search_history` to avoid colliding with canonical `users` and `audit_log`. **`LoginDialog` (~75 lines), seed-default-admin code, and `BGCheckerApp._login` deleted**; the "Default login: admin / admin" line in About is gone. New `_bgcheck_role()` maps EDU_AUTH roles onto admin / officer / viewer permission tiers. `logging.basicConfig(handlers=[FileHandler("background_checker.log"), …])` replaced with `configure_logging`.
+- **Research Portal** (`modules/domain/research/services/university_research.py`) — `university_research.db` → six prefixed tables `research_people` / `research_ethics_applications` / `research_outputs` / `research_ip_assets` / `research_theses` / `research_thesis_milestones`. All FK references updated. Header "Research Administrator" placeholder replaced with `{user} ({role})`. `DB_PATH` constant removed. Sample seed (9 people, 4 ethics, 4 outputs, 4 IP, 3 theses, 12 milestones) populates the new tables on first run.
+- **Apprenticeships** (`modules/domain/academics/apprenticeships/apprenticeship_system.py`) — `apprenticeships.db` retired. **Migrated to the canonical shared tables** so apprenticeship data lives alongside the rest of the system: switched from module-private `apprenticeship_listings` / `apprenticeship_applications` to the canonical `apprenticeships` / `applications` (schemas matched exactly), and adapted SQL to the canonical `students` (TEXT student_id PK, `email_address` not `email`) and `employers` (`employer_id`, `contact_person`, `contact_email`, `contact_phone`). Added `gpa REAL` to `students` and `address TEXT` to `employers` via `ALTER TABLE` (idempotent). FK pragma turned off on this connection — the canonical tables ship with FKs that reference non-existent parent columns (`employers(id)`, `students(id)`) and enforcing them rejects every INSERT. `_cleanup_module_private_tables()` drops the four legacy `apprenticeship_*` tables on startup (only when empty, with a warning otherwise).
+- **Placement Hours** (`modules/domain/academics/placements/placement_tracker.py`) — `placement_tracker.db` retired. Basic identity stored in canonical `students` (so adding a placement student also makes them visible to the rest of the system); placement-specific fields (cohort, employer, supervisor, start/end dates) in a side table `placement_profiles`; daily hours in `placement_hours_log` (renamed from generic `hours_log`). "Delete student" now removes only the placement enrolment + hours, not the canonical student row. `_tree_pk` returns TEXT student_id instead of `int()`-casting it.
+- **Employer Portal** (`modules/domain/student_affairs/employer_portal/`) — service was already on central `get_connection()`. Wired `configure_logging` into the launcher; passed the resolved user dict to `EmployerPortalFrame(auth=...)` (the kwarg the GUI accepted but no caller populated); pre-filled the Sign-Off tab's "Signer Name" with the current user; INFO logs on register-employer, schedule-review, complete-review, sign-off-review.
+- **Intervention Outcomes** (`modules/domain/student_affairs/services/early_warning/outcomes/intervention_outcomes_app.py`) — service was already on central `get_connection()`. Launcher: added `configure_logging`, EDU_AUTH bootstrap, signed-in header. `record_session()` now passes `recorded_by=self._user_display` so each session row in `intervention_sessions` is stamped with the staff member who logged it.
+- **KPI Dashboard** (`modules/domain/analytics/kpi_dashboard/kpi_dashboard_app.py`) — service was already on central DB. Launcher: added `configure_logging`, EDU_AUTH bootstrap, signed-in header, INFO log on every "Update KPI Actual" action.
+- **Peer Mentoring Matching** — **critical fix:** `MentoringMatchingService.__init__` previously defaulted `db_path` to `":memory:"` when no path was passed. Every launch started with a blank DB and lost everything on close. The launcher app never passed a path, so this had been silently broken. Now `db_path=None` uses the shared `get_connection()` (with `:memory:` preserved as an explicit option for tests). Launcher: added `configure_logging`, EDU_AUTH bootstrap, signed-in header, INFO logs on save-mentor / save-mentee / recommend-mentors.
+- **Room Booking** (`modules/domain/campus/room_booking/room_booking_app.py`) — service was already on central DB. Launcher: added `configure_logging`, EDU_AUTH bootstrap, signed-in header. **"Booked by" field pre-fills with the current user's display name.** INFO logs on create-booking and cancel-booking.
+- **Tutor Groups** (`modules/domain/academics/tutor_groups/tutor_groups_app.py`) — service was already on central DB. Launcher: added `configure_logging`, EDU_AUTH bootstrap, signed-in header, INFO logs on create-group / add-member / assign-tutor / schedule-meeting.
+- **Bakery Shop** (`modules/domain/commerce/bakery_shop/bakery_shop.py`) — `bakery_orders.json` → `bakery_orders` table. **In-app Login button retired** (along with its hardcoded `admin / admin123` and any-password-works flow); replaced with a passive "Signed in: …" label populated from EDU_AUTH at startup. Discount tier derived from EDU_AUTH role: student → Student (10%), staff/instructor/lecturer/faculty/manager/hr → Staff (15%), admin/superadmin → Admin, otherwise Guest. INFO log on every order placement (with order id, user, tier, item count, total).
+
+#### Removed
+
+- **"✨ New Features" sidebar bucket retired entirely.** All 17 standalone-app buttons it used to host have been redistributed into topical categories. The `new_features_buttons_data` list, the `if any(...)` guard, and the `✨ New Features ▶` sidebar tile have been deleted from `gui_setup.py`. Buttons still subprocess-launch via the same `UnifiedManagementGUI._launch_new_feature_module` plumbing — only their sidebar location changed:
+  - **Academic Management**: Course Evaluation, Module Evaluation, Lecturer Evaluation, Lesson Planner, Tutor Groups, Research Portal *(all moved here)*
+  - **Student Services**: Intervention Support, Intervention Outcomes, Safeguarding, Peer Mentoring Matching
+  - **Career & Alumni**: Apprenticeships, Placement Hours, Employer Portal
+  - **Health & Wellness**: First Aid Portal
+  - **Campus Life**: Room Booking
+  - **Dining & Food**: Bakery Shop
+  - **Communication**: Complaints Portal *(moved in 8.99.0)*
+  - **Family & Legal**: Disciplinary Portal
+  - **Administration**: Health & Safety, Background Checker
+  - **Analytics & Reporting**: KPI Dashboard
+
+#### Fixed
+
+- **Risk Management dialog: `_tkinter.TclError: grab failed: window not viewable`** when opening the New/Edit Risk dialog on some window managers. `grab_set()` is now deferred until the window is mapped via `after(50, _safe_grab)` which calls `wait_visibility()` first.
+- **Risk Management dialog: `TclError: expected integer but got "2 - Unlikely"`** on save. The Likelihood and Impact comboboxes display strings like `"3 - Possible"` but the vars were `IntVar`, so `.get()` choked. Switched both to `StringVar` (the existing `_parse_level()` already handles the `"N - Label"` format).
 
 ---
 

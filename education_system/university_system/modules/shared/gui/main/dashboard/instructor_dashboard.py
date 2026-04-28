@@ -92,6 +92,15 @@ def create_instructor_dashboard(parent_frame, auth, service):
     ttk.Button(actions_row, text="Semester Analytics",
                command=lambda: _launch_semester_analytics(root, auth)).pack(side=tk.LEFT, padx=3)
 
+    from education_system.university_system.modules.shared.gui.main.dashboard.evaluation_launchers import (
+        EVALUATION_MODULES, launch_evaluation_module,
+    )
+    for _label, _module in EVALUATION_MODULES:
+        ttk.Button(
+            actions_row, text=_label,
+            command=lambda m=_module, l=_label: launch_evaluation_module(root, auth, m, l),
+        ).pack(side=tk.LEFT, padx=3)
+
     # Summary Cards
     summary_frame = ttk.LabelFrame(scrollable, text="Overview", padding="10")
     summary_frame.pack(fill=tk.X, padx=15, pady=5)

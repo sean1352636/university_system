@@ -16,7 +16,11 @@ from typing import Any, Optional
 
 from education_system.university_system.infrastructure.database.db import get_connection
 
-logger = logging.getLogger(__name__)
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    logger = configure_logging(name=__name__)
+except ImportError:
+    logger = logging.getLogger(__name__)
 
 
 class BursaryError(Exception):
@@ -53,6 +57,7 @@ class BursaryService:
 
     def __init__(self, db_path: Optional[str] = None) -> None:
         self._db_path = db_path
+        logger.debug("BursaryService init db_path=%s", db_path or "<default>")
         self.init_schema()
 
     # ------------------------------------------------------------------
@@ -184,6 +189,7 @@ class BursaryService:
         except BursaryError:
             raise
         except Exception as exc:
+            logger.exception("create_fund failed name=%r type=%r budget=%s", name, fund_type, total_budget)
             raise BursaryError(f"Failed to create fund: {exc}") from exc
 
     def list_funds(
@@ -233,7 +239,12 @@ class BursaryService:
                     (float(total_budget), fund_id),
                 )
                 conn.commit()
+                logger.info(
+                    "Updated bursary fund id=%s budget=%s (was=%s, allocated=%s)",
+                    fund_id, total_budget, fund.get("total_budget"), fund.get("allocated"),
+                )
         except Exception as exc:
+            logger.exception("update_fund_budget failed id=%s budget=%s", fund_id, total_budget)
             raise BursaryError(f"Failed to update fund budget: {exc}") from exc
 
     # ------------------------------------------------------------------
@@ -269,6 +280,10 @@ class BursaryService:
                 )
                 return cur.lastrowid
         except Exception as exc:
+            logger.exception(
+                "submit_application failed student=%s fund=%s amount=%s",
+                student_id, fund_id, requested_amount,
+            )
             raise BursaryError(f"Failed to submit application: {exc}") from exc
 
     def list_applications(
@@ -331,7 +346,15 @@ class BursaryService:
                     (status, decision_notes, application_id),
                 )
                 conn.commit()
+                logger.info(
+                    "Updated bursary application id=%s status=%s notes=%r",
+                    application_id, status, decision_notes,
+                )
         except Exception as exc:
+            logger.exception(
+                "update_application_status failed id=%s status=%s",
+                application_id, status,
+            )
             raise BursaryError(
                 f"Failed to update application status: {exc}"
             ) from exc
@@ -361,8 +384,15 @@ class BursaryService:
                     (application_id, evidence_type.strip(), filename, description),
                 )
                 conn.commit()
+                logger.info(
+                    "Added bursary evidence id=%s app=%s type=%s file=%r",
+                    cur.lastrowid, application_id, evidence_type, filename,
+                )
                 return cur.lastrowid
         except Exception as exc:
+            logger.exception(
+                "add_evidence failed app=%s type=%s", application_id, evidence_type,
+            )
             raise BursaryError(f"Failed to add evidence: {exc}") from exc
 
     def verify_evidence(self, evidence_id: int, verified_by: str) -> None:
@@ -379,9 +409,13 @@ class BursaryService:
                 if cur.rowcount == 0:
                     raise BursaryError(f"evidence {evidence_id} not found")
                 conn.commit()
+                logger.info(
+                    "Verified bursary evidence id=%s by=%s", evidence_id, verified_by,
+                )
         except BursaryError:
             raise
         except Exception as exc:
+            logger.exception("verify_evidence failed id=%s", evidence_id)
             raise BursaryError(f"Failed to verify evidence: {exc}") from exc
 
     def list_evidence(self, application_id: int) -> list[dict]:
@@ -495,6 +529,10 @@ class BursaryService:
         except BursaryError:
             raise
         except Exception as exc:
+            logger.exception(
+                "award_bursary failed app=%s amount=%s freq=%s n=%s start=%s",
+                application_id, amount, frequency, num_payments, start_date,
+            )
             raise BursaryError(f"Failed to award bursary: {exc}") from exc
 
     def mark_payment_paid(self, payment_id: int, reference: str) -> None:
@@ -512,9 +550,13 @@ class BursaryService:
                 if cur.rowcount == 0:
                     raise BursaryError(f"payment {payment_id} not found")
                 conn.commit()
+                logger.info(
+                    "Marked bursary payment id=%s paid ref=%s", payment_id, reference,
+                )
         except BursaryError:
             raise
         except Exception as exc:
+            logger.exception("mark_payment_paid failed id=%s", payment_id)
             raise BursaryError(f"Failed to mark payment paid: {exc}") from exc
 
     def get_payment_schedule(self, award_id: int) -> list[dict]:

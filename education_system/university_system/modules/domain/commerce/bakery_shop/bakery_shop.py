@@ -2,20 +2,120 @@
 University Bakery Shop Management System
 A GUI application built with tkinter for managing a university bakery.
 
-Features:
-- Product catalog with categories
-- Shopping cart functionality
-- Student/Staff discount system
-- Order management
-- Sales reporting
-- Inventory tracking
+Auth: piggybacks on the main university auth — when launched as a
+subprocess from the unified main GUI, EDU_AUTH_* env vars carry the
+logged-in user's identity. The role-based discount tier is derived
+from EDU_AUTH_ROLE (student → 10%, staff → 15%, admin → admin
+console). There is no in-app login.
+
+Persistence: orders live in the central `student_records.db` table
+`bakery_orders`. The legacy `bakery_orders.json` sidecar file is
+removed on startup.
+
+Logging: routed through the shared rotating `app.log` via
+`infrastructure.logging.log_config.configure_logging`.
 """
 
-import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
-from datetime import datetime
 import json
+import logging
 import os
+import sqlite3
+import sys
+import tkinter as tk
+from datetime import datetime
+from tkinter import ttk, messagebox, simpledialog
+
+
+# When the main GUI launches us as a subprocess, the child Python is
+# invoked directly on this file's path with no PYTHONPATH set, so
+# `education_system` isn't importable. Walk up from this file until we
+# find the dir that contains the `education_system` package and put
+# that on sys.path. No-op when imported normally.
+if 'education_system' not in sys.modules:
+    _here = os.path.abspath(os.path.dirname(__file__))
+    while _here and not os.path.isdir(os.path.join(_here, 'education_system')):
+        _parent = os.path.dirname(_here)
+        if _parent == _here:
+            break
+        _here = _parent
+    if _here and _here not in sys.path:
+        sys.path.insert(0, _here)
+
+
+logger = logging.getLogger(__name__)
+
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    configure_logging(name=__name__)
+except Exception:
+    logger.debug("Central log config unavailable; falling back to default handlers", exc_info=True)
+
+
+# ---------------------------------------------------------------------------
+# AUTH BOOTSTRAP
+# ---------------------------------------------------------------------------
+def _get_current_user():
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+    if user_id or username:
+        return {
+            'id': user_id or None,
+            'user_id': user_id or None,
+            'username': username,
+            'role': role,
+            'email': email,
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            return ga.current_user
+    except Exception:
+        logger.debug("get_global_auth fallback failed", exc_info=True)
+    return None
+
+
+def _bakery_user_type(role: str) -> str:
+    """Map an EDU_AUTH role onto the bakery's discount-tier model:
+    Admin / Staff / Student / Guest."""
+    r = (role or '').lower()
+    if r in ('admin', 'administrator', 'superadmin'):
+        return 'Admin'
+    if r in ('staff', 'instructor', 'lecturer', 'faculty', 'manager', 'hr'):
+        return 'Staff'
+    if r in ('student',):
+        return 'Student'
+    return 'Guest'
+
+
+# Legacy sidecar files this module used to write — superseded by the
+# central student_records.db.
+_LEGACY_JSON_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 "bakery_orders.json")
+
+
+def _remove_legacy_files():
+    here = os.path.dirname(os.path.abspath(__file__))
+    targets = [
+        _LEGACY_JSON_FILE,
+        os.path.abspath("bakery_orders.json"),
+    ]
+    if os.path.isdir(here):
+        for fname in os.listdir(here):
+            if fname.endswith(('.db', '.db-wal', '.db-shm', '.db-journal')):
+                targets.append(os.path.join(here, fname))
+    for path in set(targets):
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                logger.info("Removed legacy bakery file: %s", path)
+            except OSError:
+                logger.warning("Could not remove legacy file %s", path,
+                               exc_info=True)
 
 
 class BakeryShop:
@@ -79,34 +179,108 @@ class BakeryShop:
         # Shopping cart and order history
         self.cart = {}
         self.orders = []
-        self.current_user = None
-        self.user_type = "Guest"  # Guest, Student, Staff, Admin
 
-        # Load saved data if exists
+        # Resolve identity from EDU_AUTH_* env vars (no in-app login).
+        user = _get_current_user()
+        self._auth_user = user
+        if user:
+            self.current_user = (user.get('username') or user.get('email')
+                                 or user.get('user_id') or 'Unknown')
+            self.user_type = _bakery_user_type(user.get('role'))
+        else:
+            self.current_user = None
+            self.user_type = "Guest"
+        logger.info("Bakery Shop starting user=%s tier=%s",
+                    self.current_user or 'guest', self.user_type)
+
+        # Ensure DB schema then load saved data.
+        self._ensure_schema()
         self.load_data()
 
         # Build the UI
         self.create_widgets()
 
     # ------------------------------------------------------------------ #
-    # Persistence
+    # Persistence — central student_records.db, table `bakery_orders`
     # ------------------------------------------------------------------ #
+    def _connect(self):
+        from education_system.university_system.infrastructure.database.db import get_connection
+        return get_connection()
+
+    def _ensure_schema(self):
+        conn = self._connect()
+        try:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS bakery_orders (
+                    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                    order_id     TEXT,
+                    timestamp    TEXT NOT NULL,
+                    username     TEXT,
+                    user_type    TEXT,
+                    items_json   TEXT NOT NULL,
+                    subtotal     REAL,
+                    discount     REAL,
+                    total        REAL
+                )
+            """)
+            conn.commit()
+        finally:
+            conn.close()
+
     def load_data(self):
-        """Load orders from file if it exists."""
-        if os.path.exists("bakery_orders.json"):
+        """Load orders from the central DB into self.orders, in the
+        same shape the existing GUI code expects (list of dicts)."""
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT order_id, timestamp, username, user_type, items_json, "
+                "subtotal, discount, total FROM bakery_orders ORDER BY id ASC"
+            ).fetchall()
+        finally:
+            conn.close()
+        self.orders = []
+        for r in rows:
             try:
-                with open("bakery_orders.json", "r") as f:
-                    self.orders = json.load(f)
-            except (json.JSONDecodeError, IOError):
-                self.orders = []
+                items = json.loads(r[4]) if r[4] else {}
+            except (TypeError, ValueError):
+                items = {}
+            self.orders.append({
+                "order_id": r[0],
+                "timestamp": r[1],
+                "user": r[2] or "Guest",
+                "user_type": r[3] or "Guest",
+                "items": items,
+                "subtotal": r[5] or 0,
+                "discount": r[6] or 0,
+                "total": r[7] or 0,
+            })
 
     def save_data(self):
-        """Save orders to file."""
+        """Persist self.orders back to the central DB. DELETE-all +
+        bulk INSERT inside one transaction keeps state consistent with
+        the GUI's list-mutation patterns (append/clear/etc.)."""
+        conn = self._connect()
         try:
-            with open("bakery_orders.json", "w") as f:
-                json.dump(self.orders, f, indent=2)
-        except IOError as e:
+            conn.execute("BEGIN")
+            conn.execute("DELETE FROM bakery_orders")
+            for o in self.orders:
+                conn.execute(
+                    "INSERT INTO bakery_orders (order_id, timestamp, username, "
+                    "user_type, items_json, subtotal, discount, total) "
+                    "VALUES (?,?,?,?,?,?,?,?)",
+                    (o.get("order_id"), o.get("timestamp"),
+                     o.get("user"), o.get("user_type"),
+                     json.dumps(o.get("items", {})),
+                     o.get("subtotal", 0), o.get("discount", 0),
+                     o.get("total", 0)),
+                )
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            logger.exception("Failed to save bakery orders")
             messagebox.showerror("Save Error", f"Could not save data: {e}")
+        finally:
+            conn.close()
 
     # ------------------------------------------------------------------ #
     # UI Construction
@@ -131,28 +305,23 @@ class BakeryShop:
         self.user_frame = tk.Frame(header, bg=self.colors["primary"])
         self.user_frame.pack(side="right", padx=20, pady=15)
 
+        if self.current_user:
+            user_text = f"👤 {self.current_user} ({self.user_type})"
+        else:
+            user_text = "Guest User"
         self.user_label = tk.Label(
             self.user_frame,
-            text="Guest User",
+            text=user_text,
             font=("Arial", 11),
             bg=self.colors["primary"],
             fg="white",
         )
         self.user_label.pack(side="left", padx=10)
-
-        self.login_btn = tk.Button(
-            self.user_frame,
-            text="Login",
-            font=("Arial", 10, "bold"),
-            bg=self.colors["accent"],
-            fg=self.colors["text"],
-            relief="flat",
-            padx=15,
-            pady=4,
-            cursor="hand2",
-            command=self.show_login,
-        )
-        self.login_btn.pack(side="left")
+        # In-app login removed — identity comes from the main university
+        # system via EDU_AUTH_* env vars. Keep `self.login_btn` as a
+        # disabled placeholder so any code still referencing it doesn't
+        # blow up.
+        self.login_btn = tk.Label(self.user_frame, text="", bg=self.colors["primary"])
 
         # ----- Tab system -----
         style = ttk.Style()
@@ -770,6 +939,9 @@ class BakeryShop:
 
         self.orders.append(order)
         self.save_data()
+        logger.info("Bakery order placed order_id=%s user=%s tier=%s items=%s total=%.2f",
+                    order['order_id'], order['user'], order['user_type'],
+                    sum(order['items'].values()), order['total'])
 
         # Show confirmation
         receipt = (
@@ -1196,8 +1368,9 @@ class BakeryShop:
 
 
 def main():
+    _remove_legacy_files()
     root = tk.Tk()
-    app = BakeryShop(root)
+    BakeryShop(root)
     root.mainloop()
 
 

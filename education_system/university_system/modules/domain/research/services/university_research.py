@@ -2,29 +2,125 @@
 University Research Management System
 A GUI application for managing research ethics, REF submissions, IP/commercialisation,
 and thesis/viva workflows at a university.
+
+Auth: piggybacks on the main university auth — when launched as a
+subprocess from the unified main GUI, EDU_AUTH_* env vars carry the
+logged-in user's identity. The header shows the signed-in user.
+
+Persistence: rows live in the central `student_records.db` under
+module-prefixed tables (`research_people`, `research_ethics_applications`,
+`research_outputs`, `research_ip_assets`, `research_theses`,
+`research_thesis_milestones`) so they don't collide with generic
+table names elsewhere in the system. The legacy local
+`university_research.db` file is removed on startup.
+
+Logging: routed through the shared rotating `app.log` via
+`infrastructure.logging.log_config.configure_logging`.
 """
 
-import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
-import sqlite3
+import logging
 import os
+import sqlite3
+import sys
+import tkinter as tk
 from datetime import datetime, date
 from pathlib import Path
+from tkinter import ttk, messagebox, filedialog, simpledialog
+
+
+# When the main GUI launches us as a subprocess, the child Python is
+# invoked directly on this file's path with no PYTHONPATH set, so
+# `education_system` isn't importable. Walk up from this file until we
+# find the dir that contains the `education_system` package and put
+# that on sys.path. No-op when imported normally.
+if 'education_system' not in sys.modules:
+    _here = os.path.abspath(os.path.dirname(__file__))
+    while _here and not os.path.isdir(os.path.join(_here, 'education_system')):
+        _parent = os.path.dirname(_here)
+        if _parent == _here:
+            break
+        _here = _parent
+    if _here and _here not in sys.path:
+        sys.path.insert(0, _here)
+
+
+logger = logging.getLogger(__name__)
+
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    configure_logging(name=__name__)
+except Exception:
+    logger.debug("Central log config unavailable; falling back to default handlers", exc_info=True)
+
+
+# ---------------------------------------------------------------------------
+# AUTH BOOTSTRAP
+# ---------------------------------------------------------------------------
+def _get_current_user():
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+    if user_id or username:
+        return {
+            'id': user_id or None,
+            'user_id': user_id or None,
+            'username': username,
+            'role': role,
+            'email': email,
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            return ga.current_user
+    except Exception:
+        logger.debug("get_global_auth fallback failed", exc_info=True)
+    return None
+
+
+def _user_display_name(user):
+    if not user:
+        return 'Guest'
+    return (user.get('username') or user.get('email') or
+            user.get('user_id') or user.get('id') or 'Unknown')
+
+
+# Legacy local DB file — data now lives in the central student_records.db.
+_LEGACY_DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "university_research.db")
+
+
+def _remove_legacy_db():
+    for suffix in ("", "-wal", "-shm", "-journal"):
+        path = _LEGACY_DB_FILE + suffix
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                logger.info("Removed legacy research DB file: %s", path)
+            except OSError:
+                logger.warning("Could not remove legacy DB file %s", path,
+                               exc_info=True)
+
 
 # ---------------------------------------------------------------------------
 # Database layer
 # ---------------------------------------------------------------------------
 
-DB_PATH = "university_research.db"
-
 
 class Database:
-    """Handles all SQLite database operations."""
+    """Wraps the central `student_records.db` via the shared
+    `get_connection`. All tables are prefixed `research_*` to avoid
+    colliding with generic table names elsewhere in the system."""
 
-    def __init__(self, db_path=DB_PATH):
-        self.db_path = db_path
-        self.conn = sqlite3.connect(db_path)
+    def __init__(self, db_path=None):
+        from education_system.university_system.infrastructure.database.db import get_connection
+        self.conn = get_connection()
         self.conn.row_factory = sqlite3.Row
+        # Foreign keys reference research_people / research_theses
+        # which we own — enabling FK enforcement is safe here.
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.create_tables()
         self.seed_if_empty()
@@ -34,7 +130,7 @@ class Database:
 
         # People (researchers, supervisors, students, examiners)
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS people (
+            CREATE TABLE IF NOT EXISTS research_people (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 email TEXT,
@@ -46,7 +142,7 @@ class Database:
 
         # Research Ethics / IRB
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS ethics_applications (
+            CREATE TABLE IF NOT EXISTS research_ethics_applications (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 reference TEXT UNIQUE NOT NULL,
                 title TEXT NOT NULL,
@@ -59,7 +155,7 @@ class Database:
                 status TEXT NOT NULL,         -- 'Draft','Submitted','Under Review','Approved','Rejected','Revisions Required','Expired'
                 approval_expiry TEXT,
                 notes TEXT,
-                FOREIGN KEY (principal_investigator_id) REFERENCES people(id)
+                FOREIGN KEY (principal_investigator_id) REFERENCES research_people(id)
             )
         """)
 
@@ -79,13 +175,13 @@ class Database:
                 open_access INTEGER DEFAULT 0,
                 quality_rating TEXT,          -- '1*','2*','3*','4*', or ''
                 abstract TEXT,
-                FOREIGN KEY (lead_author_id) REFERENCES people(id)
+                FOREIGN KEY (lead_author_id) REFERENCES research_people(id)
             )
         """)
 
         # IP / Tech-transfer / Commercialisation
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS ip_assets (
+            CREATE TABLE IF NOT EXISTS research_ip_assets (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 reference TEXT UNIQUE NOT NULL,
                 title TEXT NOT NULL,
@@ -100,13 +196,13 @@ class Database:
                 licensee TEXT,
                 revenue_to_date REAL DEFAULT 0,
                 notes TEXT,
-                FOREIGN KEY (inventor_id) REFERENCES people(id)
+                FOREIGN KEY (inventor_id) REFERENCES research_people(id)
             )
         """)
 
         # Theses / dissertations
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS theses (
+            CREATE TABLE IF NOT EXISTS research_theses (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 student_id INTEGER NOT NULL,
                 title TEXT NOT NULL,
@@ -122,17 +218,17 @@ class Database:
                 external_examiner_id INTEGER,
                 status TEXT NOT NULL,         -- 'Active','Submitted','Under Examination','Viva Scheduled','Passed','Minor Corrections','Major Corrections','Failed','Withdrawn'
                 outcome TEXT,
-                FOREIGN KEY (student_id) REFERENCES people(id),
-                FOREIGN KEY (primary_supervisor_id) REFERENCES people(id),
-                FOREIGN KEY (secondary_supervisor_id) REFERENCES people(id),
-                FOREIGN KEY (internal_examiner_id) REFERENCES people(id),
-                FOREIGN KEY (external_examiner_id) REFERENCES people(id)
+                FOREIGN KEY (student_id) REFERENCES research_people(id),
+                FOREIGN KEY (primary_supervisor_id) REFERENCES research_people(id),
+                FOREIGN KEY (secondary_supervisor_id) REFERENCES research_people(id),
+                FOREIGN KEY (internal_examiner_id) REFERENCES research_people(id),
+                FOREIGN KEY (external_examiner_id) REFERENCES research_people(id)
             )
         """)
 
         # Thesis milestones
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS thesis_milestones (
+            CREATE TABLE IF NOT EXISTS research_thesis_milestones (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 thesis_id INTEGER NOT NULL,
                 name TEXT NOT NULL,
@@ -140,7 +236,7 @@ class Database:
                 completed_date TEXT,
                 status TEXT NOT NULL,         -- 'Pending','Completed','Overdue','Missed'
                 notes TEXT,
-                FOREIGN KEY (thesis_id) REFERENCES theses(id) ON DELETE CASCADE
+                FOREIGN KEY (thesis_id) REFERENCES research_theses(id) ON DELETE CASCADE
             )
         """)
 
@@ -149,7 +245,7 @@ class Database:
     def seed_if_empty(self):
         """Populate with sample data on first run so the UI is not empty."""
         cur = self.conn.cursor()
-        cur.execute("SELECT COUNT(*) FROM people")
+        cur.execute("SELECT COUNT(*) FROM research_people")
         if cur.fetchone()[0] > 0:
             return
 
@@ -167,7 +263,7 @@ class Database:
         ]
         for p in people:
             cur.execute(
-                "INSERT INTO people(name,email,role,department,created_at) VALUES(?,?,?,?,?)",
+                "INSERT INTO research_people(name,email,role,department,created_at) VALUES(?,?,?,?,?)",
                 (*p, now),
             )
 
@@ -191,7 +287,7 @@ class Database:
              "Revise consent form language."),
         ]
         for e in ethics:
-            cur.execute("""INSERT INTO ethics_applications
+            cur.execute("""INSERT INTO research_ethics_applications
                 (reference,title,principal_investigator_id,department,risk_level,category,
                  submitted_date,decision_date,status,approval_expiry,notes)
                 VALUES(?,?,?,?,?,?,?,?,?,?,?)""", e)
@@ -238,7 +334,7 @@ class Database:
              "Disclosed", "None yet", None, 0, ""),
         ]
         for item in ip:
-            cur.execute("""INSERT INTO ip_assets
+            cur.execute("""INSERT INTO research_ip_assets
                 (reference,title,ip_type,inventor_id,disclosure_date,filing_date,grant_date,
                  jurisdiction,status,commercial_route,licensee,revenue_to_date,notes)
                 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""", item)
@@ -257,7 +353,7 @@ class Database:
              "Minor corrections to be submitted within 3 months."),
         ]
         for t in theses:
-            cur.execute("""INSERT INTO theses
+            cur.execute("""INSERT INTO research_theses
                 (student_id,title,degree,department,primary_supervisor_id,secondary_supervisor_id,
                  start_date,expected_submission,submission_date,viva_date,
                  internal_examiner_id,external_examiner_id,status,outcome)
@@ -282,7 +378,7 @@ class Database:
             (3, "Corrections submission", "2025-07-10", None, "Pending", ""),
         ]
         for m in milestones:
-            cur.execute("""INSERT INTO thesis_milestones
+            cur.execute("""INSERT INTO research_thesis_milestones
                 (thesis_id,name,due_date,completed_date,status,notes)
                 VALUES(?,?,?,?,?,?)""", m)
 
@@ -595,11 +691,11 @@ class ModuleTab(ttk.Frame):
     def people_choices(self, role=None):
         if role:
             rows = self.db.query(
-                "SELECT id,name,department FROM people WHERE role=? ORDER BY name",
+                "SELECT id,name,department FROM research_people WHERE role=? ORDER BY name",
                 (role,))
         else:
             rows = self.db.query(
-                "SELECT id,name,department FROM people ORDER BY name")
+                "SELECT id,name,department FROM research_people ORDER BY name")
         return [(r["id"], f"{r['name']} ({r['department'] or '—'})") for r in rows]
 
 
@@ -670,12 +766,12 @@ class DashboardTab(ModuleTab):
 
         stats = [
             ("Active ethics apps",
-             self.db.query("SELECT COUNT(*) c FROM ethics_applications "
+             self.db.query("SELECT COUNT(*) c FROM research_ethics_applications "
                            "WHERE status IN ('Submitted','Under Review',"
                            "'Revisions Required')")[0]["c"],
              PALETTE["accent"]),
             ("Approved (current)",
-             self.db.query("SELECT COUNT(*) c FROM ethics_applications "
+             self.db.query("SELECT COUNT(*) c FROM research_ethics_applications "
                            "WHERE status='Approved'")[0]["c"],
              PALETTE["success"]),
             ("Outputs (REF-tagged)",
@@ -683,16 +779,16 @@ class DashboardTab(ModuleTab):
                            "WHERE ref_submitted=1")[0]["c"],
              PALETTE["accent"]),
             ("IP assets",
-             self.db.query("SELECT COUNT(*) c FROM ip_assets")[0]["c"],
+             self.db.query("SELECT COUNT(*) c FROM research_ip_assets")[0]["c"],
              PALETTE["header"]),
             ("Active theses",
-             self.db.query("SELECT COUNT(*) c FROM theses "
+             self.db.query("SELECT COUNT(*) c FROM research_theses "
                            "WHERE status IN ('Active','Submitted',"
                            "'Under Examination','Viva Scheduled',"
                            "'Minor Corrections','Major Corrections')")[0]["c"],
              PALETTE["warn"]),
             ("IP revenue (total)",
-             f"£{self.db.query('SELECT COALESCE(SUM(revenue_to_date),0) s FROM ip_assets')[0]['s']:,.0f}",
+             f"£{self.db.query('SELECT COALESCE(SUM(revenue_to_date),0) s FROM research_ip_assets')[0]['s']:,.0f}",
              PALETTE["success"]),
         ]
 
@@ -720,9 +816,9 @@ class DashboardTab(ModuleTab):
         today = date.today().isoformat()
         rows = self.db.query("""
             SELECT m.name, m.due_date, m.status, p.name AS student, t.title
-            FROM thesis_milestones m
-            JOIN theses t ON t.id = m.thesis_id
-            JOIN people p ON p.id = t.student_id
+            FROM research_thesis_milestones m
+            JOIN research_theses t ON t.id = m.thesis_id
+            JOIN research_people p ON p.id = t.student_id
             WHERE m.status='Pending' OR (m.status='Pending' AND m.due_date < ?)
             ORDER BY COALESCE(m.due_date,'9999-12-31')
             LIMIT 12
@@ -743,14 +839,14 @@ class DashboardTab(ModuleTab):
         self.right_list.delete(0, "end")
         attention = []
         rows = self.db.query(
-            "SELECT reference,title,status FROM ethics_applications "
+            "SELECT reference,title,status FROM research_ethics_applications "
             "WHERE status IN ('Revisions Required','Expired')")
         for r in rows:
             attention.append(("Ethics", f"{r['reference']}: {r['status']}",
                               r["title"], PALETTE["danger"]))
 
         rows = self.db.query(
-            "SELECT reference,title,status FROM ethics_applications "
+            "SELECT reference,title,status FROM research_ethics_applications "
             "WHERE status='Approved' AND approval_expiry IS NOT NULL "
             "AND approval_expiry < date('now','+90 days')")
         for r in rows:
@@ -759,14 +855,14 @@ class DashboardTab(ModuleTab):
                               r["title"], PALETTE["warn"]))
 
         rows = self.db.query(
-            "SELECT t.title, p.name FROM theses t JOIN people p ON p.id=t.student_id "
+            "SELECT t.title, p.name FROM research_theses t JOIN research_people p ON p.id=t.student_id "
             "WHERE t.status='Minor Corrections' OR t.status='Major Corrections'")
         for r in rows:
             attention.append(("Thesis", "Corrections outstanding",
                               f"{r['name']} — {r['title']}", PALETTE["warn"]))
 
         rows = self.db.query(
-            "SELECT reference,title FROM ip_assets WHERE status='Disclosed'")
+            "SELECT reference,title FROM research_ip_assets WHERE status='Disclosed'")
         for r in rows:
             attention.append(("IP", f"{r['reference']}: awaiting evaluation",
                               r["title"], PALETTE["accent"]))
@@ -1031,16 +1127,16 @@ class EthicsTab(TableModule):
     def fetch_rows(self, search):
         q = f"%{search.lower()}%" if search else None
         if q:
-            sql = """SELECT e.*, p.name AS pi_name FROM ethics_applications e
-                     LEFT JOIN people p ON p.id=e.principal_investigator_id
+            sql = """SELECT e.*, p.name AS pi_name FROM research_ethics_applications e
+                     LEFT JOIN research_people p ON p.id=e.principal_investigator_id
                      WHERE LOWER(e.reference) LIKE ? OR LOWER(e.title) LIKE ?
                         OR LOWER(COALESCE(p.name,'')) LIKE ?
                         OR LOWER(COALESCE(e.status,'')) LIKE ?
                      ORDER BY e.submitted_date DESC NULLS LAST, e.id DESC"""
             return self.db.query(sql, (q, q, q, q))
         return self.db.query("""SELECT e.*, p.name AS pi_name
-            FROM ethics_applications e
-            LEFT JOIN people p ON p.id=e.principal_investigator_id
+            FROM research_ethics_applications e
+            LEFT JOIN research_people p ON p.id=e.principal_investigator_id
             ORDER BY e.submitted_date DESC, e.id DESC""")
 
     def row_to_tree_values(self, row):
@@ -1075,7 +1171,7 @@ class EthicsTab(TableModule):
     def render_detail(self, row):
         pi_name = "—"
         if row.get("principal_investigator_id"):
-            r = self.db.query("SELECT name FROM people WHERE id=?",
+            r = self.db.query("SELECT name FROM research_people WHERE id=?",
                               (row["principal_investigator_id"],))
             if r:
                 pi_name = r[0]["name"]
@@ -1094,7 +1190,7 @@ class EthicsTab(TableModule):
         ])
 
     def insert_sql(self, d):
-        self.db.execute("""INSERT INTO ethics_applications
+        self.db.execute("""INSERT INTO research_ethics_applications
             (reference,title,principal_investigator_id,department,risk_level,
              category,submitted_date,decision_date,status,approval_expiry,notes)
             VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
@@ -1105,7 +1201,7 @@ class EthicsTab(TableModule):
              d.get("status"), d.get("approval_expiry"), d.get("notes")))
 
     def update_sql(self, d, pk):
-        self.db.execute("""UPDATE ethics_applications SET
+        self.db.execute("""UPDATE research_ethics_applications SET
             reference=?,title=?,principal_investigator_id=?,department=?,
             risk_level=?,category=?,submitted_date=?,decision_date=?,
             status=?,approval_expiry=?,notes=? WHERE id=?""",
@@ -1143,14 +1239,14 @@ class OutputsTab(TableModule):
         if q:
             return self.db.query("""SELECT o.*, p.name AS lead_name
                 FROM research_outputs o
-                LEFT JOIN people p ON p.id=o.lead_author_id
+                LEFT JOIN research_people p ON p.id=o.lead_author_id
                 WHERE LOWER(o.title) LIKE ? OR LOWER(COALESCE(o.authors,'')) LIKE ?
                    OR LOWER(COALESCE(o.venue,'')) LIKE ?
                    OR LOWER(COALESCE(p.name,'')) LIKE ?
                 ORDER BY o.publication_date DESC""", (q, q, q, q))
         return self.db.query("""SELECT o.*, p.name AS lead_name
             FROM research_outputs o
-            LEFT JOIN people p ON p.id=o.lead_author_id
+            LEFT JOIN research_people p ON p.id=o.lead_author_id
             ORDER BY o.publication_date DESC""")
 
     def row_to_tree_values(self, row):
@@ -1184,7 +1280,7 @@ class OutputsTab(TableModule):
     def render_detail(self, row):
         lead_name = "—"
         if row.get("lead_author_id"):
-            r = self.db.query("SELECT name FROM people WHERE id=?",
+            r = self.db.query("SELECT name FROM research_people WHERE id=?",
                               (row["lead_author_id"],))
             if r:
                 lead_name = r[0]["name"]
@@ -1256,15 +1352,15 @@ class IPTab(TableModule):
         q = f"%{search.lower()}%" if search else None
         if q:
             return self.db.query("""SELECT i.*, p.name AS inv_name
-                FROM ip_assets i
-                LEFT JOIN people p ON p.id=i.inventor_id
+                FROM research_ip_assets i
+                LEFT JOIN research_people p ON p.id=i.inventor_id
                 WHERE LOWER(i.reference) LIKE ? OR LOWER(i.title) LIKE ?
                    OR LOWER(COALESCE(p.name,'')) LIKE ?
                    OR LOWER(COALESCE(i.status,'')) LIKE ?
                 ORDER BY i.disclosure_date DESC""", (q, q, q, q))
         return self.db.query("""SELECT i.*, p.name AS inv_name
-            FROM ip_assets i
-            LEFT JOIN people p ON p.id=i.inventor_id
+            FROM research_ip_assets i
+            LEFT JOIN research_people p ON p.id=i.inventor_id
             ORDER BY i.disclosure_date DESC""")
 
     def row_to_tree_values(self, row):
@@ -1300,7 +1396,7 @@ class IPTab(TableModule):
     def render_detail(self, row):
         inv_name = "—"
         if row.get("inventor_id"):
-            r = self.db.query("SELECT name FROM people WHERE id=?",
+            r = self.db.query("SELECT name FROM research_people WHERE id=?",
                               (row["inventor_id"],))
             if r:
                 inv_name = r[0]["name"]
@@ -1322,7 +1418,7 @@ class IPTab(TableModule):
         ])
 
     def insert_sql(self, d):
-        self.db.execute("""INSERT INTO ip_assets
+        self.db.execute("""INSERT INTO research_ip_assets
             (reference,title,ip_type,inventor_id,disclosure_date,filing_date,
              grant_date,jurisdiction,status,commercial_route,licensee,
              revenue_to_date,notes)
@@ -1335,7 +1431,7 @@ class IPTab(TableModule):
              d.get("revenue_to_date") or 0, d.get("notes")))
 
     def update_sql(self, d, pk):
-        self.db.execute("""UPDATE ip_assets SET
+        self.db.execute("""UPDATE research_ip_assets SET
             reference=?,title=?,ip_type=?,inventor_id=?,disclosure_date=?,
             filing_date=?,grant_date=?,jurisdiction=?,status=?,
             commercial_route=?,licensee=?,revenue_to_date=?,notes=?
@@ -1406,9 +1502,9 @@ class ThesisTab(TableModule):
         base = """SELECT t.*,
                   s.name AS student_name,
                   sup.name AS supervisor_name
-                  FROM theses t
-                  LEFT JOIN people s ON s.id=t.student_id
-                  LEFT JOIN people sup ON sup.id=t.primary_supervisor_id"""
+                  FROM research_theses t
+                  LEFT JOIN research_people s ON s.id=t.student_id
+                  LEFT JOIN research_people sup ON sup.id=t.primary_supervisor_id"""
         if q:
             return self.db.query(base + """
                 WHERE LOWER(COALESCE(s.name,'')) LIKE ?
@@ -1458,7 +1554,7 @@ class ThesisTab(TableModule):
         def person(pid):
             if not pid:
                 return "—"
-            r = self.db.query("SELECT name FROM people WHERE id=?", (pid,))
+            r = self.db.query("SELECT name FROM research_people WHERE id=?", (pid,))
             return r[0]["name"] if r else "—"
 
         self.detail_text.insert("end", f"{row['title']}\n", ("section",))
@@ -1492,7 +1588,7 @@ class ThesisTab(TableModule):
         for iid in self.ms_tree.get_children():
             self.ms_tree.delete(iid)
         rows = self.db.query(
-            "SELECT * FROM thesis_milestones WHERE thesis_id=? "
+            "SELECT * FROM research_thesis_milestones WHERE thesis_id=? "
             "ORDER BY COALESCE(due_date,'9999-12-31')", (thesis_id,))
         today = date.today().isoformat()
         for r in rows:
@@ -1532,7 +1628,7 @@ class ThesisTab(TableModule):
         self.wait_window(dlg)
         if dlg.result:
             d = dlg.result
-            self.db.execute("""INSERT INTO thesis_milestones
+            self.db.execute("""INSERT INTO research_thesis_milestones
                 (thesis_id,name,due_date,status,notes)
                 VALUES(?,?,?,?,?)""",
                 (tid, d.get("name"), d.get("due_date"),
@@ -1549,7 +1645,7 @@ class ThesisTab(TableModule):
             return
         mid = int(sel[0])
         self.db.execute(
-            "UPDATE thesis_milestones SET status='Completed', "
+            "UPDATE research_thesis_milestones SET status='Completed', "
             "completed_date=? WHERE id=?",
             (date.today().isoformat(), mid))
         self._refresh_milestones(tid)
@@ -1564,13 +1660,13 @@ class ThesisTab(TableModule):
                                    "Delete the selected milestone?",
                                    parent=self):
             return
-        self.db.execute("DELETE FROM thesis_milestones WHERE id=?",
+        self.db.execute("DELETE FROM research_thesis_milestones WHERE id=?",
                         (int(sel[0]),))
         self._refresh_milestones(tid)
         self.app.dashboard.refresh()
 
     def insert_sql(self, d):
-        self.db.execute("""INSERT INTO theses
+        self.db.execute("""INSERT INTO research_theses
             (student_id,title,degree,department,primary_supervisor_id,
              secondary_supervisor_id,start_date,expected_submission,
              submission_date,viva_date,internal_examiner_id,
@@ -1585,7 +1681,7 @@ class ThesisTab(TableModule):
              d.get("outcome")))
 
     def update_sql(self, d, pk):
-        self.db.execute("""UPDATE theses SET
+        self.db.execute("""UPDATE research_theses SET
             student_id=?,title=?,degree=?,department=?,
             primary_supervisor_id=?,secondary_supervisor_id=?,
             start_date=?,expected_submission=?,submission_date=?,
@@ -1620,12 +1716,12 @@ class PeopleTab(TableModule):
     def fetch_rows(self, search):
         q = f"%{search.lower()}%" if search else None
         if q:
-            return self.db.query("""SELECT * FROM people
+            return self.db.query("""SELECT * FROM research_people
                 WHERE LOWER(name) LIKE ? OR LOWER(COALESCE(email,'')) LIKE ?
                    OR LOWER(COALESCE(department,'')) LIKE ?
                    OR LOWER(role) LIKE ?
                 ORDER BY name""", (q, q, q, q))
-        return self.db.query("SELECT * FROM people ORDER BY name")
+        return self.db.query("SELECT * FROM research_people ORDER BY name")
 
     def row_to_tree_values(self, row):
         return (row["name"], row["role"],
@@ -1652,16 +1748,16 @@ class PeopleTab(TableModule):
         # Quick links — what this person is involved in
         pid = row["id"]
         ethics = self.db.query(
-            "SELECT reference,title FROM ethics_applications "
+            "SELECT reference,title FROM research_ethics_applications "
             "WHERE principal_investigator_id=?", (pid,))
         outputs = self.db.query(
             "SELECT title FROM research_outputs WHERE lead_author_id=?",
             (pid,))
         ip = self.db.query(
-            "SELECT reference,title FROM ip_assets WHERE inventor_id=?",
+            "SELECT reference,title FROM research_ip_assets WHERE inventor_id=?",
             (pid,))
         theses = self.db.query(
-            "SELECT title FROM theses WHERE student_id=? "
+            "SELECT title FROM research_theses WHERE student_id=? "
             "OR primary_supervisor_id=? OR secondary_supervisor_id=? "
             "OR internal_examiner_id=? OR external_examiner_id=?",
             (pid, pid, pid, pid, pid))
@@ -1685,13 +1781,13 @@ class PeopleTab(TableModule):
                         "end", f"  … and {len(items) - 6} more\n", ("muted",))
 
     def insert_sql(self, d):
-        self.db.execute("""INSERT INTO people(name,email,role,department,created_at)
+        self.db.execute("""INSERT INTO research_people(name,email,role,department,created_at)
             VALUES(?,?,?,?,?)""",
             (d.get("name"), d.get("email"), d.get("role"),
              d.get("department"), datetime.now().isoformat()))
 
     def update_sql(self, d, pk):
-        self.db.execute("""UPDATE people SET name=?,email=?,role=?,department=?
+        self.db.execute("""UPDATE research_people SET name=?,email=?,role=?,department=?
             WHERE id=?""",
             (d.get("name"), d.get("email"), d.get("role"),
              d.get("department"), pk))
@@ -1704,6 +1800,11 @@ class PeopleTab(TableModule):
 class UniversityApp:
     def __init__(self):
         self.db = Database()
+        self.user = _get_current_user()
+        self.user_display = _user_display_name(self.user)
+        logger.info("Research Portal starting user=%s role=%s",
+                    self.user_display,
+                    (self.user or {}).get('role') or 'none')
         self.root = tk.Tk()
         self.root.title("University Research Management System")
         self.root.geometry("1320x820")
@@ -1734,7 +1835,9 @@ class UniversityApp:
         tk.Label(right, text=datetime.now().strftime("%A, %d %B %Y"),
                  bg=PALETTE["header"], fg="#cfd8ea",
                  font=("Segoe UI", 10)).pack(anchor="e", pady=(14, 0))
-        tk.Label(right, text="Research Administrator",
+        role = (self.user or {}).get('role') or ('Research Administrator' if self.user else 'not signed in')
+        tk.Label(right,
+                 text=f"{self.user_display}  ({role})",
                  bg=PALETTE["header"], fg="white",
                  font=("Segoe UI", 10, "bold")).pack(anchor="e")
 
@@ -1771,7 +1874,7 @@ class UniversityApp:
         bar = tk.Frame(self.root, bg=PALETTE["border"], height=24)
         bar.pack(fill="x", side="bottom")
         bar.pack_propagate(False)
-        tk.Label(bar, text=f"Data file: {os.path.abspath(DB_PATH)}",
+        tk.Label(bar, text="Data: central student_records.db",
                  bg=PALETTE["border"], fg=PALETTE["muted"],
                  font=("Segoe UI", 9)).pack(side="left", padx=12)
         tk.Label(bar, text="Ready",
@@ -1791,6 +1894,11 @@ class UniversityApp:
 # Entry point
 # ---------------------------------------------------------------------------
 
-if __name__ == "__main__":
+def main():
+    _remove_legacy_db()
     app = UniversityApp()
     app.run()
+
+
+if __name__ == "__main__":
+    main()

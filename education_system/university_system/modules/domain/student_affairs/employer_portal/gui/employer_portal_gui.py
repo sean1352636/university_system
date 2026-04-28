@@ -1,6 +1,7 @@
 """Tkinter GUI for the university employer portal."""
 from __future__ import annotations
 
+import logging
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -8,6 +9,15 @@ from education_system.university_system.modules.domain.student_affairs.employer_
     EmployerPortalService,
     EmployerPortalError,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def _user_display_name(auth):
+    if not auth:
+        return ''
+    return (auth.get('username') or auth.get('email') or
+            auth.get('user_id') or auth.get('id') or '')
 
 
 class EmployerPortalFrame(tk.Frame):
@@ -17,6 +27,7 @@ class EmployerPortalFrame(tk.Frame):
         super().__init__(parent, **kwargs)
         self._svc = EmployerPortalService(db_path)
         self._auth = auth
+        self._user_display = _user_display_name(auth) or 'Guest'
         self._build_ui()
         self._load_employers()
 
@@ -29,6 +40,13 @@ class EmployerPortalFrame(tk.Frame):
             header, text="Employer Portal",
             font=("Helvetica", 15, "bold"), bg="#2c3e50", fg="white",
         ).pack(side="left", padx=20, pady=10)
+
+        role = (self._auth or {}).get('role') or ('—' if self._auth else 'not signed in')
+        tk.Label(
+            header,
+            text=f"Signed in: {self._user_display}  ({role})",
+            font=("Helvetica", 10), bg="#2c3e50", fg="#bdc3c7",
+        ).pack(side="right", padx=20, pady=15)
 
         self._nb = ttk.Notebook(self)
         self._nb.pack(fill="both", expand=True, padx=10, pady=10)
@@ -76,7 +94,7 @@ class EmployerPortalFrame(tk.Frame):
     def _add_employer(self):
         try:
             v = self._emp_vars
-            self._svc.register_employer(
+            new_id = self._svc.register_employer(
                 company_name=v["Company"].get().strip(),
                 contact_name=v["Contact"].get().strip(),
                 contact_email=v["Email"].get().strip(),
@@ -84,6 +102,8 @@ class EmployerPortalFrame(tk.Frame):
                 sector=v["Sector"].get().strip(),
                 company_size=v["Size"].get().strip() or "small",
             )
+            logger.info("Employer registered id=%s company=%r by user=%s",
+                        new_id, v["Company"].get().strip(), self._user_display)
             messagebox.showinfo("Success", "Employer registered.")
             for var in v.values():
                 var.set("" if var.get() != "small" else "small")
@@ -154,11 +174,14 @@ class EmployerPortalFrame(tk.Frame):
 
     def _schedule_review(self):
         try:
-            self._svc.schedule_review(
+            new_id = self._svc.schedule_review(
                 placement_id=int(self._rev_pid.get()),
                 review_date=self._rev_date.get().strip(),
                 review_type=self._rev_type.get(),
             )
+            logger.info("Review scheduled id=%s placement=%s date=%s type=%s by user=%s",
+                        new_id, self._rev_pid.get(), self._rev_date.get(),
+                        self._rev_type.get(), self._user_display)
             messagebox.showinfo("Success", "Review scheduled.")
             self._load_reviews()
         except (EmployerPortalError, ValueError) as exc:
@@ -175,6 +198,8 @@ class EmployerPortalFrame(tk.Frame):
                 employer_feedback=v["Employer Feedback"].get(),
                 next_review_date=v["Next Review Date"].get().strip() or None,
             )
+            logger.info("Review completed review_id=%s by user=%s",
+                        v["Review ID"].get(), self._user_display)
             messagebox.showinfo("Success", "Review completed.")
             self._load_reviews()
         except (EmployerPortalError, ValueError) as exc:
@@ -218,7 +243,7 @@ class EmployerPortalFrame(tk.Frame):
                      values=["employer", "student", "supervisor"], width=12).grid(
             row=0, column=3, padx=5, pady=5)
         tk.Label(form, text="Signer Name:", bg="#ecf0f1").grid(row=0, column=4, padx=5, pady=5, sticky="e")
-        self._so_name = tk.StringVar()
+        self._so_name = tk.StringVar(value=self._user_display if self._auth else "")
         tk.Entry(form, textvariable=self._so_name, width=20).grid(row=0, column=5, padx=5, pady=5)
         tk.Label(form, text="Comments:", bg="#ecf0f1").grid(row=1, column=0, padx=5, pady=5, sticky="e")
         self._so_comment = tk.StringVar()
@@ -243,6 +268,9 @@ class EmployerPortalFrame(tk.Frame):
                 signer_name=self._so_name.get().strip(),
                 comments=self._so_comment.get().strip() or None,
             )
+            logger.info("Review signed off review_id=%s signer_type=%s signer=%r logged_by=%s",
+                        self._so_rid.get(), self._so_type.get(),
+                        self._so_name.get().strip(), self._user_display)
             messagebox.showinfo("Success", "Review signed off.")
         except (EmployerPortalError, ValueError) as exc:
             messagebox.showerror("Error", str(exc))

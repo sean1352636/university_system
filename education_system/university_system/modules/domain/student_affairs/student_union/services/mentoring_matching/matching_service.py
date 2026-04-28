@@ -55,12 +55,15 @@ class MentoringMatchingService:
         db_path: Optional[str] = None,
         count_active_mentees: Optional[Callable[[int], int]] = None,
     ) -> None:
-        self.db_path = db_path or ":memory:"
+        # When no path is given, use the central student_records.db via
+        # the shared `get_connection()` so mentoring data persists
+        # alongside the rest of the system. `:memory:` is preserved as
+        # an explicit option for tests.
+        self.db_path = db_path  # may be None, ":memory:", or a real path
         self._count_active_mentees = count_active_mentees or (lambda _mid: 0)
-        # When using :memory:, hold a long-lived connection so state persists.
         self._mem_conn: Optional[sqlite3.Connection] = None
-        if self.db_path == ":memory:":
-            self._mem_conn = sqlite3.connect(self.db_path)
+        if db_path == ":memory:":
+            self._mem_conn = sqlite3.connect(":memory:")
             self._mem_conn.row_factory = sqlite3.Row
         self._init_schema()
 
@@ -68,7 +71,11 @@ class MentoringMatchingService:
     def _conn(self) -> sqlite3.Connection:
         if self._mem_conn is not None:
             return self._mem_conn
-        conn = sqlite3.connect(self.db_path)
+        if self.db_path is None:
+            from education_system.university_system.infrastructure.database.db import get_connection
+            conn = get_connection()
+        else:
+            conn = sqlite3.connect(self.db_path)
         conn.row_factory = sqlite3.Row
         return conn
 

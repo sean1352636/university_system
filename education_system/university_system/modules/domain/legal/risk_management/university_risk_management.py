@@ -3,25 +3,114 @@ University Risk Management System
 A GUI-based application for identifying, assessing, tracking, and mitigating
 risks across university operations (academic, financial, IT, safety, compliance).
 
-Run with:  python university_risk_management.py
-Requires:  Python 3.8+ (uses only the standard library — Tkinter + sqlite3)
+Auth: piggybacks on the main university auth — when launched as a
+subprocess from the unified main GUI, EDU_AUTH_* env vars carry the
+logged-in user's identity. New/edited risks are stamped with the
+current user; the header shows who is signed in.
+
+Persistence: rows live in the central `student_records.db` `risks` table
+(reached via `infrastructure.database.db.get_connection`). The legacy
+local `university_risks.db` file alongside this module is removed on
+startup if it still exists.
+
+Logging: routed through the shared rotating `app.log` via
+`infrastructure.logging.log_config.configure_logging`.
 """
 
-import os
 import csv
+import logging
+import os
 import sqlite3
+import sys
 from datetime import datetime
 from dataclasses import dataclass
 from typing import Optional
 
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
+from tkinter import ttk, messagebox, filedialog
+
+# When the main GUI launches us as a subprocess, the child Python is
+# invoked directly on this file's path with no PYTHONPATH set, so
+# `education_system` isn't importable. Walk up from this file until we
+# find the dir that contains the `education_system` package and put
+# that on sys.path. No-op when imported normally.
+if 'education_system' not in sys.modules:
+    _here = os.path.abspath(os.path.dirname(__file__))
+    while _here and not os.path.isdir(os.path.join(_here, 'education_system')):
+        _parent = os.path.dirname(_here)
+        if _parent == _here:
+            break
+        _here = _parent
+    if _here and _here not in sys.path:
+        sys.path.insert(0, _here)
+
+
+logger = logging.getLogger(__name__)
+
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    configure_logging(name=__name__)
+except Exception:
+    logger.debug("Central log config unavailable; falling back to default handlers", exc_info=True)
+
+
+# ---------------------------------------------------------------------------
+# AUTH BOOTSTRAP
+# ---------------------------------------------------------------------------
+def _get_current_user():
+    """Resolve the logged-in user dict from EDU_AUTH_* env vars, falling
+    back to the in-process global auth singleton."""
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+
+    if user_id or username:
+        return {
+            'id': user_id or None,
+            'user_id': user_id or None,
+            'username': username,
+            'role': role,
+            'email': email,
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            return ga.current_user
+    except Exception:
+        logger.debug("get_global_auth fallback failed", exc_info=True)
+    return None
+
+
+def _user_display_name(user):
+    if not user:
+        return 'Guest'
+    return (user.get('username') or user.get('email') or
+            user.get('user_id') or user.get('id') or 'Unknown User')
+
+
+def _user_can_write(user):
+    """Risk register edits are restricted to admin/staff roles. Read-only
+    otherwise."""
+    if not user:
+        return False
+    role = (user.get('role') or '').lower()
+    return role in ('admin', 'administrator', 'superadmin', 'staff',
+                    'lecturer', 'manager')
+
 
 # ---------------------------------------------------------------------------
 # Configuration & constants
 # ---------------------------------------------------------------------------
 
-DB_FILE = "university_risks.db"
+# Legacy local DB file — we now use the central student_records.db.
+# The file is deleted on startup if it still exists alongside this module.
+_LEGACY_DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "university_risks.db")
 
 CATEGORIES = [
     "Academic",
@@ -109,66 +198,104 @@ class Risk:
 
 
 class RiskDB:
-    """Thin SQLite wrapper — schema creation + CRUD."""
+    """Thin wrapper around the central `student_records.db`.
 
-    def __init__(self, path: str = DB_FILE):
-        self.path = path
-        self.conn = sqlite3.connect(path)
-        self.conn.row_factory = sqlite3.Row
-        self._create_schema()
+    The `risks` table is part of the canonical schema; this class assumes
+    it exists and only ever inserts/reads from it. A short-lived
+    connection is opened per call to play nicely with the shared WAL
+    pool used elsewhere in the app.
+    """
 
-    def _create_schema(self):
-        self.conn.execute(
-            """
-            CREATE TABLE IF NOT EXISTS risks (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                title       TEXT NOT NULL,
-                category    TEXT NOT NULL,
-                department  TEXT NOT NULL,
-                description TEXT,
-                likelihood  INTEGER NOT NULL CHECK(likelihood BETWEEN 1 AND 5),
-                impact      INTEGER NOT NULL CHECK(impact BETWEEN 1 AND 5),
-                status      TEXT NOT NULL,
-                owner       TEXT,
-                mitigation  TEXT,
-                created     TEXT NOT NULL,
-                updated     TEXT NOT NULL
+    def __init__(self):
+        try:
+            from education_system.university_system.infrastructure.database.db import get_connection
+            self._connect = get_connection
+        except Exception:
+            logger.exception("Could not import central get_connection")
+            raise
+        self._ensure_schema()
+
+    def _connection(self):
+        conn = self._connect()
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _ensure_schema(self):
+        # `risks` is in the canonical schema; CREATE IF NOT EXISTS is a
+        # belt-and-braces guard for fresh dev DBs that haven't run the
+        # full migration set.
+        conn = self._connection()
+        try:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS risks (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    title       TEXT NOT NULL,
+                    category    TEXT NOT NULL,
+                    department  TEXT NOT NULL,
+                    description TEXT,
+                    likelihood  INTEGER NOT NULL CHECK(likelihood BETWEEN 1 AND 5),
+                    impact      INTEGER NOT NULL CHECK(impact BETWEEN 1 AND 5),
+                    status      TEXT NOT NULL,
+                    owner       TEXT,
+                    mitigation  TEXT,
+                    created     TEXT NOT NULL,
+                    updated     TEXT NOT NULL
+                )
+                """
             )
-            """
-        )
-        self.conn.commit()
+            conn.commit()
+        finally:
+            conn.close()
 
     # -- CRUD ---------------------------------------------------------------
 
     def add(self, r: Risk) -> int:
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cur = self.conn.execute(
-            """INSERT INTO risks
-               (title, category, department, description, likelihood, impact,
-                status, owner, mitigation, created, updated)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
-            (r.title, r.category, r.department, r.description, r.likelihood,
-             r.impact, r.status, r.owner, r.mitigation, now, now),
-        )
-        self.conn.commit()
-        return cur.lastrowid
+        conn = self._connection()
+        try:
+            cur = conn.execute(
+                """INSERT INTO risks
+                   (title, category, department, description, likelihood, impact,
+                    status, owner, mitigation, created, updated)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                (r.title, r.category, r.department, r.description, r.likelihood,
+                 r.impact, r.status, r.owner, r.mitigation, now, now),
+            )
+            conn.commit()
+            new_id = cur.lastrowid
+            logger.info("Risk added id=%s title=%r owner=%r score=%s",
+                        new_id, r.title, r.owner, r.likelihood * r.impact)
+            return new_id
+        finally:
+            conn.close()
 
     def update(self, r: Risk):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        self.conn.execute(
-            """UPDATE risks SET
-                 title=?, category=?, department=?, description=?,
-                 likelihood=?, impact=?, status=?, owner=?, mitigation=?,
-                 updated=?
-               WHERE id=?""",
-            (r.title, r.category, r.department, r.description, r.likelihood,
-             r.impact, r.status, r.owner, r.mitigation, now, r.id),
-        )
-        self.conn.commit()
+        conn = self._connection()
+        try:
+            conn.execute(
+                """UPDATE risks SET
+                     title=?, category=?, department=?, description=?,
+                     likelihood=?, impact=?, status=?, owner=?, mitigation=?,
+                     updated=?
+                   WHERE id=?""",
+                (r.title, r.category, r.department, r.description, r.likelihood,
+                 r.impact, r.status, r.owner, r.mitigation, now, r.id),
+            )
+            conn.commit()
+            logger.info("Risk updated id=%s title=%r status=%s", r.id, r.title, r.status)
+        finally:
+            conn.close()
 
     def delete(self, risk_id: int):
-        self.conn.execute("DELETE FROM risks WHERE id=?", (risk_id,))
-        self.conn.commit()
+        conn = self._connection()
+        try:
+            conn.execute("DELETE FROM risks WHERE id=?", (risk_id,))
+            conn.commit()
+            logger.info("Risk deleted id=%s", risk_id)
+        finally:
+            conn.close()
 
     def fetch_all(self, search: str = "", category: str = "All",
                   status: str = "All") -> list[Risk]:
@@ -185,22 +312,35 @@ class RiskDB:
             query += " AND status=?"
             params.append(status)
         query += " ORDER BY (likelihood*impact) DESC, id DESC"
-        rows = self.conn.execute(query, params).fetchall()
+        conn = self._connection()
+        try:
+            rows = conn.execute(query, params).fetchall()
+        finally:
+            conn.close()
         return [self._row_to_risk(row) for row in rows]
 
     def fetch(self, risk_id: int) -> Optional[Risk]:
-        row = self.conn.execute(
-            "SELECT * FROM risks WHERE id=?", (risk_id,)
-        ).fetchone()
+        conn = self._connection()
+        try:
+            row = conn.execute(
+                "SELECT * FROM risks WHERE id=?", (risk_id,)
+            ).fetchone()
+        finally:
+            conn.close()
         return self._row_to_risk(row) if row else None
 
     def stats(self) -> dict:
-        c = self.conn.cursor()
-        total = c.execute("SELECT COUNT(*) FROM risks").fetchone()[0]
         by_rating = {"Critical": 0, "High": 0, "Medium": 0, "Low": 0}
         by_status = {s: 0 for s in STATUSES}
         by_category = {cat: 0 for cat in CATEGORIES}
-        for row in c.execute("SELECT likelihood, impact, status, category FROM risks"):
+        conn = self._connection()
+        try:
+            c = conn.cursor()
+            total = c.execute("SELECT COUNT(*) FROM risks").fetchone()[0]
+            rows = c.execute("SELECT likelihood, impact, status, category FROM risks").fetchall()
+        finally:
+            conn.close()
+        for row in rows:
             score = row[0] * row[1]
             if score >= 20:
                 by_rating["Critical"] += 1
@@ -245,7 +385,8 @@ class RiskDB:
 class RiskDialog(tk.Toplevel):
     """Modal dialog for creating or editing a single risk."""
 
-    def __init__(self, parent, db: RiskDB, risk: Optional[Risk] = None):
+    def __init__(self, parent, db: RiskDB, risk: Optional[Risk] = None,
+                 default_owner: str = ""):
         super().__init__(parent)
         self.db = db
         self.risk = risk
@@ -254,12 +395,23 @@ class RiskDialog(tk.Toplevel):
         self.title("Edit Risk" if risk else "New Risk")
         self.geometry("560x620")
         self.transient(parent)
-        self.grab_set()
         self.configure(padx=16, pady=16)
+        # Defer grab_set until the window is mapped — calling it earlier
+        # raises "grab failed: window not viewable" on some WMs.
+        self.after(50, self._safe_grab)
 
         self._build_form()
         if risk:
             self._populate(risk)
+        elif default_owner:
+            self.owner_var.set(default_owner)
+
+    def _safe_grab(self):
+        try:
+            self.wait_visibility()
+            self.grab_set()
+        except tk.TclError:
+            logger.debug("grab_set deferred — window not yet viewable", exc_info=True)
 
     # -- UI construction ----------------------------------------------------
 
@@ -302,7 +454,7 @@ class RiskDialog(tk.Toplevel):
 
         row += 1
         ttk.Label(self, text="Likelihood *").grid(row=row, column=0, sticky="w")
-        self.likelihood_var = tk.IntVar(value=3)
+        self.likelihood_var = tk.StringVar(value=f"3 - {LIKELIHOOD_LEVELS[3]}")
         ttk.Combobox(
             self, textvariable=self.likelihood_var,
             values=[f"{k} - {v}" for k, v in LIKELIHOOD_LEVELS.items()],
@@ -311,7 +463,7 @@ class RiskDialog(tk.Toplevel):
 
         row += 1
         ttk.Label(self, text="Impact *").grid(row=row, column=0, sticky="w")
-        self.impact_var = tk.IntVar(value=3)
+        self.impact_var = tk.StringVar(value=f"3 - {IMPACT_LEVELS[3]}")
         ttk.Combobox(
             self, textvariable=self.impact_var,
             values=[f"{k} - {v}" for k, v in IMPACT_LEVELS.items()],
@@ -435,6 +587,14 @@ class RiskApp(tk.Tk):
         super().__init__()
         self.db = RiskDB()
 
+        self.user = _get_current_user()
+        self.user_display = _user_display_name(self.user)
+        self.can_write = _user_can_write(self.user)
+        logger.info("Risk Management starting user=%s role=%s write=%s",
+                    self.user_display,
+                    (self.user or {}).get('role') or 'none',
+                    self.can_write)
+
         self.title("University Risk Management System")
         self.geometry("1180x720")
         self.minsize(960, 600)
@@ -469,6 +629,10 @@ class RiskApp(tk.Tk):
         ttk.Label(header,
                   text="Identify • Assess • Mitigate • Monitor",
                   foreground="#555").pack(side="left", padx=(14, 0))
+        role = (self.user or {}).get('role') or ('—' if self.user else 'not signed in')
+        ttk.Label(header,
+                  text=f"Signed in: {self.user_display}  ({role})",
+                  foreground="#1565c0").pack(side="right")
 
         # --- Dashboard cards ----------------------------------------------
         self.dashboard = ttk.Frame(self, padding=(14, 0, 14, 10))
@@ -634,8 +798,20 @@ class RiskApp(tk.Tk):
 
     # -- Actions ------------------------------------------------------------
 
+    def _require_write(self, action: str) -> bool:
+        if self.can_write:
+            return True
+        logger.warning("Blocked %s by user=%s — read-only role", action, self.user_display)
+        messagebox.showwarning(
+            "Read-only",
+            "Your account is read-only for the risk register.\n"
+            "Sign in with an admin/staff role to make changes.")
+        return False
+
     def new_risk(self):
-        dlg = RiskDialog(self, self.db)
+        if not self._require_write("new_risk"):
+            return
+        dlg = RiskDialog(self, self.db, default_owner=self.user_display)
         self.wait_window(dlg)
         if dlg.result:
             self.refresh()
@@ -644,6 +820,8 @@ class RiskApp(tk.Tk):
         rid = self._selected_id()
         if rid is None:
             messagebox.showinfo("Edit", "Select a risk to edit.")
+            return
+        if not self._require_write("edit_risk"):
             return
         risk = self.db.fetch(rid)
         if not risk:
@@ -657,6 +835,8 @@ class RiskApp(tk.Tk):
         rid = self._selected_id()
         if rid is None:
             messagebox.showinfo("Delete", "Select a risk to delete.")
+            return
+        if not self._require_write("delete_risk"):
             return
         if messagebox.askyesno("Confirm", f"Delete risk #{rid}? This cannot be undone."):
             self.db.delete(rid)
@@ -684,6 +864,8 @@ class RiskApp(tk.Tk):
                     r.likelihood, r.impact, r.score, r.rating,
                     r.status, r.owner, r.mitigation, r.created, r.updated,
                 ])
+        logger.info("Exported %s risk(s) to %s by user=%s",
+                    len(risks), path, self.user_display)
         messagebox.showinfo("Export", f"Exported {len(risks)} risk(s) to:\n{path}")
 
     def show_matrix(self):
@@ -860,11 +1042,26 @@ def seed_sample_data(db: RiskDB):
 # ---------------------------------------------------------------------------
 
 
+def _remove_legacy_db():
+    """Drop the old per-module university_risks.db file (and WAL/SHM
+    siblings) — data now lives in the central student_records.db.
+    """
+    for suffix in ("", "-wal", "-shm", "-journal"):
+        path = _LEGACY_DB_FILE + suffix
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                logger.info("Removed legacy risk DB file: %s", path)
+            except OSError:
+                logger.warning("Could not remove legacy DB file %s", path, exc_info=True)
+
+
 def main():
-    # Seed a fresh DB with a set of realistic university risks on first launch
-    needs_seed = not os.path.exists(DB_FILE)
+    _remove_legacy_db()
     app = RiskApp()
-    if needs_seed:
+    # Seed only if the central risks table is empty (first run on a fresh DB)
+    if not app.db.fetch_all():
+        logger.info("Risks table empty — seeding sample data")
         seed_sample_data(app.db)
         app.refresh()
     app.mainloop()

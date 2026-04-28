@@ -1,11 +1,185 @@
 """
 University First Aid Portal
-A comprehensive GUI application for first aid information and emergency response
+A comprehensive GUI application for first aid information and emergency response.
+
+Auth: piggybacks on the main university auth — when launched as a
+subprocess from the unified main GUI, EDU_AUTH_* env vars carry the
+logged-in user's identity. The reporter name/ID fields on the incident
+form are pre-filled from the signed-in user; submitted reports are
+stamped with that identity.
+
+Persistence: incident reports live in the `first_aid_incidents` table of
+the central university `student_records.db` (reached via
+`infrastructure.database.db.get_connection`). The legacy in-memory list
+is gone, and any stray local *.db files alongside this module are
+removed on startup.
+
+Logging: routed through the shared rotating `app.log` via
+`infrastructure.logging.log_config.configure_logging`.
 """
 
+import logging
+import os
+import sqlite3
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime
+
+
+# When the main GUI launches us as a subprocess, the child Python is
+# invoked directly on this file's path with no PYTHONPATH set, so
+# `education_system` isn't importable. Walk up from this file until we
+# find the dir that contains the `education_system` package and put
+# that on sys.path. No-op when imported normally.
+if 'education_system' not in sys.modules:
+    _here = os.path.abspath(os.path.dirname(__file__))
+    while _here and not os.path.isdir(os.path.join(_here, 'education_system')):
+        _parent = os.path.dirname(_here)
+        if _parent == _here:
+            break
+        _here = _parent
+    if _here and _here not in sys.path:
+        sys.path.insert(0, _here)
+
+
+logger = logging.getLogger(__name__)
+
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    configure_logging(name=__name__)
+except Exception:
+    logger.debug("Central log config unavailable; falling back to default handlers", exc_info=True)
+
+
+# ---------------------------------------------------------------------------
+# AUTH BOOTSTRAP
+# ---------------------------------------------------------------------------
+def _get_current_user():
+    """Resolve the logged-in user dict from EDU_AUTH_* env vars, with a
+    fallback to the in-process global auth singleton."""
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+
+    if user_id or username:
+        return {
+            'id': user_id or None,
+            'user_id': user_id or None,
+            'username': username,
+            'role': role,
+            'email': email,
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            return ga.current_user
+    except Exception:
+        logger.debug("get_global_auth fallback failed", exc_info=True)
+    return None
+
+
+def _user_display_name(user):
+    if not user:
+        return ''
+    return (user.get('username') or user.get('email') or
+            user.get('user_id') or user.get('id') or '')
+
+
+# ---------------------------------------------------------------------------
+# DATA LAYER
+# ---------------------------------------------------------------------------
+class IncidentDB:
+    """Persists first-aid incident reports in the central
+    `student_records.db`. Creates the `first_aid_incidents` table on
+    demand."""
+
+    def __init__(self):
+        try:
+            from education_system.university_system.infrastructure.database.db import get_connection
+            self._connect = get_connection
+        except Exception:
+            logger.exception("Could not import central get_connection")
+            raise
+        self._ensure_schema()
+
+    def _connection(self):
+        conn = self._connect()
+        conn.row_factory = sqlite3.Row
+        return conn
+
+    def _ensure_schema(self):
+        conn = self._connection()
+        try:
+            conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS first_aid_incidents (
+                    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+                    submitted_at    TEXT NOT NULL,
+                    reporter_user   TEXT,
+                    reporter_name   TEXT NOT NULL,
+                    reporter_id     TEXT,
+                    phone           TEXT,
+                    location        TEXT,
+                    incident_type   TEXT,
+                    severity        TEXT,
+                    description     TEXT NOT NULL
+                )
+                """
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+    def add(self, report: dict) -> int:
+        conn = self._connection()
+        try:
+            cur = conn.execute(
+                """INSERT INTO first_aid_incidents
+                   (submitted_at, reporter_user, reporter_name, reporter_id,
+                    phone, location, incident_type, severity, description)
+                   VALUES (?,?,?,?,?,?,?,?,?)""",
+                (report['submitted_at'], report.get('reporter_user', ''),
+                 report['reporter_name'], report.get('reporter_id', ''),
+                 report.get('phone', ''), report.get('location', ''),
+                 report.get('incident_type', ''), report.get('severity', ''),
+                 report['description']),
+            )
+            conn.commit()
+            return cur.lastrowid
+        finally:
+            conn.close()
+
+    def fetch_all(self) -> list:
+        conn = self._connection()
+        try:
+            rows = conn.execute(
+                "SELECT * FROM first_aid_incidents ORDER BY id DESC"
+            ).fetchall()
+        finally:
+            conn.close()
+        return [dict(r) for r in rows]
+
+
+def _remove_legacy_db():
+    """Sweep any stray local SQLite files that earlier iterations of
+    this module may have written alongside it. Data lives in the
+    central `student_records.db`."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    for fname in os.listdir(here) if os.path.isdir(here) else []:
+        if fname.endswith(('.db', '.db-wal', '.db-shm', '.db-journal')):
+            path = os.path.join(here, fname)
+            try:
+                os.remove(path)
+                logger.info("Removed legacy first-aid DB file: %s", path)
+            except OSError:
+                logger.warning("Could not remove legacy DB file %s", path,
+                               exc_info=True)
 
 
 class FirstAidPortal:
@@ -26,10 +200,22 @@ class FirstAidPortal:
             "warning": "#e67e22",
         }
 
+        # Auth + persistence
+        self.user = _get_current_user()
+        self.user_display = _user_display_name(self.user) or 'Guest'
+        try:
+            self.db = IncidentDB()
+        except Exception:
+            self.db = None
+            logger.exception("First Aid Portal starting without DB persistence")
+        logger.info("First Aid Portal starting user=%s role=%s db=%s",
+                    self.user_display,
+                    (self.user or {}).get('role') or 'none',
+                    'on' if self.db else 'off')
+
         # First aid data
         self.first_aid_data = self._load_first_aid_data()
         self.emergency_contacts = self._load_emergency_contacts()
-        self.incident_log = []
 
         self._setup_styles()
         self._create_header()
@@ -76,6 +262,15 @@ class FirstAidPortal:
             bg=self.colors["primary"],
             fg="#ffe5e5",
         ).pack(side="right", pady=25)
+
+        role = (self.user or {}).get('role') or ('—' if self.user else 'not signed in')
+        tk.Label(
+            title_frame,
+            text=f"Signed in: {self.user_display}  ({role})",
+            font=("Segoe UI", 9),
+            bg=self.colors["primary"],
+            fg="#ffe5e5",
+        ).pack(side="right", padx=15, pady=25)
 
     def _create_main_content(self):
         self.notebook = ttk.Notebook(self.root)
@@ -363,6 +558,16 @@ class FirstAidPortal:
                 side="left", fill="x", expand=True
             )
 
+        # Pre-fill reporter identity from the signed-in user.
+        if self.user:
+            self.form_vars["name"].set(self.user_display)
+            uid = (self.user.get('user_id') or self.user.get('id') or '')
+            if uid:
+                self.form_vars["id"].set(str(uid))
+            if self.user.get('email'):
+                # Phone isn't in EDU_AUTH_*; leave blank rather than guess.
+                pass
+
         # Incident type
         row = tk.Frame(form_frame, bg=self.colors["card"])
         row.pack(fill="x", padx=30, pady=8)
@@ -568,24 +773,48 @@ class FirstAidPortal:
 
         if not name or not description:
             messagebox.showwarning("Incomplete Form", "Please fill in at least your name and a description.")
+            logger.warning("Incident submit blocked — missing name or description (user=%s)",
+                           self.user_display)
             return
 
         report = {
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
-            "name": name,
-            "id": self.form_vars["id"].get(),
-            "phone": self.form_vars["phone"].get(),
-            "location": self.form_vars["location"].get(),
-            "type": self.form_vars["type"].get(),
+            "submitted_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "reporter_user": self.user_display if self.user else '',
+            "reporter_name": name,
+            "reporter_id": self.form_vars["id"].get().strip(),
+            "phone": self.form_vars["phone"].get().strip(),
+            "location": self.form_vars["location"].get().strip(),
+            "incident_type": self.form_vars["type"].get(),
             "severity": self.form_vars["severity"].get(),
             "description": description,
         }
-        self.incident_log.append(report)
+
+        if not self.db:
+            messagebox.showerror(
+                "Database Unavailable",
+                "Cannot save the report — the central database is not "
+                "reachable. Please contact IT support.")
+            logger.error("Incident submit failed — DB unavailable (user=%s)",
+                         self.user_display)
+            return
+
+        try:
+            new_id = self.db.add(report)
+        except sqlite3.Error:
+            logger.exception("Incident submit failed — DB error (user=%s)",
+                             self.user_display)
+            messagebox.showerror("Save Error",
+                                 "Could not save the incident report.")
+            return
+
+        logger.info("Incident submitted id=%s severity=%s type=%s reporter=%s",
+                    new_id, report['severity'], report['incident_type'],
+                    self.user_display)
 
         messagebox.showinfo(
             "Report Submitted",
             f"✓ Incident report submitted successfully.\n\n"
-            f"Reference: INC-{len(self.incident_log):04d}\n"
+            f"Reference: INC-{new_id:04d}\n"
             f"Severity: {report['severity']}\n\n"
             f"A first aid officer will be notified.",
         )
@@ -616,22 +845,32 @@ class FirstAidPortal:
         log_text = scrolledtext.ScrolledText(log_window, font=("Consolas", 10), wrap="word")
         log_text.pack(fill="both", expand=True, padx=15, pady=10)
 
-        if not self.incident_log:
+        incidents = []
+        if self.db:
+            try:
+                incidents = self.db.fetch_all()
+            except sqlite3.Error:
+                logger.exception("Could not load incident log")
+
+        if not incidents:
             log_text.insert("1.0", "No incidents reported yet.\n")
         else:
-            for i, rep in enumerate(self.incident_log, 1):
+            for rep in incidents:
                 log_text.insert(
                     "end",
-                    f"── Incident INC-{i:04d} ──\n"
-                    f"Time:        {rep['timestamp']}\n"
-                    f"Reporter:    {rep['name']} (ID: {rep['id']})\n"
-                    f"Phone:       {rep['phone']}\n"
-                    f"Location:    {rep['location']}\n"
-                    f"Type:        {rep['type']}\n"
-                    f"Severity:    {rep['severity']}\n"
+                    f"── Incident INC-{rep['id']:04d} ──\n"
+                    f"Time:        {rep['submitted_at']}\n"
+                    f"Reporter:    {rep['reporter_name']} (ID: {rep['reporter_id'] or '—'})\n"
+                    f"Logged by:   {rep['reporter_user'] or '—'}\n"
+                    f"Phone:       {rep['phone'] or '—'}\n"
+                    f"Location:    {rep['location'] or '—'}\n"
+                    f"Type:        {rep['incident_type'] or '—'}\n"
+                    f"Severity:    {rep['severity'] or '—'}\n"
                     f"Description: {rep['description']}\n\n",
                 )
         log_text.config(state="disabled")
+        logger.info("Incident log viewed by user=%s entries=%s",
+                    self.user_display, len(incidents))
 
     # ---------- Data ----------
 
@@ -897,8 +1136,9 @@ class FirstAidPortal:
 
 
 def main():
+    _remove_legacy_db()
     root = tk.Tk()
-    app = FirstAidPortal(root)
+    FirstAidPortal(root)
     root.mainloop()
 
 

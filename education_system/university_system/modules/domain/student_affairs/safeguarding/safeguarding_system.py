@@ -1,12 +1,23 @@
 """
 University Portal Safeguarding System
 --------------------------------------
-A demonstration GUI application that screens messages/posts submitted
-through a university portal for safeguarding concerns (self-harm,
-bullying, harassment, exploitation, academic distress, etc.) and
-routes flagged content to the appropriate support team.
+A GUI application that screens messages/posts submitted through a
+university portal for safeguarding concerns (self-harm, bullying,
+harassment, exploitation, academic distress, etc.) and routes flagged
+content to the appropriate support team.
 
-Built with tkinter (standard library - no external dependencies).
+Auth: piggybacks on the main university auth — when launched as a
+subprocess from the unified main GUI, EDU_AUTH_* env vars carry the
+logged-in user's identity. There is no in-app login screen. Users
+with role=='student' see the submission form; everyone else (staff,
+instructor, admin, dsl, ...) gets the staff review console.
+
+Persistence: rows live in the central `student_records.db` table
+`safeguarding_submissions`. The legacy local `safeguarding.db` file
+is removed on startup.
+
+Logging: routed through the shared rotating `app.log` via
+`infrastructure.logging.log_config.configure_logging`.
 
 NOTE: This is an educational/demonstration tool. A real safeguarding
 system requires trained professionals, robust NLP (not keyword matching),
@@ -14,14 +25,84 @@ compliance with GDPR/Data Protection law, and integration with
 institutional safeguarding policy.
 """
 
-import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
-import sqlite3
-import hashlib
-import re
 import json
+import logging
+import os
+import re
+import sqlite3
+import sys
+import tkinter as tk
 from datetime import datetime
-from pathlib import Path
+from tkinter import ttk, messagebox, scrolledtext
+
+
+# When the main GUI launches us as a subprocess, the child Python is
+# invoked directly on this file's path with no PYTHONPATH set, so
+# `education_system` isn't importable. Walk up from this file until we
+# find the dir that contains the `education_system` package and put
+# that on sys.path. No-op when imported normally.
+if 'education_system' not in sys.modules:
+    _here = os.path.abspath(os.path.dirname(__file__))
+    while _here and not os.path.isdir(os.path.join(_here, 'education_system')):
+        _parent = os.path.dirname(_here)
+        if _parent == _here:
+            break
+        _here = _parent
+    if _here and _here not in sys.path:
+        sys.path.insert(0, _here)
+
+
+logger = logging.getLogger(__name__)
+
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    configure_logging(name=__name__)
+except Exception:
+    logger.debug("Central log config unavailable; falling back to default handlers", exc_info=True)
+
+
+# Legacy local DB file — data now lives in the central student_records.db.
+_LEGACY_DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "safeguarding.db")
+
+
+# ---------------------------------------------------------------------------
+# AUTH BOOTSTRAP
+# ---------------------------------------------------------------------------
+def _get_current_user():
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    full_name = os.environ.get('EDU_AUTH_FULL_NAME') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+    if user_id or username:
+        return {
+            'id': user_id or username,
+            'user_id': user_id or username,
+            'username': username or user_id,
+            'role': role or 'student',
+            'email': email,
+            'full_name': full_name or username or user_id or 'Unknown User',
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            u = dict(ga.current_user)
+            u.setdefault('full_name', u.get('username', 'Unknown User'))
+            u.setdefault('role', 'student')
+            return u
+        return None
+    except Exception:
+        logger.debug("get_global_auth fallback failed", exc_info=True)
+    return None
+
+
+def _is_staff_role(role: str) -> bool:
+    """Anyone who isn't a student sees the staff review console."""
+    return (role or '').lower() not in ('student', '', 'guest')
 
 
 # ---------------------------------------------------------------------------
@@ -154,88 +235,55 @@ def analyse_text(text: str):
 
 
 # ---------------------------------------------------------------------------
-# Persistence layer (SQLite)
+# Persistence layer — central student_records.db
 # ---------------------------------------------------------------------------
 
-DB_PATH = Path("safeguarding.db")
+
+def _connect():
+    from education_system.university_system.infrastructure.database.db import get_connection
+    return get_connection()
 
 
 def init_db():
-    conn = sqlite3.connect(DB_PATH)
+    """Create the safeguarding_submissions table if missing.
+
+    The previous schema split data across `users` and `submissions`
+    tables in a per-module DB. Auth now comes from EDU_AUTH_* env vars
+    so there's no need for a local users table — we record the
+    submitter's username / full_name / role inline with each row.
+    """
+    conn = _connect()
     cur = conn.cursor()
     cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            username   TEXT UNIQUE NOT NULL,
-            pw_hash    TEXT NOT NULL,
-            role       TEXT NOT NULL,       -- 'student' or 'staff'
-            full_name  TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        )
-    """)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS submissions (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id     INTEGER NOT NULL,
-            content     TEXT NOT NULL,
+        CREATE TABLE IF NOT EXISTS safeguarding_submissions (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            username     TEXT NOT NULL,
+            full_name    TEXT,
+            role         TEXT,
+            content      TEXT NOT NULL,
             submitted_at TEXT NOT NULL,
-            severity    TEXT NOT NULL,
-            categories  TEXT NOT NULL,      -- JSON
-            status      TEXT NOT NULL DEFAULT 'Pending',
-            reviewer    TEXT,
-            review_note TEXT,
-            reviewed_at TEXT,
-            FOREIGN KEY (user_id) REFERENCES users(id)
+            severity     TEXT NOT NULL,
+            categories   TEXT NOT NULL,      -- JSON
+            status       TEXT NOT NULL DEFAULT 'Pending',
+            reviewer     TEXT,
+            review_note  TEXT,
+            reviewed_at  TEXT
         )
     """)
     conn.commit()
-
-    # Seed demo accounts on first run
-    cur.execute("SELECT COUNT(*) FROM users")
-    if cur.fetchone()[0] == 0:
-        demo = [
-            ("student1", "password", "student", "Alex Morgan"),
-            ("student2", "password", "student", "Sam Taylor"),
-            ("staff1",   "password", "staff",   "Dr. Jordan Reed"),
-        ]
-        for username, pw, role, name in demo:
-            cur.execute(
-                "INSERT INTO users(username, pw_hash, role, full_name, created_at) "
-                "VALUES (?,?,?,?,?)",
-                (username, hash_pw(pw), role, name, datetime.now().isoformat()),
-            )
-        conn.commit()
     conn.close()
 
 
-def hash_pw(password: str) -> str:
-    # NOTE: demonstration only — real systems must use bcrypt/argon2 with a salt.
-    return hashlib.sha256(password.encode("utf-8")).hexdigest()
-
-
-def authenticate(username: str, password: str):
-    conn = sqlite3.connect(DB_PATH)
+def save_submission(user, content, severity, categories):
+    conn = _connect()
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, username, role, full_name FROM users "
-        "WHERE username=? AND pw_hash=?",
-        (username, hash_pw(password)),
-    )
-    row = cur.fetchone()
-    conn.close()
-    if row:
-        return {"id": row[0], "username": row[1], "role": row[2], "full_name": row[3]}
-    return None
-
-
-def save_submission(user_id, content, severity, categories):
-    conn = sqlite3.connect(DB_PATH)
-    cur = conn.cursor()
-    cur.execute(
-        "INSERT INTO submissions(user_id, content, submitted_at, severity, categories) "
-        "VALUES (?,?,?,?,?)",
-        (user_id, content, datetime.now().isoformat(),
-         severity, json.dumps(categories)),
+        "INSERT INTO safeguarding_submissions"
+        "(username, full_name, role, content, submitted_at, severity, categories) "
+        "VALUES (?,?,?,?,?,?,?)",
+        (user.get('username') or '', user.get('full_name') or '',
+         user.get('role') or '', content,
+         datetime.now().isoformat(), severity, json.dumps(categories)),
     )
     conn.commit()
     sid = cur.lastrowid
@@ -244,25 +292,26 @@ def save_submission(user_id, content, severity, categories):
 
 
 def fetch_submissions(status_filter=None, severity_filter=None):
-    conn = sqlite3.connect(DB_PATH)
+    """Return rows shaped like the previous version expected:
+    (id, full_name, username, submitted_at, severity, categories,
+     status, content, reviewer, review_note, reviewed_at)."""
+    conn = _connect()
     cur = conn.cursor()
-    q = """SELECT s.id, u.full_name, u.username, s.submitted_at,
-                  s.severity, s.categories, s.status, s.content,
-                  s.reviewer, s.review_note, s.reviewed_at
-           FROM submissions s
-           JOIN users u ON s.user_id = u.id
-           WHERE 1=1"""
+    q = """SELECT id, full_name, username, submitted_at,
+                  severity, categories, status, content,
+                  reviewer, review_note, reviewed_at
+           FROM safeguarding_submissions WHERE 1=1"""
     params = []
     if status_filter and status_filter != "All":
-        q += " AND s.status = ?"
+        q += " AND status = ?"
         params.append(status_filter)
     if severity_filter and severity_filter != "All":
-        q += " AND s.severity = ?"
+        q += " AND severity = ?"
         params.append(severity_filter)
-    q += " ORDER BY CASE s.severity " \
+    q += " ORDER BY CASE severity " \
          "WHEN 'CRITICAL' THEN 1 WHEN 'HIGH' THEN 2 " \
          "WHEN 'MEDIUM' THEN 3 WHEN 'LOW' THEN 4 ELSE 5 END, " \
-         "s.submitted_at DESC"
+         "submitted_at DESC"
     cur.execute(q, params)
     rows = cur.fetchall()
     conn.close()
@@ -270,10 +319,11 @@ def fetch_submissions(status_filter=None, severity_filter=None):
 
 
 def update_submission_status(sub_id, status, reviewer, note):
-    conn = sqlite3.connect(DB_PATH)
+    conn = _connect()
     cur = conn.cursor()
     cur.execute(
-        "UPDATE submissions SET status=?, reviewer=?, review_note=?, reviewed_at=? "
+        "UPDATE safeguarding_submissions "
+        "SET status=?, reviewer=?, review_note=?, reviewed_at=? "
         "WHERE id=?",
         (status, reviewer, note, datetime.now().isoformat(), sub_id),
     )
@@ -281,17 +331,31 @@ def update_submission_status(sub_id, status, reviewer, note):
     conn.close()
 
 
-def fetch_user_submissions(user_id):
-    conn = sqlite3.connect(DB_PATH)
+def fetch_user_submissions(username):
+    conn = _connect()
     cur = conn.cursor()
     cur.execute(
-        "SELECT id, submitted_at, severity, status FROM submissions "
-        "WHERE user_id=? ORDER BY submitted_at DESC",
-        (user_id,),
+        "SELECT id, submitted_at, severity, status FROM safeguarding_submissions "
+        "WHERE username=? ORDER BY submitted_at DESC",
+        (username,),
     )
     rows = cur.fetchall()
     conn.close()
     return rows
+
+
+def _remove_legacy_db():
+    """Delete the old per-module safeguarding.db (and WAL/SHM siblings)
+    — data now lives in the central student_records.db."""
+    for suffix in ("", "-wal", "-shm", "-journal"):
+        path = _LEGACY_DB_FILE + suffix
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                logger.info("Removed legacy safeguarding DB file: %s", path)
+            except OSError:
+                logger.warning("Could not remove legacy DB file %s", path,
+                               exc_info=True)
 
 
 # ---------------------------------------------------------------------------
@@ -315,7 +379,7 @@ class SafeguardingApp(tk.Tk):
         self.geometry("1000x680")
         self.configure(bg="#f4f6fa")
 
-        self.user = None
+        self.user = _get_current_user()
 
         # ttk theming
         style = ttk.Style(self)
@@ -334,73 +398,35 @@ class SafeguardingApp(tk.Tk):
         self.container = tk.Frame(self, bg="#f4f6fa")
         self.container.pack(fill="both", expand=True)
 
-        self.show_login()
+        if not self.user:
+            self.show_no_auth()
+        elif _is_staff_role(self.user.get('role')):
+            logger.info("Safeguarding starting console=staff user=%s role=%s",
+                        self.user.get('username'), self.user.get('role'))
+            self.show_staff_dashboard()
+        else:
+            logger.info("Safeguarding starting console=student user=%s role=%s",
+                        self.user.get('username'), self.user.get('role'))
+            self.show_student_dashboard()
 
     # ---------- helpers ----------
     def _clear(self):
         for w in self.container.winfo_children():
             w.destroy()
 
-    # ---------- login ----------
-    def show_login(self):
+    # ---------- no-auth fallback ----------
+    def show_no_auth(self):
         self._clear()
         frame = tk.Frame(self.container, bg="#f4f6fa")
         frame.place(relx=0.5, rely=0.5, anchor="center")
-
-        ttk.Label(frame, text="University Portal",
-                  style="Header.TLabel").pack(pady=(0, 4))
-        ttk.Label(frame, text="Safeguarding & Wellbeing System",
-                  style="Sub.TLabel").pack(pady=(0, 20))
-
-        form = tk.Frame(frame, bg="white", bd=1, relief="solid",
-                        padx=30, pady=25)
-        form.pack()
-
-        tk.Label(form, text="Username", bg="white",
-                 anchor="w").grid(row=0, column=0, sticky="w")
-        user_entry = ttk.Entry(form, width=32)
-        user_entry.grid(row=1, column=0, pady=(2, 10))
-
-        tk.Label(form, text="Password", bg="white",
-                 anchor="w").grid(row=2, column=0, sticky="w")
-        pw_entry = ttk.Entry(form, width=32, show="•")
-        pw_entry.grid(row=3, column=0, pady=(2, 15))
-
-        msg_lbl = tk.Label(form, text="", bg="white", fg="#b00020")
-        msg_lbl.grid(row=5, column=0)
-
-        def try_login():
-            u = user_entry.get().strip()
-            p = pw_entry.get()
-            if not u or not p:
-                msg_lbl.config(text="Please enter username and password.")
-                return
-            user = authenticate(u, p)
-            if user:
-                self.user = user
-                if user["role"] == "staff":
-                    self.show_staff_dashboard()
-                else:
-                    self.show_student_dashboard()
-            else:
-                msg_lbl.config(text="Invalid credentials.")
-
-        ttk.Button(form, text="Sign in",
-                   command=try_login).grid(row=4, column=0, sticky="ew")
-
-        # Demo credentials hint
-        hint = tk.Label(
-            frame, bg="#f4f6fa", fg="#555",
-            font=("Segoe UI", 9),
-            text=("Demo accounts:\n"
-                  "  student1 / password    (student)\n"
-                  "  staff1   / password    (safeguarding staff)"),
-            justify="left",
-        )
-        hint.pack(pady=(15, 0))
-
-        user_entry.focus_set()
-        self.bind("<Return>", lambda e: try_login())
+        ttk.Label(frame, text="🔒 Authentication Required",
+                  style="Header.TLabel").pack(pady=(0, 8))
+        ttk.Label(frame,
+                  text="Please launch this portal from the main\n"
+                       "University System after signing in.",
+                  style="Sub.TLabel", justify="center").pack(pady=(0, 14))
+        ttk.Button(frame, text="Close",
+                   command=self.destroy).pack()
 
     # ---------- student dashboard ----------
     def show_student_dashboard(self):
@@ -459,7 +485,8 @@ class SafeguardingApp(tk.Tk):
 
     def _refresh_student_history(self):
         self.history_list.delete(0, "end")
-        for sid, ts, sev, status in fetch_user_submissions(self.user["id"]):
+        for sid, ts, sev, status in fetch_user_submissions(
+                self.user.get("username") or ""):
             date = ts.split("T")[0]
             self.history_list.insert(
                 "end", f"#{sid}  {date}   {sev:<8}  {status}")
@@ -472,7 +499,10 @@ class SafeguardingApp(tk.Tk):
 
         matches, overall = analyse_text(text)
         categories = {cat: info["snippets"] for cat, info in matches.items()}
-        sid = save_submission(self.user["id"], text, overall, categories)
+        sid = save_submission(self.user, text, overall, categories)
+        logger.info("Safeguarding submission saved id=%s severity=%s user=%s categories=%s",
+                    sid, overall, self.user.get('username'),
+                    list(categories.keys()))
 
         # If severity is critical, strongly surface support info to the user
         if overall == "CRITICAL":
@@ -665,6 +695,8 @@ class SafeguardingApp(tk.Tk):
                 sid, new_status, self.user["full_name"],
                 note_box.get("1.0", "end").strip(),
             )
+            logger.info("Safeguarding submission %s status->%s by %s",
+                        sid, new_status, self.user.get('username'))
             messagebox.showinfo("Updated",
                                 f"Submission #{sid} marked as '{new_status}'.")
             self._refresh_staff_list()
@@ -682,6 +714,8 @@ class SafeguardingApp(tk.Tk):
                            sid, "In progress", self.user["full_name"],
                            (note_box.get("1.0", "end").strip()
                             + "\n[ESCALATED]").strip()),
+                       logger.warning("Safeguarding submission %s ESCALATED by %s",
+                                      sid, self.user.get('username')),
                        messagebox.showwarning(
                            "Escalated",
                            "Case escalated to senior safeguarding lead. "
@@ -700,17 +734,21 @@ class SafeguardingApp(tk.Tk):
         tk.Label(bar, text=title, bg="#1f3a5f", fg="white",
                  font=("Segoe UI", 12, "bold")).pack(side="left",
                                                     padx=20)
-        ttk.Button(bar, text="Sign out",
-                   command=self._logout).pack(side="right", padx=20)
-
-    def _logout(self):
-        self.user = None
-        self.show_login()
+        role = (self.user or {}).get('role') or '—'
+        tk.Label(bar,
+                 text=f"Signed in: {(self.user or {}).get('username') or 'Guest'}  ({role})",
+                 bg="#1f3a5f", fg="#cfe0ff",
+                 font=("Segoe UI", 9)).pack(side="right", padx=20)
 
 
 # ---------------------------------------------------------------------------
 
-if __name__ == "__main__":
+def main():
+    _remove_legacy_db()
     init_db()
     app = SafeguardingApp()
     app.mainloop()
+
+
+if __name__ == "__main__":
+    main()

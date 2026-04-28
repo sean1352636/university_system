@@ -2,150 +2,325 @@
 T-Level / Industry Placement Hours Tracker
 A desktop GUI application for university systems to track student placement hours.
 
-Requirements: Python 3.8+ (uses only standard library: tkinter, sqlite3, datetime, csv)
-Run with: python placement_tracker.py
+Auth: piggybacks on the main university auth — when launched as a
+subprocess from the unified main GUI, EDU_AUTH_* env vars carry the
+logged-in user's identity. The header shows the signed-in user; key
+write actions are stamped with that identity in the log.
+
+Persistence: rows live in the central `student_records.db`. Basic
+student identity (student_id, first_name, last_name, course,
+email_address) is read from / written to the canonical `students`
+table so this module shares its student rolodex with the rest of the
+system. Placement-specific fields (cohort, employer, supervisor,
+start_date, end_date) live in a side table `placement_profiles` keyed
+on student_id, and daily hours go in `placement_hours_log` (renamed
+from the old generic `hours_log`). The legacy local
+`placement_tracker.db` file is removed on startup.
+
+Logging: routed through the shared rotating `app.log` via
+`infrastructure.logging.log_config.configure_logging`.
 """
 
-import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
-import sqlite3
-from datetime import datetime, date
 import csv
+import logging
 import os
+import sqlite3
+import sys
+import tkinter as tk
+from datetime import datetime, date
+from tkinter import ttk, messagebox, filedialog
+
+
+# When the main GUI launches us as a subprocess, the child Python is
+# invoked directly on this file's path with no PYTHONPATH set, so
+# `education_system` isn't importable. Walk up from this file until we
+# find the dir that contains the `education_system` package and put
+# that on sys.path. No-op when imported normally.
+if 'education_system' not in sys.modules:
+    _here = os.path.abspath(os.path.dirname(__file__))
+    while _here and not os.path.isdir(os.path.join(_here, 'education_system')):
+        _parent = os.path.dirname(_here)
+        if _parent == _here:
+            break
+        _here = _parent
+    if _here and _here not in sys.path:
+        sys.path.insert(0, _here)
+
+
+logger = logging.getLogger(__name__)
+
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    configure_logging(name=__name__)
+except Exception:
+    logger.debug("Central log config unavailable; falling back to default handlers", exc_info=True)
+
 
 # T-Level minimum required hours (industry placement requirement)
 REQUIRED_HOURS = 315  # Minimum hours required for T-Level industry placement
 
+# Legacy local DB file — data now lives in the central student_records.db.
+_LEGACY_DB_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               "placement_tracker.db")
+
+
+# ---------------------------------------------------------------------------
+# AUTH BOOTSTRAP
+# ---------------------------------------------------------------------------
+def _get_current_user():
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+    if user_id or username:
+        return {
+            'id': user_id or None,
+            'user_id': user_id or None,
+            'username': username,
+            'role': role,
+            'email': email,
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            return ga.current_user
+    except Exception:
+        logger.debug("get_global_auth fallback failed", exc_info=True)
+    return None
+
+
+def _user_display_name(user):
+    if not user:
+        return 'Guest'
+    return (user.get('username') or user.get('email') or
+            user.get('user_id') or user.get('id') or 'Unknown')
+
+
+def _remove_legacy_db():
+    """Delete the old per-module placement_tracker.db (and WAL/SHM
+    siblings) — data now lives in the central student_records.db."""
+    for suffix in ("", "-wal", "-shm", "-journal"):
+        path = _LEGACY_DB_FILE + suffix
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                logger.info("Removed legacy placement_tracker DB file: %s", path)
+            except OSError:
+                logger.warning("Could not remove legacy DB file %s", path,
+                               exc_info=True)
+
 
 class Database:
-    """Handles all SQLite database operations."""
+    """Wraps the central `student_records.db` via the shared
+    `get_connection`. Basic student identity lives in canonical
+    `students`; placement-specific data is split into side tables
+    `placement_profiles` and `placement_hours_log`.
 
-    def __init__(self, db_name="placement_tracker.db"):
-        self.db_name = db_name
-        self.connect()
+    The methods preserve the same return shapes the GUI expects (the
+    leading element is the row identity used as the WHERE-clause key);
+    that "pk" is now the TEXT student_id (or the integer hours-log id)
+    rather than a synthetic surrogate."""
+
+    def __init__(self, db_name=None):
+        from education_system.university_system.infrastructure.database.db import get_connection
+        self.conn = get_connection()
+        # FK enforcement off — the canonical students table has no
+        # column named `id` (PK is `student_id` TEXT) so any FK
+        # references from older module-private tables would mismatch.
+        self.conn.execute("PRAGMA foreign_keys = OFF")
+        self.cursor = self.conn.cursor()
         self.create_tables()
 
-    def connect(self):
-        self.conn = sqlite3.connect(self.db_name)
-        self.conn.execute("PRAGMA foreign_keys = ON")
-        self.cursor = self.conn.cursor()
-
     def create_tables(self):
-        self.cursor.execute("""
+        self.cursor.executescript("""
             CREATE TABLE IF NOT EXISTS students (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_id TEXT UNIQUE NOT NULL,
-                first_name TEXT NOT NULL,
-                last_name TEXT NOT NULL,
-                course TEXT NOT NULL,
-                cohort TEXT,
-                email TEXT,
-                employer TEXT,
+                student_id TEXT PRIMARY KEY,
+                first_name TEXT,
+                last_name TEXT,
+                email_address TEXT,
+                course TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS placement_profiles (
+                student_id TEXT PRIMARY KEY,
+                cohort     TEXT,
+                employer   TEXT,
                 supervisor TEXT,
                 start_date TEXT,
-                end_date TEXT
-            )
-        """)
-        self.cursor.execute("""
-            CREATE TABLE IF NOT EXISTS hours_log (
+                end_date   TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS placement_hours_log (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                student_id INTEGER NOT NULL,
+                student_id TEXT NOT NULL,
                 log_date TEXT NOT NULL,
                 hours REAL NOT NULL,
                 activity TEXT,
                 supervisor_signoff INTEGER DEFAULT 0,
-                notes TEXT,
-                FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
-            )
+                notes TEXT
+            );
         """)
         self.conn.commit()
 
     # ---------- Student CRUD ----------
     def add_student(self, data):
+        """data = (student_id, first_name, last_name, course, cohort,
+        email, employer, supervisor, start_date, end_date)."""
+        sid, first, last, course, cohort, email, employer, supervisor, start, end = data
+        # Upsert canonical students — preserve any existing
+        # non-placement columns set elsewhere in the system.
         self.cursor.execute("""
-            INSERT INTO students (student_id, first_name, last_name, course, cohort,
-                                  email, employer, supervisor, start_date, end_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, data)
+            INSERT INTO students (student_id, first_name, last_name, course, email_address)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(student_id) DO UPDATE SET
+                first_name=excluded.first_name,
+                last_name=excluded.last_name,
+                course=excluded.course,
+                email_address=excluded.email_address
+        """, (sid, first, last, course, email))
+        # Upsert placement profile.
+        self.cursor.execute("""
+            INSERT INTO placement_profiles
+                (student_id, cohort, employer, supervisor, start_date, end_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(student_id) DO UPDATE SET
+                cohort=excluded.cohort,
+                employer=excluded.employer,
+                supervisor=excluded.supervisor,
+                start_date=excluded.start_date,
+                end_date=excluded.end_date
+        """, (sid, cohort, employer, supervisor, start, end))
         self.conn.commit()
-        return self.cursor.lastrowid
+        return sid
 
     def update_student(self, student_pk, data):
+        """student_pk is the original student_id (TEXT) being edited.
+        If the dialog renames the student_id, we cascade-rename across
+        the three tables to keep the join key consistent."""
+        old_sid = student_pk
+        new_sid = data[0]
+        sid, first, last, course, cohort, email, employer, supervisor, start, end = data
+        if new_sid != old_sid:
+            self.cursor.execute("UPDATE students SET student_id=? WHERE student_id=?",
+                                (new_sid, old_sid))
+            self.cursor.execute("UPDATE placement_profiles SET student_id=? WHERE student_id=?",
+                                (new_sid, old_sid))
+            self.cursor.execute("UPDATE placement_hours_log SET student_id=? WHERE student_id=?",
+                                (new_sid, old_sid))
         self.cursor.execute("""
-            UPDATE students SET student_id=?, first_name=?, last_name=?, course=?,
-                                cohort=?, email=?, employer=?, supervisor=?,
-                                start_date=?, end_date=?
-            WHERE id=?
-        """, (*data, student_pk))
+            UPDATE students SET first_name=?, last_name=?, course=?, email_address=?
+            WHERE student_id=?
+        """, (first, last, course, email, new_sid))
+        # Use INSERT OR REPLACE for placement_profiles in case the row
+        # didn't exist yet (older student records added via another
+        # subsystem won't have a placement profile).
+        self.cursor.execute("""
+            INSERT INTO placement_profiles
+                (student_id, cohort, employer, supervisor, start_date, end_date)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(student_id) DO UPDATE SET
+                cohort=excluded.cohort,
+                employer=excluded.employer,
+                supervisor=excluded.supervisor,
+                start_date=excluded.start_date,
+                end_date=excluded.end_date
+        """, (new_sid, cohort, employer, supervisor, start, end))
         self.conn.commit()
 
     def delete_student(self, student_pk):
-        self.cursor.execute("DELETE FROM students WHERE id=?", (student_pk,))
+        """Remove placement enrollment for a student. The canonical
+        `students` row is left intact — it's shared with the rest of
+        the system and may be referenced by other modules."""
+        self.cursor.execute("DELETE FROM placement_hours_log WHERE student_id=?",
+                            (student_pk,))
+        self.cursor.execute("DELETE FROM placement_profiles WHERE student_id=?",
+                            (student_pk,))
         self.conn.commit()
 
     def get_all_students(self, search=""):
+        """Return rows for students that have a placement_profile (i.e.
+        are enrolled in placements). Shape: (id, student_id, first,
+        last, course, cohort, employer)."""
+        base = """
+            SELECT s.student_id AS id, s.student_id, s.first_name, s.last_name,
+                   s.course, p.cohort, p.employer
+            FROM placement_profiles p
+            JOIN students s ON s.student_id = p.student_id
+        """
         if search:
             q = f"%{search}%"
-            self.cursor.execute("""
-                SELECT id, student_id, first_name, last_name, course, cohort, employer
-                FROM students
-                WHERE student_id LIKE ? OR first_name LIKE ? OR last_name LIKE ?
-                   OR course LIKE ? OR employer LIKE ?
-                ORDER BY last_name, first_name
+            self.cursor.execute(base + """
+                WHERE s.student_id LIKE ? OR s.first_name LIKE ? OR s.last_name LIKE ?
+                   OR s.course LIKE ? OR p.employer LIKE ?
+                ORDER BY s.last_name, s.first_name
             """, (q, q, q, q, q))
         else:
-            self.cursor.execute("""
-                SELECT id, student_id, first_name, last_name, course, cohort, employer
-                FROM students ORDER BY last_name, first_name
-            """)
+            self.cursor.execute(base + " ORDER BY s.last_name, s.first_name")
         return self.cursor.fetchall()
 
     def get_student(self, student_pk):
-        self.cursor.execute("SELECT * FROM students WHERE id=?", (student_pk,))
+        """Shape: (id, student_id, first, last, course, cohort, email,
+        employer, supervisor, start_date, end_date) — matches the
+        original Database.get_student tuple for GUI compatibility."""
+        self.cursor.execute("""
+            SELECT s.student_id AS id, s.student_id, s.first_name, s.last_name,
+                   s.course, p.cohort, s.email_address, p.employer, p.supervisor,
+                   p.start_date, p.end_date
+            FROM students s
+            LEFT JOIN placement_profiles p ON p.student_id = s.student_id
+            WHERE s.student_id = ?
+        """, (student_pk,))
         return self.cursor.fetchone()
 
     # ---------- Hours CRUD ----------
     def add_hours(self, student_pk, log_date, hours, activity, signoff, notes):
         self.cursor.execute("""
-            INSERT INTO hours_log (student_id, log_date, hours, activity, supervisor_signoff, notes)
+            INSERT INTO placement_hours_log
+                (student_id, log_date, hours, activity, supervisor_signoff, notes)
             VALUES (?, ?, ?, ?, ?, ?)
         """, (student_pk, log_date, hours, activity, signoff, notes))
         self.conn.commit()
 
     def update_hours(self, log_pk, log_date, hours, activity, signoff, notes):
         self.cursor.execute("""
-            UPDATE hours_log SET log_date=?, hours=?, activity=?,
+            UPDATE placement_hours_log SET log_date=?, hours=?, activity=?,
                                  supervisor_signoff=?, notes=?
             WHERE id=?
         """, (log_date, hours, activity, signoff, notes, log_pk))
         self.conn.commit()
 
     def delete_hours(self, log_pk):
-        self.cursor.execute("DELETE FROM hours_log WHERE id=?", (log_pk,))
+        self.cursor.execute("DELETE FROM placement_hours_log WHERE id=?", (log_pk,))
         self.conn.commit()
 
     def get_hours_for_student(self, student_pk):
         self.cursor.execute("""
             SELECT id, log_date, hours, activity, supervisor_signoff, notes
-            FROM hours_log WHERE student_id=? ORDER BY log_date DESC
+            FROM placement_hours_log WHERE student_id=? ORDER BY log_date DESC
         """, (student_pk,))
         return self.cursor.fetchall()
 
     def get_total_hours(self, student_pk):
         self.cursor.execute("""
-            SELECT COALESCE(SUM(hours), 0) FROM hours_log WHERE student_id=?
+            SELECT COALESCE(SUM(hours), 0) FROM placement_hours_log WHERE student_id=?
         """, (student_pk,))
         return self.cursor.fetchone()[0]
 
     def get_signed_off_hours(self, student_pk):
         self.cursor.execute("""
-            SELECT COALESCE(SUM(hours), 0) FROM hours_log
+            SELECT COALESCE(SUM(hours), 0) FROM placement_hours_log
             WHERE student_id=? AND supervisor_signoff=1
         """, (student_pk,))
         return self.cursor.fetchone()[0]
 
     def close(self):
-        self.conn.close()
+        try:
+            self.conn.close()
+        except Exception:
+            pass
 
 
 class PlacementTrackerApp:
@@ -159,6 +334,12 @@ class PlacementTrackerApp:
 
         self.db = Database()
         self.current_student_pk = None
+
+        self.user = _get_current_user()
+        self.user_display = _user_display_name(self.user)
+        logger.info("Placement Tracker starting user=%s role=%s",
+                    self.user_display,
+                    (self.user or {}).get('role') or 'none')
 
         self._configure_styles()
         self._build_ui()
@@ -184,6 +365,10 @@ class PlacementTrackerApp:
                   style="Header.TLabel").pack(side="left")
         ttk.Label(header, text=f"Required: {REQUIRED_HOURS} hours",
                   foreground="#555").pack(side="right")
+        role = (self.user or {}).get('role') or ('—' if self.user else 'not signed in')
+        ttk.Label(header,
+                  text=f"Signed in: {self.user_display}  ({role})",
+                  foreground="#1565c0").pack(side="right", padx=(0, 14))
 
         ttk.Separator(self.root, orient="horizontal").pack(fill="x")
 
@@ -329,15 +514,14 @@ class PlacementTrackerApp:
         sel = self.student_tree.selection()
         if not sel:
             return
-        self.current_student_pk = int(self.student_tree.item(sel[0])["values"][0].split("|")[0]) \
-            if isinstance(self.student_tree.item(sel[0])["values"][0], str) and "|" in str(self.student_tree.item(sel[0])["values"][0]) \
-            else self._tree_pk(sel[0])
+        self.current_student_pk = self._tree_pk(sel[0])
         self.load_student_details()
 
     def _tree_pk(self, item_id):
-        # Use item tags to retrieve hidden PK
+        # The PK is the canonical TEXT student_id, stored as the row's
+        # first tag.
         tags = self.student_tree.item(item_id, "tags")
-        return int(tags[0]) if tags else None
+        return tags[0] if tags else None
 
     # ---------- Refresh / load ----------
     def refresh_student_list(self):
@@ -426,15 +610,20 @@ class PlacementTrackerApp:
             return
         pk = self._tree_pk(sel[0])
         student = self.db.get_student(pk)
-        if messagebox.askyesno("Confirm delete",
-                               f"Delete {student[2]} {student[3]} and all their hours logs?"):
+        if messagebox.askyesno(
+                "Confirm delete",
+                f"Remove {student[2]} {student[3]} from the placement tracker "
+                f"and delete all their hours logs?\n\n"
+                f"(The student's record in the central system will not be removed.)"):
             self.db.delete_student(pk)
+            logger.info("Placement enrollment removed for student=%s by user=%s",
+                        pk, self.user_display)
             self.current_student_pk = None
             self.refresh_student_list()
             self.refresh_hours_log()
             for k in self.info_labels:
                 self.info_labels[k].config(text="—")
-            self.status.set("Student deleted")
+            self.status.set("Placement removed")
 
     # ---------- Hours dialogs ----------
     def open_hours_dialog(self, existing=None):
@@ -581,12 +770,16 @@ class StudentDialog(tk.Toplevel):
         try:
             if self.existing:
                 self.db.update_student(self.existing[0], data)
+                logger.info("Placement student updated student_id=%s", data[0])
             else:
                 self.db.add_student(data)
+                logger.info("Placement student added student_id=%s employer=%r",
+                            data[0], data[6])
         except sqlite3.IntegrityError:
             messagebox.showerror("Duplicate ID", "A student with that Student ID already exists.")
             return
         except Exception as e:
+            logger.exception("Placement student save failed")
             messagebox.showerror("Database error", str(e))
             return
 
@@ -687,9 +880,14 @@ class HoursDialog(tk.Toplevel):
         try:
             if self.existing:
                 self.db.update_hours(self.existing[0], date_str, hours, activity, signoff, notes)
+                logger.info("Placement hours updated log_id=%s student=%s hours=%s signoff=%s",
+                            self.existing[0], self.student_pk, hours, signoff)
             else:
                 self.db.add_hours(self.student_pk, date_str, hours, activity, signoff, notes)
+                logger.info("Placement hours logged student=%s hours=%s signoff=%s activity=%r",
+                            self.student_pk, hours, signoff, activity)
         except Exception as e:
+            logger.exception("Placement hours save failed")
             messagebox.showerror("Database error", str(e))
             return
 
@@ -699,6 +897,7 @@ class HoursDialog(tk.Toplevel):
 
 
 def main():
+    _remove_legacy_db()
     root = tk.Tk()
     app = PlacementTrackerApp(root)
 

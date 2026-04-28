@@ -1,26 +1,104 @@
-"""Standalone Tk launcher for Tutor Groups."""
+"""Standalone Tk launcher for Tutor Groups.
+
+Auth: piggybacks on the main university auth — when launched as a
+subprocess from the unified main GUI, EDU_AUTH_* env vars carry the
+logged-in user's identity. The header shows the signed-in user; key
+write actions are stamped with that identity in the log.
+
+Persistence: data lives in the central `student_records.db` (tutor
+group / member / meeting tables managed by `TutorGroupService`). Any
+stray *.db files alongside this module are removed on startup.
+
+Logging: routed through the shared rotating `app.log` via
+`infrastructure.logging.log_config.configure_logging`.
+"""
 from __future__ import annotations
 
-import sys, pathlib  # noqa: E401
+import logging
+import os
+import pathlib
+import sys
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
+
 _p = pathlib.Path(__file__).resolve()
 while _p.parent != _p and not (_p / "education_system").is_dir():
     _p = _p.parent
 if str(_p) not in sys.path:
     sys.path.insert(0, str(_p))
 
-import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+logger = logging.getLogger(__name__)
 
-from education_system.university_system.modules.domain.academics.tutor_groups import (
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    configure_logging(name=__name__)
+except Exception:
+    logger.debug("Central log config unavailable; falling back to default handlers", exc_info=True)
+
+
+from education_system.university_system.modules.domain.academics.tutor_groups import (  # noqa: E402
     TutorGroupService,
     TutorGroupError,
 )
 
 
+def _get_current_user():
+    """Resolve the logged-in user dict from EDU_AUTH_* env vars, with a
+    fallback to the in-process global auth singleton."""
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+    if user_id or username:
+        return {
+            'id': user_id or None,
+            'user_id': user_id or None,
+            'username': username,
+            'role': role,
+            'email': email,
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            return ga.current_user
+    except Exception:
+        logger.debug("get_global_auth fallback failed", exc_info=True)
+    return None
+
+
+def _user_display_name(user):
+    if not user:
+        return 'Guest'
+    return (user.get('username') or user.get('email') or
+            user.get('user_id') or user.get('id') or 'Unknown')
+
+
+def _remove_legacy_db():
+    """Sweep any stray local SQLite files left alongside this module
+    by earlier iterations. Data lives in the central student_records.db."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.isdir(here):
+        return
+    for fname in os.listdir(here):
+        if fname.endswith(('.db', '.db-wal', '.db-shm', '.db-journal')):
+            path = os.path.join(here, fname)
+            try:
+                os.remove(path)
+                logger.info("Removed legacy tutor-groups DB file: %s", path)
+            except OSError:
+                logger.warning("Could not remove legacy DB file %s", path,
+                               exc_info=True)
+
+
 class _Frame(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, user=None):
         super().__init__(parent, bg="#ecf0f1")
         self._svc = TutorGroupService()
+        self._user = user
+        self._user_display = _user_display_name(user)
         self._build()
         self._refresh()
 
@@ -29,6 +107,10 @@ class _Frame(tk.Frame):
         hdr.pack(fill="x"); hdr.pack_propagate(False)
         tk.Label(hdr, text="Tutor Groups", font=("Helvetica", 14, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=8)
+        role = (self._user or {}).get('role') or ('—' if self._user else 'not signed in')
+        tk.Label(hdr, text=f"Signed in: {self._user_display}  ({role})",
+                 font=("Helvetica", 9), bg="#2c3e50",
+                 fg="#bdc3c7").pack(side="right", padx=20, pady=14)
 
         ctrl = tk.Frame(self, bg="#ecf0f1"); ctrl.pack(fill="x", padx=10, pady=6)
         tk.Button(ctrl, text="Create Group", command=self._create).pack(side="left", padx=4)
@@ -56,42 +138,54 @@ class _Frame(tk.Frame):
         cap = simpledialog.askinteger("Group", "Capacity:", initialvalue=20, parent=self)
         if not all([name, year, prog, lead, cap]): return
         try:
-            self._svc.create_group(name, year, prog, lead, capacity=cap); self._refresh()
+            gid = self._svc.create_group(name, year, prog, lead, capacity=cap)
+            logger.info("Tutor group created group_id=%s name=%r year=%s lead=%s by=%s",
+                        gid, name, year, lead, self._user_display)
+            self._refresh()
         except TutorGroupError as e:
             messagebox.showerror("Error", str(e))
 
     def _add_member(self):
-        gid = self._selected();
+        gid = self._selected()
         if gid is None: return
         sid = simpledialog.askstring("Member", "Student ID:", parent=self)
         if not sid: return
         try:
-            self._svc.add_member(gid, sid); messagebox.showinfo("OK", "Added.")
+            self._svc.add_member(gid, sid)
+            logger.info("Tutor group member added group_id=%s student_id=%s by=%s",
+                        gid, sid, self._user_display)
+            messagebox.showinfo("OK", "Added.")
         except TutorGroupError as e:
             messagebox.showerror("Error", str(e))
 
     def _assign(self):
-        gid = self._selected();
+        gid = self._selected()
         if gid is None: return
         tid = simpledialog.askstring("Tutor", "Tutor ID:", parent=self)
         if not tid: return
         try:
-            self._svc.assign_tutor(gid, tid); messagebox.showinfo("OK", "Assigned.")
+            self._svc.assign_tutor(gid, tid)
+            logger.info("Tutor assigned group_id=%s tutor_id=%s by=%s",
+                        gid, tid, self._user_display)
+            messagebox.showinfo("OK", "Assigned.")
         except TutorGroupError as e:
             messagebox.showerror("Error", str(e))
 
     def _meeting(self):
-        gid = self._selected();
+        gid = self._selected()
         if gid is None: return
         when = simpledialog.askstring("Meeting", "Scheduled at YYYY-MM-DD HH:MM:", parent=self)
         if not when: return
         try:
-            self._svc.schedule_meeting(gid, when); messagebox.showinfo("OK", "Scheduled.")
+            self._svc.schedule_meeting(gid, when)
+            logger.info("Tutor group meeting scheduled group_id=%s when=%s by=%s",
+                        gid, when, self._user_display)
+            messagebox.showinfo("OK", "Scheduled.")
         except TutorGroupError as e:
             messagebox.showerror("Error", str(e))
 
     def _summary(self):
-        gid = self._selected();
+        gid = self._selected()
         if gid is None: return
         try:
             s = self._svc.group_summary(gid)
@@ -119,9 +213,14 @@ class _Frame(tk.Frame):
 
 
 def main() -> None:
+    _remove_legacy_db()
+    user = _get_current_user()
+    logger.info("Tutor Groups starting user=%s role=%s",
+                _user_display_name(user),
+                (user or {}).get('role') or 'none')
     root = tk.Tk()
     root.title("Tutor Groups"); root.geometry("960x600")
-    _Frame(root).pack(fill="both", expand=True)
+    _Frame(root, user=user).pack(fill="both", expand=True)
     root.mainloop()
 
 

@@ -127,6 +127,16 @@ def create_admin_dashboard(parent_frame, auth, service):
     ttk.Button(tools_grid, text="Branding & Customization",
                command=_open_branding).grid(row=0, column=2, padx=5, pady=5, sticky="ew")
 
+    from education_system.university_system.modules.shared.gui.main.dashboard.evaluation_launchers import (
+        EVALUATION_MODULES, launch_evaluation_module,
+    )
+    root = parent_frame.winfo_toplevel()
+    for i, (_label, _module) in enumerate(EVALUATION_MODULES):
+        ttk.Button(
+            tools_grid, text=_label,
+            command=lambda m=_module, l=_label: launch_evaluation_module(root, auth, m, l),
+        ).grid(row=1, column=i, padx=5, pady=5, sticky="ew")
+
 
 def _create_stat_card(parent, label, value, row, col):
     """Create a small stat card widget."""

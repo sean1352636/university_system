@@ -270,6 +270,12 @@ def create_student_dashboard(parent_frame, auth, service):
         ("Wellness Hub", lambda: _launch_feature(root, auth, 'wellness_hub')),
         ("Todo App", lambda: _launch_feature(root, auth, 'todo_app')),
     ]
+    from education_system.university_system.modules.shared.gui.main.dashboard.evaluation_launchers import (
+        EVALUATION_MODULES, launch_evaluation_module,
+    )
+    for _label, _module in EVALUATION_MODULES:
+        buttons.append((_label,
+                        lambda m=_module, l=_label: launch_evaluation_module(root, auth, m, l)))
     for i, (label, cmd) in enumerate(buttons):
         ttk.Button(actions_grid, text=label, command=cmd).grid(
             row=i // 4, column=i % 4, padx=3, pady=2, sticky="ew"

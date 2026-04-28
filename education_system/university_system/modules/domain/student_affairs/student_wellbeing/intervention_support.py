@@ -2,13 +2,118 @@
 University Intervention Support System
 A GUI application for tracking and managing student interventions,
 academic support, and at-risk student monitoring.
+
+Auth: piggybacks on the main university auth — when launched as a
+subprocess from the unified main GUI, EDU_AUTH_* env vars carry the
+logged-in user's identity. The header shows the signed-in user; key
+write actions are stamped with that identity in the log.
+
+Persistence: rows live in the central `student_records.db` table
+`intervention_records`. The legacy `intervention_data.json` sidecar
+file is removed on startup.
+
+Logging: routed through the shared rotating `app.log` via
+`infrastructure.logging.log_config.configure_logging`.
 """
 
-import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext
-from datetime import datetime
-import json
+import logging
 import os
+import sqlite3
+import sys
+import tkinter as tk
+from datetime import datetime
+from tkinter import ttk, messagebox, scrolledtext
+
+
+# When the main GUI launches us as a subprocess, the child Python is
+# invoked directly on this file's path with no PYTHONPATH set, so
+# `education_system` isn't importable. Walk up from this file until we
+# find the dir that contains the `education_system` package and put
+# that on sys.path. No-op when imported normally.
+if 'education_system' not in sys.modules:
+    _here = os.path.abspath(os.path.dirname(__file__))
+    while _here and not os.path.isdir(os.path.join(_here, 'education_system')):
+        _parent = os.path.dirname(_here)
+        if _parent == _here:
+            break
+        _here = _parent
+    if _here and _here not in sys.path:
+        sys.path.insert(0, _here)
+
+
+logger = logging.getLogger(__name__)
+
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    configure_logging(name=__name__)
+except Exception:
+    logger.debug("Central log config unavailable; falling back to default handlers", exc_info=True)
+
+
+# ---------------------------------------------------------------------------
+# AUTH BOOTSTRAP
+# ---------------------------------------------------------------------------
+def _get_current_user():
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+    if user_id or username:
+        return {
+            'id': user_id or None,
+            'user_id': user_id or None,
+            'username': username,
+            'role': role,
+            'email': email,
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            return ga.current_user
+    except Exception:
+        logger.debug("get_global_auth fallback failed", exc_info=True)
+    return None
+
+
+def _user_display_name(user):
+    if not user:
+        return 'Guest'
+    return (user.get('username') or user.get('email') or
+            user.get('user_id') or user.get('id') or 'Unknown')
+
+
+# Legacy local data file — superseded by the `intervention_records` table
+# in the central student_records.db.
+_LEGACY_DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 "intervention_data.json")
+
+
+def _remove_legacy_files():
+    """Sweep stray sidecar files left by earlier iterations of this
+    module. Data now lives in the central student_records.db."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    targets = [_LEGACY_DATA_FILE,
+               os.path.abspath("intervention_data.json")]
+    if os.path.isdir(here):
+        for fname in os.listdir(here):
+            if fname.endswith(('.db', '.db-wal', '.db-shm', '.db-journal')):
+                targets.append(os.path.join(here, fname))
+    for path in set(targets):
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                logger.info("Removed legacy intervention data file: %s", path)
+            except OSError:
+                logger.warning("Could not remove legacy file %s", path,
+                               exc_info=True)
+
+
+_INTERVENTION_FIELDS = ("student_id", "name", "program", "gpa", "email",
+                        "risk", "status", "intervention", "last_contact",
+                        "notes")
 
 
 class InterventionSupportSystem:
@@ -18,8 +123,17 @@ class InterventionSupportSystem:
         self.root.geometry("1100x700")
         self.root.configure(bg="#f0f4f8")
 
-        # Data storage
-        self.data_file = "intervention_data.json"
+        self.user = _get_current_user()
+        self.user_display = _user_display_name(self.user)
+        logger.info("Intervention Support starting user=%s role=%s",
+                    self.user_display,
+                    (self.user or {}).get('role') or 'none')
+
+        # Data storage — central student_records.db, table
+        # `intervention_records`. We mirror the rows into self.students
+        # so the rest of the GUI code (which mutates this list) keeps
+        # working unchanged; save_data writes the list back.
+        self._ensure_schema()
         self.students = self.load_data()
 
         # Style configuration
@@ -86,6 +200,12 @@ class InterventionSupportSystem:
                             bg="#1e3a5f",
                             fg="#cbd5e1")
         subtitle.pack(side="left", pady=20)
+
+        role = (self.user or {}).get('role') or ('—' if self.user else 'not signed in')
+        tk.Label(header,
+                 text=f"Signed in: {self.user_display}  ({role})",
+                 font=("Segoe UI", 9),
+                 bg="#1e3a5f", fg="#cbd5e1").pack(side="right", padx=20, pady=20)
 
     def create_main_layout(self):
         main_frame = tk.Frame(self.root, bg="#f0f4f8")
@@ -394,6 +514,8 @@ class InterventionSupportSystem:
         data["last_contact"] = datetime.now().strftime("%Y-%m-%d")
         self.students.append(data)
         self.save_data()
+        logger.info("Intervention record added student=%s risk=%s by %s",
+                    data['student_id'], data.get('risk'), self.user_display)
         self.refresh_student_list()
         self.clear_form()
         messagebox.showinfo("Success", f"Student {data['name']} added successfully.")
@@ -409,6 +531,9 @@ class InterventionSupportSystem:
                 data["last_contact"] = datetime.now().strftime("%Y-%m-%d")
                 self.students[i] = data
                 self.save_data()
+                logger.info("Intervention record updated student=%s risk=%s status=%s by %s",
+                            data['student_id'], data.get('risk'),
+                            data.get('status'), self.user_display)
                 self.refresh_student_list()
                 messagebox.showinfo("Updated", "Student record updated.")
                 return
@@ -426,6 +551,8 @@ class InterventionSupportSystem:
             self.students = [s for s in self.students
                              if s.get("student_id") != student_id]
             self.save_data()
+            logger.info("Intervention record deleted student=%s by %s",
+                        student_id, self.user_display)
             self.refresh_student_list()
             self.clear_form()
             messagebox.showinfo("Deleted", "Student record deleted.")
@@ -462,6 +589,8 @@ class InterventionSupportSystem:
                 s["notes"] = self.notes_text.get("1.0", "end").strip()
                 break
         self.save_data()
+        logger.info("Intervention contact logged student=%s by %s",
+                    student_id, self.user_display)
         self.refresh_student_list()
         messagebox.showinfo("Contact Logged", "Contact has been logged.")
 
@@ -528,16 +657,50 @@ class InterventionSupportSystem:
         report_text.insert("1.0", report)
         report_text.config(state="disabled")
 
-    def load_data(self):
-        if os.path.exists(self.data_file):
-            try:
-                with open(self.data_file, "r") as f:
-                    return json.load(f)
-            except:
-                pass
+    def _connect(self):
+        from education_system.university_system.infrastructure.database.db import get_connection
+        return get_connection()
 
-        # Sample data for first-time use
-        return [
+    def _ensure_schema(self):
+        conn = self._connect()
+        try:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS intervention_records (
+                    student_id   TEXT PRIMARY KEY,
+                    name         TEXT,
+                    program      TEXT,
+                    gpa          TEXT,
+                    email        TEXT,
+                    risk         TEXT,
+                    status       TEXT,
+                    intervention TEXT,
+                    last_contact TEXT,
+                    notes        TEXT,
+                    updated_at   TEXT,
+                    updated_by   TEXT
+                )
+            """)
+            conn.commit()
+        finally:
+            conn.close()
+
+    def load_data(self):
+        conn = self._connect()
+        try:
+            rows = conn.execute(
+                "SELECT student_id, name, program, gpa, email, risk, status, "
+                "intervention, last_contact, notes FROM intervention_records "
+                "ORDER BY student_id"
+            ).fetchall()
+        finally:
+            conn.close()
+
+        if rows:
+            return [dict(zip(_INTERVENTION_FIELDS, r)) for r in rows]
+
+        # First-run seed — populate the table once with realistic sample
+        # cases so the dashboard isn't empty on a fresh install.
+        seed = [
             {"student_id": "S1001", "name": "Emma Thompson",
              "program": "Computer Science", "gpa": "2.1", "email": "e.thompson@uni.edu",
              "risk": "High", "status": "Active", "intervention": "Academic Advising",
@@ -564,18 +727,49 @@ class InterventionSupportSystem:
              "last_contact": "2026-04-18",
              "notes": "Referred to university counseling services."},
         ]
+        self.students = seed
+        try:
+            self.save_data()
+            logger.info("Seeded intervention_records with %d sample cases", len(seed))
+        except Exception:
+            logger.exception("Could not seed intervention_records")
+        return seed
 
     def save_data(self):
+        """Persist the in-memory list of intervention records back to
+        the central DB. Uses DELETE-all + bulk INSERT inside one
+        transaction so the on-disk state stays in sync with the GUI's
+        list-mutation patterns (append/replace/remove)."""
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        actor = self.user_display if getattr(self, 'user_display', None) else ''
+        conn = self._connect()
         try:
-            with open(self.data_file, "w") as f:
-                json.dump(self.students, f, indent=2)
-        except Exception as e:
+            conn.execute("BEGIN")
+            conn.execute("DELETE FROM intervention_records")
+            for s in self.students:
+                conn.execute(
+                    "INSERT INTO intervention_records "
+                    "(student_id, name, program, gpa, email, risk, status, "
+                    " intervention, last_contact, notes, updated_at, updated_by) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+                    (s.get("student_id", ""), s.get("name", ""), s.get("program", ""),
+                     s.get("gpa", ""), s.get("email", ""), s.get("risk", ""),
+                     s.get("status", ""), s.get("intervention", ""),
+                     s.get("last_contact", ""), s.get("notes", ""), now, actor),
+                )
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            logger.exception("Failed to save intervention records")
             messagebox.showerror("Save Error", f"Could not save data: {e}")
+        finally:
+            conn.close()
 
 
 def main():
+    _remove_legacy_files()
     root = tk.Tk()
-    app = InterventionSupportSystem(root)
+    InterventionSupportSystem(root)
     root.mainloop()
 
 

@@ -1,26 +1,105 @@
-"""Standalone Tk launcher for Intervention Outcomes."""
+"""Standalone Tk launcher for Intervention Outcomes.
+
+Auth: piggybacks on the main university auth — when launched as a
+subprocess from the unified main GUI, EDU_AUTH_* env vars carry the
+logged-in user's identity. The header shows the signed-in user, and
+session-recording calls stamp the user's name on the row.
+
+Persistence: data lives in the central `student_records.db`
+(tables `intervention_outcomes` and `intervention_sessions` managed
+by the underlying service). Any stray *.db files alongside this
+module are removed on startup.
+
+Logging: routed through the shared rotating `app.log` via
+`infrastructure.logging.log_config.configure_logging`.
+"""
 from __future__ import annotations
 
-import sys, pathlib  # noqa: E401
+import logging
+import os
+import pathlib
+import sys
+import tkinter as tk
+from tkinter import ttk, messagebox
+
 _p = pathlib.Path(__file__).resolve()
 while _p.parent != _p and not (_p / "education_system").is_dir():
     _p = _p.parent
 if str(_p) not in sys.path:
     sys.path.insert(0, str(_p))
 
-import tkinter as tk
-from tkinter import ttk, messagebox
+logger = logging.getLogger(__name__)
 
-from education_system.university_system.modules.domain.student_affairs.services.early_warning.outcomes import (
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    configure_logging(name=__name__)
+except Exception:
+    logger.debug("Central log config unavailable; falling back to default handlers", exc_info=True)
+
+
+from education_system.university_system.modules.domain.student_affairs.services.early_warning.outcomes import (  # noqa: E402
     InterventionOutcomesService,
     InterventionOutcomesError,
 )
 
 
+def _get_current_user():
+    """Resolve the logged-in user dict from EDU_AUTH_* env vars, with a
+    fallback to the in-process global auth singleton."""
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+    if user_id or username:
+        return {
+            'id': user_id or None,
+            'user_id': user_id or None,
+            'username': username,
+            'role': role,
+            'email': email,
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            return ga.current_user
+    except Exception:
+        logger.debug("get_global_auth fallback failed", exc_info=True)
+    return None
+
+
+def _user_display_name(user):
+    if not user:
+        return 'Guest'
+    return (user.get('username') or user.get('email') or
+            user.get('user_id') or user.get('id') or 'Unknown')
+
+
+def _remove_legacy_db():
+    """Sweep any stray local SQLite files left alongside this module by
+    earlier iterations. Data lives in the central student_records.db."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.isdir(here):
+        return
+    for fname in os.listdir(here):
+        if fname.endswith(('.db', '.db-wal', '.db-shm', '.db-journal')):
+            path = os.path.join(here, fname)
+            try:
+                os.remove(path)
+                logger.info("Removed legacy outcomes DB file: %s", path)
+            except OSError:
+                logger.warning("Could not remove legacy DB file %s", path,
+                               exc_info=True)
+
+
 class _Frame(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self, parent, user=None):
         super().__init__(parent, bg="#ecf0f1")
         self._svc = InterventionOutcomesService()
+        self._user = user
+        self._user_display = _user_display_name(user)
         self._build()
         self._refresh()
 
@@ -29,6 +108,10 @@ class _Frame(tk.Frame):
         hdr.pack(fill="x"); hdr.pack_propagate(False)
         tk.Label(hdr, text="Intervention Outcomes", font=("Helvetica", 14, "bold"),
                  bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=8)
+        role = (self._user or {}).get('role') or ('—' if self._user else 'not signed in')
+        tk.Label(hdr, text=f"Signed in: {self._user_display}  ({role})",
+                 font=("Helvetica", 9), bg="#2c3e50",
+                 fg="#bdc3c7").pack(side="right", padx=20, pady=14)
 
         form = tk.LabelFrame(self, text="Action", bg="#ecf0f1", padx=8, pady=6)
         form.pack(fill="x", padx=10, pady=8)
@@ -59,23 +142,35 @@ class _Frame(tk.Frame):
 
     def _baseline(self):
         try:
-            self._svc.set_baseline(self._iid(), float(self._vars["Pre-score"].get()),
+            iid = self._iid()
+            pre = float(self._vars["Pre-score"].get())
+            self._svc.set_baseline(iid, pre,
                                    subject_area=self._vars["Subject area"].get() or None)
+            logger.info("Outcome baseline set intervention=%s pre=%s by=%s",
+                        iid, pre, self._user_display)
             messagebox.showinfo("OK", "Baseline saved."); self._refresh()
         except (InterventionOutcomesError, ValueError) as e:
             messagebox.showerror("Error", str(e))
 
     def _session(self):
         try:
-            self._svc.record_session(self._iid(),
-                                     self._vars["Session date (YYYY-MM-DD)"].get().strip())
+            iid = self._iid()
+            session_date = self._vars["Session date (YYYY-MM-DD)"].get().strip()
+            self._svc.record_session(iid, session_date,
+                                     recorded_by=self._user_display or None)
+            logger.info("Outcome session recorded intervention=%s date=%s by=%s",
+                        iid, session_date, self._user_display)
             messagebox.showinfo("OK", "Session recorded."); self._refresh()
         except (InterventionOutcomesError, ValueError) as e:
             messagebox.showerror("Error", str(e))
 
     def _outcome(self):
         try:
-            out = self._svc.set_outcome(self._iid(), float(self._vars["Post-score"].get()))
+            iid = self._iid()
+            post = float(self._vars["Post-score"].get())
+            out = self._svc.set_outcome(iid, post)
+            logger.info("Outcome final score set intervention=%s post=%s value_added=%s by=%s",
+                        iid, post, out.get('value_added'), self._user_display)
             messagebox.showinfo("OK", f"value_added = {out.get('value_added')}"); self._refresh()
         except (InterventionOutcomesError, ValueError) as e:
             messagebox.showerror("Error", str(e))
@@ -106,10 +201,15 @@ class _Frame(tk.Frame):
 
 
 def main() -> None:
+    _remove_legacy_db()
+    user = _get_current_user()
+    logger.info("Intervention Outcomes starting user=%s role=%s",
+                _user_display_name(user),
+                (user or {}).get('role') or 'none')
     root = tk.Tk()
     root.title("Intervention Outcomes")
     root.geometry("960x600")
-    _Frame(root).pack(fill="both", expand=True)
+    _Frame(root, user=user).pack(fill="both", expand=True)
     root.mainloop()
 
 

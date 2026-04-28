@@ -41,6 +41,13 @@ if 'education_system' not in sys.modules:
         sys.path.insert(0, _here)
 
 
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    configure_logging(name=__name__)
+except Exception:
+    logger.debug("Central log config unavailable; falling back to default handlers", exc_info=True)
+
+
 # ---------------------------------------------------------------------------
 # AUTH BOOTSTRAP
 # ---------------------------------------------------------------------------

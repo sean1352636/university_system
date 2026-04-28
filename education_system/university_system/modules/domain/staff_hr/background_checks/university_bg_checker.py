@@ -1,50 +1,150 @@
-import tkinter as tk
-from tkinter import ttk, messagebox, filedialog, simpledialog
-import sqlite3
-import hashlib
-import logging
+"""
+University Background Checker
+=============================
+
+Auth: piggybacks on the main university auth — when launched as a
+subprocess from the unified main GUI, EDU_AUTH_* env vars carry the
+logged-in user's identity. There is no in-app login screen.
+
+Persistence: rows live in the central `student_records.db` under
+module-prefixed tables (`bgcheck_persons`, `bgcheck_audit_log`,
+`bgcheck_watchlist`, `bgcheck_search_history`) so they don't collide
+with the canonical `users` / `audit_log` tables already in the same
+DB. The legacy `background_checker.db` and `background_checker.log`
+files alongside this module are removed on startup.
+
+Logging: routed through the shared rotating `app.log` via
+`infrastructure.logging.log_config.configure_logging`.
+"""
+
 import csv
+import datetime
+import hashlib
 import json
+import logging
 import os
 import re
+import sqlite3
+import sys
+import tkinter as tk
 import uuid
-import datetime
+from tkinter import ttk, messagebox, filedialog, simpledialog
 from typing import Optional
 
-# ============================================================
-# LOGGING CONFIGURATION
-# ============================================================
-LOG_FILE = "background_checker.log"
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_FILE, encoding="utf-8"),
-        logging.StreamHandler(),
-    ],
-)
+
+# When the main GUI launches us as a subprocess, the child Python is
+# invoked directly on this file's path with no PYTHONPATH set, so
+# `education_system` isn't importable. Walk up from this file until we
+# find the dir that contains the `education_system` package and put
+# that on sys.path. No-op when imported normally.
+if 'education_system' not in sys.modules:
+    _here = os.path.abspath(os.path.dirname(__file__))
+    while _here and not os.path.isdir(os.path.join(_here, 'education_system')):
+        _parent = os.path.dirname(_here)
+        if _parent == _here:
+            break
+        _here = _parent
+    if _here and _here not in sys.path:
+        sys.path.insert(0, _here)
+
+
 logger = logging.getLogger("BGChecker")
+
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    configure_logging(name="BGChecker")
+except Exception:
+    logger.debug("Central log config unavailable; falling back to default handlers", exc_info=True)
+
+
+# ---------------------------------------------------------------------------
+# AUTH BOOTSTRAP
+# ---------------------------------------------------------------------------
+def _get_current_user():
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+    if user_id or username:
+        return {
+            'id': user_id or None,
+            'user_id': user_id or None,
+            'username': username or user_id,
+            'role': role,
+            'email': email,
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            return ga.current_user
+    except Exception:
+        logger.debug("get_global_auth fallback failed", exc_info=True)
+    return None
+
+
+def _bgcheck_role(role: str) -> str:
+    """Map an EDU_AUTH role onto the three-tier permission model this
+    module uses: admin / officer / viewer."""
+    r = (role or '').lower()
+    if r in ('admin', 'administrator', 'superadmin'):
+        return 'admin'
+    if r in ('hr', 'staff', 'manager', 'instructor', 'faculty'):
+        return 'officer'
+    return 'viewer'
+
+
+# Legacy local files this module used to write — superseded by the
+# central student_records.db and shared logs/app.log.
+_HERE = os.path.dirname(os.path.abspath(__file__))
+_LEGACY_DB_FILE  = os.path.join(_HERE, "background_checker.db")
+_LEGACY_LOG_FILE = os.path.join(_HERE, "background_checker.log")
+
+
+def _remove_legacy_files():
+    targets = [
+        _LEGACY_DB_FILE,
+        _LEGACY_DB_FILE + "-wal",
+        _LEGACY_DB_FILE + "-shm",
+        _LEGACY_DB_FILE + "-journal",
+        _LEGACY_LOG_FILE,
+    ]
+    for path in targets:
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                logger.info("Removed legacy bg-checker file: %s", path)
+            except OSError:
+                logger.warning("Could not remove legacy file %s", path,
+                               exc_info=True)
 
 
 # ============================================================
 # DATABASE LAYER
 # ============================================================
 class Database:
-    """SQLite database wrapper with full error handling."""
+    """Thin wrapper around the central `student_records.db`.
 
-    def __init__(self, db_path: str = "background_checker.db"):
-        self.db_path = db_path
+    Uses `bgcheck_*` prefixed tables (persons, audit_log, watchlist,
+    search_history) so they don't collide with the canonical
+    `users` / `audit_log` / etc. tables in the shared DB. There is no
+    local `users` table — auth comes from the main system via
+    EDU_AUTH_* env vars."""
+
+    def __init__(self, db_path: Optional[str] = None):
         self.conn: Optional[sqlite3.Connection] = None
         self.connect()
         self.init_schema()
 
     def connect(self) -> None:
         try:
-            self.conn = sqlite3.connect(self.db_path)
+            from education_system.university_system.infrastructure.database.db import get_connection
+            self.conn = get_connection()
             self.conn.row_factory = sqlite3.Row
-            self.conn.execute("PRAGMA foreign_keys = ON")
-            logger.info("Database connected: %s", self.db_path)
-        except sqlite3.Error as e:
+            logger.info("Database connected (central student_records.db)")
+        except Exception as e:
             logger.exception("Database connection failed")
             raise RuntimeError(f"Could not connect to DB: {e}") from e
 
@@ -53,14 +153,7 @@ class Database:
             cur = self.conn.cursor()
             cur.executescript(
                 """
-                CREATE TABLE IF NOT EXISTS users (
-                    username TEXT PRIMARY KEY,
-                    password_hash TEXT NOT NULL,
-                    role TEXT NOT NULL CHECK(role IN ('admin','officer','viewer')),
-                    created_at TEXT NOT NULL
-                );
-
-                CREATE TABLE IF NOT EXISTS persons (
+                CREATE TABLE IF NOT EXISTS bgcheck_persons (
                     case_id TEXT PRIMARY KEY,
                     person_id TEXT UNIQUE NOT NULL,
                     full_name TEXT NOT NULL,
@@ -85,7 +178,7 @@ class Database:
                     updated_at TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS audit_log (
+                CREATE TABLE IF NOT EXISTS bgcheck_audit_log (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     timestamp TEXT NOT NULL,
                     username TEXT,
@@ -94,14 +187,14 @@ class Database:
                     details TEXT
                 );
 
-                CREATE TABLE IF NOT EXISTS watchlist (
+                CREATE TABLE IF NOT EXISTS bgcheck_watchlist (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     name TEXT NOT NULL,
                     reason TEXT,
                     added_at TEXT NOT NULL
                 );
 
-                CREATE TABLE IF NOT EXISTS search_history (
+                CREATE TABLE IF NOT EXISTS bgcheck_search_history (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     username TEXT,
                     query TEXT,
@@ -207,7 +300,7 @@ class AuditLogger:
     def log(self, username: str, action: str, target: str = "", details: str = "") -> None:
         try:
             self.db.execute(
-                "INSERT INTO audit_log (timestamp, username, action, target, details) VALUES (?,?,?,?,?)",
+                "INSERT INTO bgcheck_audit_log (timestamp, username, action, target, details) VALUES (?,?,?,?,?)",
                 (now_iso(), username, action, target, details),
             )
             logger.info("AUDIT [%s] %s -> %s | %s", username, action, target, details)
@@ -239,80 +332,11 @@ def calculate_risk_score(person: dict, watchlist_names: list) -> int:
 
 
 # ============================================================
-# LOGIN DIALOG
+# LOGIN
 # ============================================================
-class LoginDialog(tk.Toplevel):
-    def __init__(self, parent, db: Database):
-        super().__init__(parent)
-        self.db = db
-        self.title("Login - University Background Checker")
-        self.geometry("360x220")
-        self.resizable(False, False)
-        self.result: Optional[tuple] = None  # (username, role)
-        self.transient(parent)
-        self.grab_set()
-
-        ttk.Label(self, text="Username:").pack(pady=(20, 4))
-        self.user_var = tk.StringVar()
-        ttk.Entry(self, textvariable=self.user_var, width=30).pack()
-
-        ttk.Label(self, text="Password:").pack(pady=(10, 4))
-        self.pw_var = tk.StringVar()
-        ttk.Entry(self, textvariable=self.pw_var, show="*", width=30).pack()
-
-        btn = ttk.Frame(self)
-        btn.pack(pady=20)
-        ttk.Button(btn, text="Login", command=self._login).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn, text="Create Admin", command=self._create_admin).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn, text="Cancel", command=self._cancel).pack(side=tk.LEFT, padx=5)
-
-        self.bind("<Return>", lambda _e: self._login())
-        self.protocol("WM_DELETE_WINDOW", self._cancel)
-
-    def _login(self):
-        u = self.user_var.get().strip()
-        p = self.pw_var.get()
-        if not u or not p:
-            messagebox.showwarning("Login", "Enter username and password.", parent=self)
-            return
-        try:
-            row = self.db.fetchone(
-                "SELECT password_hash, role FROM users WHERE username=?", (u,)
-            )
-        except RuntimeError as e:
-            messagebox.showerror("Database error", str(e), parent=self)
-            return
-        if row and row["password_hash"] == sha256(p):
-            self.result = (u, row["role"])
-            logger.info("Login success: %s (%s)", u, row["role"])
-            self.destroy()
-        else:
-            logger.warning("Login failed for %s", u)
-            messagebox.showerror("Login", "Invalid credentials.", parent=self)
-
-    def _create_admin(self):
-        u = self.user_var.get().strip()
-        p = self.pw_var.get()
-        if not u or len(p) < 4:
-            messagebox.showwarning("Create Admin", "Username and password (4+ chars) required.", parent=self)
-            return
-        try:
-            existing = self.db.fetchone("SELECT 1 FROM users WHERE username=?", (u,))
-            if existing:
-                messagebox.showinfo("Create Admin", "User already exists.", parent=self)
-                return
-            self.db.execute(
-                "INSERT INTO users (username, password_hash, role, created_at) VALUES (?,?,?,?)",
-                (u, sha256(p), "admin", now_iso()),
-            )
-            logger.info("Admin created: %s", u)
-            messagebox.showinfo("Create Admin", "Admin created. You may now log in.", parent=self)
-        except RuntimeError as e:
-            messagebox.showerror("Database error", str(e), parent=self)
-
-    def _cancel(self):
-        self.result = None
-        self.destroy()
+# In-app login removed — identity comes from EDU_AUTH_* env vars set
+# by the main university GUI. See `_get_current_user` at the top of
+# this module.
 
 
 # ============================================================
@@ -458,11 +482,9 @@ class BGCheckerApp(tk.Tk):
         self.font_size = 10
         self.last_activity = datetime.datetime.now()
 
-        self.withdraw()
-        if not self._login():
+        if not self._resolve_user():
             self.destroy()
             return
-        self.deiconify()
 
         self._build_menu()
         self._build_ui()
@@ -474,25 +496,22 @@ class BGCheckerApp(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     # ---------- AUTH ----------
-    def _login(self) -> bool:
-        # Seed default admin if no users exist
-        try:
-            row = self.db.fetchone("SELECT COUNT(*) AS c FROM users")
-            if row and row["c"] == 0:
-                self.db.execute(
-                    "INSERT INTO users (username, password_hash, role, created_at) VALUES (?,?,?,?)",
-                    ("admin", sha256("admin"), "admin", now_iso()),
-                )
-                logger.info("Seeded default admin/admin")
-        except RuntimeError:
-            logger.exception("Seed admin failed")
-
-        dlg = LoginDialog(self, self.db)
-        self.wait_window(dlg)
-        if not dlg.result:
+    def _resolve_user(self) -> bool:
+        """Pull identity from EDU_AUTH_* env vars instead of an in-app
+        login. If the env vars aren't set (i.e. someone launched the
+        module standalone), show a placeholder and bail."""
+        user = _get_current_user()
+        if not user:
+            messagebox.showwarning(
+                "Authentication Required",
+                "Please launch this portal from the main University System "
+                "after signing in.")
             return False
-        self.current_user, self.current_role = dlg.result
+        self.current_user = user.get('username') or user.get('user_id') or 'Unknown'
+        self.current_role = _bgcheck_role(user.get('role'))
         self.audit.log(self.current_user, "LOGIN", "", f"role={self.current_role}")
+        logger.info("BG Checker starting user=%s mapped_role=%s",
+                    self.current_user, self.current_role)
         return True
 
     # ---------- MENU ----------
@@ -663,7 +682,7 @@ class BGCheckerApp(tk.Tk):
             self.tree.delete(i)
         if rows is None:
             try:
-                rows = self.db.fetchall("SELECT * FROM persons ORDER BY updated_at DESC")
+                rows = self.db.fetchall("SELECT * FROM bgcheck_persons ORDER BY updated_at DESC")
             except RuntimeError as e:
                 messagebox.showerror("Database error", str(e))
                 return
@@ -680,9 +699,9 @@ class BGCheckerApp(tk.Tk):
 
     def _refresh_stats(self):
         try:
-            total = self.db.fetchone("SELECT COUNT(*) c FROM persons")["c"]
-            flagged = self.db.fetchone("SELECT COUNT(*) c FROM persons WHERE status='flagged'")["c"]
-            cleared = self.db.fetchone("SELECT COUNT(*) c FROM persons WHERE status='cleared'")["c"]
+            total = self.db.fetchone("SELECT COUNT(*) c FROM bgcheck_persons")["c"]
+            flagged = self.db.fetchone("SELECT COUNT(*) c FROM bgcheck_persons WHERE status='flagged'")["c"]
+            cleared = self.db.fetchone("SELECT COUNT(*) c FROM bgcheck_persons WHERE status='cleared'")["c"]
             self.title(f"University Background Checker — Total: {total} | Flagged: {flagged} | Cleared: {cleared}")
         except RuntimeError:
             logger.exception("Stats refresh failed")
@@ -707,15 +726,15 @@ class BGCheckerApp(tk.Tk):
             return
         d = dlg.result
         try:
-            existing = self.db.fetchone("SELECT 1 FROM persons WHERE person_id=?", (d["person_id"],))
+            existing = self.db.fetchone("SELECT 1 FROM bgcheck_persons WHERE person_id=?", (d["person_id"],))
             if existing:
                 messagebox.showerror("Duplicate", "Person ID already exists.")
                 return
-            watch = [r["name"] for r in self.db.fetchall("SELECT name FROM watchlist")]
+            watch = [r["name"] for r in self.db.fetchall("SELECT name FROM bgcheck_watchlist")]
             risk = calculate_risk_score(d, watch)
             case_id = "CASE-" + uuid.uuid4().hex[:8].upper()
             self.db.execute(
-                """INSERT INTO persons (case_id, person_id, full_name, role, email, phone, dob,
+                """INSERT INTO bgcheck_persons (case_id, person_id, full_name, role, email, phone, dob,
                    department, status, gpa, criminal_flag, disciplinary_history, employment_history,
                    references_text, documents, notes, tags, risk_score, id_hash, created_at, updated_at)
                    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
@@ -738,7 +757,7 @@ class BGCheckerApp(tk.Tk):
             messagebox.showinfo("Edit", "Select a row first.")
             return
         try:
-            row = self.db.fetchone("SELECT * FROM persons WHERE case_id=?", (cid,))
+            row = self.db.fetchone("SELECT * FROM bgcheck_persons WHERE case_id=?", (cid,))
             if not row:
                 return
             initial = dict(row)
@@ -747,10 +766,10 @@ class BGCheckerApp(tk.Tk):
             if not dlg.result:
                 return
             d = dlg.result
-            watch = [r["name"] for r in self.db.fetchall("SELECT name FROM watchlist")]
+            watch = [r["name"] for r in self.db.fetchall("SELECT name FROM bgcheck_watchlist")]
             risk = calculate_risk_score(d, watch)
             self.db.execute(
-                """UPDATE persons SET person_id=?, full_name=?, role=?, email=?, phone=?, dob=?,
+                """UPDATE bgcheck_persons SET person_id=?, full_name=?, role=?, email=?, phone=?, dob=?,
                    department=?, status=?, gpa=?, criminal_flag=?, disciplinary_history=?,
                    employment_history=?, references_text=?, documents=?, notes=?, tags=?,
                    risk_score=?, updated_at=? WHERE case_id=?""",
@@ -774,7 +793,7 @@ class BGCheckerApp(tk.Tk):
         if not messagebox.askyesno("Delete", f"Delete {cid}?"):
             return
         try:
-            self.db.execute("DELETE FROM persons WHERE case_id=?", (cid,))
+            self.db.execute("DELETE FROM bgcheck_persons WHERE case_id=?", (cid,))
             self.audit.log(self.current_user, "DELETE_PERSON", cid)
             self._refresh_table()
             self._refresh_stats()
@@ -789,10 +808,10 @@ class BGCheckerApp(tk.Tk):
         if not note:
             return
         try:
-            row = self.db.fetchone("SELECT notes FROM persons WHERE case_id=?", (cid,))
+            row = self.db.fetchone("SELECT notes FROM bgcheck_persons WHERE case_id=?", (cid,))
             existing = row["notes"] or ""
             new = f"{existing}\n[{now_iso()} by {self.current_user}] {note}".strip()
-            self.db.execute("UPDATE persons SET notes=?, updated_at=? WHERE case_id=?",
+            self.db.execute("UPDATE bgcheck_persons SET notes=?, updated_at=? WHERE case_id=?",
                             (new, now_iso(), cid))
             self.audit.log(self.current_user, "ADD_NOTE", cid, note[:80])
             messagebox.showinfo("Note", "Note added.")
@@ -807,7 +826,7 @@ class BGCheckerApp(tk.Tk):
         status = self.filter_status.get()
         dept = self.filter_dept.get().strip()
 
-        sql = "SELECT * FROM persons WHERE 1=1"
+        sql = "SELECT * FROM bgcheck_persons WHERE 1=1"
         params: list = []
         if q:
             if field not in ("person_id", "full_name", "email"):
@@ -829,7 +848,7 @@ class BGCheckerApp(tk.Tk):
             rows = self.db.fetchall(sql, tuple(params))
             self._refresh_table(rows)
             self.db.execute(
-                "INSERT INTO search_history (username, query, timestamp) VALUES (?,?,?)",
+                "INSERT INTO bgcheck_search_history (username, query, timestamp) VALUES (?,?,?)",
                 (self.current_user, f"{field}:{q} role:{role} status:{status} dept:{dept}", now_iso()),
             )
         except RuntimeError as e:
@@ -844,7 +863,7 @@ class BGCheckerApp(tk.Tk):
 
     def _sort_column(self, col: str):
         try:
-            rows = self.db.fetchall(f"SELECT * FROM persons ORDER BY {col}")
+            rows = self.db.fetchall(f"SELECT * FROM bgcheck_persons ORDER BY {col}")
             self._refresh_table(rows)
         except RuntimeError as e:
             messagebox.showerror("Database error", str(e))
@@ -866,7 +885,7 @@ class BGCheckerApp(tk.Tk):
                         if not valid_id(d["person_id"]) or not d["full_name"] or not d["role"]:
                             errors += 1
                             continue
-                        if self.db.fetchone("SELECT 1 FROM persons WHERE person_id=?", (d["person_id"],)):
+                        if self.db.fetchone("SELECT 1 FROM bgcheck_persons WHERE person_id=?", (d["person_id"],)):
                             errors += 1
                             continue
                         try:
@@ -879,11 +898,11 @@ class BGCheckerApp(tk.Tk):
                             d["criminal_flag"] = 0
                         if not d["status"]:
                             d["status"] = "pending"
-                        watch = [r["name"] for r in self.db.fetchall("SELECT name FROM watchlist")]
+                        watch = [r["name"] for r in self.db.fetchall("SELECT name FROM bgcheck_watchlist")]
                         risk = calculate_risk_score(d, watch)
                         case_id = "CASE-" + uuid.uuid4().hex[:8].upper()
                         self.db.execute(
-                            """INSERT INTO persons (case_id, person_id, full_name, role, email, phone, dob,
+                            """INSERT INTO bgcheck_persons (case_id, person_id, full_name, role, email, phone, dob,
                                department, status, gpa, criminal_flag, disciplinary_history, employment_history,
                                references_text, documents, notes, tags, risk_score, id_hash, created_at, updated_at)
                                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
@@ -908,7 +927,7 @@ class BGCheckerApp(tk.Tk):
         if not path:
             return
         try:
-            rows = self.db.fetchall("SELECT * FROM persons")
+            rows = self.db.fetchall("SELECT * FROM bgcheck_persons")
             if not rows:
                 messagebox.showinfo("Export", "Nothing to export.")
                 return
@@ -927,7 +946,7 @@ class BGCheckerApp(tk.Tk):
         if not path:
             return
         try:
-            rows = [dict(r) for r in self.db.fetchall("SELECT * FROM persons")]
+            rows = [dict(r) for r in self.db.fetchall("SELECT * FROM bgcheck_persons")]
             with open(path, "w", encoding="utf-8") as f:
                 json.dump(rows, f, indent=2, default=str)
             self.audit.log(self.current_user, "EXPORT_JSON", path)
@@ -941,7 +960,7 @@ class BGCheckerApp(tk.Tk):
             messagebox.showinfo("Report", "Select a row first.")
             return
         try:
-            row = self.db.fetchone("SELECT * FROM persons WHERE case_id=?", (cid,))
+            row = self.db.fetchone("SELECT * FROM bgcheck_persons WHERE case_id=?", (cid,))
             if not row:
                 return
             lines = ["=" * 60, "BACKGROUND CHECK REPORT", "=" * 60,
@@ -1000,7 +1019,7 @@ class BGCheckerApp(tk.Tk):
             messagebox.showinfo("Print", "Select a row first.")
             return
         try:
-            row = self.db.fetchone("SELECT * FROM persons WHERE case_id=?", (cid,))
+            row = self.db.fetchone("SELECT * FROM bgcheck_persons WHERE case_id=?", (cid,))
             win = tk.Toplevel(self)
             win.title("Print Preview")
             txt = tk.Text(win, width=80, height=30)
@@ -1018,12 +1037,12 @@ class BGCheckerApp(tk.Tk):
             messagebox.showinfo("Check", "Select a row first.")
             return
         try:
-            row = dict(self.db.fetchone("SELECT * FROM persons WHERE case_id=?", (cid,)))
-            watch = [r["name"] for r in self.db.fetchall("SELECT name FROM watchlist")]
+            row = dict(self.db.fetchone("SELECT * FROM bgcheck_persons WHERE case_id=?", (cid,)))
+            watch = [r["name"] for r in self.db.fetchall("SELECT name FROM bgcheck_watchlist")]
             risk = calculate_risk_score(row, watch)
             new_status = "flagged" if risk >= 50 else "cleared"
             self.db.execute(
-                "UPDATE persons SET risk_score=?, status=?, updated_at=? WHERE case_id=?",
+                "UPDATE bgcheck_persons SET risk_score=?, status=?, updated_at=? WHERE case_id=?",
                 (risk, new_status, now_iso(), cid),
             )
             self.audit.log(self.current_user, "RUN_CHECK", cid, f"risk={risk} status={new_status}")
@@ -1036,7 +1055,7 @@ class BGCheckerApp(tk.Tk):
     def detect_duplicates(self):
         try:
             rows = self.db.fetchall(
-                "SELECT full_name, COUNT(*) c FROM persons GROUP BY full_name HAVING c > 1"
+                "SELECT full_name, COUNT(*) c FROM bgcheck_persons GROUP BY full_name HAVING c > 1"
             )
             if not rows:
                 messagebox.showinfo("Duplicates", "No duplicates found.")
@@ -1056,7 +1075,7 @@ class BGCheckerApp(tk.Tk):
         def reload():
             lb.delete(0, "end")
             try:
-                for r in self.db.fetchall("SELECT id, name, reason FROM watchlist ORDER BY name"):
+                for r in self.db.fetchall("SELECT id, name, reason FROM bgcheck_watchlist ORDER BY name"):
                     lb.insert("end", f"{r['id']}: {r['name']} ({r['reason'] or ''})")
             except RuntimeError as e:
                 messagebox.showerror("Watchlist", str(e), parent=win)
@@ -1068,7 +1087,7 @@ class BGCheckerApp(tk.Tk):
             reason = simpledialog.askstring("Watchlist", "Reason:", parent=win) or ""
             try:
                 self.db.execute(
-                    "INSERT INTO watchlist (name, reason, added_at) VALUES (?,?,?)",
+                    "INSERT INTO bgcheck_watchlist (name, reason, added_at) VALUES (?,?,?)",
                     (name, reason, now_iso()),
                 )
                 self.audit.log(self.current_user, "WATCHLIST_ADD", name)
@@ -1082,7 +1101,7 @@ class BGCheckerApp(tk.Tk):
                 return
             wid = int(lb.get(sel[0]).split(":", 1)[0])
             try:
-                self.db.execute("DELETE FROM watchlist WHERE id=?", (wid,))
+                self.db.execute("DELETE FROM bgcheck_watchlist WHERE id=?", (wid,))
                 self.audit.log(self.current_user, "WATCHLIST_DEL", str(wid))
                 reload()
             except RuntimeError as e:
@@ -1109,10 +1128,10 @@ class BGCheckerApp(tk.Tk):
     # ---------- VIEW DIALOGS ----------
     def show_stats(self):
         try:
-            total = self.db.fetchone("SELECT COUNT(*) c FROM persons")["c"]
-            by_role = self.db.fetchall("SELECT role, COUNT(*) c FROM persons GROUP BY role")
-            by_status = self.db.fetchall("SELECT status, COUNT(*) c FROM persons GROUP BY status")
-            avg_risk = self.db.fetchone("SELECT AVG(risk_score) a FROM persons")["a"] or 0
+            total = self.db.fetchone("SELECT COUNT(*) c FROM bgcheck_persons")["c"]
+            by_role = self.db.fetchall("SELECT role, COUNT(*) c FROM bgcheck_persons GROUP BY role")
+            by_status = self.db.fetchall("SELECT status, COUNT(*) c FROM bgcheck_persons GROUP BY status")
+            avg_risk = self.db.fetchone("SELECT AVG(risk_score) a FROM bgcheck_persons")["a"] or 0
             lines = [f"Total persons: {total}", f"Average risk: {avg_risk:.1f}", "", "By role:"]
             lines += [f"  {r['role']}: {r['c']}" for r in by_role]
             lines += ["", "By status:"]
@@ -1128,7 +1147,7 @@ class BGCheckerApp(tk.Tk):
         txt = tk.Text(win)
         txt.pack(fill=tk.BOTH, expand=True)
         try:
-            for r in self.db.fetchall("SELECT * FROM audit_log ORDER BY id DESC LIMIT 500"):
+            for r in self.db.fetchall("SELECT * FROM bgcheck_audit_log ORDER BY id DESC LIMIT 500"):
                 txt.insert("end",
                            f"{r['timestamp']} | {r['username']} | {r['action']} | {r['target']} | {r['details']}\n")
         except RuntimeError as e:
@@ -1142,7 +1161,7 @@ class BGCheckerApp(tk.Tk):
         txt = tk.Text(win)
         txt.pack(fill=tk.BOTH, expand=True)
         try:
-            for r in self.db.fetchall("SELECT * FROM search_history ORDER BY id DESC LIMIT 200"):
+            for r in self.db.fetchall("SELECT * FROM bgcheck_search_history ORDER BY id DESC LIMIT 200"):
                 txt.insert("end", f"{r['timestamp']} | {r['username']} | {r['query']}\n")
         except RuntimeError as e:
             messagebox.showerror("History", str(e))
@@ -1155,7 +1174,7 @@ class BGCheckerApp(tk.Tk):
         txt = tk.Text(win)
         txt.pack(fill=tk.BOTH, expand=True)
         try:
-            for r in self.db.fetchall("SELECT * FROM persons ORDER BY updated_at DESC LIMIT 25"):
+            for r in self.db.fetchall("SELECT * FROM bgcheck_persons ORDER BY updated_at DESC LIMIT 25"):
                 txt.insert("end", f"{r['updated_at']} | {r['case_id']} | {r['full_name']} | {r['status']}\n")
         except RuntimeError as e:
             messagebox.showerror("Activity", str(e))
@@ -1180,9 +1199,9 @@ class BGCheckerApp(tk.Tk):
             "About",
             "University Background Checker v1.0\n\n"
             "Tkinter + SQLite\n"
-            "50 features including auth, audit log, risk scoring,\n"
-            "import/export, watchlist, and more.\n\n"
-            "Default login: admin / admin",
+            "Audit log, risk scoring, import/export, watchlist, and more.\n\n"
+            "Authentication: handled by the main university system "
+            "(EDU_AUTH_*).",
         )
 
     # ---------- LIFECYCLE ----------
@@ -1200,6 +1219,7 @@ class BGCheckerApp(tk.Tk):
 # ENTRY POINT
 # ============================================================
 def main():
+    _remove_legacy_files()
     try:
         app = BGCheckerApp()
         if app.winfo_exists():

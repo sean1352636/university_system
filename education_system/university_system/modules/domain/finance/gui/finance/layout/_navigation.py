@@ -148,6 +148,7 @@ class NavigationMixin:
             (_("finance_gui.nav.budget"), "budget", "admin"),  # Admin only
             (_("finance_gui.nav.forecasting"), "forecasting", "admin"),  # Admin only
             (_("finance_gui.nav.research_grants"), "research_grants", "admin_staff"),  # Admin and Staff only
+            ("Bursary Management", "bursary", "admin_staff"),  # Admin and Staff only — launches standalone Tk app
             (_("finance_gui.nav.bank_app"), "bank_app", "all"),  # All can access bank app
             (_("finance_gui.nav.club_payments"), "club_payments", "admin_staff"),  # Admin and Staff only
             (_("finance_gui.nav.admin"), "admin", "admin"),  # Admin only
@@ -304,6 +305,10 @@ class NavigationMixin:
                 self.gui.view_student_finances()
             return
 
+        # Bursary Management — embed standalone Tk frame inline as a tab on first use
+        if tab_id == 'bursary' and 'bursary' not in self.tab_frames:
+            self._build_bursary_tab()
+
         # Hide current tab if exists
         if self.current_tab and self.current_tab in self.tab_frames:
             self.tab_frames[self.current_tab].pack_forget()
@@ -322,3 +327,21 @@ class NavigationMixin:
         for widget in self.nav_frame.winfo_children():
             if isinstance(widget, tk.Button) and tab_id in widget['text'].lower():
                 widget.config(bg=self.colors['primary'])
+
+    def _build_bursary_tab(self):
+        import logging
+        log = logging.getLogger(__name__)
+        try:
+            from education_system.university_system.modules.domain.finance.bursary.bursary_app import _Frame as BursaryFrame
+        except Exception as e:
+            log.exception("Bursary import failed")
+            messagebox.showerror("Bursary Management", f"Failed to load module: {e}")
+            return
+        frame = tk.Frame(self.content_frame, bg='white')
+        self.tab_frames['bursary'] = frame
+        try:
+            BursaryFrame(frame).pack(fill='both', expand=True)
+            log.info("Bursary tab embedded in Finance GUI content area")
+        except Exception as e:
+            log.exception("Bursary render failed")
+            messagebox.showerror("Bursary Management", f"Failed to render: {e}")

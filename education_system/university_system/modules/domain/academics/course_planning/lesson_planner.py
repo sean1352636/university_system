@@ -1,13 +1,118 @@
 """
 University Lesson Planner - A GUI application for managing university lessons,
 courses, and schedules.
+
+Auth: piggybacks on the main university auth — when launched as a
+subprocess from the unified main GUI, EDU_AUTH_* env vars carry the
+logged-in user's identity. The header shows the signed-in user; key
+write actions are stamped with that identity in the log.
+
+Persistence: rows live in the central `student_records.db` tables
+`lesson_plans` and `lesson_courses` (module-private — they're
+pedagogical scheduling artefacts, distinct from the canonical
+`courses` table used by Academic Management). The legacy
+`lesson_planner_data.json` sidecar is removed on startup.
+
+Logging: routed through the shared rotating `app.log` via
+`infrastructure.logging.log_config.configure_logging`.
 """
 
+import logging
+import os
+import sqlite3
+import sys
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
-import json
 from datetime import datetime
-from pathlib import Path
+from tkinter import ttk, messagebox, filedialog
+
+
+# When the main GUI launches us as a subprocess, the child Python is
+# invoked directly on this file's path with no PYTHONPATH set, so
+# `education_system` isn't importable. Walk up from this file until we
+# find the dir that contains the `education_system` package and put
+# that on sys.path. No-op when imported normally.
+if 'education_system' not in sys.modules:
+    _here = os.path.abspath(os.path.dirname(__file__))
+    while _here and not os.path.isdir(os.path.join(_here, 'education_system')):
+        _parent = os.path.dirname(_here)
+        if _parent == _here:
+            break
+        _here = _parent
+    if _here and _here not in sys.path:
+        sys.path.insert(0, _here)
+
+
+logger = logging.getLogger(__name__)
+
+try:
+    from education_system.university_system.infrastructure.logging.log_config import configure_logging
+    configure_logging(name=__name__)
+except Exception:
+    logger.debug("Central log config unavailable; falling back to default handlers", exc_info=True)
+
+
+# ---------------------------------------------------------------------------
+# AUTH BOOTSTRAP
+# ---------------------------------------------------------------------------
+def _get_current_user():
+    user_id = os.environ.get('EDU_AUTH_USER_ID') or ''
+    username = os.environ.get('EDU_AUTH_USERNAME') or ''
+    role = os.environ.get('EDU_AUTH_ROLE') or ''
+    email = os.environ.get('EDU_AUTH_EMAIL') or ''
+    perms_raw = os.environ.get('EDU_AUTH_PERMISSIONS') or ''
+    if user_id or username:
+        return {
+            'id': user_id or None,
+            'user_id': user_id or None,
+            'username': username,
+            'role': role,
+            'email': email,
+            'permissions': [p for p in perms_raw.split(',') if p],
+        }
+    try:
+        from education_system.university_system.infrastructure.auth import get_global_auth
+        ga = get_global_auth()
+        if ga and getattr(ga, 'current_user', None):
+            return ga.current_user
+    except Exception:
+        logger.debug("get_global_auth fallback failed", exc_info=True)
+    return None
+
+
+def _user_display_name(user):
+    if not user:
+        return 'Guest'
+    return (user.get('username') or user.get('email') or
+            user.get('user_id') or user.get('id') or 'Unknown')
+
+
+_LEGACY_DATA_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 "lesson_planner_data.json")
+
+
+def _remove_legacy_files():
+    """Sweep stray sidecar files left by earlier iterations of this
+    module. Data now lives in the central student_records.db."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    targets = [_LEGACY_DATA_FILE,
+               os.path.abspath("lesson_planner_data.json")]
+    if os.path.isdir(here):
+        for fname in os.listdir(here):
+            if fname.endswith(('.db', '.db-wal', '.db-shm', '.db-journal')):
+                targets.append(os.path.join(here, fname))
+    for path in set(targets):
+        if os.path.exists(path):
+            try:
+                os.remove(path)
+                logger.info("Removed legacy lesson-planner data file: %s", path)
+            except OSError:
+                logger.warning("Could not remove legacy file %s", path,
+                               exc_info=True)
+
+
+_LESSON_FIELDS = ("course", "title", "instructor", "type", "day",
+                  "start", "end", "room", "notes")
+_COURSE_FIELDS = ("code", "name", "dept", "credits", "semester", "description")
 
 
 class LessonPlannerApp:
@@ -23,14 +128,20 @@ class LessonPlannerApp:
         self.root.geometry("1200x720")
         self.root.configure(bg="#f0f2f5")
 
+        self.user = _get_current_user()
+        self.user_display = _user_display_name(self.user)
+        logger.info("Lesson Planner starting user=%s role=%s",
+                    self.user_display,
+                    (self.user or {}).get('role') or 'none')
+
         # Data storage
         self.lessons = []
         self.courses = []
-        self.data_file = Path("lesson_planner_data.json")
         self.selected_lesson_index = None
 
         self._setup_styles()
         self._build_ui()
+        self._ensure_schema()
         self._load_data()
         self._refresh_views()
 
@@ -62,6 +173,12 @@ class LessonPlannerApp:
         tk.Label(header, text="🎓 University Lesson Planner",
                  bg="#1e3a8a", fg="white",
                  font=("Segoe UI", 16, "bold")).pack(side="left", padx=20)
+
+        role = (self.user or {}).get('role') or ('—' if self.user else 'not signed in')
+        tk.Label(header,
+                 text=f"Signed in: {self.user_display}  ({role})",
+                 bg="#1e3a8a", fg="#cbd5e1",
+                 font=("Segoe UI", 9)).pack(side="right", padx=20)
 
         self.status_label = tk.Label(header, text="", bg="#1e3a8a",
                                      fg="#cbd5e1", font=("Segoe UI", 9))
@@ -331,6 +448,9 @@ class LessonPlannerApp:
                 return
         self.lessons.append(new_lesson)
         self._save_data()
+        logger.info("Lesson added title=%r course=%r day=%s start=%s by=%s",
+                    new_lesson.get('title'), new_lesson.get('course'),
+                    new_lesson.get('day'), new_lesson.get('start'), self.user_display)
         self._refresh_views()
         self._clear_form()
         self._set_status(f"Added lesson: {new_lesson['title']}")
@@ -351,6 +471,8 @@ class LessonPlannerApp:
                 return
         self.lessons[self.selected_lesson_index] = updated
         self._save_data()
+        logger.info("Lesson updated title=%r day=%s by=%s",
+                    updated.get('title'), updated.get('day'), self.user_display)
         self._refresh_views()
         self._clear_form()
         self._set_status(f"Updated lesson: {updated['title']}")
@@ -365,6 +487,8 @@ class LessonPlannerApp:
                                 f"Delete '{lesson['title']}'?"):
             self.lessons.pop(self.selected_lesson_index)
             self._save_data()
+            logger.info("Lesson deleted title=%r by=%s",
+                        lesson.get('title'), self.user_display)
             self._refresh_views()
             self._clear_form()
             self._set_status(f"Deleted lesson: {lesson['title']}")
@@ -423,6 +547,8 @@ class LessonPlannerApp:
             "description": self.course_desc.get("1.0", "end-1c"),
         })
         self._save_data()
+        logger.info("Lesson-planner course added code=%s name=%r by=%s",
+                    code, name, self.user_display)
         self._refresh_views()
         for var in self.course_vars.values():
             var.set("")
@@ -441,6 +567,8 @@ class LessonPlannerApp:
                                 f"Delete course '{course['code']}'?"):
             self.courses.pop(index)
             self._save_data()
+            logger.info("Lesson-planner course deleted code=%s by=%s",
+                        course.get('code'), self.user_display)
             self._refresh_views()
             self._set_status(f"Deleted course: {course['code']}")
 
@@ -588,16 +716,97 @@ class LessonPlannerApp:
         except Exception as e:
             messagebox.showerror("Export Error", str(e))
 
-    def _save_data(self):
+    def _connect(self):
+        from education_system.university_system.infrastructure.database.db import get_connection
+        return get_connection()
+
+    def _ensure_schema(self):
+        conn = self._connect()
         try:
-            with open(self.data_file, "w", encoding="utf-8") as f:
-                json.dump({"lessons": self.lessons,
-                           "courses": self.courses}, f, indent=2)
-        except Exception as e:
+            conn.executescript("""
+                CREATE TABLE IF NOT EXISTS lesson_plans (
+                    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+                    course      TEXT,
+                    title       TEXT,
+                    instructor  TEXT,
+                    type        TEXT,
+                    day         TEXT,
+                    start       TEXT,
+                    end         TEXT,
+                    room        TEXT,
+                    notes       TEXT,
+                    updated_at  TEXT,
+                    updated_by  TEXT
+                );
+                CREATE TABLE IF NOT EXISTS lesson_courses (
+                    code        TEXT PRIMARY KEY,
+                    name        TEXT,
+                    dept        TEXT,
+                    credits     TEXT,
+                    semester    TEXT,
+                    description TEXT,
+                    updated_at  TEXT,
+                    updated_by  TEXT
+                );
+            """)
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _save_data(self):
+        """Persist the in-memory lessons + courses lists back to the
+        central DB. DELETE-all + bulk INSERT inside one transaction
+        keeps this in step with the GUI's list-mutation semantics
+        (append/replace/pop)."""
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        actor = getattr(self, 'user_display', '') or ''
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN")
+            conn.execute("DELETE FROM lesson_plans")
+            for lesson in self.lessons:
+                conn.execute(
+                    "INSERT INTO lesson_plans (course, title, instructor, type, "
+                    "day, start, end, room, notes, updated_at, updated_by) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                    tuple(lesson.get(k, "") for k in _LESSON_FIELDS) +
+                    (now, actor),
+                )
+            conn.execute("DELETE FROM lesson_courses")
+            for course in self.courses:
+                conn.execute(
+                    "INSERT INTO lesson_courses (code, name, dept, credits, "
+                    "semester, description, updated_at, updated_by) "
+                    "VALUES (?,?,?,?,?,?,?,?)",
+                    tuple(course.get(k, "") for k in _COURSE_FIELDS) +
+                    (now, actor),
+                )
+            conn.commit()
+        except sqlite3.Error as e:
+            conn.rollback()
+            logger.exception("Failed to save lesson planner data")
             messagebox.showerror("Save Error", str(e))
+        finally:
+            conn.close()
 
     def _load_data(self):
-        if not self.data_file.exists():
+        conn = self._connect()
+        try:
+            lessons = conn.execute(
+                "SELECT course, title, instructor, type, day, start, end, room, notes "
+                "FROM lesson_plans ORDER BY day, start"
+            ).fetchall()
+            courses = conn.execute(
+                "SELECT code, name, dept, credits, semester, description "
+                "FROM lesson_courses ORDER BY code"
+            ).fetchall()
+        finally:
+            conn.close()
+
+        self.lessons = [dict(zip(_LESSON_FIELDS, r)) for r in lessons]
+        self.courses = [dict(zip(_COURSE_FIELDS, r)) for r in courses]
+
+        if not self.lessons and not self.courses:
             # Seed with sample data on first run
             self.courses = [
                 {"code": "CS101", "name": "Introduction to Computer Science",
@@ -619,15 +828,11 @@ class LessonPlannerApp:
                  "start": "14:00", "end": "16:00", "room": "B205",
                  "notes": ""},
             ]
-            return
-
-        try:
-            with open(self.data_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                self.lessons = data.get("lessons", [])
-                self.courses = data.get("courses", [])
-        except Exception as e:
-            messagebox.showerror("Load Error", str(e))
+            try:
+                self._save_data()
+                logger.info("Seeded lesson_plans/lesson_courses with sample rows")
+            except Exception:
+                logger.exception("Could not seed lesson planner data")
 
     def _set_status(self, message):
         self.status_label.config(text=message)
@@ -635,8 +840,9 @@ class LessonPlannerApp:
 
 
 def main():
+    _remove_legacy_files()
     root = tk.Tk()
-    app = LessonPlannerApp(root)
+    LessonPlannerApp(root)
     root.mainloop()
 
 
