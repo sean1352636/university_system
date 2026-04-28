@@ -79,7 +79,28 @@ class UserAuth:
                     conn.commit()
 
             legacy_salt = user["legacy_salt"] if "legacy_salt" in user.keys() else None
-            if not verify_password(password, user["password_hash"], legacy_salt=legacy_salt):
+            password_ok = verify_password(password, user["password_hash"], legacy_salt=legacy_salt)
+
+            # Recovery-code login: if the password didn't match, accept an
+            # unused MFA recovery code as a single-use bypass. The code is
+            # consumed and the account is flagged for forced password reset
+            # so the user must set a new password on first login.
+            recovery_used = False
+            if not password_ok:
+                if self._try_recovery_code_login(conn, user["id"], password):
+                    recovery_used = True
+                    password_ok = True
+                    # Flag for forced password change
+                    conn.execute(
+                        "UPDATE users SET password_changed_at = NULL WHERE id = ?",
+                        (user["id"],),
+                    )
+                    conn.commit()
+                    logger.info(
+                        "User '%s' logged in via MFA recovery code", username,
+                    )
+
+            if not password_ok:
                 attempts = user["failed_login_attempts"] + 1
                 updates = {"failed_login_attempts": attempts}
                 if attempts >= MAX_LOGIN_ATTEMPTS:
@@ -123,8 +144,11 @@ class UserAuth:
             )
             conn.commit()
 
-            # Check password expiry
-            password_expired = self.check_password_expiry(user["id"])
+            # Check password expiry. Recovery-code logins always force a
+            # password change because the user no longer knows the real
+            # password — without this flag they'd be locked out on the
+            # next login.
+            password_expired = recovery_used or self.check_password_expiry(user["id"])
 
             # Fetch systems the user has access to
             systems = conn.execute(
@@ -135,19 +159,22 @@ class UserAuth:
         finally:
             conn.close()
 
-        # Check MFA
-        try:
-            from education_system.shared.auth.mfa_service import MFAService
-            mfa_svc = MFAService(self._db_path)
-            if mfa_svc.is_mfa_enabled(user["id"]):
-                return {
-                    "mfa_required": True,
-                    "user_id": user["id"],
-                    "username": user["username"],
-                    "password_expired": password_expired,
-                }
-        except ImportError:
-            pass
+        # Check MFA — but skip the MFA challenge when the user logged in
+        # with a recovery code, since the code is itself a one-time second
+        # factor and they no longer have access to the authenticator.
+        if not recovery_used:
+            try:
+                from education_system.shared.auth.mfa_service import MFAService
+                mfa_svc = MFAService(self._db_path)
+                if mfa_svc.is_mfa_enabled(user["id"]):
+                    return {
+                        "mfa_required": True,
+                        "user_id": user["id"],
+                        "username": user["username"],
+                        "password_expired": password_expired,
+                    }
+            except ImportError:
+                pass
 
         # Enforce MFA for privileged roles
         user_roles = {s["role"] for s in systems}
@@ -264,6 +291,41 @@ class UserAuth:
         logger.info("MFA login completed for user '%s' (external verification)", user["username"])
 
         return self._current_user
+
+    def _try_recovery_code_login(self, conn, user_id: int, candidate: str) -> bool:
+        """If *candidate* matches an unused MFA recovery code for the user,
+        consume it and return True. Returns False if MFA isn't set up for
+        the user, the rate-limit is exceeded, or the code doesn't match.
+
+        The provided *conn* is intentionally not used for the recovery-code
+        verification itself — MFAService opens its own connection so the
+        consume-on-match write commits independently.
+        """
+        # Cheap rejection for inputs that can't possibly be a recovery code
+        # (codes are short alphanumerics like "ABCD-1234"). This avoids
+        # paying bcrypt cost for every wrong-password attempt.
+        cleaned = candidate.strip().upper()
+        if not (4 <= len(cleaned) <= 20):
+            return False
+
+        try:
+            from education_system.shared.auth.mfa_service import MFAService, MFAError
+        except ImportError:
+            return False
+
+        mfa_svc = MFAService(self._db_path)
+        if not mfa_svc.is_mfa_enabled(user_id):
+            return False
+
+        try:
+            return mfa_svc.verify_recovery_code(user_id, candidate)
+        except MFAError as exc:
+            # Rate-limit lockout — surface as a normal AuthError so the user
+            # gets feedback instead of a silent fall-through to "invalid".
+            raise AuthError(str(exc)) from exc
+        except Exception as exc:
+            logger.debug("Recovery code login check failed: %s", exc)
+            return False
 
     def _check_mfa_required(self, user_id: int, roles: set[str]) -> bool:
         """Check if MFA is required but not set up for privileged roles."""

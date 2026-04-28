@@ -182,6 +182,10 @@ class UniversalLoginWindow(tk.Tk):
             self._error_var.set("An unexpected error occurred. Please try again.")
             return
 
+        # Stash the just-used password so the forced-change screen can
+        # prefill the "Current Password" field (typically a temp password).
+        self._last_login_password = password
+
         # Handle MFA challenge
         if user_info.get("mfa_required"):
             logger.info("MFA required for user_id=%s, showing MFA screen", user_info["user_id"])
@@ -777,11 +781,20 @@ class UniversalLoginWindow(tk.Tk):
             card, text="Current Password", font=("Helvetica", 10, "bold"),
             bg=_CARD_BG, anchor="w",
         ).pack(fill="x", pady=(0, 4))
-        self._cp_old_var = tk.StringVar()
+        # Prefill with the password the user just logged in with (e.g. the
+        # temp password from a forgot-password reset) so they don't have to
+        # retype it. Consume the cached value so it's only used once.
+        prefilled_old = getattr(self, "_last_login_password", "") or ""
+        self._last_login_password = ""
+        self._cp_old_var = tk.StringVar(value=prefilled_old)
         old_entry = ttk.Entry(card, textvariable=self._cp_old_var, width=30,
                               show="*", font=("Helvetica", 11))
         old_entry.pack(fill="x", ipady=4, pady=(0, 10))
-        old_entry.focus_set()
+        # Focus the new-password field if old is already filled in
+        if prefilled_old:
+            pass  # focus moves below after new_entry exists
+        else:
+            old_entry.focus_set()
 
         tk.Label(
             card, text="New Password", font=("Helvetica", 10, "bold"),
@@ -791,6 +804,8 @@ class UniversalLoginWindow(tk.Tk):
         new_entry = ttk.Entry(card, textvariable=self._cp_new_var, width=30,
                               show="*", font=("Helvetica", 11))
         new_entry.pack(fill="x", ipady=4, pady=(0, 10))
+        if prefilled_old:
+            new_entry.focus_set()
 
         tk.Label(
             card, text="Confirm New Password", font=("Helvetica", 10, "bold"),
