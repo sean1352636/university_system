@@ -9,6 +9,7 @@ from education_system.university_system.modules.domain.academics.gui.exam_manage
 from education_system.university_system.modules.domain.academics.gui.exam_management import conflicts as conflict_utils
 from education_system.university_system.modules.domain.academics.gui.exam_management import notifications as notification_utils
 from education_system.university_system.modules.domain.academics.gui.exam_management import room_booking as room_booking_utils
+from education_system.university_system.modules.domain.academics.gui.exam_management import external_examiners_link as ee_link
 
 logger = logging.getLogger(__name__)
 
@@ -383,6 +384,23 @@ class DataManager:
         return room_booking_utils.find_external_conflicts(
             date, start_time, end_time, room_name, exclude_exam_id,
         )
+
+    # --- External examiner integration ---
+
+    def list_active_examiners(self) -> List[Dict]:
+        """Active examiners from the sibling external_examiners module."""
+        return ee_link.list_active_examiners()
+
+    def list_examiners_for_exam(self, exam_id: int) -> List[Dict]:
+        return ee_link.list_examiners_for_exam(exam_id)
+
+    def attach_external_examiner(self, exam_id: int, examiner_id: int,
+                                 role: str = "") -> bool:
+        return ee_link.attach_examiner(exam_id, examiner_id, role)
+
+    def detach_external_examiner(self, exam_id: int,
+                                 examiner_id: int) -> bool:
+        return ee_link.detach_examiner(exam_id, examiner_id)
 
     # --- Data persistence ---
 

@@ -216,6 +216,9 @@ class ExamsTabMixin:
         ttk.Button(btn_frame, text=_("exam_scheduler.buttons.duplicate"), command=self.duplicate_exam).pack(side=tk.LEFT, padx=3)
         ttk.Button(btn_frame, text=_("exam_scheduler.buttons.delete"), command=self.delete_exam).pack(side=tk.LEFT, padx=3)
         ttk.Button(btn_frame, text=_("exam_scheduler.buttons.clear"), command=self.clear_exam_form).pack(side=tk.LEFT, padx=3)
+        ttk.Button(btn_frame, text="External examiners…",
+                   command=self.open_external_examiners_dialog).pack(
+                       side=tk.LEFT, padx=3)
 
         # Note about automatic actions
         note_label = ttk.Label(form_frame, text=_("exam_scheduler.labels.auto_notifications_note"),
@@ -346,6 +349,20 @@ class ExamsTabMixin:
         if not selection:
             return None
         return selection.split(' - ')[0].strip() or None
+
+    def open_external_examiners_dialog(self):
+        """Open the external-examiner attachment manager for the selected
+        exam. Requires an exam to be selected (since attachments are
+        per-exam)."""
+        if not self.selected_exam_id:
+            messagebox.showinfo(
+                "External examiners",
+                "Select an exam in the list before managing examiners.",
+            )
+            return
+        ExternalExaminersDialog(
+            self.root, self.data_manager, self.selected_exam_id,
+        )
 
     def _confirm_external_conflicts(self, conflicts) -> bool:
         """Show overlapping bookings/lectures from other systems and ask
@@ -800,3 +817,132 @@ class ExamsTabMixin:
             "Duplicate Mode",
             "Exam details loaded. Change the date/time and click 'Add Exam' to create a duplicate."
         )
+
+
+class ExternalExaminersDialog(tk.Toplevel):
+    """Manage which external examiners are attached to a given exam."""
+
+    def __init__(self, parent, data_manager, exam_id: int):
+        super().__init__(parent)
+        self.title(f"External examiners — exam #{exam_id}")
+        self.geometry("560x420")
+        self.transient(parent)
+        self.grab_set()
+
+        self._dm = data_manager
+        self._exam_id = exam_id
+
+        wrap = ttk.Frame(self, padding=10)
+        wrap.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(
+            wrap,
+            text="Examiners are pulled from the external_examiners "
+                 "module. Add new examiners there; this dialog only "
+                 "manages who is attached to this exam.",
+            foreground="#555", wraplength=520, justify="left",
+        ).pack(anchor="w", pady=(0, 8))
+
+        # Currently attached
+        ttk.Label(wrap, text="Attached to this exam",
+                  font=("Helvetica", 10, "bold")).pack(anchor="w")
+        self._attached_tree = ttk.Treeview(
+            wrap,
+            columns=("name", "institution", "role"),
+            show="headings", height=6,
+        )
+        for c, w, h in [("name", 200, "Name"),
+                        ("institution", 180, "Institution"),
+                        ("role", 130, "Role")]:
+            self._attached_tree.heading(c, text=h)
+            self._attached_tree.column(c, width=w, anchor="w")
+        self._attached_tree.pack(fill=tk.BOTH, expand=True, pady=(2, 6))
+
+        ttk.Button(wrap, text="Remove selected",
+                   command=self._remove_selected).pack(anchor="w")
+
+        # Add a new attachment
+        sep = ttk.Separator(wrap)
+        sep.pack(fill=tk.X, pady=12)
+
+        ttk.Label(wrap, text="Attach an examiner",
+                  font=("Helvetica", 10, "bold")).pack(anchor="w")
+        row = ttk.Frame(wrap)
+        row.pack(fill=tk.X, pady=4)
+        self._examiner_var = tk.StringVar()
+        self._role_var = tk.StringVar()
+
+        examiners = data_manager.list_active_examiners()
+        self._examiner_lookup = {}
+        for e in examiners:
+            ex_id = e.get("examiner_id") or e.get("id")
+            if ex_id is None:
+                continue
+            label = f"{e.get('name','?')} — {e.get('institution','?')}"
+            self._examiner_lookup[label] = ex_id
+        self._combo = ttk.Combobox(
+            row, textvariable=self._examiner_var,
+            values=list(self._examiner_lookup.keys()),
+            state="readonly", width=42,
+        )
+        self._combo.pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Entry(row, textvariable=self._role_var, width=18).pack(
+            side=tk.LEFT, padx=(0, 6))
+        ttk.Label(row, text="(role, optional)",
+                  foreground="#888").pack(side=tk.LEFT)
+
+        ttk.Button(wrap, text="Attach",
+                   command=self._attach).pack(anchor="w", pady=(4, 0))
+
+        ttk.Button(wrap, text="Close",
+                   command=self.destroy).pack(side=tk.RIGHT, pady=(8, 0))
+
+        self._refresh_attached()
+
+    def _refresh_attached(self):
+        for iid in self._attached_tree.get_children():
+            self._attached_tree.delete(iid)
+        for r in self._dm.list_examiners_for_exam(self._exam_id):
+            self._attached_tree.insert(
+                "", tk.END,
+                iid=str(r["examiner_id"]),
+                values=(r.get("name", ""),
+                        r.get("institution", "") or "—",
+                        r.get("role", "") or "—"),
+            )
+
+    def _attach(self):
+        label = self._examiner_var.get().strip()
+        if not label:
+            messagebox.showinfo("Attach", "Pick an examiner first.",
+                                parent=self)
+            return
+        examiner_id = self._examiner_lookup.get(label)
+        if not examiner_id:
+            messagebox.showerror("Attach", "Unknown examiner.", parent=self)
+            return
+        ok = self._dm.attach_external_examiner(
+            self._exam_id, examiner_id, self._role_var.get().strip(),
+        )
+        if not ok:
+            messagebox.showerror(
+                "Attach", "Could not save the attachment — see logs.",
+                parent=self)
+            return
+        self._role_var.set("")
+        self._examiner_var.set("")
+        self._refresh_attached()
+
+    def _remove_selected(self):
+        sel = self._attached_tree.selection()
+        if not sel:
+            messagebox.showinfo("Remove", "Pick an attached examiner.",
+                                parent=self)
+            return
+        examiner_id = int(sel[0])
+        if not messagebox.askyesno(
+                "Remove", "Detach this examiner from the exam?",
+                parent=self):
+            return
+        self._dm.detach_external_examiner(self._exam_id, examiner_id)
+        self._refresh_attached()
