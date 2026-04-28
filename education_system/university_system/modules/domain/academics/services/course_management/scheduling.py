@@ -294,6 +294,124 @@ def _pick_instructor(cursor, start_time, end_time, days, semester, year, exclude
             print("Please enter a valid number.")
 
 
+def _push_in_app_notification(user_id, title: str, message: str,
+                              source_id, priority: str = "normal") -> bool:
+    """Best-effort in-app notification via the central NotificationsService.
+
+    Mirrors the helper used by the exam scheduler so a schedule change
+    appears alongside exam updates / cancellations in users' inboxes.
+    Never raises; returns False if the service is unavailable.
+    """
+    if user_id is None:
+        return False
+    try:
+        from education_system.university_system.modules.domain.communications.notifications.services.notifications_service import (
+            NotificationsService,
+        )
+        NotificationsService().create_notification(
+            user_id=str(user_id),
+            channel="academic",
+            priority=priority,
+            title=title,
+            message=message,
+            source_system="course_management",
+            source_id=str(source_id) if source_id is not None else None,
+        )
+        return True
+    except Exception as exc:
+        # Notifications are nice-to-have — never block the schedule write.
+        print(f"  Note: in-app notification skipped for {user_id}: {exc}")
+        return False
+
+
+def _notify_schedule_change(cursor, course_id, semester, year, start_time,
+                            end_time, days, classroom, action_type,
+                            change_details=""):
+    """Fan a schedule change out to every enrolled student via email +
+    in-app notification. The instructor is handled separately by the
+    legacy ``_send_schedule_email`` so this only covers the student
+    side, avoiding double-emails to instructors who happen to also be
+    enrolled somewhere.
+    """
+    try:
+        cursor.execute(
+            "SELECT COALESCE(course_code, code), course_name "
+            "FROM courses WHERE id = ?",
+            (course_id,),
+        )
+        row = cursor.fetchone()
+        if not row:
+            return
+        module_code, course_name = row[0], (row[1] if len(row) > 1 else "")
+    except Exception:
+        return
+
+    try:
+        cursor.execute(
+            "SELECT s.student_id, s.first_name, s.last_name, "
+            "       s.email_address "
+            "FROM student_modules sm "
+            "JOIN students s ON s.student_id = sm.student_id "
+            "WHERE sm.module_code = ? "
+            "  AND COALESCE(sm.status,'') != 'cancelled'",
+            (module_code,),
+        )
+        students = cursor.fetchall()
+    except Exception:
+        students = []
+
+    if not students:
+        return
+
+    priority = "high" if action_type.lower() != "created" else "normal"
+    title = f"{module_code} schedule {action_type.lower()}"
+    summary = (
+        f"{module_code} - {course_name or ''}\n"
+        f"{semester} {year}\n"
+        f"{start_time or 'TBA'}–{end_time or 'TBA'} on {days or 'TBA'}"
+        f"\nRoom: {classroom or 'TBA'}"
+    )
+    if change_details:
+        summary += f"\n\nChanges: {change_details}"
+
+    # Email each student (best-effort) and push the in-app row.
+    try:
+        from education_system.university_system.infrastructure.email import send_template_email
+    except Exception:
+        send_template_email = None
+
+    sent = 0
+    for sid, first_name, last_name, email in students:
+        _push_in_app_notification(sid, title, summary, course_id, priority)
+        if send_template_email and email:
+            try:
+                send_template_email(
+                    'user_management/schedule_notification',
+                    email,
+                    {
+                        'recipient_name': f"{first_name or ''} {last_name or ''}".strip(),
+                        'course_code': module_code,
+                        'course_name': course_name or '',
+                        'semester': semester,
+                        'year': str(year),
+                        'days': days or 'TBA',
+                        'start_time': start_time or 'TBA',
+                        'end_time': end_time or 'TBA',
+                        'classroom': classroom or 'TBA',
+                        'instructor_name': '',  # student-facing copy
+                        'action_type': action_type,
+                        'action_type_lower': action_type.lower(),
+                        'change_details': change_details,
+                    },
+                )
+                sent += 1
+            except Exception as exc:
+                print(f"  Note: schedule email to {email} failed: {exc}")
+    if sent:
+        print(f"  Schedule {action_type.lower()} email sent to "
+              f"{sent}/{len(students)} students")
+
+
 def _send_schedule_email(cursor, course_id, semester, year, start_time, end_time,
                          days, classroom, instructor_id, action_type, change_details=""):
     """Send schedule notification email to the instructor (if assigned)."""
@@ -524,6 +642,12 @@ def create_course_schedule(auth):
         # Send notification email to instructor
         _send_schedule_email(cursor, course_id, semester, year, start_time, end_time,
                             days, classroom, instructor_id, "Created")
+
+        # Notify enrolled students by email + in-app notification.
+        _notify_schedule_change(
+            cursor, course_id, semester, year, start_time, end_time,
+            days, classroom, "Created",
+        )
 
         return True
 
@@ -841,6 +965,12 @@ def update_schedule(auth):
             _send_schedule_email(cursor, course_id, semester, year, new_start, new_end,
                                 new_days, new_classroom, new_instructor_id, "Updated",
                                 change_details)
+
+        # Notify enrolled students of the change.
+        _notify_schedule_change(
+            cursor, course_id, semester, year, new_start, new_end,
+            new_days, new_classroom, "Updated", change_details,
+        )
 
         return True
 
