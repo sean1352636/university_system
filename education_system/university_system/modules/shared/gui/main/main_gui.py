@@ -176,9 +176,22 @@ class UnifiedManagementGUI:
     def run(self):
         """Start the Tkinter main loop."""
         try:
+            self._maybe_open_email_after_password_change()
             self.root.mainloop()
         except Exception as e:
             logger.error(f"Error running main loop: {e}")
+
+    def _maybe_open_email_after_password_change(self):
+        """If the login flow flagged the user as just having reset their
+        password, auto-open the in-app email manager so they can read the
+        confirmation message that was just sent."""
+        cu = getattr(self.auth, "current_user", None) or {}
+        if not cu.pop("_open_email_after_login", False):
+            return
+        try:
+            self.root.after(300, self.show_email_manager)
+        except Exception as exc:
+            logger.debug("Could not auto-open email manager: %s", exc)
 
 from education_system.university_system.modules.shared.gui.main.core.gui_setup import (
     create_fallback_interface,

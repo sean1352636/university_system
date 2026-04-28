@@ -558,7 +558,58 @@ class UniversalLoginWindow(tk.Tk):
             self._forgot_q_error_var.set(str(exc))
             return
 
-        self._show_temp_password(result)
+        if result.get("delivered_via_email"):
+            self._show_temp_password_emailed(result)
+        else:
+            self._show_temp_password(result)
+
+    def _show_temp_password_emailed(self, reset_info: dict):
+        """MFA flow: confirm temp password was sent to the user's email."""
+        for w in self.winfo_children():
+            w.destroy()
+        self.geometry("500x420")
+
+        header = tk.Frame(self, bg="#27ae60", height=70)
+        header.pack(fill="x")
+        header.pack_propagate(False)
+        tk.Label(
+            header, text="Check Your Email",
+            font=("Helvetica", 18, "bold"), fg="white", bg="#27ae60",
+        ).pack(expand=True)
+
+        card = tk.Frame(self, bg=_CARD_BG, bd=1, relief="solid", padx=40, pady=30)
+        card.pack(padx=50, pady=30, fill="x")
+
+        email = reset_info.get("email") or ""
+        masked = email
+        if "@" in email:
+            local, _, domain = email.partition("@")
+            if len(local) > 2:
+                masked = local[0] + "*" * (len(local) - 2) + local[-1] + "@" + domain
+
+        tk.Label(
+            card,
+            text="Because MFA is enabled on this account, your temporary "
+                 "password has been sent to your registered email address:",
+            font=("Helvetica", 11), bg=_CARD_BG, wraplength=380, justify="left",
+        ).pack(pady=(0, 10))
+
+        tk.Label(
+            card, text=masked, font=("Helvetica", 12, "bold"),
+            bg=_CARD_BG, fg="#2c3e50",
+        ).pack(pady=(0, 15))
+
+        tk.Label(
+            card,
+            text="Use that password to log in. You'll be asked to set a "
+                 "new password on first login.",
+            font=("Helvetica", 10), bg=_CARD_BG, fg="#555",
+            wraplength=380, justify="left",
+        ).pack(pady=(0, 20))
+
+        ttk.Button(
+            card, text="Back to Login", command=self._build_login_ui,
+        ).pack(fill="x", ipady=6)
 
     def _show_temp_password(self, reset_info: dict):
         """Step 3: Show the temporary password to the user (masked by default)."""
@@ -826,12 +877,42 @@ class UniversalLoginWindow(tk.Tk):
             self._build_login_ui()
             return
 
+        # Send a confirmation email and flag the session so the system GUI
+        # opens the email manager once it loads.
+        self._send_change_confirmation_email(new_user_info)
+        new_user_info["_open_email_after_login"] = True
+
         messagebox.showinfo(
             "Password Changed",
-            "Your password has been changed successfully.",
+            "Your password has been changed successfully.\n"
+            "A confirmation email has been sent to your inbox.",
             parent=self,
         )
         self._proceed_after_login(new_user_info)
+
+    def _send_change_confirmation_email(self, user_info: dict):
+        """Send a 'password changed' confirmation to the user's email."""
+        email = user_info.get("email")
+        if not email:
+            return
+        try:
+            from education_system.shared.email.email_service import EmailService
+            svc = EmailService()
+            if not svc.is_configured:
+                return
+            display = user_info.get("display_name") or user_info.get("username", "")
+            subject = "Your password was changed"
+            body = (
+                f"Hello {display},\n\n"
+                "This is confirmation that your Education System password "
+                "was just changed.\n\n"
+                "If you did not make this change, contact an administrator "
+                "immediately.\n\n"
+                "— Education System"
+            )
+            svc.send_email(email, subject, body)
+        except Exception as exc:
+            logger.debug("Confirmation email failed: %s", exc)
 
     def _proceed_after_login(self, user_info: dict):
         """Continue login flow after password is confirmed OK."""

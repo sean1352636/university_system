@@ -367,6 +367,28 @@ class ForgotPasswordService:
                 "email": user["email"],
             }
 
+            # If MFA is enabled, treat the user's email as the second-factor
+            # channel: deliver the temp password there and don't expose it
+            # on the local screen. Falls back to on-screen display only when
+            # email delivery isn't possible (no MFA, no email, or SMTP off).
+            mfa_enabled = self._is_mfa_enabled(user["id"])
+            if mfa_enabled and user["email"]:
+                emailed = self._email_temp_password(result)
+                if emailed:
+                    result["delivered_via_email"] = True
+                    result["temp_password"] = None  # don't leak to caller
+                    self._audit("sq_temp_emailed", username=username,
+                                user_id=user["id"], ip_address=ip_address)
+                else:
+                    logger.warning(
+                        "MFA enabled for '%s' but temp-password email failed; "
+                        "falling back to on-screen display",
+                        username,
+                    )
+                    result["delivered_via_email"] = False
+            else:
+                result["delivered_via_email"] = False
+
             self._send_notifications(result)
             return result
         finally:
@@ -463,6 +485,47 @@ class ForgotPasswordService:
                 logger.info("Admin notification sent for account reset of '%s'", reset_info["username"])
             else:
                 logger.warning("Failed to send admin notification: %s", result.get("error"))
+
+    def _is_mfa_enabled(self, user_id: int) -> bool:
+        try:
+            from education_system.shared.auth.mfa_service import MFAService
+            return MFAService(self._db_path).is_mfa_enabled(user_id)
+        except Exception as exc:
+            logger.debug("MFA check failed for user_id=%d: %s", user_id, exc)
+            return False
+
+    def _email_temp_password(self, reset_info: dict) -> bool:
+        """Email the temp password to the user. Returns True on success."""
+        try:
+            from education_system.shared.email.email_service import EmailService
+            svc = EmailService()
+            if not svc.is_configured:
+                return False
+
+            subject = "Your temporary password"
+            body = (
+                f"Hello {reset_info['display_name']},\n\n"
+                f"A password reset was requested for your account "
+                f"'{reset_info['username']}'. Your temporary password is:\n\n"
+                f"    {reset_info['temp_password']}\n\n"
+                "Use it to log in. You will be required to set a new "
+                "password on first login.\n\n"
+                "If you did not request this reset, contact an administrator "
+                "immediately.\n\n"
+                "— Education System"
+            )
+            result = svc.send_email(reset_info["email"], subject, body)
+            if result.get("success"):
+                logger.info(
+                    "Temp password emailed to '%s' for user '%s'",
+                    reset_info["email"], reset_info["username"],
+                )
+                return True
+            logger.warning("Temp password email failed: %s", result.get("error"))
+            return False
+        except Exception as exc:
+            logger.warning("Temp password email errored: %s", exc)
+            return False
 
     def _send_student_notification(self, svc, reset_info: dict, timestamp: str):
         user_email = reset_info.get("email")
