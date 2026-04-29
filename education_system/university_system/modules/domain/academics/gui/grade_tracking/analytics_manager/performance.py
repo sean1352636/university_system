@@ -1,10 +1,25 @@
-"""Performance analysis methods for AnalyticsManager."""
+"""Performance analysis methods for AnalyticsManager.
+
+The aggregation queries below deliberately UNION the legacy
+``grades`` table with the newer ``assignment_submissions`` table —
+splitting them would change the meaning of the per-student averages
+this view shows. New flat-row callers should go through
+``grade_tracking.integrations.fetch_assignment_submissions``
+instead of adding more raw ``FROM assignment_submissions`` queries
+here.
+"""
 
 import tkinter as tk
 from tkinter import messagebox
 
 from education_system.university_system.infrastructure.database.db import sqlite3
 from education_system.university_system.modules.domain.academics.gui.grade_tracking.analytics_manager.constants import get_connection
+# Re-exported so future analytics tabs can pull flat submission rows
+# without reaching back into raw SQL.
+from education_system.university_system.modules.domain.academics.gui.grade_tracking.integrations.submissions import (  # noqa: F401
+    fetch_assignment_submissions,
+    fetch_graded_submission_count,
+)
 
 
 def _open_connection():

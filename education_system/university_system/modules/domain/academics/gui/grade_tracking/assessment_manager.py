@@ -16,6 +16,19 @@ from education_system.university_system.modules.shared.constants import paths
 from education_system.university_system.modules.domain.academics.services.assessment_service import AssessmentAssignmentService
 from education_system.university_system.modules.domain.academics.gui.grade_tracking.utils import ensure_column_exists
 
+# Mirror grade_manager's immutable-audit pattern so assessment
+# mutations (create / update / delete) leave the same trail FERPA
+# expects for grade mutations.
+try:
+    from education_system.university_system.infrastructure.security.audit_helpers import (
+        safe_log_security_event,
+        get_gui_context,
+    )
+    from education_system.university_system.infrastructure.security.immutable_audit_log import AuditAction
+    IMMUTABLE_AUDIT_AVAILABLE = True
+except ImportError:
+    IMMUTABLE_AUDIT_AVAILABLE = False
+
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
 _CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
@@ -626,9 +639,28 @@ class AssessmentManager:
                     """, (name, assessment_type, module_code, max_points_float, weight_float,
                           full_due, duration_int, status, description, rubric,
                           datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                    new_assessment_id = cursor.lastrowid
                     conn.commit()
                 finally:
                     conn.close()
+
+                if IMMUTABLE_AUDIT_AVAILABLE:
+                    user_id, session_id = get_gui_context()
+                    safe_log_security_event(
+                        action=AuditAction.RECORD_CREATE,
+                        user_id=user_id,
+                        resource_type='assessment',
+                        resource_id=str(new_assessment_id),
+                        session_id=session_id,
+                        details={
+                            'assessment_name': name,
+                            'assessment_type': assessment_type,
+                            'module_code': module_code,
+                            'max_points': max_points_float,
+                            'weight': weight_float,
+                            'due_date': full_due,
+                        },
+                    )
 
                 messagebox.showinfo("Success", "Assessment added successfully!")
                 dialog.destroy()
@@ -775,6 +807,23 @@ class AssessmentManager:
                     finally:
                         update_conn.close()
 
+                    if IMMUTABLE_AUDIT_AVAILABLE:
+                        user_id, session_id = get_gui_context()
+                        safe_log_security_event(
+                            action=AuditAction.RECORD_UPDATE,
+                            user_id=user_id,
+                            resource_type='assessment',
+                            resource_id=str(real_id),
+                            session_id=session_id,
+                            details={
+                                'assessment_name': name,
+                                'assessment_type': assessment_type,
+                                'module_code': module_code,
+                                'max_points': max_pts,
+                                'due_date': due,
+                            },
+                        )
+
                     messagebox.showinfo("Success", "Assessment updated successfully!")
                     dialog.destroy()
                     self.refresh_assessments()
@@ -829,6 +878,18 @@ class AssessmentManager:
                 cursor.execute("DELETE FROM assessments WHERE assessment_id = ?", (raw_id,))
 
             conn.commit()
+
+            if IMMUTABLE_AUDIT_AVAILABLE:
+                user_id, session_id = get_gui_context()
+                safe_log_security_event(
+                    action=AuditAction.RECORD_DELETE,
+                    user_id=user_id,
+                    resource_type='assessment',
+                    resource_id=str(raw_id),
+                    session_id=session_id,
+                    details={'raw_id': str(raw_id), 'cascade': True},
+                )
+
             messagebox.showinfo("Success", "Assessment deleted successfully!")
             self.refresh_assessments()
             if hasattr(self.app, 'populate_filter_combos'):

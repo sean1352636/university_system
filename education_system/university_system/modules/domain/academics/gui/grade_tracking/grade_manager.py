@@ -1524,11 +1524,19 @@ class GradeManager:
         ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
 
     def calculate_all_gpas(self):
-        """Calculate GPAs for all students"""
-        try:
-            cursor = self.get_safe_cursor()
+        """Calculate GPAs for all students.
 
-            # Get all students
+        Delegates per-student GPA math to
+        ``grading.grade_calculation.gpa.calculate_student_gpa`` so the
+        formula stays in one place; this method only handles the loop
+        and the result-dialog rendering.
+        """
+        try:
+            from education_system.university_system.modules.domain.academics.grading.grade_calculation.gpa import (
+                calculate_student_gpa,
+            )
+
+            cursor = self.get_safe_cursor()
             cursor.execute("SELECT student_id, first_name, last_name FROM students")
             students = cursor.fetchall()
 
@@ -1539,43 +1547,13 @@ class GradeManager:
                 student_id = student[0]
                 name = f"{student[1]} {student[2]}"
 
-                # Get all grades for student with module credits
-                cursor.execute("""
-                    SELECT g.letter_grade, m.credits
-                    FROM grades g
-                    JOIN assessments a ON g.assessment_id = a.assessment_id
-                    JOIN modules m ON a.module_code = m.module_code
-                    WHERE g.student_id = ?
-                """, (student_id,))
-
-                grades = cursor.fetchall()
-
-                if not grades:
+                gpa, credits, _ = calculate_student_gpa(cursor, student_id)
+                if gpa is None:
                     results.append(f"{name}: No grades found")
                     continue
 
-                # Calculate weighted GPA
-                total_grade_points = 0
-                total_credits = 0
-
-                for grade in grades:
-                    letter_grade = grade[0]
-                    credits = grade[1] if grade[1] else 1
-
-                    gpa_value = self.letter_to_gpa(letter_grade)
-                    total_grade_points += gpa_value * credits
-                    total_credits += credits
-
-                if total_credits > 0:
-                    gpa = total_grade_points / total_credits
-
-                    # Update or insert module grades (using a summary approach)
-                    # Note: This is a simplified version - in production you might want
-                    # to calculate final grades per module instead of overall GPA
-                    results.append(f"{name}: GPA = {gpa:.2f}")
-                    updated_count += 1
-                else:
-                    results.append(f"{name}: No credits found")
+                results.append(f"{name}: GPA = {gpa:.2f} ({credits} module(s))")
+                updated_count += 1
 
             self.safe_commit()
 

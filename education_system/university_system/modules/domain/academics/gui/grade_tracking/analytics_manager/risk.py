@@ -38,66 +38,50 @@ class RiskMixin:
         return value if isinstance(value, (int, float)) else default
 
     def identify_at_risk_students(self):
-        """Identify students at risk based on grades and performance"""
+        """Identify students at risk based on grades and performance.
+
+        Delegates risk scoring to
+        ``grading.predictive_analytics.calculate_dropout_risk_score``
+        (which factors in GPA, failed modules, submission rate and
+        declining-performance trend) so the canonical formula is used
+        everywhere instead of this view's earlier ad-hoc thresholds.
+        """
+        from education_system.university_system.modules.domain.academics.grading.predictive_analytics import (
+            calculate_dropout_risk_score,
+            calculate_risk_factors,
+        )
+
         conn = None
         try:
             raw_conn, conn = _open_connection()
             cursor = conn.cursor()
 
-            # Calculate risk scores for all students
-            cursor.execute("""
-                SELECT
-                    s.student_id,
-                    s.first_name || ' ' || s.last_name AS name,
-                    COUNT(DISTINCT g.assessment_id) AS total_assessments,
-                    AVG(g.score / a.max_points * 100) AS avg_percentage,
-                    SUM(CASE WHEN g.letter_grade IN ('F', 'D-', 'D') THEN 1 ELSE 0 END) AS poor_grades,
-                    COUNT(CASE WHEN g.submission_date > a.due_date THEN 1 END) AS late_submissions
-                FROM students s
-                LEFT JOIN grades g ON s.student_id = g.student_id
-                LEFT JOIN assessments a ON g.assessment_id = a.assessment_id
-                GROUP BY s.student_id, s.first_name, s.last_name
-                HAVING COUNT(g.grade_id) > 0
-            """)
-
+            cursor.execute(
+                "SELECT student_id, first_name || ' ' || last_name AS name FROM students"
+            )
             students = cursor.fetchall()
             at_risk_students = []
 
-            for student_id, name, total_assessments, avg_percentage, poor_grades, late_submissions in (
-                self._pad_row(row, 6, ["", "", 0, 0.0, 0, 0]) for row in students
-            ):
-                total_assessments = self._num(total_assessments, 0)
-                avg_percentage = self._num(avg_percentage, 0.0)
-                poor_grades = self._num(poor_grades, 0)
-                late_submissions = self._num(late_submissions, 0)
-                risk_score = 0
-                risk_factors = []
-
-                # Calculate risk score
-                if avg_percentage and avg_percentage < 60:
-                    risk_score += 40
-                    risk_factors.append(f"Low average: {avg_percentage:.1f}%")
-                elif avg_percentage and avg_percentage < 70:
-                    risk_score += 20
-                    risk_factors.append(f"Below average: {avg_percentage:.1f}%")
-
-                if poor_grades and poor_grades >= 3:
-                    risk_score += 30
-                    risk_factors.append(f"{poor_grades} failing grades")
-                elif poor_grades and poor_grades >= 1:
-                    risk_score += 15
-                    risk_factors.append(f"{poor_grades} poor grade(s)")
-
-                if late_submissions and late_submissions >= 3:
-                    risk_score += 20
-                    risk_factors.append(f"{late_submissions} late submissions")
-                elif late_submissions and late_submissions >= 1:
-                    risk_score += 10
-                    risk_factors.append(f"{late_submissions} late submission(s)")
-
-                if risk_score >= 30:  # Threshold for at-risk
-                    risk_level = "High" if risk_score >= 60 else "Medium"
-                    at_risk_students.append((student_id, name, risk_score, risk_level, ", ".join(risk_factors)))
+            for student_id, name in students:
+                try:
+                    risk_score = calculate_dropout_risk_score(cursor, student_id)
+                except Exception:
+                    continue
+                if risk_score < 30:
+                    continue
+                risk_level = "High" if risk_score >= 60 else "Medium"
+                try:
+                    factors = calculate_risk_factors(cursor, student_id) or {}
+                except Exception:
+                    factors = {}
+                # ``calculate_risk_factors`` returns a dict of contributing
+                # factors; flatten into a one-line summary.
+                factors_summary = ", ".join(
+                    f"{k}: {v}" for k, v in factors.items() if v not in (None, 0, "")
+                )
+                at_risk_students.append(
+                    (student_id, name, risk_score, risk_level, factors_summary)
+                )
 
             if not at_risk_students:
                 messagebox.showinfo("At-Risk Students", "No students currently identified as at-risk.")

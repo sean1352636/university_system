@@ -1,4 +1,15 @@
-"""Module/course management"""
+"""Module/course management.
+
+This view holds full CRUD over the local ``modules`` and
+``student_modules`` tables for grade-tracking purposes. The
+canonical source of module / enrollment data is
+``services/course_management`` (``courses.py``, ``scheduling.py``);
+however that layer is currently CLI-bound (``input()`` / ``print()``
+driven, ``auth``-stamped) so the GUI cannot delegate writes to it
+without a parallel non-interactive service surface. New callers that
+only *read* module rows should use ``services/course_management``
+queries directly rather than duplicating SELECTs here.
+"""
 
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
@@ -18,6 +29,18 @@ from education_system.university_system.modules.domain.academics.gui.grade_track
 # Use centralized path configuration
 DEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
 _CENTRALDEFAULT_DB_PATH = paths.DEFAULT_DB_PATH
+
+# Mirror grade_manager's immutable-audit pattern so module mutations
+# leave the same trail FERPA expects for grade mutations.
+try:
+    from education_system.university_system.infrastructure.security.audit_helpers import (
+        safe_log_security_event,
+        get_gui_context,
+    )
+    from education_system.university_system.infrastructure.security.immutable_audit_log import AuditAction
+    IMMUTABLE_AUDIT_AVAILABLE = True
+except ImportError:
+    IMMUTABLE_AUDIT_AVAILABLE = False
 
 # Optional imports with fallbacks
 try:
@@ -773,6 +796,26 @@ class ModuleManager:
                      course, semester, year))
 
                 conn.commit()
+
+                if IMMUTABLE_AUDIT_AVAILABLE:
+                    user_id, session_id = get_gui_context()
+                    safe_log_security_event(
+                        action=AuditAction.RECORD_CREATE,
+                        user_id=user_id,
+                        resource_type='module',
+                        resource_id=module_code,
+                        session_id=session_id,
+                        details={
+                            'module_code': module_code,
+                            'module_name': module_name,
+                            'module_type': module_type,
+                            'credits': credits,
+                            'course': course,
+                            'semester': semester,
+                            'year': year,
+                        },
+                    )
+
                 messagebox.showinfo("Success", f"Module '{module_code}' created successfully",
                                   parent=dialog)
 
@@ -945,6 +988,26 @@ class ModuleManager:
                      course, semester, year, module_code))
 
                 conn.commit()
+
+                if IMMUTABLE_AUDIT_AVAILABLE:
+                    user_id, session_id = get_gui_context()
+                    safe_log_security_event(
+                        action=AuditAction.RECORD_UPDATE,
+                        user_id=user_id,
+                        resource_type='module',
+                        resource_id=module_code,
+                        session_id=session_id,
+                        details={
+                            'module_code': module_code,
+                            'module_name': module_name,
+                            'module_type': module_type,
+                            'credits': credits,
+                            'course': course,
+                            'semester': semester,
+                            'year': year,
+                        },
+                    )
+
                 messagebox.showinfo("Success", f"Module '{module_code}' updated successfully",
                                   parent=dialog)
 
@@ -1054,6 +1117,18 @@ class ModuleManager:
             cursor.execute('DELETE FROM modules WHERE module_code = ?', (module_code,))
 
             conn.commit()
+
+            if IMMUTABLE_AUDIT_AVAILABLE:
+                user_id, session_id = get_gui_context()
+                safe_log_security_event(
+                    action=AuditAction.RECORD_DELETE,
+                    user_id=user_id,
+                    resource_type='module',
+                    resource_id=module_code,
+                    session_id=session_id,
+                    details={'module_code': module_code, 'cascade': True},
+                )
+
             messagebox.showinfo("Success", f"Module '{module_code}' deleted successfully")
 
             # Refresh the module list
