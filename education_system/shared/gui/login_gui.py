@@ -269,6 +269,14 @@ class UniversalLoginWindow(tk.Tk):
                     pass
 
             if user_email and username:
+                # Mask email for display
+                parts = user_email.split("@")
+                masked_email = (
+                    parts[0][:2] + "***@" + parts[1]
+                    if len(parts) == 2
+                    else user_email
+                )
+
                 # Generate a 6-digit code and hash it with PBKDF2-HMAC-SHA256
                 # so the in-memory pending-OTP tuple never holds a bare digest
                 # of user-supplied data (py/weak-sensitive-data-hashing).
@@ -302,16 +310,8 @@ class UniversalLoginWindow(tk.Tk):
                     email_fallback_code = code
             else:
                 logger.info("No email found for MFA (email=%s, username=%s)", user_email, username)
-
-                # Mask email for display
-                parts = user_email.split("@")
-                masked_email = (
-                    parts[0][:2] + "***@" + parts[1]
-                    if len(parts) == 2
-                    else user_email
-                )
         except Exception as exc:
-            logger.debug("MFA email lookup failed: %s", exc)
+            logger.warning("MFA email lookup failed: %s", exc, exc_info=True)
 
         for w in self.winfo_children():
             w.destroy()

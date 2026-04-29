@@ -163,18 +163,63 @@ class UserAuth:
         # with a recovery code, since the code is itself a one-time second
         # factor and they no longer have access to the authenticator.
         if not recovery_used:
+            mfa_required = False
             try:
                 from education_system.shared.auth.mfa_service import MFAService
                 mfa_svc = MFAService(self._db_path)
                 if mfa_svc.is_mfa_enabled(user["id"]):
-                    return {
-                        "mfa_required": True,
-                        "user_id": user["id"],
-                        "username": user["username"],
-                        "password_expired": password_expired,
-                    }
+                    mfa_required = True
             except ImportError:
                 pass
+
+            # Also honour MFA enabled via the university subsystem
+            # (mfa_user_settings / mfa_methods in student_records.db).
+            # The university setup wizard writes there but not into the
+            # shared mfa_secrets table, so without this fall-through the
+            # login screen would silently bypass MFA.
+            if not mfa_required:
+                try:
+                    from education_system.university_system.infrastructure.database.db import (
+                        get_connection,
+                    )
+                    uconn = get_connection()
+                    try:
+                        urow = uconn.execute(
+                            "SELECT id FROM user_accounts WHERE username = ?",
+                            (user["username"],),
+                        ).fetchone()
+                        if urow:
+                            ua_id = urow[0] if isinstance(urow, tuple) else urow["id"]
+                            srow = uconn.execute(
+                                "SELECT mfa_enabled, COALESCE(verification_disabled, 0) AS off "
+                                "FROM mfa_user_settings WHERE user_id = ?",
+                                (ua_id,),
+                            ).fetchone()
+                            if srow and srow["mfa_enabled"] and not srow["off"]:
+                                mrow = uconn.execute(
+                                    "SELECT 1 FROM mfa_methods "
+                                    "WHERE user_id = ? AND is_enabled = 1 LIMIT 1",
+                                    (ua_id,),
+                                ).fetchone()
+                                if mrow:
+                                    mfa_required = True
+                    finally:
+                        uconn.close()
+                except ImportError:
+                    pass
+                except Exception as exc:
+                    logger.warning(
+                        "University MFA lookup failed for %s: %s",
+                        user["username"], exc, exc_info=True,
+                    )
+
+            if mfa_required:
+                return {
+                    "mfa_required": True,
+                    "user_id": user["id"],
+                    "username": user["username"],
+                    "password_expired": password_expired,
+                }
 
         # Enforce MFA for privileged roles
         user_roles = {s["role"] for s in systems}
