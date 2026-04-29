@@ -458,9 +458,43 @@ class ExamIntegrityMixin:
                 VALUES (?, ?, ?, ?, 0, ?)
                 ''', (assessment_id, student_id, event_type, event_data_str, timestamp))
 
+                # Pull a richer student/assessment record for the legal case
+                row = cursor.execute(
+                    """
+                    SELECT s.first_name, s.last_name, s.email_address,
+                           a.assessment_name
+                    FROM students s
+                    LEFT JOIN assessments a ON a.id = ?
+                    WHERE s.student_id = ?
+                    """,
+                    (assessment_id, student_id),
+                ).fetchone()
+
                 conn.commit()
             finally:
                 conn.close()
+
+            # Mirror serious integrity events as a legal case so the
+            # academic-misconduct trail lives alongside the per-event log.
+            try:
+                from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations import (
+                    open_integrity_case,
+                )
+                if row:
+                    first, last, email, assessment_title = row
+                else:
+                    first, last, email, assessment_title = ("", "", "", str(assessment_id))
+                open_integrity_case(
+                    student_id=str(student_id),
+                    student_name=f"{first or ''} {last or ''}".strip()
+                        or str(student_id),
+                    student_email=email or "",
+                    assessment_title=assessment_title or str(assessment_id),
+                    event_type=event_type,
+                    details=event_data_str,
+                )
+            except Exception as legal_err:
+                print(f"Warning: failed to mirror integrity event to legal: {legal_err}")
 
             print(f"Integrity event logged: {event_type} for student {student_id}")
             return True

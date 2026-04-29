@@ -16,6 +16,26 @@ from education_system.university_system.modules.domain.academics.gui.assignment_
     fetch_module_attendance,
     fetch_attendance_warning,
 )
+from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations.finance import (
+    calc_late_penalty,
+    record_late_penalty,
+)
+from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations.helpdesk import (
+    escalate_dispute_to_helpdesk,
+)
+from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations.legal import (
+    open_integrity_case,
+)
+from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations.transcripts import (
+    sync_grade_to_gradebook,
+)
+from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations.kpi import (
+    push_assignment_kpi,
+)
+from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations.calendar_sync import (
+    sync_assignment_to_calendar,
+    remove_assignment_from_calendar,
+)
 
 __all__ = [
     "fetch_child_assignments",
@@ -23,4 +43,12 @@ __all__ = [
     "fetch_module_resources",
     "fetch_module_attendance",
     "fetch_attendance_warning",
+    "calc_late_penalty",
+    "record_late_penalty",
+    "escalate_dispute_to_helpdesk",
+    "open_integrity_case",
+    "sync_grade_to_gradebook",
+    "push_assignment_kpi",
+    "sync_assignment_to_calendar",
+    "remove_assignment_from_calendar",
 ]

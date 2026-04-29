@@ -305,6 +305,31 @@ class GradingManager:
                 except Exception as email_error:
                     print(f"Warning: Failed to send grade email: {email_error}")
 
+            # Mirror final grade into the gradebook so transcripts pick it up
+            if submission_details:
+                try:
+                    from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations import (
+                        sync_grade_to_gradebook,
+                        push_assignment_kpi,
+                    )
+                    grader = (
+                        self.auth.current_user.get('username')
+                        if self.auth and self.auth.current_user else None
+                    )
+                    sync_grade_to_gradebook(
+                        student_id=submission_details[0],
+                        module_code=submission_details[5],
+                        assessment_name=submission_details[4],
+                        grade_value=grade,
+                        max_marks=max_marks,
+                        instructor=grader,
+                        is_final=True,
+                    )
+                    # Best-effort KPI push — runs only if a matching KPI is registered
+                    push_assignment_kpi("Average Assignment Grade", percentage)
+                except Exception as gradebook_err:
+                    print(f"Warning: gradebook/KPI sync failed: {gradebook_err}")
+
             messagebox.showinfo("Success", f"Grade submitted: {percentage:.1f}% ({grade}/{max_marks})")
 
             # Refresh the submissions list

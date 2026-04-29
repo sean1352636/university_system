@@ -239,8 +239,34 @@ class GradeDisputeManager:
                     evidence_path,
                     datetime.now().isoformat(),
                 ))
+                dispute_id = cursor.lastrowid
                 conn.commit()
-                messagebox.showinfo("Success", "Grade dispute submitted successfully.")
+
+                # Escalate to the helpdesk so support can track it too
+                ticket_id = None
+                try:
+                    from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations import (
+                        escalate_dispute_to_helpdesk,
+                    )
+                    user = (self.auth.current_user or {}) if self.auth else {}
+                    ticket_id = escalate_dispute_to_helpdesk(
+                        user_id=user.get('id'),
+                        student_id=student_id,
+                        dispute_id=dispute_id,
+                        assignment_title=info.get('assignment_title') or sel,
+                        reason=reason,
+                    )
+                except Exception as helpdesk_err:
+                    import logging
+                    logging.warning(
+                        "helpdesk escalation failed for dispute %s: %s",
+                        dispute_id, helpdesk_err,
+                    )
+
+                msg = "Grade dispute submitted successfully."
+                if ticket_id:
+                    msg += f"\nHelpdesk ticket #{ticket_id} opened."
+                messagebox.showinfo("Success", msg)
                 self.show_my_disputes()
             finally:
                 conn.close()

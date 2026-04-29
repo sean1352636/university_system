@@ -466,6 +466,23 @@ class CreationMixin:
                 import logging
                 logging.warning(f"Failed to send assignment notification emails: {e}")
 
+            # Mirror the deadline into the academic calendar
+            try:
+                from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations import (
+                    sync_assignment_to_calendar,
+                )
+                sync_assignment_to_calendar(
+                    assignment_id=assignment_id,
+                    title=self.title_var.get().strip(),
+                    due_date=due_date.strftime('%Y-%m-%d %H:%M:%S'),
+                    module_code=module_code,
+                    created_by=str(self.auth.current_user.get('id'))
+                        if self.auth and self.auth.current_user else None,
+                )
+            except Exception as e:
+                import logging
+                logging.warning(f"Failed to sync assignment to calendar: {e}")
+
             # Update GUI on main thread
             self.root.after(0, lambda: self.show_assignment_status(
                 f"Assignment '{self.title_var.get()}' created successfully! ID: {assignment_id}", "success"))

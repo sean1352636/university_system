@@ -590,6 +590,7 @@ class SubmissionManager:
                           file_name, file_size, file_hash, 'submitted', late_submission, late_days,
                           version_number, 1))
 
+                    new_submission_id = cursor.lastrowid
                     conn.commit()
                 except sqlite3.IntegrityError as ie:
                     error_msg = str(ie)
@@ -622,6 +623,32 @@ class SubmissionManager:
                 )
             except Exception as email_error:
                 print(f"Warning: Failed to send submission emails: {email_error}")
+
+            # Record a pending finance fine for late submissions
+            if late_submission and late_days > 0:
+                try:
+                    from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations import (
+                        calc_late_penalty,
+                        record_late_penalty,
+                    )
+                    submission_id_for_fine = locals().get('new_submission_id')
+                    amount = calc_late_penalty(
+                        days_late=late_days,
+                        max_marks=assignment[6] or 0,
+                        penalty_per_day_pct=float(assignment[13] or 0),
+                    )
+                    if amount > 0 and submission_id_for_fine:
+                        record_late_penalty(
+                            student_id=student_id,
+                            submission_id=submission_id_for_fine,
+                            assignment_title=assignment[2],
+                            days_late=late_days,
+                            amount=amount,
+                            created_by=str(self.auth.current_user.get('id'))
+                                if self.auth and self.auth.current_user else None,
+                        )
+                except Exception as fin_error:
+                    logger.warning(f"Failed to record late-penalty fine: {fin_error}")
 
             # Update GUI on main thread
             success_msg = f"Assignment submitted successfully! Version: {version_number}"
