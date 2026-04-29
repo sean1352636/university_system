@@ -252,17 +252,25 @@ class QueryTab(ttk.Frame):
         # Update info
         self.results_info.set(f"Found {len(results)} log entries")
 
-        # Add results to tree
+        # Add results to tree.
+        # dict.get returns the default only when the key is missing —
+        # NULL columns produce a real `None`, so coerce every cell to
+        # a string before len()/slicing.
+        def _s(value) -> str:
+            return '' if value is None else str(value)
+
         for result in results:
+            details = _s(result.get('details'))
+            details_cell = (details[:100] + '...') if len(details) > 100 else details
             values = (
-                result.get('timestamp', ''),
-                result.get('log_level', ''),
-                result.get('username', ''),
-                result.get('action', ''),
-                result.get('module', ''),
-                result.get('status', ''),
-                result.get('ip_address', ''),
-                (result.get('details', '')[:100] + '...') if len(result.get('details', '')) > 100 else result.get('details', '')
+                _s(result.get('timestamp')),
+                _s(result.get('log_level')),
+                _s(result.get('username')),
+                _s(result.get('action')),
+                _s(result.get('module')),
+                _s(result.get('status')),
+                _s(result.get('ip_address')),
+                details_cell,
             )
 
             # Color code based on level and status
