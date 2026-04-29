@@ -360,6 +360,10 @@ class GradeTrackingApp:
         self.assessments = AssessmentManager(self)
         self.grades = GradeManager(self)
         self.analytics = AnalyticsManager(self)
+        from education_system.university_system.modules.domain.academics.gui.grade_tracking.integrations_manager import (
+            GradeIntegrationsManager,
+        )
+        self.integrations = GradeIntegrationsManager(self)
 
         # Initialize database
         self.initialize_database()

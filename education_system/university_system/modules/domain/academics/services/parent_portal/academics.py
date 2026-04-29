@@ -44,51 +44,31 @@ class AcademicsMixin:
 
             print(f"\nViewing grades for {selected_child[1]} {selected_child[3]}")
 
-            conn = None
-            try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
-                conn.execute("PRAGMA busy_timeout = 30000")
-                cursor = conn.cursor()
+            # Shared data path with the grade-tracking GUI's parent dialog
+            from education_system.university_system.modules.domain.academics.gui.grade_tracking.integrations.parent_portal import (
+                fetch_child_grades,
+            )
+            grades = fetch_child_grades(student_id)
+            if not grades:
+                print("No grades recorded for this student.")
+                return
 
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='student_grades'")
+            current_module = None
+            for row in grades:
+                module_code = row.get("module_code", "")
+                module_name = row.get("module_name", "") or module_code
+                assessment_name = row.get("assessment_name", "")
+                grade_value = row.get("grade", "")
+                grade_date = row.get("grade_date", "")
 
-                if not cursor.fetchone():
-                    print("Grade tracking is not yet set up in the system.")
-                    return
+                if module_code != current_module:
+                    print(f"\n{module_code}: {module_name}")
+                    current_module = module_code
 
-                cursor.execute('''
-                SELECT m.module_code, m.module_name, g.assessment_name, g.grade, g.grade_date
-                FROM student_modules sm
-                JOIN modules m ON sm.module_code = m.module_code
-                LEFT JOIN student_grades g ON sm.student_id = g.student_id AND sm.module_code = g.module_code
-                WHERE sm.student_id = ?
-                ORDER BY m.module_code, g.assessment_name
-                ''', (student_id,))
-
-                grades = cursor.fetchall()
-
-                if not grades:
-                    print("No grades recorded for this student.")
-                    return
-
-                current_module = None
-                for grade in grades:
-                    module_code, module_name, assessment_name, grade_value, grade_date = grade
-
-                    if module_code != current_module:
-                        print(f"\n{module_code}: {module_name}")
-                        current_module = module_code
-
-                    if assessment_name:
-                        print(f"  - {assessment_name}: {grade_value} (Recorded: {grade_date})")
-                    else:
-                        print("  - No assessments recorded yet")
-
-            except sqlite3.Error as e:
-                print(f"Database error viewing grades: {e}")
-            finally:
-                if conn:
-                    conn.close()
+                if assessment_name:
+                    print(f"  - {assessment_name}: {grade_value} (Recorded: {grade_date})")
+                else:
+                    print(f"  - Final: {grade_value} (Completed: {grade_date})")
 
         except (ValueError, IndexError):
             print("Invalid choice.")

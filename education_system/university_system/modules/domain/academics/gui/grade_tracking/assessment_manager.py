@@ -662,6 +662,22 @@ class AssessmentManager:
                         },
                     )
 
+                # Mirror the due date into the academic calendar so it
+                # shows up in the calendar view alongside lecture events.
+                try:
+                    from education_system.university_system.modules.domain.academics.gui.grade_tracking.integrations import (
+                        sync_assessment_to_calendar,
+                    )
+                    if full_due:
+                        sync_assessment_to_calendar(
+                            assessment_id=new_assessment_id,
+                            name=name,
+                            due_date=full_due,
+                            module_code=module_code,
+                        )
+                except Exception:
+                    pass
+
                 messagebox.showinfo("Success", "Assessment added successfully!")
                 dialog.destroy()
                 self.refresh_assessments()

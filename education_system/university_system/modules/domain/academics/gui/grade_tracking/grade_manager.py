@@ -1535,6 +1535,10 @@ class GradeManager:
             from education_system.university_system.modules.domain.academics.grading.grade_calculation.gpa import (
                 calculate_student_gpa,
             )
+            from education_system.university_system.modules.domain.academics.gui.grade_tracking.integrations import (
+                push_grade_kpi,
+                notify_aid_of_gpa,
+            )
 
             cursor = self.get_safe_cursor()
             cursor.execute("SELECT student_id, first_name, last_name FROM students")
@@ -1542,6 +1546,7 @@ class GradeManager:
 
             results = []
             updated_count = 0
+            gpa_values: list[float] = []
 
             for student in students:
                 student_id = student[0]
@@ -1554,8 +1559,30 @@ class GradeManager:
 
                 results.append(f"{name}: GPA = {gpa:.2f} ({credits} module(s))")
                 updated_count += 1
+                gpa_values.append(gpa)
+
+                # Cross-domain side-effect: tag the student's aid record(s)
+                # with the latest GPA so financial_aid reviewers see the
+                # number that's gating their scholarship eligibility.
+                try:
+                    notify_aid_of_gpa(student_id=student_id, gpa=gpa)
+                except Exception:
+                    pass
 
             self.safe_commit()
+
+            # Best-effort KPI push — silent when no matching KPI exists
+            if gpa_values:
+                try:
+                    push_grade_kpi(
+                        "Average GPA", sum(gpa_values) / len(gpa_values),
+                    )
+                    pass_rate = (
+                        sum(1 for g in gpa_values if g >= 2.0) / len(gpa_values) * 100.0
+                    )
+                    push_grade_kpi("Pass Rate %", pass_rate)
+                except Exception:
+                    pass
 
             # Show results dialog
             result_dialog = tk.Toplevel(self.root)

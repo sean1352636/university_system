@@ -433,6 +433,7 @@ class LayoutManager:
                 ("Reports", self.show_reports_view),
                 ("Academic Progress", self.show_academic_progress),
                 ("Assignment System", self.open_assignment_system),
+                ("Cross-Domain Activity", self.open_integrations_activity),
                 ("🏠 Return to Main Menu", self.return_to_main_menu)
             ]
         # Staff/Instructor gets grading and analytics features
@@ -497,6 +498,17 @@ class LayoutManager:
                              relief='sunken', anchor='w', bg='#ecf0f1')
         status_bar.pack(side='bottom', fill='x')
 
+
+    def open_integrations_activity(self):
+        """Open the cross-domain activity panel (early warning, referrals, etc.)."""
+        try:
+            self.app.integrations.show_integrations_activity()
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror(
+                "Error",
+                f"Failed to open integrations activity: {e}",
+            )
 
     def open_assignment_system(self):
         """Launch the Assignment System GUI in a Toplevel."""

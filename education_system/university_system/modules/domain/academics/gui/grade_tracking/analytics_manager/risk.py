@@ -50,6 +50,10 @@ class RiskMixin:
             calculate_dropout_risk_score,
             calculate_risk_factors,
         )
+        from education_system.university_system.modules.domain.academics.gui.grade_tracking.integrations import (
+            flag_at_risk_student,
+            fetch_overall_attendance,
+        )
 
         conn = None
         try:
@@ -74,14 +78,30 @@ class RiskMixin:
                     factors = calculate_risk_factors(cursor, student_id) or {}
                 except Exception:
                     factors = {}
-                # ``calculate_risk_factors`` returns a dict of contributing
-                # factors; flatten into a one-line summary.
+                # Add an attendance column from services.attendance so the
+                # view shows grades + absence patterns side-by-side.
+                attendance = fetch_overall_attendance(student_id)
+                if attendance:
+                    factors["attendance_pct"] = attendance["percentage"]
                 factors_summary = ", ".join(
                     f"{k}: {v}" for k, v in factors.items() if v not in (None, 0, "")
                 )
                 at_risk_students.append(
                     (student_id, name, risk_score, risk_level, factors_summary)
                 )
+
+                # Auto-flag the student in the early-warning subsystem so
+                # student_affairs picks it up; idempotent on the open
+                # 'grade_risk' indicator per student.
+                try:
+                    flag_at_risk_student(
+                        student_id=student_id,
+                        risk_score=int(risk_score),
+                        risk_level=risk_level,
+                        factors_summary=factors_summary,
+                    )
+                except Exception:
+                    pass
 
             if not at_risk_students:
                 messagebox.showinfo("At-Risk Students", "No students currently identified as at-risk.")
