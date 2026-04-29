@@ -51,7 +51,7 @@ make lint                  # Check code quality
 ```
 
 > **Warning**
-> Default login: `superadmin` / `SuperAdmin@123` — change immediately in production! See the [default accounts table](#default-accounts) for the full list of pre-configured users.
+> Default login: `admin` / `admin123` — change immediately in production! See the [default accounts table](#default-accounts) for the full list of pre-configured users.
 
 ---
 
@@ -223,24 +223,13 @@ The API is accessible from other devices on the network. Configure `API_HOST` an
 
 ### Default Accounts
 
-Usernames follow the pattern `<system>.<role>` (dot-separated), and passwords follow `<Role>@<System>123` with capitalised system / role names.
-
 | Username | Password | Systems | Role |
 |----------|----------|---------|------|
-| `superadmin` | `SuperAdmin@123` | All 4 | Admin (all systems) |
-| `university.admin` | `Admin@University123` | University | Admin |
-| `university.instructor` | `Instructor@University123` | University | Instructor |
-| `college.admin` | `Admin@College123` | College | Admin |
-| `college.student` | `Student@College123` | College | Student |
-| `college.parent` | `Parent@College123` | College | Parent |
-| `school.admin` | `Admin@School123` | Secondary | Admin |
-| `school.student` | `Student@School123` | Secondary | Student |
-| `school.parent` | `Parent@School123` | Secondary | Parent |
-| `primary.admin` | `Admin@Primary123` | Primary | Admin |
-| `primary.student` | `Student@Primary123` | Primary | Student |
-| `primary.parent` | `Parent@Primary123` | Primary | Parent |
+| `admin` | `admin123` | University | Admin |
+| `staff` | `staff123` | University | Staff |
+| `S12345` | `student123` | University | Student |
 
-The auth DB also contains `university.staff`, `university.student`, `university.parent`, and `*.teacher` accounts whose seed passwords aren't in any default-creds file — reset them via the forgot-password flow or as `superadmin` if you need access. After 5 failed attempts an account is locked for 15 minutes; sign in as `superadmin` and use the admin panel to clear the lockout.
+After 5 failed login attempts an account is locked for 15 minutes — sign in as `admin` and use the admin panel to clear the lockout. Change these passwords immediately in any non-development environment.
 
 ### Makefile Targets
 
