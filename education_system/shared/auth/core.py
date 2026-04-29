@@ -296,12 +296,32 @@ class UserAuth:
     def verify_mfa(self, user_id: int, code: str) -> dict:
         """Complete login after MFA verification."""
         from education_system.shared.auth.mfa_service import MFAService
+        from education_system.shared.auth.exceptions import MFAError
         mfa_svc = MFAService(self._db_path)
 
-        if not mfa_svc.verify_totp(user_id, code):
-            if not mfa_svc.verify_recovery_code(user_id, code):
-                logger.warning("MFA verification failed for user_id=%d", user_id)  # lgtm[py/clear-text-logging-sensitive-data]
-                raise AuthError("Invalid MFA code.")
+        # ``verify_totp`` / ``verify_recovery_code`` raise MFAError when
+        # no TOTP secret / no recovery codes are configured for the user
+        # (common when the only enrolled second factor is email OTP,
+        # which is verified out-of-band by the GUI before this method
+        # is reached). Treat "not set up" the same as "code didn't
+        # match" — a missing factor isn't a verification, but it's also
+        # not a crash. Surface every failure to callers as the same
+        # friendly AuthError they already know how to render.
+        def _try_totp() -> bool:
+            try:
+                return bool(mfa_svc.verify_totp(user_id, code))
+            except MFAError:
+                return False
+
+        def _try_recovery() -> bool:
+            try:
+                return bool(mfa_svc.verify_recovery_code(user_id, code))
+            except MFAError:
+                return False
+
+        if not _try_totp() and not _try_recovery():
+            logger.warning("MFA verification failed for user_id=%d", user_id)  # lgtm[py/clear-text-logging-sensitive-data]
+            raise AuthError("Invalid MFA code.")
 
         conn = self._conn()
         try:

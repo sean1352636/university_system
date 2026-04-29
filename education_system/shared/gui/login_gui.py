@@ -11,7 +11,7 @@ import logging
 
 from education_system.shared.auth.core import UserAuth
 from education_system.shared.auth.db import connect
-from education_system.shared.auth.exceptions import AuthError
+from education_system.shared.auth.exceptions import AuthError, MFAError
 from education_system.shared.auth.defaults import SYSTEMS
 
 logger = logging.getLogger(__name__)
@@ -399,11 +399,17 @@ class UniversalLoginWindow(tk.Tk):
                     self._on_login_success(user_info)
                     return
 
-        # Fall back to shared auth TOTP / recovery code verification
+        # Fall back to shared auth TOTP / recovery code verification.
+        # MFAError is a sibling of AuthError (not a subclass) and bubbled
+        # up uncaught when the user only had email-MFA enrolled (no TOTP
+        # secret on file) — verify_totp would raise "MFA is not set up"
+        # and crash the dialog. core.verify_mfa now swallows MFAError
+        # internally, but we keep both in the except for defence in
+        # depth in case any other auth backend re-raises.
         try:
             user_info = self._auth.verify_mfa(user_id, code)
-        except AuthError as exc:
-            self._mfa_error_var.set(str(exc))
+        except (AuthError, MFAError) as exc:
+            self._mfa_error_var.set(str(exc) or "Invalid MFA code.")
             return
 
         self._on_login_success(user_info)
