@@ -314,7 +314,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 | Document | Description |
 |----------|-------------|
-| [CHANGELOG.md](CHANGELOG.md) | Complete v8.x version history (165 releases, latest 8.91.0 on 2026-04-24) |
+| [CHANGELOG.md](CHANGELOG.md) | Complete v8.x version history (178 releases, latest 8.104.0 on 2026-04-28) |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute, branch naming, commit format |
 | [SECURITY.md](SECURITY.md) | Security features, practices, and vulnerability reporting |
 | [ROADMAP.md](docs/operations/ROADMAP.md) | Future plans and known limitations |
@@ -634,9 +634,30 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 ## What's New
 
-### Version 8.91.0 (April 24, 2026) — Latest
+### Cross-domain integration sweep (April 29, 2026)
 
-- **Log consolidation** — 8 specialised log files collapsed into `app.log` (43 literal substitutions across 34 files). `analytics.log`, `activity.log`, `health_portal_audit.log`, `reporting_system.log`, `restaurant_system.log`, `permit_system.log`, `student_support.log` and `student_support_errors.log` deleted; only `app.log` remains. Writer and reader sites both redirected; rotation now handled centrally by `infrastructure/logging/log_config.py` (5 MB × 5 backups).
+- **Assignment GUI ↔ 9 other domains.** New `assignment_system/integrations/` package with adapters for parent_portal, library, attendance, finance (late-submission fines via `record_payment_to_finance`), helpdesk (dispute-ticket escalation), legal (academic-integrity case creation), gradebook (`student_grades` sync so transcripts pick up assignment grades), KPI dashboard, and academic calendar (deadline mirroring). Hooks fire from existing managers (submit / grade / dispute / integrity-event / assignment-create paths). New "View Integrations Activity" panel on the dashboard shows recent rows produced in each downstream domain.
+- **Grade Tracking GUI ↔ 10 other domains.** Parallel `grade_tracking/integrations/` package: parent_portal grade reads, external-examiner moderation gate, calendar sync for assessment due dates, attendance correlation column on the at-risk view, automatic `early_warning_indicators` flagging for at-risk students, wellbeing referrals, grade-appeal helpdesk tickets, KPI push (Average GPA + Pass Rate %), financial-aid GPA review tagging, legal audit-trail export. Sidebar gains a "Cross-Domain Activity" panel mirroring the assignment-side one.
+- **Cross-launch buttons** between assignment GUI and grade management — both subsystems now reuse the same auth context in a Toplevel.
+- **Internal dedup** in grade tracking GUI: `calculate_all_gpas` delegates to `grade_calculation.gpa.calculate_student_gpa`; `risk.identify_at_risk_students` delegates to `predictive_analytics.calculate_dropout_risk_score`; `module_manager` and `assessment_manager` now write the same FERPA `safe_log_security_event` audit trail as `grade_manager`.
+- **Auth fixes:** unified login now honours MFA enabled via the university `mfa_user_settings` / `mfa_methods` tables (was previously checking only the shared `mfa_secrets`, so MFA-enrolled admins were silently bypassed); the OTP screen's `masked_email` is now computed in the right branch so the "code sent to ***" message renders correctly.
+
+### Version 8.104.0 (April 28, 2026)
+
+- **Module scheduling ↔ rest of university.** Derived student/instructor timetables, attendance-session materialisation from `module_schedule`, schedule-change in-app + email notifications fanned out to enrolled students, and recurring lectures mirrored onto the academic calendar (deterministic `LEC-{id}` events, semester-window resolution with 16-week fallback).
+
+### Version 8.103.0 (April 28, 2026)
+
+- **Course management ↔ rest of university.** Exam grades now appear in the grade-management GUI (UNION on `student_grades`, double-click hands off to exam scheduler's `ResultsEntryDialog`); enrolment fee assessment, library hold auto-placement, course-level external-examiner appointments, teaching workload mirroring, academic-calendar sync for years/semesters, per-course academic-integrity toggles. All four enrolment writers now sync to finance + library.
+
+### Version 8.102.0 (April 28, 2026)
+
+- **Auth recovery overhaul.** Forgot-password resets now null `legacy_salt` (fixed silent rejection of fresh bcrypt hashes for migrated PBKDF2 users); MFA-aware temp-password delivery to email; recovery codes accepted as login bypass (single-use, forces password change); `change_password` wrapper propagates real errors instead of silently falling back to the legacy `user_accounts` table.
+- **Exam scheduler ↔ rest of university.** Idempotent `EXAM-{id}` calendar sync, in-app notification fan-out via `NotificationsService`, shared `room_bookings` reservations, results writeback to `student_grades` + `grade_audit_log`, deferred-exam accommodations honour `student_accommodations` + `exam_accommodations`, and external-examiner attachment per exam.
+
+### Version 8.91.0 (April 24, 2026)
+
+- **Log consolidation** — 8 specialised log files collapsed into `app.log` (43 literal substitutions across 34 files). Rotation handled centrally by `infrastructure/logging/log_config.py` (5 MB × 5 backups).
 
 ### Version 8.90.0 (April 24, 2026)
 
@@ -666,7 +687,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 - **Domain directory reorganisation** — `university_system/modules/domain/` collapsed from 63 folders into 15 top-level categories (`academics`, `finance`, `health`, `commerce`, `campus`, `student_affairs`, etc.). Sub-modules moved, not deleted.
 
-See [CHANGELOG.md](CHANGELOG.md) for the complete v8.x history (165 releases) and [docs/changelogs/CHANGELOG-v5.md](docs/changelogs/CHANGELOG-v5.md) for earlier versions.
+See [CHANGELOG.md](CHANGELOG.md) for the complete v8.x history (178 releases) and [docs/changelogs/CHANGELOG-v5.md](docs/changelogs/CHANGELOG-v5.md) for earlier versions.
 
 ---
 
