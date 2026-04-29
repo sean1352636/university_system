@@ -39,12 +39,59 @@ class UserAuth:
     def is_logged_in(self) -> bool:
         return self._current_user is not None
 
+    def _record_login_attempt(self, username: str, success: bool) -> None:
+        """Mirror every login attempt into the university DB's
+        ``login_attempts`` table so the login-analytics dashboard can
+        count it.
+
+        Best-effort: any failure (table missing, DB locked, university
+        package unavailable) is logged at debug-level and swallowed —
+        the auth flow itself must never break because of analytics.
+        """
+        try:
+            from education_system.university_system.infrastructure.database.db import (
+                get_connection as get_uni_connection,
+            )
+        except ImportError:
+            return
+        try:
+            with get_uni_connection() as conn:
+                if hasattr(conn, "row_factory"):
+                    pass  # context manager already gives us a connection
+                cur = conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name='login_attempts'"
+                )
+                if not cur.fetchone():
+                    return
+                conn.execute(
+                    "INSERT INTO login_attempts "
+                    "(username, attempt_time, ip_address, success) "
+                    "VALUES (?, datetime('now'), ?, ?)",
+                    (username, "unknown", 1 if success else 0),
+                )
+                conn.commit()
+        except Exception as exc:
+            logger.debug("login_attempts insert failed: %s", exc)
+
     def login(self, username: str, password: str) -> dict:
         """Authenticate a user against the shared auth database.
 
         Returns a user info dict on success. Raises AuthError on failure.
         The returned dict includes the list of systems the user can access.
         """
+        try:
+            result = self._login_impl(username, password)
+        except AuthError:
+            self._record_login_attempt(username, success=False)
+            raise
+        # _login_impl returns either a complete user dict or an
+        # ``{"mfa_required": True, ...}`` challenge — both count as
+        # successful primary auth (the password matched).
+        self._record_login_attempt(username, success=True)
+        return result
+
+    def _login_impl(self, username: str, password: str) -> dict:
+        """Original login body — see ``login`` for the public wrapper."""
         conn = self._conn()
         try:
             user = conn.execute(
