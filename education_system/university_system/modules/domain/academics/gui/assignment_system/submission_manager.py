@@ -109,8 +109,16 @@ class SubmissionManager:
         # Assignment selection
         ttk.Label(form_frame, text="Select Assignment:").grid(row=current_row, column=0, sticky='w', pady=5)
         self.assignment_var = tk.StringVar()
-        assignment_combo = ttk.Combobox(form_frame, textvariable=self.assignment_var, width=50)
-        assignment_combo.grid(row=current_row, column=1, sticky='ew', pady=5, padx=(10, 0))
+        assignment_row = ttk.Frame(form_frame)
+        assignment_row.grid(row=current_row, column=1, sticky='ew', pady=5, padx=(10, 0))
+        assignment_combo = ttk.Combobox(assignment_row, textvariable=self.assignment_var, width=46)
+        assignment_combo.pack(side='left', fill='x', expand=True)
+        ttk.Button(
+            assignment_row,
+            text="Resources",
+            command=lambda: self._open_resources_for_selected_assignment(),
+        ).pack(side='right', padx=(8, 0))
+        self._submit_assignment_combo = assignment_combo
         current_row += 1
 
         # Load available assignments
@@ -243,6 +251,34 @@ class SubmissionManager:
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load assignments: {e}")
+
+
+    def _open_resources_for_selected_assignment(self):
+        """Open the library resources dialog for the currently picked assignment."""
+        assignment_id = (
+            getattr(self, "assignment_map", {}) or {}
+        ).get(self.assignment_var.get())
+        if not assignment_id:
+            messagebox.showinfo(
+                "Resources",
+                "Pick an assignment first to see its module resources.",
+            )
+            return
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            try:
+                row = conn.execute(
+                    "SELECT module_code FROM assignments WHERE id = ?",
+                    (assignment_id,),
+                ).fetchone()
+            finally:
+                conn.close()
+        except Exception as e:
+            messagebox.showerror("Resources", f"Could not look up module: {e}")
+            return
+        module_code = row[0] if row else None
+        student_id = self.assignment_system._get_student_id() if self.assignment_system else None
+        self.gui.show_module_resources(module_code, student_id=student_id)
 
 
     def browse_file(self):

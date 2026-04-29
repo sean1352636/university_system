@@ -138,7 +138,7 @@ class GradingManager:
 
             # Get submission details
             cursor.execute('''
-            SELECT s.*, a.title, a.max_marks, st.first_name, st.last_name
+            SELECT s.*, a.title, a.max_marks, st.first_name, st.last_name, a.module_code
             FROM assignment_submissions s
             JOIN assignments a ON s.assignment_id = a.id
             JOIN students st ON s.student_id = st.student_id
@@ -149,23 +149,57 @@ class GradingManager:
             if not submission:
                 return
 
+            # Cache identifiers used by the attendance integration
+            student_id_for_attendance = submission[1]
+            module_code_for_attendance = submission[16]
+
             # Display submission details
             details_text = f"Student: {submission[14]} {submission[15]}\n"
             details_text += f"Assignment: {submission[11]}\n"
+            details_text += f"Module: {module_code_for_attendance}\n"
             details_text += f"File: {submission[6]}\n"
             details_text += f"Submitted: {submission[4]}\n"
             details_text += f"Max Marks: {submission[12]}"
 
-            ttk.Label(self.grading_details_frame, text=details_text, justify='left').pack(anchor='w', pady=(0, 20))
+            ttk.Label(self.grading_details_frame, text=details_text, justify='left').pack(anchor='w', pady=(0, 10))
 
-            # File actions
+            # Inline attendance warning (rendered only when below threshold)
+            try:
+                warning = self.gui.attendance_warning(
+                    student_id_for_attendance, module_code_for_attendance
+                )
+            except Exception:
+                warning = None
+            if warning:
+                tk.Label(
+                    self.grading_details_frame,
+                    text=f"⚠ {warning}",
+                    fg='#c0392b',
+                    wraplength=520,
+                    justify='left',
+                    anchor='w',
+                ).pack(fill='x', pady=(0, 10))
+
+            # File / context actions
             file_frame = ttk.Frame(self.grading_details_frame)
             file_frame.pack(fill='x', pady=(0, 20))
 
             ttk.Button(file_frame, text="Open File",
                       command=lambda: self.open_submission_file(submission[5])).pack(side='left', padx=(0, 10))
             ttk.Button(file_frame, text="Download File",
-                      command=lambda: self.download_file(submission[5])).pack(side='left')
+                      command=lambda: self.download_file(submission[5])).pack(side='left', padx=(0, 10))
+            ttk.Button(
+                file_frame, text="Attendance",
+                command=lambda: self.gui.show_student_attendance(
+                    student_id_for_attendance, module_code_for_attendance,
+                ),
+            ).pack(side='left', padx=(0, 10))
+            ttk.Button(
+                file_frame, text="Module Resources",
+                command=lambda: self.gui.show_module_resources(
+                    module_code_for_attendance, student_id=student_id_for_attendance,
+                ),
+            ).pack(side='left')
 
             # Grading form
             grading_form = ttk.LabelFrame(self.grading_details_frame, text="Grade Assignment", padding=10)

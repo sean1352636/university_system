@@ -33,6 +33,7 @@ from education_system.university_system.modules.domain.academics.gui.assignment_
 from education_system.university_system.modules.domain.academics.gui.assignment_system.multi_stage_manager import MultiStageManager
 from education_system.university_system.modules.domain.academics.gui.assignment_system.admin_tools_manager import AdminToolsManager
 from education_system.university_system.modules.domain.academics.gui.assignment_system.ai_assistant_manager import AIAssistantManager
+from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations_manager import IntegrationsManager
 
 class AssignmentGUI:
     """Main GUI class that coordinates all managers"""
@@ -87,6 +88,7 @@ class AssignmentGUI:
         self.multi_stage = MultiStageManager(self)
         self.admin_tools = AdminToolsManager(self)
         self.ai_assistant = AIAssistantManager(self)
+        self.integrations = IntegrationsManager(self)
 
         # Initialize database and interface
         self.db.ensure_database_exists()
@@ -110,7 +112,7 @@ class AssignmentGUI:
             'rubrics', 'peer_review', 'maintenance', 'auto_grading',
             'exam_integrity', 'student_experience', 'grade_disputes',
             'late_policies', 'annotations', 'multi_stage', 'admin_tools',
-            'ai_assistant'
+            'ai_assistant', 'integrations'
         ]
 
         for manager_name in required_managers:
@@ -510,6 +512,20 @@ class AssignmentGUI:
 
     def show_late_pass_advisor(self):
         return self.ai_assistant.show_late_pass_advisor()
+
+    # ── Integration delegates (parent_portal / library / attendance) ──
+
+    def show_module_resources(self, module_code, student_id=None):
+        return self.integrations.show_module_resources(module_code, student_id=student_id)
+
+    def show_student_attendance(self, student_id, module_code):
+        return self.integrations.show_student_attendance(student_id, module_code)
+
+    def attendance_warning(self, student_id, module_code):
+        return self.integrations.attendance_warning(student_id, module_code)
+
+    def show_parent_assignments_view(self):
+        return self.integrations.show_parent_assignments_view()
 
     # Internal/Helper Functions
 

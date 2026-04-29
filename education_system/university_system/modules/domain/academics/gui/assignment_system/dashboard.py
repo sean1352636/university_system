@@ -41,6 +41,24 @@ class DashboardManager:
         title = ttk.Label(self.gui.layout.content_area, text=_t("assignments.dashboard"), style='Title.TLabel')
         title.pack(anchor='w', pady=(0, 20))
 
+        # Parent role gets a shortcut into the children-assignments view
+        try:
+            role = (self.auth.current_user or {}).get('role', '').lower()
+        except Exception:
+            role = ''
+        if role == 'parent':
+            parent_bar = ttk.Frame(self.gui.layout.content_area)
+            parent_bar.pack(fill='x', pady=(0, 15))
+            ttk.Label(
+                parent_bar,
+                text="Parent view: track your children's assignments",
+            ).pack(side='left')
+            ttk.Button(
+                parent_bar,
+                text="My Children's Assignments",
+                command=self.gui.show_parent_assignments_view,
+            ).pack(side='right')
+
         # Create dashboard content with statistics
         self.create_dashboard_widgets()
 

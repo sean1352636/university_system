@@ -439,92 +439,42 @@ class AcademicsMixin:
 
             student_id = selected_child[0]
 
-            conn = None
-            try:
-                conn = sqlite3.connect(str(DEFAULT_DB_PATH), timeout=30)
-                conn.execute("PRAGMA busy_timeout = 30000")
-                cursor = conn.cursor()
+            # Shared data path with the assignment GUI's parent dashboard
+            from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations.parent_portal import (
+                fetch_child_assignments,
+            )
 
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='student_assignments'")
+            data = fetch_child_assignments(student_id)
+            upcoming = data["upcoming"]
+            overdue = data["overdue"]
+            completed = data["completed"]
 
-                if not cursor.fetchone():
-                    print("Assignment tracking is not yet set up in the system.")
+            print(f"\nAssignments for {selected_child[1]} {selected_child[3]}:")
+
+            if not upcoming and not overdue and not completed:
+                print("No assignments found for this student.")
+                return
+
+            def _print(rows, header, mark_overdue=False):
+                if not rows:
                     return
+                print(f"\n{header}:")
+                for row in rows:
+                    title = row.get("title", "")
+                    module_code = row.get("module_code", "")
+                    due_date = row.get("due_date", "")
+                    status = row.get("status", "")
+                    description = row.get("description") or ""
+                    print(f"- {title} ({module_code})")
+                    print(f"  Due: {due_date}{' (OVERDUE)' if mark_overdue else ''}")
+                    print(f"  Status: {status}")
+                    if description:
+                        print(f"  Description: {description}")
+                    print()
 
-                today = datetime.datetime.now().strftime('%Y-%m-%d')
-
-                cursor.execute('''
-                SELECT sa.id, sa.title, sa.description, sa.due_date, m.module_code, m.module_name, sa.status
-                FROM student_assignments sa
-                JOIN modules m ON sa.module_code = m.module_code
-                WHERE sa.student_id = ? AND sa.due_date >= ? AND sa.status != 'completed'
-                ORDER BY sa.due_date
-                ''', (student_id, today))
-
-                upcoming = cursor.fetchall()
-
-                cursor.execute('''
-                SELECT sa.id, sa.title, sa.description, sa.due_date, m.module_code, m.module_name, sa.status
-                FROM student_assignments sa
-                JOIN modules m ON sa.module_code = m.module_code
-                WHERE sa.student_id = ? AND sa.due_date < ? AND sa.status != 'completed'
-                ORDER BY sa.due_date
-                ''', (student_id, today))
-
-                overdue = cursor.fetchall()
-
-                cursor.execute('''
-                SELECT sa.id, sa.title, sa.description, sa.due_date, m.module_code, m.module_name, sa.status
-                FROM student_assignments sa
-                JOIN modules m ON sa.module_code = m.module_code
-                WHERE sa.student_id = ? AND sa.status = 'completed'
-                ORDER BY sa.due_date DESC
-                LIMIT 5
-                ''', (student_id,))
-
-                completed = cursor.fetchall()
-
-                print(f"\nAssignments for {selected_child[1]} {selected_child[3]}:")
-
-                if not upcoming and not overdue and not completed:
-                    print("No assignments found for this student.")
-                else:
-                    if upcoming:
-                        print("\nUpcoming Assignments:")
-                        for assignment in upcoming:
-                            id, title, description, due_date, module_code, module_name, status = assignment
-                            print(f"- {title} ({module_code})")
-                            print(f"  Due: {due_date}")
-                            print(f"  Status: {status}")
-                            if description:
-                                print(f"  Description: {description}")
-                            print()
-
-                    if overdue:
-                        print("\nOverdue Assignments:")
-                        for assignment in overdue:
-                            id, title, description, due_date, module_code, module_name, status = assignment
-                            print(f"- {title} ({module_code})")
-                            print(f"  Due: {due_date} (OVERDUE)")
-                            print(f"  Status: {status}")
-                            if description:
-                                print(f"  Description: {description}")
-                            print()
-
-                    if completed:
-                        print("\nRecently Completed Assignments:")
-                        for assignment in completed:
-                            id, title, description, due_date, module_code, module_name, status = assignment
-                            print(f"- {title} ({module_code})")
-                            print(f"  Due: {due_date}")
-                            print(f"  Status: {status}")
-                            print()
-
-            except sqlite3.Error as e:
-                print(f"Database error viewing assignments: {e}")
-            finally:
-                if conn:
-                    conn.close()
+            _print(upcoming, "Upcoming Assignments")
+            _print(overdue, "Overdue Assignments", mark_overdue=True)
+            _print(completed, "Recently Completed Assignments")
 
         except (ValueError, IndexError):
             print("Invalid choice.")
