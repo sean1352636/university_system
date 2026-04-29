@@ -147,6 +147,46 @@ class OCRManager:
                 )
                 ''')
 
+                # Heal older deployments where ocr_results was created
+                # with `REFERENCES student_documents` — that target table
+                # never existed, so any INSERT under FK-enforcement raises
+                # "no such table: main.student_documents". Detect a wrong
+                # FK target and rebuild the table with the right one,
+                # carrying over any rows already saved.
+                fks = list(cursor.execute("PRAGMA foreign_key_list(ocr_results)"))
+                # row layout: (id, seq, table, from, to, on_update, on_delete, match)
+                if any(r[2] != 'documents' for r in fks):
+                    conn.commit()
+                    cursor.execute("PRAGMA foreign_keys = OFF")
+                    cursor.execute("BEGIN")
+                    try:
+                        cursor.execute("ALTER TABLE ocr_results RENAME TO _ocr_results_old")
+                        cursor.execute('''
+                            CREATE TABLE ocr_results (
+                                ocr_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                document_id INTEGER,
+                                extracted_text TEXT,
+                                confidence_score REAL,
+                                processing_date TEXT,
+                                FOREIGN KEY (document_id) REFERENCES documents (document_id)
+                            )
+                        ''')
+                        cursor.execute('''
+                            INSERT INTO ocr_results
+                                (ocr_id, document_id, extracted_text,
+                                 confidence_score, processing_date)
+                            SELECT ocr_id, document_id, extracted_text,
+                                   confidence_score, processing_date
+                            FROM _ocr_results_old
+                        ''')
+                        cursor.execute("DROP TABLE _ocr_results_old")
+                        cursor.execute("COMMIT")
+                    except Exception:
+                        cursor.execute("ROLLBACK")
+                        raise
+                    finally:
+                        cursor.execute("PRAGMA foreign_keys = ON")
+
                 cursor.execute('''
                 INSERT INTO ocr_results (document_id, extracted_text, confidence_score, processing_date)
                 VALUES (?, ?, ?, ?)
