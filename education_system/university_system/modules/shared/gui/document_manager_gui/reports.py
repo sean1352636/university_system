@@ -719,11 +719,16 @@ class ReportsManager:
                         if required_docs:
                             report.append("\n  Required Documents:")
                             for req in required_docs:
+                                # documents.document_type stores the type_id as TEXT —
+                                # cast to INTEGER to match document_types.type_id, the
+                                # same shape the dashboard activity query uses.
                                 cursor.execute('''
                                 SELECT COUNT(*) FROM documents
-                                WHERE owner_id = ? AND source_type = 'student' AND type_id = (
-                                    SELECT type_id FROM document_types WHERE type_name = ?
-                                )
+                                WHERE owner_id = ?
+                                  AND source_type = 'student'
+                                  AND CAST(document_type AS INTEGER) = (
+                                      SELECT type_id FROM document_types WHERE type_name = ?
+                                  )
                                 ''', (student_id, req[0]))
                                 has_doc = cursor.fetchone()[0] > 0
                                 status = "\u2713 Submitted" if has_doc else "\u2717 Missing"
