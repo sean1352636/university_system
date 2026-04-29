@@ -783,9 +783,44 @@ def transaction(
         - Rolls back on any exception
         - Closes connection on exit
     """
-    conn = get_connection(db_path=db_path, row_factory=row_factory)
+    # BEGIN IMMEDIATE acquires a RESERVED write-lock up front. busy_timeout
+    # already retries inside SQLite, but if the conflicting writer hasn't
+    # released by then we still see "database is locked" — typically when
+    # a long-running operation in another thread holds the lock past the
+    # default 30s. Add a small Python-level retry on top so transient
+    # contention has another chance instead of bubbling straight out.
+    import time as _time
+    _LOCK_RETRIES = 3
+    _LOCK_BACKOFF_BASE = 0.25  # seconds
+
+    conn = None
+    last_lock_error: Optional[Exception] = None
+    for attempt in range(_LOCK_RETRIES):
+        conn = get_connection(db_path=db_path, row_factory=row_factory)
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            break  # got the lock
+        except _sqlite3.OperationalError as begin_err:
+            try:
+                conn.close()
+            except Exception:
+                pass
+            if "database is locked" not in str(begin_err) or attempt == _LOCK_RETRIES - 1:
+                last_lock_error = begin_err
+                logging.error(
+                    "Transaction BEGIN failed after %d attempt(s): %s",
+                    attempt + 1, begin_err,
+                )
+                raise
+            sleep_for = _LOCK_BACKOFF_BASE * (2 ** attempt)
+            logging.warning(
+                "BEGIN IMMEDIATE locked (attempt %d/%d); retrying after %.2fs",
+                attempt + 1, _LOCK_RETRIES, sleep_for,
+            )
+            time.sleep(sleep_for)
+            conn = None
+
     try:
-        conn.execute("BEGIN IMMEDIATE")
         yield conn
         # If we reach here, commit the transaction
         conn.commit()
