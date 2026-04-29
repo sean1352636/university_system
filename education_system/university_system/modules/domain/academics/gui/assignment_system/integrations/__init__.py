@@ -36,6 +36,13 @@ from education_system.university_system.modules.domain.academics.gui.assignment_
     sync_assignment_to_calendar,
     remove_assignment_from_calendar,
 )
+from education_system.university_system.modules.domain.academics.gui.assignment_system.integrations.activity import (
+    recent_late_fines,
+    recent_dispute_tickets,
+    recent_integrity_cases,
+    recent_gradebook_syncs,
+    recent_calendar_events,
+)
 
 __all__ = [
     "fetch_child_assignments",
@@ -51,4 +58,9 @@ __all__ = [
     "push_assignment_kpi",
     "sync_assignment_to_calendar",
     "remove_assignment_from_calendar",
+    "recent_late_fines",
+    "recent_dispute_tickets",
+    "recent_integrity_cases",
+    "recent_gradebook_syncs",
+    "recent_calendar_events",
 ]

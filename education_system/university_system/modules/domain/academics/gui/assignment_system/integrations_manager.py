@@ -16,6 +16,11 @@ from education_system.university_system.modules.domain.academics.gui.assignment_
     fetch_module_resources,
     fetch_module_attendance,
     fetch_attendance_warning,
+    recent_late_fines,
+    recent_dispute_tickets,
+    recent_integrity_cases,
+    recent_gradebook_syncs,
+    recent_calendar_events,
 )
 
 
@@ -272,3 +277,89 @@ class IntegrationsManager:
 
         combo.bind("<<ComboboxSelected>>", reload)
         reload()
+
+    # ------------------------------------------------------------------
+    # Cross-domain activity panel
+    # ------------------------------------------------------------------
+
+    _ACTIVITY_TABS: tuple[tuple[str, str, callable, tuple[str, ...]], ...] = (
+        (
+            "fines", "Late-Submission Fines", recent_late_fines,
+            ("payment_id", "student_id", "amount", "status",
+             "transaction_id", "payment_date"),
+        ),
+        (
+            "tickets", "Dispute Tickets", recent_dispute_tickets,
+            ("ticket_id", "student_id", "subject", "status",
+             "priority", "created_at"),
+        ),
+        (
+            "legal", "Integrity Cases", recent_integrity_cases,
+            ("case_id", "case_number", "client_id", "case_title",
+             "status", "priority", "created_at"),
+        ),
+        (
+            "grades", "Gradebook Syncs", recent_gradebook_syncs,
+            ("id", "student_id", "module_code", "assessment_name",
+             "grade", "percentage", "grade_date"),
+        ),
+        (
+            "calendar", "Calendar Events", recent_calendar_events,
+            ("id", "name", "date", "last_modified"),
+        ),
+    )
+
+    def show_integrations_activity(self):
+        """Open a window showing recent rows produced by each integration."""
+        win = tk.Toplevel(self.root)
+        win.title("Cross-Domain Activity — Assignments")
+        win.geometry("960x560")
+
+        ttk.Label(
+            win,
+            text=(
+                "Recent rows produced by the assignment GUI in other "
+                "subsystems. Empty tabs = the trigger action hasn't fired "
+                "yet (e.g. no late submission, no dispute filed)."
+            ),
+            wraplength=920, justify="left",
+        ).pack(anchor="w", padx=15, pady=(15, 5))
+
+        nb = ttk.Notebook(win)
+        nb.pack(fill="both", expand=True, padx=10, pady=10)
+
+        trees: dict[str, tuple[ttk.Treeview, callable, tuple[str, ...]]] = {}
+        for key, label, fetcher, cols in self._ACTIVITY_TABS:
+            tab = ttk.Frame(nb)
+            nb.add(tab, text=label)
+            tree = ttk.Treeview(tab, columns=cols, show="headings")
+            for c in cols:
+                tree.heading(c, text=c.replace("_", " ").title())
+                tree.column(c, width=140, anchor="w")
+            tree.pack(fill="both", expand=True)
+            trees[key] = (tree, fetcher, cols)
+
+        def reload(*_):
+            for tree, fetcher, cols in trees.values():
+                for i in tree.get_children():
+                    tree.delete(i)
+                rows = fetcher() or []
+                for r in rows:
+                    tree.insert(
+                        "", "end",
+                        values=tuple(self._fmt(r.get(c)) for c in cols),
+                    )
+
+        btn_bar = ttk.Frame(win)
+        btn_bar.pack(fill="x", padx=10, pady=(0, 10))
+        ttk.Button(btn_bar, text="Refresh", command=reload).pack(side="left")
+        ttk.Button(btn_bar, text="Close", command=win.destroy).pack(side="right")
+        reload()
+
+    @staticmethod
+    def _fmt(value) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, float):
+            return f"{value:.2f}"
+        return str(value)

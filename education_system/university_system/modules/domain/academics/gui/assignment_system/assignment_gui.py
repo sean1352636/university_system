@@ -527,6 +527,9 @@ class AssignmentGUI:
     def show_parent_assignments_view(self):
         return self.integrations.show_parent_assignments_view()
 
+    def show_integrations_activity(self):
+        return self.integrations.show_integrations_activity()
+
     # Internal/Helper Functions
 
     def _init_directories(self):

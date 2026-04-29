@@ -59,6 +59,23 @@ class DashboardManager:
                 command=self.gui.show_parent_assignments_view,
             ).pack(side='right')
 
+        # Staff/admin shortcut into the cross-domain activity panel
+        if role in ('admin', 'staff', 'instructor', 'faculty'):
+            integ_bar = ttk.Frame(self.gui.layout.content_area)
+            integ_bar.pack(fill='x', pady=(0, 15))
+            ttk.Label(
+                integ_bar,
+                text=(
+                    "Cross-domain activity: fines, dispute tickets, "
+                    "integrity cases, gradebook syncs, calendar events"
+                ),
+            ).pack(side='left')
+            ttk.Button(
+                integ_bar,
+                text="View Integrations Activity",
+                command=self.gui.show_integrations_activity,
+            ).pack(side='right')
+
         # Create dashboard content with statistics
         self.create_dashboard_widgets()
 
