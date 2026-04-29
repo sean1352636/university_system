@@ -149,8 +149,16 @@ class DashboardManager:
 
     def load_recent_activity(self):
         """Load recent activity data"""
-        # Check if activity_tree exists before using it
-        if not hasattr(self.gui, 'activity_tree') or self.gui.activity_tree is None:
+        # Bail out cleanly if the tree was never built or has been
+        # destroyed (e.g. user closed the dashboard, or the after-upload
+        # refresh callback fires once the activity panel is gone).
+        tree = getattr(self.gui, 'activity_tree', None)
+        if tree is None:
+            return
+        try:
+            if not tree.winfo_exists():
+                return
+        except tk.TclError:
             return
 
         try:
@@ -172,13 +180,18 @@ class DashboardManager:
             activities = [tuple(row) for row in cursor.fetchall()]
             conn.close()
 
-            # Clear existing items
-            for item in self.gui.activity_tree.get_children():
-                self.gui.activity_tree.delete(item)
-
-            # Insert new items
-            for activity in activities:
-                self.gui.activity_tree.insert('', 'end', values=activity)
+            # Re-check the widget — a refresh that races a window close
+            # could destroy it between the early-return check and here.
+            try:
+                if not tree.winfo_exists():
+                    return
+                for item in tree.get_children():
+                    tree.delete(item)
+                for activity in activities:
+                    tree.insert('', 'end', values=activity)
+            except tk.TclError:
+                # Widget was destroyed mid-update — nothing to do
+                return
 
         except Exception as e:
             print(f"Error loading activity: {e}")
