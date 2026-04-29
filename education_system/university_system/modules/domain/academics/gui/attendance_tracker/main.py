@@ -337,9 +337,31 @@ class AttendanceGUI:
                     self.analytics = None
                     self.backup_system = None
 
-            # Style configuration
+            # Style configuration.
+            # ttk.Style() is process-global, and theme_use() affects every
+            # ttk widget in the entire app — calling it from a child window
+            # leaks the 'clam' look back into the parent (background,
+            # text-box colours, etc.). Only switch themes when this GUI is
+            # the standalone application root; when we're a Toplevel inside
+            # an existing app, inherit the parent's theme. As defence in
+            # depth, snapshot the prior theme on entry and restore it on
+            # destroy so even a future direct caller doesn't leave the
+            # app on a different theme than it started.
             self.style = ttk.Style()
-            self.style.theme_use('clam')
+            self._previous_theme = self.style.theme_use()
+            if not isinstance(self.root, tk.Toplevel):
+                try:
+                    self.style.theme_use('clam')
+                except tk.TclError:
+                    pass
+
+                def _restore_theme(_event=None, prev=self._previous_theme, style=self.style):
+                    try:
+                        style.theme_use(prev)
+                    except tk.TclError:
+                        pass
+
+                self.root.bind("<Destroy>", _restore_theme, add="+")
 
             # Configure colors
             self.colors = {
