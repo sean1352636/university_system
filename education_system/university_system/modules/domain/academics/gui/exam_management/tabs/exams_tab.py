@@ -567,7 +567,15 @@ class ExamsTabMixin:
             if email_failed > 0:
                 msg += f" ({_('exam_scheduler.messages.failed')}: {email_failed})"
 
-        messagebox.showinfo(_("exam_scheduler.dialogs.success"), msg)
+        # The DB writes above can take long enough on a contended SQLite
+        # database that the user closes the window first; the resulting
+        # ``_tkinter.TclError: can't invoke "grab" command: application
+        # has been destroyed`` then propagates up through the Tk callback.
+        # Skip the dialog cleanly when the parent window is gone.
+        try:
+            messagebox.showinfo(_("exam_scheduler.dialogs.success"), msg)
+        except tk.TclError:
+            pass
 
     def update_exam(self):
         """Update the selected exam."""

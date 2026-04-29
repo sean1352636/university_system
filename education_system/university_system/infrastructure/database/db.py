@@ -789,9 +789,8 @@ def transaction(
     # a long-running operation in another thread holds the lock past the
     # default 30s. Add a small Python-level retry on top so transient
     # contention has another chance instead of bubbling straight out.
-    import time as _time
-    _LOCK_RETRIES = 3
-    _LOCK_BACKOFF_BASE = 0.25  # seconds
+    _LOCK_RETRIES = 5
+    _LOCK_BACKOFF_BASE = 0.5  # seconds — 0.5, 1, 2, 4, 8s = 15.5s extra
 
     conn = None
     last_lock_error: Optional[Exception] = None
