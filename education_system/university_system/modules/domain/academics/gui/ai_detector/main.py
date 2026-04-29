@@ -186,8 +186,22 @@ class AIDetectorGUI:
 
     def setup_styles(self):
         """Setup basic theme to match main GUI"""
+        # ttk.Style is process-global. Only switch themes when this is
+        # the standalone Tk root; inherit the parent's theme otherwise.
         self.style = ttk.Style()
-        self.style.theme_use('clam')
+        prev_theme = self.style.theme_use()
+        if not isinstance(self.root, tk.Toplevel):
+            try:
+                self.style.theme_use('clam')
+            except tk.TclError:
+                pass
+            self.root.bind(
+                "<Destroy>",
+                lambda _e, p=prev_theme, s=self.style: (
+                    s.theme_use(p) if _e.widget is self.root else None
+                ),
+                add="+",
+            )
 
 
     def create_main_interface(self):

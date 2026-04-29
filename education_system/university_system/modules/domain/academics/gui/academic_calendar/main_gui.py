@@ -395,9 +395,23 @@ class CalendarGUI(DashboardMixin, CalendarViewMixin, EventsViewMixin, AcademicVi
         except Exception as e:
             gui_logger.debug(f"Failed to set window icon: {e}")
 
-        # Configure style
+        # Configure style. ttk.Style is process-global; only switch
+        # themes when this window owns the Tk root, otherwise inherit
+        # the parent's theme so it isn't restyled.
         self.style = ttk.Style()
-        self.style.theme_use('clam')
+        self._previous_theme = self.style.theme_use()
+        if self.parent_window is None:
+            try:
+                self.style.theme_use('clam')
+            except tk.TclError:
+                pass
+            self.root.bind(
+                "<Destroy>",
+                lambda _e, p=self._previous_theme, s=self.style: (
+                    s.theme_use(p) if _e.widget is self.root else None
+                ),
+                add="+",
+            )
 
         # Configure colors and fonts
         self._configure_styles()

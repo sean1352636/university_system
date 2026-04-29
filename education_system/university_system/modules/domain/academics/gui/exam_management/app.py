@@ -48,7 +48,22 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
     def setup_styles(self):
         """Configure ttk styles for the application."""
         style = ttk.Style()
-        style.theme_use('clam')
+        # ttk.Style is process-global. Only switch themes when this app
+        # owns its Tk root; if we're embedded in a parent window inherit
+        # its theme so the parent isn't restyled.
+        prev_theme = style.theme_use()
+        if not self._is_embedded:
+            try:
+                style.theme_use('clam')
+            except tk.TclError:
+                pass
+            self.root.bind(
+                "<Destroy>",
+                lambda _e, p=prev_theme, s=style: (
+                    s.theme_use(p) if _e.widget is self.root else None
+                ),
+                add="+",
+            )
 
         # Configure colors
         style.configure('Title.TLabel', font=('Helvetica', 16, 'bold'))

@@ -35,13 +35,29 @@ class ExamPortalGUI:
 
         if parent:
             self.root = parent
+            self._is_standalone = False
         else:
             self.root = tk.Tk()
             self.root.title("Exam Management")
             self.root.geometry("1200x800")
+            self._is_standalone = True
 
+        # ttk.Style is process-global. Only switch themes when this is the
+        # standalone application root; otherwise inherit the parent's theme.
         self.style = ttk.Style()
-        self.style.theme_use("clam")
+        self._previous_theme = self.style.theme_use()
+        if self._is_standalone:
+            try:
+                self.style.theme_use("clam")
+            except tk.TclError:
+                pass
+            self.root.bind(
+                "<Destroy>",
+                lambda _e, p=self._previous_theme, s=self.style: (
+                    s.theme_use(p) if _e.widget is self.root else None
+                ),
+                add="+",
+            )
 
         self._user = self._get_user_info()
         self._role = self._user.get("role", "student")

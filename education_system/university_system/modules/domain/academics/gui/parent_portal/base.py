@@ -80,10 +80,24 @@ class ParentPortalGUI:
             self._setup_mock_layout()
             return self.root
 
-        # Configure style - use 'default' theme for lower resource usage
+        # Configure style - use 'default' theme for lower resource usage.
+        # ttk.Style is process-global, so only flip the theme when this
+        # window is the standalone Tk root; otherwise inherit the parent
+        # app's theme so the parent isn't restyled.
         style = ttk.Style()
-        # Use 'default' theme to minimize X pixmap allocation (prevents BadAlloc errors)
-        style.theme_use('default')
+        prev_theme = style.theme_use()
+        if not isinstance(self.root, tk.Toplevel):
+            try:
+                style.theme_use('default')  # minimise X pixmap allocation
+            except tk.TclError:
+                pass
+            self.root.bind(
+                "<Destroy>",
+                lambda _e, p=prev_theme, s=style: (
+                    s.theme_use(p) if _e.widget is self.root else None
+                ),
+                add="+",
+            )
 
         # Configure fonts only - avoid background colors to reduce X pixmap allocation
         style.configure('Title.TLabel', font=('Arial', 16, 'bold'))

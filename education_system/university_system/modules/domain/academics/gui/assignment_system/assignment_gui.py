@@ -53,9 +53,24 @@ class AssignmentGUI:
         self.root.geometry("1200x800")
         self.root.configure(bg='#f0f0f0')
 
-        # Style configuration
+        # Style configuration. ttk.Style is process-global, so calling
+        # theme_use() from a child window restyles the parent app. Only
+        # switch themes when launched standalone; inherit the parent's
+        # theme when embedded in an existing app.
         self.style = ttk.Style()
-        self.style.theme_use('clam')
+        self._previous_theme = self.style.theme_use()
+        if self.is_standalone:
+            try:
+                self.style.theme_use('clam')
+            except tk.TclError:
+                pass
+            self.root.bind(
+                "<Destroy>",
+                lambda _e, p=self._previous_theme, s=self.style: (
+                    s.theme_use(p) if _e.widget is self.root else None
+                ),
+                add="+",
+            )
 
         # Initialize variables
         self.current_frame = None
