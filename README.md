@@ -223,6 +223,12 @@ The API is accessible from other devices on the network. Configure `API_HOST` an
 
 ### Default Accounts
 
+**Superadmin (cross-system)**
+
+| Username | Password | Role |
+|----------|----------|------|
+| `superadmin` | `SuperAdmin@123` | Admin across university, college, secondary, and primary |
+
 **University**
 
 | Username | Password | Role |
