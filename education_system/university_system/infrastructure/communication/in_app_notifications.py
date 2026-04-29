@@ -33,11 +33,89 @@ class InAppNotificationService:
         self.base_service = get_base_notification_service()
         self._ensure_extended_tables()
 
+    def _heal_notification_actions_schema(self, conn) -> None:
+        """Repair the notification_actions FK on older DBs.
+
+        Pre-fix deployments shipped ``FOREIGN KEY (notification_id)
+        REFERENCES notifications(id)`` — but the notifications PK is
+        ``notification_id``, not ``id``. Any DELETE on the
+        notifications table then fails with "foreign key mismatch".
+
+        We detect the broken FK with PRAGMA foreign_key_list and, if
+        present, rebuild the table with the correct FK target,
+        carrying the existing rows over.
+        """
+        try:
+            row = conn.execute(
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' AND name='notification_actions'"
+            ).fetchone()
+            if not row:
+                return
+            fks = list(conn.execute("PRAGMA foreign_key_list(notification_actions)"))
+            # row layout: (id, seq, table, from, to, on_update, on_delete, match)
+            broken = any(
+                r[2] == "notifications" and r[4] != "notification_id"
+                for r in fks
+            )
+            if not broken:
+                return
+            logger.warning(
+                "Repairing notification_actions FK (was REFERENCES "
+                "notifications(id), should be notifications(notification_id))"
+            )
+            # The 12-step ALTER TABLE recipe — must run with FK
+            # enforcement off so the rename doesn't trigger the
+            # broken constraint. We're already inside a transaction,
+            # so commit it first, do the unwrapped fix, then let the
+            # caller continue.
+            conn.commit()
+            conn.execute("PRAGMA foreign_keys = OFF")
+            conn.execute("BEGIN")
+            try:
+                conn.execute("ALTER TABLE notification_actions RENAME TO _notification_actions_old")
+                conn.execute('''
+                    CREATE TABLE notification_actions (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        notification_id INTEGER NOT NULL,
+                        action_text TEXT NOT NULL,
+                        action_url TEXT NOT NULL,
+                        action_type TEXT DEFAULT 'link',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (notification_id)
+                            REFERENCES notifications(notification_id)
+                            ON DELETE CASCADE
+                    )
+                ''')
+                conn.execute('''
+                    INSERT INTO notification_actions
+                        (id, notification_id, action_text, action_url,
+                         action_type, created_at)
+                    SELECT id, notification_id, action_text, action_url,
+                           action_type, created_at
+                    FROM _notification_actions_old
+                ''')
+                conn.execute("DROP TABLE _notification_actions_old")
+                conn.execute("COMMIT")
+            except Exception:
+                conn.execute("ROLLBACK")
+                raise
+            finally:
+                conn.execute("PRAGMA foreign_keys = ON")
+        except Exception as exc:
+            logger.warning("notification_actions schema heal failed: %s", exc)
+
     def _ensure_extended_tables(self):
         """Create extended notification tables"""
         try:
             with transaction() as conn:
                 # Notification actions table (e.g., "View Grade", "Reply")
+                # FK targets notifications(notification_id) — that's the
+                # actual PK of the notifications table. Earlier deployments
+                # shipped this FK pointing at a non-existent `id` column,
+                # which caused SQLite to refuse DELETE FROM notifications
+                # with "foreign key mismatch". The migration block in
+                # _heal_notification_actions_schema repairs older DBs.
                 conn.execute('''
                     CREATE TABLE IF NOT EXISTS notification_actions (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,9 +124,12 @@ class InAppNotificationService:
                         action_url TEXT NOT NULL,
                         action_type TEXT DEFAULT 'link',
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (notification_id) REFERENCES notifications(id)
+                        FOREIGN KEY (notification_id)
+                            REFERENCES notifications(notification_id)
+                            ON DELETE CASCADE
                     )
                 ''')
+                self._heal_notification_actions_schema(conn)
 
                 # Notification preferences table
                 conn.execute('''
