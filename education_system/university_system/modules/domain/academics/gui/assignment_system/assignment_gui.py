@@ -530,6 +530,20 @@ class AssignmentGUI:
     def show_integrations_activity(self):
         return self.integrations.show_integrations_activity()
 
+    def open_grade_management(self):
+        """Launch the Grade Tracking / Management GUI alongside this one."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui.core import (
+                GradeTrackingManagementGUI,
+            )
+            wrapper = GradeTrackingManagementGUI(self.root, self.auth)
+            wrapper.show_grade_tracking_gui()
+        except Exception as e:
+            messagebox.showerror(
+                _("common.error"),
+                f"Failed to open Grade Management: {e}",
+            )
+
     # Internal/Helper Functions
 
     def _init_directories(self):

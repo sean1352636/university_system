@@ -432,6 +432,7 @@ class LayoutManager:
                 ("Analytics", self.show_analytics_view),
                 ("Reports", self.show_reports_view),
                 ("Academic Progress", self.show_academic_progress),
+                ("Assignment System", self.open_assignment_system),
                 ("🏠 Return to Main Menu", self.return_to_main_menu)
             ]
         # Staff/Instructor gets grading and analytics features
@@ -496,6 +497,31 @@ class LayoutManager:
                              relief='sunken', anchor='w', bg='#ecf0f1')
         status_bar.pack(side='bottom', fill='x')
 
+
+    def open_assignment_system(self):
+        """Launch the Assignment System GUI in a Toplevel."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui.assignment_system.assignment_gui import (
+                AssignmentGUI,
+            )
+            from education_system.university_system.modules.domain.academics.services.assignments.assignment_submission import (
+                AssignmentSubmission,
+            )
+            assignment_window = tk.Toplevel(self.root)
+            assignment_window.title("Assignment System")
+            assignment_window.geometry("1200x800")
+            assignment_window.minsize(1000, 600)
+            try:
+                assignment_window.transient(self.root)
+            except Exception:
+                pass
+            AssignmentGUI(AssignmentSubmission(), self.auth, parent=assignment_window)
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror(
+                "Error",
+                f"Failed to open Assignment System: {e}",
+            )
 
     def return_to_main_menu(self):
         """Return to the main menu"""

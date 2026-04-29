@@ -76,6 +76,18 @@ class DashboardManager:
                 command=self.gui.show_integrations_activity,
             ).pack(side='right')
 
+            grade_bar = ttk.Frame(self.gui.layout.content_area)
+            grade_bar.pack(fill='x', pady=(0, 15))
+            ttk.Label(
+                grade_bar,
+                text="Open the gradebook / transcripts in a separate window",
+            ).pack(side='left')
+            ttk.Button(
+                grade_bar,
+                text="Open Grade Management",
+                command=self.gui.open_grade_management,
+            ).pack(side='right')
+
         # Create dashboard content with statistics
         self.create_dashboard_widgets()
 
