@@ -158,12 +158,14 @@ class AssessmentAssignmentService:
         cursor = conn.cursor()
 
         try:
-            # Get assignment data
+            # Get assignment data. Same Row→dict bridge as
+            # sync_assessment_to_assignment so the .get(default) calls
+            # below tolerate optional columns.
             cursor.execute("SELECT * FROM assignments WHERE id = ?", (assignment_id,))
-            assignment = cursor.fetchone()
-
-            if not assignment:
+            row = cursor.fetchone()
+            if not row:
                 return None
+            assignment = dict(row)
 
             # Check if assessment already exists for this assignment
             cursor.execute("""
@@ -214,13 +216,16 @@ class AssessmentAssignmentService:
         cursor = conn.cursor()
 
         try:
-            # Get assessment data
+            # Get assessment data. fetchone() returns a sqlite3.Row when
+            # row_factory is set; Row supports key indexing but not .get(),
+            # so wrap in dict() — that also lets the .get(default) calls
+            # below survive older schemas missing optional columns.
             cursor.execute("SELECT * FROM assessments WHERE assessment_id = ?",
                          (assessment_id,))
-            assessment = cursor.fetchone()
-
-            if not assessment:
+            row = cursor.fetchone()
+            if not row:
                 return None
+            assessment = dict(row)
 
             # Check if assignment already exists for this assessment
             cursor.execute("""
