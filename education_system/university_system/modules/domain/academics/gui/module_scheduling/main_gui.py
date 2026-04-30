@@ -95,6 +95,25 @@ class ModuleSchedulingGUI:
         # Load initial data
         self.refresh_all_data()
 
+        # Live refresh: course list / enrolments / exam / grade events
+        # in sibling windows can invalidate this view's data, so re-pull.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                subscribe_tk,
+                EVENT_COURSE_CHANGED,
+                EVENT_ENROLMENT_CHANGED,
+                EVENT_EXAM_CHANGED,
+            )
+
+            def _on_external_change(**_payload):
+                if hasattr(self, "refresh_all_data"):
+                    self.refresh_all_data()
+
+            for evt in (EVENT_COURSE_CHANGED, EVENT_ENROLMENT_CHANGED, EVENT_EXAM_CHANGED):
+                subscribe_tk(evt, self.root, _on_external_change)
+        except Exception:
+            pass
+
     def set_auth(self, auth):
         """Optional; accept auth context from main app."""
         self._auth = auth

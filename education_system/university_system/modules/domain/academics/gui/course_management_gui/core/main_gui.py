@@ -71,6 +71,27 @@ class CourseManagementGUI(
             self.create_menu()
         self.create_main_interface()
 
+        # Live refresh: when sibling GUIs publish course / enrolment /
+        # module-schedule events, re-pull the course list so this view
+        # stays in sync with what other windows have written.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                subscribe_tk,
+                EVENT_COURSE_CHANGED,
+                EVENT_ENROLMENT_CHANGED,
+                EVENT_MODULE_SCHEDULE_CHANGED,
+            )
+
+            def _on_external_change(**_payload):
+                if hasattr(self, "refresh_course_list"):
+                    self.refresh_course_list()
+
+            for evt in (EVENT_COURSE_CHANGED, EVENT_ENROLMENT_CHANGED,
+                        EVENT_MODULE_SCHEDULE_CHANGED):
+                subscribe_tk(evt, self.root, _on_external_change)
+        except Exception:
+            pass
+
     def update_status(self, message, error=False):
         # Defensive: if someone calls this very early, ensure widgets exist
         if not hasattr(self, "status_var"):

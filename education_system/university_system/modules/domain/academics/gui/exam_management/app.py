@@ -45,6 +45,29 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
         self.refresh_exam_list()
         self.refresh_room_list()
 
+        # Live refresh: when sibling GUIs change module schedules or
+        # student enrolment, re-pull exam data so this view doesn't
+        # show stale rosters or hidden room conflicts.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                subscribe_tk,
+                EVENT_MODULE_SCHEDULE_CHANGED,
+                EVENT_ENROLMENT_CHANGED,
+                EVENT_ASSESSMENT_CHANGED,
+            )
+
+            def _on_external_change(**_payload):
+                if hasattr(self, "refresh_exam_list"):
+                    self.refresh_exam_list()
+                if hasattr(self, "refresh_room_list"):
+                    self.refresh_room_list()
+
+            subscribe_tk(EVENT_MODULE_SCHEDULE_CHANGED, self.root, _on_external_change)
+            subscribe_tk(EVENT_ENROLMENT_CHANGED, self.root, _on_external_change)
+            subscribe_tk(EVENT_ASSESSMENT_CHANGED, self.root, _on_external_change)
+        except Exception:
+            pass
+
     def setup_styles(self):
         """Configure ttk styles for the application."""
         style = ttk.Style()

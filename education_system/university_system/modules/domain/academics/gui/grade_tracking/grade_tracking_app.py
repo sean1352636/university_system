@@ -374,6 +374,30 @@ class GradeTrackingApp:
         self.layout.setup_ui()
         self.refresh_all_data()
 
+        # Live refresh: when sibling GUIs add/update assessments, exams,
+        # assignments, or enrolments, re-pull our data so cached lists
+        # don't go stale.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                subscribe_tk,
+                EVENT_ASSESSMENT_CHANGED,
+                EVENT_EXAM_CHANGED,
+                EVENT_ASSIGNMENT_CHANGED,
+                EVENT_ENROLMENT_CHANGED,
+                EVENT_GRADE_CHANGED,
+            )
+
+            def _on_external_change(**_payload):
+                if hasattr(self, "refresh_all_data"):
+                    self.refresh_all_data()
+
+            for evt in (EVENT_ASSESSMENT_CHANGED, EVENT_EXAM_CHANGED,
+                        EVENT_ASSIGNMENT_CHANGED, EVENT_ENROLMENT_CHANGED,
+                        EVENT_GRADE_CHANGED):
+                subscribe_tk(evt, self.root, _on_external_change)
+        except Exception:
+            pass
+
     def get_user_role(self):
         """Get the current user's role from authentication system"""
         try:

@@ -445,6 +445,16 @@ class AddScheduleDialog:
             )
 
             if success:
+                # Notify open sibling GUIs that a schedule changed.
+                try:
+                    from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                        publish, EVENT_MODULE_SCHEDULE_CHANGED,
+                    )
+                    publish(EVENT_MODULE_SCHEDULE_CHANGED,
+                            module_code=module_code, action="create")
+                except Exception:
+                    pass
+
                 # Send notifications to instructor and students — ONLY for
                 # published rows. Drafts are silent so what-if scenarios
                 # don't email students about classes that may never run.

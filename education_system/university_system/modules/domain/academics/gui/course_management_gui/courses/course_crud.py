@@ -523,6 +523,16 @@ class CourseCreateDialog:
 
                 conn.commit()
 
+                # Notify open sibling GUIs that a course changed.
+                try:
+                    from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                        publish, EVENT_COURSE_CHANGED,
+                    )
+                    publish(EVENT_COURSE_CHANGED,
+                            course_code=course_code, action="create")
+                except Exception:
+                    pass
+
                 messagebox.showinfo(_("common.success"), f"Course '{course_code} - {course_name}' created successfully.")
                 self.result = f"{course_code} - {course_name}"
                 self.dialog.destroy()

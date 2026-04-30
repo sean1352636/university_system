@@ -539,10 +539,27 @@ class ExamsTabMixin:
 
         self.data_manager.add_exam(exam)
 
+        # Notify any open sibling GUIs (Grade tracking, Module scheduling,
+        # Course mgmt) so their views can refresh without manual reload.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                publish, EVENT_EXAM_CHANGED, EVENT_CALENDAR_CHANGED,
+            )
+            publish(EVENT_EXAM_CHANGED,
+                    exam_id=exam.id, module_code=module_code, action="create")
+        except Exception:
+            pass
+
         # Automatically add to calendar
         calendar_added = False
         if HAS_CALENDAR:
             calendar_added = self.data_manager.add_exam_to_calendar(exam)
+            if calendar_added:
+                try:
+                    publish(EVENT_CALENDAR_CHANGED,
+                            event_type="Exam", source_id=exam.id, action="create")
+                except Exception:
+                    pass
 
         # Reserve the room in the shared room_bookings table so other
         # systems (lectures, society events, facilities) see it as taken.
@@ -637,6 +654,16 @@ class ExamsTabMixin:
         if HAS_CALENDAR:
             calendar_updated = self.data_manager.update_exam_in_calendar(exam)
 
+        # Broadcast to sibling GUIs.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                publish, EVENT_EXAM_CHANGED,
+            )
+            publish(EVENT_EXAM_CHANGED,
+                    exam_id=exam.id, module_code=exam.module_code, action="update")
+        except Exception:
+            pass
+
         # Refresh the shared room reservation (room or time may have changed).
         room_reserved = self.data_manager.reserve_room_for_exam(exam)
 
@@ -674,6 +701,16 @@ class ExamsTabMixin:
             exam_obj = next((e for e in self.data_manager.exams if e.id == exam_id), None)
 
             self.data_manager.delete_exam(exam_id)
+            try:
+                from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                    publish, EVENT_EXAM_CHANGED,
+                )
+                publish(EVENT_EXAM_CHANGED,
+                        exam_id=exam_id,
+                        module_code=getattr(exam_obj, "module_code", None),
+                        action="delete")
+            except Exception:
+                pass
             if HAS_CALENDAR:
                 self.data_manager.remove_exam_from_calendar(exam_id)
             self.data_manager.release_room_for_exam(exam_id)

@@ -838,6 +838,17 @@ class GradeManager:
                 sel_text = assessment_var.get()
                 a_name = sel_text.split(' - ')[1].split(' (')[0] if ' - ' in sel_text else sel_text
 
+                # Broadcast to sibling GUIs.
+                try:
+                    from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                        publish, EVENT_GRADE_CHANGED,
+                    )
+                    publish(EVENT_GRADE_CHANGED,
+                            student_id=student_id, assessment_id=assessment_id,
+                            action="create")
+                except Exception:
+                    pass
+
                 messagebox.showinfo("Success", "Grade added successfully!", parent=dialog)
                 dialog.destroy()
                 self.refresh_grades()
