@@ -147,6 +147,33 @@ class CasesMixin:
                 if hasattr(self, 'cases_tree'):
                     self.refresh_cases()
 
+                # Cross-domain: mirror the case into cases_bus as a
+                # security_incident so it inherits hearing scheduling,
+                # sanction routing (fine→finance, suspension→hold),
+                # and risk-register auto-raise. The local police_cases
+                # row remains the source of truth for the security
+                # desk GUI; cases_bus carries the cross-domain side-
+                # effects.
+                try:
+                    from education_system.university_system.modules.services import (
+                        cases_bus,
+                    )
+                    cases_bus.open_case(
+                        kind="security_incident",
+                        subject_id=str(case.get('subject_id')
+                                       or case.get('suspect_id')
+                                       or case_id),
+                        opened_by=str(case.get('officer') or "security_desk"),
+                        description=case.get('description')
+                                    or case.get('title') or "",
+                        severity=str(case.get('priority', 'Minor')),
+                        offense_type=str(case.get('type', 'Incident')),
+                        incident_date=case.get('date'),
+                        location=case.get('location'),
+                    )
+                except Exception:
+                    pass
+
             # Send email to assigned officer
             if case.get('officer'):
                 officer_email = get_officer_email(case['officer'])

@@ -732,6 +732,18 @@ class ResearchGrantsGUI:
         budget_entry.grid(row=row, column=1, pady=5, padx=(10, 0))
         row += 1
 
+        # Activity tags (cross-domain risk register feed) — comma-
+        # separated. Recognised tags: biosafety, human_subjects,
+        # animal, chemical, radiation, clinical, data_protection,
+        # field_work. Anything else falls under "Compliance".
+        ttk.Label(form_frame, text="Activity tags").grid(row=row, column=0, sticky=tk.W, pady=5)
+        tags_entry = ttk.Entry(form_frame, width=35)
+        tags_entry.grid(row=row, column=1, pady=5, padx=(10, 0))
+        ttk.Label(form_frame, text="(comma-sep; e.g. biosafety, human_subjects)",
+                  font=('Arial', 8), foreground='#666'
+                  ).grid(row=row + 1, column=1, sticky=tk.W, padx=(10, 0))
+        row += 2
+
         # Description
         ttk.Label(form_frame, text=_("research_grants.fields.description")).grid(row=row, column=0, sticky=tk.NW, pady=5)
         desc_text = scrolledtext.ScrolledText(form_frame, width=33, height=5)
@@ -739,6 +751,9 @@ class ResearchGrantsGUI:
 
         def create():
             try:
+                tags_raw = tags_entry.get().strip()
+                activity_tags = [t.strip() for t in tags_raw.split(',')
+                                 if t.strip()] if tags_raw else None
                 project_id = ResearchProjectManager.create_project(
                     project_title=title_entry.get(),
                     principal_investigator_id=pi_var.get(),
@@ -746,7 +761,8 @@ class ResearchGrantsGUI:
                     project_type=type_var.get(),
                     start_date=start_entry.get(),
                     description=desc_text.get('1.0', tk.END).strip(),
-                    total_budget=float(budget_entry.get() or 0)
+                    total_budget=float(budget_entry.get() or 0),
+                    activity_tags=activity_tags,
                 )
 
                 log_activity('create', 'research_project', project_id=project_id,

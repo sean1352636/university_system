@@ -266,9 +266,28 @@ class RiskDB:
             new_id = cur.lastrowid
             logger.info("Risk added id=%s title=%r owner=%r score=%s",
                         new_id, r.title, r.owner, r.likelihood * r.impact)
-            return new_id
         finally:
             conn.close()
+
+        # Cross-domain: publish a 'risk.raised' bus event so other
+        # subscribers (calendar, dashboards) see the new entry. If
+        # the Risk model has a next_review_date attribute set, also
+        # publish a calendar row for that review.
+        try:
+            from education_system.university_system.modules.services import (
+                risk_bus,
+            )
+            from education_system.university_system.modules.domain.academics.gui._event_bus import publish
+            publish("risk.raised",
+                    risk_id=new_id, category=r.category,
+                    likelihood=r.likelihood, impact=r.impact)
+            review_date = getattr(r, 'next_review_date', None)
+            if review_date:
+                risk_bus.set_review_date(new_id, review_date)
+        except Exception:
+            pass
+
+        return new_id
 
     def update(self, r: Risk):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

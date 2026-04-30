@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.109.1 — 2026-04-30](#81091---2026-04-30)
 - [8.109.0 — 2026-04-30](#81090---2026-04-30)
 - [8.108.1 — 2026-04-30](#81081---2026-04-30)
 - [8.108.0 — 2026-04-30](#81080---2026-04-30)
@@ -215,6 +216,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.109.1] — 2026-04-30
+
+### Wire 8.109.0 helpers to live consumers
+
+The 8.109.0 buses were dormant — helpers existed but no existing
+GUI or service path called them. This release wires the four
+consumer paths so the cross-domain side-effects fire in the
+running program, not just in unit tests.
+
+#### Changed — `predictive_analytics.predict_student_risk`
+
+When the model classifies a student as **High Risk** (existing label
+in `risk_labels[risk_level]`), now calls
+`attendance_bus.flag_student_concern(student_id, threshold_pct=...,
+description=...)`. Idempotency is handled by `attendance_bus`'s ISO-
+week cache — running the predictor multiple times in a week creates
+at most one Student-Affairs case per student.
+
+#### Changed — Security desk `cases.add_case` (campus/gui/security/tabs/cases.py)
+
+After the local `police_cases` row is saved, mirrors the case into
+`cases_bus.open_case(kind='security_incident', ...)` so it inherits
+hearing scheduling, sanction routing
+(fine→`finance_bus.raise_charge`, suspension→`place_hold`), and
+risk-register auto-raise. The local row remains the source of truth
+for the security desk GUI; cases_bus carries the cross-domain side-
+effects.
+
+#### Changed — Risk GUI `RiskDB.add`
+
+After insert, publishes `risk.raised` on the academics event bus and
+calls `risk_bus.set_review_date(new_id, next_review_date)` when the
+`Risk` model carries that attribute. The legacy GUI is forward-
+compatible: existing risk-edit code continues to work without
+exposing `next_review_date`; new code that sets the attribute
+gets calendar publication for free.
+
+#### Changed — Research grants create-project dialog
+
+`research_grants_gui.py` `_create_project` adds an "Activity tags"
+comma-separated entry field with helper text listing the
+recognised tags. Submitting passes the parsed list to
+`ResearchProjectManager.create_project(activity_tags=[...])` which
+already routes to `risk_bus.raise_research_risk`. PIs creating a
+new project now see risks auto-raised on the legal/risk GUI
+without leaving the research portal.
+
+#### Verified live
+
+- `ResearchProjectManager.create_project(activity_tags=['biosafety',
+  'clinical'])` → 2 linked risks via `list_risks_for('project:N')`.
+- `cases_bus.open_case(kind='security_incident', severity='High')`
+  → 1 linked risk via `list_risks_for('case:N')`.
+- Research grants GUI dialog field accepts and parses the tags list.
+
+#### Note — research-session payment helper
+
+`attendance_bus.post_research_session_payment` is intentionally not
+auto-wired. Most attendance records are class sessions, not paid
+research; firing the helper on every attendance write would be
+wrong. The helper is exposed for the research portal to call when
+a study session completes — concrete UI for that lives downstream.
 
 ---
 

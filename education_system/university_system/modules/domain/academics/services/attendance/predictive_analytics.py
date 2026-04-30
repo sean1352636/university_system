@@ -212,6 +212,29 @@ class AttendancePredictiveAnalytics:
             conn.commit()
             conn.close()
 
+            # Cross-domain: a 'High Risk' classification feeds the
+            # student_affairs case spine via attendance_bus, which is
+            # idempotent per ISO week so repeated predictions don't
+            # create duplicate cases.
+            if risk_labels[risk_level] == 'High Risk':
+                try:
+                    from education_system.university_system.modules.services import (
+                        attendance_bus,
+                    )
+                    attendance_bus.flag_student_concern(
+                        student_id,
+                        threshold_pct=current_attendance_rate * 100,
+                        description=(
+                            f"Predictive model classifies student as "
+                            f"High Risk (confidence {confidence:.2f}, "
+                            f"rate {current_attendance_rate:.0%}, "
+                            f"module {module_code})."
+                        ),
+                        opened_by="predictive_analytics",
+                    )
+                except Exception:
+                    pass
+
             return {
                 'risk_level': risk_labels[risk_level],
                 'confidence': confidence,
