@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.108.1 — 2026-04-30](#81081---2026-04-30)
 - [8.108.0 — 2026-04-30](#81080---2026-04-30)
 - [8.107.0 — 2026-04-30](#81070---2026-04-30)
 - [8.106.0 — 2026-04-30](#81060---2026-04-30)
@@ -213,6 +214,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.108.1] — 2026-04-30
+
+### Commerce bus semantics fix + robust customer linking + centralised migrations
+
+Three follow-up fixes to the 8.108.0 cross-domain spine:
+
+#### Fixed — `post_sale` no longer creates phantom debt
+
+`commerce_bus.post_sale` previously called `finance_bus.raise_charge`
+for every cinema booking / shop checkout / gym signup / restaurant
+order, lowering the student's balance even though the customer had
+already paid at the till. The unified account view would show paid
+transactions as outstanding debt.
+
+- New **`finance_bus.record_paid_sale`** writes a
+  ``transaction_type='sale'`` row whose
+  ``balance_before == balance_after`` — sale appears in transaction
+  history, balance is untouched. Still publishes
+  `finance.charge.raised` with ``kind='sale'`` so the Finance GUI's
+  bus subscriber refreshes.
+- **`commerce_bus.post_sale`** now defaults to the paid path; an
+  explicit ``invoice=True`` flag opts back into `raise_charge` for
+  genuinely deferred obligations (a future subscription invoice).
+  Return dict gains a ``"kind"`` field. Housing rent continues to
+  use `housing_finance.post_rent_charge` (which is correctly an
+  invoice — rent is owed before paid).
+
+Verified with a real student account: `record_paid_sale(£12.50)` →
+balance delta £0; `raise_charge(£12.50)` → balance delta −£12.50;
+`post_sale` default → £0 delta; `post_sale(invoice=True)` → debit.
+
+#### Added — `commerce_bus.resolve_student`
+
+Replaces the brittle inline email-match in restaurant order_processing.
+Best-effort lookup that checks (in order):
+
+1. `restaurant_customers.student_id` — explicit link column added by
+   the bus_migrations module below.
+2. `students.email` match.
+3. `users.id` → `users.student_id`.
+
+Returns `None` when no match — caller skips the loyalty/finance
+side-effects cleanly. Restaurant `process_cash_payment` now uses
+this resolver instead of an inline two-step query.
+
+#### Added — `modules/services/bus_migrations.py`
+
+Centralises every cross-domain bus's idempotent schema bootstrap into
+one **`ensure_all_bus_schemas()`** function:
+
+- `finance_holds` (from finance_bus)
+- `su_advocacy_requests` (from student_union_bus)
+- `loyalty_ledger` (from loyalty_bus)
+- `gym_day_passes` (from student_union_bus' fitness perk path)
+- ALTER `student_union_clubs.hall_id`
+- ALTER `restaurant_customers.student_id`
+
+Tests that need a populated schema can now call this once in
+``setUp`` instead of having to invoke every bus's first-call path.
+Production code is unchanged — the per-module first-call bootstrap
+remains in place. The aggregator is safe to call repeatedly: every
+CREATE is `IF NOT EXISTS`; every ALTER is gated by a `PRAGMA
+table_info` column-presence check.
 
 ---
 

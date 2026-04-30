@@ -271,6 +271,91 @@ def raise_charge(
 
 
 # ---------------------------------------------------------------------------
+# Paid-in-full sales (informational; do NOT mutate the running balance)
+# ---------------------------------------------------------------------------
+
+def record_paid_sale(
+    student_id: str | int,
+    amount: float,
+    *,
+    source: str,
+    description: str,
+    reference_id: str | None = None,
+    processed_by: str | None = None,
+) -> int | None:
+    """Record a sale that has already been paid at the till.
+
+    Unlike :func:`raise_charge`, this writes a ``transaction_type='sale'``
+    row whose ``balance_before == balance_after`` so it appears in the
+    student's transaction history but does not create phantom debt.
+
+    Used by Cinema / Gym / Restaurant / Shop after a successful POS
+    payment. Use :func:`raise_charge` only for genuinely deferred
+    obligations (e.g. monthly rent, an apprenticeship levy invoice).
+
+    Still publishes ``finance.charge.raised`` so the Finance GUI's
+    bus subscriber refreshes — the event payload includes
+    ``kind='sale'`` so subscribers can distinguish it from a charge.
+    """
+    if not student_id or amount is None:
+        return None
+    sid = str(student_id)
+    amt = float(amount)
+    if amt <= 0:
+        return None
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    tx_id: int | None = None
+
+    try:
+        with get_connection() as conn:
+            acc = conn.execute(
+                "SELECT account_id, balance FROM student_finance_accounts "
+                "WHERE student_id = ? LIMIT 1",
+                (sid,),
+            ).fetchone()
+            if acc is None:
+                conn.execute(
+                    "INSERT INTO student_finance_accounts "
+                    "(student_id, balance, currency, account_status, "
+                    " created_at, updated_at) "
+                    "VALUES (?, 0, 'GBP', 'active', ?, ?)",
+                    (sid, now, now),
+                )
+                acc = conn.execute(
+                    "SELECT account_id, balance FROM student_finance_accounts "
+                    "WHERE student_id = ? LIMIT 1",
+                    (sid,),
+                ).fetchone()
+
+            account_id = acc["account_id"]
+            balance = float(acc["balance"] or 0)
+
+            cur = conn.execute(
+                "INSERT INTO student_finance_transactions "
+                "(account_id, student_id, transaction_type, amount, "
+                " balance_before, balance_after, description, "
+                " reference_id, processed_by, created_at) "
+                "VALUES (?, ?, 'sale', ?, ?, ?, ?, ?, ?, ?)",
+                (account_id, sid, amt, balance, balance, description,
+                 reference_id, processed_by, now),
+            )
+            tx_id = cur.lastrowid
+            conn.commit()
+    except Exception as exc:
+        logger.warning("record_paid_sale(%s, %s) failed: %s",
+                       student_id, amount, exc)
+        return None
+
+    _publish(
+        "finance.charge.raised",
+        tx_id=tx_id, student_id=sid, amount=amt,
+        source=source, description=description,
+        reference_id=reference_id, kind="sale",
+    )
+    return tx_id
+
+
+# ---------------------------------------------------------------------------
 # Balances
 # ---------------------------------------------------------------------------
 
@@ -400,6 +485,7 @@ __all__ = [
     "place_hold",
     "release_hold",
     "raise_charge",
+    "record_paid_sale",
     "student_balance",
     "grant_balance",
     "student_account_summary",

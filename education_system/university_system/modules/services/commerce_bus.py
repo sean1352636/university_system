@@ -124,30 +124,54 @@ def post_sale(
     description: str,
     reference_id: str | None = None,
     earn_points: bool = True,
+    invoice: bool = False,
     processed_by: str | None = None,
 ) -> dict[str, Any]:
     """Single entry-point used by every commerce module.
 
-    * Writes a ``charge`` row through ``finance_bus.raise_charge`` so
-      the unified student-account view picks it up.
-    * Adds loyalty points (1 point per £1, integer) via ``loyalty_bus``.
-    * Returns ``{"tx_id": ..., "points_earned": ...}``.
+    Writes a finance row + earns loyalty points. Returns
+    ``{"tx_id", "points_earned", "kind"}``.
 
-    Sales without a ``student_id`` (walk-in customer) only return the
-    no-op shape — finance/loyalty are not mutated.
+    Two semantic modes:
+
+    * ``invoice=False`` (default) — already paid at the till. Calls
+      :func:`finance_bus.record_paid_sale` which writes a
+      ``transaction_type='sale'`` row that does *not* mutate the
+      running balance. Use for cinema bookings, restaurant orders,
+      shop purchases, gym membership signup.
+    * ``invoice=True`` — genuinely deferred obligation. Calls
+      :func:`finance_bus.raise_charge` which lowers the balance.
+      Use for things like a monthly subscription that will be
+      billed later. Housing rent has its own helper
+      (``housing_finance.post_rent_charge``); don't double up.
+
+    Walk-ins (no ``student_id``) return the no-op shape with no
+    finance/loyalty side-effects.
     """
-    out: dict[str, Any] = {"tx_id": None, "points_earned": 0}
+    out: dict[str, Any] = {
+        "tx_id": None, "points_earned": 0,
+        "kind": "invoice" if invoice else "sale",
+    }
     amt = float(amount or 0)
     if not student_id or amt <= 0:
         return out
 
-    out["tx_id"] = finance_bus.raise_charge(
-        student_id, amt,
-        source=source,
-        description=description,
-        reference_id=reference_id,
-        processed_by=processed_by or source,
-    )
+    if invoice:
+        out["tx_id"] = finance_bus.raise_charge(
+            student_id, amt,
+            source=source,
+            description=description,
+            reference_id=reference_id,
+            processed_by=processed_by or source,
+        )
+    else:
+        out["tx_id"] = finance_bus.record_paid_sale(
+            student_id, amt,
+            source=source,
+            description=description,
+            reference_id=reference_id,
+            processed_by=processed_by or source,
+        )
 
     if earn_points:
         try:
@@ -165,6 +189,52 @@ def post_sale(
             logger.debug("post_sale loyalty add failed: %s", exc)
 
     return out
+
+
+def resolve_student(*, email: str | None = None,
+                    customer_id: str | None = None,
+                    user_id: str | int | None = None) -> str | None:
+    """Best-effort lookup of a student_id from any of the identifiers
+    a commerce module is likely to have. Returns ``None`` if no
+    match — caller skips the loyalty/finance side-effects.
+
+    Order: explicit ``student_id`` field on a customer-row table,
+    then ``students.email``, then ``users.id`` → ``users.student_id``.
+    """
+    try:
+        with get_connection() as conn:
+            if customer_id:
+                # restaurant_customers may carry an explicit student_id
+                # link (added by the restaurant migration); prefer it.
+                try:
+                    row = conn.execute(
+                        "SELECT student_id FROM restaurant_customers "
+                        "WHERE customer_id = ? AND student_id IS NOT NULL "
+                        "LIMIT 1",
+                        (str(customer_id),),
+                    ).fetchone()
+                    if row and row[0]:
+                        return str(row[0])
+                except Exception:
+                    pass
+            if email:
+                row = conn.execute(
+                    "SELECT student_id FROM students WHERE email = ? "
+                    "LIMIT 1",
+                    (email,),
+                ).fetchone()
+                if row and row[0]:
+                    return str(row[0])
+            if user_id is not None:
+                row = conn.execute(
+                    "SELECT student_id FROM users WHERE id = ? LIMIT 1",
+                    (user_id,),
+                ).fetchone()
+                if row and row[0]:
+                    return str(row[0])
+    except Exception as exc:
+        logger.debug("resolve_student failed: %s", exc)
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -202,4 +272,5 @@ def apply_perk(student_id: str | int | None,
 
 __all__ = [
     "post_sale", "price_for", "customer_tier", "apply_perk",
+    "resolve_student",
 ]
