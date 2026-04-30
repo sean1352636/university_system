@@ -433,6 +433,9 @@ class LayoutManager:
                 ("Reports", self.show_reports_view),
                 ("Academic Progress", self.show_academic_progress),
                 ("Assignment System", self.open_assignment_system),
+                ("Exam Scheduler", self.open_exam_scheduler),
+                ("Module Scheduling", self.open_module_scheduling),
+                ("Course Management", self.open_course_management),
                 ("Cross-Domain Activity", self.open_integrations_activity),
                 ("🏠 Return to Main Menu", self.return_to_main_menu)
             ]
@@ -498,6 +501,27 @@ class LayoutManager:
                              relief='sunken', anchor='w', bg='#ecf0f1')
         status_bar.pack(side='bottom', fill='x')
 
+
+    def open_exam_scheduler(self):
+        """Launch the Exam Scheduler in a sibling Toplevel."""
+        from education_system.university_system.modules.domain.academics.gui._cross_launchers import (
+            open_exam_gui,
+        )
+        open_exam_gui(self.root, self.auth)
+
+    def open_module_scheduling(self):
+        """Launch Module Scheduling in a sibling Toplevel."""
+        from education_system.university_system.modules.domain.academics.gui._cross_launchers import (
+            open_module_gui,
+        )
+        open_module_gui(self.root, self.auth)
+
+    def open_course_management(self):
+        """Launch Course Management in a sibling Toplevel."""
+        from education_system.university_system.modules.domain.academics.gui._cross_launchers import (
+            open_course_gui,
+        )
+        open_course_gui(self.root, self.auth)
 
     def open_integrations_activity(self):
         """Open the cross-domain activity panel (early warning, referrals, etc.)."""

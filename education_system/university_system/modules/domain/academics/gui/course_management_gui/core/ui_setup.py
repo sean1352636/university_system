@@ -191,6 +191,25 @@ class UISetupMixin:
             )
 
         # Help menu - available to everyone
+        # Open — cross-launch sibling academic GUIs in their own Toplevels.
+        from education_system.university_system.modules.domain.academics.gui._cross_launchers import (
+            open_exam_gui, open_grade_gui, open_module_gui,
+        )
+        open_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Open", menu=open_menu)
+        open_menu.add_command(
+            label="Exam Scheduler",
+            command=lambda: open_exam_gui(self.root, getattr(self, "auth", None)),
+        )
+        open_menu.add_command(
+            label="Grade Tracking",
+            command=lambda: open_grade_gui(self.root, getattr(self, "auth", None)),
+        )
+        open_menu.add_command(
+            label="Module Scheduling",
+            command=lambda: open_module_gui(self.root, getattr(self, "auth", None)),
+        )
+
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label=_("course_management.menu.help"), menu=help_menu)
         help_menu.add_command(label=_("course_management.menu.about"), command=self.show_about)

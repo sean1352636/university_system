@@ -87,6 +87,27 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
         file_menu.add_separator()
         file_menu.add_command(label=_("exam_scheduler.menu.exit"), command=self.root.quit)
 
+        # Open — cross-launch sibling academic GUIs in their own Toplevels.
+        # Imports lazy via the central _cross_launchers helper so this stays
+        # cycle-safe.
+        from education_system.university_system.modules.domain.academics.gui._cross_launchers import (
+            open_grade_gui, open_module_gui, open_course_gui,
+        )
+        open_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Open", menu=open_menu)
+        open_menu.add_command(
+            label="Grade Tracking",
+            command=lambda: open_grade_gui(self.root, getattr(self, "auth", None)),
+        )
+        open_menu.add_command(
+            label="Module Scheduling",
+            command=lambda: open_module_gui(self.root, getattr(self, "auth", None)),
+        )
+        open_menu.add_command(
+            label="Course Management",
+            command=lambda: open_course_gui(self.root, getattr(self, "auth", None)),
+        )
+
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label=_("exam_scheduler.menu.help"), menu=help_menu)

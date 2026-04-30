@@ -275,6 +275,25 @@ class ModuleSchedulingGUI:
                           lambda _e: self.delete_selected_schedule())
         self.root.after(100, _bind_delete_on_tree)
 
+        # Open — cross-launch sibling academic GUIs in their own Toplevels.
+        from education_system.university_system.modules.domain.academics.gui._cross_launchers import (
+            open_exam_gui, open_grade_gui, open_course_gui,
+        )
+        open_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Open", menu=open_menu)
+        open_menu.add_command(
+            label="Exam Scheduler",
+            command=lambda: open_exam_gui(self.root, getattr(self, "auth", None)),
+        )
+        open_menu.add_command(
+            label="Grade Tracking",
+            command=lambda: open_grade_gui(self.root, getattr(self, "auth", None)),
+        )
+        open_menu.add_command(
+            label="Course Management",
+            command=lambda: open_course_gui(self.root, getattr(self, "auth", None)),
+        )
+
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label=_t("menu.help"), menu=help_menu)
