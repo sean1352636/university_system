@@ -221,3 +221,96 @@ class FinanceManagementGUI:
         except Exception as e:
             messagebox.showerror(_t("finance_management.error.title"), _t("finance_management.error.reporting_failed", error=str(e)))
             print(f"❌ Finance Reporting Dashboard error: {e}")
+
+    def show_student_account_summary(self, student_id: str):
+        """Open a unified per-student account window combining housing,
+        SU and other finance activity via ``finance_bus`` +
+        ``student_union_bus``.
+
+        Reads only — useful for Finance staff triaging a student's
+        cross-domain charges and active holds in one place.
+        """
+        if not self.auth or not self.auth.current_user:
+            messagebox.showerror("Account Summary", "Login required.")
+            return
+        if not any([
+            self.auth.check_permission('manage_finances'),
+            self.auth.check_permission('view_financial_reports'),
+            self.auth.current_user.get('role') == 'admin',
+        ]):
+            messagebox.showerror("Account Summary",
+                                 "You don't have permission to view "
+                                 "student finance summaries.")
+            return
+
+        try:
+            from education_system.university_system.modules.services import (
+                finance_bus,
+            )
+            from education_system.university_system.modules.services import (
+                student_union_bus,
+            )
+        except Exception as exc:
+            messagebox.showerror("Account Summary",
+                                 f"Bus modules unavailable: {exc}")
+            return
+
+        summary = finance_bus.student_account_summary(student_id)
+        su_charges = student_union_bus.list_outstanding_su_charges(student_id)
+        clubs = student_union_bus.list_clubs_for(student_id)
+        hall = student_union_bus.student_hall(student_id)
+
+        win = tk.Toplevel(self.root)
+        win.title(f"Student account — {student_id}")
+        win.geometry("700x600")
+
+        header = ttk.Label(
+            win,
+            text=f"Student {student_id}   |   Balance: £{summary['balance']:.2f}"
+                 f"   |   Hall: {hall or '—'}",
+            font=("TkDefaultFont", 11, "bold"),
+        )
+        header.pack(anchor="w", padx=12, pady=(12, 6))
+
+        holds = summary.get("active_holds") or []
+        if holds:
+            ttk.Label(win, text=f"Active holds ({len(holds)}):",
+                      foreground="#a00").pack(anchor="w", padx=12)
+            for h in holds:
+                ttk.Label(
+                    win,
+                    text=f"  • {h.get('source')} — {h.get('reason')} "
+                         f"(£{float(h.get('amount') or 0):.2f})"
+                ).pack(anchor="w", padx=12)
+        else:
+            ttk.Label(win, text="No active holds.",
+                      foreground="#070").pack(anchor="w", padx=12)
+
+        ttk.Separator(win).pack(fill="x", padx=8, pady=6)
+
+        totals = summary.get("totals_by_source") or {}
+        ttk.Label(win, text="Charges by source (last 365 days):",
+                  font=("TkDefaultFont", 10, "bold")
+                  ).pack(anchor="w", padx=12)
+        if totals:
+            for src, amt in sorted(totals.items(),
+                                   key=lambda kv: -kv[1]):
+                ttk.Label(win, text=f"  • {src}: £{amt:.2f}"
+                          ).pack(anchor="w", padx=12)
+        else:
+            ttk.Label(win, text="  (none)").pack(anchor="w", padx=12)
+
+        ttk.Separator(win).pack(fill="x", padx=8, pady=6)
+
+        ttk.Label(win,
+                  text=f"SU clubs ({len(clubs)}) — recent SU charges "
+                       f"({len(su_charges)}):",
+                  font=("TkDefaultFont", 10, "bold")
+                  ).pack(anchor="w", padx=12)
+        for c in clubs[:10]:
+            ttk.Label(win,
+                      text=f"  • {c.get('name')} ({c.get('category') or '—'})"
+                      ).pack(anchor="w", padx=12)
+
+        ttk.Button(win, text="Close",
+                   command=win.destroy).pack(pady=10)

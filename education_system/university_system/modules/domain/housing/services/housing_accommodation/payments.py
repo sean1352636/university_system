@@ -168,6 +168,23 @@ def record_payment():
             created_by=auth.current_user['username'] if auth and auth.current_user else None
         )
 
+        # Cross-domain: a successful rent payment clears any active
+        # arrears hold on this assignment, unblocking enrolment / room
+        # changes / club-join checks.
+        try:
+            from education_system.university_system.modules.services import (
+                housing_finance,
+            )
+            released = housing_finance.release_arrears_holds_for(
+                student_id, assignment_id,
+                released_by=auth.current_user['username']
+                            if auth and auth.current_user else None,
+            )
+            if released:
+                print(f"Cleared {released} arrears hold(s) for {student_id}.")
+        except Exception:
+            pass
+
         print(f"\nPayment recorded successfully with ID: {payment_id}")
         print(f"Amount: £{payment_amount} | Method: {payment_method}")
         print(f"Period: {period_start} to {period_end}")

@@ -322,6 +322,78 @@ def grant_balance(grant_ref: str | int) -> float:
         return 0.0
 
 
+# ---------------------------------------------------------------------------
+# Unified student account summary
+# ---------------------------------------------------------------------------
+
+def student_account_summary(student_id: str | int,
+                            *, days: int = 365) -> dict[str, Any]:
+    """Return a single dict combining balance, holds, and recent
+    transactions grouped by source. Pulls in housing and SU charges
+    via their bus modules so the Finance GUI doesn't need to know
+    those schemas.
+
+    Shape::
+
+        {
+          "student_id": "S12345",
+          "balance": -120.0,
+          "active_holds": [...],
+          "transactions_by_source": {
+              "housing_rent": [...],
+              "su_membership": [...],
+              "library": [...],
+          },
+          "totals_by_source": {"housing_rent": 540.0, ...},
+        }
+    """
+    sid = str(student_id) if student_id is not None else ""
+    summary: dict[str, Any] = {
+        "student_id": sid,
+        "balance": student_balance(sid),
+        "active_holds": list_active_holds(sid),
+        "transactions_by_source": {},
+        "totals_by_source": {},
+    }
+    if not sid:
+        return summary
+
+    try:
+        with get_connection() as conn:
+            rows = conn.execute(
+                "SELECT transaction_id, transaction_type, amount, "
+                "       description, reference_id, created_at "
+                "FROM student_finance_transactions "
+                "WHERE student_id = ? "
+                "  AND created_at >= date('now', ?) "
+                "ORDER BY created_at DESC",
+                (sid, f"-{int(days)} days"),
+            ).fetchall()
+    except Exception as exc:
+        logger.warning("student_account_summary(%s) failed: %s", sid, exc)
+        return summary
+
+    by_src: dict[str, list[dict[str, Any]]] = {}
+    totals: dict[str, float] = {}
+    for r in rows:
+        d = dict(r)
+        ref = d.get("reference_id") or ""
+        if ref.startswith("club:"):
+            src = "su_membership"
+        elif ref.startswith("asg:"):
+            src = "housing"
+        else:
+            src = (d.get("description") or "other").split()[0].lower() \
+                if d.get("description") else "other"
+        by_src.setdefault(src, []).append(d)
+        if d.get("transaction_type") == "charge":
+            totals[src] = totals.get(src, 0.0) + float(d.get("amount") or 0)
+
+    summary["transactions_by_source"] = by_src
+    summary["totals_by_source"] = totals
+    return summary
+
+
 __all__ = [
     "has_active_hold",
     "list_active_holds",
@@ -330,4 +402,5 @@ __all__ = [
     "raise_charge",
     "student_balance",
     "grant_balance",
+    "student_account_summary",
 ]

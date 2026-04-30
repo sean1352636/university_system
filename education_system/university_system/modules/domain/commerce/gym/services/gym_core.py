@@ -225,12 +225,61 @@ class MembershipManager:
             log_activity('create', 'gym_membership',
                         details={'membership_id': membership_id, 'member_number': member_number, 'type': membership_type})
 
+            # Cross-domain: post the membership fee through the
+            # unified commerce bus (charges student finance ledger,
+            # earns loyalty points, applies SU/tier discount).
+            final_fee = total_fee
+            sale_meta: Dict = {}
+            try:
+                from education_system.university_system.modules.services import (
+                    commerce_bus,
+                )
+                final_fee_calc, _brk = commerce_bus.price_for(
+                    user_id, total_fee, source="gym",
+                )
+                final_fee = final_fee_calc
+                sale_meta = commerce_bus.post_sale(
+                    user_id,
+                    source="gym",
+                    amount=final_fee,
+                    description=f"Gym {membership_type} ({months}mo)",
+                    reference_id=member_number,
+                    processed_by=created_by or "gym",
+                )
+            except Exception:
+                pass
+
+            # Cross-domain: enrolling in any gym membership grants the
+            # student access to the SU "Sports & Fitness" club (free
+            # of charge — this is institutional cross-promotion, not a
+            # paid membership). Best-effort — skipped if SU bus or
+            # club row are missing.
+            try:
+                from education_system.university_system.modules.services import (
+                    student_union_bus,
+                )
+                with get_connection() as conn2:
+                    row = conn2.execute(
+                        "SELECT id FROM student_union_clubs "
+                        "WHERE LOWER(category) IN "
+                        "      ('sports', 'fitness', 'sports & fitness') "
+                        "ORDER BY id LIMIT 1"
+                    ).fetchone()
+                if row:
+                    student_union_bus.join_club(
+                        user_id, int(row[0]), fee=0.0,
+                        ignore_holds=True,
+                    )
+            except Exception:
+                pass
+
             return {
                 'membership_id': membership_id,
                 'member_number': member_number,
-                'total_fee': total_fee,
+                'total_fee': final_fee,
                 'start_date': start_date.isoformat(),
-                'end_date': end_date.isoformat()
+                'end_date': end_date.isoformat(),
+                'loyalty': sale_meta,
             }
         except Exception as e:
             print(f"Error creating membership: {e}")

@@ -527,6 +527,28 @@ def process_application(application_id=None):
             move_out_date = (datetime.datetime.strptime(move_in_date, '%Y-%m-%d') +
                             datetime.timedelta(days=30 * duration_months)).strftime('%Y-%m-%d')
 
+            # Cross-domain: refuse to assign a room to a student who
+            # has any active finance hold (rent arrears from a previous
+            # tenancy, unpaid SU fees, etc.). Operator can override by
+            # clearing the hold in the Finance GUI first.
+            try:
+                from education_system.university_system.modules.services import (
+                    housing_finance,
+                )
+                allowed, reason = housing_finance.can_assign_room(
+                    application[1]
+                )
+                if not allowed:
+                    print(
+                        f"\nCannot assign room to {application[1]}: {reason}.\n"
+                        "Clear the hold in Finance first, then re-process "
+                        "this application."
+                    )
+                    conn.close()
+                    return
+            except Exception:
+                pass
+
             assignment_id = generate_id('ASG')
             contract_number = generate_id('CNT')
 
@@ -553,6 +575,26 @@ def process_application(application_id=None):
             SET available_rooms = available_rooms - 1, updated_at = ?
             WHERE building_id = ?
             ''', (timestamp, selected_room[1]))
+
+            # Cross-domain: post the first month's rent through finance_bus
+            # so the Finance GUI's account view, holds and bus events all
+            # reflect the new tenancy.
+            try:
+                from education_system.university_system.modules.services import (
+                    housing_finance,
+                )
+                housing_finance.post_rent_charge(
+                    application[1], assignment_id, monthly_rent,
+                    period_start=move_in_date,
+                    period_end=(datetime.datetime.strptime(move_in_date,
+                                                            '%Y-%m-%d')
+                                + datetime.timedelta(days=30)
+                                ).strftime('%Y-%m-%d'),
+                    processed_by=auth.current_user.get('username')
+                                 if auth and auth.current_user else None,
+                )
+            except Exception as _hf_exc:
+                pass
 
         elif decision == '2':
             # Reject application

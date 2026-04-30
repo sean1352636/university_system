@@ -653,6 +653,29 @@ def checkout_process():
             created_by=config.auth.current_user['username'] if config.auth and config.auth.current_user else None
         )
 
+        # Cross-domain: post the shop sale through the unified
+        # commerce bus so the loyalty ledger / tier and the unified
+        # student account view both pick it up. Walk-ins (no
+        # student_id) are skipped — only loyalty side-effects need
+        # the student link.
+        if student_id and student_id != "EXTERNAL":
+            try:
+                from education_system.university_system.modules.services import (
+                    commerce_bus,
+                )
+                commerce_bus.post_sale(
+                    student_id,
+                    source="shop",
+                    amount=float(total),
+                    description=f"Shop purchase ({len(cart_items)} items)",
+                    reference_id=transaction_id,
+                    processed_by=(config.auth.current_user.get('username')
+                                  if config.auth and config.auth.current_user
+                                  else None),
+                )
+            except Exception:
+                pass
+
         # Display confirmation
         print("\nOrder placed successfully!")
         print(f"Transaction ID: {transaction_id}")

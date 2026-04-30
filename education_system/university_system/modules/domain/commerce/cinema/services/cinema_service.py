@@ -232,6 +232,7 @@ class CinemaService:
         price: float,
         rows: List[str] = None,
         seats_per_row: int = 12,
+        event_type: str = None,
     ) -> int:
         """Create a screening and generate its seat grid.  Returns the
         screening id.
@@ -264,6 +265,32 @@ class CinemaService:
                         (screening_id, row, seat_num, seat_type),
                     )
             conn.commit()
+
+            # Cross-domain: a screening tagged as a movie-night
+            # publishes itself onto the academic calendar via the SU
+            # bus. Same plumbing SU events / H&S drills already use,
+            # so it shows up everywhere subscribed to
+            # EVENT_CALENDAR_CHANGED.
+            if event_type and event_type.lower() == "movie_night":
+                try:
+                    cursor.execute(
+                        "SELECT title FROM movies WHERE id = ?",
+                        (movie_id,),
+                    )
+                    row = cursor.fetchone()
+                    title = row[0] if row else f"Movie #{movie_id}"
+                    from education_system.university_system.modules.services import (
+                        student_union_bus,
+                    )
+                    student_union_bus.publish_event(
+                        name=f"Movie night: {title}",
+                        when=show_time,
+                        location=f"Cinema screen {screen_number}",
+                        description="Cinema movie night — tickets at door",
+                    )
+                except Exception:
+                    pass
+
             return screening_id
         except Exception:
             conn.rollback()
@@ -411,6 +438,7 @@ class CinemaService:
         payment_method: str = "Credit Card",
         promo_code: str = None,
         snacks: Dict[str, int] = None,
+        student_id: str = None,
     ) -> Dict[str, Any]:
         """Create a complete booking.
 
@@ -459,6 +487,26 @@ class CinemaService:
                         applied_promo_id = promo_id
 
             total_amount = subtotal + snacks_total - discount_amount
+
+            # Cross-domain: stack institution-wide SU/tier discounts on
+            # top of any cinema-local promo code, when we know who's
+            # booking. ``commerce_bus.price_for`` returns final price +
+            # breakdown; we treat the delta as additional discount.
+            if student_id and total_amount > 0:
+                try:
+                    from education_system.university_system.modules.services import (
+                        commerce_bus,
+                    )
+                    final, brk = commerce_bus.price_for(
+                        student_id, total_amount, source="cinema",
+                    )
+                    extra = max(0.0, total_amount - final)
+                    if extra > 0:
+                        discount_amount += extra
+                        total_amount = final
+                except Exception:
+                    pass
+
             booking_ref = _generate_booking_ref()
             ticket_types_json = json.dumps(
                 {str(k): v for k, v in ticket_types.items()}
@@ -528,12 +576,32 @@ class CinemaService:
             )
             seat_list = cursor.fetchall()
 
+            # Cross-domain: post the sale through the unified bus so
+            # the Finance GUI ledger and loyalty tier track this
+            # booking. Walk-ins (no student_id) are skipped.
+            sale_meta: Dict[str, Any] = {}
+            if student_id and total_amount > 0:
+                try:
+                    from education_system.university_system.modules.services import (
+                        commerce_bus,
+                    )
+                    sale_meta = commerce_bus.post_sale(
+                        student_id,
+                        source="cinema",
+                        amount=total_amount,
+                        description=f"Cinema booking {booking_ref}",
+                        reference_id=booking_ref,
+                    )
+                except Exception:
+                    pass
+
             return {
                 "booking_ref": booking_ref,
                 "booking_id": booking_id,
                 "total_amount": total_amount,
                 "discount_amount": discount_amount,
                 "seats": seat_list,
+                "loyalty": sale_meta,
             }
         except Exception:
             conn.rollback()

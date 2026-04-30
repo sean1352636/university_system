@@ -635,6 +635,44 @@ def process_cash_payment():
             created_by=auth.current_user['username'] if auth and auth.current_user else None
         )
 
+        # Cross-domain: if the order's customer matches a student
+        # record, post the sale through the unified commerce bus so
+        # restaurant spend feeds into loyalty tier + the unified
+        # finance ledger. Best-effort lookup.
+        try:
+            cursor.execute(
+                "SELECT rc.email "
+                "FROM orders o "
+                "LEFT JOIN restaurant_customers rc "
+                "  ON rc.customer_id = o.customer_id "
+                "WHERE o.order_id = ?",
+                (order_id,),
+            )
+            crow = cursor.fetchone()
+            customer_email = crow[0] if crow else None
+            student_id = None
+            if customer_email:
+                cursor.execute(
+                    "SELECT student_id FROM students WHERE email = ?",
+                    (customer_email,),
+                )
+                srow = cursor.fetchone()
+                if srow:
+                    student_id = srow[0]
+            if student_id:
+                from education_system.university_system.modules.services import (
+                    commerce_bus,
+                )
+                commerce_bus.post_sale(
+                    student_id,
+                    source="restaurant",
+                    amount=float(order[0]),
+                    description=f"Restaurant order {order_id}",
+                    reference_id=order_id,
+                )
+        except Exception:
+            pass
+
         conn.close()
 
         print(f"✅ Payment processed successfully!")

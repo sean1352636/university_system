@@ -115,9 +115,32 @@ def is_member_of(student_id: str | int, club_id: int) -> bool:
 
 
 def join_club(student_id: str | int, club_id: int,
-              *, fee: float = 0.0) -> int | None:
-    """Add a club_memberships row + (optionally) a finance charge."""
+              *, fee: float = 0.0,
+              ignore_holds: bool = False) -> int | None:
+    """Add a club_memberships row + (optionally) a finance charge.
+
+    Refuses the join if the student has an active finance hold and the
+    club has a non-zero fee (so we don't pile charges onto a blocked
+    account). Pass ``ignore_holds=True`` to override — e.g. an SU
+    welfare officer manually waiving the gate.
+    """
     sid = str(student_id)
+    if fee and fee > 0 and not ignore_holds:
+        try:
+            from education_system.university_system.modules.services import (
+                finance_bus,
+            )
+            if finance_bus.has_active_hold(sid):
+                logger.info(
+                    "join_club refused for %s: active finance hold", sid
+                )
+                _publish("su.membership.refused",
+                         student_id=sid, club_id=int(club_id),
+                         reason="finance_hold")
+                return None
+        except Exception as exc:
+            logger.debug("join_club hold check failed: %s", exc)
+
     today = datetime.now().strftime("%Y-%m-%d")
     membership_id: int | None = None
     try:
@@ -140,7 +163,56 @@ def join_club(student_id: str | int, club_id: int,
 
     if fee and fee > 0:
         charge_membership_fee(sid, club_id, float(fee))
+
+    # Cross-domain: joining a fitness/sports SU club auto-grants
+    # gym day-passes so the SU and gym memberships reinforce each
+    # other instead of competing. Best-effort.
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT category FROM student_union_clubs WHERE id = ?",
+                (int(club_id),),
+            ).fetchone()
+        if row and row[0]:
+            cat = str(row[0]).lower()
+            if any(k in cat for k in ("sport", "fitness", "athletic")):
+                _grant_gym_day_passes(sid, count=3,
+                                      reason=f"su_club:{club_id}")
+    except Exception as exc:
+        logger.debug("fitness club perk failed: %s", exc)
+
     return membership_id
+
+
+def _grant_gym_day_passes(student_id: str, *, count: int,
+                          reason: str) -> None:
+    """Insert N day-pass rows in ``gym_day_passes`` (created on demand).
+    Decoupled from gym_core so SU doesn't import gym; gym reads this
+    table when the student tries to enter without a membership."""
+    if not student_id or count <= 0:
+        return
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        with get_connection() as conn:
+            conn.executescript(
+                "CREATE TABLE IF NOT EXISTS gym_day_passes ("
+                " pass_id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                " student_id TEXT NOT NULL,"
+                " granted_at TEXT NOT NULL,"
+                " used_at TEXT,"
+                " reason TEXT)"
+            )
+            for _ in range(int(count)):
+                conn.execute(
+                    "INSERT INTO gym_day_passes "
+                    "(student_id, granted_at, reason) VALUES (?, ?, ?)",
+                    (student_id, now, reason),
+                )
+            conn.commit()
+        _publish("gym.day_pass.granted",
+                 student_id=student_id, count=int(count), reason=reason)
+    except Exception as exc:
+        logger.debug("_grant_gym_day_passes failed: %s", exc)
 
 
 def leave_club(student_id: str | int, club_id: int) -> bool:
@@ -349,9 +421,138 @@ def publish_event(*, name: str, when: str,
     return event_id
 
 
+# ---------------------------------------------------------------------------
+# Housing ↔ SU: hall-scoped clubs and residents
+# ---------------------------------------------------------------------------
+
+def _ensure_hall_column(conn: sqlite3.Connection) -> None:
+    """Add a nullable ``hall_id`` column to ``student_union_clubs``
+    on first use. Idempotent — silently does nothing if the column
+    already exists or the table is missing."""
+    try:
+        cols = {r[1] for r in conn.execute(
+            "PRAGMA table_info(student_union_clubs)"
+        ).fetchall()}
+        if cols and "hall_id" not in cols:
+            conn.execute(
+                "ALTER TABLE student_union_clubs ADD COLUMN hall_id TEXT"
+            )
+    except Exception as exc:
+        logger.debug("_ensure_hall_column: %s", exc)
+
+
+def student_hall(student_id: str | int) -> str | None:
+    """Return the building_id of the student's active housing
+    assignment, or ``None`` if they have no current room."""
+    if not student_id:
+        return None
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT r.building_id "
+                "FROM housing_assignments a "
+                "JOIN housing_rooms r ON r.room_id = a.room_id "
+                "WHERE a.student_id = ? AND a.status = 'Active' "
+                "ORDER BY a.created_at DESC LIMIT 1",
+                (str(student_id),),
+            ).fetchone()
+            return str(row[0]) if row else None
+    except Exception as exc:
+        logger.warning("student_hall(%s) failed: %s", student_id, exc)
+        return None
+
+
+def list_hall_residents(building_id: str | int) -> list[str]:
+    """Return active resident student_ids for a building. Used by
+    SU elections to scope hall-rep ballots."""
+    if not building_id:
+        return []
+    try:
+        with get_connection() as conn:
+            rows = conn.execute(
+                "SELECT DISTINCT a.student_id "
+                "FROM housing_assignments a "
+                "JOIN housing_rooms r ON r.room_id = a.room_id "
+                "WHERE r.building_id = ? AND a.status = 'Active'",
+                (str(building_id),),
+            ).fetchall()
+            return [str(r[0]) for r in rows]
+    except Exception as exc:
+        logger.warning("list_hall_residents(%s) failed: %s",
+                       building_id, exc)
+        return []
+
+
+def list_hall_clubs(building_id: str | int) -> list[dict[str, Any]]:
+    """Return SU clubs scoped to a specific hall."""
+    if not building_id:
+        return []
+    out: list[dict[str, Any]] = []
+    try:
+        with get_connection() as conn:
+            _ensure_hall_column(conn)
+            for r in conn.execute(
+                "SELECT id, name, category, hall_id "
+                "FROM student_union_clubs "
+                "WHERE hall_id = ?",
+                (str(building_id),),
+            ).fetchall():
+                out.append(dict(r))
+    except Exception as exc:
+        logger.warning("list_hall_clubs(%s) failed: %s", building_id, exc)
+    return out
+
+
+def set_club_hall(club_id: int, building_id: str | int | None) -> bool:
+    """Mark an SU club as hall-scoped (or clear the scope with
+    ``building_id=None``)."""
+    if not club_id:
+        return False
+    try:
+        with get_connection() as conn:
+            _ensure_hall_column(conn)
+            conn.execute(
+                "UPDATE student_union_clubs SET hall_id = ? WHERE id = ?",
+                (str(building_id) if building_id is not None else None,
+                 int(club_id)),
+            )
+            conn.commit()
+        return True
+    except Exception as exc:
+        logger.warning("set_club_hall(%s, %s) failed: %s",
+                       club_id, building_id, exc)
+        return False
+
+
+def hall_eligible_for(student_id: str | int, club_id: int) -> bool:
+    """Return True if either the club is open (no hall_id) or the
+    student lives in the matching hall. Used by ``join_club`` to
+    enforce hall-scoped membership."""
+    if not student_id or not club_id:
+        return False
+    try:
+        with get_connection() as conn:
+            _ensure_hall_column(conn)
+            row = conn.execute(
+                "SELECT hall_id FROM student_union_clubs WHERE id = ?",
+                (int(club_id),),
+            ).fetchone()
+            if not row:
+                return False
+            club_hall = row[0]
+            if not club_hall:
+                return True
+            return student_hall(student_id) == str(club_hall)
+    except Exception as exc:
+        logger.warning("hall_eligible_for failed: %s", exc)
+        return False
+
+
 __all__ = [
     "list_clubs_for", "is_member_of", "join_club", "leave_club",
     "charge_membership_fee", "list_outstanding_su_charges",
     "request_advocacy", "record_advocacy", "list_advocacy_requests_for",
     "publish_event",
+    "student_hall", "list_hall_residents", "list_hall_clubs",
+    "set_club_hall", "hall_eligible_for",
 ]

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.108.0 — 2026-04-30](#81080---2026-04-30)
 - [8.107.0 — 2026-04-30](#81070---2026-04-30)
 - [8.106.0 — 2026-04-30](#81060---2026-04-30)
 - [8.105.0 — 2026-04-30](#81050---2026-04-30)
@@ -212,6 +213,160 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.108.0] — 2026-04-30
+
+### Housing + commerce → finance/loyalty: closing the cross-domain loop for accommodation, cinema, gym, restaurant and shop
+
+This release wires Housing, Cinema, Gym, Restaurant, Shop and the
+Student Union into the existing finance / loyalty / calendar buses,
+turning eight previously stand-alone GUIs into one connected system.
+Two new shared service modules (`commerce_bus`, `loyalty_bus`), one
+new domain helper (`housing_finance`), expansions to
+`finance_bus` and `student_union_bus`, and integration calls at the
+actual sale / payment / assignment points in each consumer.
+
+#### Added — three shared service modules under `modules/services/`
+
+- **`housing_finance.py`** — routes housing money through
+  `finance_bus`. `post_rent_charge`, `post_deposit_charge`,
+  `post_damage_charge`; `place_arrears_hold` (idempotent — folds onto
+  any existing active hold for the same assignment) /
+  `release_arrears_holds_for`; `check_overdue_assignments(days)`
+  (read-only scan of `housing_assignments` joined to `payments`);
+  `can_assign_room(student_id) -> (bool, reason)` — the new gate used
+  by housing applications; `list_housing_charges`. All writes funnel
+  through `finance_bus.raise_charge` / `place_hold` so the existing
+  `finance.charge.raised` / `finance.hold.changed` events fire and
+  the Finance GUI's bus subscriber refreshes automatically.
+- **`commerce_bus.py`** — single small surface used by Cinema, Gym,
+  Restaurant and Shop. `post_sale(student_id, source, amount, ...)`
+  writes a charge through `finance_bus.raise_charge` and adds points
+  through `loyalty_bus.add_points` (1 point per £1 by default).
+  `price_for(student_id, base, source=...)` returns
+  `(final_price, breakdown)` after stacking SU-member discount (10%
+  for any active club member) and tier discount (Silver 5% / Gold 10%
+  / Platinum 15%, capped at 30% combined). `customer_tier` reads from
+  `loyalty_bus` first and falls back to legacy
+  `restaurant_customers.loyalty_tier` so existing data isn't ignored.
+  `apply_perk` exposes cross-venue perks (`cinema_seat_upgrade`,
+  `shop_free_delivery`, `gym_guest_pass`, `restaurant_priority`)
+  driven off the unified tier.
+- **`loyalty_bus.py`** — unified `loyalty_ledger` table created on
+  first use. `add_points(student_id, source, points, ...)` (negative
+  for redemption), `points_balance`, `tier`, `list_recent`. Balance
+  computation also folds in legacy `restaurant_customers.loyalty_points`
+  and `su_points` rows so existing per-venue points still count
+  toward the institution-wide tier; new earnings land in the ledger
+  and become the canonical source. Tier thresholds: Bronze < 500,
+  Silver ≥ 500, Gold ≥ 2000, Platinum ≥ 5000. Publishes
+  `loyalty.points.changed` after each write.
+
+#### Added — `finance_bus.student_account_summary`
+
+New unified read on `finance_bus`:
+`student_account_summary(student_id, days=365)` returns
+`{balance, active_holds, transactions_by_source, totals_by_source}`
+in one call. References starting `asg:` are bucketed under
+`housing`; `club:` under `su_membership`; everything else by
+description first-word. Surfaced in `FinanceManagementGUI` via a new
+`show_student_account_summary(student_id)` Toplevel that lists
+balance, active holds (red), totals per source, SU clubs and recent
+SU charges — single screen, no domain hopping.
+
+#### Added — Housing ↔ Student Union via `student_union_bus`
+
+Five new functions plus a schema upgrade. `student_union_clubs`
+gains a nullable `hall_id` column on first use (idempotent ALTER).
+
+- `student_hall(student_id)` — returns `building_id` of the student's
+  active housing assignment (joins `housing_assignments` ↔
+  `housing_rooms`).
+- `list_hall_residents(building_id)` — distinct active resident
+  student_ids for a building, used by SU elections to scope hall-rep
+  ballots.
+- `list_hall_clubs(building_id)` — clubs scoped to that hall.
+- `set_club_hall(club_id, building_id)` — mark a club as hall-scoped
+  (or clear with `None`).
+- `hall_eligible_for(student_id, club_id)` — open clubs are universal;
+  hall-scoped clubs require a matching `student_hall`. Used by
+  `join_club` to enforce hall eligibility.
+
+#### Added — Gym ↔ Student Union sports auto-link
+
+Joining a fitness/sports SU club (category contains "sport",
+"fitness" or "athletic") grants three rows in a new
+`gym_day_passes` table (created on demand) and publishes
+`gym.day_pass.granted`. The reverse: `gym_core.create_membership`
+auto-grants the SU "Sports & Fitness" club (`fee=0.0`,
+`ignore_holds=True`) so the two memberships reinforce each other
+instead of competing. Decoupled — SU writes a row, gym reads it
+when a non-member tries to enter.
+
+#### Added — Cinema → SU calendar publish
+
+`cinema_service.add_screening` accepts an optional `event_type`
+parameter. `event_type="movie_night"` publishes the screening as an
+SU event via `student_union_bus.publish_event`, hitting the same
+`academic_calendar_events` row + `EVENT_CALENDAR_CHANGED` path that
+H&S drills and SU events already use. Subscribers see the screening
+on every calendar view without new plumbing.
+
+#### Changed — hold-aware gating
+
+- **`student_union_bus.join_club`** — refuses paid-club joins
+  (`fee > 0`) when `finance_bus.has_active_hold(student_id)` returns
+  true, publishing `su.membership.refused` with `reason="finance_hold"`.
+  Welfare officers can override via the new `ignore_holds=True`
+  argument.
+- **`housing_accommodation/applications.py`** — calls
+  `housing_finance.can_assign_room` immediately before
+  `INSERT INTO housing_assignments`. Active holds (rent arrears from
+  a previous tenancy, unpaid SU fees, etc.) abort the assignment
+  with a printed reason; operator clears the hold in Finance first.
+
+#### Changed — point-of-sale wiring into the buses
+
+- **Cinema `create_booking`** — accepts a `student_id` arg, applies
+  `commerce_bus.price_for` on top of any cinema-local promo code
+  (extra delta added to `discount_amount`), then posts the final
+  booking total through `commerce_bus.post_sale` (charges finance,
+  earns loyalty points). Returns the loyalty meta on the booking
+  result.
+- **Gym `MembershipManager.create_membership`** — recalculates
+  `total_fee` via `commerce_bus.price_for` at point of sale, posts
+  the fee through `commerce_bus.post_sale`, returns the new fee +
+  loyalty meta.
+- **Shop `checkout_process`** — alongside the existing
+  `record_payment_to_finance` call, also posts the sale through
+  `commerce_bus.post_sale` when the customer is a real student so
+  shop spend feeds tier.
+- **Restaurant `process_cash_payment`** — best-effort lookup of the
+  order's customer email → `students.student_id`; if matched, posts
+  through `commerce_bus.post_sale` so restaurant spend counts toward
+  the unified loyalty tier.
+- **Housing `process_application`** — on assignment creation,
+  immediately raises the first month's rent charge via
+  `housing_finance.post_rent_charge` so the new tenancy shows in the
+  Finance GUI ledger and unified account view from day one.
+- **Housing `record_payment`** — after a successful rent payment,
+  calls `housing_finance.release_arrears_holds_for(student_id,
+  assignment_id)` to clear any active arrears hold; prints
+  count of holds cleared so the operator sees the unblock.
+
+#### Architecture note
+
+The shared bus pattern (`finance_bus`, `student_union_bus`,
+`careers_bus`, `trip_bus`, `cases_bus`, `restaurant_bus`,
+`email_bus`, `parking_bus`, `cert_bus`, `document_bus`,
+`staff_hr_bus`, `academic_state`) gains two new members
+(`commerce_bus`, `loyalty_bus`) and one domain helper
+(`housing_finance`). Every cross-domain side-effect in this release
+publishes through the existing
+`modules.domain.academics.gui._event_bus` so subscribers (Finance
+GUI, Calendar widgets, SU dashboards) refresh without polling.
 
 ---
 
