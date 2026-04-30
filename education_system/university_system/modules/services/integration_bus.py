@@ -31,6 +31,7 @@ from education_system.university_system.infrastructure.database.db import (
     transaction,
 )
 from education_system.university_system.modules.domain.academics.gui._event_bus import (
+    EVENT_CASE_OPENED,
     EVENT_CERT_CHANGED,
     EVENT_CHARGE_RAISED,
     EVENT_COURSE_CHANGED,
@@ -2397,6 +2398,216 @@ def _has_class_at(student_id: str, day_of_week: str,
     return None
 
 
+# ===========================================================================
+# Tier-4 academic-loop features (attendance, tutor groups, study matching)
+# ===========================================================================
+
+# Cohort attendance % below this triggers a module-level risk row.
+_COHORT_RISK_THRESHOLD = 65.0
+
+
+def sweep_cohort_attendance_risk(*, threshold_pct: float = _COHORT_RISK_THRESHOLD,
+                                  weeks: int = 3) -> dict[str, int]:
+    """Scan recent attendance per module; raise risk for cohorts below threshold.
+
+    Reads ``attendance_records`` over the last ``weeks`` weeks,
+    computes the cohort attendance % per module_code, and routes
+    each below-threshold module through
+    ``attendance_bus.flag_module_attendance_risk`` (which writes
+    into the canonical ``risks`` table via risk_bus).
+
+    Returns ``{"checked": N, "raised": M}``. Idempotent — risk_bus
+    keys on ``reference_id='module:<code>'`` so a second sweep on
+    the same window won't double-raise.
+    """
+    checked = 0
+    raised = 0
+    try:
+        with get_connection() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='attendance_records'"
+            ).fetchone()
+            if not tbl:
+                return {"checked": 0, "raised": 0}
+            rows = conn.execute(
+                "SELECT module_code, "
+                "       SUM(CASE WHEN LOWER(status) IN ('present','late','excused') "
+                "                THEN 1 ELSE 0 END) AS attended, "
+                "       COUNT(*) AS total "
+                "FROM attendance_records "
+                "WHERE julianday('now') - julianday(date) <= ? "
+                "GROUP BY module_code",
+                (int(weeks * 7),),
+            ).fetchall()
+    except Exception as exc:
+        logger.warning("sweep_cohort_attendance_risk query failed: %s", exc)
+        return {"checked": 0, "raised": 0}
+
+    try:
+        from education_system.university_system.modules.services.attendance_bus import (
+            flag_module_attendance_risk,
+        )
+    except Exception:
+        return {"checked": 0, "raised": 0}
+
+    for r in rows:
+        d = dict(r)
+        if not d["total"]:
+            continue
+        checked += 1
+        pct = float(d["attended"] or 0) / float(d["total"]) * 100.0
+        if pct < threshold_pct:
+            try:
+                rid = flag_module_attendance_risk(
+                    d["module_code"],
+                    cohort_pct=pct, weeks_observed=weeks,
+                )
+                if rid:
+                    raised += 1
+            except Exception as exc:
+                logger.debug("flag_module_attendance_risk failed for %s: %s",
+                             d["module_code"], exc)
+
+    return {"checked": checked, "raised": raised}
+
+
+# ---------------------------------------------------------------------------
+# Tier-4 #20 — attendance concern → tutor group agenda
+# ---------------------------------------------------------------------------
+
+def _on_case_opened_for_tutor_group(**payload: Any) -> None:
+    """Append a pastoral agenda item to the next tutor-group meeting
+    when an attendance_concern case is opened.
+
+    cases_bus publishes via EVENT_CASE_OPENED. We filter on
+    ``kind='attendance_concern'`` so other case kinds don't crowd
+    the tutor's calendar.
+    """
+    if (payload.get("kind") or "").lower() != "attendance_concern":
+        return
+    student_id = payload.get("subject_id")
+    case_id = payload.get("case_id") or payload.get("record_id")
+    if not student_id:
+        return
+
+    try:
+        with get_connection() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='tutor_group_members'"
+            ).fetchone()
+            if not tbl:
+                return
+            grp = conn.execute(
+                "SELECT m.group_id FROM tutor_group_members m "
+                "WHERE m.student_id = ? AND m.is_active = 1 "
+                "ORDER BY m.membership_id DESC LIMIT 1",
+                (str(student_id),),
+            ).fetchone()
+            if not grp:
+                return
+            group_id = grp[0]
+            meeting = conn.execute(
+                "SELECT meeting_id, agenda FROM tutor_group_meetings "
+                "WHERE group_id = ? AND status = 'scheduled' "
+                "  AND scheduled_at >= datetime('now') "
+                "ORDER BY scheduled_at ASC LIMIT 1",
+                (group_id,),
+            ).fetchone()
+    except Exception as exc:
+        logger.debug("tutor_group lookup failed: %s", exc)
+        return
+
+    note = (
+        f"Attendance concern: student {student_id} "
+        f"(case #{case_id}) — review intervention plan."
+    )
+    try:
+        with transaction() as conn:
+            if meeting and meeting[0]:
+                # Append to the next scheduled meeting's agenda.
+                existing = (meeting[1] or "").rstrip()
+                new_agenda = f"{existing}\n• {note}".lstrip()
+                conn.execute(
+                    "UPDATE tutor_group_meetings SET agenda = ? "
+                    "WHERE meeting_id = ?",
+                    (new_agenda, meeting[0]),
+                )
+            else:
+                # No upcoming meeting — drop a placeholder so the
+                # tutor sees the flag on the dashboard.
+                conn.execute(
+                    "INSERT INTO tutor_group_meetings "
+                    "(group_id, scheduled_at, duration_minutes, agenda, status) "
+                    "VALUES (?, ?, 30, ?, 'pending')",
+                    (group_id,
+                     datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                     f"• {note}"),
+                )
+            conn.commit()
+    except Exception as exc:
+        logger.debug("tutor_group agenda update failed: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# Tier-4 #21 — enrolment → study matching auto-suggest
+# ---------------------------------------------------------------------------
+
+# Cap on auto-suggestions per enrolment so a popular module doesn't
+# spam the suggestion table.
+_STUDY_MATCH_LIMIT = 3
+
+
+def publish_enrolment_added(student_id: str, course_code: str,
+                            *, source: str = "course_management") -> None:
+    """Origin: enrolment writers (student_registration, course
+    catalog, grade_tracking module_manager). Publishes through the
+    canonical EVENT_ENROLMENT_CHANGED so consumers (study matching
+    auto-suggest, exam roster, finance) can react.
+    """
+    log_and_publish(
+        EVENT_ENROLMENT_CHANGED,
+        source=source,
+        action="enrolled",
+        student_id=str(student_id),
+        course_code=course_code,
+    )
+
+
+def _on_enrolment_added(**payload: Any) -> None:
+    if payload.get("action") not in ("enrolled", "added"):
+        return
+    student_id = payload.get("student_id")
+    course_code = payload.get("course_code")
+    if not (student_id and course_code):
+        return
+
+    try:
+        from education_system.university_system.modules.domain.academics.study_matching.services.study_matching_service import (
+            StudyMatchingService,
+        )
+        svc = StudyMatchingService()
+        matches = svc.find_study_matches(
+            str(student_id), course_id=course_code, limit=_STUDY_MATCH_LIMIT,
+        ) or []
+    except Exception as exc:
+        logger.debug("study matches lookup failed: %s", exc)
+        return
+
+    for m in matches:
+        peer_id = m.get("student_id") or m.get("matched_student_id")
+        if not peer_id:
+            continue
+        try:
+            svc.create_match_suggestion(
+                str(student_id), str(peer_id),
+                course_id=course_code,
+            )
+        except Exception as exc:
+            logger.debug("create_match_suggestion failed: %s", exc)
+
+
 # ---------------------------------------------------------------------------
 # Wire-up
 # ---------------------------------------------------------------------------
@@ -2435,6 +2646,8 @@ def wire_subscribers() -> None:
     subscribe(EVENT_SELECTION_CHANGED, _on_event_check_in)
     subscribe(EVENT_SELECTION_CHANGED, _on_internship_placed)
     subscribe(EVENT_SELECTION_CHANGED, _on_admissions_decision)
+    subscribe(EVENT_CASE_OPENED, _on_case_opened_for_tutor_group)
+    subscribe(EVENT_ENROLMENT_CHANGED, _on_enrolment_added)
     _WIRED = True
     logger.info("integration_bus subscribers wired")
 
@@ -2477,6 +2690,8 @@ __all__ = [
     "publish_admissions_decision",
     "publish_complaint_filed",
     "publish_health_appointment",
+    "publish_enrolment_added",
+    "sweep_cohort_attendance_risk",
     "wire_subscribers",
     "reset_for_tests",
 ]

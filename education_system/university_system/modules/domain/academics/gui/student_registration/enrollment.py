@@ -135,6 +135,16 @@ class EnrollmentMixin:
             logger.info(
                 "Student %s enrolled in %s", self.student_id, module_code,
             )
+            try:
+                from education_system.university_system.modules.services.integration_bus import (
+                    publish_enrolment_added,
+                )
+                publish_enrolment_added(
+                    str(self.student_id), module_code,
+                    source="student_registration",
+                )
+            except Exception:
+                pass
             self._refresh_views()
 
         except Exception as exc:

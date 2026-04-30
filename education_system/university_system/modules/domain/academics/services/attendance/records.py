@@ -233,6 +233,7 @@ def record_attendance(module_code, date, attendance_data, recorded_by="System"):
         # Best-effort — don't block recording on session resolution.
         pass
 
+    affected_students: list[str] = []
     try:
         conn = get_connection()
         cursor = conn.cursor()
@@ -245,12 +246,48 @@ def record_attendance(module_code, date, attendance_data, recorded_by="System"):
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (student_id, module_code, date, status, notes, recorded_by,
                   datetime.datetime.now().isoformat(), session_id))
+            affected_students.append(str(student_id))
 
         conn.commit()
         conn.close()
 
-        return True
-
     except Exception as e:
         print(f"Error recording attendance: {e}")
         return False
+
+    # Recompute each affected student's running attendance % for this
+    # module and route through attendance_bus when below threshold.
+    # Best-effort — we already committed the writes, so a flag failure
+    # cannot fail the user-facing call.
+    try:
+        from education_system.university_system.modules.services.attendance_bus import (
+            flag_student_concern,
+        )
+        threshold = 70.0
+        conn2 = get_connection()
+        for sid in set(affected_students):
+            row = conn2.execute(
+                "SELECT "
+                "  SUM(CASE WHEN LOWER(status) IN ('present','late','excused') "
+                "           THEN 1 ELSE 0 END) AS attended, "
+                "  COUNT(*) AS total "
+                "FROM attendance_records "
+                "WHERE student_id = ? AND module_code = ?",
+                (sid, module_code),
+            ).fetchone()
+            if not row or not row[1]:
+                continue
+            pct = (float(row[0] or 0) / float(row[1])) * 100.0
+            if pct < threshold:
+                flag_student_concern(
+                    sid, threshold_pct=pct,
+                    description=(
+                        f"Auto: {pct:.0f}% attendance in {module_code}"
+                    ),
+                    opened_by=recorded_by,
+                )
+        conn2.close()
+    except Exception:
+        pass
+
+    return True

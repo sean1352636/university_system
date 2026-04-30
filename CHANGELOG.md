@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.116.0 — 2026-04-30](#81160---2026-04-30)
 - [8.115.0 — 2026-04-30](#81150---2026-04-30)
 - [8.114.0 — 2026-04-30](#81140---2026-04-30)
 - [8.113.0 — 2026-04-30](#81130---2026-04-30)
@@ -225,6 +226,95 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.116.0] — 2026-04-30
+
+### integration_bus Tier-4: attendance / tutor groups / study matching loop
+
+Closes the academic feedback loop. attendance_bus exposes
+`flag_student_concern` and `flag_module_attendance_risk` but the
+GUIs never called them automatically — recording attendance was
+just a row insert. Tutor groups and study matching had zero
+event-bus participation. Four flows now connect them.
+
+#### Added — `integration_bus` extensions
+
+- `sweep_cohort_attendance_risk(threshold_pct=65, weeks=3)` — scans
+  `attendance_records` for the last `weeks*7` days, computes
+  cohort attendance % per `module_code`, routes each below-threshold
+  module through `attendance_bus.flag_module_attendance_risk`
+  (which idempotency-keys on `reference_id='module:<code>'`).
+  Returns `{"checked": N, "raised": M}`.
+- `publish_enrolment_added(student_id, course_code, source)` —
+  origin: enrolment writers
+  (`student_registration.enrollment.enroll_in_module`). Subscriber
+  calls `StudyMatchingService.find_study_matches(student_id,
+  course_id, limit=3)` and creates a `study_match_suggestions` row
+  for each top peer.
+- `_on_case_opened_for_tutor_group` — subscribes to
+  `EVENT_CASE_OPENED` filtered by `kind='attendance_concern'`.
+  Resolves the student's active tutor group via
+  `tutor_group_members`, finds the next scheduled meeting, and
+  appends a pastoral agenda bullet. When no upcoming meeting
+  exists, inserts a `'pending'` placeholder row so the tutor
+  dashboard surfaces the flag.
+
+#### Wired features (writer → effect)
+
+- **Attendance auto-flag (#18):** `records.record_attendance`
+  collects affected `student_id`s, then re-queries each one's
+  running attendance % per module after commit. Below 70% calls
+  `attendance_bus.flag_student_concern(threshold_pct=…,
+  description="Auto: <pct>% attendance in <module>")` which (via
+  cases_bus) opens an `attendance_concern` case and publishes
+  `EVENT_CASE_OPENED`. Idempotent per week (attendance_bus's
+  `_RECENT_FLAGS` cache).
+- **Cohort sweep (#19):** new public entry point — call from a
+  daily cron or admin button. Healthy cohorts (≥65%) are skipped
+  silently.
+- **Pastoral agenda (#20):** the `EVENT_CASE_OPENED` from #18 (or
+  any other writer that opens an `attendance_concern` case) flows
+  through to the tutor group's next meeting. Other case kinds
+  (`academic_misconduct`, `safeguarding`, `complaint`) are
+  ignored — the agenda surface is reserved for attendance
+  concerns to keep tutor inboxes signal-rich.
+- **Study match auto-suggest (#21):** the student_registration
+  enrolment writer publishes after the `INSERT INTO
+  student_modules` commit. Subscriber gracefully no-ops when the
+  student has no `study_profiles` row yet (find_study_matches
+  raises) so existing students aren't required to opt in.
+
+#### Patched origin services
+
+- `academics.services.attendance.records.record_attendance` —
+  collects `student_id`s, recomputes %, calls
+  `attendance_bus.flag_student_concern`. Best-effort: a flag
+  failure can't fail the user-facing record write.
+- `student_registration.enrollment.enroll_in_module` — publishes
+  `publish_enrolment_added` after the enrolment INSERT commits.
+
+#### Tests — `tests/cli/integration/test_integration_bus_tier4.py`
+
+7 passing:
+- Recording another absence on a student already at 20%
+  attendance opens an attendance_concern case.
+- Recording attendance for a student at 90% does NOT open a case.
+- Cohort sweep raises a `risks` row for the 50%-attendance
+  module (`reference_id=module:CS101`) and ignores the 90%
+  module — `{"checked": 2, "raised": 1}`.
+- Concern with an existing scheduled meeting appends to its
+  `agenda` column, preserving the existing text.
+- Concern with no scheduled meeting inserts a `'pending'`
+  meeting row carrying the agenda note.
+- `kind='academic_misconduct'` does NOT touch tutor_group_meetings
+  (filter test).
+- Enrolment publish invokes `create_match_suggestion` once per
+  match returned by `find_study_matches`.
+
+Combined integration suite: 301 passing in
+`tests/cli/integration/`.
 
 ---
 
