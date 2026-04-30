@@ -118,6 +118,28 @@ def apply_exam_results(exam: Exam,
         "Exam results applied for %s: %d written, %d failed",
         exam.module_code, written, failed,
     )
+
+    # Step 3 of the attendance/absence/exam closed loop: mirror exam-day
+    # presence into attendance_records so the % the eligibility gate
+    # reads (step 1) reflects students who actually sat the exam.
+    # Students with a result are Present; enrolled students missing
+    # from the results dict are auto-marked Absent. Best-effort —
+    # writeback failure must not affect grade saves.
+    try:
+        from education_system.university_system.modules.domain.academics.gui._exam_attendance_writer import (
+            record_exam_attendance_bulk,
+        )
+        present_ids = [sid for sid, score in results.items()
+                       if isinstance(score, (int, float)) and 0 <= float(score) <= 100]
+        record_exam_attendance_bulk(
+            exam, present_ids, recorded_by=graded_by,
+        )
+    except Exception:
+        logger.exception(
+            "exam-attendance writeback failed for %s/%s",
+            exam.module_code, getattr(exam, "id", "?"),
+        )
+
     return (written, failed)
 
 
