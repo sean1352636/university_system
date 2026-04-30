@@ -398,6 +398,28 @@ class Database:
         if decision not in ("approved", "rejected"):
             raise ValueError(f"unknown decision {decision!r}")
         decided_at = datetime.now().isoformat(timespec="seconds")
+        # Snapshot the request's payload before flipping status — we
+        # need student/module/date for the deferred-exam side-effect
+        # below and the row will already be in 'approved' state by then.
+        # self.cur returns plain tuples (no row_factory), so unpack
+        # by position.
+        try:
+            req_row = self.cur.execute(
+                "SELECT student_id, module_code, date, exam_id, "
+                "       COALESCE(is_missed_exam, 0) "
+                "FROM absence_requests WHERE id = ?",
+                (request_id,),
+            ).fetchone()
+        except sqlite3.Error:
+            req_row = None
+        if req_row is not None:
+            (req_student_id, req_module_code, req_date,
+             req_exam_id, req_is_missed_exam) = req_row
+        else:
+            req_student_id = req_module_code = req_date = None
+            req_exam_id = None
+            req_is_missed_exam = 0
+
         self.cur.execute(
             """UPDATE absence_requests
                SET status = ?,
@@ -420,6 +442,28 @@ class Database:
             logger.exception(
                 "decision email hook failed rid=%s decision=%s",
                 request_id, decision)
+
+        # Step 2 of the attendance/absence/exam closed loop:
+        # If the absence was approved AND it covers a scheduled exam,
+        # auto-create (or attach to) a deferred resit and clone
+        # accommodations. Idempotent — re-deciding won't double up.
+        if (decision == "approved"
+                and req_student_id and req_module_code and req_date):
+            try:
+                from education_system.university_system.modules.domain.academics.gui._absence_to_deferred import (
+                    defer_exam_for_authorised_absence,
+                )
+                defer_exam_for_authorised_absence(
+                    student_id=req_student_id,
+                    module_code=req_module_code,
+                    absence_date=req_date,
+                    exam_id=req_exam_id or None,
+                    decided_by=decided_by,
+                )
+            except Exception:
+                logger.exception(
+                    "deferred-resit auto-create failed rid=%s", request_id,
+                )
 
     def close(self):
         self.conn.close()
