@@ -106,7 +106,27 @@ class GrantApplicationManager:
                     WHERE application_id = ?
                 ''', (decision_status, datetime.now().date().isoformat(),
                       awarded_amount, grant_period_start, grant_period_end, application_id))
-                return True
+                row = conn.execute(
+                    "SELECT grant_name, principal_investigator_id "
+                    "FROM grant_applications WHERE application_id = ?",
+                    (application_id,),
+                ).fetchone()
+            try:
+                from education_system.university_system.modules.services.integration_bus import (
+                    publish_grant_decision,
+                )
+                publish_grant_decision(
+                    application_id=int(application_id),
+                    status=decision_status,
+                    grant_name=row[0] if row else None,
+                    awarded_amount=float(awarded_amount or 0),
+                    pi_id=str(row[1]) if row and row[1] else None,
+                    grant_period_start=grant_period_start or None,
+                    grant_period_end=grant_period_end or None,
+                )
+            except Exception:
+                pass
+            return True
         except Exception as e:
             raise Exception(get_text("research.grants.errors.update_decision", "Error updating grant decision: {error}").format(error=e))
 

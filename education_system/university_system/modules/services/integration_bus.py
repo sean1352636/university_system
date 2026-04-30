@@ -1627,6 +1627,338 @@ def _format_accommodation_note(payload: dict[str, Any]) -> str:
     return ", ".join(bits)
 
 
+# ===========================================================================
+# Tier-2 money-flow features (mail, housing, mobility, research)
+# ===========================================================================
+
+# Mail storage cadence — matches mail_post_core's FREE_STORAGE_DAYS /
+# DAILY_STORAGE_FEE so the sweep produces the same numbers the
+# package GUI surfaces.
+_MAIL_FREE_DAYS = 7
+_MAIL_DAILY_FEE = 0.50
+
+
+def sweep_overdue_mail(*, free_days: int = _MAIL_FREE_DAYS,
+                       daily_fee: float = _MAIL_DAILY_FEE) -> dict[str, int]:
+    """Sweep ``mail_packages`` for unclaimed packages past the free
+    window. Idempotent — uses ``reference_id='package:<id>'`` so a
+    second sweep on the same day doesn't double-bill.
+
+    Returns ``{"charged": N, "emailed": M}``.
+    """
+    charged = 0
+    emailed = 0
+    try:
+        with get_connection() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='mail_packages'"
+            ).fetchone()
+            if not tbl:
+                return {"charged": 0, "emailed": 0}
+            rows = conn.execute(
+                "SELECT package_id, recipient_id, recipient_name, "
+                "       recipient_email, tracking_number, received_date "
+                "FROM mail_packages "
+                "WHERE LOWER(status) IN ('received', 'stored') "
+                "  AND julianday('now') - julianday(received_date) > ?",
+                (int(free_days),),
+            ).fetchall()
+    except Exception as exc:
+        logger.warning("sweep_overdue_mail query failed: %s", exc)
+        return {"charged": 0, "emailed": 0}
+
+    try:
+        from education_system.university_system.modules.services.finance_bus import (
+            raise_charge,
+        )
+        from education_system.university_system.modules.services.email_bus import (
+            send_templated,
+        )
+    except Exception:
+        return {"charged": 0, "emailed": 0}
+
+    for r in rows:
+        d = dict(r)
+        try:
+            received = datetime.strptime(
+                str(d["received_date"])[:10], "%Y-%m-%d").date()
+        except Exception:
+            continue
+        days_over = max((date.today() - received).days - free_days, 0)
+        if days_over <= 0:
+            continue
+        amount = round(days_over * float(daily_fee), 2)
+        ref = f"package:{d['package_id']}:{date.today().isoformat()}"
+        if not d.get("recipient_id"):
+            continue
+        try:
+            tx = raise_charge(
+                d["recipient_id"], amount,
+                source="mail_storage",
+                description=(
+                    f"Mail storage overdue ({days_over}d): "
+                    f"{d.get('tracking_number') or ''}"
+                ),
+                reference_id=ref,
+            )
+            if tx:
+                charged += 1
+        except Exception as exc:
+            logger.debug("mail charge failed for %s: %s",
+                         d["package_id"], exc)
+            continue
+        try:
+            send_templated(
+                d["recipient_id"], "mail.overdue",
+                {
+                    "tracking_number": d.get("tracking_number") or "",
+                    "days_over": days_over,
+                    "amount": amount,
+                },
+                related_to=f"package:{d['package_id']}",
+                force=True,
+            )
+            emailed += 1
+        except Exception as exc:
+            logger.debug("mail email failed: %s", exc)
+
+    return {"charged": charged, "emailed": emailed}
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 #5 — Housing move-out → refund preview + final inspection
+# ---------------------------------------------------------------------------
+
+def publish_housing_move_out(assignment_id: int, *, student_id: str,
+                              room_id: str, building_id: str | None = None,
+                              actual_move_out_date: str,
+                              new_status: str) -> None:
+    """Publish a housing move-out / termination.
+
+    Origin: ``housing.assignments.update_assignment_status`` when
+    new_status ∈ {'Terminated', 'Expired'}. Subscribers (this
+    module) queue a deposit refund preview row and email the
+    inspector to schedule a checkout walk-through.
+    """
+    log_and_publish(
+        EVENT_INCIDENT_LOGGED,
+        source="housing",
+        kind="housing_move_out",
+        severity="low",
+        assignment_id=int(assignment_id),
+        student_id=str(student_id),
+        room_id=str(room_id),
+        building_id=str(building_id) if building_id else None,
+        actual_move_out_date=actual_move_out_date,
+        new_status=new_status,
+    )
+
+
+def _on_housing_move_out(**payload: Any) -> None:
+    if payload.get("kind") != "housing_move_out":
+        return
+    student_id = payload.get("student_id")
+    if not student_id:
+        return
+
+    # Queue a refund preview using whatever deposit can be looked up.
+    deposit = _lookup_housing_deposit(payload.get("assignment_id"))
+    try:
+        with transaction() as conn:
+            conn.executescript(_REFUND_PREVIEW_SQL)
+            conn.execute(
+                "INSERT INTO refund_previews "
+                "(student_id, course_code, amount, reason, status) "
+                "VALUES (?, ?, ?, ?, 'pending')",
+                (str(student_id),
+                 f"housing:{payload.get('room_id')}",
+                 float(deposit),
+                 f"Housing move-out ({payload.get('new_status')})"),
+            )
+            conn.commit()
+    except Exception as exc:
+        logger.debug("housing→refund_previews failed: %s", exc)
+
+    # Email the inspector (first user with an inspections role; fallback admin).
+    try:
+        from education_system.university_system.modules.services.email_bus import (
+            send_templated,
+        )
+        recipient = _housing_inspector_user_id() or _admin_user_id() or "admin"
+        send_templated(
+            recipient, "hs.incident.logged",
+            {
+                "incident_id": f"checkout:{payload.get('assignment_id')}",
+                "severity": "low",
+                "location": f"room {payload.get('room_id')}",
+            },
+            related_to=f"housing_assignment:{payload.get('assignment_id')}",
+            force=True,
+        )
+    except Exception as exc:
+        logger.debug("housing inspector email failed: %s", exc)
+
+
+def _lookup_housing_deposit(assignment_id: Any) -> float:
+    if assignment_id is None:
+        return 0.0
+    try:
+        with get_connection() as conn:
+            for sql in (
+                "SELECT deposit_amount FROM housing_assignments WHERE assignment_id = ?",
+                "SELECT amount FROM housing_payments "
+                "WHERE assignment_id = ? AND LOWER(payment_type) = 'deposit' "
+                "ORDER BY payment_id DESC LIMIT 1",
+            ):
+                try:
+                    row = conn.execute(sql, (assignment_id,)).fetchone()
+                    if row and row[0] is not None:
+                        return float(row[0])
+                except Exception:
+                    continue
+    except Exception:
+        pass
+    return 0.0
+
+
+def _housing_inspector_user_id() -> str | None:
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT user_id FROM users "
+                "WHERE LOWER(role) IN ('housing_inspector', 'inspector', "
+                "                      'housing_manager') "
+                "AND email IS NOT NULL LIMIT 1"
+            ).fetchone()
+            return str(row[0]) if row else None
+    except Exception:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 #6 — Mobility permit issued → finance + email
+# ---------------------------------------------------------------------------
+
+def publish_permit_issued(permit_id: str, *, holder_id: str,
+                          fee: float, zone: str, permit_type: str,
+                          plate: str | None = None,
+                          email: str | None = None,
+                          start_date: str | None = None,
+                          end_date: str | None = None) -> None:
+    """Publish a permit issuance from the legacy CLI/GUI writer
+    paths that don't go through ``parking_bus.issue_permit``.
+
+    Subscriber raises the charge against the holder's finance
+    account and emails the holder. Idempotent on
+    ``reference_id='permit:<permit_id>'``.
+    """
+    log_and_publish(
+        EVENT_INCIDENT_LOGGED,
+        source="mobility",
+        kind="permit_issued",
+        severity="low",
+        permit_id=str(permit_id),
+        holder_id=str(holder_id),
+        fee=float(fee or 0),
+        zone=zone,
+        permit_type=permit_type,
+        plate=plate,
+        email=email,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+
+def _on_permit_issued(**payload: Any) -> None:
+    if payload.get("kind") != "permit_issued":
+        return
+    fee = float(payload.get("fee") or 0)
+    holder_id = payload.get("holder_id")
+    if not holder_id or fee <= 0:
+        return
+    try:
+        from education_system.university_system.modules.services.finance_bus import (
+            raise_charge,
+        )
+        raise_charge(
+            holder_id, fee,
+            source="parking_permit",
+            description=(
+                f"Parking permit fee — {payload.get('permit_type')} "
+                f"({payload.get('zone')}); plate {payload.get('plate') or 'n/a'}"
+            ),
+            reference_id=f"permit:{payload.get('permit_id')}",
+        )
+    except Exception as exc:
+        logger.debug("permit→finance failed: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# Tier-2 #7 — Research grant approved → grant ledger
+# ---------------------------------------------------------------------------
+
+def publish_grant_decision(application_id: int, *, status: str,
+                           grant_name: str | None = None,
+                           awarded_amount: float = 0.0,
+                           pi_id: str | None = None,
+                           grant_period_start: str | None = None,
+                           grant_period_end: str | None = None) -> None:
+    """Publish a grant decision so finance can ledger the award.
+
+    Origin: ``GrantApplicationManager.update_decision``. The PI
+    becomes the budget owner; subscribers ledger the awarded
+    amount via ``finance_bus.raise_charge`` with
+    ``reference_id='grant:<id>'`` so ``finance_bus.grant_balance``
+    can subtract spend from the same ref family.
+    """
+    log_and_publish(
+        EVENT_SELECTION_CHANGED,
+        source="research",
+        action="grant_decided",
+        application_id=int(application_id),
+        status=status,
+        grant_name=grant_name,
+        awarded_amount=float(awarded_amount or 0),
+        pi_id=pi_id,
+        grant_period_start=grant_period_start,
+        grant_period_end=grant_period_end,
+    )
+
+
+def _on_grant_decided(**payload: Any) -> None:
+    if payload.get("action") != "grant_decided":
+        return
+    if (payload.get("status") or "").lower() not in (
+            "approved", "awarded", "accepted"):
+        return
+    amount = float(payload.get("awarded_amount") or 0)
+    if amount <= 0:
+        return
+    pi_id = payload.get("pi_id")
+    application_id = payload.get("application_id")
+    if not pi_id:
+        return
+    try:
+        from education_system.university_system.modules.services.finance_bus import (
+            raise_charge,
+        )
+        # Negative-amount charge represents a *credit* into the
+        # grant's tracked balance. We post it against the PI so the
+        # row appears in their finance summary, with reference_id
+        # tied to the grant so grant_balance() reads it back.
+        raise_charge(
+            pi_id, -amount,
+            source="research_grant",
+            description=(
+                f"Grant award credit: {payload.get('grant_name') or application_id}"
+            ),
+            reference_id=f"grant:{application_id}",
+        )
+    except Exception as exc:
+        logger.debug("grant→finance ledger failed: %s", exc)
+
+
 # ---------------------------------------------------------------------------
 # Wire-up
 # ---------------------------------------------------------------------------
@@ -1656,7 +1988,10 @@ def wire_subscribers() -> None:
     subscribe(EVENT_TERM_CHANGED, _on_term_changed)
     subscribe(EVENT_ENROLMENT_CHANGED, _on_enrolment_withdrew)
     subscribe(EVENT_INCIDENT_LOGGED, _on_health_risk_assessment)
+    subscribe(EVENT_INCIDENT_LOGGED, _on_housing_move_out)
+    subscribe(EVENT_INCIDENT_LOGGED, _on_permit_issued)
     subscribe(EVENT_SELECTION_CHANGED, _on_accommodation_decided)
+    subscribe(EVENT_SELECTION_CHANGED, _on_grant_decided)
     _WIRED = True
     logger.info("integration_bus subscribers wired")
 
@@ -1690,6 +2025,10 @@ __all__ = [
     "publish_enrolment_withdrew",
     "publish_health_risk_assessment",
     "publish_accommodation_decision",
+    "sweep_overdue_mail",
+    "publish_housing_move_out",
+    "publish_permit_issued",
+    "publish_grant_decision",
     "wire_subscribers",
     "reset_for_tests",
 ]

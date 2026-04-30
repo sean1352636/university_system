@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.114.0 — 2026-04-30](#81140---2026-04-30)
 - [8.113.0 — 2026-04-30](#81130---2026-04-30)
 - [8.112.0 — 2026-04-30](#81120---2026-04-30)
 - [8.111.0 — 2026-04-30](#81110---2026-04-30)
@@ -223,6 +224,109 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.114.0] — 2026-04-30
+
+### integration_bus Tier-2: mail, housing, mobility, research money flows
+
+Four cross-domain money-flow integrations that previously stayed
+inside their origin tables. Mail late fees post automatically;
+housing move-outs queue refund previews; legacy parking permit
+issuance feeds finance; research grant approvals credit the PI's
+finance account so `finance_bus.grant_balance` reflects committed
+budget.
+
+#### Added — `integration_bus` extensions
+
+- `sweep_overdue_mail(free_days=7, daily_fee=0.50)` — daily sweep
+  over `mail_packages` where `status IN ('received', 'stored')`
+  and `julianday('now') - julianday(received_date) > free_days`.
+  Posts the storage fee through `finance_bus.raise_charge` with
+  `reference_id='package:<id>:<today>'` and emails the recipient
+  via the new `mail.overdue` template. Returns `{"charged": N,
+  "emailed": M}`.
+- `publish_housing_move_out(assignment_id, student_id, room_id,
+  actual_move_out_date, new_status)` — origin: housing
+  `update_assignment_status` for `'Terminated'` / `'Expired'`
+  status. Subscriber queues a `refund_previews` row sized from
+  `housing_assignments.deposit_amount` (with fallback to the
+  latest `housing_payments` deposit row) and emails the housing
+  inspector / admin via `hs.incident.logged`.
+- `publish_permit_issued(permit_id, holder_id, fee, zone,
+  permit_type, plate, …)` — origin: legacy CLI/GUI permit writer
+  in `parking_management/permits.py` that doesn't go through
+  `parking_bus.issue_permit`. Subscriber raises the permit fee
+  charge against the holder via `finance_bus.raise_charge` with
+  `reference_id='permit:<permit_id>'`. Visitor permits (no
+  user_id) skip publish entirely.
+- `publish_grant_decision(application_id, status, awarded_amount,
+  pi_id, …)` — origin: `GrantApplicationManager.update_decision`.
+  Approved/awarded/accepted statuses with a positive
+  `awarded_amount` post a *negative* charge (= credit) against
+  the PI with `reference_id='grant:<application_id>'`. The
+  matching positive `'charge'` rows from grant spending then net
+  out via `finance_bus.grant_balance(grant_ref)` which already
+  sums by `reference_id`.
+
+#### Wired features (writer → effect)
+
+- **Mail:** `sweep_overdue_mail()` is the sweep entry point —
+  callable from a cron job or admin button. Computes
+  `days_over * daily_fee` per package, mirrors mail_post_core's
+  `FREE_STORAGE_DAYS` / `DAILY_STORAGE_FEE` constants so the
+  numbers match what the GUI surfaces.
+- **Housing:** `assignments.update_assignment_status` publishes
+  after commit when `new_status ∈ {'Terminated', 'Expired'}` and
+  an `actual_move_out_date` was provided. The deposit lookup
+  falls back gracefully when the column is missing — refund
+  previews still queue at £0 so the admin sees the pending row.
+- **Mobility:** `parking_management/permits.py` line ~349
+  publishes after the local `INSERT INTO parking_permits` and
+  `send_permit_confirmation` call. Visitor permits (where
+  `user_id is None`) deliberately skip the publish so visitors
+  aren't billed against a non-existent finance account.
+- **Research:** `research_grants_core.update_decision` reads the
+  grant_name + PI back from `grant_applications` after the UPDATE
+  commits and publishes through `publish_grant_decision`.
+
+#### Email templates
+
+`email_bus._BUILTIN_TEMPLATES` extended with `mail.overdue`. Added
+to `_TRACKED_EVENTS` so user prefs can opt out.
+
+#### Patched origin services
+
+- `mail_post_core.PackageManager` — no patch needed; sweep is a
+  pull-based read of the existing table.
+- `housing.assignments.update_assignment_status` — publish after
+  commit on terminate/expire.
+- `mobility.parking_management.permits.create_permit` — publish
+  after insert + confirmation email.
+- `research.research_grants_core.GrantApplicationManager.update_decision`
+  — read PI/grant_name back after UPDATE commits, publish.
+
+#### Tests — `tests/cli/integration/test_integration_bus_tier2.py`
+
+7 passing:
+- Mail sweep charges 1 of 2 packages (the 10-day-old one) with
+  the right amount (£1.50 = 3 over-days × £0.50) and emails the
+  recipient.
+- Mail sweep is at-least-once safe across same-day re-runs.
+- Housing move-out queues a £750 refund_preview row and emails
+  the housing_inspector.
+- Permit issued raises a £120 charge against the holder with
+  `reference_id='permit:PA260001'`.
+- Permit with £0 fee posts no charge (visitor permit case).
+- Grant approval posts a -£50000 credit against the PI with
+  `reference_id='grant:42'` (matches finance_bus.grant_balance
+  expectations).
+- Grant rejection has no finance effect.
+
+Combined integration test suite: 29 passing across the four
+integration_bus files + the broader `tests/cli/integration/`
+directory still clean (286 total).
 
 ---
 

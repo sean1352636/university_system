@@ -62,6 +62,7 @@ _TRACKED_EVENTS = (
     "exam.pending_grade",
     "exam.room_conflict",
     "finance.report.sent",
+    "mail.overdue",
 )
 
 
@@ -240,6 +241,13 @@ _BUILTIN_TEMPLATES: dict[str, tuple[str, str]] = {
     "finance.report.sent": (
         "Finance report: {report_title}",
         "{report_title} generated {generated_at}.\n\n{summary}",
+    ),
+    "mail.overdue": (
+        "Mail awaiting collection: {tracking_number}",
+        "Your package {tracking_number} has been held {days_over} day(s) "
+        "past the free-storage window. A storage fee of £{amount} has "
+        "been added to your finance account. Please collect it from the "
+        "mail room.",
     ),
 }
 

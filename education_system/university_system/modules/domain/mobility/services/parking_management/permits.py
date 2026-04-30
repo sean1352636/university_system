@@ -346,6 +346,23 @@ def create_parking_permit():
                 print(_t("parking.msg.visitor_permit_ready"))
             else:
                 print(f"\nNote: Permit linked to user account ID: {user_id}")
+                try:
+                    from education_system.university_system.modules.services.integration_bus import (
+                        publish_permit_issued,
+                    )
+                    publish_permit_issued(
+                        permit_id=permit_id,
+                        holder_id=str(user_id),
+                        fee=float(fee),
+                        zone=zone,
+                        permit_type=permit_type,
+                        plate=vehicle_id,
+                        email=email,
+                        start_date=start_date_str,
+                        end_date=end_date_str,
+                    )
+                except Exception:
+                    pass
 
             print("="*50)
 

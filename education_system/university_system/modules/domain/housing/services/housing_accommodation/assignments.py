@@ -558,6 +558,22 @@ def update_assignment_status(assignment_id=None):
             ''', (timestamp, building_id))
 
         conn.commit()
+
+        if new_status in ('Terminated', 'Expired') and actual_move_out_date:
+            try:
+                from education_system.university_system.modules.services.integration_bus import (
+                    publish_housing_move_out,
+                )
+                publish_housing_move_out(
+                    assignment_id=int(assignment_id),
+                    student_id=str(assignment[1]),
+                    room_id=str(assignment[4]),
+                    actual_move_out_date=actual_move_out_date,
+                    new_status=new_status,
+                )
+            except Exception:
+                pass
+
         print("\n" + get_text("housing.assignment.updated_success", status=new_status))
         conn.close()
 
