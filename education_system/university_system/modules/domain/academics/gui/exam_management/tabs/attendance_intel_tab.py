@@ -220,46 +220,50 @@ class ExamEligibilityTabMixin:
             threshold = float(self.eligibility_threshold.get())
         except (TypeError, tk.TclError):
             threshold = ELIGIBILITY_THRESHOLD
+
+        # Delegate the per-student calculation to the canonical
+        # adapter so the verdict gets persisted into ``exam_eligibility``
+        # — the Attendance and Absence GUIs read the same row.
+        from education_system.university_system.modules.domain.academics.gui._attendance_eligibility import (
+            compute_exam_eligibility,
+        )
+
         try:
             with get_connection() as conn:
                 exams = _list_upcoming_exams(conn)
-                for (_eid, mod, _mname, dt, _st, _rm, raw_ids) in exams:
-                    sids = _enrolled_ids(raw_ids)
-                    if not sids:
-                        continue
-                    placeholders = ",".join("?" * len(sids))
-                    rows = conn.execute(
-                        f"""SELECT ar.student_id,
-                                  TRIM(COALESCE(s.first_name,'')||' '
-                                       ||COALESCE(s.last_name,'')) AS name,
-                                  SUM(CASE WHEN LOWER(ar.status)
-                                            IN ('present','late','excused')
-                                            THEN 1 ELSE 0 END) AS present_n,
-                                  COUNT(*) AS total_n
-                           FROM attendance_records ar
-                           LEFT JOIN students s ON s.student_id = ar.student_id
-                           WHERE ar.module_code = ?
-                             AND ar.date < ?
-                             AND ar.student_id IN ({placeholders})
-                           GROUP BY ar.student_id""",
-                        (mod, dt, *sids)).fetchall()
-                    seen = {}
-                    for (sid, name, p, t) in rows:
-                        seen[sid] = (name, p, t)
-                    for sid in sids:
-                        name, p, t = seen.get(sid, ("", 0, 0))
-                        pct = (100.0 * p / t) if t else 0.0
-                        eligible = bool(t) and pct >= threshold
-                        verdict = "Eligible" if eligible else \
-                                  ("No data" if not t else "Not Eligible")
-                        display = (name or "").strip() or sid
-                        tag = "ok" if eligible else ("" if not t else "bad")
-                        self.eligibility_tree.insert(
-                            "", tk.END,
-                            values=(dt, mod, display, p, t,
-                                    f"{pct:.1f}%" if t else "-",
-                                    verdict),
-                            tags=(tag,))
+                # Pre-fetch student names once to avoid one SELECT per
+                # row in the per-exam loop below.
+                name_lookup: dict[str, str] = {}
+                names = conn.execute(
+                    "SELECT student_id, "
+                    "       TRIM(COALESCE(first_name,'')||' '||COALESCE(last_name,'')) "
+                    "FROM students"
+                ).fetchall()
+                for sid, label in names:
+                    name_lookup[sid] = (label or "").strip() or sid
+
+            for (eid, mod, _mname, dt, _st, _rm, raw_ids) in exams:
+                sids = _enrolled_ids(raw_ids)
+                if not sids:
+                    continue
+                for sid in sids:
+                    res = compute_exam_eligibility(
+                        sid, mod, exam_id=eid,
+                        threshold=threshold, cutoff_date=dt, persist=True,
+                    )
+                    p = res["attended"]
+                    t = res["total_sessions"]
+                    pct = res["percentage"]
+                    verdict = res["verdict"]
+                    eligible = res["eligible"]
+                    tag = "ok" if eligible else ("" if not t else "bad")
+                    self.eligibility_tree.insert(
+                        "", tk.END,
+                        values=(dt, mod, name_lookup.get(sid, sid),
+                                p, t,
+                                f"{pct:.1f}%" if t else "-",
+                                verdict),
+                        tags=(tag,))
         except Exception as exc:
             messagebox.showerror("Exam Eligibility",
                                  f"Failed to load: {exc}", parent=self.root)
