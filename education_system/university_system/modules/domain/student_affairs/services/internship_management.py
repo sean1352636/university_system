@@ -759,10 +759,31 @@ def review_application():
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (application[0], application[1], dates[0], dates[1],
                   supervisor_name, supervisor_email, 'active'))
+            placement_id = cursor.lastrowid
+            company_row = cursor.execute(
+                'SELECT company FROM internships WHERE internship_id = ?',
+                (application[1],),
+            ).fetchone()
 
             conn.commit()
 
             print("\nPlacement record created successfully!")
+
+            try:
+                from education_system.university_system.modules.services.integration_bus import (
+                    publish_internship_placement,
+                )
+                publish_internship_placement(
+                    placement_id=int(placement_id),
+                    student_id=str(application[0]),
+                    internship_id=int(application[1]),
+                    company=company_row[0] if company_row else None,
+                    supervisor_email=supervisor_email,
+                    start_date=dates[0],
+                    end_date=dates[1],
+                )
+            except Exception:
+                pass
 
         # Send notification to student
         send_internship_notification(application[0], application[1], new_status, feedback)

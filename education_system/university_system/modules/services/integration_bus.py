@@ -1959,6 +1959,444 @@ def _on_grant_decided(**payload: Any) -> None:
         logger.debug("grant→finance ledger failed: %s", exc)
 
 
+# ===========================================================================
+# Tier-3 engagement / yield / safeguarding-light features
+# ===========================================================================
+
+# Application-fee defaults for a clearing/admissions accept when the
+# application doesn't carry one. Override per-row by setting
+# admission_applications.application_fee.
+_DEFAULT_APPLICATION_FEE = 25.0
+
+
+# ---------------------------------------------------------------------------
+# Tier-3 #8 — Event check-in → engagement KPI
+# ---------------------------------------------------------------------------
+
+def publish_event_attendance(event_id: int, *, user_id: str,
+                             event_name: str | None = None,
+                             event_category: str | None = None) -> None:
+    """Publish an event check-in. Origin: ``EventsService.check_in_to_event``."""
+    log_and_publish(
+        EVENT_SELECTION_CHANGED,
+        source="events",
+        action="event_check_in",
+        event_id=int(event_id),
+        user_id=str(user_id),
+        event_name=event_name,
+        event_category=event_category,
+    )
+
+
+def _on_event_check_in(**payload: Any) -> None:
+    if payload.get("action") != "event_check_in":
+        return
+    # Bump the Student Engagement KPI by 1. _set_kpi handles the
+    # "create on first sight" path so a fresh deploy doesn't need a
+    # seed migration.
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT current_value FROM kpi_metrics "
+                "WHERE kpi_name = 'Student Engagement' LIMIT 1"
+            ).fetchone()
+            current = float(row[0] or 0) if row else 0.0
+    except Exception:
+        current = 0.0
+    _set_kpi(name="Student Engagement", category="engagement",
+             value=current + 1)
+
+
+# ---------------------------------------------------------------------------
+# Tier-3 #9 — Internship placement → KPI + employer email
+# ---------------------------------------------------------------------------
+
+def publish_internship_placement(placement_id: int, *, student_id: str,
+                                  internship_id: int,
+                                  company: str | None = None,
+                                  supervisor_email: str | None = None,
+                                  start_date: str | None = None,
+                                  end_date: str | None = None) -> None:
+    """Publish a confirmed internship placement.
+
+    Origin: ``internship_management.review_application`` after the
+    placement INSERT.
+    """
+    log_and_publish(
+        EVENT_SELECTION_CHANGED,
+        source="careers",
+        action="internship_placed",
+        placement_id=int(placement_id),
+        student_id=str(student_id),
+        internship_id=int(internship_id),
+        company=company,
+        supervisor_email=supervisor_email,
+        start_date=start_date,
+        end_date=end_date,
+    )
+
+
+def _on_internship_placed(**payload: Any) -> None:
+    if payload.get("action") != "internship_placed":
+        return
+
+    # Bump Internship Placements KPI.
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT current_value FROM kpi_metrics "
+                "WHERE kpi_name = 'Internship Placements' LIMIT 1"
+            ).fetchone()
+            current = float(row[0] or 0) if row else 0.0
+    except Exception:
+        current = 0.0
+    _set_kpi(name="Internship Placements", category="careers",
+             value=current + 1)
+
+    # Email the employer supervisor — direct address (not a user_id).
+    supervisor_email = payload.get("supervisor_email")
+    if not supervisor_email:
+        return
+    try:
+        from education_system.university_system.modules.services.email_bus import (
+            send_templated,
+        )
+        # email_bus resolves recipients by user_id; we use the email
+        # as the user_id and force send so prefs lookup doesn't 404.
+        send_templated(
+            supervisor_email, "careers.engagement.started",
+            {
+                "kind": "internship",
+                "role": payload.get("company") or "internship",
+                "hours_required": "see contract",
+            },
+            related_to=f"placement:{payload.get('placement_id')}",
+            force=True,
+        )
+    except Exception as exc:
+        logger.debug("internship→employer email failed: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# Tier-3 #10 — Admissions decision → yield KPI + application fee
+# ---------------------------------------------------------------------------
+
+def publish_admissions_decision(application_id: int, *,
+                                decision: str,
+                                applicant_id: str | None = None,
+                                course: str | None = None,
+                                application_fee: float | None = None,
+                                fee_paid: bool = False) -> None:
+    """Publish an admissions decision (pre-clearing track).
+
+    Origin: ``admissions_crm_core.ApplicationManager.make_decision``.
+    Subscriber updates yield-rate KPI (offers vs accepts) and, on
+    a positive decision with unpaid fee, raises the application
+    fee charge.
+    """
+    log_and_publish(
+        EVENT_SELECTION_CHANGED,
+        source="admissions",
+        action="admissions_decision",
+        application_id=int(application_id),
+        decision=decision,
+        applicant_id=str(applicant_id) if applicant_id else None,
+        course=course,
+        application_fee=float(application_fee) if application_fee is not None else None,
+        fee_paid=bool(fee_paid),
+    )
+
+
+def _on_admissions_decision(**payload: Any) -> None:
+    if payload.get("action") != "admissions_decision":
+        return
+    decision = (payload.get("decision") or "").lower()
+
+    # Yield-rate metric: ratio of accepts to total decisions.
+    _bump_yield_rate(decision)
+
+    # Fee charge on accept when not already paid.
+    if decision in ("accepted", "offer", "approved"):
+        applicant_id = payload.get("applicant_id")
+        if applicant_id and not payload.get("fee_paid"):
+            fee = payload.get("application_fee") or _DEFAULT_APPLICATION_FEE
+            try:
+                from education_system.university_system.modules.services.finance_bus import (
+                    raise_charge,
+                )
+                raise_charge(
+                    applicant_id, float(fee),
+                    source="admissions",
+                    description="Application fee",
+                    reference_id=f"admission_app:{payload.get('application_id')}",
+                )
+            except Exception as exc:
+                logger.debug("admissions→fee charge failed: %s", exc)
+
+
+def _bump_yield_rate(decision: str) -> None:
+    """Update the running Yield Rate (%) KPI: accepted / decisions_made."""
+    try:
+        with get_connection() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='admission_applications'"
+            ).fetchone()
+            if not tbl:
+                return
+            total = conn.execute(
+                "SELECT COUNT(*) FROM admission_applications "
+                "WHERE decision IS NOT NULL AND decision != ''"
+            ).fetchone()[0] or 0
+            accepted = conn.execute(
+                "SELECT COUNT(*) FROM admission_applications "
+                "WHERE LOWER(decision) IN ('accepted', 'offer', 'approved')"
+            ).fetchone()[0] or 0
+    except Exception:
+        return
+    if total <= 0:
+        return
+    rate = (accepted / total) * 100
+    _set_kpi(name="Yield Rate", category="admissions", value=rate)
+
+
+# ---------------------------------------------------------------------------
+# Tier-3 #11 — Urgent complaint → cases_bus + dean email
+# ---------------------------------------------------------------------------
+
+def publish_complaint_filed(complaint_id: str | int, *,
+                            user_id: str | None,
+                            email: str | None = None,
+                            category: str | None = None,
+                            priority: str | None = None,
+                            subject: str | None = None) -> None:
+    """Publish a complaint submission.
+
+    Origin: ``complaints_portal.insert_complaint``. Only urgent /
+    high-priority complaints auto-escalate; lower priorities save
+    silently.
+    """
+    log_and_publish(
+        EVENT_INCIDENT_LOGGED,
+        source="complaints",
+        kind="complaint_filed",
+        severity=_severity_for_priority(priority),
+        complaint_id=str(complaint_id),
+        user_id=str(user_id) if user_id else None,
+        email=email,
+        category=category,
+        priority=priority,
+        subject=subject,
+    )
+
+
+def _severity_for_priority(priority: str | None) -> str:
+    p = (priority or "").lower()
+    if p in ("urgent", "critical", "p0"):
+        return "critical"
+    if p in ("high", "p1"):
+        return "high"
+    if p in ("medium", "p2"):
+        return "medium"
+    return "low"
+
+
+def _on_complaint_filed(**payload: Any) -> None:
+    if payload.get("kind") != "complaint_filed":
+        return
+    priority = (payload.get("priority") or "").lower()
+    if priority not in ("urgent", "critical", "p0", "high", "p1"):
+        return  # auto-escalation only for genuine fires
+
+    user_id = payload.get("user_id") or "unknown"
+
+    # Open a case so disciplinary / pastoral pipelines see it.
+    try:
+        from education_system.university_system.modules.services.cases_bus import (
+            open_case,
+        )
+        open_case(
+            kind="complaint",
+            subject_id=str(user_id),
+            severity=payload.get("severity") or "high",
+            description=(
+                f"Urgent complaint #{payload.get('complaint_id')} — "
+                f"{payload.get('category') or 'uncategorised'}: "
+                f"{payload.get('subject') or ''}"
+            ),
+            opened_by="complaints_portal",
+        )
+    except Exception as exc:
+        logger.debug("complaint→cases_bus failed: %s", exc)
+
+    # Email the Dean of Students (or fallback admin).
+    try:
+        from education_system.university_system.modules.services.email_bus import (
+            send_templated,
+        )
+        recipient = _dean_of_students_user_id() or _admin_user_id() or "admin"
+        send_templated(
+            recipient, "case.opened",
+            {
+                "case_id": payload.get("complaint_id"),
+                "kind": "complaint",
+                "severity": payload.get("severity") or "high",
+            },
+            related_to=f"complaint:{payload.get('complaint_id')}",
+            force=True,
+        )
+    except Exception as exc:
+        logger.debug("complaint→dean email failed: %s", exc)
+
+
+def _dean_of_students_user_id() -> str | None:
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT user_id FROM users "
+                "WHERE LOWER(role) IN ('dean', 'dean_of_students', "
+                "                      'student_affairs_dean') "
+                "AND email IS NOT NULL LIMIT 1"
+            ).fetchone()
+            return str(row[0]) if row else None
+    except Exception:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Tier-3 #12 — Health appointment booked → calendar conflict check
+# ---------------------------------------------------------------------------
+
+def publish_health_appointment(appointment_id: int, *, student_id: str,
+                                appointment_date: str,
+                                appointment_time: str,
+                                provider: str | None = None,
+                                appointment_type: str | None = None) -> None:
+    """Publish a booked health appointment so the calendar checker
+    can flag class-time clashes.
+
+    Origin: health appointment_booking schedule_appointment.
+    """
+    log_and_publish(
+        EVENT_INCIDENT_LOGGED,
+        source="health",
+        kind="health_appointment_booked",
+        severity="low",
+        appointment_id=int(appointment_id),
+        student_id=str(student_id),
+        appointment_date=str(appointment_date),
+        appointment_time=str(appointment_time),
+        provider=provider,
+        appointment_type=appointment_type,
+    )
+
+
+def _on_health_appointment_booked(**payload: Any) -> None:
+    if payload.get("kind") != "health_appointment_booked":
+        return
+    student_id = payload.get("student_id")
+    appt_date = payload.get("appointment_date") or ""
+    appt_time = payload.get("appointment_time") or ""
+    if not (student_id and appt_date and appt_time):
+        return
+
+    # Compute the day-of-week and a 1-hour window around the
+    # appointment, then check student timetable / module_schedule.
+    try:
+        dt = datetime.strptime(
+            f"{appt_date[:10]} {appt_time[:5]}", "%Y-%m-%d %H:%M")
+    except Exception:
+        return
+    day_name = dt.strftime("%A")
+    window_start = dt.strftime("%H:%M")
+    window_end = (dt + timedelta(hours=1)).strftime("%H:%M")
+
+    clash = _has_class_at(student_id, day_name, window_start, window_end)
+    if not clash:
+        return
+
+    # Notify the student via email + flag the appointment as
+    # 'has_conflict' (column added lazily) so the GUI can render a
+    # warning badge.
+    try:
+        with transaction() as conn:
+            cols = {r[1] for r in conn.execute(
+                "PRAGMA table_info(health_appointments)").fetchall()}
+            if "has_conflict" not in cols:
+                conn.execute(
+                    "ALTER TABLE health_appointments "
+                    "ADD COLUMN has_conflict INTEGER DEFAULT 0"
+                )
+            conn.execute(
+                "UPDATE health_appointments SET has_conflict = 1 "
+                "WHERE appointment_id = ?",
+                (int(payload.get("appointment_id")),),
+            )
+            conn.commit()
+    except Exception as exc:
+        logger.debug("health appt conflict flag failed: %s", exc)
+
+    try:
+        from education_system.university_system.modules.services.email_bus import (
+            send_templated,
+        )
+        send_templated(
+            student_id, "hs.incident.logged",
+            {
+                "incident_id": f"appt_clash:{payload.get('appointment_id')}",
+                "severity": "medium",
+                "location": (
+                    f"{appt_date} {appt_time} — clashes with "
+                    f"{clash.get('module_code') or 'class'}"
+                ),
+            },
+            related_to=f"appt:{payload.get('appointment_id')}",
+            force=True,
+        )
+    except Exception as exc:
+        logger.debug("health appt clash email failed: %s", exc)
+
+
+def _has_class_at(student_id: str, day_of_week: str,
+                   start_time: str, end_time: str) -> dict[str, Any] | None:
+    """Look for a module_schedule row the student is enrolled in
+    that overlaps the window.
+    """
+    try:
+        with get_connection() as conn:
+            # student_enrolment is the canonical roster table; fall
+            # back to plan_courses if the former isn't present.
+            for sql in (
+                "SELECT ms.module_code, ms.start_time, ms.end_time "
+                "FROM module_schedule ms "
+                "JOIN student_enrolment se ON se.module_code = ms.module_code "
+                "WHERE se.student_id = ? AND ms.day_of_week = ? "
+                "  AND NOT (ms.end_time <= ? OR ms.start_time >= ?) "
+                "LIMIT 1",
+                "SELECT ms.module_code, ms.start_time, ms.end_time "
+                "FROM module_schedule ms "
+                "JOIN plan_courses pc ON pc.course_code = ms.module_code "
+                "JOIN student_plans sp ON sp.plan_id = pc.plan_id "
+                "WHERE sp.student_id = ? AND ms.day_of_week = ? "
+                "  AND NOT (ms.end_time <= ? OR ms.start_time >= ?) "
+                "LIMIT 1",
+            ):
+                try:
+                    row = conn.execute(
+                        sql, (str(student_id), day_of_week,
+                              start_time, end_time),
+                    ).fetchone()
+                    if row:
+                        return {"module_code": row[0],
+                                "start_time": row[1],
+                                "end_time": row[2]}
+                except Exception:
+                    continue
+    except Exception:
+        pass
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Wire-up
 # ---------------------------------------------------------------------------
@@ -1990,8 +2428,13 @@ def wire_subscribers() -> None:
     subscribe(EVENT_INCIDENT_LOGGED, _on_health_risk_assessment)
     subscribe(EVENT_INCIDENT_LOGGED, _on_housing_move_out)
     subscribe(EVENT_INCIDENT_LOGGED, _on_permit_issued)
+    subscribe(EVENT_INCIDENT_LOGGED, _on_complaint_filed)
+    subscribe(EVENT_INCIDENT_LOGGED, _on_health_appointment_booked)
     subscribe(EVENT_SELECTION_CHANGED, _on_accommodation_decided)
     subscribe(EVENT_SELECTION_CHANGED, _on_grant_decided)
+    subscribe(EVENT_SELECTION_CHANGED, _on_event_check_in)
+    subscribe(EVENT_SELECTION_CHANGED, _on_internship_placed)
+    subscribe(EVENT_SELECTION_CHANGED, _on_admissions_decision)
     _WIRED = True
     logger.info("integration_bus subscribers wired")
 
@@ -2029,6 +2472,11 @@ __all__ = [
     "publish_housing_move_out",
     "publish_permit_issued",
     "publish_grant_decision",
+    "publish_event_attendance",
+    "publish_internship_placement",
+    "publish_admissions_decision",
+    "publish_complaint_filed",
+    "publish_health_appointment",
     "wire_subscribers",
     "reset_for_tests",
 ]

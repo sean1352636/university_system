@@ -317,6 +317,20 @@ def insert_complaint(complaint, submitted_by=None):
         logger.info("Inserted complaint id=%s category=%s priority=%s by=%s",
                     complaint['id'], complaint.get('category'),
                     complaint.get('priority'), submitted_by)
+        try:
+            from education_system.university_system.modules.services.integration_bus import (
+                publish_complaint_filed,
+            )
+            publish_complaint_filed(
+                complaint_id=complaint['id'],
+                user_id=complaint.get('user_id'),
+                email=complaint.get('email'),
+                category=complaint.get('category'),
+                priority=complaint.get('priority'),
+                subject=complaint.get('subject'),
+            )
+        except Exception:
+            pass
         return True
     except sqlite3.Error:
         logger.exception("Failed to insert complaint id=%s", complaint.get('id'))

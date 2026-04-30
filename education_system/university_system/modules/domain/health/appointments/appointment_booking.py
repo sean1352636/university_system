@@ -932,13 +932,28 @@ def schedule_appointment(auth):
     
     conn.commit()
     appointment_id = cursor.lastrowid
-    
+
     log_audit_event(auth.current_user['id'], 'schedule_appointment', 'appointment', appointment_id)
-    
+
     print(f"\nAppointment scheduled successfully!")
     print(f"Appointment ID: {appointment_id}")
     print(f"Date: {appointment_date} at {appointment_time}")
     print(f"Provider: {provider}")
+
+    try:
+        from education_system.university_system.modules.services.integration_bus import (
+            publish_health_appointment,
+        )
+        publish_health_appointment(
+            appointment_id=int(appointment_id),
+            student_id=str(student_id),
+            appointment_date=str(appointment_date),
+            appointment_time=str(appointment_time),
+            provider=provider,
+            appointment_type=appointment_type,
+        )
+    except Exception:
+        pass
     
     # Send confirmation email (placeholder)
     try:

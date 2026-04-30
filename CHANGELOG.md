@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.115.0 — 2026-04-30](#81150---2026-04-30)
 - [8.114.0 — 2026-04-30](#81140---2026-04-30)
 - [8.113.0 — 2026-04-30](#81130---2026-04-30)
 - [8.112.0 — 2026-04-30](#81120---2026-04-30)
@@ -224,6 +225,89 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.115.0] — 2026-04-30
+
+### integration_bus Tier-3: events, internships, admissions, complaints, health
+
+Five engagement / yield / safeguarding-light flows that rounded
+out the still-isolated domains. Every cross-domain writer now
+fans out where it should.
+
+#### Added — `integration_bus` extensions
+
+- `publish_event_attendance(event_id, user_id, event_name)` —
+  origin: `EventsService.check_in_to_event`. Subscriber bumps
+  the Student Engagement KPI by 1 per check-in, lazily creating
+  the row if missing.
+- `publish_internship_placement(placement_id, student_id,
+  internship_id, company, supervisor_email, …)` — origin:
+  `internship_management.review_application` after the placement
+  INSERT. Subscriber bumps Internship Placements KPI and emails
+  the supervisor (the supervisor_email is the recipient_id; force
+  bypasses prefs since employers don't have user rows).
+- `publish_admissions_decision(application_id, decision,
+  applicant_id, application_fee, fee_paid)` — origin:
+  `admissions_crm_core.ApplicationManager.make_decision`.
+  Subscriber refreshes Yield Rate KPI from
+  `admission_applications` (accepts ÷ decided), and on accepts
+  with `fee_paid=False` raises a £25 application fee with
+  `reference_id=admission_app:<id>`.
+- `publish_complaint_filed(complaint_id, user_id, email, category,
+  priority, subject)` — origin: `complaints_portal.insert_complaint`.
+  Severity is mapped from priority; only `urgent`/`critical`/`p0`/
+  `high`/`p1` complaints auto-escalate. Subscriber opens a case
+  via `cases_bus.open_case(kind='complaint')` and emails the Dean
+  of Students (with admin fallback).
+- `publish_health_appointment(appointment_id, student_id,
+  appointment_date, appointment_time, provider,
+  appointment_type)` — origin:
+  `health.appointment_booking.schedule_appointment`. Subscriber
+  computes the day-of-week + 1-hour window, queries
+  `module_schedule` joined to `student_enrolment` (with
+  `plan_courses` fallback), flags the appointment with
+  `has_conflict=1` (column added lazily) and emails the student
+  via `hs.incident.logged` when a clash is found.
+
+#### Wired features (writer → effect)
+
+- **Events:** `events_service.check_in_to_event` reads the event
+  name back from `unified_events` after the INSERT into
+  `discovery_event_attendance`, then publishes.
+- **Internships:** `internship_management.review_application`
+  captures the new `placement_id` (`cursor.lastrowid`) and the
+  internship's company name (`internships.company`) before
+  closing the connection, then publishes.
+- **Admissions:** `make_decision` reads `prospect_id` and
+  `application_fee_paid` back inside the same transaction so the
+  publisher knows who to bill and whether to skip.
+- **Complaints:** `insert_complaint` publishes after commit;
+  prefs lookup ensures only escalation-priority items fan out.
+- **Health appointments:** `schedule_appointment` (the second
+  writer at line ~926 covering all booking entry points) publishes
+  after audit log + confirmation email.
+
+#### Tests — `tests/cli/integration/test_integration_bus_tier3.py`
+
+8 passing:
+- Two consecutive event check-ins set Student Engagement KPI to 2.
+- Internship placement bumps Internship Placements KPI and emails
+  the supervisor with `careers.engagement.started`.
+- Admissions accept with unpaid fee posts £25 charge with
+  `reference_id=admission_app:<id>` and refreshes Yield Rate to
+  the right ratio (66.67% for 2 of 3 decisions).
+- Admissions accept with `fee_paid=True` posts no charge.
+- Urgent complaint opens a `disciplinary_records` row with
+  `severity='critical'` and emails the Dean.
+- Low-priority complaint is a silent no-op.
+- Health appointment that clashes with an enrolled module flags
+  `has_conflict=1` and emails the student.
+- Health appointment outside class hours triggers no email.
+
+Combined integration suite: 294 passing across the full
+`tests/cli/integration/` directory.
 
 ---
 

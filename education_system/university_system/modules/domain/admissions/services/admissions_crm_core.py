@@ -158,7 +158,24 @@ class ApplicationManager:
                     SET decision = ?, decision_date = ?, status = 'decision_made'
                     WHERE application_id = ?
                 ''', (decision, decision_date, application_id))
-                return True
+                row = conn.execute(
+                    "SELECT prospect_id, application_fee_paid "
+                    "FROM admission_applications WHERE application_id = ?",
+                    (application_id,),
+                ).fetchone()
+            try:
+                from education_system.university_system.modules.services.integration_bus import (
+                    publish_admissions_decision,
+                )
+                publish_admissions_decision(
+                    application_id=int(application_id),
+                    decision=decision,
+                    applicant_id=str(row[0]) if row and row[0] else None,
+                    fee_paid=bool(row[1]) if row else False,
+                )
+            except Exception:
+                pass
+            return True
         except Exception as e:
             raise Exception(f"Error making decision: {e}")
 

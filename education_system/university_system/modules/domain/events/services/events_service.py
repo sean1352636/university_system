@@ -786,7 +786,22 @@ class EventsService:
                     details={'event_id': event_id}
                 )
 
-                return True
+                event_name_row = conn.execute(
+                    "SELECT event_name FROM unified_events WHERE event_id = ?",
+                    (event_id,),
+                ).fetchone()
+
+            try:
+                from education_system.university_system.modules.services.integration_bus import (
+                    publish_event_attendance,
+                )
+                publish_event_attendance(
+                    event_id, user_id=str(user_id),
+                    event_name=event_name_row[0] if event_name_row else None,
+                )
+            except Exception:
+                pass
+            return True
 
         except Exception as e:
             logger.error(f"Error checking in to event {event_id}: {e}")
