@@ -495,6 +495,31 @@ class SubmissionManager:
                     self.root.after(0, lambda: self.show_status_message(f"File validation failed: {message}", "error"))
                     return
 
+                # Prerequisite gate — re-check at submission time so newly
+                # added prereq rules (after enrolment) still block work.
+                try:
+                    cursor.execute(
+                        "SELECT module_code FROM assignments WHERE id = ?",
+                        (assignment_id,),
+                    )
+                    mc_row = cursor.fetchone()
+                    submission_module_code = mc_row[0] if mc_row else None
+                    if submission_module_code:
+                        from education_system.university_system.modules.domain.academics.gui._cross_services import (
+                            check_prerequisites,
+                        )
+                        verdict = check_prerequisites(student_id, submission_module_code)
+                        if not verdict.get("ok", True):
+                            reason = verdict.get("reason") or "Prerequisites not met."
+                            self.root.after(0, lambda r=reason: self.show_status_message(
+                                f"Submission blocked: {r}", "error"
+                            ))
+                            return
+                except Exception as prereq_err:
+                    # Soft-fail — never block a submission on the prereq
+                    # check itself. Log and continue.
+                    print(f"Warning: prerequisite check failed: {prereq_err}")
+
                 # Check for existing submissions
                 cursor.execute('''
                 SELECT version_number FROM assignment_submissions

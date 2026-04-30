@@ -168,6 +168,52 @@ class LibraryGUI:
         # Check for late fees and display notification
         self.check_and_display_late_fees()
 
+        # Cross-domain bus subscriptions: when other GUIs publish events
+        # the library cares about (exam peak periods, charges, reading
+        # list edits), reload the relevant view automatically.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                subscribe_tk,
+                EVENT_EXAM_CHANGED,
+                EVENT_READING_LIST_CHANGED,
+                EVENT_CHARGE_RAISED,
+                EVENT_LOAN_CHANGED,
+            )
+
+            def _on_exam_change(**payload):
+                # peak_period hint lets the library team plan extended
+                # opening hours / silent zones around exam blocks.
+                if payload.get("peak_period") and hasattr(self, "status_label"):
+                    try:
+                        self.status_label.configure(
+                            text="Exam peak period — review opening hours",
+                            foreground="#c0392b",
+                        )
+                    except Exception:
+                        pass
+
+            def _on_reading_list_change(**_payload):
+                if hasattr(self, "refresh_reading_lists"):
+                    try:
+                        self.refresh_reading_lists()
+                    except Exception:
+                        pass
+
+            def _on_loan_change(**_payload):
+                if hasattr(self, "refresh_overdue_books"):
+                    try:
+                        self.refresh_overdue_books()
+                    except Exception:
+                        pass
+
+            subscribe_tk(EVENT_EXAM_CHANGED, self.master, _on_exam_change)
+            subscribe_tk(EVENT_READING_LIST_CHANGED, self.master,
+                         _on_reading_list_change)
+            subscribe_tk(EVENT_LOAN_CHANGED, self.master, _on_loan_change)
+            subscribe_tk(EVENT_CHARGE_RAISED, self.master, _on_loan_change)
+        except Exception:
+            pass
+
     def get_user_role(self):
         """Get the current user's role from authentication system"""
         try:

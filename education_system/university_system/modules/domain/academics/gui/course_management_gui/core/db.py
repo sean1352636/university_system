@@ -382,8 +382,69 @@ class DatabaseMixin:
                 cursor.execute(query, (page_size, offset))
                 courses = cursor.fetchall()
 
+                # Pre-compute course-codes that have unresolved schedule
+                # conflicts on any of their modules. Single bus call per
+                # refresh — the per-row check is then a set lookup.
+                conflict_courses: set[str] = set()
+                try:
+                    from education_system.university_system.modules.domain.academics.gui._cross_services import (
+                        find_conflicts_for_course,
+                    )
+                    for course in courses:
+                        course_code = course[1]
+                        if course_code and find_conflicts_for_course(course_code):
+                            conflict_courses.add(course_code)
+                except Exception:
+                    conflict_courses = set()
+
+                # Capacity heat overlay (#9). For each course, sum the
+                # capacity of every distinct room across its modules'
+                # scheduled sessions. If that's smaller than the
+                # course's current enrolment, the row is tinted orange:
+                # we're enrolling more bodies than we have seats for.
+                hot_courses: set[str] = set()
+                try:
+                    for course in courses:
+                        course_code = course[1]
+                        # Course tuple: id, code, name, dept, level, credits,
+                        # enrollment 'X/Y', status. Pull X.
+                        try:
+                            enrolled = int(str(course[6]).split('/')[0])
+                        except (IndexError, ValueError, TypeError):
+                            enrolled = 0
+                        if enrolled <= 0 or not course_code:
+                            continue
+                        cap_row = cursor.execute(
+                            "SELECT COALESCE(SUM(r.capacity), 0) "
+                            "FROM modules m "
+                            "LEFT JOIN module_schedule ms "
+                            "       ON ms.module_code = m.module_code "
+                            "LEFT JOIN rooms r ON ms.room_id = r.id "
+                            "WHERE m.course = ?",
+                            (course_code,),
+                        ).fetchone()
+                        room_capacity = int((cap_row[0] if cap_row else 0) or 0)
+                        if room_capacity and room_capacity < enrolled:
+                            hot_courses.add(course_code)
+                except Exception:
+                    hot_courses = set()
+
                 for course in courses:
-                    self.course_tree.insert("", tk.END, values=course)
+                    course_code = course[1]
+                    tag_list = []
+                    if course_code in conflict_courses:
+                        tag_list.append('has_conflict')
+                    if course_code in hot_courses:
+                        tag_list.append('over_capacity')
+                    tags = tuple(tag_list)
+                    display_code = course_code
+                    if 'has_conflict' in tags:
+                        display_code = f"⚠ {course_code}"
+                    elif 'over_capacity' in tags:
+                        display_code = f"🔥 {course_code}"
+                    if display_code != course_code:
+                        course = (course[0], display_code) + tuple(course[2:])
+                    self.course_tree.insert("", tk.END, values=course, tags=tags)
 
                 self.update_status(
                     f"Showing {len(courses)} of {self._page_total} course(s).")

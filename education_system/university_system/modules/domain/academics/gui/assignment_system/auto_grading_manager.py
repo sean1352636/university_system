@@ -919,6 +919,15 @@ class AutoGradingManager:
             except Exception:
                 errors += 1
 
+        # Closed-loop write-back: every distinct (student, module) we just
+        # auto-graded gets marked 'attended' on any exam scheduled for that
+        # module today. Mirrors the manual exam-invigilation path so a
+        # computer-marked test counts toward attendance/eligibility.
+        try:
+            self._writeback_exam_attendance(pending)
+        except Exception as wb_err:
+            print(f"Warning: exam attendance write-back failed: {wb_err}")
+
         messagebox.showinfo(
             "Batch Grading Complete",
             f"Graded: {graded}\nErrors: {errors}\nTotal pending: {len(pending)}",
@@ -927,6 +936,74 @@ class AutoGradingManager:
         # Refresh dashboard if visible
         if hasattr(self, 'pending_tree'):
             self._load_pending_submissions()
+
+    def _writeback_exam_attendance(self, pending_rows):
+        """Mark each just-graded student 'attended' on today's matching exam.
+
+        ``pending_rows`` is the list of ``(student_answer_id, qtype)`` we
+        iterated in ``run_auto_grading``. Walk back through them to learn
+        each (student_id, module_code) pair, then look up exams scheduled
+        for that module on today's date and call the canonical writer.
+        """
+        if not pending_rows:
+            return
+        from datetime import date
+        from education_system.university_system.modules.domain.academics.gui._exam_attendance_writer import (
+            record_exam_attendance,
+        )
+        from education_system.university_system.modules.domain.academics.gui._event_bus import (
+            publish, EVENT_EXAM_CHANGED,
+        )
+
+        today = date.today().strftime('%Y-%m-%d')
+        sa_ids = [row[0] for row in pending_rows]
+        if not sa_ids:
+            return
+
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        try:
+            cursor = conn.cursor()
+            placeholders = ','.join('?' * len(sa_ids))
+            # Map answer-id → (student_id, module_code) via the question's bank.
+            cursor.execute(
+                f"""
+                SELECT DISTINCT sa.student_id, qb.module_code
+                FROM student_answers sa
+                JOIN questions q       ON sa.question_id = q.id
+                JOIN question_banks qb ON q.bank_id = qb.id
+                WHERE sa.id IN ({placeholders})
+                  AND sa.student_id IS NOT NULL
+                  AND qb.module_code IS NOT NULL
+                """,
+                sa_ids,
+            )
+            pairs = cursor.fetchall()
+
+            written = 0
+            for student_id, module_code in pairs:
+                cursor.execute(
+                    "SELECT id FROM exams WHERE module_code = ? AND date = ? "
+                    "ORDER BY start_time LIMIT 1",
+                    (module_code, today),
+                )
+                exam_row = cursor.fetchone()
+                if not exam_row:
+                    continue
+                exam_id = exam_row[0]
+                if record_exam_attendance(
+                    exam_id, student_id, status='attended',
+                    module_code=module_code, exam_date=today,
+                    recorded_by='auto_grader',
+                    notes='Marked attended via auto-grading completion.',
+                ):
+                    written += 1
+                    publish(
+                        EVENT_EXAM_CHANGED,
+                        exam_id=exam_id, module_code=module_code,
+                        student_id=student_id, source='auto_grading',
+                    )
+        finally:
+            conn.close()
 
     # ------------------------------------------------------------------ #
     #  Question Bank Stats

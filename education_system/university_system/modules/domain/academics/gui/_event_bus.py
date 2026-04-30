@@ -42,6 +42,35 @@ EVENT_ASSESSMENT_CHANGED = "assessment.changed"
 EVENT_ASSIGNMENT_CHANGED = "assignment.changed"
 EVENT_CALENDAR_CHANGED = "calendar.changed"
 
+# Cross-domain events (Finance / Library / Research). The bus is the
+# de-facto in-process channel for all GUIs, not just academics, so the
+# new events live here too.
+EVENT_CHARGE_RAISED = "finance.charge.raised"
+EVENT_HOLD_CHANGED = "finance.hold.changed"
+EVENT_READING_LIST_CHANGED = "library.reading_list.changed"
+EVENT_LOAN_CHANGED = "library.loan.changed"
+
+# Shared academic state. ``term.changed`` carries year/semester so all
+# four scheduling GUIs re-filter together. ``selection.changed`` is a
+# soft pointer ("we're now looking at module X") so sibling windows can
+# highlight the same row without forcing a context switch.
+EVENT_TERM_CHANGED = "academic.term.changed"
+EVENT_SELECTION_CHANGED = "academic.selection.changed"
+
+# HR publishes this when a staff member's availability changes (leave
+# approved, sickness recorded, sabbatical starts). Module Scheduling,
+# Exam, Timetable, and Grade subscribe so they can grey-out / flag
+# affected slots without the operator having to refresh manually.
+EVENT_STAFF_AVAILABILITY_CHANGED = "hr.staff_availability.changed"
+
+# Document Manager / Health & Safety / Certifications events. The DM
+# event lets the chatbot re-index and any GUI displaying an evidence
+# pack auto-refresh. Incident logged is the HS/First Aid bridge into
+# Finance and the chatbot. Cert changed feeds the expiry tracker.
+EVENT_DOCUMENT_CHANGED = "dm.document.changed"
+EVENT_INCIDENT_LOGGED = "hs.incident.logged"
+EVENT_CERT_CHANGED = "hr.certification.changed"
+
 ALL_EVENTS = (
     EVENT_EXAM_CHANGED,
     EVENT_GRADE_CHANGED,
@@ -51,6 +80,16 @@ ALL_EVENTS = (
     EVENT_ASSESSMENT_CHANGED,
     EVENT_ASSIGNMENT_CHANGED,
     EVENT_CALENDAR_CHANGED,
+    EVENT_CHARGE_RAISED,
+    EVENT_HOLD_CHANGED,
+    EVENT_READING_LIST_CHANGED,
+    EVENT_LOAN_CHANGED,
+    EVENT_TERM_CHANGED,
+    EVENT_SELECTION_CHANGED,
+    EVENT_STAFF_AVAILABILITY_CHANGED,
+    EVENT_DOCUMENT_CHANGED,
+    EVENT_INCIDENT_LOGGED,
+    EVENT_CERT_CHANGED,
 )
 
 # ---------------------------------------------------------------------------
@@ -157,6 +196,16 @@ __all__ = [
     "EVENT_ASSESSMENT_CHANGED",
     "EVENT_ASSIGNMENT_CHANGED",
     "EVENT_CALENDAR_CHANGED",
+    "EVENT_CHARGE_RAISED",
+    "EVENT_HOLD_CHANGED",
+    "EVENT_READING_LIST_CHANGED",
+    "EVENT_LOAN_CHANGED",
+    "EVENT_TERM_CHANGED",
+    "EVENT_SELECTION_CHANGED",
+    "EVENT_STAFF_AVAILABILITY_CHANGED",
+    "EVENT_DOCUMENT_CHANGED",
+    "EVENT_INCIDENT_LOGGED",
+    "EVENT_CERT_CHANGED",
     "ALL_EVENTS",
     "subscribe",
     "subscribe_tk",

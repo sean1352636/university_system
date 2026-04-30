@@ -151,9 +151,31 @@ class IncidentDB:
                  report['description']),
             )
             conn.commit()
-            return cur.lastrowid
+            new_id = cur.lastrowid
         finally:
             conn.close()
+
+        # Bus broadcast (#2). Lets H&S link this treatment to a parent
+        # incident, the chatbot proactively notify managers, and DM
+        # offer an evidence-pack slot.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                publish, EVENT_INCIDENT_LOGGED,
+            )
+            publish(
+                EVENT_INCIDENT_LOGGED,
+                incident_id=new_id, domain="first_aid",
+                incident_type=report.get('incident_type', ''),
+                severity=report.get('severity', ''),
+                location=report.get('location', ''),
+                reporter_id=report.get('reporter_id', ''),
+                reporter_name=report.get('reporter_name', ''),
+                description=report.get('description', ''),
+            )
+        except Exception:
+            pass
+
+        return new_id
 
     def fetch_all(self) -> list:
         conn = self._connection()

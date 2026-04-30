@@ -380,6 +380,17 @@ def calculate_overdue_fines(self):
         except (sqlite3.Error, DatabaseError, ValueError, TypeError):
             pass
 
+        # Snapshot the rows we're about to fine so we can post each one
+        # to the finance bus *after* the local UPDATE commits. Without the
+        # snapshot we'd have no way to know which loans we just changed.
+        cursor.execute('''
+            SELECT loan_id, user_id, book_id,
+                   (julianday('now') - julianday(due_date)) * ? AS new_fine
+            FROM book_loans
+            WHERE status = 'overdue' AND due_date < datetime('now')
+        ''', (fine_per_day,))
+        about_to_fine = cursor.fetchall()
+
         # Update fines for overdue books
         cursor.execute('''
         UPDATE book_loans
@@ -390,6 +401,38 @@ def calculate_overdue_fines(self):
         count = cursor.rowcount
         conn.commit()
         conn.close()
+
+        # Closed-loop: each overdue loan posts a charge to Finance and
+        # broadcasts a loan-changed event so any open Library, Finance,
+        # or enrolment GUI auto-refreshes. Best-effort.
+        try:
+            from education_system.university_system.modules.services.finance_bus import (
+                raise_charge,
+            )
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                publish, EVENT_LOAN_CHANGED,
+            )
+            for row in about_to_fine:
+                loan_id, user_id, book_id, new_fine = row
+                if not user_id or not new_fine:
+                    continue
+                amount = round(float(new_fine), 2)
+                if amount <= 0:
+                    continue
+                raise_charge(
+                    user_id, amount,
+                    source="library_overdue",
+                    description=f"Library overdue fine — loan #{loan_id}",
+                    reference_id=f"loan:{loan_id}",
+                    processed_by="library_overdue_processor",
+                )
+                publish(
+                    EVENT_LOAN_CHANGED,
+                    loan_id=loan_id, user_id=user_id, book_id=book_id,
+                    action="overdue_fined", fine_amount=amount,
+                )
+        except Exception as bus_err:
+            print(f"Warning: overdue fine bus publish failed: {bus_err}")
 
         return count
 

@@ -277,11 +277,38 @@ class DialogsMixin:
         # Get minimum capacity requirement
         min_capacity = len(self.enrolled_student_ids)
 
-        # Get available rooms
-        available_rooms = self.data_manager.get_available_rooms(
-            date, start, end, min_capacity,
-            exclude_id=self.selected_exam_id
-        )
+        # Get available rooms — route through the shared cross-services
+        # finder so Exam, Module, and Course schedulers all use the same
+        # algorithm. Falls back to the legacy data-manager helper if the
+        # shared service can't be loaded.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._cross_services import (
+                find_free_rooms,
+            )
+            free_rows = find_free_rooms(
+                on_date=date,
+                start_time=start, end_time=end,
+                min_capacity=min_capacity,
+                exclude_exam_id=self.selected_exam_id,
+            )
+            # Adapt the dict rows to objects the existing render loop
+            # below understands (it accesses .name, .building, etc.).
+            class _R:
+                def __init__(self, d):
+                    self.name = d.get("name", "")
+                    self.building = d.get("building", "")
+                    self.capacity = d.get("capacity", 0) or 0
+                    self.has_projector = bool(d.get("has_projector"))
+                    self.has_computers = bool(d.get("has_computers"))
+            available_rooms = [_R(r) for r in free_rows] if free_rows else None
+        except Exception:
+            available_rooms = None
+
+        if available_rooms is None:
+            available_rooms = self.data_manager.get_available_rooms(
+                date, start, end, min_capacity,
+                exclude_id=self.selected_exam_id
+            )
 
         if not available_rooms:
             messagebox.showinfo(

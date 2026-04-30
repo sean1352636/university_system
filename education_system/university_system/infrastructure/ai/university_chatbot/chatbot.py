@@ -78,6 +78,79 @@ class UniversityChatbot:
                 pass
             self.setup_api_routes()
 
+        # Cross-domain bus integration (#10): turn events that affect a
+        # specific user into queued chatbot messages they'll see on their
+        # next chat session. Read-only consumer; never raises.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                subscribe,
+                EVENT_CHARGE_RAISED,
+                EVENT_HOLD_CHANGED,
+                EVENT_LOAN_CHANGED,
+                EVENT_INCIDENT_LOGGED,
+                EVENT_DOCUMENT_CHANGED,
+            )
+            from education_system.university_system.modules.services.chatbot_inbox import (
+                queue_message_for,
+            )
+
+            def _on_charge(**kw):
+                sid = kw.get("student_id")
+                if not sid:
+                    return
+                amt = kw.get("amount") or 0
+                desc = kw.get("description") or "charge"
+                queue_message_for(
+                    sid,
+                    f"Heads up — a £{float(amt):.2f} charge was added to "
+                    f"your account: {desc}.",
+                    source=kw.get("source") or "finance",
+                )
+
+            def _on_hold(**kw):
+                sid = kw.get("student_id")
+                if sid and kw.get("action") == "placed":
+                    reason = kw.get("reason") or "finance hold"
+                    queue_message_for(
+                        sid,
+                        f"A finance hold has been placed on your account "
+                        f"({reason}). Resolve it to keep enrolling/booking.",
+                        source="finance_hold",
+                    )
+
+            def _on_loan(**kw):
+                uid = kw.get("user_id")
+                if uid and kw.get("action") == "overdue_fined":
+                    fine = kw.get("fine_amount") or 0
+                    queue_message_for(
+                        uid,
+                        f"Library overdue fine: £{float(fine):.2f}. "
+                        f"Return the book to stop further charges.",
+                        source="library",
+                    )
+
+            def _on_incident(**kw):
+                # Notify the reporter that their incident landed.
+                sid = kw.get("reporter_id") or kw.get("reported_by")
+                if sid:
+                    queue_message_for(
+                        sid,
+                        f"Your {kw.get('domain', 'incident')} report "
+                        f"#{kw.get('incident_id')} has been logged. "
+                        f"You'll be contacted with follow-up actions.",
+                        source="incident",
+                    )
+
+            subscribe(EVENT_CHARGE_RAISED, _on_charge)
+            subscribe(EVENT_HOLD_CHANGED, _on_hold)
+            subscribe(EVENT_LOAN_CHANGED, _on_loan)
+            subscribe(EVENT_INCIDENT_LOGGED, _on_incident)
+            # Document changes don't get a message — chatbot just
+            # invalidates its local index. Hook reserved for future RAG.
+            subscribe(EVENT_DOCUMENT_CHANGED, lambda **_: None)
+        except Exception as exc:
+            print(f"Chatbot bus subscribe skipped: {exc}")
+
         print("University Chatbot initialized successfully!")
 
     # -- Auth ---------------------------------------------------------------
@@ -95,6 +168,23 @@ class UniversityChatbot:
         If session_id matches an active authenticated session, we process with auth context.
         Otherwise we use/initialize a conversation context keyed by user_id.
         """
+        # Drain the inbox first (#12) — queued messages from background
+        # gates land before the user's reply so they don't get missed.
+        inbox_prefix = ""
+        try:
+            from education_system.university_system.modules.services.chatbot_inbox import (
+                pop_messages_for,
+            )
+            queued = pop_messages_for(user_id, mark_read=True, limit=5)
+            if queued:
+                lines = [f"• {m['message']}" for m in queued]
+                inbox_prefix = (
+                    "While you were away, the system noted:\n"
+                    + "\n".join(lines) + "\n\n"
+                )
+        except Exception:
+            inbox_prefix = ""
+
         try:
             if session_id and session_id in self.active_sessions:
                 session = self.active_sessions[session_id]
@@ -136,6 +226,8 @@ class UniversityChatbot:
                 return self.escalate_to_human(message, user_id)
 
             response = self.generate_response(nlp_result, context)
+            if inbox_prefix:
+                response = inbox_prefix + response
 
             self.log_enhanced_conversation(user_id, message, response, nlp_result, session_id)
 

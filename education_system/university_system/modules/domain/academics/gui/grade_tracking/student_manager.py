@@ -488,12 +488,13 @@ class StudentManager:
         list_frame.pack(fill='both', expand=True, padx=10, pady=5)
 
         # Treeview for students
-        columns = ('ID', 'Name', 'Email', 'Course', 'Registration Date')
+        columns = ('ID', 'Name', 'Email', 'Course', 'Registration Date', 'Exam Risk')
         self.student_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=20)
 
         for col in columns:
             self.student_tree.heading(col, text=col)
             self.student_tree.column(col, width=120, anchor='center')
+        self.student_tree.tag_configure('at_risk', foreground='#c0392b')
 
         # Scrollbars
         v_scrollbar = ttk.Scrollbar(list_frame, orient='vertical', command=self.student_tree.yview)
@@ -697,6 +698,27 @@ class StudentManager:
 
             students = cursor.fetchall()
 
+            # Per-student exam-risk count: number of upcoming exams the
+            # student is enrolled in but currently fails eligibility on.
+            # Sourced from the unified ``exam_eligibility`` table written
+            # by the attendance subsystem; absent table → all zeros.
+            risk_by_student: dict[str, int] = {}
+            try:
+                cursor.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table' "
+                    "AND name='exam_eligibility'"
+                )
+                if cursor.fetchone():
+                    cursor.execute(
+                        "SELECT student_id, COUNT(*) "
+                        "FROM exam_eligibility "
+                        "WHERE COALESCE(eligible, 0) = 0 "
+                        "GROUP BY student_id"
+                    )
+                    risk_by_student = {row[0]: int(row[1] or 0) for row in cursor.fetchall()}
+            except Exception:
+                risk_by_student = {}
+
             # Insert into treeview with formatted data
             for student in students:
                 student_id, first_name, middle_name, last_name, course, email, reg_date = student
@@ -709,16 +731,20 @@ class StudentManager:
                     full_name += f" {last_name}"
                 full_name = full_name.strip()
 
-                # Format data for new column structure: ('ID', 'Name', 'Email', 'Course', 'Registration Date')
+                risk_count = risk_by_student.get(student_id, 0)
+                risk_label = f"⚠ {risk_count}" if risk_count else "✓"
+
                 formatted_data = (
                     student_id,
                     full_name,
                     email or '',
                     course or '',
-                    reg_date or ''
+                    reg_date or '',
+                    risk_label,
                 )
 
-                self.student_tree.insert('', 'end', values=formatted_data)
+                tags = ('at_risk',) if risk_count else ()
+                self.student_tree.insert('', 'end', values=formatted_data, tags=tags)
 
             self.update_status(f"Loaded {len(students)} students")
 

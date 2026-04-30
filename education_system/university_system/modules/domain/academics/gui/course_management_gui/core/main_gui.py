@@ -89,6 +89,33 @@ class CourseManagementGUI(
             for evt in (EVENT_COURSE_CHANGED, EVENT_ENROLMENT_CHANGED,
                         EVENT_MODULE_SCHEDULE_CHANGED):
                 subscribe_tk(evt, self.root, _on_external_change)
+
+            # Term and selection: refilter together with siblings; soft
+            # selection just highlights the matching course row.
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                EVENT_TERM_CHANGED, EVENT_SELECTION_CHANGED,
+            )
+            subscribe_tk(EVENT_TERM_CHANGED, self.root, _on_external_change)
+
+            def _on_selection(**payload):
+                target = payload.get("course_code")
+                if not target or not hasattr(self, "course_tree"):
+                    return
+                try:
+                    for iid in self.course_tree.get_children():
+                        vals = self.course_tree.item(iid, "values")
+                        if vals and len(vals) >= 2:
+                            code = vals[1]
+                            if isinstance(code, str) and code.startswith("⚠ "):
+                                code = code[2:]
+                            if code == target:
+                                self.course_tree.selection_set(iid)
+                                self.course_tree.see(iid)
+                                break
+                except Exception:
+                    pass
+
+            subscribe_tk(EVENT_SELECTION_CHANGED, self.root, _on_selection)
         except Exception:
             pass
 

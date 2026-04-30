@@ -764,6 +764,53 @@ class GradeManager:
                 messagebox.showerror("Validation Error", "Please enter a score", parent=dialog)
                 return
 
+            # Submission-window gate (#5). Block grade entries outside the
+            # active submission_window unless the user has an explicit
+            # override permission. Soft-fails open if the calendar has
+            # no submission_window defined (no period configured = no
+            # restriction yet).
+            try:
+                from education_system.university_system.modules.domain.academics.gui._cross_services import (
+                    current_period,
+                )
+                window_today = current_period("submission_window")
+                if window_today is None:
+                    # If a window exists for this term but today isn't in it,
+                    # we can still detect that by querying with the entry date.
+                    window_for_entry = current_period("submission_window", on_date=date)
+                    if window_for_entry is None:
+                        # Need to know whether *any* submission_window is on
+                        # the calendar: if not, soft-fail open.
+                        from education_system.university_system.infrastructure.database.db import get_connection
+                        with get_connection() as conn:
+                            row = conn.execute(
+                                "SELECT 1 FROM academic_calendar_events "
+                                "WHERE LOWER(event_type) = 'submission_window' "
+                                "LIMIT 1"
+                            ).fetchone()
+                        if row:
+                            override = False
+                            try:
+                                if (hasattr(self.app, 'auth') and self.app.auth
+                                        and self.app.auth.current_user
+                                        and self.app.auth.check_permission(
+                                            'override_submission_window')):
+                                    override = True
+                            except Exception:
+                                pass
+                            if not override:
+                                messagebox.showerror(
+                                    "Submission window closed",
+                                    "Grade entries are only allowed during "
+                                    "the active submission window. Update "
+                                    "the calendar or request an override.",
+                                    parent=dialog,
+                                )
+                                return
+            except Exception:
+                # Never block grading on a calendar-gate failure.
+                pass
+
             try:
                 score_float = float(score)
                 max_points = float(max_points_var.get())

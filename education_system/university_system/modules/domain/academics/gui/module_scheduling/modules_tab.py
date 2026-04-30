@@ -108,6 +108,9 @@ def create_modules_tab(self):
         else:
             self.modules_tree.column(col, width=100)
 
+    # Red overlay tag for modules that have unresolved schedule conflicts.
+    self.modules_tree.tag_configure('has_conflict', foreground='#c0392b')
+
     # Scrollbars
     v_scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.modules_tree.yview)
     self.modules_tree.configure(yscrollcommand=v_scrollbar.set)
@@ -116,6 +119,29 @@ def create_modules_tab(self):
     v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     self.modules_tree.bind("<Double-1>", lambda e: self.edit_selected_module())
+
+    # Single-click → soft selection broadcast (#7). Sibling GUIs that
+    # subscribe to academic.selection.changed will highlight the same
+    # module without context-switching their own tabs.
+    def _publish_module_selection(_event=None):
+        try:
+            sel = self.modules_tree.selection()
+            if not sel:
+                return
+            vals = self.modules_tree.item(sel[0], 'values')
+            if not vals or len(vals) < 2:
+                return
+            code = vals[1]
+            if code and code.startswith("⚠ "):
+                code = code[2:]
+            from education_system.university_system.modules.services.academic_state import (
+                set_current_selection,
+            )
+            set_current_selection(module_code=code, source="module_scheduling")
+        except Exception:
+            pass
+
+    self.modules_tree.bind("<<TreeviewSelect>>", _publish_module_selection, add="+")
 
 ModuleSchedulingGUI.create_modules_tab = create_modules_tab
 
@@ -141,17 +167,36 @@ def refresh_modules(self):
         self.log_activity(f"Error loading modules: {e}")
         return
 
+    # Pre-compute conflict set once per refresh so the per-row check is O(1).
+    conflict_codes: set[str] = set()
+    try:
+        from education_system.university_system.modules.domain.academics.gui._cross_services import (
+            _all_conflicts,
+        )
+        codes_lower = {(m.get("code") or "").lower() for m in modules if m.get("code")}
+        for c in _all_conflicts():
+            desc = (c.get("description") or "").lower()
+            for code in codes_lower:
+                if code and code in desc:
+                    conflict_codes.add(code)
+    except Exception:
+        conflict_codes = set()
+
     for m in modules:
+        code = m.get("code", "") or ""
+        tags = ('has_conflict',) if code.lower() in conflict_codes else ()
+        display_code = f"⚠ {code}" if tags else code
         self.modules_tree.insert(
             "", tk.END, values=(
                 m.get("id", ""),
-                m.get("code", ""),
+                display_code,
                 m.get("name", ""),
                 m.get("credits", ""),
                 m.get("semester", ""),
                 m.get("type", ""),
                 m.get("instructor", ""),
-            )
+            ),
+            tags=tags,
         )
 
     self.log_activity("Modules refreshed")

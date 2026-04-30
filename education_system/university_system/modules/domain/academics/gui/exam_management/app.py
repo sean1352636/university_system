@@ -65,6 +65,34 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
             subscribe_tk(EVENT_MODULE_SCHEDULE_CHANGED, self.root, _on_external_change)
             subscribe_tk(EVENT_ENROLMENT_CHANGED, self.root, _on_external_change)
             subscribe_tk(EVENT_ASSESSMENT_CHANGED, self.root, _on_external_change)
+
+            # Term changes refilter together; soft selection highlights
+            # the matching exam row without forcing a tab switch.
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                EVENT_TERM_CHANGED, EVENT_SELECTION_CHANGED,
+            )
+            subscribe_tk(EVENT_TERM_CHANGED, self.root, _on_external_change)
+
+            def _on_selection(**payload):
+                target_module = payload.get("module_code")
+                target_exam = payload.get("exam_id")
+                tree = getattr(self, "exam_tree", None)
+                if tree is None:
+                    return
+                try:
+                    for iid in tree.get_children():
+                        vals = tree.item(iid, "values")
+                        if not vals:
+                            continue
+                        if (target_exam is not None
+                                and str(vals[0]) == str(target_exam)):
+                            tree.selection_set(iid); tree.see(iid); break
+                        if target_module and target_module in vals:
+                            tree.selection_set(iid); tree.see(iid); break
+                except Exception:
+                    pass
+
+            subscribe_tk(EVENT_SELECTION_CHANGED, self.root, _on_selection)
         except Exception:
             pass
 
@@ -179,6 +207,16 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
         title_label.pack(pady=(0, 10))
 
         # Notebook for tabs
+        # Embedded period strip (#11) — always shows term + exam window
+        # status above the tabs.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._cross_dialogs import (
+                AcademicPeriodPanel,
+            )
+            AcademicPeriodPanel(main_frame).pack(fill=tk.X, padx=10, pady=(0, 4))
+        except Exception:
+            pass
+
         self.notebook = ttk.Notebook(main_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
 

@@ -111,6 +111,41 @@ class ModuleSchedulingGUI:
 
             for evt in (EVENT_COURSE_CHANGED, EVENT_ENROLMENT_CHANGED, EVENT_EXAM_CHANGED):
                 subscribe_tk(evt, self.root, _on_external_change)
+
+            # Term changes refilter all four scheduling GUIs together.
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                EVENT_TERM_CHANGED, EVENT_SELECTION_CHANGED,
+            )
+            subscribe_tk(EVENT_TERM_CHANGED, self.root, _on_external_change)
+
+            # Calendar + staff availability changes affect what's
+            # eligible to schedule, so refresh on those too.
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                EVENT_CALENDAR_CHANGED, EVENT_STAFF_AVAILABILITY_CHANGED,
+            )
+            subscribe_tk(EVENT_CALENDAR_CHANGED, self.root, _on_external_change)
+            subscribe_tk(EVENT_STAFF_AVAILABILITY_CHANGED, self.root, _on_external_change)
+
+            # Soft selection from siblings — highlight the matching row.
+            def _on_selection(**payload):
+                target = payload.get("module_code")
+                if not target or not hasattr(self, "modules_tree"):
+                    return
+                try:
+                    for iid in self.modules_tree.get_children():
+                        vals = self.modules_tree.item(iid, "values")
+                        if vals and len(vals) >= 2:
+                            code = vals[1]
+                            if code.startswith("⚠ "):
+                                code = code[2:]
+                            if code == target:
+                                self.modules_tree.selection_set(iid)
+                                self.modules_tree.see(iid)
+                                break
+                except Exception:
+                    pass
+
+            subscribe_tk(EVENT_SELECTION_CHANGED, self.root, _on_selection)
         except Exception:
             pass
 
@@ -194,6 +229,17 @@ class ModuleSchedulingGUI:
         self.language_btn = ttk.Button(toolbar_frame, text=lang_text,
                                        command=self.show_language_selector, style='Action.TButton')
         self.language_btn.pack(side=tk.RIGHT, padx=5)
+
+        # Embedded period strip (#11). Always-visible context: term,
+        # week-of-term, exam window status. Reads the calendar via the
+        # cross-services helper, refreshes on bus events.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._cross_dialogs import (
+                AcademicPeriodPanel,
+            )
+            AcademicPeriodPanel(main_frame).pack(fill=tk.X, padx=10, pady=(0, 4))
+        except Exception:
+            pass
 
         # Create notebook for tabs
         self.notebook = ttk.Notebook(main_frame, style='Main.TNotebook')

@@ -20,6 +20,31 @@ from education_system.university_system.modules.shared.constants import paths
 from collections import deque
 
 
+def _publish_grade_change(submission_id, *, student_id=None, module_code=None,
+                          assignment_title=None, percentage=None):
+    """Notify sibling academic GUIs that a final grade landed.
+
+    Best-effort: any failure (bus import, payload issue) is swallowed —
+    a missed refresh must never block the grade commit itself.
+    """
+    try:
+        from education_system.university_system.modules.domain.academics.gui._event_bus import (
+            publish, EVENT_GRADE_CHANGED, EVENT_ASSIGNMENT_CHANGED,
+        )
+        payload = {
+            "submission_id": submission_id,
+            "student_id": student_id,
+            "module_code": module_code,
+            "assignment_title": assignment_title,
+            "percentage": percentage,
+            "source": "assignment_grading",
+        }
+        publish(EVENT_GRADE_CHANGED, **payload)
+        publish(EVENT_ASSIGNMENT_CHANGED, **payload)
+    except Exception:
+        pass
+
+
 
 class GradingManager:
     """Grade management and rubric grading"""
@@ -330,6 +355,14 @@ class GradingManager:
                 except Exception as gradebook_err:
                     print(f"Warning: gradebook/KPI sync failed: {gradebook_err}")
 
+            _publish_grade_change(
+                submission_id,
+                student_id=submission_details[0] if submission_details else None,
+                module_code=submission_details[5] if submission_details else None,
+                assignment_title=submission_details[4] if submission_details else None,
+                percentage=percentage,
+            )
+
             messagebox.showinfo("Success", f"Grade submitted: {percentage:.1f}% ({grade}/{max_marks})")
 
             # Refresh the submissions list
@@ -592,10 +625,11 @@ class GradingManager:
                 conn.commit()
 
                 # Send grade notification email
+                rubric_meta = None
                 try:
                     # Get student email and assignment details
                     cursor.execute('''
-                    SELECT s.email_address, a.title, a.module_code
+                    SELECT s.student_id, s.email_address, a.title, a.module_code
                     FROM assignment_submissions sub
                     JOIN students s ON sub.student_id = s.student_id
                     JOIN assignments a ON sub.assignment_id = a.id
@@ -604,7 +638,8 @@ class GradingManager:
                     result = cursor.fetchone()
 
                     if result:
-                        student_email, assignment_title, module_code = result
+                        student_id_val, student_email, assignment_title, module_code = result
+                        rubric_meta = (student_id_val, assignment_title, module_code)
                         from education_system.university_system.infrastructure.email.email_service import send_grade_notification
                         import logging
                         send_grade_notification(
@@ -620,6 +655,14 @@ class GradingManager:
 
             finally:
                 conn.close()
+
+            _publish_grade_change(
+                submission_id,
+                student_id=rubric_meta[0] if rubric_meta else None,
+                module_code=rubric_meta[2] if rubric_meta else None,
+                assignment_title=rubric_meta[1] if rubric_meta else None,
+                percentage=percentage,
+            )
 
             messagebox.showinfo("Success", f"Grade submitted: {percentage:.1f}% ({total_earned}/{total_possible})")
 
@@ -853,6 +896,7 @@ class GradingManager:
 
                     # Save to database
                     conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+                    simple_meta = None
                     try:
                         cursor = conn.cursor()
 
@@ -864,9 +908,28 @@ class GradingManager:
                         WHERE id = ?
                         ''', (percentage, self.auth.current_user['id'], timestamp, feedback, submission_id))
 
+                        try:
+                            cursor.execute('''
+                            SELECT sub.student_id, a.title, a.module_code
+                            FROM assignment_submissions sub
+                            JOIN assignments a ON sub.assignment_id = a.id
+                            WHERE sub.id = ?
+                            ''', (submission_id,))
+                            simple_meta = cursor.fetchone()
+                        except Exception:
+                            simple_meta = None
+
                         conn.commit()
                     finally:
                         conn.close()
+
+                    _publish_grade_change(
+                        submission_id,
+                        student_id=simple_meta[0] if simple_meta else None,
+                        module_code=simple_meta[2] if simple_meta else None,
+                        assignment_title=simple_meta[1] if simple_meta else None,
+                        percentage=percentage,
+                    )
 
                     messagebox.showinfo("Success", f"Grade submitted: {percentage:.1f}% ({score}/{max_marks})", parent=dialog)
                     dialog.destroy()

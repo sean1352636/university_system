@@ -180,9 +180,99 @@ class HSDatabase:
                  data.get('department'), data.get('status', 'Open'), now),
             )
             conn.commit()
-            return cur.lastrowid
+            new_id = cur.lastrowid
         finally:
             conn.close()
+
+        # Bus broadcast (#2): subscribers (First Aid, Finance, DM,
+        # chatbot) link, charge, attach evidence, and notify managers.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                publish, EVENT_INCIDENT_LOGGED,
+            )
+            publish(
+                EVENT_INCIDENT_LOGGED,
+                incident_id=new_id, domain="hs",
+                ref=data.get('ref'),
+                incident_type=data.get('incident_type'),
+                severity=data.get('severity'),
+                location=data.get('location'),
+                department=data.get('department'),
+                reported_by=data.get('reported_by'),
+                description=data.get('description'),
+            )
+        except Exception:
+            pass
+
+        # Finance link (#7) — if the incident carries an estimated cost,
+        # post it as a charge against the responsible department.
+        cost = data.get('estimated_cost') or data.get('cost')
+        if cost:
+            try:
+                amount = float(cost)
+                if amount > 0:
+                    from education_system.university_system.modules.services.finance_bus import (
+                        raise_charge,
+                    )
+                    raise_charge(
+                        data.get('reported_by') or 'department',
+                        amount,
+                        source="hs_incident",
+                        description=(
+                            f"H&S incident #{new_id} ("
+                            f"{data.get('incident_type') or 'incident'})"
+                        ),
+                        reference_id=f"incident:{new_id}",
+                        processed_by="health_safety_portal",
+                    )
+            except Exception:
+                pass
+
+        return new_id
+
+    def schedule_evacuation_drill(self, *, drill_date: str,
+                                  location: str | None = None,
+                                  description: str | None = None,
+                                  scheduled_by: str | None = None) -> str | None:
+        """Persist an evacuation drill as a Calendar event (#8).
+
+        Single source for "what's happening on what day" — the drill
+        shows up automatically in the Academic Calendar GUI; H&S
+        doesn't run its own drill scheduler.
+        """
+        try:
+            from education_system.university_system.infrastructure.database.db import (
+                get_connection,
+            )
+            import uuid
+            event_id = str(uuid.uuid4())
+            now = datetime.now().isoformat()
+            with get_connection() as conn:
+                conn.execute(
+                    "INSERT INTO academic_calendar_events "
+                    "(id, name, date, description, event_type, "
+                    " date_added, last_modified, created_by) "
+                    "VALUES (?, ?, ?, ?, 'evacuation_drill', ?, ?, ?)",
+                    (event_id,
+                     f"Evacuation drill — {location or 'campus'}",
+                     drill_date,
+                     description or "Scheduled evacuation drill",
+                     now, now, scheduled_by),
+                )
+                conn.commit()
+            try:
+                from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                    publish, EVENT_CALENDAR_CHANGED,
+                )
+                publish(EVENT_CALENDAR_CHANGED, event_id=event_id,
+                        event_type="evacuation_drill", action="created",
+                        date=drill_date)
+            except Exception:
+                pass
+            return event_id
+        except Exception as exc:
+            logger.warning("schedule_evacuation_drill failed: %s", exc)
+            return None
 
     def update_incident_status(self, incident_id: int, status: str):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

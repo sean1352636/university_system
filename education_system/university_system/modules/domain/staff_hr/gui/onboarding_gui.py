@@ -537,12 +537,44 @@ class OnboardingGUI:
                 total, completed = cursor.fetchone()
 
                 if total == completed:
-                    # All tasks complete - mark assignment as complete
-                    conn.execute('''
-                        UPDATE onboarding_assignments
-                        SET status = 'completed', actual_completion_date = ?, updated_at = ?
-                        WHERE assignment_id = ?
-                    ''', (datetime.now().strftime("%Y-%m-%d"), datetime.now().isoformat(), assignment_id))
+                    # All tasks complete — but before flipping the
+                    # assignment to 'completed' we require a contract
+                    # document to be present in DM (#9). Without it,
+                    # the new starter shouldn't be considered active.
+                    cursor.execute(
+                        "SELECT staff_id FROM onboarding_assignments "
+                        "WHERE assignment_id = ?",
+                        (assignment_id,),
+                    )
+                    staff_row = cursor.fetchone()
+                    staff_id = staff_row[0] if staff_row else None
+
+                    contract_present = True
+                    try:
+                        from education_system.university_system.modules.services.document_bus import (
+                            has_document,
+                        )
+                        contract_present = has_document(
+                            "contract", staff_id,
+                            document_type="contract",
+                        )
+                    except Exception:
+                        contract_present = True
+
+                    if not contract_present:
+                        messagebox.showwarning(
+                            "Contract not on file",
+                            f"All onboarding tasks complete, but no signed "
+                            f"contract is linked in Document Manager for "
+                            f"staff {staff_id}. The assignment will stay "
+                            f"in progress until the contract is uploaded.",
+                        )
+                    else:
+                        conn.execute('''
+                            UPDATE onboarding_assignments
+                            SET status = 'completed', actual_completion_date = ?, updated_at = ?
+                            WHERE assignment_id = ?
+                        ''', (datetime.now().strftime("%Y-%m-%d"), datetime.now().isoformat(), assignment_id))
 
             log_activity('update', 'onboarding_task', progress_id=progress_id, details={'action': 'completed'})
             messagebox.showinfo("Success", "Task marked as complete")

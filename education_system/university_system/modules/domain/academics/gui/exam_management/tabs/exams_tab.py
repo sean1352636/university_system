@@ -758,6 +758,18 @@ class ExamsTabMixin:
 
         self.selected_exam_id = exam_id
 
+        # Soft selection broadcast so siblings highlight this exam.
+        try:
+            from education_system.university_system.modules.services.academic_state import (
+                set_current_selection,
+            )
+            set_current_selection(
+                exam_id=exam_id, module_code=exam.module_code,
+                source="exam_scheduler",
+            )
+        except Exception:
+            pass
+
         # Set module dropdown
         # Find matching module in dropdown options
         module = self.data_manager.lookup_module(exam.module_code)

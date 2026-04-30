@@ -25,14 +25,49 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 def _all_conflicts() -> list[dict[str, Any]]:
-    """Run the canonical conflict detector and return its dict list."""
+    """Return the current list of unresolved scheduling conflicts.
+
+    The canonical detector is the ``ConflictsMixin`` in
+    ``services.module_scheduling.conflicts`` — but it's a mixin (needs
+    ``self.db_path``), not a standalone class. We compose a tiny host
+    on the fly to invoke it. On any failure we fall back to reading
+    the persisted ``schedule_conflicts`` table, which is what the
+    detector writes to anyway, so callers still see something useful
+    even when the detector can't run (e.g. missing tables).
+    """
     try:
         from education_system.university_system.modules.domain.academics.services.module_scheduling.conflicts import (
-            ConflictDetector,
+            ConflictsMixin,
         )
-        return ConflictDetector(str(DEFAULT_DB_PATH)).detect_all_conflicts() or []
+
+        class _DetectorHost(ConflictsMixin):
+            def __init__(self, db_path: str) -> None:
+                self.db_path = db_path
+
+        return _DetectorHost(str(DEFAULT_DB_PATH)).detect_all_conflicts() or []
     except Exception as exc:
-        logger.warning("conflict detector failed: %s", exc)
+        logger.debug("live conflict detection failed (%s); reading table",
+                     exc)
+
+    # Fallback: read whatever the detector last persisted.
+    try:
+        with get_connection() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='schedule_conflicts'"
+            ).fetchone()
+            if not tbl:
+                return []
+            rows = conn.execute(
+                "SELECT conflict_type AS type, description, "
+                "       COALESCE(severity, 'medium') AS severity "
+                "FROM schedule_conflicts "
+                "WHERE COALESCE(resolved, 0) = 0 "
+                "ORDER BY detected_date DESC"
+            ).fetchall()
+            return [dict(r) for r in rows]
+    except Exception as exc:
+        logger.warning("conflict table fallback failed: %s", exc)
         return []
 
 
@@ -451,6 +486,379 @@ def module_timeline(module_code: str) -> list[dict[str, Any]]:
     return rows
 
 
+# ---------------------------------------------------------------------------
+# 6) Weighted module grade — single source of truth
+# ---------------------------------------------------------------------------
+
+def compute_module_grade(
+    student_id: str | int,
+    module_code: str,
+) -> dict[str, Any]:
+    """Return ``{percentage, letter, components, missing}`` for one module.
+
+    Weighting comes from ``assessments.weight`` (per ``module_code``).
+    Marks are pulled, in order of preference, from:
+      1. ``student_grades`` rows joined on assessment_id / module_code,
+      2. ``assignment_submissions.grade`` joined via ``assignments`` for
+         any assessment whose name matches an assignment title in the
+         same module (so the assignment GUI's grades feed in).
+
+    When no assessment rows exist for the module, falls back to a
+    simple unweighted mean over ``student_grades`` for that student
+    and module — keeps callers useful on partially-migrated data.
+    """
+    out: dict[str, Any] = {
+        "percentage": None,
+        "letter": "",
+        "components": [],   # [{name, weight, score, source}]
+        "missing": [],      # assessments with no recorded mark
+    }
+    if not student_id or not module_code:
+        return out
+    sid = str(student_id)
+
+    try:
+        with get_connection() as conn:
+            tables = {
+                r[0] for r in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                )
+            }
+            assessments: list[dict[str, Any]] = []
+            if "assessments" in tables:
+                for r in conn.execute(
+                    "SELECT assessment_id, assessment_name, weight, max_points "
+                    "FROM assessments WHERE module_code = ?",
+                    (module_code,),
+                ).fetchall():
+                    assessments.append(dict(r))
+
+            # Unweighted fallback: no assessment rows for this module.
+            if not assessments:
+                rows = []
+                if "student_grades" in tables:
+                    try:
+                        rows = conn.execute(
+                            "SELECT grade FROM student_grades "
+                            "WHERE student_id = ? AND module_code = ?",
+                            (sid, module_code),
+                        ).fetchall()
+                    except sqlite3.OperationalError:
+                        rows = []
+                pcts = []
+                for r in rows:
+                    g = (r[0] or "").strip()
+                    try:
+                        pcts.append(float(g.rstrip("%")))
+                    except ValueError:
+                        continue
+                if pcts:
+                    out["percentage"] = round(sum(pcts) / len(pcts), 2)
+                out["letter"] = _letter(out["percentage"])
+                return out
+
+            total_weight = 0.0
+            weighted_sum = 0.0
+            for a in assessments:
+                aid = a.get("assessment_id")
+                name = a.get("assessment_name") or f"#{aid}"
+                weight = float(a.get("weight") or 0)
+                max_points = float(a.get("max_points") or 100)
+                score_pct: float | None = None
+                source = ""
+
+                # 1) student_grades joined by assessment_id
+                if "student_grades" in tables and aid is not None:
+                    try:
+                        row = conn.execute(
+                            "SELECT grade FROM student_grades "
+                            "WHERE student_id = ? AND assessment_id = ? "
+                            "ORDER BY rowid DESC LIMIT 1",
+                            (sid, aid),
+                        ).fetchone()
+                    except sqlite3.OperationalError:
+                        row = None
+                    if row and row[0]:
+                        try:
+                            score_pct = float(str(row[0]).rstrip("%"))
+                            source = "student_grades"
+                        except ValueError:
+                            pass
+
+                # 2) assignment_submissions matched by title in same module
+                if score_pct is None and "assignment_submissions" in tables:
+                    try:
+                        row = conn.execute(
+                            "SELECT sub.grade "
+                            "FROM assignment_submissions sub "
+                            "JOIN assignments a ON sub.assignment_id = a.id "
+                            "WHERE sub.student_id = ? "
+                            "  AND a.module_code = ? "
+                            "  AND a.title = ? "
+                            "ORDER BY sub.submission_date DESC LIMIT 1",
+                            (sid, module_code, name),
+                        ).fetchone()
+                    except sqlite3.OperationalError:
+                        row = None
+                    if row and row[0] is not None:
+                        try:
+                            # assignment_submissions.grade is already a percentage
+                            score_pct = float(row[0])
+                            source = "assignment_submissions"
+                        except (TypeError, ValueError):
+                            pass
+
+                comp = {
+                    "name": name,
+                    "weight": weight,
+                    "max_points": max_points,
+                    "score": score_pct,
+                    "source": source,
+                }
+                out["components"].append(comp)
+                if score_pct is None:
+                    out["missing"].append(name)
+                    continue
+                if weight > 0:
+                    total_weight += weight
+                    weighted_sum += score_pct * weight
+
+            if total_weight > 0:
+                out["percentage"] = round(weighted_sum / total_weight, 2)
+            out["letter"] = _letter(out["percentage"])
+    except Exception as exc:
+        logger.warning(
+            "compute_module_grade(%s, %s) failed: %s",
+            student_id, module_code, exc,
+        )
+    return out
+
+
+# ---------------------------------------------------------------------------
+# 7) Free-room finder — single algorithm, all four schedulers
+# ---------------------------------------------------------------------------
+
+def find_free_rooms(
+    *,
+    day_of_week: str | None = None,
+    on_date: str | None = None,
+    start_time: str,
+    end_time: str,
+    min_capacity: int | None = None,
+    exclude_schedule_id: int | None = None,
+    exclude_exam_id: int | None = None,
+) -> list[dict[str, Any]]:
+    """Return rooms free for the given window.
+
+    A room is "free" iff:
+      * No row in ``module_schedule`` overlaps the window on the same
+        weekday (recurring lecture slots).
+      * No row in ``exams`` overlaps the window on ``on_date`` (one-off
+        exam bookings).
+      * Optional ``min_capacity`` floor on ``rooms.capacity``.
+
+    Either ``day_of_week`` *or* ``on_date`` must be supplied:
+      * ``day_of_week`` for weekly recurring use (lectures).
+      * ``on_date`` for one-off use (exams). If a date is given, the
+        weekday is derived for the recurring-slot check too.
+
+    Returns ``[{id, name, building, capacity, has_projector,
+    has_computers}]``. Empty list on failure — callers fall back to
+    showing all rooms.
+    """
+    if not start_time or not end_time:
+        return []
+    if not day_of_week and not on_date:
+        return []
+
+    derived_day = day_of_week
+    if not derived_day and on_date:
+        try:
+            from datetime import datetime as _dt
+            derived_day = _dt.strptime(on_date[:10], "%Y-%m-%d").strftime("%A")
+        except Exception:
+            derived_day = None
+
+    out: list[dict[str, Any]] = []
+    try:
+        with get_connection() as conn:
+            params: list[Any] = []
+            # rooms schema varies — newer rows use ``room_name``,
+            # older ones only have ``room_number``. Equipment is a free-
+            # text column rather than booleans, so we surface its
+            # presence as substring flags for back-compat with callers.
+            sql = (
+                "SELECT id, "
+                "       COALESCE(room_name, room_number) AS name, "
+                "       COALESCE(building, '') AS building, "
+                "       COALESCE(capacity, 0) AS capacity, "
+                "       CASE WHEN LOWER(COALESCE(equipment, '')) "
+                "            LIKE '%projector%' THEN 1 ELSE 0 END "
+                "         AS has_projector, "
+                "       CASE WHEN LOWER(COALESCE(equipment, '')) "
+                "            LIKE '%computer%' THEN 1 ELSE 0 END "
+                "         AS has_computers "
+                "FROM rooms WHERE COALESCE(is_active, 1) = 1 "
+            )
+            if min_capacity is not None:
+                sql += "AND COALESCE(capacity, 0) >= ? "
+                params.append(int(min_capacity))
+            sql += "ORDER BY capacity DESC"
+            rooms = conn.execute(sql, tuple(params)).fetchall()
+
+            for r in rooms:
+                room_id = r["id"]
+
+                # Lecture slot conflict (recurring weekday).
+                lecture_conflict = False
+                if derived_day:
+                    q = (
+                        "SELECT 1 FROM module_schedule "
+                        "WHERE room_id = ? AND day_of_week = ? "
+                        "  AND start_time < ? AND end_time > ? "
+                    )
+                    qp: list[Any] = [room_id, derived_day,
+                                     end_time, start_time]
+                    if exclude_schedule_id is not None:
+                        q += "AND id != ? "
+                        qp.append(exclude_schedule_id)
+                    q += "LIMIT 1"
+                    if conn.execute(q, tuple(qp)).fetchone():
+                        lecture_conflict = True
+                if lecture_conflict:
+                    continue
+
+                # Exam booking conflict (specific date).
+                exam_conflict = False
+                if on_date:
+                    eq = (
+                        "SELECT 1 FROM exams "
+                        "WHERE date = ? AND room = ? "
+                        "  AND start_time < ? AND end_time > ? "
+                    )
+                    ep: list[Any] = [on_date[:10], r["name"],
+                                     end_time, start_time]
+                    if exclude_exam_id is not None:
+                        eq += "AND id != ? "
+                        ep.append(exclude_exam_id)
+                    eq += "LIMIT 1"
+                    try:
+                        if conn.execute(eq, tuple(ep)).fetchone():
+                            exam_conflict = True
+                    except sqlite3.OperationalError:
+                        pass
+                if exam_conflict:
+                    continue
+
+                out.append(dict(r))
+    except Exception as exc:
+        logger.warning("find_free_rooms failed: %s", exc)
+        return []
+    return out
+
+
+# ---------------------------------------------------------------------------
+# 8) Calendar period authority — single source of truth for term windows
+# ---------------------------------------------------------------------------
+
+# Recognised period kinds. The calendar stores them as
+# ``academic_calendar_events.event_type`` strings (case-insensitive).
+PERIOD_KINDS = (
+    "term", "reading_week", "exam_window",
+    "submission_window", "holiday",
+)
+
+
+def current_period(kind: str, *, on_date: str | None = None) -> dict[str, Any] | None:
+    """Return the active period of ``kind`` covering ``on_date`` (default today).
+
+    Reads ``academic_calendar_events`` rows whose ``event_type``
+    matches ``kind`` (case-insensitive) and whose date range covers
+    the target date. The Calendar GUI is the canonical writer; every
+    other GUI calls this instead of hardcoding semester boundaries.
+
+    Returns ``None`` if no matching period exists or the calendar
+    table isn't present.
+    """
+    from datetime import date as _date
+    target = (on_date or _date.today().isoformat())[:10]
+    try:
+        with get_connection() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='academic_calendar_events'"
+            ).fetchone()
+            if not tbl:
+                return None
+            row = conn.execute(
+                "SELECT id, name, date, date_start, date_end, event_type "
+                "FROM academic_calendar_events "
+                "WHERE LOWER(event_type) = LOWER(?) "
+                "  AND ( "
+                "    (date_start IS NOT NULL AND date_end IS NOT NULL "
+                "     AND date_start <= ? AND date_end >= ?) "
+                "    OR (date IS NOT NULL AND date = ?) "
+                "  ) "
+                "ORDER BY COALESCE(date_start, date) DESC LIMIT 1",
+                (kind, target, target, target),
+            ).fetchone()
+            return dict(row) if row else None
+    except Exception as exc:
+        logger.warning("current_period(%s) failed: %s", kind, exc)
+        return None
+
+
+def is_holiday(check_date: str) -> bool:
+    """``True`` if ``check_date`` falls inside any holiday period.
+
+    Checks both the Calendar's ``academic_calendar_events`` rows
+    (event_type='holiday') and the legacy ``holidays`` table.
+    """
+    if not check_date:
+        return False
+    target = check_date[:10]
+    try:
+        with get_connection() as conn:
+            tables = {
+                r[0] for r in conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type='table'"
+                )
+            }
+            if "academic_calendar_events" in tables:
+                row = conn.execute(
+                    "SELECT 1 FROM academic_calendar_events "
+                    "WHERE LOWER(event_type) = 'holiday' AND ( "
+                    "  (date_start IS NOT NULL AND date_end IS NOT NULL "
+                    "   AND date_start <= ? AND date_end >= ?) "
+                    "  OR (date = ?) "
+                    ") LIMIT 1",
+                    (target, target, target),
+                ).fetchone()
+                if row:
+                    return True
+            if "holidays" in tables:
+                row = conn.execute(
+                    "SELECT 1 FROM holidays "
+                    "WHERE start_date <= ? AND end_date >= ? LIMIT 1",
+                    (target, target),
+                ).fetchone()
+                if row:
+                    return True
+    except Exception as exc:
+        logger.warning("is_holiday(%s) failed: %s", check_date, exc)
+    return False
+
+
+def _letter(pct: float | None) -> str:
+    if pct is None:
+        return ""
+    if pct >= 70: return "A"
+    if pct >= 60: return "B"
+    if pct >= 50: return "C"
+    if pct >= 40: return "D"
+    return "F"
+
+
 __all__ = [
     "find_conflicts_for_module",
     "find_conflicts_for_course",
@@ -459,4 +867,9 @@ __all__ = [
     "list_instructors",
     "at_risk_students_unified",
     "module_timeline",
+    "compute_module_grade",
+    "find_free_rooms",
+    "current_period",
+    "is_holiday",
+    "PERIOD_KINDS",
 ]

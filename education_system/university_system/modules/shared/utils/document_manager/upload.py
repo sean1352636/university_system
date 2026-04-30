@@ -93,6 +93,23 @@ class UploadMixin:
 
             document_id = cursor.lastrowid
 
+            # Bus broadcast (#1) — chatbot re-indexes, evidence panels
+            # refresh, anyone subscribed to dm.document.changed picks
+            # this up. Best-effort.
+            try:
+                from education_system.university_system.modules.services.document_bus import (
+                    publish_document_changed,
+                )
+                publish_document_changed(
+                    document_id=document_id,
+                    action="uploaded",
+                    domain="student",
+                    ref_id=str(student_id),
+                    name=type_name,
+                )
+            except Exception:
+                pass
+
             # Create workflow steps
             self.create_workflow_steps(cursor, document_id, type_id)
 

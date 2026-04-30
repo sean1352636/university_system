@@ -1407,6 +1407,24 @@ class ModuleManager:
             if not confirm:
                 return
 
+            # Finance hold gate — admins still need the override path,
+            # but the default UX is to block until the hold is cleared.
+            try:
+                from education_system.university_system.modules.services.finance_bus import (
+                    has_active_hold,
+                )
+                if has_active_hold(student_id):
+                    override = messagebox.askyesno(
+                        "Finance hold active",
+                        f"Student {student_id} has an active finance hold.\n\n"
+                        "Enrol anyway as an administrative override?",
+                        parent=dialog,
+                    )
+                    if not override:
+                        return
+            except Exception:
+                pass
+
             conn = None
             try:
                 conn = get_connection()

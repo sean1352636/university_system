@@ -422,6 +422,32 @@ class DataManager:
             logger.error("Database not available, cannot save exam")
             raise RuntimeError("Database not available")
 
+        # Calendar period gate (#4) — exam dates must fall in the
+        # active exam_window and must not land on a holiday. Soft-fails
+        # open if the calendar table is empty so first-run installs
+        # aren't blocked.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._cross_services import (
+                current_period, is_holiday,
+            )
+            if exam.date:
+                window = current_period("exam_window", on_date=exam.date)
+                if window is None and current_period("exam_window") is not None:
+                    raise RuntimeError(
+                        f"Exam date {exam.date} is outside the active "
+                        f"exam window. Update the calendar's exam_window "
+                        f"or pick a date inside it."
+                    )
+                if is_holiday(exam.date):
+                    raise RuntimeError(
+                        f"Exam date {exam.date} falls on a holiday "
+                        f"(see Academic Calendar). Pick a different date."
+                    )
+        except RuntimeError:
+            raise
+        except Exception as gate_err:
+            logger.debug("exam date gate skipped: %s", gate_err)
+
         try:
             # Serialize enrolled_student_ids to JSON
             enrolled_ids_json = json.dumps(exam.enrolled_student_ids)

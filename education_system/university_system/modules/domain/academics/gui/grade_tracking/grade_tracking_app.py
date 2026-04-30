@@ -395,6 +395,38 @@ class GradeTrackingApp:
                         EVENT_ASSIGNMENT_CHANGED, EVENT_ENROLMENT_CHANGED,
                         EVENT_GRADE_CHANGED):
                 subscribe_tk(evt, self.root, _on_external_change)
+
+            # Term, selection, calendar, and staff availability — Grade
+            # joins the same broadcast channel the four scheduling GUIs
+            # already use (#9). Calendar/staff changes can move the
+            # submission window or grey out a grader's queue, so a
+            # refresh keeps everything coherent.
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                EVENT_TERM_CHANGED, EVENT_SELECTION_CHANGED,
+                EVENT_CALENDAR_CHANGED, EVENT_STAFF_AVAILABILITY_CHANGED,
+            )
+
+            for evt in (EVENT_TERM_CHANGED, EVENT_CALENDAR_CHANGED,
+                        EVENT_STAFF_AVAILABILITY_CHANGED):
+                subscribe_tk(evt, self.root, _on_external_change)
+
+            def _on_selection(**payload):
+                # Soft pointer — pre-filter the module dropdown to the
+                # selected module if the GUI has one. We don't navigate
+                # away from whatever tab the user is on.
+                target = payload.get("module_code")
+                if not target:
+                    return
+                try:
+                    if (hasattr(self, "modules") and
+                            hasattr(self.modules, "filter_module_var")):
+                        self.modules.filter_module_var.set(target)
+                        if hasattr(self.modules, "filter_modules"):
+                            self.modules.filter_modules()
+                except Exception:
+                    pass
+
+            subscribe_tk(EVENT_SELECTION_CHANGED, self.root, _on_selection)
         except Exception:
             pass
 

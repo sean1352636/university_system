@@ -1074,6 +1074,24 @@ class AcademicCalendarManager:
                 )
 
             logger.info(f"Event '{name}' created with ID {event_id}")
+
+            # Calendar is the canonical writer for academic periods —
+            # publish so every scheduler refreshes its term-aware filters.
+            # Holidays and exam windows in particular drive validation
+            # gates in Module Scheduling, Exam, and Grade.
+            try:
+                from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                    publish, EVENT_CALENDAR_CHANGED,
+                )
+                publish(
+                    EVENT_CALENDAR_CHANGED,
+                    event_id=event_id, name=name, event_type=event_type,
+                    date=date, date_start=date_start, date_end=date_end,
+                    action="created",
+                )
+            except Exception:
+                pass
+
             return {
                 'success': True,
                 'message': f"Event '{name}' added successfully",
@@ -1151,6 +1169,16 @@ class AcademicCalendarManager:
                 )
 
             logger.info(f"Event {event_id} updated successfully")
+
+            try:
+                from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                    publish, EVENT_CALENDAR_CHANGED,
+                )
+                publish(EVENT_CALENDAR_CHANGED,
+                        event_id=event_id, action="updated")
+            except Exception:
+                pass
+
             return {'success': True, 'message': 'Event updated successfully'}
 
         except Exception as e:
@@ -1189,6 +1217,16 @@ class AcademicCalendarManager:
                     )
 
             logger.info(f"Event {event_id} deleted successfully")
+
+            try:
+                from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                    publish, EVENT_CALENDAR_CHANGED,
+                )
+                publish(EVENT_CALENDAR_CHANGED,
+                        event_id=event_id, action="deleted")
+            except Exception:
+                pass
+
             return {'success': True, 'message': 'Event deleted successfully'}
 
         except Exception as e:

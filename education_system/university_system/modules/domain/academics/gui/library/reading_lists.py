@@ -442,12 +442,27 @@ def create_reading_list_database(self, name, description, category, is_public, i
         VALUES (?, ?, ?, ?, ?, ?, ?)
         ''', (name, description, get_current_user_id(), now, is_public, is_collaborative, category))
 
+        new_list_id = cursor.lastrowid
         conn.commit()
         conn.close()
 
         # Log the action
         if ORIGINAL_LIBRARY_AVAILABLE:
             log_audit_event(get_current_user_id(), f"GUI: Created reading list '{name}'", "reading_lists")
+
+        # Broadcast so any open Course / Module / Assignment GUI that
+        # embeds a ResourceAvailabilityPanel auto-refreshes.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                publish, EVENT_READING_LIST_CHANGED,
+            )
+            publish(
+                EVENT_READING_LIST_CHANGED,
+                list_id=new_list_id, name=name, category=category,
+                action="created",
+            )
+        except Exception:
+            pass
 
         return True
 

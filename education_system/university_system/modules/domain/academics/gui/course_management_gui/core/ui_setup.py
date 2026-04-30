@@ -475,6 +475,12 @@ class UISetupMixin:
             elif col == "Status":
                 self.course_tree.column(col, width=80)
 
+        # Red overlay for courses whose modules have unresolved conflicts.
+        self.course_tree.tag_configure('has_conflict', foreground='#c0392b')
+        # Orange overlay for courses where total room capacity across
+        # scheduled sessions falls short of current enrolment.
+        self.course_tree.tag_configure('over_capacity', foreground='#d97706')
+
         # Scrollbar for treeview
         scrollbar = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=self.course_tree.yview)
         self.course_tree.configure(yscrollcommand=scrollbar.set)
@@ -485,6 +491,30 @@ class UISetupMixin:
 
         # Bind double-click event
         self.course_tree.bind("<Double-1>", self.on_course_double_click)
+
+        # Soft selection broadcast — sibling academic GUIs highlight the
+        # same course without context-switching their tabs.
+        def _publish_course_selection(_event=None):
+            try:
+                sel = self.course_tree.selection()
+                if not sel:
+                    return
+                vals = self.course_tree.item(sel[0], 'values')
+                if not vals or len(vals) < 2:
+                    return
+                code = vals[1]
+                if isinstance(code, str) and code.startswith("⚠ "):
+                    code = code[2:]
+                from education_system.university_system.modules.services.academic_state import (
+                    set_current_selection,
+                )
+                set_current_selection(course_code=code, source="course_management")
+            except Exception:
+                pass
+
+        self.course_tree.bind(
+            "<<TreeviewSelect>>", _publish_course_selection, add="+",
+        )
 
         # Pagination — keeps the treeview from loading the entire courses
         # table when it grows beyond a few hundred rows. State is set on

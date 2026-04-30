@@ -76,6 +76,29 @@ class EnrollmentMixin:
                 conn.close()
                 return
 
+            # Finance hold gate — refuse enrolment if the student has any
+            # active hold (overdue library fines, unpaid fees, etc.). Soft
+            # fail on lookup errors so a finance outage doesn't block
+            # registration.
+            try:
+                from education_system.university_system.modules.services.finance_bus import (
+                    has_active_hold, list_active_holds,
+                )
+                if has_active_hold(self.student_id):
+                    holds = list_active_holds(self.student_id)
+                    reasons = ", ".join(h.get("reason", "") for h in holds[:3]) or "active hold"
+                    messagebox.showerror(
+                        "Enrolment blocked",
+                        f"Cannot enrol {self.student_id} in {module_code}: "
+                        f"finance hold active ({reasons}).\n\n"
+                        "Resolve outstanding charges or have an admin "
+                        "release the hold, then retry.",
+                    )
+                    conn.close()
+                    return
+            except Exception as hold_err:
+                logger.warning("Hold check failed (proceeding): %s", hold_err)
+
             # Capacity check (no limit if column doesn't exist)
             max_capacity = None
             if max_capacity:

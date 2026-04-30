@@ -620,6 +620,7 @@ Rejection Reason: {row[11] or 'N/A'}
         approved_by = self.current_user.get('username') or self.current_user.get('id')
         approved_date = datetime.now().isoformat()
 
+        availability_changes: list[dict] = []
         try:
             with transaction() as conn:
                 for item_id in selection:
@@ -637,11 +638,40 @@ Rejection Reason: {row[11] or 'N/A'}
                     days = float(item['values'][5])
                     self._update_leave_balance(conn, user_id, request_id, days)
 
+                    # Capture for the post-commit availability broadcast
+                    # (#8). Subscribers (Module Scheduling, Exam,
+                    # Timetable, Grade) repaint affected slots.
+                    try:
+                        full = conn.execute(
+                            "SELECT user_id, start_date, end_date, leave_type_id "
+                            "FROM leave_requests WHERE request_id = ?",
+                            (request_id,),
+                        ).fetchone()
+                        if full:
+                            availability_changes.append(dict(full))
+                    except Exception:
+                        pass
+
                     log_activity('update', 'leave_request',
                                  details={'action': 'approved', 'approved_by': approved_by, 'request_id': request_id})
 
             messagebox.showinfo("Success", f"Approved {len(selection)} request(s)")
             self._load_pending_approvals()
+
+            # Bus broadcast (#8). Best-effort; never raises.
+            try:
+                from education_system.university_system.modules.services.staff_hr_bus import (
+                    publish_availability_change,
+                )
+                for r in availability_changes:
+                    publish_availability_change(
+                        r["user_id"], action="leave_approved",
+                        start_date=r["start_date"], end_date=r["end_date"],
+                        leave_type=str(r.get("leave_type_id") or ""),
+                        source="leave_management",
+                    )
+            except Exception:
+                pass
 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to approve requests: {e}")

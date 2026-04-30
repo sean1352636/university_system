@@ -119,6 +119,31 @@ class FinanceManagementGUI:
                 except Exception as e:
                     logger.debug(f"Could not set auth on finance app: {e}")
 
+                # Cross-domain bus: receive charges raised by Library
+                # (overdue fines), Exam scheduling (resit fees), Research
+                # (grant spend), and refresh the open finance view so the
+                # operator sees the new balance/transaction immediately.
+                try:
+                    from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                        subscribe_tk, EVENT_CHARGE_RAISED, EVENT_HOLD_CHANGED,
+                    )
+
+                    def _on_finance_change(**_payload):
+                        for attr in ("refresh", "reload", "refresh_all_data",
+                                     "load_data", "refresh_data"):
+                            fn = getattr(app, attr, None)
+                            if callable(fn):
+                                try:
+                                    fn()
+                                except Exception:
+                                    pass
+                                return
+
+                    subscribe_tk(EVENT_CHARGE_RAISED, win, _on_finance_change)
+                    subscribe_tk(EVENT_HOLD_CHANGED, win, _on_finance_change)
+                except Exception as bus_err:
+                    logger.debug(f"Finance bus subscribe failed: {bus_err}")
+
                 # Navigate to specific tab if requested
                 if initial_tab and hasattr(app, 'layout') and hasattr(app.layout, 'show_tab'):
                     try:

@@ -52,10 +52,56 @@ class StudentTimetableGUI:
         self.auth = auth_instance
         self.student_id = self._resolve_student_id()
         self.schedule_rows = []  # raw DB rows
+        self.exam_rows = []     # one-off exam bookings overlaid on the grid
         self._grid_cells = {}   # (day_index, slot_index) -> Label
 
         self._build_ui()
         self.refresh_data()
+
+        # Live participation in the cross-GUI bus. Anything that changes
+        # the underlying schedule, exams, enrolment, calendar, or term
+        # filter triggers a redraw. Each click on a grid cell publishes
+        # a soft selection so sibling GUIs can highlight the row.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                subscribe_tk,
+                EVENT_MODULE_SCHEDULE_CHANGED,
+                EVENT_EXAM_CHANGED,
+                EVENT_ENROLMENT_CHANGED,
+                EVENT_CALENDAR_CHANGED,
+                EVENT_TERM_CHANGED,
+                EVENT_SELECTION_CHANGED,
+            )
+
+            host = self.parent
+
+            def _on_change(**_payload):
+                self.refresh_data()
+
+            def _on_selection(**payload):
+                # Soft pointer — highlight the matching row in the
+                # fallback list if it's the module currently selected
+                # elsewhere. Don't navigate away.
+                target = payload.get("module_code")
+                if not target or not hasattr(self, "tree"):
+                    return
+                try:
+                    for iid in self.tree.get_children():
+                        vals = self.tree.item(iid, "values")
+                        if vals and len(vals) >= 3 and vals[2] == target:
+                            self.tree.selection_set(iid)
+                            self.tree.see(iid)
+                            break
+                except Exception:
+                    pass
+
+            for evt in (EVENT_MODULE_SCHEDULE_CHANGED, EVENT_EXAM_CHANGED,
+                        EVENT_ENROLMENT_CHANGED, EVENT_CALENDAR_CHANGED,
+                        EVENT_TERM_CHANGED):
+                subscribe_tk(evt, host, _on_change)
+            subscribe_tk(EVENT_SELECTION_CHANGED, host, _on_selection)
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------
     # Helpers
@@ -180,6 +226,7 @@ class StudentTimetableGUI:
         self._clear_grid()
         self.tree.delete(*self.tree.get_children())
         self.schedule_rows.clear()
+        self.exam_rows = []
         self.status_lbl.config(text="")
 
         if not self.student_id:
@@ -227,10 +274,27 @@ class StudentTimetableGUI:
                 enrolled,
             )
             self.schedule_rows = cursor.fetchall()
+
+            # Pull exam overlays for the same enrolled modules so the
+            # student sees lectures + exams in one grid.
+            try:
+                cursor.execute(
+                    f"""
+                    SELECT module_code, date, start_time, end_time, room
+                    FROM exams WHERE module_code IN ({placeholders})
+                    """,
+                    enrolled,
+                )
+                self.exam_rows = cursor.fetchall()
+            except Exception:
+                self.exam_rows = []
+
             conn.close()
 
             if self.schedule_rows:
                 self._populate_grid()
+                self._populate_exam_overlay()
+                self._populate_conflict_ribbons()
                 self._show_grid()
             else:
                 self._show_fallback_list()
@@ -287,12 +351,98 @@ class StudentTimetableGUI:
                         stype, (DEFAULT_CELL_BG, DEFAULT_CELL_FG)
                     )
                     cell.config(text=cell_text, bg=bg, fg=fg)
+                    self._bind_cell_selection(cell, module_code)
 
             # Also insert into fallback list
             time_str = f"{start}-{end}" if start and end else (start or "")
             self.tree.insert("", tk.END, values=(
                 day, time_str, module_code, room_str, instructor, stype or ""
             ))
+
+    def _populate_exam_overlay(self):
+        """Overlay one-off exams on top of the lecture grid in orange.
+
+        Exams have specific dates rather than weekday recurrence; we
+        derive the weekday from ``exams.date`` and tag the cell with
+        ``EXAM …`` so the student spots the difference at a glance.
+        """
+        from datetime import datetime as _dt
+        day_index_map = {d: i for i, d in enumerate(DAYS_OF_WEEK)}
+        for row in self.exam_rows or []:
+            try:
+                module_code = row["module_code"] if hasattr(row, "keys") else row[0]
+                date_str = row["date"] if hasattr(row, "keys") else row[1]
+                start = row["start_time"] if hasattr(row, "keys") else row[2]
+                room = row["room"] if hasattr(row, "keys") else row[4]
+            except Exception:
+                continue
+            if not date_str or not start:
+                continue
+            try:
+                day = _dt.strptime(date_str[:10], "%Y-%m-%d").strftime("%A")
+            except Exception:
+                continue
+            d_idx = day_index_map.get(day)
+            s_idx = self._slot_index(start)
+            if d_idx is None or s_idx is None:
+                continue
+            cell = self._grid_cells.get((d_idx, s_idx))
+            if not cell:
+                continue
+            existing = cell.cget("text")
+            cell.config(
+                text=f"EXAM {module_code}\n{room or ''}"
+                     + (f"\n(also: {existing.splitlines()[0]})" if existing else ""),
+                bg="#fde2c4", fg="#7a3e00",
+            )
+            self._bind_cell_selection(cell, module_code)
+
+    def _populate_conflict_ribbons(self):
+        """Outline cells whose module appears in unresolved conflicts."""
+        try:
+            from education_system.university_system.modules.domain.academics.gui._cross_services import (
+                _all_conflicts,
+            )
+            descs = [(c.get("description") or "").lower()
+                     for c in _all_conflicts()]
+        except Exception:
+            descs = []
+        if not descs:
+            return
+        for cell in self._grid_cells.values():
+            text = (cell.cget("text") or "").lower()
+            if not text:
+                continue
+            for desc in descs:
+                if any(tok and tok in desc
+                       for tok in text.replace("\n", " ").split()):
+                    try:
+                        cell.config(
+                            highlightthickness=2,
+                            highlightbackground="#c0392b",
+                        )
+                    except Exception:
+                        pass
+                    break
+
+    def _bind_cell_selection(self, cell, module_code):
+        """Click a cell → publish soft selection so siblings highlight."""
+        if not module_code:
+            return
+
+        def _on_click(_event=None, mc=module_code):
+            try:
+                from education_system.university_system.modules.services.academic_state import (
+                    set_current_selection,
+                )
+                set_current_selection(module_code=mc, source="student_timetable")
+            except Exception:
+                pass
+
+        try:
+            cell.bind("<Button-1>", _on_click)
+        except Exception:
+            pass
 
     def _slot_index(self, start_time):
         """Return the row index for a given start_time string, or None."""

@@ -1059,6 +1059,28 @@ class CourseAnalyticsDialog:
         self.create_widgets()
         self.dialog.focus_set()
 
+        # Live refresh: when assignment grading or grade tracking writes
+        # land, repull the analytics so cohort metrics don't drift from
+        # what the gradebook shows.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                subscribe_tk,
+                EVENT_GRADE_CHANGED,
+                EVENT_ASSIGNMENT_CHANGED,
+                EVENT_ASSESSMENT_CHANGED,
+                EVENT_ENROLMENT_CHANGED,
+            )
+
+            def _on_external_change(**_payload):
+                if hasattr(self, "refresh_all_data"):
+                    self.refresh_all_data()
+
+            for evt in (EVENT_GRADE_CHANGED, EVENT_ASSIGNMENT_CHANGED,
+                        EVENT_ASSESSMENT_CHANGED, EVENT_ENROLMENT_CHANGED):
+                subscribe_tk(evt, self.dialog, _on_external_change)
+        except Exception:
+            pass
+
     def create_widgets(self):
         main_frame = ttk.Frame(self.dialog)
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)

@@ -1578,6 +1578,30 @@ class ResearchGrantsGUI:
                 log_activity('create', 'equipment', equipment_id=equipment_id,
                            user_id=self.auth.current_user.get('username'))
 
+                # Grant spend → Finance bus. Restricted-fund posting,
+                # not a student charge, so we bypass raise_charge() and
+                # publish the event directly. Finance subscribers map the
+                # grant reference to the right restricted ledger.
+                try:
+                    if assigned_project_id and purchase_cost:
+                        from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                            publish, EVENT_CHARGE_RAISED,
+                        )
+                        publish(
+                            EVENT_CHARGE_RAISED,
+                            source="research_grant",
+                            account=f"grant:{assigned_project_id}",
+                            amount=float(purchase_cost),
+                            description=(
+                                f"Equipment purchase #{equipment_id} — "
+                                f"{entries['equipment_name'].get()}"
+                            ),
+                            reference_id=str(assigned_project_id),
+                            posted_by=self.auth.current_user.get('username'),
+                        )
+                except Exception as grant_bus_err:
+                    print(f"Warning: grant spend bus publish failed: {grant_bus_err}")
+
                 messagebox.showinfo(_("common.success"),
                                   _("research_grants.messages.equipment_added").format(id=equipment_id))
                 self._load_equipment()

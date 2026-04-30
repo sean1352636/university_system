@@ -275,6 +275,27 @@ def defer_exam_for_authorised_absence(
         except Exception:
             pass
 
+    # Bill the resit fee. Only on freshly created resits — re-attaching
+    # to an existing resit means the student was already billed once.
+    # A configurable per-module fee would live in a settings table; for
+    # now we use a flat default the institution can override later.
+    RESIT_FEE_DEFAULT = 50.00
+    try:
+        from education_system.university_system.modules.services.finance_bus import raise_charge
+        for r in results:
+            if r.get("action") == "created":
+                raise_charge(
+                    sid, RESIT_FEE_DEFAULT,
+                    source="exam_resit",
+                    description=(
+                        f"Resit fee — {module_code} on {r.get('resit_date')}"
+                    ),
+                    reference_id=f"resit:{r['resit_exam_id']}",
+                    processed_by="exam_deferral_processor",
+                )
+    except Exception as fee_err:
+        logger.warning("resit fee billing failed: %s", fee_err)
+
     return results
 
 

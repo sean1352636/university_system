@@ -468,6 +468,24 @@ def import_schedules_from_csv(self):
                             errors.append(f"Row missing required fields: {row}")
                             continue
 
+                        # Qualifications gate (#7) — refuse to assign an
+                        # instructor to a module they're not recorded as
+                        # qualified for. Soft-fails open if the
+                        # qualifications table is empty.
+                        try:
+                            from education_system.university_system.modules.services.staff_hr_bus import (
+                                is_qualified_for,
+                            )
+                            if not is_qualified_for(int(instructor_id), module_code):
+                                errors.append(
+                                    f"Instructor {instructor_id} is not "
+                                    f"qualified for module {module_code} "
+                                    f"(see Staff HR teaching_qualifications)."
+                                )
+                                continue
+                        except Exception:
+                            pass
+
                         cursor.execute('''
                         INSERT INTO module_schedule
                         (module_code, day_of_week, start_time, end_time, room_id, instructor_id, session_type)
