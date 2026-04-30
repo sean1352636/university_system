@@ -728,7 +728,7 @@ def run_compliance_check(self):
     """Run compliance check"""
     def check_in_background():
         try:
-            compliance_audit_system()
+            self.compliance_audit_system()
             self.root.after(0, lambda: [
                 self.log_activity("Compliance check completed"),
                 messagebox.showinfo("Compliance Check", "Compliance audit completed. Check console for results.")
@@ -797,7 +797,7 @@ def run_compliance_audit(self):
 
     def audit_in_background():
         try:
-            compliance_audit_system()
+            self.compliance_audit_system()
 
             self.root.after(0, lambda: [
                 self.log_activity("Compliance audit completed"),
