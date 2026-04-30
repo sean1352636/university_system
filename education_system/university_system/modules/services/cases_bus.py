@@ -159,6 +159,34 @@ def open_case(
         subject_id=str(subject_id), opened_by=opened_by,
         severity=severity, offense_type=offense_type,
     )
+
+    # Cross-domain: high-severity cases (and every security incident)
+    # auto-raise a row in the risk register so the legal/risk GUI
+    # surfaces live operational risk fed by real events, not just
+    # admin entry. Reference back to this case so close_case can
+    # fold them when the incident is resolved.
+    try:
+        sev_norm = (severity or "").strip().lower()
+        is_security = (kind or "").lower() == "security_incident"
+        if is_security or sev_norm in ("high", "critical", "severe"):
+            from education_system.university_system.modules.services import (
+                risk_bus,
+            )
+            cat = "Safety" if is_security else "Compliance"
+            risk_bus.raise_risk(
+                title=f"{kind} #{new_id}: {offense_type or 'incident'}",
+                category=cat,
+                department="Security" if is_security else "Compliance",
+                description=description or "",
+                likelihood=4 if sev_norm in ("critical", "severe") else 3,
+                impact=5 if sev_norm in ("critical", "severe")
+                       else (4 if sev_norm == "high" else 3),
+                owner=str(opened_by) if opened_by else None,
+                reference_id=f"case:{new_id}",
+            )
+    except Exception as exc:
+        logger.debug("risk auto-raise from case failed: %s", exc)
+
     return new_id
 
 
@@ -194,6 +222,18 @@ def close_case(*, kind: str, case_id: int,
         return False
 
     _publish("case.closed", case_id=case_id, kind=kind, outcome=outcome)
+
+    # Cross-domain: fold any auto-raised risk-register entries.
+    try:
+        from education_system.university_system.modules.services import (
+            risk_bus,
+        )
+        risk_bus.close_risks_for_reference(
+            f"case:{case_id}", outcome="case_closed"
+        )
+    except Exception as exc:
+        logger.debug("risk close from case failed: %s", exc)
+
     return True
 
 

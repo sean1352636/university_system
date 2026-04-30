@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.109.0 — 2026-04-30](#81090---2026-04-30)
 - [8.108.1 — 2026-04-30](#81081---2026-04-30)
 - [8.108.0 — 2026-04-30](#81080---2026-04-30)
 - [8.107.0 — 2026-04-30](#81070---2026-04-30)
@@ -214,6 +215,133 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.109.0] — 2026-04-30
+
+### Risk register, attendance and research portal join the cross-domain spine
+
+Wires the Student Union, Security desk, Risk Management, Research
+portal, Academic Calendar and Attendance GUIs into a single live
+loop. Two new shared-service modules (`risk_bus`, `attendance_bus`),
+expansions to `cases_bus` and `student_union_bus`, plus an integration
+hook in the research grant lifecycle.
+
+#### Added — `modules/services/risk_bus.py`
+
+Turns the previously read-only `risks` table into a live operational
+register fed by real events. Adds nullable cross-domain columns
+(`reference_id`, `next_review_date`, `expires_at`, `closed_at`) on
+first use so the legacy GUI keeps working.
+
+- `raise_risk(...)` → `risk_id`, publishes `risk.raised`.
+- `close_risk(risk_id, ...)` / `close_risks_for_reference(...)` —
+  the latter is what `cases_bus.close_case` calls so risk entries
+  fold automatically when the originating incident is resolved.
+- `set_review_date(risk_id, date)` — persists `next_review_date`
+  and writes a calendar row with `event_type='risk_review'` so
+  reviews surface alongside SU events / H&S drills via the existing
+  `EVENT_CALENDAR_CHANGED` path.
+- `list_risks_for(reference_id)` — read helper for GUIs.
+- `raise_research_risk(project_id, activity_tags, pi_id, ...)` —
+  bulk helper used by the research portal. Maps tags
+  (`biosafety`, `human_subjects`, `chemical`, `radiation`,
+  `clinical`, `animal`, `data_protection`, `field_work`) to risk
+  categories. Unknown tags fall under Compliance.
+- `raise_event_clearance_risk(event_id, name, when, tags, ...)` —
+  date-bounded entry used by SU large/alcohol/external events.
+
+#### Added — `modules/services/attendance_bus.py`
+
+Three thin wrappers around the existing attendance domain so
+`predictive_analytics` / `absence_tracking` can fan out without
+learning about cases / risks / finance schemas:
+
+- `flag_student_concern(student_id, threshold_pct=...)` opens an
+  `attendance_concern` case via `cases_bus.open_case`. Idempotent
+  per ISO week so the same student isn't case'd twice in seven days.
+  Severity scales with threshold (Critical < 50%, High < 70%).
+- `flag_module_attendance_risk(module_id, cohort_pct=...,
+  weeks_observed=...)` raises a `risks` row tagged
+  `category='Academic'` against `reference_id=f"module:{module_id}"`
+  — module delivery is the risk, not the student.
+- `post_research_session_payment(student_id, project_id, hours,
+  hourly_rate)` closes the loop between attendance records of
+  `kind='research_session'` and the research grant ledger. Pays
+  the participant via `commerce_bus.post_sale` (paid-in-full,
+  balance-neutral, earns loyalty points) and debits the project
+  budget via `finance_bus.raise_charge` against
+  `project:{project_id}`, so `finance_bus.grant_balance` reflects
+  remaining grant immediately.
+
+#### Changed — `cases_bus`
+
+- **Auto-raise risk on high-severity / security cases.**
+  `open_case` now calls `risk_bus.raise_risk` when
+  `kind == 'security_incident'` or `severity ∈ {High, Critical, Severe}`,
+  with `reference_id=f"case:{new_id}"`. Likelihood/impact scale
+  with severity. Department defaults to Security for security
+  incidents, Compliance otherwise.
+- **Auto-close risks on case close.** `close_case` calls
+  `risk_bus.close_risks_for_reference(f"case:{case_id}")` so any
+  auto-raised entries fold back to `status='case_closed'` when the
+  underlying incident is resolved.
+- Security desk's `cases.py` (campus/gui/security/tabs/) now has a
+  canonical bus path: passing `kind='security_incident'` to
+  `open_case` writes to `disciplinary_records` (the existing
+  parallel store) and inherits hearing scheduling, sanction
+  fan-out (`fine`→finance, `suspension`→hold), and risk-register
+  lifecycle for free.
+
+#### Changed — `student_union_bus.publish_event`
+
+Optional `tags=[...]` kwarg. When tags include `large`, `alcohol`
+or `external`, the event is published with `approval_status='pending'`
+on the `EVENT_CALENDAR_CHANGED` payload (so calendar subscribers can
+gate public visibility), AND triggers two cross-domain side-effects:
+
+1. `cases_bus.open_case(kind='event_clearance', severity='High')`
+   for the security desk to triage.
+2. `risk_bus.raise_event_clearance_risk(event_id, ..., expires_at=when)`
+   so the risk register has a date-bounded entry that auto-expires
+   the day after the event.
+
+When the security desk closes the clearance case with
+`outcome='approved'`, the existing `case.closed` event subscribers
+can flip the calendar row to `approved` (subscriber side; this
+release wires the publisher only).
+
+#### Changed — `ResearchProjectManager.create_project`
+
+Optional `activity_tags=[...]` kwarg. Non-empty tags trigger
+`risk_bus.raise_research_risk(project_id, activity_tags, pi_id,
+title)` so projects with biosafety / human-subjects / chemical /
+radiation / clinical / animal / data-protection / field-work
+activity automatically populate the risk register with the PI as
+owner. PIs / risk officers can use the existing risk GUI to manage
+ratings and review schedules.
+
+#### Changed — `bus_migrations.ensure_all_bus_schemas`
+
+Adds the four new `risks` columns (`reference_id`,
+`next_review_date`, `expires_at`, `closed_at`) to the central
+idempotent ALTER list so test fixtures can bootstrap the cross-
+domain schema without invoking each bus's first-call path.
+
+#### Verified live
+
+End-to-end smoke against the seeded DB:
+
+- `raise_risk` + `list_risks_for(reference_id)` round-trip works.
+- `close_risks_for_reference` closes 1 row.
+- `raise_research_risk` with `['biosafety','human_subjects']`
+  produces 2 rows.
+- `flag_module_attendance_risk('CS101', cohort_pct=48.0,
+  weeks_observed=3)` returns a new `risks` id.
+- `publish_event(... tags=['large','external','alcohol'])` writes
+  the calendar row, opens the clearance case, and surfaces 1
+  `event:` risk via `list_risks_for`.
 
 ---
 

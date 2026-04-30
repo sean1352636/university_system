@@ -381,17 +381,37 @@ def list_advocacy_requests_for(student_id: str | int,
 def publish_event(*, name: str, when: str,
                   location: str | None = None,
                   description: str | None = None,
-                  organizer_id: str | int | None = None) -> str | None:
+                  organizer_id: str | int | None = None,
+                  tags: list[str] | None = None) -> str | None:
     """Persist an SU event as an academic_calendar_events row.
 
     Hits the same path H&S evacuation drills and AM/DP hearings use,
     so the SU event shows up automatically on every calendar view
     that subscribes to ``EVENT_CALENDAR_CHANGED``.
+
+    ``tags`` (e.g. ``["large", "alcohol", "external"]``) drives
+    cross-domain pre-clearance:
+
+    * Any tag triggering "large"/"alcohol"/"external" opens a
+      ``cases_bus`` ``event_clearance`` case for the security desk
+      and a date-bounded ``risks`` row that auto-expires after the
+      event. The calendar row is still written (so it shows up on
+      planning views) but is published with
+      ``approval_status='pending'`` so subscribers can hide it from
+      public-facing views until the case closes with
+      ``outcome='approved'``.
     """
     if not name or not when:
         return None
     event_id = str(uuid.uuid4())
     now = datetime.now().isoformat()
+
+    needs_clearance = bool(tags) and any(
+        str(t).lower() in ("large", "alcohol", "external")
+        for t in tags
+    )
+    approval_status = "pending" if needs_clearance else "approved"
+
     try:
         with get_connection() as conn:
             conn.execute(
@@ -415,9 +435,46 @@ def publish_event(*, name: str, when: str,
         )
         publish(EVENT_CALENDAR_CHANGED, event_id=event_id,
                 event_type="su_event", action="created",
-                date=when[:10], name=name)
+                date=when[:10], name=name,
+                approval_status=approval_status,
+                tags=list(tags) if tags else [])
     except Exception:
         pass
+
+    if needs_clearance:
+        # Open a security-desk clearance case and a date-bounded
+        # risk register entry. Both reference back to the event_id
+        # so closing the case folds the risk and the calendar
+        # subscriber can flip approval_status to 'approved'.
+        try:
+            from education_system.university_system.modules.services import (
+                cases_bus,
+            )
+            cases_bus.open_case(
+                kind="event_clearance",
+                subject_id=str(organizer_id or event_id),
+                opened_by="student_union_bus",
+                description=(f"SU event '{name}' on {when[:10]} "
+                             f"requires security pre-clearance "
+                             f"(tags: {sorted(set(tags or []))})."),
+                severity="High",
+                offense_type="Event clearance",
+                location=location,
+            )
+        except Exception as exc:
+            logger.debug("event clearance case failed: %s", exc)
+
+        try:
+            from education_system.university_system.modules.services import (
+                risk_bus,
+            )
+            risk_bus.raise_event_clearance_risk(
+                event_id, name=name, when=when, tags=tags or [],
+                organizer_id=str(organizer_id) if organizer_id else None,
+            )
+        except Exception as exc:
+            logger.debug("event clearance risk failed: %s", exc)
+
     return event_id
 
 

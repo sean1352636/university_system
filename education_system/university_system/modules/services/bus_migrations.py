@@ -95,6 +95,10 @@ CREATE TABLE IF NOT EXISTS gym_day_passes (
 _COLUMN_ADDITIONS: tuple[tuple[str, str, str], ...] = (
     ("student_union_clubs", "hall_id", "TEXT"),
     ("restaurant_customers", "student_id", "TEXT"),
+    ("risks", "reference_id",     "TEXT"),
+    ("risks", "next_review_date", "TEXT"),
+    ("risks", "expires_at",       "TEXT"),
+    ("risks", "closed_at",        "TEXT"),
 )
 
 

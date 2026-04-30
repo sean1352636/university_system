@@ -20,7 +20,8 @@ class ResearchProjectManager:
     @staticmethod
     def create_project(project_title: str, principal_investigator_id: str,
                       department: str, project_type: str, start_date: str,
-                      description: str = "", total_budget: float = 0) -> int:
+                      description: str = "", total_budget: float = 0,
+                      activity_tags: list = None) -> int:
         try:
             with transaction() as conn:
                 cursor = conn.execute('''
@@ -31,7 +32,27 @@ class ResearchProjectManager:
                 ''', (project_title, principal_investigator_id, department,
                       project_type, start_date, description, total_budget))
                 project_id = cursor.lastrowid
-                return project_id
+
+            # Cross-domain: high-risk research activities (biosafety,
+            # human subjects, chemical, radiation, clinical, animal,
+            # data_protection, field_work) auto-raise risk-register
+            # entries linked back to this project so the risk GUI
+            # surfaces them and the calendar shows their reviews.
+            if activity_tags:
+                try:
+                    from education_system.university_system.modules.services import (
+                        risk_bus,
+                    )
+                    risk_bus.raise_research_risk(
+                        project_id,
+                        activity_tags=activity_tags,
+                        pi_id=principal_investigator_id,
+                        title=project_title,
+                    )
+                except Exception:
+                    pass
+
+            return project_id
         except Exception as e:
             raise Exception(get_text("research.grants.errors.create_project", "Error creating research project: {error}").format(error=e))
 
