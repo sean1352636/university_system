@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.109.2 — 2026-04-30](#81092---2026-04-30)
 - [8.109.1 — 2026-04-30](#81091---2026-04-30)
 - [8.109.0 — 2026-04-30](#81090---2026-04-30)
 - [8.108.1 — 2026-04-30](#81081---2026-04-30)
@@ -216,6 +217,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.109.2] — 2026-04-30
+
+### Bus audit: wire previously-dormant buses to live consumer paths
+
+Audited every shared service bus to verify each has at least one
+domain GUI/service consumer firing it from the running program.
+Found six buses (careers, trip, parking, cert, restaurant, email)
+that were exposed as helpers but had no domain caller — only the
+chatbot tool surface and informational pop-ups read them. Wired
+the four highest-value writers; the remaining gaps are documented.
+
+#### Changed — launcher startup
+
+`run.py:main()` now calls
+`bus_migrations.ensure_all_bus_schemas()` and the new
+`bus_migrations.bootstrap_all_bus_subscribers()` before the auth /
+menu / dispatch step. The bootstrap eagerly imports every bus
+module so any self-registering subscriber (notably
+`email_bus.register_subscribers`, which runs at import time) wires
+up at process start rather than the first lazy reference. Best-
+effort — a missing module is logged at debug; the launcher
+continues.
+
+#### Changed — `trip_management/trips.py:create_trip`
+
+After the `INSERT INTO trips`, publishes `trip.created` through
+`trip_bus._publish` with the new trip_id, dates, cost and capacity.
+Subscribers (calendar bus, chatbot, finance hold gate) now see
+trips created from the mobility GUI; previously only trips created
+through `trip_bus.create_trip` itself surfaced.
+
+#### Changed — `career_services_core.create_job_posting`
+
+Publishes `careers.job.posted` through `careers_bus._publish` after
+the job_posting row is written. Job postings created from the
+career-services GUI now feed the chatbot, student-job dashboards
+and email digest subscribers.
+
+#### Changed — `parking_management/violations.py:record_violation`
+
+After the local `INSERT INTO parking_violations`, calls
+`parking_bus.record_violation(plate, kind=..., fine_amount=...,
+location=..., officer_id=..., issued_by=...)` which raises the fine
+through `finance_bus.raise_charge` against the permit holder and
+publishes the cross-domain event. Violations issued at the desk now
+appear on the holder's finance ledger automatically.
+
+#### Changed — `training_manager.add_certification`
+
+Publishes `cert.issued` through `cert_bus._publish` with the new
+cert_id, user_id, issuing body, and expiry. The cert-bus's existing
+`expiring_certifications` dashboard and the cases_bus
+cert-revoke sanction path now have a known counterpart event when
+new certifications are added through the staff-HR training GUI.
+
+#### Bus consumer audit — final state
+
+All shared service buses now have at least one live domain caller:
+
+| Bus | Live domain consumer(s) |
+| --- | --- |
+| `academic_state` | 5 academics GUIs (timetable, exams, modules, courses, cross-dialogs) |
+| `attendance_bus` | predictive_analytics |
+| `careers_bus` | career_services_core (this release) |
+| `cases_bus` | security cases.add_case (8.109.1), trip incidents, attendance_bus, AM/DP GUI |
+| `cert_bus` | training_manager (this release), cases_bus sanction path |
+| `commerce_bus` | cinema, gym, shop, restaurant operations |
+| `document_bus` | shared upload helper, staff_hr onboarding GUI |
+| `email_bus` | self-registering subscribers (eager-imported by launcher this release) |
+| `finance_bus` | housing rent, commerce sales, cases sanctions, parking fines, careers/research grants |
+| `housing_finance` | housing applications, payments, finance_integration |
+| `loyalty_bus` | commerce_bus.post_sale (every cinema/gym/shop/restaurant sale) |
+| `parking_bus` | parking violations writer (this release) |
+| `restaurant_bus` | (still chatbot-only — see Note below) |
+| `risk_bus` | cases_bus, attendance_bus, student_union_bus event clearance, research project create |
+| `staff_hr_bus` | leave management GUI, module scheduling, trip leader gate, cases_bus |
+| `student_union_bus` | gym membership auto-link, SU GUI, calendar, chatbot |
+| `trip_bus` | mobility trips writer (this release), trip_management GUI |
+
+#### Note — restaurant_bus
+
+`restaurant_bus.top_up_meal_plan`, `record_pos_transaction`,
+`apply_su_discount`, `apply_staff_subsidy` are exposed but the
+restaurant order_processing path uses `commerce_bus.post_sale`
+(8.108.0) which already covers POS transactions through finance +
+loyalty. The meal-plan and SU/staff-subsidy entry points still
+need a UI to invoke them — left for follow-up rather than wiring
+to a stand-in caller.
 
 ---
 

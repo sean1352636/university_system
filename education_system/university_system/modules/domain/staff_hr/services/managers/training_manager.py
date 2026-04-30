@@ -146,7 +146,26 @@ class TrainingManager:
                   data.get('issue_date'), data.get('expiry_date'),
                   data.get('document_path'), data.get('status', 'active'),
                   data.get('notes')))
-            return cursor.lastrowid
+            cert_id = cursor.lastrowid
+
+        # Cross-domain: publish through cert_bus so the chatbot,
+        # expiring-certs dashboard, and email subscribers see the
+        # new certification (and so cases_bus.apply_sanction's
+        # cert-revoke path has a known counterpart event).
+        try:
+            from education_system.university_system.modules.services import (
+                cert_bus,
+            )
+            cert_bus._publish(
+                "cert.issued",
+                cert_id=cert_id, user_id=str(user_id), name=name,
+                issuing_body=data.get('issuing_body'),
+                expiry_date=data.get('expiry_date'),
+            )
+        except Exception:
+            pass
+
+        return cert_id
 
     @staticmethod
     def get_expiring_certs(days: int = 30) -> List[Dict[str, Any]]:

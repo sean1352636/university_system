@@ -286,6 +286,20 @@ def main():
     _run_alembic_upgrade()
     _seed_demo_if_fresh()
 
+    # Bootstrap cross-domain bus schemas + eagerly import every bus
+    # module so self-registering subscribers (email_bus,
+    # student_union_bus calendar publisher, etc.) wire up before the
+    # first user action triggers them. Best-effort — failures are
+    # logged at debug; the launcher continues.
+    try:
+        from education_system.university_system.modules.services import (
+            bus_migrations,
+        )
+        bus_migrations.ensure_all_bus_schemas()
+        bus_migrations.bootstrap_all_bus_subscribers()
+    except Exception as exc:
+        logger.debug("bus bootstrap skipped: %s", exc)
+
     from education_system.launcher.auth import gui_universal_login, cli_universal_login
     from education_system.launcher.systems import (
         LAUNCHERS, AUTH_GUI_SYSTEMS, AUTH_CLI_SYSTEMS,

@@ -142,4 +142,29 @@ def ensure_all_bus_schemas() -> None:
         logger.warning("ensure_all_bus_schemas failed: %s", exc)
 
 
-__all__ = ["ensure_all_bus_schemas"]
+def bootstrap_all_bus_subscribers() -> None:
+    """Eagerly import every bus module so any self-registering
+    subscribers (e.g. ``email_bus.register_subscribers``) wire up
+    at startup rather than the first lazy reference.
+
+    Called by the unified launcher; safe to call multiple times —
+    each bus's registration is idempotent.
+    """
+    bus_names = (
+        "academic_state",
+        "attendance_bus", "careers_bus", "cases_bus", "cert_bus",
+        "commerce_bus", "document_bus", "email_bus", "finance_bus",
+        "housing_finance", "loyalty_bus", "parking_bus",
+        "restaurant_bus", "risk_bus", "staff_hr_bus",
+        "student_union_bus", "trip_bus",
+    )
+    for name in bus_names:
+        try:
+            __import__(
+                f"education_system.university_system.modules.services.{name}"
+            )
+        except Exception as exc:
+            logger.debug("bus import %s failed: %s", name, exc)
+
+
+__all__ = ["ensure_all_bus_schemas", "bootstrap_all_bus_subscribers"]

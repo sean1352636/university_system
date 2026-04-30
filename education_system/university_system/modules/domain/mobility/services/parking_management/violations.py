@@ -131,6 +131,27 @@ def record_violation():
 
         conn.commit()
 
+        # Cross-domain: route the fine through parking_bus so the
+        # finance ledger, hold gates and chatbot subscribers all
+        # see the violation. parking_bus.record_violation raises a
+        # finance charge against the holder when the plate matches
+        # an issued permit.
+        try:
+            from education_system.university_system.modules.services import (
+                parking_bus,
+            )
+            parking_bus.record_violation(
+                license_plate,
+                kind=violation_type,
+                fine_amount=fine_amount,
+                location=location,
+                officer_id=officer_id,
+                issued_by=auth.current_user.get('username')
+                          if auth and auth.current_user else None,
+            )
+        except Exception:
+            pass
+
         print("\n" + _t("parking.msg.violation_recorded") + ":")
         print(f"Violation ID: {violation_id}")
         print(f"License Plate: {license_plate}")

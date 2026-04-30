@@ -40,7 +40,25 @@ class JobManager:
                 ''', (employer_id, job_title, company_name, job_type, location,
                       salary_range, description, requirements, application_deadline))
                 job_id = cursor.lastrowid
-                return job_id
+
+            # Cross-domain: publish through careers_bus so the chatbot,
+            # student-job dashboards and email subscribers see the
+            # new posting without needing to poll job_postings.
+            try:
+                from education_system.university_system.modules.services import (
+                    careers_bus,
+                )
+                careers_bus._publish(
+                    "careers.job.posted",
+                    job_id=job_id, employer_id=employer_id,
+                    job_title=job_title, company=company_name,
+                    job_type=job_type, location=location,
+                    deadline=application_deadline,
+                )
+            except Exception:
+                pass
+
+            return job_id
         except sqlite3.Error as e:
             raise DatabaseError(f"Error creating job posting: {e}") from e
 

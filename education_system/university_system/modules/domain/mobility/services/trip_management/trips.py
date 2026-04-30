@@ -226,6 +226,25 @@ def create_trip():
 
         trip_id = cursor.lastrowid
 
+        # Cross-domain: publish through trip_bus so the academic
+        # calendar, finance hold gates, and chatbot subscribers all
+        # see the new trip. The bus also writes a calendar row via
+        # EVENT_TRIP_CREATED.
+        try:
+            from education_system.university_system.modules.services import (
+                trip_bus,
+            )
+            trip_bus._publish(
+                "trip.created",
+                trip_id=trip_id, trip_name=trip_name,
+                destination=destination,
+                start_date=start_date_str, end_date=end_date_str,
+                cost=cost, max_participants=max_participants,
+                kind="university",
+            )
+        except Exception:
+            pass
+
         print(get_text("mobility.trip_management.create.success", "\nTrip '{trip_name}' created successfully!").format(trip_name=trip_name))
         print(get_text("mobility.trip_management.create.trip_id_label", "Trip ID: {trip_id}").format(trip_id=trip_id))
         print(get_text("mobility.trip_management.create.destination_label", "Destination: {destination}").format(destination=destination))
