@@ -54,6 +54,14 @@ _TRACKED_EVENTS = (
     "parking.violation",
     "hs.incident.logged",
     "su.advocacy.requested",
+    # Exam lifecycle. integration_bus publishes these with action=
+    # 'published' / 'graded' / 'pending_grade' so a single template
+    # entry per event_kind covers each shape.
+    "exam.scheduled",
+    "exam.graded",
+    "exam.pending_grade",
+    "exam.room_conflict",
+    "finance.report.sent",
 )
 
 
@@ -204,6 +212,34 @@ _BUILTIN_TEMPLATES: dict[str, tuple[str, str]] = {
         "SU advocacy requested",
         "Advocacy request #{request_id} on case #{case_id} "
         "({case_kind}).",
+    ),
+    "exam.scheduled": (
+        "Exam scheduled: {exam_title}",
+        "Exam '{exam_title}' (module {module_code}) is scheduled "
+        "for {start_time}. Duration: {duration_minutes} min. "
+        "Pass mark: {pass_mark}%.",
+    ),
+    "exam.graded": (
+        "Exam result: {exam_title}",
+        "Your attempt on '{exam_title}' has been graded. "
+        "Score: {score}/{total_marks} ({percentage}%). "
+        "Result: {result}.",
+    ),
+    "exam.pending_grade": (
+        "Reminder: ungraded attempts on {exam_title}",
+        "{count} attempts on '{exam_title}' are still awaiting "
+        "manual grading (oldest: {oldest_submitted}). Please "
+        "complete grading in the Exam portal.",
+    ),
+    "exam.room_conflict": (
+        "Exam room conflict: {exam_title}",
+        "Module reschedule for {module_code} now collides with "
+        "exam '{exam_title}' on {when}. Please review the "
+        "timetable.",
+    ),
+    "finance.report.sent": (
+        "Finance report: {report_title}",
+        "{report_title} generated {generated_at}.\n\n{summary}",
     ),
 }
 

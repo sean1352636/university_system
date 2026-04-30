@@ -34,9 +34,13 @@ from education_system.university_system.modules.domain.academics.gui._event_bus 
     EVENT_CERT_CHANGED,
     EVENT_CHARGE_RAISED,
     EVENT_COURSE_CHANGED,
+    EVENT_ENROLMENT_CHANGED,
+    EVENT_EXAM_CHANGED,
+    EVENT_INCIDENT_LOGGED,
     EVENT_MODULE_SCHEDULE_CHANGED,
     EVENT_SELECTION_CHANGED,
     EVENT_STAFF_AVAILABILITY_CHANGED,
+    EVENT_TERM_CHANGED,
     publish,
     subscribe,
 )
@@ -937,6 +941,476 @@ def _tag_payroll_leave(user_id: str, start: str, end: str,
         logger.debug("payroll leave tag failed: %s", exc)
 
 
+# ===========================================================================
+# Exam + Email features (10–17)
+# ===========================================================================
+
+# Cached current term window — populated by EVENT_TERM_CHANGED. Used by
+# Feature 16 to refuse exams scheduled outside the active term.
+_current_term: dict[str, Any] = {"start": None, "end": None, "name": None}
+
+
+def _on_term_changed(**payload: Any) -> None:
+    if payload.get("start_date"):
+        _current_term["start"] = str(payload["start_date"])[:10]
+    if payload.get("end_date"):
+        _current_term["end"] = str(payload["end_date"])[:10]
+    if payload.get("term") or payload.get("name"):
+        _current_term["name"] = str(payload.get("term") or payload.get("name"))
+
+
+# ---------------------------------------------------------------------------
+# Feature 10 — Exam published → email enrolled roster
+# ---------------------------------------------------------------------------
+
+def publish_exam_event(exam_id: int, *, action: str,
+                       module_code: str | None = None,
+                       exam_title: str | None = None,
+                       start_time: str | None = None,
+                       duration_minutes: int | None = None,
+                       pass_mark: float | None = None,
+                       student_id: str | None = None,
+                       score: float | None = None,
+                       total_marks: float | None = None,
+                       percentage: float | None = None,
+                       passed: bool | None = None) -> None:
+    """Publish an exam lifecycle event.
+
+    ``action`` is one of: ``"published"``, ``"unpublished"``,
+    ``"graded"``, ``"pending_grade"``. Origin: ExamPortalService.
+    """
+    log_and_publish(
+        EVENT_EXAM_CHANGED,
+        source="exam_management",
+        exam_id=int(exam_id),
+        action=action,
+        module_code=module_code,
+        exam_title=exam_title,
+        start_time=start_time,
+        duration_minutes=duration_minutes,
+        pass_mark=pass_mark,
+        student_id=student_id,
+        score=score,
+        total_marks=total_marks,
+        percentage=percentage,
+        passed=passed,
+    )
+
+
+def _enrolled_students_for_module(module_code: str) -> list[str]:
+    """Best-effort roster lookup. Tries student_enrolment, then plan_courses."""
+    if not module_code:
+        return []
+    try:
+        with get_connection() as conn:
+            for sql in (
+                "SELECT DISTINCT student_id FROM student_enrolment WHERE module_code = ?",
+                "SELECT DISTINCT sp.student_id FROM plan_courses pc "
+                "JOIN student_plans sp ON sp.plan_id = pc.plan_id "
+                "WHERE pc.course_code = ?",
+            ):
+                try:
+                    rows = conn.execute(sql, (module_code,)).fetchall()
+                    if rows:
+                        return [str(r[0]) for r in rows if r[0]]
+                except Exception:
+                    continue
+    except Exception:
+        pass
+    return []
+
+
+def _on_exam_event(**payload: Any) -> None:
+    action = payload.get("action")
+    if action == "published":
+        _fanout_exam_published(payload)
+    elif action == "graded":
+        _fanout_exam_graded(payload)
+
+
+def _fanout_exam_published(payload: dict[str, Any]) -> None:
+    module_code = payload.get("module_code") or ""
+    students = _enrolled_students_for_module(module_code)
+    try:
+        from education_system.university_system.modules.services.email_bus import (
+            send_templated,
+        )
+        ctx = {
+            "exam_title": payload.get("exam_title") or f"Exam #{payload.get('exam_id')}",
+            "module_code": module_code,
+            "start_time": payload.get("start_time") or "TBA",
+            "duration_minutes": payload.get("duration_minutes") or "?",
+            "pass_mark": payload.get("pass_mark") or 50,
+        }
+        for sid in students:
+            try:
+                send_templated(sid, "exam.scheduled", ctx,
+                               related_to=f"exam:{payload.get('exam_id')}")
+            except Exception as exc:
+                logger.debug("exam.scheduled email failed for %s: %s", sid, exc)
+    except Exception as exc:
+        logger.debug("email_bus unavailable for exam roster: %s", exc)
+
+
+def _fanout_exam_graded(payload: dict[str, Any]) -> None:
+    sid = payload.get("student_id")
+    if not sid:
+        return
+    try:
+        from education_system.university_system.modules.services.email_bus import (
+            send_templated,
+        )
+        send_templated(
+            sid, "exam.graded",
+            {
+                "exam_title": payload.get("exam_title")
+                              or f"Exam #{payload.get('exam_id')}",
+                "score": payload.get("score") or 0,
+                "total_marks": payload.get("total_marks") or 0,
+                "percentage": round(payload.get("percentage") or 0.0, 1),
+                "result": "passed" if payload.get("passed") else "review",
+            },
+            related_to=f"exam:{payload.get('exam_id')}",
+        )
+    except Exception as exc:
+        logger.debug("exam.graded email failed: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# Feature 11 — Hold blocks exam start (read-helper, no event)
+# ---------------------------------------------------------------------------
+
+def can_student_start_exam(student_id: str) -> tuple[bool, str | None]:
+    """Return ``(allowed, reason)`` for an exam-start gate.
+
+    Wraps ``finance_bus.has_active_hold``. Callers (exam_service) can
+    plug this in without learning the holds schema.
+    """
+    if not student_id:
+        return True, None
+    try:
+        from education_system.university_system.modules.services.finance_bus import (
+            has_active_hold, list_active_holds,
+        )
+        if not has_active_hold(student_id):
+            return True, None
+        holds = list_active_holds(student_id) or []
+        reason = (holds[0].get("reason") if holds else None) or "active finance hold"
+        return False, reason
+    except Exception as exc:
+        logger.debug("hold check failed for %s: %s — allowing", student_id, exc)
+        return True, None
+
+
+# ---------------------------------------------------------------------------
+# Feature 13 — Module reschedule → exam room conflict
+# ---------------------------------------------------------------------------
+
+def _on_module_schedule_changed_for_exams(**payload: Any) -> None:
+    if payload.get("action") == "timetable_locked":
+        return  # already handled by Feature 4
+    module_code = payload.get("module_code")
+    if not module_code:
+        return
+    new_start = payload.get("start_time")
+    new_end = payload.get("end_time")
+    new_room = payload.get("room_id")
+    if not (new_start and new_end):
+        return
+    try:
+        with get_connection() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='exam_portal_exams'"
+            ).fetchone()
+            if not tbl:
+                return
+            rows = conn.execute(
+                "SELECT id, title, start_time, end_time, room_id "
+                "FROM exam_portal_exams "
+                "WHERE module_code = ? AND status = 'published' "
+                "  AND start_time IS NOT NULL AND end_time IS NOT NULL",
+                (module_code,),
+            ).fetchall()
+    except Exception:
+        return
+
+    for exam in rows:
+        if not _windows_overlap(new_start, new_end,
+                                 exam["start_time"], exam["end_time"]):
+            continue
+        if new_room and exam["room_id"] and new_room != exam["room_id"]:
+            continue  # different rooms, no real conflict
+        log_and_publish(
+            EVENT_INCIDENT_LOGGED,
+            source="integration_bus",
+            kind="exam_room_conflict",
+            severity="medium",
+            module_code=module_code,
+            exam_id=exam["id"],
+            exam_title=exam["title"],
+            location=exam["room_id"] or new_room,
+        )
+        # Notify the scheduler/admin via email_bus.
+        try:
+            from education_system.university_system.modules.services.email_bus import (
+                send_templated,
+            )
+            send_templated(
+                _admin_user_id() or "admin", "exam.room_conflict",
+                {
+                    "exam_title": exam["title"] or f"Exam #{exam['id']}",
+                    "module_code": module_code,
+                    "when": exam["start_time"],
+                },
+                related_to=f"exam:{exam['id']}",
+                force=True,
+            )
+        except Exception as exc:
+            logger.debug("conflict email failed: %s", exc)
+
+
+def _windows_overlap(a_start: str, a_end: str, b_start: str, b_end: str) -> bool:
+    try:
+        return not (a_end <= b_start or b_end <= a_start)
+    except Exception:
+        return False
+
+
+def _admin_user_id() -> str | None:
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT user_id FROM users WHERE LOWER(role) = 'admin' "
+                "AND email IS NOT NULL LIMIT 1"
+            ).fetchone()
+            return str(row[0]) if row else None
+    except Exception:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Feature 14 — Finance report → email_bus
+# ---------------------------------------------------------------------------
+
+def send_finance_report(report_title: str, summary: str,
+                        *, recipient_user_id: str | None = None,
+                        related_to: str | None = None) -> str | None:
+    """Route a finance report through email_bus so it lands in
+    ``email_log`` and fires ``EVENT_EMAIL_SENT`` for audit.
+
+    Returns the message_id on success.
+    """
+    target = recipient_user_id or _admin_user_id() or "admin"
+    try:
+        from education_system.university_system.modules.services.email_bus import (
+            send_templated,
+        )
+        return send_templated(
+            target, "finance.report.sent",
+            {
+                "report_title": report_title,
+                "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "summary": summary[:1500],
+            },
+            related_to=related_to or "finance_report",
+            force=True,
+        )
+    except Exception as exc:
+        logger.warning("send_finance_report failed: %s", exc)
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Feature 15 — Ungraded sweep
+# ---------------------------------------------------------------------------
+
+def sweep_ungraded_exams(*, reminder_after_days: int = 7,
+                         hold_after_days: int = 14) -> dict[str, int]:
+    """Daily sweep over ``exam_portal_attempts``.
+
+    - Attempts submitted >= reminder_after_days ago and still not
+      graded → email the instructor.
+    - Attempts submitted >= hold_after_days ago and still not graded
+      → place a finance hold against the student so transcripts
+      can't release.
+    Returns ``{"reminded": N, "held": M}``.
+    """
+    reminded = 0
+    held = 0
+    try:
+        with get_connection() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='exam_portal_attempts'"
+            ).fetchone()
+            if not tbl:
+                return {"reminded": 0, "held": 0}
+
+            stale = conn.execute(
+                "SELECT a.id, a.student_id, a.submitted_at, "
+                "       e.id as exam_id, e.title, e.created_by, e.module_code "
+                "FROM exam_portal_attempts a "
+                "JOIN exam_portal_exams e ON e.id = a.exam_id "
+                "WHERE a.graded_at IS NULL "
+                "  AND a.submitted_at IS NOT NULL "
+                "  AND julianday('now') - julianday(a.submitted_at) >= ?",
+                (int(reminder_after_days),),
+            ).fetchall()
+    except Exception as exc:
+        logger.warning("sweep_ungraded_exams query failed: %s", exc)
+        return {"reminded": 0, "held": 0}
+
+    # Group by instructor for one email per instructor per sweep.
+    by_instructor: dict[str, list[dict[str, Any]]] = {}
+    for r in stale:
+        d = dict(r)
+        by_instructor.setdefault(str(d.get("created_by") or "admin"), []).append(d)
+
+    try:
+        from education_system.university_system.modules.services.email_bus import (
+            send_templated,
+        )
+        for instructor_id, attempts in by_instructor.items():
+            oldest = min(a.get("submitted_at") or "" for a in attempts)
+            send_templated(
+                instructor_id, "exam.pending_grade",
+                {
+                    "exam_title": attempts[0].get("title") or "exam",
+                    "count": len(attempts),
+                    "oldest_submitted": oldest,
+                },
+                related_to=f"exam:{attempts[0].get('exam_id')}",
+                force=True,
+            )
+            reminded += len(attempts)
+    except Exception as exc:
+        logger.debug("ungraded sweep email failed: %s", exc)
+
+    # Holds for older still-ungraded attempts.
+    try:
+        from education_system.university_system.modules.services.finance_bus import (
+            place_hold,
+        )
+        for r in stale:
+            d = dict(r)
+            sub = d.get("submitted_at") or ""
+            try:
+                age_days = (datetime.now() - datetime.strptime(
+                    sub[:19], "%Y-%m-%d %H:%M:%S")).days
+            except Exception:
+                age_days = 0
+            if age_days >= hold_after_days and d.get("student_id"):
+                place_hold(
+                    d["student_id"],
+                    reason=f"Exam '{d.get('title')}' awaiting grading",
+                    source="exam_management",
+                    reference_id=f"attempt:{d.get('id')}",
+                )
+                held += 1
+    except Exception as exc:
+        logger.debug("ungraded sweep hold failed: %s", exc)
+
+    return {"reminded": reminded, "held": held}
+
+
+# ---------------------------------------------------------------------------
+# Feature 16 — Exam outside term → refuse
+# ---------------------------------------------------------------------------
+
+def is_exam_within_term(start_time: str | None, end_time: str | None) -> bool:
+    """Return True if the exam window falls inside the cached term.
+
+    Returns True (permissive) when no term has been broadcast yet —
+    the integration check shouldn't block an admin who never set a
+    term in the first place.
+    """
+    if not _current_term["start"] or not _current_term["end"]:
+        return True
+    if not start_time or not end_time:
+        return True
+    try:
+        s = str(start_time)[:10]
+        e = str(end_time)[:10]
+        return _current_term["start"] <= s and e <= _current_term["end"]
+    except Exception:
+        return True
+
+
+# ---------------------------------------------------------------------------
+# Feature 17 — Withdraw → cancel attempts + refund preview
+# ---------------------------------------------------------------------------
+
+_REFUND_PREVIEW_SQL = """
+CREATE TABLE IF NOT EXISTS refund_previews (
+    preview_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id  TEXT NOT NULL,
+    course_code TEXT NOT NULL,
+    amount      REAL NOT NULL DEFAULT 0,
+    reason      TEXT,
+    status      TEXT NOT NULL DEFAULT 'pending',
+    created_at  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
+"""
+
+
+def publish_enrolment_withdrew(student_id: str, course_code: str,
+                               *, reason: str | None = None) -> None:
+    """Course Management calls this when a student drops a module."""
+    log_and_publish(
+        EVENT_ENROLMENT_CHANGED,
+        source="course_management",
+        action="withdrew",
+        student_id=str(student_id),
+        course_code=course_code,
+        reason=reason,
+    )
+
+
+def _on_enrolment_withdrew(**payload: Any) -> None:
+    if payload.get("action") != "withdrew":
+        return
+    student_id = payload.get("student_id")
+    course_code = payload.get("course_code")
+    if not (student_id and course_code):
+        return
+
+    # Cancel any in-progress exam attempts for that module.
+    try:
+        with transaction() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='exam_portal_attempts'"
+            ).fetchone()
+            if tbl:
+                conn.execute(
+                    "UPDATE exam_portal_attempts SET status = 'cancelled' "
+                    "WHERE student_id = ? AND status = 'in_progress' "
+                    "  AND exam_id IN ("
+                    "      SELECT id FROM exam_portal_exams WHERE module_code = ?)",
+                    (str(student_id), course_code),
+                )
+            conn.commit()
+    except Exception as exc:
+        logger.debug("withdraw → cancel attempts failed: %s", exc)
+
+    # Queue a refund preview row (no auto-charge).
+    try:
+        with transaction() as conn:
+            conn.executescript(_REFUND_PREVIEW_SQL)
+            fee = _lookup_program_fee(course_code, None) or 0.0
+            conn.execute(
+                "INSERT INTO refund_previews "
+                "(student_id, course_code, amount, reason, status) "
+                "VALUES (?, ?, ?, ?, 'pending')",
+                (str(student_id), course_code, float(fee),
+                 payload.get("reason") or "withdrawal"),
+            )
+            conn.commit()
+    except Exception as exc:
+        logger.debug("withdraw → refund preview failed: %s", exc)
+
+
 # ---------------------------------------------------------------------------
 # Wire-up
 # ---------------------------------------------------------------------------
@@ -960,7 +1434,11 @@ def wire_subscribers() -> None:
     subscribe(EVENT_COURSE_CHANGED, _on_demand_forecast)
     subscribe(EVENT_STAFF_AVAILABILITY_CHANGED, _on_staff_availability_changed)
     subscribe(EVENT_MODULE_SCHEDULE_CHANGED, _on_timetable_locked)
+    subscribe(EVENT_MODULE_SCHEDULE_CHANGED, _on_module_schedule_changed_for_exams)
     subscribe(EVENT_SELECTION_CHANGED, _on_appraisal_completed)
+    subscribe(EVENT_EXAM_CHANGED, _on_exam_event)
+    subscribe(EVENT_TERM_CHANGED, _on_term_changed)
+    subscribe(EVENT_ENROLMENT_CHANGED, _on_enrolment_withdrew)
     _WIRED = True
     logger.info("integration_bus subscribers wired")
 
@@ -986,6 +1464,12 @@ __all__ = [
     "promote_from_waitlist",
     "run_degree_audit_sweep",
     "sweep_expiring_certifications",
+    "publish_exam_event",
+    "can_student_start_exam",
+    "send_finance_report",
+    "sweep_ungraded_exams",
+    "is_exam_within_term",
+    "publish_enrolment_withdrew",
     "wire_subscribers",
     "reset_for_tests",
 ]

@@ -261,6 +261,17 @@ class ExamPortalService:
         return True
 
     def publish_exam(self, exam_id: int) -> bool:
+        exam = self.get_exam(exam_id)
+        if not exam:
+            return False
+        try:
+            from education_system.university_system.modules.services.integration_bus import (
+                is_exam_within_term,
+            )
+            if not is_exam_within_term(exam.get("start_time"), exam.get("end_time")):
+                return False
+        except Exception:
+            pass
         with get_connection() as conn:
             conn.execute(
                 "UPDATE exam_portal_exams SET status = 'published', "
@@ -268,6 +279,20 @@ class ExamPortalService:
                 (exam_id,),
             )
             conn.commit()
+        try:
+            from education_system.university_system.modules.services.integration_bus import (
+                publish_exam_event,
+            )
+            publish_exam_event(
+                exam_id, action="published",
+                module_code=exam.get("module_code"),
+                exam_title=exam.get("title"),
+                start_time=exam.get("start_time"),
+                duration_minutes=exam.get("duration_minutes"),
+                pass_mark=exam.get("pass_mark"),
+            )
+        except Exception:
+            pass
         return True
 
     def unpublish_exam(self, exam_id: int) -> bool:
@@ -424,6 +449,15 @@ class ExamPortalService:
         exam = self.get_exam(exam_id)
         if not exam or exam["status"] != "published":
             return None
+        try:
+            from education_system.university_system.modules.services.integration_bus import (
+                can_student_start_exam,
+            )
+            allowed, reason = can_student_start_exam(student_id)
+            if not allowed:
+                return {"error": "blocked", "reason": reason}
+        except Exception:
+            pass
 
         # Check for existing in-progress attempt first, then limit
         with get_connection() as conn:
@@ -578,7 +612,7 @@ class ExamPortalService:
             )
             conn.commit()
 
-            return {
+            result = {
                 "attempt_id": attempt_id,
                 "score": total_score,
                 "total_marks": total_marks,
@@ -587,6 +621,22 @@ class ExamPortalService:
                 "status": graded_status,
                 "needs_manual_grading": needs_manual,
             }
+        if graded_status == "graded":
+            try:
+                from education_system.university_system.modules.services.integration_bus import (
+                    publish_exam_event,
+                )
+                publish_exam_event(
+                    attempt["exam_id"], action="graded",
+                    module_code=exam["module_code"] if exam else None,
+                    exam_title=exam["title"] if exam else None,
+                    student_id=attempt["student_id"],
+                    score=total_score, total_marks=total_marks,
+                    percentage=round(percentage, 1), passed=bool(passed),
+                )
+            except Exception:
+                pass
+        return result
 
     def update_time_remaining(self, attempt_id: int, seconds: int):
         with get_connection() as conn:
@@ -638,9 +688,29 @@ class ExamPortalService:
                    WHERE id = ?""",
                 (total_score, percentage, passed, graded_by, attempt_id),
             )
+            student_row = conn.execute(
+                "SELECT a.student_id, e.title, e.module_code FROM exam_portal_attempts a "
+                "JOIN exam_portal_exams e ON e.id = a.exam_id WHERE a.id = ?",
+                (attempt_id,),
+            ).fetchone()
             conn.commit()
 
-            return {"score": total_score, "percentage": round(percentage, 1), "passed": bool(passed)}
+        try:
+            from education_system.university_system.modules.services.integration_bus import (
+                publish_exam_event,
+            )
+            if student_row:
+                publish_exam_event(
+                    attempt["exam_id"], action="graded",
+                    module_code=student_row["module_code"],
+                    exam_title=student_row["title"],
+                    student_id=student_row["student_id"],
+                    score=total_score, total_marks=total_marks,
+                    percentage=round(percentage, 1), passed=bool(passed),
+                )
+        except Exception:
+            pass
+        return {"score": total_score, "percentage": round(percentage, 1), "passed": bool(passed)}
 
     # ── Results ─────────────────────────────────────────────────────
 

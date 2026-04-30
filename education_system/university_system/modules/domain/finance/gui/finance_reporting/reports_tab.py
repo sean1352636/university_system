@@ -80,7 +80,28 @@ def get_admin_email():
 
 
 def send_report_to_admin(report_title, report_content, parent_window=None):
-    """Send a report to the admin via email"""
+    """Send a report to the admin via the shared email_bus.
+
+    Routing through ``integration_bus.send_finance_report`` rather
+    than the raw SMTP helper means the send lands in ``email_log``
+    and fires ``EVENT_EMAIL_SENT`` for audit. Falls back to the raw
+    helper if the bus isn't available (partial deploy).
+    """
+    try:
+        from education_system.university_system.modules.services.integration_bus import (
+            send_finance_report,
+        )
+        msg_id = send_finance_report(
+            report_title=report_title,
+            summary=str(report_content),
+            related_to="finance_report",
+        )
+        if msg_id:
+            messagebox.showinfo("Success", "Report sent to admin (logged in email_log).")
+            return True
+    except Exception:
+        pass
+
     if not HAS_EMAIL:
         messagebox.showerror("Error", "Email system not available")
         return False
@@ -93,27 +114,20 @@ def send_report_to_admin(report_title, report_content, parent_window=None):
     try:
         generated_date = datetime.now().strftime('%Y-%m-%d %H:%M')
         generated_timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
-        # Render email from template
         subject, body = render_template('reports/finance_report', {
             'report_title': report_title,
             'generated_date': generated_date,
             'generated_timestamp': generated_timestamp,
             'report_content': report_content
         })
-
-        # Fallback if template not found
         if not subject or not body:
             subject = f"Finance Report: {report_title} - {generated_date}"
             body = f"Finance Report: {report_title}\nGenerated: {generated_timestamp}\n\n{report_content}"
-
-        result = send_email(admin_email, subject, body)
-        if result:
+        if send_email(admin_email, subject, body):
             messagebox.showinfo("Success", f"Report sent to admin at:\n{admin_email}")
             return True
-        else:
-            messagebox.showerror("Error", "Failed to send email. Please check email configuration.")
-            return False
+        messagebox.showerror("Error", "Failed to send email. Please check email configuration.")
+        return False
     except Exception as e:
         messagebox.showerror("Error", f"Failed to send report:\n{e}")
         return False

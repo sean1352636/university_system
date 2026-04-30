@@ -110,23 +110,40 @@ def show_room_utilization(self):
         report_text += f"{'Room':<15} {'Type':<15} {'Capacity':<10} {'Sessions':<10} {'Utilization':<12} {'Avg Duration':<12}\n"
         report_text += "-" * 100 + "\n"
 
+        def _s(v, default="-"):
+            return default if v is None else str(v)
+
         for room in room_data:
-            line = f"{room['Room']:<15} {room['Type']:<15} {room['Capacity']:<10} {room['Sessions']:<10} {room['Utilization Rate (%)']:<12} {room['Avg Duration (min)']:<12}\n"
+            line = (
+                f"{_s(room.get('Room')):<15} "
+                f"{_s(room.get('Type')):<15} "
+                f"{_s(room.get('Capacity'), '0'):<10} "
+                f"{_s(room.get('Sessions'), '0'):<10} "
+                f"{_s(room.get('Utilization Rate (%)'), '0'):<12} "
+                f"{_s(room.get('Avg Duration (min)'), '0'):<12}\n"
+            )
             report_text += line
 
         report_text += "=" * 100 + "\n"
 
         # Summary statistics
         if room_data:
-            avg_utilization = sum(room['Utilization Rate (%)'] for room in room_data) / len(room_data)
+            rates = [room.get('Utilization Rate (%)') or 0 for room in room_data]
+            avg_utilization = sum(rates) / len(rates) if rates else 0
             report_text += f"\nSummary:\n"
             report_text += f"Total Rooms: {len(room_data)}\n"
             report_text += f"Average Utilization: {avg_utilization:.2f}%\n"
 
-            most_utilized = max(room_data, key=lambda x: x['Utilization Rate (%)'])
-            least_utilized = min(room_data, key=lambda x: x['Utilization Rate (%)'])
-            report_text += f"Most Utilized: {most_utilized['Room']} ({most_utilized['Utilization Rate (%)']}%)\n"
-            report_text += f"Least Utilized: {least_utilized['Room']} ({least_utilized['Utilization Rate (%)']}%)\n"
+            most_utilized = max(room_data, key=lambda x: x.get('Utilization Rate (%)') or 0)
+            least_utilized = min(room_data, key=lambda x: x.get('Utilization Rate (%)') or 0)
+            report_text += (
+                f"Most Utilized: {_s(most_utilized.get('Room'))} "
+                f"({_s(most_utilized.get('Utilization Rate (%)'), '0')}%)\n"
+            )
+            report_text += (
+                f"Least Utilized: {_s(least_utilized.get('Room'))} "
+                f"({_s(least_utilized.get('Utilization Rate (%)'), '0')}%)\n"
+            )
 
         # Update analytics text area
         self.analytics_text.delete(1.0, tk.END)

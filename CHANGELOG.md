@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.112.0 — 2026-04-30](#81120---2026-04-30)
 - [8.111.0 — 2026-04-30](#81110---2026-04-30)
 - [8.110.0 — 2026-04-30](#81100---2026-04-30)
 - [8.109.4 — 2026-04-30](#81094---2026-04-30)
@@ -221,6 +222,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.112.0] — 2026-04-30
+
+### integration_bus — exam + email cross-module loop
+
+Eight more cross-cutting features wiring Exam GUI and Email GUI
+into the integration bus alongside Finance Reporting, Module
+Scheduling, and Course Management. ExamPortalService now
+publishes lifecycle events; integration_bus owns the consumer
+side (roster emails, room-conflict detection, finance gates,
+ungraded sweep, withdrawal cascades). Finance reports now route
+through `email_bus` so every send lands in `email_log` and fires
+`EVENT_EMAIL_SENT`.
+
+#### Added — `integration_bus` extensions
+
+- `publish_exam_event(exam_id, action=…)` — single publisher
+  covering `published`/`unpublished`/`graded`/`pending_grade`.
+- `can_student_start_exam(student_id)` → `(allowed, reason)` —
+  thin wrapper over `finance_bus.has_active_hold` so exam_service
+  doesn't need to know the holds schema.
+- `send_finance_report(report_title, summary, …)` — routes
+  through `email_bus.send_templated('finance.report.sent', …)` so
+  reports appear in `email_log` and fire `EVENT_EMAIL_SENT` for
+  audit instead of bypassing the bus.
+- `sweep_ungraded_exams(reminder_after_days=7, hold_after_days=14)` —
+  daily sweep over `exam_portal_attempts.graded_at IS NULL`. Stale
+  attempts email the instructor (grouped, one per instructor);
+  attempts >14d old also place a `finance_holds` row against the
+  student via `finance_bus.place_hold`.
+- `is_exam_within_term(start_time, end_time)` — checks against the
+  term window cached from `EVENT_TERM_CHANGED`. Permissive when no
+  term has been broadcast.
+- `publish_enrolment_withdrew(student_id, course_code)` — Course
+  Management calls this on a drop; subscriber cancels in-progress
+  exam attempts and queues a row in the new `refund_previews`
+  table (no auto-charge — admin reviews before refund).
+- New EVENT_EXAM_CHANGED, EVENT_TERM_CHANGED, EVENT_ENROLMENT_CHANGED
+  subscribers wired in `wire_subscribers()`. Consumer side of
+  `EVENT_MODULE_SCHEDULE_CHANGED` extended with exam room-conflict
+  detection.
+
+#### Wired features (writer → effect)
+
+10. `ExamPortalService.publish_exam` → `EVENT_EXAM_CHANGED(action='published')`
+    → enrolled-roster lookup against `student_enrolment` (falls back to
+    `plan_courses`) → one `email_bus.send_templated('exam.scheduled', …)`
+    per student, all logged in `email_log`.
+11. `ExamPortalService.start_attempt` now calls `can_student_start_exam`
+    first; an active finance hold returns `{"error": "blocked", "reason"}`
+    with the hold reason instead of silently creating an attempt.
+12. `submit_attempt` (auto-graded path) and `finalise_grading` (manual
+    path) both publish `EVENT_EXAM_CHANGED(action='graded')` with score,
+    percentage, and pass/fail; subscriber emails the student via
+    `email.graded` template.
+13. `EVENT_MODULE_SCHEDULE_CHANGED` subscriber scans
+    `exam_portal_exams` for the affected `module_code`, detects time
+    overlap with same room_id, publishes `EVENT_INCIDENT_LOGGED(kind='exam_room_conflict')`
+    and emails the admin.
+14. Finance Reporting `reports_tab.send_report_to_admin` refactored
+    to call `integration_bus.send_finance_report` first; falls back
+    to the raw `send_email` helper only when the bus is unavailable.
+15. `sweep_ungraded_exams()` runs the reminder/hold cadence
+    described above. Reminder is grouped per instructor; hold is per
+    student per stale attempt with `reference_id=attempt:<id>` for
+    idempotency.
+16. `publish_exam` now refuses if the exam window is outside the
+    cached term broadcast (returns False, no DB write).
+17. `publish_enrolment_withdrew(student_id, course_code)` cascades
+    in one transaction: `exam_portal_attempts.status='cancelled'`
+    for `in_progress` attempts on that module, plus a queued row in
+    `refund_previews` (table created lazily) sized from
+    `program_fees.amount`.
+
+#### Email templates
+
+`email_bus._BUILTIN_TEMPLATES` extended with `exam.scheduled`,
+`exam.graded`, `exam.pending_grade`, `exam.room_conflict`, and
+`finance.report.sent`. Each appears in `_TRACKED_EVENTS` so user
+prefs can opt out of any one without breaking the others.
+
+#### Patched origin services
+
+- `exam_service.publish_exam` — term-window gate + publish.
+- `exam_service.start_attempt` — finance hold gate.
+- `exam_service.submit_attempt` — publish on auto-graded result.
+- `exam_service.finalise_grading` — publish on manual-graded
+  result.
+- `finance_reporting/reports_tab.send_report_to_admin` — routes
+  through integration_bus first.
+
+#### Fixed — `module_scheduling/analytics_tab.show_room_utilization`
+
+Coerced None field values through a `_s()` helper before
+formatting, and treated missing utilisation rates as 0 in the
+summary `sum()`/`max()`/`min()` calls. Rooms with zero booked
+sessions no longer crash the report with
+`TypeError: unsupported format string passed to NoneType.__format__`.
+
+#### Tests — `tests/cli/integration/test_integration_bus_exam_email.py`
+
+Eight passing tests, one per feature 10–17. The previous
+integration suite (`test_integration_bus.py`, 9 tests) still
+passes — 17 cross-module integration tests in total.
 
 ---
 
