@@ -426,7 +426,13 @@ class StudentTimetableGUI:
                     break
 
     def _bind_cell_selection(self, cell, module_code):
-        """Click a cell → publish soft selection so siblings highlight."""
+        """Click a cell → publish soft selection so siblings highlight.
+
+        Drag-and-drop a populated cell onto another cell → route the
+        move through ``slot_writer.move_slot`` (#7). The bus broadcast
+        and conflict re-check happen inside the writer; the timetable
+        just refreshes on the resulting EVENT_MODULE_SCHEDULE_CHANGED.
+        """
         if not module_code:
             return
 
@@ -439,8 +445,93 @@ class StudentTimetableGUI:
             except Exception:
                 pass
 
+        def _on_press(event=None, mc=module_code, src_cell=cell):
+            self._drag_state = {
+                "module_code": mc,
+                "src_cell": src_cell,
+                "x_root": event.x_root if event else 0,
+                "y_root": event.y_root if event else 0,
+            }
+
+        def _on_release(event=None):
+            state = getattr(self, "_drag_state", None)
+            if not state:
+                return
+            try:
+                target = self.parent.winfo_containing(event.x_root, event.y_root)
+            except Exception:
+                target = None
+            self._drag_state = None
+            if target is None or target is state["src_cell"]:
+                return
+            # Find which (day, slot) the target cell maps to.
+            target_day_idx = target_slot_idx = None
+            for (d, s), c in self._grid_cells.items():
+                if c is target:
+                    target_day_idx, target_slot_idx = d, s
+                    break
+            if target_day_idx is None:
+                return
+            try:
+                from education_system.university_system.modules.domain.academics.services.module_scheduling.slot_writer import (
+                    move_slot,
+                )
+                from education_system.university_system.infrastructure.database.db import (
+                    get_connection,
+                )
+                # Resolve the schedule_id from the source module + a
+                # current weekday/start_time guess by inspecting the
+                # row that placed this cell.
+                src_d = src_s = None
+                for (d, s), c in self._grid_cells.items():
+                    if c is state["src_cell"]:
+                        src_d, src_s = d, s
+                        break
+                if src_d is None:
+                    return
+                src_day = DAYS_OF_WEEK[src_d]
+                src_start = TIME_SLOTS[src_s]
+                with get_connection() as conn:
+                    row = conn.execute(
+                        "SELECT id FROM module_schedule "
+                        "WHERE module_code = ? AND day_of_week = ? "
+                        "  AND start_time LIKE ? LIMIT 1",
+                        (state["module_code"], src_day, f"{src_start}%"),
+                    ).fetchone()
+                if not row:
+                    return
+                new_day = DAYS_OF_WEEK[target_day_idx]
+                new_start = TIME_SLOTS[target_slot_idx]
+                # Preserve duration: assume 1h grid step.
+                from datetime import datetime as _dt, timedelta as _td
+                try:
+                    new_end = (_dt.strptime(new_start, "%H:%M")
+                               + _td(hours=1)).strftime("%H:%M")
+                except Exception:
+                    new_end = new_start
+                result = move_slot(
+                    int(row[0]),
+                    new_day=new_day,
+                    new_start_time=new_start,
+                    new_end_time=new_end,
+                    moved_by="timetable_drag",
+                )
+                if not result.get("ok"):
+                    try:
+                        from tkinter import messagebox
+                        messagebox.showwarning(
+                            "Move blocked",
+                            result.get("reason") or "Schedule move was rejected.",
+                        )
+                    except Exception:
+                        pass
+            except Exception as exc:
+                logger.warning("timetable drag move failed: %s", exc)
+
         try:
             cell.bind("<Button-1>", _on_click)
+            cell.bind("<ButtonPress-1>", _on_press, add="+")
+            cell.bind("<ButtonRelease-1>", _on_release, add="+")
         except Exception:
             pass
 

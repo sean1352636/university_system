@@ -302,6 +302,13 @@ class CreationMixin:
                   command=self.create_assignment_gui, style='Accent.TButton').pack(side='right', padx=(10, 0))
         ttk.Button(buttons_frame, text="Save as Draft",
                   command=self.save_assignment_draft).pack(side='right', padx=(10, 0))
+        # Free-room finder for venue-bound assignments (in-class quiz,
+        # lab, workshop) — same shared algorithm Module Scheduling and
+        # Exam use, so we never invent a fourth implementation.
+        ttk.Button(buttons_frame, text="Suggest Venue",
+                  command=self._suggest_assignment_venue).pack(
+            side='left', padx=(10, 0),
+        )
         ttk.Button(buttons_frame, text="Load Template",
                   command=self.load_assignment_template).pack(side='left')
         ttk.Button(buttons_frame, text="Save as Template",
@@ -376,6 +383,68 @@ class CreationMixin:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load modules: {e}")
 
+
+    def _suggest_assignment_venue(self):
+        """Find rooms free on the assignment's due date (#10).
+
+        For an in-class quiz / lab / workshop the due date doubles as
+        the venue date. Reuses the canonical ``find_free_rooms`` so
+        Module Scheduling, Exam, and Assignment all share one algo.
+        """
+        import tkinter as tk
+        from tkinter import ttk, messagebox
+        try:
+            due_date = (self.due_date_var.get() or "").strip()
+            due_time = (self.due_time_var.get() or "10:00").strip()
+        except Exception:
+            due_date = due_time = ""
+        if not due_date:
+            messagebox.showwarning(
+                "Pick a due date first",
+                "Set the assignment due date so we know when to look.",
+            )
+            return
+        # 1-hour default slot from the due time.
+        try:
+            from datetime import datetime as _dt, timedelta as _td
+            start = due_time[:5]
+            end = (_dt.strptime(start, "%H:%M") + _td(hours=1)).strftime("%H:%M")
+        except Exception:
+            start, end = "10:00", "11:00"
+
+        try:
+            from education_system.university_system.modules.domain.academics.gui._cross_services import (
+                find_free_rooms,
+            )
+            rows = find_free_rooms(
+                on_date=due_date, start_time=start, end_time=end,
+            )
+        except Exception as exc:
+            messagebox.showerror("Error",
+                                 f"Could not query rooms: {exc}")
+            return
+
+        win = tk.Toplevel()
+        win.title(f"Free venues — {due_date} {start}–{end}")
+        win.geometry("520x360")
+
+        if not rows:
+            ttk.Label(win,
+                      text="No rooms available in that window.",
+                      foreground="#7f8c8d").pack(padx=15, pady=20)
+        else:
+            cols = ("name", "building", "capacity")
+            tree = ttk.Treeview(win, columns=cols, show="headings", height=12)
+            for c, w in zip(cols, (140, 160, 100)):
+                tree.heading(c, text=c.capitalize())
+                tree.column(c, width=w, anchor="w")
+            for r in sorted(rows, key=lambda x: -(x.get("capacity") or 0)):
+                tree.insert("", "end", values=(
+                    r.get("name", ""), r.get("building", ""),
+                    r.get("capacity", 0),
+                ))
+            tree.pack(fill="both", expand=True, padx=10, pady=10)
+        ttk.Button(win, text="Close", command=win.destroy).pack(pady=10)
 
     def create_assignment_gui(self):
         """Create assignment through GUI"""

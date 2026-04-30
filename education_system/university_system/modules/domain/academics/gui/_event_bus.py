@@ -71,6 +71,20 @@ EVENT_DOCUMENT_CHANGED = "dm.document.changed"
 EVENT_INCIDENT_LOGGED = "hs.incident.logged"
 EVENT_CERT_CHANGED = "hr.certification.changed"
 
+# Academic Misconduct + Disciplinary Portal share one lifecycle. Single
+# event family lets HR profiles, Grade Tracking, the chatbot, and the
+# evidence panel all subscribe without caring which subsystem opened
+# the case.
+EVENT_CASE_OPENED = "case.opened"
+EVENT_CASE_CLOSED = "case.closed"
+EVENT_SANCTION_APPLIED = "case.sanction.applied"
+
+# Student Union events. Advocacy is opt-in: the chatbot prompts the
+# subject after a case is opened, and only on user reply does this
+# fire — SU never receives a feed of every disciplinary case.
+EVENT_SU_ADVOCACY_REQUESTED = "su.advocacy.requested"
+EVENT_MEMBERSHIP_CHANGED = "su.membership.changed"
+
 ALL_EVENTS = (
     EVENT_EXAM_CHANGED,
     EVENT_GRADE_CHANGED,
@@ -90,6 +104,11 @@ ALL_EVENTS = (
     EVENT_DOCUMENT_CHANGED,
     EVENT_INCIDENT_LOGGED,
     EVENT_CERT_CHANGED,
+    EVENT_CASE_OPENED,
+    EVENT_CASE_CLOSED,
+    EVENT_SANCTION_APPLIED,
+    EVENT_SU_ADVOCACY_REQUESTED,
+    EVENT_MEMBERSHIP_CHANGED,
 )
 
 # ---------------------------------------------------------------------------
@@ -206,6 +225,11 @@ __all__ = [
     "EVENT_DOCUMENT_CHANGED",
     "EVENT_INCIDENT_LOGGED",
     "EVENT_CERT_CHANGED",
+    "EVENT_CASE_OPENED",
+    "EVENT_CASE_CLOSED",
+    "EVENT_SANCTION_APPLIED",
+    "EVENT_SU_ADVOCACY_REQUESTED",
+    "EVENT_MEMBERSHIP_CHANGED",
     "ALL_EVENTS",
     "subscribe",
     "subscribe_tk",

@@ -126,24 +126,33 @@ class ModuleSchedulingGUI:
             subscribe_tk(EVENT_CALENDAR_CHANGED, self.root, _on_external_change)
             subscribe_tk(EVENT_STAFF_AVAILABILITY_CHANGED, self.root, _on_external_change)
 
-            # Soft selection from siblings — highlight the matching row.
+            # Soft selection from siblings — module: highlight the row.
+            # Course: pre-fill the search box so the operator sees only
+            # that course's modules without context-switching tabs.
             def _on_selection(**payload):
-                target = payload.get("module_code")
-                if not target or not hasattr(self, "modules_tree"):
-                    return
-                try:
-                    for iid in self.modules_tree.get_children():
-                        vals = self.modules_tree.item(iid, "values")
-                        if vals and len(vals) >= 2:
-                            code = vals[1]
-                            if code.startswith("⚠ "):
-                                code = code[2:]
-                            if code == target:
-                                self.modules_tree.selection_set(iid)
-                                self.modules_tree.see(iid)
-                                break
-                except Exception:
-                    pass
+                target_module = payload.get("module_code")
+                target_course = payload.get("course_code")
+                if target_module and hasattr(self, "modules_tree"):
+                    try:
+                        for iid in self.modules_tree.get_children():
+                            vals = self.modules_tree.item(iid, "values")
+                            if vals and len(vals) >= 2:
+                                code = vals[1]
+                                if code.startswith("⚠ "):
+                                    code = code[2:]
+                                if code == target_module:
+                                    self.modules_tree.selection_set(iid)
+                                    self.modules_tree.see(iid)
+                                    break
+                    except Exception:
+                        pass
+                # Course → module list filter. The search var triggers
+                # filter_modules via its 'w' trace.
+                if target_course and hasattr(self, "module_search_var"):
+                    try:
+                        self.module_search_var.set(str(target_course))
+                    except Exception:
+                        pass
 
             subscribe_tk(EVENT_SELECTION_CHANGED, self.root, _on_selection)
         except Exception:

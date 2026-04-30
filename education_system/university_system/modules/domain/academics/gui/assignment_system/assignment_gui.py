@@ -142,6 +142,28 @@ class AssignmentGUI:
                         EVENT_MODULE_SCHEDULE_CHANGED, EVENT_COURSE_CHANGED,
                         EVENT_ENROLMENT_CHANGED):
                 subscribe_tk(evt, self.root, _on_external_change)
+
+            # Term broadcast — refresh together with the four scheduling
+            # GUIs when the active term flips. Selection — soft-filter
+            # the current view to the module a sibling has selected.
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                EVENT_TERM_CHANGED, EVENT_SELECTION_CHANGED,
+            )
+            subscribe_tk(EVENT_TERM_CHANGED, self.root, _on_external_change)
+
+            def _on_selection(**payload):
+                target = payload.get("module_code")
+                if not target:
+                    return
+                # Best-effort: most assignment views read a current
+                # module_code attr, so just stash it and refresh.
+                try:
+                    self.current_module_code = target
+                except Exception:
+                    pass
+                _on_external_change()
+
+            subscribe_tk(EVENT_SELECTION_CHANGED, self.root, _on_selection)
         except Exception:
             pass
 

@@ -78,6 +78,32 @@ class UniversityChatbot:
                 pass
             self.setup_api_routes()
 
+        # Selection-aware context. The four scheduling GUIs publish
+        # academic.selection.changed when the operator clicks a row;
+        # we cache the most recent module/course/exam pointer per
+        # user (or globally for unauth chats) and surface it in
+        # process_message so replies are scoped to what the user is
+        # looking at in a sibling window.
+        self._selection_module: str | None = None
+        self._selection_course: str | None = None
+        self._selection_exam_id: int | None = None
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                subscribe, EVENT_SELECTION_CHANGED,
+            )
+
+            def _on_selection(**payload):
+                if payload.get("module_code"):
+                    self._selection_module = payload.get("module_code")
+                if payload.get("course_code"):
+                    self._selection_course = payload.get("course_code")
+                if payload.get("exam_id") is not None:
+                    self._selection_exam_id = payload.get("exam_id")
+
+            subscribe(EVENT_SELECTION_CHANGED, _on_selection)
+        except Exception:
+            pass
+
         # Cross-domain bus integration (#10): turn events that affect a
         # specific user into queued chatbot messages they'll see on their
         # next chat session. Read-only consumer; never raises.
@@ -145,6 +171,42 @@ class UniversityChatbot:
             subscribe(EVENT_HOLD_CHANGED, _on_hold)
             subscribe(EVENT_LOAN_CHANGED, _on_loan)
             subscribe(EVENT_INCIDENT_LOGGED, _on_incident)
+
+            # Cases (#11): notify the subject when a misconduct or
+            # disciplinary case is opened against them. Also extend the
+            # message with a Student Union advocacy opt-in line so the
+            # student can reply "help" and have us route the request to
+            # SU — keeps SU privacy-respecting (they don't see cases
+            # until the student opts in).
+            self._pending_advocacy: dict[str, dict] = {}
+            try:
+                from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                    EVENT_CASE_OPENED,
+                )
+
+                def _on_case(**kw):
+                    sid = kw.get("subject_id")
+                    if not sid:
+                        return
+                    queue_message_for(
+                        sid,
+                        f"A {kw.get('kind') or 'case'} (#"
+                        f"{kw.get('case_id')}, {kw.get('severity') or '—'}) "
+                        f"has been opened. Check your portal for details "
+                        f"and any required response. "
+                        f"Student Union advocacy is available — reply "
+                        f"'help' to request representation.",
+                        source="case",
+                    )
+                    # Stash the latest case so 'help' knows what to act on.
+                    self._pending_advocacy[str(sid)] = {
+                        "case_id": kw.get("case_id"),
+                        "kind": kw.get("kind") or "disciplinary",
+                    }
+
+                subscribe(EVENT_CASE_OPENED, _on_case)
+            except Exception:
+                pass
             # Document changes don't get a message — chatbot just
             # invalidates its local index. Hook reserved for future RAG.
             subscribe(EVENT_DOCUMENT_CHANGED, lambda **_: None)
@@ -184,6 +246,34 @@ class UniversityChatbot:
                 )
         except Exception:
             inbox_prefix = ""
+
+        # Student Union advocacy opt-in: if there's a pending case for
+        # this user and they reply with a help-request keyword, route
+        # the advocacy request to SU. This is the only path SU sees
+        # the case — privacy-respecting by construction.
+        try:
+            pending = self._pending_advocacy.get(str(user_id))
+            if pending and message.strip().lower() in (
+                "help", "yes please", "yes", "su help", "request advocacy",
+            ):
+                from education_system.university_system.modules.services.student_union_bus import (
+                    request_advocacy,
+                )
+                rid = request_advocacy(
+                    user_id, pending["case_id"], pending["kind"],
+                    notes="Student requested via chatbot",
+                )
+                self._pending_advocacy.pop(str(user_id), None)
+                ack = (
+                    f"Routed to Student Union advocacy "
+                    f"(request #{rid}). They'll be in touch."
+                    if rid else
+                    "Could not route the advocacy request. "
+                    "Try contacting the SU welfare team directly."
+                )
+                return inbox_prefix + ack
+        except Exception:
+            pass
 
         try:
             if session_id and session_id in self.active_sessions:
@@ -228,6 +318,18 @@ class UniversityChatbot:
             response = self.generate_response(nlp_result, context)
             if inbox_prefix:
                 response = inbox_prefix + response
+
+            # Selection-aware context badge — show the user which
+            # sibling-window selection the chatbot is reading from.
+            sel_bits = []
+            if self._selection_module:
+                sel_bits.append(f"module {self._selection_module}")
+            if self._selection_course:
+                sel_bits.append(f"course {self._selection_course}")
+            if self._selection_exam_id is not None:
+                sel_bits.append(f"exam #{self._selection_exam_id}")
+            if sel_bits:
+                response = f"(in context: {', '.join(sel_bits)})\n" + response
 
             self.log_enhanced_conversation(user_id, message, response, nlp_result, session_id)
 

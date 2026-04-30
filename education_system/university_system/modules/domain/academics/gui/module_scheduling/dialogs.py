@@ -220,8 +220,78 @@ class AddScheduleDialog:
         button_frame.grid(row=12, column=0, columnspan=2, pady=20)
 
         ttk.Button(button_frame, text="Check Conflicts", command=self.check_conflicts).pack(side=tk.LEFT, padx=5)
+        ttk.Button(button_frame, text="Suggest Free Rooms",
+                   command=self._suggest_free_rooms).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Save", command=self.save_schedule).pack(side=tk.LEFT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=self.dialog.destroy).pack(side=tk.LEFT, padx=5)
+
+    def _suggest_free_rooms(self):
+        """Pop a list of rooms free for the current day/start/end (#9).
+
+        Routes through the shared ``find_free_rooms`` helper so Module
+        Scheduling, Exam, and the chatbot all use the same algorithm.
+        """
+        try:
+            day = self.day_var.get()
+            start = self.start_time_var.get()
+            end = self.end_time_var.get()
+        except Exception:
+            return
+        if not all([day, start, end]):
+            messagebox.showwarning(
+                "Missing fields",
+                "Pick a day, start time, and end time first.",
+                parent=self.dialog,
+            )
+            return
+        try:
+            from education_system.university_system.modules.domain.academics.gui._cross_services import (
+                find_free_rooms,
+            )
+            rows = find_free_rooms(
+                day_of_week=day, start_time=start, end_time=end,
+            )
+        except Exception as exc:
+            messagebox.showerror("Error", f"Could not query rooms: {exc}",
+                                 parent=self.dialog)
+            return
+
+        win = tk.Toplevel(self.dialog)
+        win.title(f"Free rooms — {day} {start}–{end}")
+        win.geometry("520x360")
+        win.transient(self.dialog)
+
+        if not rows:
+            ttk.Label(win, text="No rooms free in that window.",
+                      foreground="#7f8c8d").pack(padx=15, pady=20)
+        else:
+            cols = ("name", "building", "capacity")
+            tree = ttk.Treeview(win, columns=cols, show="headings", height=12)
+            for c, w in zip(cols, (140, 160, 100)):
+                tree.heading(c, text=c.capitalize())
+                tree.column(c, width=w, anchor="w")
+            tree.pack(fill="both", expand=True, padx=10, pady=10)
+            for r in sorted(rows, key=lambda x: -(x.get("capacity") or 0)):
+                tree.insert("", "end", values=(
+                    r.get("name", ""), r.get("building", ""),
+                    r.get("capacity", 0),
+                ))
+
+            def _pick():
+                sel = tree.selection()
+                if not sel:
+                    return
+                vals = tree.item(sel[0], "values")
+                if vals and self.room_var is not None:
+                    try:
+                        self.room_var.set(vals[0])
+                    except Exception:
+                        pass
+                win.destroy()
+
+            ttk.Button(win, text="Use selected room",
+                       command=_pick).pack(pady=8)
+        ttk.Button(win, text="Close", command=win.destroy).pack(pady=(0, 10))
 
     def get_buildings_from_db(self):
         """Fetch list of buildings from facilities management database"""

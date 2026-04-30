@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.106.0 — 2026-04-30](#81060---2026-04-30)
 - [8.105.0 — 2026-04-30](#81050---2026-04-30)
 - [8.104.0 — 2026-04-28](#81040---2026-04-28)
 - [8.103.0 — 2026-04-28](#81030---2026-04-28)
@@ -212,6 +213,222 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.106.0] — 2026-04-30
+
+### Whole-platform integration spine — Finance / HR / Library / Calendar / DM / Cases / Student Union / Chatbot
+
+Extends the academic event bus from 8.105 to cover the rest of the
+platform. Eight new shared service modules turn previously-isolated
+GUIs (Finance, Library, Research, Health & Safety, First Aid,
+Document Manager, HR, Academic Calendar, Disciplinary Portal,
+Academic Misconduct, Student Union, Chatbot) into participants in a
+single in-process bus, with shared writers, embeddable panels, and
+validation gates.
+
+#### Added — bus events
+
+Twelve new event constants in `gui/_event_bus.py` carry domain
+state changes process-wide:
+`finance.charge.raised`, `finance.hold.changed`,
+`library.reading_list.changed`, `library.loan.changed`,
+`academic.term.changed`, `academic.selection.changed`,
+`hr.staff_availability.changed`, `dm.document.changed`,
+`hs.incident.logged`, `hr.certification.changed`,
+`case.opened`, `case.closed`, `case.sanction.applied`,
+`su.advocacy.requested`, `su.membership.changed`.
+
+#### Added — eight shared service modules under `modules/services/`
+
+- **`finance_bus.py`** — canonical money writer:
+  `has_active_hold`, `place_hold`, `release_hold`, `raise_charge`,
+  `student_balance`, `grant_balance`, `list_active_holds`. Bootstraps
+  a new `finance_holds` table; updates `student_finance_accounts`
+  and `student_finance_transactions` on every charge.
+- **`academic_state.py`** — process-wide current term + soft
+  selection pointers; `set_current_term` / `set_current_selection`
+  publish on the bus so the four schedulers refilter together.
+- **`staff_hr_bus.py`** — `is_qualified_for`, `is_available_on`,
+  `list_unavailable_ranges`, `update_instructor` (single writer),
+  `publish_availability_change`.
+- **`document_bus.py`** — DM as canonical file store:
+  `link_document(domain, ref_id, file_path)`,
+  `get_documents_for(domain, ref_id)`, `has_document`, `can_access`
+  (delegates ACL to HR roles via `users.role`),
+  `publish_document_changed` hook for legacy writers.
+- **`cert_bus.py`** — expiring-certification tracker:
+  `add_certification`, `delete_certification`,
+  `expiring_certifications(within_days, kind)`,
+  `list_certifications_for`. Bootstraps a `staff_certifications`
+  table; reads legacy `certifications` too.
+- **`cases_bus.py`** — unified Academic-Misconduct + Disciplinary
+  spine: `open_case`, `close_case`, `apply_sanction` (routes
+  fines → finance, suspensions → hold, cert revocation → cert_bus,
+  warnings → bus-only), `list_open` (UNION across both tables),
+  `schedule_hearing` (with HR availability gate, Calendar persist,
+  optional `support_attendee_ids` for SU advocates).
+- **`student_union_bus.py`** — SU clubs/charges/advocacy:
+  `list_clubs_for`, `is_member_of`, `join_club`, `leave_club`,
+  `charge_membership_fee`, `list_outstanding_su_charges`,
+  `request_advocacy` (opt-in only), `record_advocacy`,
+  `list_advocacy_requests_for`, `publish_event` (writes to academic
+  calendar with `event_type='su_event'`). Bootstraps
+  `su_advocacy_requests` table.
+- **`chatbot_inbox.py`** + **`chatbot_tools.py`** — chatbot fallback
+  inbox (`queue_message_for`, `pop_messages_for`) plus 19 named
+  tools wrapping every cross-service: `balance`, `active_holds`,
+  `module_grade`, `module_timeline`, `current_period`,
+  `find_free_rooms`, `qualified_for`, `instructor_workload`,
+  `certs_expiring`, `documents_for`, `pending_messages`,
+  `summarise_module`, `move_slot`, `book_room`, `schedule_exam`,
+  `queue_message`, `my_open_cases`, `my_clubs`,
+  `request_su_advocacy`. Mutation tools route through canonical
+  writers so all gates fire.
+
+#### Added — single canonical writer for module slots
+
+`services/module_scheduling/slot_writer.py` exposes `move_slot` —
+the only allowed mutation path for `module_schedule` rows. Performs
+a conflict re-check (room + instructor overlap), surfaces holiday
+warnings, broadcasts `module.schedule.changed`. Timetable's
+drag-to-reschedule routes through it.
+
+#### Added — eleven new embeddable panels in `_cross_dialogs.py`
+
+`ModuleTimelinePanel`, `WeeklyGridPanel(scope='module' | 'course' |
+'instructor' | 'student')`, `StudentFinancePanel`,
+`ResourceAvailabilityPanel`, `ResearchOutputPanel`,
+`StaffWorkloadPanel`, `AcademicPeriodPanel`,
+`StaffCertificationsPanel`, `IncidentEvidencePanel`,
+`ChatbotPanel(scope=, user_id=)`, `OpenCasesPanel`,
+`StudentUnionPanel`. Each subscribes to the bus events relevant to
+its domain and refreshes automatically; embedded in HR profile,
+Grade Tracking student row, Module/Course detail tabs, and the four
+scheduling GUIs.
+
+#### Added — find-free-rooms shared algorithm
+
+`_cross_services.find_free_rooms(day_of_week=|on_date=, start_time,
+end_time, min_capacity=, exclude_schedule_id=, exclude_exam_id=)`.
+Same algorithm now powers Module Scheduling's "Suggest Free Rooms"
+button, Exam scheduler's "Suggest Available Rooms" dialog,
+Assignment GUI's "Suggest Venue" button, SU room bookings, and the
+chatbot's `book_room` tool. Tolerates the dual `room_name` /
+`room_number` schema.
+
+#### Added — calendar period authority
+
+`_cross_services.current_period(kind, on_date=)` and `is_holiday`
+read `academic_calendar_events` rows by `event_type`
+(`term`, `reading_week`, `exam_window`, `submission_window`,
+`holiday`, plus the new `evacuation_drill`, `hearing`, `su_event`).
+Calendar now publishes on add/update/delete event so subscribers
+refresh.
+
+#### Added — six validation gates
+
+* Enrolment refuses with active finance hold
+  (`student_registration/enrollment.py`,
+  `grade_tracking/module_manager.py` with admin override).
+* Library overdue snapshot publishes a charge per loan and
+  `library.loan.changed` (`library/overdue.py`).
+* Exam date refused outside `exam_window` or on a holiday
+  (`exam_management/data_manager.py._save_exam_to_db`).
+* Grade entry refused outside `submission_window` unless user has
+  `override_submission_window` permission (`grade_manager.py`).
+* Module slot move warns when the next occurrence falls on a holiday
+  (`slot_writer.move_slot.warnings`).
+* Module Scheduling refuses to assign an instructor not qualified
+  for the module per `is_qualified_for`
+  (`module_scheduling/management_tab.py`).
+* Hearing scheduling blocked when any panel/support member is on
+  approved leave (`cases_bus.schedule_hearing`).
+* HR onboarding cannot complete without a contract document linked
+  in DM (`onboarding_gui.py`).
+
+#### Added — closed-loop assignment grading
+
+`assignment_system/grading_manager.py` publishes
+`grade.changed` and `assignment.changed` from all three commit
+paths (`submit_grade`, `submit_rubric_grade`, inner
+`submit_simple_grade`). Course Management's analytics dialog
+subscribes and refreshes. Auto-grading batch completion writes back
+exam-attendance for the matching same-day exam via
+`record_exam_attendance(status='attended')`.
+
+#### Added — chatbot as a participant
+
+* Subscribes to `charge.raised`, `hold.changed`, `loan.changed`,
+  `incident.logged`, `document.changed`, `case.opened`. Each event
+  queues a contextual message in the per-user inbox; on next
+  `process_message` call the prefix is prepended.
+* Selection-aware: subscribes to `academic.selection.changed`,
+  caches the latest module/course/exam pointer, and prefixes
+  replies with `(in context: module CS101, course BSc-CS)`.
+* Privacy-respecting SU advocacy: a case-opened notification asks
+  the student to reply `help`; only on user reply does
+  `request_advocacy` fire. SU never receives raw case events.
+
+#### Added — selection-aware multi-window highlighting
+
+Module Scheduling, Course Management, Exam Scheduler, Student
+Timetable, and Assignment GUI all publish `selection.changed` on
+row click and subscribe so a click in one window highlights the
+matching row in the others — without forcing a tab switch. Module
+Scheduling additionally pre-fills its module-list search box when a
+sibling publishes a `course_code` selection.
+
+#### Added — capacity heat overlay
+
+Course Management list now flags 🔥 + orange tint on rows where
+the sum of room capacities across scheduled sessions falls short
+of current enrolment.
+
+#### Added — Health & Safety / First Aid bus participation
+
+* H&S `add_incident` publishes `incident.logged`; if the row carries
+  `estimated_cost`, the cost flows to Finance via `raise_charge`.
+* First Aid `IncidentDB.add_report` publishes the same event with
+  `domain='first_aid'`.
+* `health_safety_portal.schedule_evacuation_drill` writes to the
+  academic calendar as `event_type='evacuation_drill'`.
+
+#### Added — research grant spend → Finance
+
+`research_grants_gui.py` equipment registration with an assigned
+project publishes `charge.raised` against the grant ledger
+(`account=grant:{project_id}`), so Finance restricted-fund
+subscribers post the spend without manual reconciliation.
+
+#### Changed
+
+- `_cross_dialogs.show_module_timeline_dialog` now reuses
+  `ModuleTimelinePanel` internally; no behaviour change.
+- `_cross_services._all_conflicts` no longer fails on the
+  `ConflictsMixin` import; it composes a tiny dynamic host so the
+  mixin can be invoked, with a fallback to the persisted
+  `schedule_conflicts` table when live detection can't run.
+- `find_free_rooms` SQL hardened against the dual `room_name` /
+  `room_number` and `equipment` (free-text) schemas — no more empty
+  results when capacity exists.
+- Calendar `add_event` / `update_event` / `delete_event` publish on
+  the bus so `AcademicPeriodPanel`, `current_period`, and the four
+  scheduling GUIs refresh together.
+- Disciplinary Portal's `add_action` now routes structured action
+  types (`fine`, `suspension`, `warning`, `exclusion`) through
+  `cases_bus.apply_sanction` so they fire the right Finance / cert
+  side-effects.
+
+#### Verified
+
+End-to-end smoke tests cover every spine. Each new service round-trips
+on the live `student_records.db` with real student / staff IDs:
+Finance hold place/release, charge raise + balance delta; HR
+qualification/availability lookups; DM link/get/has_document with
+event broadcast; cert add/list/delete/expiry; cases AM + DP open,
+sanction route to finance, hearing schedule, close; SU join/leave,
+membership fee charge, advocacy request/claim, event publish.
+
 
 ## [8.105.0] — 2026-04-30
 

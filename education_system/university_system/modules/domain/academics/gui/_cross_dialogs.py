@@ -1295,6 +1295,334 @@ class IncidentEvidencePanel(ttk.Frame):
             ))
 
 
+class ChatbotPanel(ttk.Frame):
+    """Inline chatbot side-panel for any GUI.
+
+    Wraps the existing ``UniversityChatbot`` instance and adds two
+    integration touches:
+
+    * ``scope`` is auto-attached to every prompt the user types, so
+      "what's the timetable?" inside Module Scheduling becomes
+      "what's the timetable for module {scope}?" — no need to retype
+      context.
+    * Reads/writes use the canonical ``chatbot_tools.call_tool``
+      surface via the chatbot's normal message pipeline.
+
+    Heavy by Tk standards; lazy-loads the chatbot on first message
+    so embedding the panel doesn't spin it up unless needed.
+    """
+
+    def __init__(self, master: tk.Misc, *,
+                 scope: str | None = None,
+                 user_id: str = "anonymous",
+                 height: int = 14) -> None:
+        super().__init__(master)
+        self._scope = scope
+        self._user_id = user_id
+        self._chatbot = None  # lazy
+
+        self._heading_var = tk.StringVar(value=self._heading_text())
+        ttk.Label(
+            self, textvariable=self._heading_var,
+            font=("Helvetica", 11, "bold"),
+        ).pack(anchor="w", padx=8, pady=(8, 4))
+
+        from tkinter import scrolledtext
+        self._log = scrolledtext.ScrolledText(
+            self, height=height, wrap="word", state="disabled",
+            font=("Helvetica", 9),
+        )
+        self._log.pack(fill="both", expand=True, padx=8, pady=(0, 4))
+
+        entry_frame = ttk.Frame(self)
+        entry_frame.pack(fill="x", padx=8, pady=(0, 8))
+        self._entry = ttk.Entry(entry_frame)
+        self._entry.pack(side="left", fill="x", expand=True)
+        self._entry.bind("<Return>", lambda _e: self._send())
+        ttk.Button(entry_frame, text="Send", command=self._send).pack(
+            side="left", padx=(4, 0),
+        )
+
+        self._append("Chatbot ready. Ask anything about your scope.\n")
+
+    def set_scope(self, scope: str | None) -> None:
+        self._scope = scope
+        self._heading_var.set(self._heading_text())
+
+    def _heading_text(self) -> str:
+        return f"Assistant — {self._scope}" if self._scope else "Assistant"
+
+    def _append(self, text: str) -> None:
+        try:
+            self._log.configure(state="normal")
+            self._log.insert("end", text)
+            self._log.see("end")
+            self._log.configure(state="disabled")
+        except Exception:
+            pass
+
+    def _ensure_chatbot(self):
+        if self._chatbot is not None:
+            return self._chatbot
+        try:
+            from education_system.university_system.infrastructure.ai.university_chatbot import (
+                UniversityChatbot,
+            )
+            self._chatbot = UniversityChatbot()
+        except Exception as exc:
+            self._append(f"[chatbot unavailable: {exc}]\n")
+            self._chatbot = False  # sentinel to avoid retrying on every send
+        return self._chatbot
+
+    def _send(self) -> None:
+        text = self._entry.get().strip()
+        if not text:
+            return
+        self._entry.delete(0, "end")
+        if self._scope:
+            text = f"[scope: {self._scope}] {text}"
+        self._append(f"You: {text}\n")
+        bot = self._ensure_chatbot()
+        if not bot:
+            return
+        try:
+            reply = bot.process_message(text, user_id=self._user_id)
+        except Exception as exc:
+            reply = f"[error: {exc}]"
+        self._append(f"Bot: {reply}\n\n")
+
+
+class OpenCasesPanel(ttk.Frame):
+    """Inline summary of open AM + DP cases against one subject.
+
+    Reads via ``cases_bus.list_open(subject_id)`` so it transparently
+    covers both ``academic_misconduct_cases`` and
+    ``disciplinary_records``. Auto-refreshes on
+    ``case.opened`` / ``case.closed`` / ``case.sanction.applied``.
+
+    Embed wherever a person's record is displayed: HR staff profile,
+    Grade Tracking student row, advisor view, etc.
+    """
+
+    _SEVERITY_FG = {
+        "Critical": "#c0392b",
+        "Major":    "#d97706",
+        "Moderate": "#0066cc",
+    }
+
+    def __init__(self, master: tk.Misc,
+                 subject_id: str | int | None = None,
+                 *, listen_to_events: bool = True) -> None:
+        super().__init__(master)
+        self._subject_id: str | None = None
+
+        self._heading_var = tk.StringVar(value="Open cases")
+        ttk.Label(
+            self, textvariable=self._heading_var,
+            font=("Helvetica", 11, "bold"),
+        ).pack(anchor="w", padx=8, pady=(8, 4))
+
+        cols = ("kind", "case_id", "offense", "severity", "status", "opened_on")
+        self._tree = ttk.Treeview(self, columns=cols, show="headings", height=5)
+        for c, w in zip(cols, (130, 80, 160, 90, 100, 100)):
+            self._tree.heading(c, text=c.replace("_", " ").capitalize())
+            self._tree.column(c, width=w, anchor="w")
+        for sev, fg in self._SEVERITY_FG.items():
+            self._tree.tag_configure(sev, foreground=fg)
+        self._tree.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+
+        self._empty_var = tk.StringVar(value="")
+        ttk.Label(
+            self, textvariable=self._empty_var, foreground="#7f8c8d",
+        ).pack(anchor="w", padx=10)
+
+        if listen_to_events:
+            try:
+                from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                    subscribe_tk,
+                    EVENT_CASE_OPENED, EVENT_CASE_CLOSED,
+                    EVENT_SANCTION_APPLIED,
+                )
+
+                def _on_change(**payload):
+                    sid = payload.get("subject_id")
+                    if (self._subject_id and
+                            (sid is None or str(sid) == self._subject_id)):
+                        self.refresh()
+
+                for evt in (EVENT_CASE_OPENED, EVENT_CASE_CLOSED,
+                            EVENT_SANCTION_APPLIED):
+                    subscribe_tk(evt, self, _on_change)
+            except Exception:
+                pass
+
+        if subject_id is not None:
+            self.set_subject(subject_id)
+
+    def set_subject(self, subject_id: str | int) -> None:
+        self._subject_id = str(subject_id) if subject_id is not None else None
+        self.refresh()
+
+    def refresh(self) -> None:
+        for item in self._tree.get_children():
+            self._tree.delete(item)
+        self._empty_var.set("")
+        if not self._subject_id:
+            self._heading_var.set("Open cases")
+            return
+        self._heading_var.set(f"Open cases — {self._subject_id}")
+
+        try:
+            from education_system.university_system.modules.services.cases_bus import (
+                list_open,
+            )
+            cases = list_open(self._subject_id)
+        except Exception as exc:
+            self._empty_var.set(f"(unavailable: {exc})")
+            return
+
+        if not cases:
+            self._empty_var.set("No open cases.")
+            return
+        for c in cases:
+            sev = c.get("severity") or ""
+            tag = (sev,) if sev in self._SEVERITY_FG else ()
+            self._tree.insert("", "end", values=(
+                c.get("kind") or "",
+                c.get("case_id") or "",
+                c.get("offense_type") or "",
+                sev,
+                c.get("status") or "",
+                (c.get("opened_on") or "")[:10],
+            ), tags=tag)
+
+
+class StudentUnionPanel(ttk.Frame):
+    """Inline student-union summary: clubs, charges, advocacy.
+
+    Embed alongside ``OpenCasesPanel`` on student profile / Grade
+    Tracking views. Auto-refreshes on
+    ``finance.charge.raised`` (fee posted),
+    ``su.membership.changed`` (joined/left),
+    and ``su.advocacy.requested`` (claimed support).
+    """
+
+    def __init__(self, master: tk.Misc,
+                 student_id: str | int | None = None,
+                 *, listen_to_events: bool = True) -> None:
+        super().__init__(master)
+        self._student_id: str | None = None
+
+        self._heading_var = tk.StringVar(value="Student Union")
+        ttk.Label(
+            self, textvariable=self._heading_var,
+            font=("Helvetica", 11, "bold"),
+        ).pack(anchor="w", padx=8, pady=(8, 4))
+
+        self._clubs_var = tk.StringVar(value="Clubs: —")
+        self._charges_var = tk.StringVar(value="Outstanding fees: —")
+        self._advocacy_var = tk.StringVar(value="Advocacy: —")
+        ttk.Label(self, textvariable=self._clubs_var).pack(anchor="w", padx=10)
+        ttk.Label(self, textvariable=self._charges_var).pack(anchor="w", padx=10)
+        ttk.Label(self, textvariable=self._advocacy_var).pack(
+            anchor="w", padx=10, pady=(0, 6),
+        )
+
+        cols = ("kind", "ref", "info", "when")
+        self._tree = ttk.Treeview(self, columns=cols, show="headings", height=4)
+        for c, w in zip(cols, (90, 110, 240, 110)):
+            self._tree.heading(c, text=c.capitalize())
+            self._tree.column(c, width=w, anchor="w")
+        self._tree.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+
+        if listen_to_events:
+            try:
+                from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                    subscribe_tk,
+                    EVENT_CHARGE_RAISED, EVENT_MEMBERSHIP_CHANGED,
+                    EVENT_SU_ADVOCACY_REQUESTED,
+                )
+
+                def _on_change(**payload):
+                    sid = payload.get("student_id")
+                    if (self._student_id and
+                            (sid is None or str(sid) == self._student_id)):
+                        self.refresh()
+
+                for evt in (EVENT_CHARGE_RAISED, EVENT_MEMBERSHIP_CHANGED,
+                            EVENT_SU_ADVOCACY_REQUESTED):
+                    subscribe_tk(evt, self, _on_change)
+            except Exception:
+                pass
+
+        if student_id is not None:
+            self.set_student(student_id)
+
+    def set_student(self, student_id: str | int) -> None:
+        self._student_id = str(student_id) if student_id is not None else None
+        self.refresh()
+
+    def refresh(self) -> None:
+        for item in self._tree.get_children():
+            self._tree.delete(item)
+        if not self._student_id:
+            self._heading_var.set("Student Union")
+            self._clubs_var.set("Clubs: —")
+            self._charges_var.set("Outstanding fees: —")
+            self._advocacy_var.set("Advocacy: —")
+            return
+        self._heading_var.set(f"Student Union — {self._student_id}")
+
+        try:
+            from education_system.university_system.modules.services.student_union_bus import (
+                list_clubs_for, list_outstanding_su_charges,
+                list_advocacy_requests_for,
+            )
+            clubs = list_clubs_for(self._student_id)
+            charges = list_outstanding_su_charges(self._student_id)
+            advocacy = list_advocacy_requests_for(self._student_id)
+        except Exception:
+            clubs, charges, advocacy = [], [], []
+
+        self._clubs_var.set(
+            f"Clubs: {len(clubs)} active"
+            + (f" — {', '.join(c.get('name') or '?' for c in clubs[:3])}"
+               if clubs else "")
+        )
+        total = sum(float(c.get("amount") or 0) for c in charges)
+        self._charges_var.set(
+            f"SU charges (12mo): £{total:,.2f} across {len(charges)} item(s)"
+        )
+        active_adv = [a for a in advocacy if a.get("status") in ("pending", "claimed")]
+        self._advocacy_var.set(
+            f"Advocacy: {len(active_adv)} active request(s)"
+            if active_adv else "Advocacy: none active"
+        )
+
+        for c in clubs:
+            self._tree.insert("", "end", values=(
+                "club",
+                f"#{c.get('club_id')}",
+                c.get("name") or "—",
+                (c.get("join_date") or "")[:10],
+            ))
+        for c in charges:
+            self._tree.insert("", "end", values=(
+                "charge",
+                c.get("reference_id") or "",
+                f"£{float(c.get('amount') or 0):,.2f} — "
+                f"{c.get('description') or ''}",
+                (c.get("created_at") or "")[:10],
+            ))
+        for a in active_adv:
+            self._tree.insert("", "end", values=(
+                "advocacy",
+                f"case #{a.get('case_id')}",
+                f"{a.get('case_kind') or ''} ({a.get('status')})",
+                (a.get("requested_at") or "")[:10],
+            ))
+
+
 __all__ = [
     "show_conflicts_dialog",
     "show_instructor_workload_dialog",
@@ -1309,4 +1637,7 @@ __all__ = [
     "AcademicPeriodPanel",
     "StaffCertificationsPanel",
     "IncidentEvidencePanel",
+    "ChatbotPanel",
+    "OpenCasesPanel",
+    "StudentUnionPanel",
 ]

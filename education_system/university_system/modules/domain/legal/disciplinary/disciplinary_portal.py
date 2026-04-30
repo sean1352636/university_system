@@ -238,6 +238,22 @@ class DatabaseManager:
         record_id = cursor.lastrowid
         conn.commit()
         conn.close()
+
+        # Bus broadcast — HR profile panels, chatbot inbox, OpenCasesPanel
+        # subscribers all refresh. Best-effort; never raises.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                publish, EVENT_CASE_OPENED,
+            )
+            publish(
+                EVENT_CASE_OPENED,
+                case_id=record_id, kind="disciplinary",
+                subject_id=str(sid), opened_by=reporter,
+                severity=severity, offense_type=itype,
+            )
+        except Exception:
+            pass
+
         return record_id
 
     def get_all_incidents(self):
@@ -291,6 +307,17 @@ class DatabaseManager:
                 "WHERE record_id = ?",
                 (status, incident_id))
             conn.commit()
+            # Bus: case.closed when status enters a closed bucket.
+            if str(status).lower() in ("resolved", "closed", "dismissed"):
+                try:
+                    from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                        publish, EVENT_CASE_CLOSED,
+                    )
+                    publish(EVENT_CASE_CLOSED,
+                            case_id=incident_id, kind="disciplinary",
+                            outcome=status)
+                except Exception:
+                    pass
         finally:
             conn.close()
 
@@ -322,8 +349,55 @@ class DatabaseManager:
             "VALUES (?, ?, ?, ?, ?, ?)",
             (record_id, action_type, action_date, duration,
              issued_by, notes))
+        action_id = cursor.lastrowid
         conn.commit()
+
+        # Pull subject_id so subscribers (and the cases_bus router)
+        # can hit the right person.
+        try:
+            cur = conn.execute(
+                "SELECT user_id FROM disciplinary_records WHERE record_id = ?",
+                (record_id,),
+            )
+            sub_row = cur.fetchone()
+            subject_id = sub_row[0] if sub_row else None
+        except Exception:
+            subject_id = None
         conn.close()
+
+        # Route the sanction through cases_bus so Finance / cert / hold
+        # paths fire automatically. Best-effort; if the action_type
+        # isn't a structured sanction, we just publish the bus event.
+        try:
+            from education_system.university_system.modules.services.cases_bus import (
+                apply_sanction,
+            )
+            mapped = (action_type or "").lower()
+            sanction = None
+            kwargs: dict = {}
+            if mapped in ("fine", "monetary"):
+                sanction = "fine"
+                try:
+                    kwargs["amount"] = float(duration or 0)
+                except Exception:
+                    kwargs["amount"] = 0.0
+            elif mapped in ("suspension", "suspend", "exclusion"):
+                sanction = "suspension"
+                try:
+                    kwargs["duration_days"] = int(duration or 0)
+                except Exception:
+                    pass
+            elif mapped in ("warning", "verbal warning", "written warning"):
+                sanction = "warning"
+            if sanction and subject_id:
+                apply_sanction(
+                    case_id=record_id, kind="disciplinary",
+                    sanction_type=sanction, subject_id=subject_id,
+                    reason=notes, applied_by=issued_by,
+                    **kwargs,
+                )
+        except Exception:
+            pass
 
     def get_actions_by_incident(self, incident_id):
         conn = self.get_connection()

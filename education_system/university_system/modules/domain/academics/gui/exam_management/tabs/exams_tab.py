@@ -742,6 +742,21 @@ class ExamsTabMixin:
         self.selected_exam_id = None
         self.selected_instructor_id = None
 
+        # Default the date field to the start of the active exam window
+        # (#8) so the operator opens the form on a date the gate will
+        # accept. Falls through silently if no window is configured.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._cross_services import (
+                current_period,
+            )
+            window = current_period("exam_window")
+            if window:
+                start = window.get("date_start") or window.get("date")
+                if start:
+                    self.exam_vars['date'].set(start[:10])
+        except Exception:
+            pass
+
     def on_exam_select(self, event):
         """Handle exam selection in the tree."""
         selection = self.exam_tree.selection()
