@@ -112,6 +112,17 @@ def check_meal_balance(self):
     threshold_label = ttk.Label(balance_frame, text="Low Balance Threshold: Loading...", font=('Arial', 10))
     threshold_label.pack(anchor='w')
 
+    # Cross-domain: show the campus restaurant POS balance derived
+    # from the unified finance ledger via restaurant_bus. This must
+    # match the local meal_accounts balance — if they diverge, a
+    # top-up was recorded somewhere that didn't mirror to the bus.
+    pos_balance_label = ttk.Label(
+        balance_frame,
+        text="Campus restaurant balance: Loading...",
+        font=('Arial', 10), foreground='#06c',
+    )
+    threshold_label.pack(anchor='w')
+
     # Transaction history frame
     history_frame = ttk.LabelFrame(main_frame, text="Recent Transactions", padding=10)
     history_frame.pack(fill=tk.BOTH, expand=True, pady=5)
@@ -204,6 +215,22 @@ def check_meal_balance(self):
                 status_label.config(text="Status: No Account", foreground="orange")
                 threshold_label.config(text="Low Balance Threshold: £10.00 (default)")
 
+            # Cross-domain: pull the campus restaurant POS balance
+            # from restaurant_bus so the parent can confirm the
+            # campus POS sees the top-up too.
+            try:
+                from education_system.university_system.modules.services import (
+                    restaurant_bus,
+                )
+                pos_balance = restaurant_bus.meal_plan_balance(student_id)
+                pos_balance_label.config(
+                    text=f"Campus restaurant balance: £{pos_balance:.2f}"
+                )
+            except Exception:
+                pos_balance_label.config(
+                    text="Campus restaurant balance: (unavailable)"
+                )
+
             # Get recent transactions
             cursor.execute('''
                 SELECT created_at, transaction_type, amount, description, balance_after
@@ -287,6 +314,26 @@ def check_meal_balance(self):
             ''', (student_id, amount, now, new_balance))
 
             conn.commit()
+
+            # Cross-domain: also route through restaurant_bus so the
+            # restaurant POS, finance ledger, and unified student
+            # account view see the same top-up. The bus writes a
+            # negative-amount row to student_finance_transactions
+            # which restaurant_bus.meal_plan_balance derives from —
+            # without this, parents and the campus restaurant would
+            # see different balances.
+            try:
+                from education_system.university_system.modules.services import (
+                    restaurant_bus,
+                )
+                actor = "parent_portal"
+                if getattr(self, 'auth', None) and self.auth.current_user:
+                    actor = self.auth.current_user.get('username') or actor
+                restaurant_bus.top_up_meal_plan(
+                    student_id, amount, processed_by=actor,
+                )
+            except Exception as bus_err:
+                print(f"restaurant_bus top-up mirror failed: {bus_err}")
 
             # Get student email for notification
             cursor.execute("SELECT email_address, first_name FROM students WHERE student_id = ?", (student_id,))

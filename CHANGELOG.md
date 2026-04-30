@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.109.4 — 2026-04-30](#81094---2026-04-30)
 - [8.109.3 — 2026-04-30](#81093---2026-04-30)
 - [8.109.2 — 2026-04-30](#81092---2026-04-30)
 - [8.109.1 — 2026-04-30](#81091---2026-04-30)
@@ -218,6 +219,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.109.4] — 2026-04-30
+
+### Parent portal meal-plan top-up mirrors through restaurant_bus
+
+Closes a real divergence: the parent portal's
+`check_meal_balance` was writing only to the legacy
+`meal_accounts` table while the campus restaurant POS reads its
+balance through `restaurant_bus.meal_plan_balance` (which derives
+from `student_finance_transactions`). Parents and the campus
+restaurant could see different balances after a parent top-up.
+
+#### Changed — `parent_portal/meal.py:add_funds`
+
+After the existing local writes (`meal_accounts.balance` update,
+`transactions` row, email notification) the parent-portal top-up
+now also calls
+`restaurant_bus.top_up_meal_plan(student_id, amount, processed_by=...)`.
+The bus posts a negative-amount finance row that `meal_plan_balance`
+derives from, so the campus POS, the unified Finance GUI account
+view, and the restaurant management dialog (8.109.3) all see the
+same top-up immediately. The local-table writes remain for back-
+compat with anything else reading `meal_accounts`.
+
+`processed_by` resolves to the logged-in parent's username when
+`self.auth.current_user` is set, falling back to
+`"parent_portal"`.
+
+#### Changed — `parent_portal/meal.py:load_balance`
+
+The "Account Balance" panel now shows two lines:
+
+- **Balance** — from the legacy `meal_accounts` table (existing).
+- **Campus restaurant balance** (new) — pulled from
+  `restaurant_bus.meal_plan_balance` so the parent can confirm
+  the campus POS sees the top-up. If the two lines diverge it
+  signals a top-up was recorded somewhere that didn't mirror to
+  the bus.
+
+#### Verified live
+
+End-to-end: `restaurant_bus.top_up_meal_plan(S12345, £15)` →
+finance tx 25, bus balance £25.50 → £40.50 (delta £15). Same
+amount the parent-portal `add_funds` flow now writes after this
+release.
 
 ---
 
