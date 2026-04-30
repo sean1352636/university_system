@@ -175,6 +175,78 @@ class IncidentDB:
         except Exception:
             pass
 
+        # Cross-domain: severe incidents open a cases_bus hs_incident
+        # case so they inherit hearing scheduling, sanction routing,
+        # and the auto-raised risk-register row (8.109.0). Minor
+        # treatments stay first-aid-only.
+        sev = str(report.get('severity', '')).lower()
+        if sev in ('high', 'critical', 'severe'):
+            try:
+                from education_system.university_system.modules.services import (
+                    cases_bus,
+                )
+                subject = (str(report.get('reporter_id', ''))
+                           or str(report.get('reporter_user', ''))
+                           or f"first_aid:{new_id}")
+                cases_bus.open_case(
+                    kind="hs_incident",
+                    subject_id=subject,
+                    opened_by=str(report.get('reporter_user', ''))
+                              or "first_aid_portal",
+                    description=(
+                        f"First-aid {report.get('incident_type','incident')} "
+                        f"({sev}) at {report.get('location','—')}. "
+                        f"{report.get('description','')}"
+                    ),
+                    severity=str(report.get('severity', '')).title(),
+                    offense_type=report.get('incident_type', 'Incident'),
+                    incident_date=str(report.get('submitted_at', ''))[:10],
+                    location=report.get('location'),
+                )
+            except Exception as exc:
+                logger.debug("hs_incident case open failed: %s", exc)
+
+        # Cross-domain: location rollup. Three or more incidents at
+        # the same location within 90 days indicates a site-level
+        # safety risk — raise a risks row tagged by location so the
+        # legal/risk GUI surfaces the pattern. Idempotent: only
+        # raised once per (location, 90-day window).
+        loc = (report.get('location') or '').strip()
+        if loc:
+            try:
+                conn2 = self._connection()
+                try:
+                    row = conn2.execute(
+                        "SELECT COUNT(*) FROM first_aid_incidents "
+                        "WHERE location = ? "
+                        "  AND submitted_at >= date('now', '-90 days')",
+                        (loc,),
+                    ).fetchone()
+                    incident_count = int(row[0] or 0) if row else 0
+                finally:
+                    conn2.close()
+                if incident_count >= 3:
+                    from education_system.university_system.modules.services import (
+                        risk_bus,
+                    )
+                    ref = f"location:{loc.lower().replace(' ','_')[:60]}"
+                    if not risk_bus.list_risks_for(ref):
+                        risk_bus.raise_risk(
+                            title=f"Repeated first-aid incidents: {loc}",
+                            category="Safety",
+                            department="Health & Safety",
+                            description=(
+                                f"{incident_count} first-aid incidents "
+                                f"recorded at '{loc}' in the last 90 "
+                                f"days. Investigate site hazards, "
+                                f"signage, and staffing."
+                            ),
+                            likelihood=4, impact=3,
+                            reference_id=ref,
+                        )
+            except Exception as exc:
+                logger.debug("location rollup risk failed: %s", exc)
+
         return new_id
 
     def fetch_all(self) -> list:

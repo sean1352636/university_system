@@ -136,7 +136,13 @@ class ContractManager:
     def terminate_contract(contract_id: int, termination_date: str,
                           reason: str = None, terminated_by: str = None) -> bool:
         """Terminate a contract."""
+        user_id_for_event: str | None = None
         with transaction() as conn:
+            row = conn.execute(
+                "SELECT user_id FROM staff_contracts WHERE contract_id = ?",
+                (contract_id,),
+            ).fetchone()
+            user_id_for_event = str(row[0]) if row and row[0] else None
             conn.execute('''
                 UPDATE staff_contracts
                 SET status = 'terminated', end_date = ?, updated_at = ?
@@ -149,7 +155,58 @@ class ContractManager:
                 'termination_date': termination_date,
                 'reason': reason
             })
-            return True
+
+        # Cross-domain: publish staff.contract.ended so module
+        # scheduling can flag any future slots taught by this staff
+        # member as needing reassignment, and so cert_bus / email_bus
+        # can notify line managers. Best-effort.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import publish
+            publish("staff.contract.ended",
+                    contract_id=contract_id,
+                    staff_id=user_id_for_event,
+                    ends_on=termination_date,
+                    reason=reason,
+                    terminated_by=terminated_by)
+        except Exception:
+            pass
+
+        # Cross-domain: flag forward-dated module_schedule rows as
+        # needing reassignment. Adds a nullable 'reassignment_needed'
+        # column on first use; sets it for slots whose instructor
+        # matches and whose start_date / created_at is on or after
+        # the termination date. Idempotent.
+        if user_id_for_event:
+            try:
+                from education_system.university_system.infrastructure.database.db import (
+                    get_connection,
+                )
+                with get_connection() as conn2:
+                    cols = {r[1] for r in conn2.execute(
+                        "PRAGMA table_info(module_schedule)"
+                    ).fetchall()}
+                    if cols and 'reassignment_needed' not in cols:
+                        try:
+                            conn2.execute(
+                                "ALTER TABLE module_schedule ADD COLUMN "
+                                "reassignment_needed TEXT"
+                            )
+                        except Exception:
+                            pass
+                    conn2.execute(
+                        "UPDATE module_schedule "
+                        "SET reassignment_needed = ? "
+                        "WHERE instructor_id = ? "
+                        "  AND COALESCE(start_date, "
+                        "                date('now')) >= ?",
+                        (f"contract_ended:{contract_id}",
+                         user_id_for_event, termination_date[:10]),
+                    )
+                    conn2.commit()
+            except Exception:
+                pass
+
+        return True
 
     # ==================== CONTRACT AMENDMENTS ====================
 

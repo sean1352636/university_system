@@ -228,6 +228,28 @@ class ModuleSchedulingGUI:
                                      command=self.open_activity_log_window, style='Action.TButton')
         activity_button.pack(side=tk.LEFT, padx=5)
 
+        # Risks button — pops the risk-register entries linked to a
+        # module, fed by cases_bus / attendance_bus / slot_writer
+        # conflict detection.
+        def _show_module_risks():
+            from tkinter import simpledialog
+            from education_system.university_system.modules.services.risks_panel import (
+                show_risks_for,
+            )
+            mc = simpledialog.askstring(
+                "Module risks",
+                "Module code (e.g. CS101) — leave blank to view all "
+                "module risks:",
+                parent=self.root,
+            )
+            ref = f"module:{mc.strip()}" if mc and mc.strip() else "module:"
+            show_risks_for(self.root, ref,
+                           title=f"Risks for {mc or 'all modules'}")
+        risks_button = ttk.Button(toolbar_frame, text="Risks",
+                                  command=_show_module_risks,
+                                  style='Action.TButton')
+        risks_button.pack(side=tk.LEFT, padx=5)
+
         # Title label
         title_label = ttk.Label(toolbar_frame, text=_t("scheduling.title"),
                                font=('Arial', 14, 'bold'))

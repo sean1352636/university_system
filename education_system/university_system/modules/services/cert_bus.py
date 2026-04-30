@@ -239,7 +239,100 @@ def list_certifications_for(staff_id: str | int) -> list[dict[str, Any]]:
     return out
 
 
+def notify_expiring(within_days: int = 30) -> dict[str, Any]:
+    """Cross-domain expiring-cert subscriber.
+
+    Walks ``expiring_certifications(within_days)`` and:
+
+    * Sends a templated email to each affected staff member via
+      ``email_bus.send_templated`` (subject ``cert_expiring``).
+    * For first-aid certs specifically, scans
+      ``trip_bus.list_trips`` for upcoming field/research trips
+      led by the staff member and raises a
+      ``risk_bus.raise_risk(category='Safety', reference_id=
+      f'staff_cert:{cert_id}')`` so HR sees the trip-coverage
+      gap on the legal/risk GUI.
+
+    Returns ``{"emailed": N, "trip_risks_raised": M, "reviewed": K}``.
+    Idempotent: the risk row is only raised once per cert (via
+    ``risk_bus.list_risks_for`` precheck).
+    """
+    out = {"emailed": 0, "trip_risks_raised": 0, "reviewed": 0}
+    try:
+        rows = expiring_certifications(within_days=within_days) or []
+    except Exception as exc:
+        logger.warning("notify_expiring: list failed: %s", exc)
+        return out
+    out["reviewed"] = len(rows)
+
+    try:
+        from education_system.university_system.modules.services import (
+            email_bus, risk_bus,
+        )
+    except Exception:
+        return out
+
+    for cert in rows:
+        cert_id = cert.get("cert_id") or cert.get("id")
+        staff_id = cert.get("subject_id") or cert.get("staff_id") \
+                    or cert.get("user_id")
+        kind = str(cert.get("kind") or cert.get("name") or "")
+        expires = cert.get("expires_on") or cert.get("expiry_date")
+        if not staff_id:
+            continue
+        try:
+            sent = email_bus.send_templated(
+                staff_id, "cert_expiring",
+                {"cert_kind": kind, "expires_on": expires,
+                 "cert_id": cert_id},
+            )
+            if sent:
+                out["emailed"] += 1
+        except Exception as exc:
+            logger.debug("cert_expiring email send failed: %s", exc)
+
+        if "first" in kind.lower() and "aid" in kind.lower() and cert_id:
+            ref = f"staff_cert:{cert_id}"
+            try:
+                if risk_bus.list_risks_for(ref):
+                    continue
+                # Look up upcoming trips led by this staff member.
+                from education_system.university_system.modules.services import (
+                    trip_bus,
+                )
+                today = datetime.now().strftime("%Y-%m-%d")
+                upcoming = [
+                    t for t in (trip_bus.list_trips() or [])
+                    if str(t.get("created_by") or "") == str(staff_id)
+                       and str(t.get("start_date", "")) >= today
+                ]
+                if upcoming:
+                    risk_bus.raise_risk(
+                        title=(f"First-aid cert expiring for staff "
+                               f"{staff_id} with {len(upcoming)} "
+                               f"upcoming trip(s)"),
+                        category="Safety",
+                        department="Trips & Mobility",
+                        description=(
+                            f"Cert {cert_id} ({kind}) expires "
+                            f"{expires}. Affects "
+                            f"{[t.get('trip_name') for t in upcoming]}."
+                        ),
+                        likelihood=4, impact=4,
+                        owner=str(staff_id),
+                        reference_id=ref,
+                        next_review_date=str(expires)[:10] if expires
+                                          else None,
+                    )
+                    out["trip_risks_raised"] += 1
+            except Exception as exc:
+                logger.debug("first-aid trip risk failed: %s", exc)
+
+    return out
+
+
 __all__ = [
     "add_certification", "delete_certification",
     "expiring_certifications", "list_certifications_for",
+    "notify_expiring",
 ]

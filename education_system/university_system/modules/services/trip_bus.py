@@ -90,6 +90,38 @@ def create_trip(
         except Exception:
             pass
 
+    # First-aid certification gate for field / research trips. Off-
+    # campus trips with no qualified first responder are refused
+    # outright. Soft-fails open if cert_bus is unavailable.
+    if leader_staff_id is not None and kind in ("field_trip", "research_trip"):
+        try:
+            from education_system.university_system.modules.services.cert_bus import (
+                list_certifications_for,
+            )
+            certs = list_certifications_for(leader_staff_id) or []
+            today = datetime.now().strftime("%Y-%m-%d")
+            has_active_first_aid = False
+            for c in certs:
+                name_lc = str(c.get("name") or "").lower()
+                if "first" not in name_lc or "aid" not in name_lc:
+                    continue
+                expiry = c.get("expiry_date")
+                if (str(c.get("status") or "active").lower() == "active"
+                        and (not expiry or str(expiry) >= today)):
+                    has_active_first_aid = True
+                    break
+            if not has_active_first_aid:
+                logger.info(
+                    "create_trip blocked: leader %s has no active "
+                    "first-aid cert for %s trip", leader_staff_id, kind,
+                )
+                _publish("trip.refused",
+                         reason="leader_first_aid_expired",
+                         leader_staff_id=leader_staff_id, kind=kind)
+                return None
+        except Exception:
+            pass
+
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     body = description or ""
     # Stash the kind in description so we can read it back without a
@@ -170,6 +202,33 @@ def create_trip(
         end_date=(end_date or start_date)[:10],
         cost=cost, leader_staff_id=leader_staff_id,
     )
+
+    # Field / research trips auto-raise a date-bounded entry in the
+    # risk register so the trip is visible alongside SU events and
+    # H&S drills until the trip date passes.
+    if kind in ("field_trip", "research_trip") and new_id is not None:
+        try:
+            from education_system.university_system.modules.services import (
+                risk_bus,
+            )
+            risk_bus.raise_risk(
+                title=f"{kind.replace('_',' ').title()}: {name}",
+                category="Safety",
+                department="Trips & Mobility",
+                description=(
+                    f"Auto-raised from trip {new_id}. Destination "
+                    f"{destination}, leader {leader_staff_id}, "
+                    f"{(end_date or start_date)[:10]}."
+                ),
+                likelihood=2, impact=4,
+                owner=str(leader_staff_id) if leader_staff_id else None,
+                reference_id=f"trip:{new_id}",
+                next_review_date=start_date[:10],
+                expires_at=(end_date or start_date)[:10],
+            )
+        except Exception as exc:
+            logger.debug("trip risk auto-raise failed: %s", exc)
+
     return new_id
 
 

@@ -111,6 +111,35 @@ def move_slot(
                         "with_module": row["module_code"],
                     })
             if conflicts:
+                # Cross-domain: an unresolvable scheduling conflict
+                # is a module-delivery risk, not a student-attendance
+                # one. Raise a risks row keyed to the module so the
+                # legal/risk GUI tracks recurring overlaps for the
+                # same module across the term.
+                try:
+                    from education_system.university_system.modules.services import (
+                        risk_bus,
+                    )
+                    mc = current["module_code"]
+                    ref = f"module:{mc}"
+                    if not risk_bus.list_risks_for(ref):
+                        kinds = sorted({c["type"] for c in conflicts})
+                        risk_bus.raise_risk(
+                            title=f"Schedule conflict on module {mc}",
+                            category="Academic",
+                            department="Academics",
+                            description=(
+                                f"Slot move blocked by {', '.join(kinds)} "
+                                f"conflict against schedules "
+                                f"{[c['with_schedule_id'] for c in conflicts]}. "
+                                f"Indicates timetable pressure for this "
+                                f"module."
+                            ),
+                            likelihood=3, impact=3,
+                            reference_id=ref,
+                        )
+                except Exception:
+                    pass
                 return {"ok": False, "reason": "conflicts detected",
                         "conflicts": conflicts}
 

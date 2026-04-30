@@ -123,6 +123,25 @@ class TripManagementGUI:
         trip_menu.add_separator()
         trip_menu.add_command(label=_t("trip.menu.my_registrations"), command=self.show_my_registrations)
 
+        # Cross-domain: surface risk-register entries linked to a
+        # trip via risk_bus.list_risks_for("trip:N").
+        def _show_trip_risks():
+            from tkinter import simpledialog
+            from education_system.university_system.modules.services.risks_panel import (
+                show_risks_for,
+            )
+            tid = simpledialog.askstring(
+                "Trip risks",
+                "Trip ID (numeric):", parent=self.root,
+            )
+            if not tid:
+                return
+            show_risks_for(self.root, f"trip:{tid.strip()}",
+                           title=f"Risks for trip {tid}")
+        trip_menu.add_separator()
+        trip_menu.add_command(label="View trip risks",
+                              command=_show_trip_risks)
+
         if self.auth.check_permission('cancel_trip_registration'):
             trip_menu.add_command(label=_t("trip.menu.cancel_registration"), command=self.cancel_selected_registration)
 

@@ -85,6 +85,26 @@ class UISetupMixin:
             command=self.show_course_forums,
         )
 
+        # Cross-domain: surface risk-register entries linked to a
+        # course code via risk_bus.list_risks_for("course:CS-BSC").
+        def _show_course_risks():
+            from tkinter import simpledialog
+            from education_system.university_system.modules.services.risks_panel import (
+                show_risks_for,
+            )
+            cc = simpledialog.askstring(
+                "Course risks",
+                "Course code:", parent=self.root,
+            )
+            if not cc:
+                return
+            show_risks_for(self.root, f"course:{cc.strip()}",
+                           title=f"Risks for {cc}")
+        course_menu.add_command(
+            label="View course risks",
+            command=_show_course_risks,
+        )
+
         # Admin and Staff can manage prerequisites
         if is_admin or is_staff:
             course_menu.add_separator()

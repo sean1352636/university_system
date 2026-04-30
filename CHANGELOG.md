@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.110.0 — 2026-04-30](#81100---2026-04-30)
 - [8.109.4 — 2026-04-30](#81094---2026-04-30)
 - [8.109.3 — 2026-04-30](#81093---2026-04-30)
 - [8.109.2 — 2026-04-30](#81092---2026-04-30)
@@ -219,6 +220,119 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.110.0] — 2026-04-30
+
+### Module scheduling, trips, courses, staff HR, risk register, first aid — full cross-domain loop
+
+Eight items closing the loop between Module Scheduling, Trip
+Management, Course Management, Staff HR, Risk Assessment, and First
+Aid. New helpers across `trip_bus`, `cert_bus`, `risk_bus`,
+plus a shared read panel; integration calls in the actual writer
+paths so the cross-domain side-effects fire from the running
+program, not just unit tests.
+
+#### Added — `risks_panel.show_risks_for(parent, reference_id)`
+
+Reusable Tk Toplevel that lists every `risks` row linked to a given
+`reference_id` (e.g. `module:CS101`, `trip:42`, `course:CS-BSC`,
+`location:lab_3`). Wraps `risk_bus.list_risks_for`. Read-only,
+status-coloured. Wired into:
+
+- **Module scheduling toolbar** — "Risks" button, prompts for
+  module code.
+- **Trip management menu** — "View trip risks" entry, prompts for
+  trip ID.
+- **Course management menu** — "View course risks" entry, prompts
+  for course code.
+
+#### Changed — `trip_bus.create_trip`
+
+1. **First-aid cert gate**: for `kind ∈ {'field_trip',
+   'research_trip'}`, looks up
+   `cert_bus.list_certifications_for(leader_staff_id)` and refuses
+   the trip when no certification with `name LIKE '%first%aid%'`
+   is currently active. Publishes `trip.refused` with
+   `reason='leader_first_aid_expired'`.
+2. **Auto-raise risk register row** for field/research trips after
+   creation, via `risk_bus.raise_risk(category='Safety',
+   reference_id=f'trip:{trip_id}', expires_at=end_date)`. Surfaces
+   on the calendar through the existing `risk_review` event_type
+   path.
+
+#### Changed — `first_aid_portal.IncidentDB.add`
+
+After the local insert + existing `EVENT_INCIDENT_LOGGED` publish,
+two cross-domain side-effects:
+
+1. **Severe incidents → cases_bus** — `severity ∈ {High, Critical,
+   Severe}` opens a `cases_bus.open_case(kind='hs_incident', ...)`
+   so it inherits hearing scheduling, sanction routing
+   (fine→finance, suspension→hold), and the auto-raised
+   risk-register row from 8.109.0.
+2. **Location rollup** — when `≥3` incidents share `location`
+   within 90 days, `risk_bus.raise_risk(category='Safety',
+   reference_id=f'location:{slug}')` (idempotent — only raised
+   once per location until closed). Turns `first_aid_incidents`
+   from a log into a leading indicator.
+
+#### Changed — `module_scheduling/slot_writer.move_slot`
+
+When the move is blocked by an unresolvable room/instructor
+conflict, raises a `risks` row tagged `category='Academic'` with
+`reference_id=f'module:{module_code}'`. Idempotent via
+`list_risks_for` precheck. Combined with the read panel above,
+academics see "this module is hard to timetable" surfaced where
+they actually look.
+
+#### Changed — `contract_manager.terminate_contract`
+
+After the `staff_contracts` UPDATE, two cross-domain effects:
+
+1. Publishes `staff.contract.ended(contract_id, staff_id, ends_on,
+   reason)` so subscribers (cert_bus expiring-check, email
+   notifications) can react.
+2. **Forward-dated module reassignment flag** — adds a nullable
+   `reassignment_needed` column to `module_schedule` on first use
+   (idempotent ALTER), then UPDATEs every row whose
+   `instructor_id` matches and whose `start_date` is on or after
+   the termination date with the marker
+   `f"contract_ended:{contract_id}"`. Module scheduling can
+   filter on this column to find slots needing reassignment;
+   today this was silent — modules just kept pointing at an
+   inactive instructor.
+
+#### Added — `cert_bus.notify_expiring(within_days=30)`
+
+Single-call cross-domain expiring-cert subscriber:
+
+- Walks `expiring_certifications(within_days)`.
+- Sends a templated email to each affected staff member via
+  `email_bus.send_templated(staff_id, 'cert_expiring', ...)`.
+- For first-aid certs specifically, finds upcoming
+  field/research trips led by the staff member via
+  `trip_bus.list_trips`, and raises
+  `risk_bus.raise_risk(category='Safety',
+  reference_id=f'staff_cert:{cert_id}')` so HR sees the trip-
+  coverage gap on the legal/risk GUI. Idempotent via
+  `list_risks_for` precheck.
+
+Returns `{"emailed": N, "trip_risks_raised": M, "reviewed": K}`
+so the caller (a nightly cron / launcher hook / chatbot tool) can
+report.
+
+#### Verified live
+
+- `trip_bus.create_trip(kind='field_trip', destination='Snowdonia',
+  cost=£120, no leader)` → trip 4, 1 linked risk via
+  `list_risks_for('trip:4')`.
+- `cert_bus.notify_expiring(within_days=30)` → returns
+  `{emailed: 0, trip_risks_raised: 0, reviewed: 0}` on the seeded
+  DB (no expiring certs in the seed); call path doesn't error.
+- `risks_panel.show_risks_for` is importable and callable from the
+  three GUI buttons added.
 
 ---
 
