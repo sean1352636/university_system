@@ -931,6 +931,45 @@ def update_student_dialog(self, student_id):
                         selected_modules.extend([m['code'] for m in course_picks])
 
                     current_date = datetime.now().strftime('%Y-%m-%d')
+
+                    # Prerequisite gate — drop any modules the student
+                    # hasn't satisfied prereqs for, surface them to the
+                    # caller in a single warning. Falls back to "ok" when
+                    # no rules are configured for a module so legacy
+                    # courses keep enrolling unchanged.
+                    skipped_for_prereqs: list[tuple[str, str]] = []
+                    try:
+                        from education_system.university_system.modules.domain.academics.gui._cross_services import (
+                            check_prerequisites,
+                        )
+                        verified_modules = []
+                        for module_code in selected_modules:
+                            res = check_prerequisites(student_id, module_code)
+                            if res.get("ok", True):
+                                verified_modules.append(module_code)
+                            else:
+                                skipped_for_prereqs.append(
+                                    (module_code, res.get("reason", "missing prereqs"))
+                                )
+                        selected_modules = verified_modules
+                    except Exception as exc:
+                        print(f"Note: prereq check unavailable, enrolling all: {exc}")
+
+                    if skipped_for_prereqs:
+                        try:
+                            from tkinter import messagebox as _mb
+                            details = "\n".join(
+                                f"  • {code}: {reason}"
+                                for code, reason in skipped_for_prereqs
+                            )
+                            _mb.showwarning(
+                                "Prerequisites not met",
+                                "Some modules were skipped because the student\n"
+                                f"hasn't satisfied their prerequisites:\n\n{details}",
+                            )
+                        except Exception:
+                            pass
+
                     for module_code in selected_modules:
                         update_cursor.execute('''
                             INSERT INTO student_modules (student_id, module_code, enrollment_date, status)

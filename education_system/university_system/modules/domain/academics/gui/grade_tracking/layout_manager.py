@@ -437,6 +437,9 @@ class LayoutManager:
                 ("Module Scheduling", self.open_module_scheduling),
                 ("Course Management", self.open_course_management),
                 ("Cross-Domain Activity", self.open_integrations_activity),
+                ("Instructor Workload", self.open_instructor_workload),
+                ("At-Risk (unified)", self.open_at_risk_unified),
+                ("Module Timeline", self.open_module_timeline),
                 ("🏠 Return to Main Menu", self.return_to_main_menu)
             ]
         # Staff/Instructor gets grading and analytics features
@@ -522,6 +525,30 @@ class LayoutManager:
             open_course_gui,
         )
         open_course_gui(self.root, self.auth)
+
+    def open_instructor_workload(self):
+        """Open the consolidated instructor workload dialog."""
+        from education_system.university_system.modules.domain.academics.gui._cross_dialogs import (
+            show_instructor_workload_dialog,
+        )
+        show_instructor_workload_dialog(self.root)
+
+    def open_at_risk_unified(self):
+        """Open the unified at-risk-students dialog (sourced from grade risk)."""
+        from education_system.university_system.modules.domain.academics.gui._cross_dialogs import (
+            show_at_risk_dialog,
+        )
+        show_at_risk_dialog(self.root)
+
+    def open_module_timeline(self):
+        """Prompt for a module code and open its timeline dialog."""
+        from tkinter import simpledialog
+        from education_system.university_system.modules.domain.academics.gui._cross_dialogs import (
+            show_module_timeline_dialog,
+        )
+        code = simpledialog.askstring("Module timeline", "Module code:")
+        if code:
+            show_module_timeline_dialog(self.root, code)
 
     def open_integrations_activity(self):
         """Open the cross-domain activity panel (early warning, referrals, etc.)."""

@@ -483,6 +483,21 @@ class CreationMixin:
                 import logging
                 logging.warning(f"Failed to sync assignment to calendar: {e}")
 
+            # Broadcast on the cross-GUI event bus so any open sibling
+            # window (Grade / Module / Course / Exam) refreshes.
+            try:
+                from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                    publish, EVENT_ASSIGNMENT_CHANGED, EVENT_CALENDAR_CHANGED,
+                )
+                publish(EVENT_ASSIGNMENT_CHANGED,
+                        assignment_id=assignment_id, module_code=module_code,
+                        action="create")
+                publish(EVENT_CALENDAR_CHANGED,
+                        event_type="Assignment", source_id=assignment_id,
+                        action="create")
+            except Exception:
+                pass
+
             # Update GUI on main thread
             self.root.after(0, lambda: self.show_assignment_status(
                 f"Assignment '{self.title_var.get()}' created successfully! ID: {assignment_id}", "success"))

@@ -111,6 +111,40 @@ class AssignmentGUI:
         self.layout.create_main_interface()
         self.notifications_mgr.update_notifications()
 
+        # Live refresh: when sibling GUIs change grades / exams / module
+        # schedules / courses / enrolments, re-pull our dashboard so
+        # cached counts and recent-activity stay in sync. Subscriptions
+        # are auto-revoked when this root is destroyed.
+        try:
+            from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                subscribe_tk,
+                EVENT_GRADE_CHANGED,
+                EVENT_EXAM_CHANGED,
+                EVENT_MODULE_SCHEDULE_CHANGED,
+                EVENT_COURSE_CHANGED,
+                EVENT_ENROLMENT_CHANGED,
+            )
+
+            def _on_external_change(**_payload):
+                # Refresh dashboard counters without re-rendering tabs.
+                if hasattr(self, "dashboard") and hasattr(self.dashboard, "show_dashboard"):
+                    try:
+                        self.dashboard.show_dashboard()
+                    except Exception:
+                        pass
+                if hasattr(self, "notifications_mgr"):
+                    try:
+                        self.notifications_mgr.update_notifications()
+                    except Exception:
+                        pass
+
+            for evt in (EVENT_GRADE_CHANGED, EVENT_EXAM_CHANGED,
+                        EVENT_MODULE_SCHEDULE_CHANGED, EVENT_COURSE_CHANGED,
+                        EVENT_ENROLMENT_CHANGED):
+                subscribe_tk(evt, self.root, _on_external_change)
+        except Exception:
+            pass
+
     def _ensure_assignment_system_methods(self):
         """
         Ensure assignment system has required methods
@@ -558,6 +592,55 @@ class AssignmentGUI:
                 _("common.error"),
                 f"Failed to open Grade Management: {e}",
             )
+
+    # ── Cross-launch sibling academic GUIs (Exam / Module / Course) ──
+
+    def open_exam_scheduler(self):
+        from education_system.university_system.modules.domain.academics.gui._cross_launchers import (
+            open_exam_gui,
+        )
+        open_exam_gui(self.root, self.auth)
+
+    def open_module_scheduling(self):
+        from education_system.university_system.modules.domain.academics.gui._cross_launchers import (
+            open_module_gui,
+        )
+        open_module_gui(self.root, self.auth)
+
+    def open_course_management(self):
+        from education_system.university_system.modules.domain.academics.gui._cross_launchers import (
+            open_course_gui,
+        )
+        open_course_gui(self.root, self.auth)
+
+    # ── Cross-domain reports (conflicts / workload / at-risk / timeline) ──
+
+    def show_cross_conflicts(self, *, module_code=None, course_code=None):
+        from education_system.university_system.modules.domain.academics.gui._cross_dialogs import (
+            show_conflicts_dialog,
+        )
+        show_conflicts_dialog(self.root, module_code=module_code, course_code=course_code)
+
+    def show_instructor_workload(self):
+        from education_system.university_system.modules.domain.academics.gui._cross_dialogs import (
+            show_instructor_workload_dialog,
+        )
+        show_instructor_workload_dialog(self.root)
+
+    def show_at_risk_unified(self):
+        from education_system.university_system.modules.domain.academics.gui._cross_dialogs import (
+            show_at_risk_dialog,
+        )
+        show_at_risk_dialog(self.root)
+
+    def show_module_timeline(self):
+        from tkinter import simpledialog
+        from education_system.university_system.modules.domain.academics.gui._cross_dialogs import (
+            show_module_timeline_dialog,
+        )
+        code = simpledialog.askstring("Module timeline", "Module code:")
+        if code:
+            show_module_timeline_dialog(self.root, code)
 
     # Internal/Helper Functions
 

@@ -210,6 +210,37 @@ class UISetupMixin:
             command=lambda: open_module_gui(self.root, getattr(self, "auth", None)),
         )
 
+        # Cross-Domain — conflicts / workload / at-risk / timeline
+        from education_system.university_system.modules.domain.academics.gui._cross_dialogs import (
+            show_conflicts_dialog, show_instructor_workload_dialog,
+            show_at_risk_dialog, show_module_timeline_dialog,
+        )
+        from tkinter import simpledialog as _simpledialog
+        cross_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Cross-Domain", menu=cross_menu)
+        cross_menu.add_command(
+            label="Show conflicts for course…",
+            command=lambda: (
+                lambda c=_simpledialog.askstring("Conflicts", "Course code:"):
+                    show_conflicts_dialog(self.root, course_code=c) if c else None
+            )(),
+        )
+        cross_menu.add_command(
+            label="Instructor workload…",
+            command=lambda: show_instructor_workload_dialog(self.root),
+        )
+        cross_menu.add_command(
+            label="At-risk students (unified)…",
+            command=lambda: show_at_risk_dialog(self.root),
+        )
+        cross_menu.add_command(
+            label="Module timeline…",
+            command=lambda: (
+                lambda mc=_simpledialog.askstring("Module timeline", "Module code:"):
+                    show_module_timeline_dialog(self.root, mc) if mc else None
+            )(),
+        )
+
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label=_("course_management.menu.help"), menu=help_menu)
         help_menu.add_command(label=_("course_management.menu.about"), command=self.show_about)

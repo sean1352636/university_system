@@ -313,6 +313,30 @@ class ModuleSchedulingGUI:
             command=lambda: open_course_gui(self.root, getattr(self, "auth", None)),
         )
 
+        # Cross-domain tools (instructor workload, at-risk, module timeline)
+        from education_system.university_system.modules.domain.academics.gui._cross_dialogs import (
+            show_instructor_workload_dialog, show_at_risk_dialog,
+            show_module_timeline_dialog,
+        )
+        from tkinter import simpledialog as _simpledialog
+        cross_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Cross-Domain", menu=cross_menu)
+        cross_menu.add_command(
+            label="Instructor workload…",
+            command=lambda: show_instructor_workload_dialog(self.root),
+        )
+        cross_menu.add_command(
+            label="At-risk students (unified)…",
+            command=lambda: show_at_risk_dialog(self.root),
+        )
+        cross_menu.add_command(
+            label="Module timeline…",
+            command=lambda: (
+                lambda mc=_simpledialog.askstring("Module timeline", "Module code:"):
+                    show_module_timeline_dialog(self.root, mc) if mc else None
+            )(),
+        )
+
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label=_t("menu.help"), menu=help_menu)

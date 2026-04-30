@@ -80,13 +80,44 @@ class DashboardManager:
             grade_bar.pack(fill='x', pady=(0, 15))
             ttk.Label(
                 grade_bar,
-                text="Open the gradebook / transcripts in a separate window",
+                text="Open sibling academic GUIs (each in its own window):",
             ).pack(side='left')
             ttk.Button(
-                grade_bar,
-                text="Open Grade Management",
+                grade_bar, text="Grade Management",
                 command=self.gui.open_grade_management,
-            ).pack(side='right')
+            ).pack(side='right', padx=(4, 0))
+            ttk.Button(
+                grade_bar, text="Course Mgmt",
+                command=self.gui.open_course_management,
+            ).pack(side='right', padx=(4, 0))
+            ttk.Button(
+                grade_bar, text="Module Scheduling",
+                command=self.gui.open_module_scheduling,
+            ).pack(side='right', padx=(4, 0))
+            ttk.Button(
+                grade_bar, text="Exam Scheduler",
+                command=self.gui.open_exam_scheduler,
+            ).pack(side='right', padx=(4, 0))
+
+            # Cross-domain reports (shared with the four sibling GUIs).
+            cross_bar = ttk.Frame(self.gui.layout.content_area)
+            cross_bar.pack(fill='x', pady=(0, 15))
+            ttk.Label(
+                cross_bar,
+                text="Cross-domain reports:",
+            ).pack(side='left')
+            ttk.Button(
+                cross_bar, text="Module Timeline",
+                command=self.gui.show_module_timeline,
+            ).pack(side='right', padx=(4, 0))
+            ttk.Button(
+                cross_bar, text="At-Risk (unified)",
+                command=self.gui.show_at_risk_unified,
+            ).pack(side='right', padx=(4, 0))
+            ttk.Button(
+                cross_bar, text="Instructor Workload",
+                command=self.gui.show_instructor_workload,
+            ).pack(side='right', padx=(4, 0))
 
         # Create dashboard content with statistics
         self.create_dashboard_widgets()

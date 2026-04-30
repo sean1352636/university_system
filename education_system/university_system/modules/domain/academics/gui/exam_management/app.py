@@ -131,6 +131,37 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
             command=lambda: open_course_gui(self.root, getattr(self, "auth", None)),
         )
 
+        # Tools — cross-domain reports (conflicts, workload, at-risk, timeline).
+        from education_system.university_system.modules.domain.academics.gui._cross_dialogs import (
+            show_instructor_workload_dialog, show_at_risk_dialog,
+            show_module_timeline_dialog, show_conflicts_dialog,
+        )
+        from tkinter import simpledialog as _simpledialog
+        tools_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(
+            label="Conflicts with module schedule…",
+            command=lambda: (
+                lambda mc=_simpledialog.askstring("Module conflicts", "Module code:"):
+                    show_conflicts_dialog(self.root, module_code=mc) if mc else None
+            )(),
+        )
+        tools_menu.add_command(
+            label="Instructor workload…",
+            command=lambda: show_instructor_workload_dialog(self.root),
+        )
+        tools_menu.add_command(
+            label="At-risk students (unified)…",
+            command=lambda: show_at_risk_dialog(self.root),
+        )
+        tools_menu.add_command(
+            label="Module timeline…",
+            command=lambda: (
+                lambda mc=_simpledialog.askstring("Module timeline", "Module code:"):
+                    show_module_timeline_dialog(self.root, mc) if mc else None
+            )(),
+        )
+
         # Help menu
         help_menu = tk.Menu(menubar, tearoff=0)
         menubar.add_cascade(label=_("exam_scheduler.menu.help"), menu=help_menu)
