@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.109.3 — 2026-04-30](#81093---2026-04-30)
 - [8.109.2 — 2026-04-30](#81092---2026-04-30)
 - [8.109.1 — 2026-04-30](#81091---2026-04-30)
 - [8.109.0 — 2026-04-30](#81090---2026-04-30)
@@ -217,6 +218,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.109.3] — 2026-04-30
+
+### Restaurant meal-plan + staff-subsidy UI — close the last bus gap
+
+The 8.109.2 audit flagged `restaurant_bus` as the only shared
+service bus without a domain UI driving its meal-plan / subsidy
+entry points. This release adds two dialogs to the restaurant
+management GUI's customers tab so the four entry points
+(`top_up_meal_plan`, `meal_plan_balance`, `apply_su_discount`,
+`apply_staff_subsidy`) are all reachable from the GUI.
+
+#### Added — `customers/meal_plan.py`
+
+Two standalone module-level dialog functions following the same
+pattern as `customers/loyalty.py`:
+
+- **`manage_meal_plan_dialog(self)`** — picks a student from a
+  combobox (loads from `students` first, falls back to
+  `restaurant_customers`), shows the live balance from
+  `restaurant_bus.meal_plan_balance`, lets the operator enter an
+  amount and call `restaurant_bus.top_up_meal_plan` (records a
+  negative-amount finance row → ledger credit). Includes an SU
+  discount preview that shows what a sample order amount would
+  cost with `apply_su_discount` applied.
+- **`manage_staff_subsidy_dialog(self)`** — picks a staff
+  member (filters `users.role` to staff/admin/instructor) and
+  previews `apply_staff_subsidy` for a sample order amount.
+  Read-only — actual subsidy applies at point of sale.
+
+#### Changed — `restaurant_management_gui/core/main_gui.py`
+
+Imports the two new dialogs and attaches them to
+`RestaurantManagementGUI` alongside the loyalty dialogs.
+
+#### Changed — `restaurant_management_gui/core/tabs.py`
+
+Adds two buttons to the customers-tab button row: "Meal Plan" and
+"Staff Subsidy", wired to the new dialog methods.
+
+#### Verified live
+
+End-to-end smoke against the seeded DB with student `S12345`:
+
+- `meal_plan_balance` → £0.00 before
+- `top_up_meal_plan(£25.50)` → finance tx 24 created
+- `meal_plan_balance` → £25.50 after (derived from the ledger,
+  matches the unified student-account view)
+- `apply_su_discount(£30.0)` → `(30.0, False)` for a non-SU student
+
+#### Bus consumer audit — final state (corrected)
+
+All shared service buses now have at least one live domain caller
+**including a GUI invocation path**:
+
+| Bus | Live consumer |
+| --- | --- |
+| `restaurant_bus` | restaurant management GUI customers tab (this release) |
+
+(The remaining 16 bus rows were already live in 8.109.2.)
 
 ---
 

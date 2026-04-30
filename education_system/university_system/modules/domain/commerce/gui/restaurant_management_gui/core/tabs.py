@@ -194,6 +194,10 @@ def create_customers_tab(self, parent=None):
               command=self.manage_loyalty_dialog).pack(side='left', padx=5)
     ttk.Button(btn_frame, text=_t("restaurant.customer_feedback"),
               command=self.manage_customer_feedback).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text="Meal Plan",
+              command=self.manage_meal_plan_dialog).pack(side='left', padx=5)
+    ttk.Button(btn_frame, text="Staff Subsidy",
+              command=self.manage_staff_subsidy_dialog).pack(side='left', padx=5)
 
     columns = ('ID', 'Name', 'Email', 'Phone', 'Loyalty Tier', 'Points', 'Total Spent')
     column_labels = (
