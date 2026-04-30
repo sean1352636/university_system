@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.107.0 — 2026-04-30](#81070---2026-04-30)
 - [8.106.0 — 2026-04-30](#81060---2026-04-30)
 - [8.105.0 — 2026-04-30](#81050---2026-04-30)
 - [8.104.0 — 2026-04-28](#81040---2026-04-28)
@@ -213,6 +214,160 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.107.0] — 2026-04-30
+
+### Careers / Trips / Parking / Restaurant / Email — bus expansion + chatbot becomes a real actor
+
+Continues the integration spine into the careers (jobs / internships /
+placements / apprenticeships / mentorships), travel/transport
+(trips, parking), and dining/notifications (restaurant, email)
+domains. Five new shared service modules, nine new bus events,
+three new embeddable panels, and a chatbot intent shim that finally
+turns the named tool surface into live natural-language replies
+without an LLM.
+
+#### Added — bus events
+
+Nine new event constants in `gui/_event_bus.py`:
+`careers.engagement.started`, `careers.engagement.ended`,
+`careers.hours.logged`, `careers.job.posted`,
+`trip.created`, `trip.registration.changed`,
+`parking.violation`,
+`restaurant.meal_plan.changed`, `email.sent`.
+
+#### Added — five shared service modules under `modules/services/`
+
+- **`careers_bus.py`** — single engagement model spanning
+  job/internship/placement/apprenticeship/mentorship.
+  `start_engagement`, `end_engagement`, `log_hours` (auto-fires
+  `EVENT_GRADE_CHANGED(action='hours_complete')` when the running
+  total hits `hours_required`), `engagement_progress`,
+  `apprenticeship_off_job_hours` (derived from `attendance_records`
+  to certify the levy 20% rule), `upsert_employer` (canonical
+  writer — Employee Portal is the only path), `get_employer`,
+  `list_employers`, `post_job`, `recent_jobs`, `can_apply`
+  (refuses with finance hold), `post_apprenticeship_levy_charge`,
+  `snapshot_alumni_employer` (auto-derives alumni current_employer
+  from the most recent job/internship engagement).
+- **`trip_bus.py`** — university trips + SU trips on one model
+  (kind tagged in description). `create_trip` writes the row,
+  persists as a calendar event, gates leader availability via HR,
+  fires `EVENT_TRIP_CREATED`. `register_student` refuses with
+  finance hold; raises the trip-fee charge.
+  `cancel_registration` posts a cancellation fee and a
+  negative-amount refund counter-charge. `record_incident`
+  escalates Major/Critical incidents to `cases_bus.open_case`.
+  Resolves `students.student_id → users.id` for the FK on
+  `trip_registrations.user_id`.
+- **`parking_bus.py`** — `issue_permit` (resolves user_id FK),
+  `suspend_permit` (places a `source='parking_suspension'` finance
+  hold so the existing campus-gate block applies),
+  `record_violation` (raises the fine via Finance; on the third
+  unpaid violation in 12 months opens a DP case via `cases_bus`),
+  `outstanding_parking_charges`. Repeat-offender count is by
+  plate, not by permit, so unpermitted plates also escalate.
+- **`restaurant_bus.py`** — `top_up_meal_plan` (negative-amount
+  Finance row = credit), `record_pos_transaction`,
+  `meal_plan_balance` (derived from finance txs),
+  `apply_su_discount` (10% off for any active SU member),
+  `apply_staff_subsidy` (20% off for active staff),
+  `publish_menu_for` (writes calendar `event_type='menu'`),
+  `menu_for(date)`.
+- **`email_bus.py`** — Email as a *universal bus subscriber*. Wires
+  `subscribe(...)` for 12 events at module import; renders 12
+  built-in templates; logs to the existing `email_log`; fires
+  `EVENT_EMAIL_SENT`. Per-user opt-in via new `email_preferences`
+  table (default-on, opt-out per event_kind). Public surface:
+  `set_pref`, `is_enabled`, `get_prefs`, `send_templated`,
+  `mirror_inbox_to_email`. Auto-links emails to a case evidence
+  pack via `document_bus.publish_document_changed` when payload
+  carries `case_id`.
+
+#### Added — single canonical writer for `module_schedule` slots
+
+`services/module_scheduling/slot_writer.py.move_slot` (introduced in
+8.106; in 8.107 it gets a holiday-warnings field on its return
+dict). Timetable's drag-to-reschedule binding now routes through it.
+
+#### Added — embeddable panels
+
+`EngagementsPanel`, `TripsAndParkingPanel`, `RestaurantPanel` in
+`_cross_dialogs.py`. Each subscribes to its domain's bus events
+and refreshes automatically. `StudentFinancePanel` extended to show
+a meal-plan balance sub-line.
+
+#### Added — chatbot intent shim
+
+`infrastructure/ai/university_chatbot/intent_handlers.py` — a
+keyword-driven router that turns natural-language phrasing into
+live `chatbot_tools.call_tool` invocations. Eleven keyword groups
+covering finance balance/holds, grades, jobs, cases, clubs,
+engagements/placements, timetable per module, term/exam-window,
+cert expiry, trips, parking, menus, meal-plan balance, and email
+preferences. Now `"what's my balance?"` returns the actual ledger,
+not canned text. Bus subscribers + opt-in SU advocacy + selection
+context still apply on top.
+
+#### Added — chatbot tools (10 new)
+
+Total tool count rises from 19 → 29:
+`my_engagements`, `recent_jobs`, `placement_progress`, `my_trips`,
+`upcoming_trips`, `my_parking`, `todays_menu`, `meal_plan_balance`,
+`email_prefs`, `set_email_pref`. Mutation tools (`move_slot`,
+`book_room`, `schedule_exam`, `queue_message`) keep their
+deliberate exclusion from natural-language routing — confirmation
+flow needed.
+
+#### Added — new validation gates
+
+* Trip leader availability gate (`is_available_on`) — refuses to
+  create a trip when the leader is on approved leave.
+* Trip registration finance-hold gate — refuses to register when
+  the student has an active hold.
+* Application gate (`careers_bus.can_apply`) — same hold check
+  for Job Board / Internship apply paths.
+
+#### Added — `chatbot_inbox ↔ email` symmetry
+
+`chatbot_inbox.queue_message_for` now also calls
+`email_bus.mirror_inbox_to_email`, sending the same notification
+via email when the user has the `chatbot_inbox` pref enabled
+(default-on).
+
+#### Changed
+
+- `_cross_services.find_free_rooms` callers now include SU room
+  bookings (via `trip_bus.create_trip` location lookups), Module
+  Scheduling's `AddScheduleDialog` ("Suggest Free Rooms" button),
+  and Assignment creation ("Suggest Venue").
+- Module Scheduling's selection-handler now soft-filters its
+  module-list search box when a sibling publishes a `course_code`.
+- `Disciplinary Portal.add_action` routes structured action types
+  through `cases_bus.apply_sanction` so they fire the right
+  Finance / cert side-effects.
+- `parking_bus.record_violation` repeat-offender check now matches
+  by plate, not by permit, so unpermitted plates escalate too.
+
+#### Verified
+
+End-to-end on the live `student_records.db`. Each spine
+round-tripped with real student/staff IDs:
+- careers: 100h placement → 50h logged → +60h → completes →
+  `EVENT_GRADE_CHANGED(action='hours_complete')` fires
+- trips: create → calendar event → register £400 → cancel with
+  £50 fee + £300 refund (positive + negative finance txs)
+- parking: 3 violations on plate `TEST-001` → 3 charges (£25/£50/£75)
+  → 3rd opens a DP case (`case_id=7`); `suspend_permit` →
+  `EVENT_HOLD_CHANGED` → `has_active_hold(SID)=True`
+- restaurant: £50 top-up + £8.50 POS → balance £41.50; 4 emails
+  landed in `email_log` from charge-raised events
+- email: `set_pref(SID, 'finance.charge.raised', False)` →
+  `send_templated` returns None; `force=True` overrides
+- intent shim: `"what's my balance?"` → real ledger; `"open cases
+  against me"` → real DP rows; `"what's on the menu?"` → real
+  calendar items.
+
 
 ## [8.106.0] — 2026-04-30
 

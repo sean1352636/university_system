@@ -359,6 +359,124 @@ def tool_request_su_advocacy(user_id: str | int, case_id: int,
         return {"ok": False, "error": str(exc)}
 
 
+def tool_my_engagements(user_id: str | int) -> dict[str, Any]:
+    """List jobs/internships/placements/apprenticeships for the user."""
+    try:
+        from education_system.university_system.modules.services.careers_bus import (
+            list_engagements,
+        )
+        return {"ok": True, "engagements": list_engagements(user_id)}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def tool_recent_jobs(*, category: str | None = None,
+                     since: str | None = None) -> dict[str, Any]:
+    """Recent job-board postings, optionally filtered by category/date."""
+    try:
+        from education_system.university_system.modules.services.careers_bus import (
+            recent_jobs,
+        )
+        return {"ok": True,
+                "jobs": recent_jobs(category=category, since=since)}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def tool_placement_progress(engagement_id: int) -> dict[str, Any]:
+    """Hours logged vs required for one placement / apprenticeship."""
+    try:
+        from education_system.university_system.modules.services.careers_bus import (
+            engagement_progress,
+        )
+        return {"ok": True, "progress": engagement_progress(int(engagement_id))}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def tool_my_trips(user_id: str | int) -> dict[str, Any]:
+    """List the user's trip registrations."""
+    try:
+        from education_system.university_system.modules.services.trip_bus import (
+            list_registrations_for,
+        )
+        return {"ok": True, "trips": list_registrations_for(user_id)}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def tool_upcoming_trips(*, since: str | None = None) -> dict[str, Any]:
+    """List trips on the calendar (default: from today)."""
+    try:
+        from datetime import date as _date
+        from education_system.university_system.modules.services.trip_bus import (
+            list_trips,
+        )
+        floor = since or _date.today().isoformat()
+        return {"ok": True, "trips": list_trips(since=floor)}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def tool_my_parking(user_id: str | int) -> dict[str, Any]:
+    """User's permits + outstanding parking charges."""
+    try:
+        from education_system.university_system.modules.services.parking_bus import (
+            list_permits_for, outstanding_parking_charges,
+        )
+        return {
+            "ok": True,
+            "permits": list_permits_for(user_id),
+            "fines": outstanding_parking_charges(user_id),
+        }
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def tool_todays_menu() -> dict[str, Any]:
+    """Today's menu rows from the academic calendar."""
+    try:
+        from education_system.university_system.modules.services.restaurant_bus import (
+            menu_for,
+        )
+        return {"ok": True, "menus": menu_for()}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def tool_meal_plan_balance(user_id: str | int) -> dict[str, Any]:
+    try:
+        from education_system.university_system.modules.services.restaurant_bus import (
+            meal_plan_balance,
+        )
+        return {"ok": True, "balance": meal_plan_balance(user_id)}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def tool_email_prefs(user_id: str | int) -> dict[str, Any]:
+    """List the user's per-event email preferences."""
+    try:
+        from education_system.university_system.modules.services.email_bus import (
+            get_prefs,
+        )
+        return {"ok": True, "prefs": get_prefs(user_id)}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+def tool_set_email_pref(user_id: str | int, event_kind: str,
+                        enabled: bool) -> dict[str, Any]:
+    """Mutation: opt the user in or out of one event's email."""
+    try:
+        from education_system.university_system.modules.services.email_bus import (
+            set_pref,
+        )
+        return {"ok": set_pref(user_id, event_kind, bool(enabled))}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
@@ -385,6 +503,16 @@ TOOLS: dict[str, Callable[..., dict[str, Any]]] = {
     "my_open_cases":       tool_my_open_cases,
     "my_clubs":            tool_my_clubs,
     "request_su_advocacy": tool_request_su_advocacy,
+    "my_engagements":      tool_my_engagements,
+    "recent_jobs":         tool_recent_jobs,
+    "placement_progress":  tool_placement_progress,
+    "my_trips":            tool_my_trips,
+    "upcoming_trips":      tool_upcoming_trips,
+    "my_parking":          tool_my_parking,
+    "todays_menu":         tool_todays_menu,
+    "meal_plan_balance":   tool_meal_plan_balance,
+    "email_prefs":         tool_email_prefs,
+    "set_email_pref":      tool_set_email_pref,
 }
 
 

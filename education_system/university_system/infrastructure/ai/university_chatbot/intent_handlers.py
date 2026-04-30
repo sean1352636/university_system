@@ -73,25 +73,77 @@ def handle_registration_query(chatbot, nlp_result: Dict, context: ConversationCo
 
 
 def handle_financial_query(chatbot, nlp_result: Dict, context: ConversationContext) -> str:
-    """Handle financial queries"""
-    entities = nlp_result["entities"]
+    """Handle financial queries — routes to live tools.
 
-    if "money" in entities:
-        return "I can help with financial information. For specific payment amounts and due dates, please log into your student portal or contact the finance office."
-
-    return "I can assist with financial aid, tuition payments, and scholarship information. What specific financial topic can I help you with?"
+    Pulls the actual balance and active holds from finance_bus via
+    ``chatbot_tools`` rather than returning a canned string. Falls
+    back to canned text on any error.
+    """
+    sid = context.entities.get("student_id") or context.user_id
+    if not sid:
+        return ("I need your student ID to look up balance or holds. "
+                "Please provide it.")
+    try:
+        from education_system.university_system.modules.services.chatbot_tools import (
+            call_tool,
+        )
+        bal = call_tool("balance", student_id=sid)
+        holds = call_tool("active_holds", student_id=sid)
+    except Exception:
+        return ("Finance lookup is unavailable right now. Please log "
+                "into your student portal for balance and holds.")
+    if not bal.get("ok"):
+        return ("I couldn't read your finance balance. Try the student "
+                "portal or contact the finance office.")
+    bits = [f"Balance: £{float(bal.get('balance') or 0):,.2f}"]
+    hold_list = (holds.get("holds") if holds.get("ok") else None) or []
+    if hold_list:
+        reasons = ", ".join((h.get("reason") or "") for h in hold_list[:3])
+        bits.append(f"⚠ {len(hold_list)} active hold(s) — {reasons}")
+    else:
+        bits.append("✓ No active holds")
+    return ". ".join(bits) + "."
 
 
 def handle_grades_query(chatbot, nlp_result: Dict, context: ConversationContext) -> str:
-    """Handle grade-related queries"""
-    if "student_id" in context.entities:
-        student_id = context.entities["student_id"]
-        gpa_info = chatbot.calculate_gpa(student_id)
+    """Handle grade-related queries — uses compute_module_grade when a
+    module code is available, otherwise falls back to GPA."""
+    sid = context.entities.get("student_id") or context.user_id
+    if not sid:
+        return "To check grades I'll need your student ID."
 
-        if "error" not in gpa_info:
-            return f"Your current GPA is {gpa_info['gpa']} based on {gpa_info['total_credits']} credit hours. For detailed grade information, please check your student portal."
+    module = (nlp_result.get("entities", {}).get("module_code")
+              or context.entities.get("module_code"))
+    try:
+        from education_system.university_system.modules.services.chatbot_tools import (
+            call_tool,
+        )
+        if module:
+            res = call_tool("module_grade", student_id=sid, module_code=module)
+            if res.get("ok"):
+                r = res["result"]
+                pct = r.get("percentage")
+                letter = r.get("letter") or ""
+                if pct is None:
+                    return (f"No graded work yet for {module}. "
+                            f"Components on file: "
+                            f"{', '.join(c.get('name','?') for c in r.get('components', [])) or 'none'}.")
+                return (f"{module}: {pct}% ({letter}) — "
+                        f"{len(r.get('components') or [])} components, "
+                        f"{len(r.get('missing') or [])} missing.")
+    except Exception:
+        pass
 
-    return "To check your grades and GPA, I'll need your student ID. Please provide it to continue."
+    # GPA fallback (legacy chatbot helper).
+    try:
+        gpa_info = chatbot.calculate_gpa(sid)
+        if gpa_info and "error" not in gpa_info:
+            return (f"Your current GPA is {gpa_info['gpa']} based on "
+                    f"{gpa_info['total_credits']} credit hours.")
+    except Exception:
+        pass
+    return ("Tell me a module code (e.g. 'CS101') for a specific grade, "
+            "or check the student portal for the full transcript.")
 
 
 def handle_technical_query(chatbot, nlp_result: Dict, context: ConversationContext) -> str:
@@ -100,15 +152,259 @@ def handle_technical_query(chatbot, nlp_result: Dict, context: ConversationConte
 
 
 def handle_general_query(chatbot, nlp_result: Dict, context: ConversationContext) -> str:
-    """Handle general queries using FAQ matching"""
+    """Handle general queries — first try a tool-keyword shim, then FAQ.
+
+    Routes natural-language queries to the live chatbot_tools surface
+    when keywords match (jobs / cases / clubs / schedule / certs /
+    timetable / engagements / period). Falls through to FAQ matching
+    when nothing matches.
+    """
     user_message = context.messages[-1]["user_message"]
+
+    tool_reply = _route_to_tools(chatbot, user_message, context)
+    if tool_reply is not None:
+        return tool_reply
 
     best_match = find_best_faq_match(chatbot, user_message)
 
     if best_match:
         return best_match
 
-    return "I'm here to help with university-related questions. You can ask about courses, registration, grades, fees, or technical support. You can also use voice commands by saying 'start voice mode'. How can I assist you today?"
+    return ("I'm here to help with university-related questions. You "
+            "can ask about courses, registration, grades, fees, jobs, "
+            "your timetable, cases, or technical support. How can I "
+            "assist you today?")
+
+
+def _route_to_tools(chatbot, message: str,
+                    context: ConversationContext) -> Optional[str]:
+    """Keyword-shim that turns common phrases into live tool calls.
+
+    Returns a templated reply if a tool fired, ``None`` otherwise so
+    the FAQ matcher gets a chance.
+    """
+    if not message:
+        return None
+    text = message.lower()
+    sid = context.entities.get("student_id") or context.user_id
+
+    try:
+        from education_system.university_system.modules.services.chatbot_tools import (
+            call_tool,
+        )
+    except Exception:
+        return None
+
+    # Job board.
+    if any(k in text for k in ("jobs", "job listings", "internship",
+                               "vacancies", "openings")):
+        try:
+            res = call_tool("recent_jobs")
+            jobs = res.get("jobs") if res.get("ok") else []
+            if not jobs:
+                return "No recent job postings on the board right now."
+            lines = [
+                f"• {j.get('job_title','?')} @ {j.get('company_name','?')}"
+                f" ({j.get('location') or 'remote/unknown'})"
+                for j in jobs[:5]
+            ]
+            return "Recent postings:\n" + "\n".join(lines)
+        except Exception:
+            pass
+
+    # Cases.
+    if any(k in text for k in ("misconduct case", "disciplinary",
+                               "open cases", "case against me")):
+        if not sid:
+            return "Tell me your user ID and I'll check open cases."
+        res = call_tool("my_open_cases", user_id=sid)
+        cases = res.get("cases") if res.get("ok") else []
+        if not cases:
+            return "No open misconduct or disciplinary cases on file."
+        lines = [
+            f"• {c.get('kind')} #{c.get('case_id')} "
+            f"({c.get('severity') or '—'}, {c.get('status') or 'open'})"
+            for c in cases
+        ]
+        return "Open cases:\n" + "\n".join(lines)
+
+    # SU clubs / engagements.
+    if "club" in text or "society" in text or "societies" in text:
+        if not sid:
+            return "Tell me your student ID and I'll check your clubs."
+        res = call_tool("my_clubs", user_id=sid)
+        clubs = res.get("clubs") if res.get("ok") else []
+        if not clubs:
+            return "You aren't recorded in any active SU clubs yet."
+        return ("Your active clubs: "
+                + ", ".join(c.get("name") or "?" for c in clubs))
+
+    if any(k in text for k in ("placement", "apprenticeship",
+                               "engagement", "my placements")):
+        if not sid:
+            return "Tell me your student ID and I'll check engagements."
+        res = call_tool("my_engagements", user_id=sid)
+        engs = res.get("engagements") if res.get("ok") else []
+        if not engs:
+            return "No careers engagements recorded for you yet."
+        active = [e for e in engs if e.get("status") == "active"]
+        line = (f"{len(engs)} engagement(s); "
+                f"{len(active)} active.")
+        for e in active[:3]:
+            req = e.get("hours_required") or 0
+            done = e.get("hours_logged") or 0
+            pct = f" ({done/req*100:.0f}%)" if req > 0 else ""
+            line += (f"\n• {e.get('kind')}: {e.get('role') or '?'} "
+                     f"— {int(done)}h{pct}")
+        return line
+
+    # Module timetable / schedule.
+    if any(k in text for k in ("timetable", "schedule", "next class",
+                               "when is")):
+        # Try to extract a module code from the entities or the message.
+        module = (nlp_result_safe_module(text)
+                  or context.entities.get("module_code"))
+        if module:
+            res = call_tool("module_timeline", module_code=module)
+            ev = res.get("events") if res.get("ok") else []
+            if not ev:
+                return f"No scheduled events on file for {module}."
+            lines = [
+                f"• {e.get('kind')} {e.get('date') or 'recurring'} "
+                f"— {e.get('label') or ''}"
+                for e in ev[:6]
+            ]
+            return f"{module}:\n" + "\n".join(lines)
+
+    # Term / exam-window context.
+    if any(k in text for k in ("term", "exam window", "exam period",
+                               "submission window", "reading week")):
+        kind = "term"
+        for k in ("exam_window", "exam window", "submission_window",
+                  "submission window", "reading_week", "reading week"):
+            if k in text:
+                kind = k.replace(" ", "_")
+                break
+        res = call_tool("current_period", kind=kind)
+        period = res.get("period") if res.get("ok") else None
+        if not period:
+            return f"No active {kind.replace('_', ' ')} on the calendar."
+        return (f"Current {kind.replace('_', ' ')}: "
+                f"{period.get('name','?')} "
+                f"({period.get('date_start') or period.get('date','?')}"
+                f"{' → ' + period['date_end'] if period.get('date_end') else ''}).")
+
+    # Trips — registered trips for the user, or all upcoming.
+    if "trip" in text or "field trip" in text or "excursion" in text:
+        if "upcoming" in text or "available" in text or "what trips" in text:
+            res = call_tool("upcoming_trips")
+            trips = res.get("trips") if res.get("ok") else []
+            if not trips:
+                return "No upcoming trips on the calendar."
+            lines = [
+                f"• {t.get('trip_name','?')} → {t.get('destination','?')} "
+                f"({t.get('start_date','?')})"
+                for t in trips[:5]
+            ]
+            return "Upcoming trips:\n" + "\n".join(lines)
+        if not sid:
+            return "Tell me your student ID and I'll list your trips."
+        res = call_tool("my_trips", user_id=sid)
+        regs = res.get("trips") if res.get("ok") else []
+        if not regs:
+            return "You're not registered on any trips."
+        lines = [
+            f"• {r.get('trip_name','?')} → {r.get('destination','?')} "
+            f"({r.get('start_date','?')}) — {r.get('status','?')}"
+            for r in regs[:5]
+        ]
+        return "Your trips:\n" + "\n".join(lines)
+
+    # Parking — permits + fines.
+    if "parking" in text or "permit" in text or "parking fine" in text:
+        if not sid:
+            return "Tell me your ID and I'll check parking."
+        res = call_tool("my_parking", user_id=sid)
+        if not res.get("ok"):
+            return "Parking lookup is unavailable right now."
+        permits = res.get("permits") or []
+        fines = res.get("fines") or []
+        bits = []
+        if permits:
+            active = [p for p in permits
+                      if p.get("status") == "active"
+                      or p.get("active_status") == 1]
+            bits.append(f"{len(active)} active permit(s)")
+        else:
+            bits.append("no permits on file")
+        if fines:
+            total = sum(float(f.get("amount") or 0) for f in fines)
+            bits.append(f"{len(fines)} outstanding fine(s) £{total:,.2f}")
+        else:
+            bits.append("no outstanding fines")
+        return "Parking: " + " · ".join(bits) + "."
+
+    # Restaurant menu / meal plan.
+    if any(k in text for k in ("menu", "lunch", "dinner", "what's for")):
+        res = call_tool("todays_menu")
+        menus = res.get("menus") if res.get("ok") else []
+        if not menus:
+            return "No menu posted for today yet."
+        first = menus[0]
+        items = first.get("body", {}).get("items", [])
+        loc = first.get("body", {}).get("location", "")
+        if not items:
+            return f"Menu for {first.get('date','today')} is empty."
+        return (f"Today's menu ({loc or 'campus'}):\n"
+                + "\n".join(f"• {i}" for i in items[:8]))
+
+    if "meal plan" in text or "meal balance" in text:
+        if not sid:
+            return "Tell me your student ID and I'll check your meal plan."
+        res = call_tool("meal_plan_balance", user_id=sid)
+        if not res.get("ok"):
+            return "Meal-plan lookup unavailable."
+        return f"Meal-plan balance: £{float(res.get('balance') or 0):,.2f}."
+
+    # Email prefs / opt-out.
+    if any(k in text for k in ("email pref", "stop email", "unsubscribe",
+                               "email notification", "stop emailing")):
+        if not sid:
+            return "Tell me your user ID and I'll list email preferences."
+        res = call_tool("email_prefs", user_id=sid)
+        prefs = res.get("prefs") if res.get("ok") else {}
+        if not prefs:
+            return "No email preferences on file."
+        on = [k for k, v in prefs.items() if v]
+        off = [k for k, v in prefs.items() if not v]
+        return (f"You're opted into {len(on)} event(s), out of "
+                f"{len(off)}. To toggle one, ask 'stop emailing me "
+                f"about <event_kind>'.")
+
+    # Cert expiry — for staff-facing chats.
+    if "certif" in text or "expir" in text:
+        res = call_tool("certs_expiring", within_days=60)
+        certs = res.get("certs") if res.get("ok") else []
+        if not certs:
+            return "No certifications expiring in the next 60 days."
+        lines = [
+            f"• {c.get('kind','?')} (subject {c.get('subject_id')}) — "
+            f"expires {c.get('expires_on','?')}"
+            for c in certs[:5]
+        ]
+        return f"Expiring soon ({len(certs)} total):\n" + "\n".join(lines)
+
+    return None
+
+
+def nlp_result_safe_module(text: str) -> Optional[str]:
+    """Tiny regex-free extractor: the first uppercase-letter+digits token."""
+    for tok in (text or "").upper().split():
+        if any(c.isalpha() for c in tok) and any(c.isdigit() for c in tok):
+            cleaned = "".join(c for c in tok if c.isalnum())
+            if 3 <= len(cleaned) <= 12:
+                return cleaned
+    return None
 
 
 def find_best_faq_match(chatbot, query: str) -> Optional[str]:

@@ -56,6 +56,7 @@ def queue_message_for(user_id: str | int, message: str,
     if not user_id or not message:
         return None
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    msg_id: int | None = None
     try:
         with get_connection() as conn:
             _ensure(conn)
@@ -66,10 +67,21 @@ def queue_message_for(user_id: str | int, message: str,
                 (str(user_id), source, message, payload, now),
             )
             conn.commit()
-            return cur.lastrowid
+            msg_id = cur.lastrowid
     except Exception as exc:
         logger.warning("queue_message_for(%s) failed: %s", user_id, exc)
         return None
+
+    # Mirror to email when the user has opted in (default-on). Same
+    # notification, two channels, single config — purely best-effort.
+    try:
+        from education_system.university_system.modules.services.email_bus import (
+            mirror_inbox_to_email,
+        )
+        mirror_inbox_to_email(user_id, message, source=source)
+    except Exception:
+        pass
+    return msg_id
 
 
 def pop_messages_for(user_id: str | int,

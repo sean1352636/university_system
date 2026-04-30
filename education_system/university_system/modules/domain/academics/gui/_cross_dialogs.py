@@ -374,6 +374,22 @@ class StudentFinancePanel(ttk.Frame):
             balance, holds = 0.0, []
 
         self._balance_var.set(f"Balance: £{balance:,.2f}")
+
+        # Meal-plan balance line (#8). Best-effort; absent service =
+        # silent skip.
+        try:
+            from education_system.university_system.modules.services.restaurant_bus import (
+                meal_plan_balance,
+            )
+            mp = meal_plan_balance(self._student_id)
+            if mp:
+                self._balance_var.set(
+                    f"Balance: £{balance:,.2f} · "
+                    f"Meal plan: £{mp:,.2f}"
+                )
+        except Exception:
+            pass
+
         if holds:
             self._hold_var.set(f"⚠ {len(holds)} active hold(s)")
             self._hold_label.configure(foreground="#c0392b")
@@ -1623,6 +1639,371 @@ class StudentUnionPanel(ttk.Frame):
             ))
 
 
+class EngagementsPanel(ttk.Frame):
+    """Inline view of careers engagements — jobs / internships /
+    placements / apprenticeships / mentorships — for one subject.
+
+    Works for current students (read live engagements) and alumni
+    (read past engagements). Auto-refreshes on
+    ``careers.engagement.started/ended`` and ``careers.hours.logged``.
+    """
+
+    _OVERDUE_FG = "#c0392b"
+    _PROGRESS_FG = "#0066cc"
+
+    def __init__(self, master: tk.Misc,
+                 subject_id: str | int | None = None,
+                 *, listen_to_events: bool = True) -> None:
+        super().__init__(master)
+        self._subject_id: str | None = None
+
+        self._heading_var = tk.StringVar(value="Engagements")
+        ttk.Label(
+            self, textvariable=self._heading_var,
+            font=("Helvetica", 11, "bold"),
+        ).pack(anchor="w", padx=8, pady=(8, 4))
+
+        self._summary_var = tk.StringVar(value="—")
+        ttk.Label(self, textvariable=self._summary_var).pack(
+            anchor="w", padx=10, pady=(0, 4),
+        )
+
+        cols = ("kind", "role", "employer", "hours", "status")
+        self._tree = ttk.Treeview(self, columns=cols, show="headings", height=5)
+        for c, w in zip(cols, (110, 160, 160, 110, 90)):
+            self._tree.heading(c, text=c.capitalize())
+            self._tree.column(c, width=w, anchor="w")
+        self._tree.tag_configure("overdue", foreground=self._OVERDUE_FG)
+        self._tree.tag_configure("progressing", foreground=self._PROGRESS_FG)
+        self._tree.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+
+        if listen_to_events:
+            try:
+                from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                    subscribe_tk,
+                    EVENT_ENGAGEMENT_STARTED, EVENT_ENGAGEMENT_ENDED,
+                    EVENT_HOURS_LOGGED,
+                )
+
+                def _on_change(**payload):
+                    sid = payload.get("student_id")
+                    if (self._subject_id and
+                            (sid is None or str(sid) == self._subject_id)):
+                        self.refresh()
+
+                for evt in (EVENT_ENGAGEMENT_STARTED,
+                            EVENT_ENGAGEMENT_ENDED,
+                            EVENT_HOURS_LOGGED):
+                    subscribe_tk(evt, self, _on_change)
+            except Exception:
+                pass
+
+        if subject_id is not None:
+            self.set_subject(subject_id)
+
+    def set_subject(self, subject_id: str | int) -> None:
+        self._subject_id = str(subject_id) if subject_id is not None else None
+        self.refresh()
+
+    def refresh(self) -> None:
+        for item in self._tree.get_children():
+            self._tree.delete(item)
+        if not self._subject_id:
+            self._heading_var.set("Engagements")
+            self._summary_var.set("—")
+            return
+        self._heading_var.set(f"Engagements — {self._subject_id}")
+
+        try:
+            from education_system.university_system.modules.services.careers_bus import (
+                list_engagements,
+            )
+            rows = list_engagements(self._subject_id)
+        except Exception as exc:
+            self._summary_var.set(f"(unavailable: {exc})")
+            return
+
+        active = [r for r in rows if r.get("status") == "active"]
+        self._summary_var.set(
+            f"{len(rows)} engagements · {len(active)} active"
+        )
+
+        for r in rows:
+            req = r.get("hours_required") or 0
+            done = r.get("hours_logged") or 0
+            pct = f"{(done / req * 100):.0f}%" if req > 0 else "—"
+            hours_label = (
+                f"{int(done)}/{int(req)}h ({pct})" if req > 0
+                else (f"{int(done)}h" if done else "—")
+            )
+            tag = ()
+            if req > 0 and done < req and r.get("status") != "active":
+                tag = ("overdue",)
+            elif req > 0 and 0 < done < req:
+                tag = ("progressing",)
+
+            employer = ""
+            try:
+                from education_system.university_system.modules.services.careers_bus import (
+                    get_employer,
+                )
+                emp = get_employer(r.get("employer_id")) if r.get("employer_id") else None
+                if emp:
+                    employer = emp.get("company_name") or ""
+            except Exception:
+                pass
+
+            self._tree.insert("", "end", values=(
+                r.get("kind") or "",
+                r.get("role") or "",
+                employer,
+                hours_label,
+                r.get("status") or "",
+            ), tags=tag)
+
+
+class TripsAndParkingPanel(ttk.Frame):
+    """Inline view of upcoming trips + active parking permits + fines.
+
+    Refreshes on ``trip.created``, ``trip.registration.changed``,
+    ``parking.violation``, and ``finance.charge.raised`` (fee paid).
+    Embed alongside ``EngagementsPanel`` / ``OpenCasesPanel`` on
+    student or staff profile pages.
+    """
+
+    def __init__(self, master: tk.Misc,
+                 subject_id: str | int | None = None,
+                 *, listen_to_events: bool = True) -> None:
+        super().__init__(master)
+        self._subject_id: str | None = None
+
+        self._heading_var = tk.StringVar(value="Trips & parking")
+        ttk.Label(
+            self, textvariable=self._heading_var,
+            font=("Helvetica", 11, "bold"),
+        ).pack(anchor="w", padx=8, pady=(8, 4))
+
+        self._summary_var = tk.StringVar(value="—")
+        ttk.Label(self, textvariable=self._summary_var).pack(
+            anchor="w", padx=10, pady=(0, 4),
+        )
+
+        cols = ("kind", "ref", "info", "when")
+        self._tree = ttk.Treeview(self, columns=cols, show="headings", height=5)
+        for c, w in zip(cols, (90, 110, 280, 110)):
+            self._tree.heading(c, text=c.capitalize())
+            self._tree.column(c, width=w, anchor="w")
+        self._tree.tag_configure("violation", foreground="#c0392b")
+        self._tree.tag_configure("upcoming", foreground="#0066cc")
+        self._tree.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+
+        if listen_to_events:
+            try:
+                from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                    subscribe_tk,
+                    EVENT_TRIP_CREATED, EVENT_TRIP_REGISTRATION_CHANGED,
+                    EVENT_PARKING_VIOLATION, EVENT_CHARGE_RAISED,
+                )
+
+                def _on_change(**payload):
+                    sid = (payload.get("student_id")
+                           or payload.get("holder_id"))
+                    if (self._subject_id and
+                            (sid is None or str(sid) == self._subject_id)):
+                        self.refresh()
+
+                for evt in (EVENT_TRIP_CREATED,
+                            EVENT_TRIP_REGISTRATION_CHANGED,
+                            EVENT_PARKING_VIOLATION,
+                            EVENT_CHARGE_RAISED):
+                    subscribe_tk(evt, self, _on_change)
+            except Exception:
+                pass
+
+        if subject_id is not None:
+            self.set_subject(subject_id)
+
+    def set_subject(self, subject_id: str | int) -> None:
+        self._subject_id = str(subject_id) if subject_id is not None else None
+        self.refresh()
+
+    def refresh(self) -> None:
+        for item in self._tree.get_children():
+            self._tree.delete(item)
+        if not self._subject_id:
+            self._heading_var.set("Trips & parking")
+            self._summary_var.set("—")
+            return
+        self._heading_var.set(f"Trips & parking — {self._subject_id}")
+
+        try:
+            from education_system.university_system.modules.services.trip_bus import (
+                list_registrations_for,
+            )
+            from education_system.university_system.modules.services.parking_bus import (
+                list_permits_for, outstanding_parking_charges,
+            )
+            regs = list_registrations_for(self._subject_id)
+            permits = list_permits_for(self._subject_id)
+            fines = outstanding_parking_charges(self._subject_id)
+        except Exception:
+            regs, permits, fines = [], [], []
+
+        active_regs = [r for r in regs if r.get("status") == "registered"]
+        active_permits = [p for p in permits
+                          if p.get("status") == "active"
+                          or p.get("active_status") == 1]
+        fine_total = sum(float(f.get("amount") or 0) for f in fines)
+        self._summary_var.set(
+            f"{len(active_regs)} active trip(s) · "
+            f"{len(active_permits)} permit(s) · "
+            f"{len(fines)} fine(s) £{fine_total:,.2f}"
+        )
+
+        for r in regs:
+            tag = ("upcoming",) if r.get("status") == "registered" else ()
+            self._tree.insert("", "end", values=(
+                "trip",
+                f"#{r.get('trip_id')}",
+                f"{r.get('trip_name') or '?'} → {r.get('destination') or '?'}",
+                (r.get("start_date") or "")[:10],
+            ), tags=tag)
+        for p in permits:
+            self._tree.insert("", "end", values=(
+                "permit",
+                f"#{p.get('permit_id')}",
+                f"{p.get('plate') or '?'} ({p.get('zone') or ''}, "
+                f"{p.get('permit_type') or ''}) — {p.get('status') or ''}",
+                (p.get("end_date") or "")[:10],
+            ))
+        for f in fines:
+            self._tree.insert("", "end", values=(
+                "fine",
+                f.get("reference_id") or "",
+                f"£{float(f.get('amount') or 0):,.2f} — "
+                f"{f.get('description') or ''}",
+                (f.get("created_at") or "")[:10],
+            ), tags=("violation",))
+
+
+class RestaurantPanel(ttk.Frame):
+    """Inline view of meal-plan balance + recent POS + today's menu.
+
+    Auto-refreshes on ``restaurant.meal_plan.changed``,
+    ``finance.charge.raised`` (filtered to restaurant sources), and
+    ``calendar.changed`` (menu publish).
+    """
+
+    def __init__(self, master: tk.Misc,
+                 student_id: str | int | None = None,
+                 *, listen_to_events: bool = True) -> None:
+        super().__init__(master)
+        self._student_id: str | None = None
+
+        self._heading_var = tk.StringVar(value="Restaurant")
+        ttk.Label(
+            self, textvariable=self._heading_var,
+            font=("Helvetica", 11, "bold"),
+        ).pack(anchor="w", padx=8, pady=(8, 4))
+
+        self._summary_var = tk.StringVar(value="—")
+        ttk.Label(self, textvariable=self._summary_var).pack(
+            anchor="w", padx=10, pady=(0, 4),
+        )
+
+        cols = ("kind", "info", "when")
+        self._tree = ttk.Treeview(self, columns=cols, show="headings", height=5)
+        for c, w in zip(cols, (90, 380, 110)):
+            self._tree.heading(c, text=c.capitalize())
+            self._tree.column(c, width=w, anchor="w")
+        self._tree.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+
+        if listen_to_events:
+            try:
+                from education_system.university_system.modules.domain.academics.gui._event_bus import (
+                    subscribe_tk,
+                    EVENT_MEAL_PLAN_CHANGED, EVENT_CHARGE_RAISED,
+                    EVENT_CALENDAR_CHANGED,
+                )
+
+                def _on_change(**payload):
+                    sid = payload.get("student_id")
+                    if (self._student_id and
+                            (sid is None or str(sid) == self._student_id)):
+                        self.refresh()
+
+                for evt in (EVENT_MEAL_PLAN_CHANGED, EVENT_CHARGE_RAISED,
+                            EVENT_CALENDAR_CHANGED):
+                    subscribe_tk(evt, self, _on_change)
+            except Exception:
+                pass
+
+        if student_id is not None:
+            self.set_student(student_id)
+
+    def set_student(self, student_id: str | int) -> None:
+        self._student_id = str(student_id) if student_id is not None else None
+        self.refresh()
+
+    def refresh(self) -> None:
+        for item in self._tree.get_children():
+            self._tree.delete(item)
+        if not self._student_id:
+            self._heading_var.set("Restaurant")
+            self._summary_var.set("—")
+            return
+        self._heading_var.set(f"Restaurant — {self._student_id}")
+
+        balance = 0.0
+        menu_rows: list[dict] = []
+        recent_pos: list[dict] = []
+        try:
+            from education_system.university_system.modules.services.restaurant_bus import (
+                meal_plan_balance, menu_for,
+            )
+            balance = meal_plan_balance(self._student_id)
+            menu_rows = menu_for() or []
+            from education_system.university_system.infrastructure.database.db import (
+                get_connection,
+            )
+            with get_connection() as conn:
+                for r in conn.execute(
+                    "SELECT amount, description, created_at "
+                    "FROM student_finance_transactions "
+                    "WHERE student_id = ? "
+                    "  AND ( description LIKE 'Restaurant POS%' "
+                    "    OR description LIKE 'Meal-plan top-up%' ) "
+                    "ORDER BY created_at DESC LIMIT 5",
+                    (self._student_id,),
+                ).fetchall():
+                    recent_pos.append(dict(r))
+        except Exception:
+            pass
+
+        items_today = (
+            menu_rows[0]["body"].get("items", []) if menu_rows else []
+        )
+        self._summary_var.set(
+            f"Meal plan: £{balance:,.2f} · "
+            f"Recent activity: {len(recent_pos)} · "
+            f"Today's menu: {len(items_today)} item(s)"
+        )
+
+        for r in recent_pos:
+            self._tree.insert("", "end", values=(
+                "tx",
+                f"£{float(r.get('amount') or 0):,.2f} — "
+                f"{r.get('description') or ''}",
+                (r.get("created_at") or "")[:10],
+            ))
+        for item in items_today[:6]:
+            self._tree.insert("", "end", values=(
+                "menu",
+                str(item),
+                (menu_rows[0].get("date") or "")[:10] if menu_rows else "",
+            ))
+
+
 __all__ = [
     "show_conflicts_dialog",
     "show_instructor_workload_dialog",
@@ -1640,4 +2021,7 @@ __all__ = [
     "ChatbotPanel",
     "OpenCasesPanel",
     "StudentUnionPanel",
+    "EngagementsPanel",
+    "TripsAndParkingPanel",
+    "RestaurantPanel",
 ]

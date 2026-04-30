@@ -85,6 +85,28 @@ EVENT_SANCTION_APPLIED = "case.sanction.applied"
 EVENT_SU_ADVOCACY_REQUESTED = "su.advocacy.requested"
 EVENT_MEMBERSHIP_CHANGED = "su.membership.changed"
 
+# Careers / employer / engagement lifecycle. One event family covers
+# job/internship/placement/apprenticeship/mentorship since they share
+# the engagement model in careers_bus.
+EVENT_ENGAGEMENT_STARTED = "careers.engagement.started"
+EVENT_ENGAGEMENT_ENDED = "careers.engagement.ended"
+EVENT_HOURS_LOGGED = "careers.hours.logged"
+EVENT_JOB_POSTED = "careers.job.posted"
+
+# Trips + Parking. Trip events feed Calendar / Finance / Cases / DM
+# subscribers; parking violations feed Finance and (on repeat) Cases.
+EVENT_TRIP_CREATED = "trip.created"
+EVENT_TRIP_REGISTRATION_CHANGED = "trip.registration.changed"
+EVENT_PARKING_VIOLATION = "parking.violation"
+
+# Restaurant + Email. Meal-plan and POS spend ride on
+# EVENT_CHARGE_RAISED already; this event fires *additionally* on
+# meal-plan top-ups so RestaurantPanel and the chatbot menu tool can
+# refresh distinctly. EVENT_EMAIL_SENT is the audit-trail signal for
+# the email_bus subscriber.
+EVENT_MEAL_PLAN_CHANGED = "restaurant.meal_plan.changed"
+EVENT_EMAIL_SENT = "email.sent"
+
 ALL_EVENTS = (
     EVENT_EXAM_CHANGED,
     EVENT_GRADE_CHANGED,
@@ -109,6 +131,15 @@ ALL_EVENTS = (
     EVENT_SANCTION_APPLIED,
     EVENT_SU_ADVOCACY_REQUESTED,
     EVENT_MEMBERSHIP_CHANGED,
+    EVENT_ENGAGEMENT_STARTED,
+    EVENT_ENGAGEMENT_ENDED,
+    EVENT_HOURS_LOGGED,
+    EVENT_JOB_POSTED,
+    EVENT_TRIP_CREATED,
+    EVENT_TRIP_REGISTRATION_CHANGED,
+    EVENT_PARKING_VIOLATION,
+    EVENT_MEAL_PLAN_CHANGED,
+    EVENT_EMAIL_SENT,
 )
 
 # ---------------------------------------------------------------------------
@@ -230,6 +261,15 @@ __all__ = [
     "EVENT_SANCTION_APPLIED",
     "EVENT_SU_ADVOCACY_REQUESTED",
     "EVENT_MEMBERSHIP_CHANGED",
+    "EVENT_ENGAGEMENT_STARTED",
+    "EVENT_ENGAGEMENT_ENDED",
+    "EVENT_HOURS_LOGGED",
+    "EVENT_JOB_POSTED",
+    "EVENT_TRIP_CREATED",
+    "EVENT_TRIP_REGISTRATION_CHANGED",
+    "EVENT_PARKING_VIOLATION",
+    "EVENT_MEAL_PLAN_CHANGED",
+    "EVENT_EMAIL_SENT",
     "ALL_EVENTS",
     "subscribe",
     "subscribe_tk",
