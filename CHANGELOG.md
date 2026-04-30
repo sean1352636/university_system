@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.105.0 — 2026-04-30](#81050---2026-04-30)
 - [8.104.0 — 2026-04-28](#81040---2026-04-28)
 - [8.103.0 — 2026-04-28](#81030---2026-04-28)
 - [8.102.0 — 2026-04-28](#81020---2026-04-28)
@@ -209,6 +210,240 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.105.0] — 2026-04-30
+
+### Cross-domain integration sweep + attendance/absence/exam closed loop
+
+This release wires the four academic management surfaces (Exam, Grade
+Tracking, Module Scheduling, Course Management) and the Assignment GUI
+together at the navigation, event, data and side-effect layers, then
+closes a three-step attendance/absence/exam loop on top.
+
+#### Added
+
+- **Assignment GUI ↔ 9 sibling domains.** New
+  `assignment_system/integrations/` package with adapters for
+  parent_portal, library, attendance, finance (late-submission fines
+  via `record_payment_to_finance`), helpdesk (dispute-ticket
+  escalation), legal (academic-integrity case creation), gradebook
+  (`student_grades` sync so transcripts pick up assignment grades),
+  KPI dashboard, and academic calendar (deadline mirroring). Hooks
+  fire from existing managers (submit / grade / dispute /
+  integrity-event / assignment-create paths). New "View Integrations
+  Activity" panel on the dashboard shows recent rows produced in
+  each downstream domain.
+
+- **Grade Tracking GUI ↔ 10 sibling domains.** Parallel
+  `grade_tracking/integrations/` package: parent_portal grade reads,
+  external-examiner moderation gate, calendar sync for assessment
+  due dates, attendance correlation column on the at-risk view,
+  automatic `early_warning_indicators` flagging for at-risk
+  students, wellbeing referrals (`wellbeing_referrals`), grade-appeal
+  helpdesk tickets, KPI push (Average GPA + Pass Rate %),
+  financial-aid GPA review tagging, legal audit-trail export.
+  Sidebar gains a "Cross-Domain Activity" panel mirroring the
+  assignment-side one.
+
+- **Cross-launch wiring across all five GUIs.** New
+  `gui/_cross_launchers.py` centralises four launchers
+  (`open_exam_gui` / `open_grade_gui` / `open_module_gui` /
+  `open_course_gui`); each opens a Toplevel parented to the caller
+  and forwards the auth context. Every GUI's menu/sidebar gains
+  entries for its three siblings. Lazy-imports keep this cycle-safe
+  across the four packages.
+
+- **Live-refresh event bus.** New `gui/_event_bus.py` exposes a
+  thread-safe pub/sub registry with module-level event constants
+  (`exam.changed`, `grade.changed`, `module.schedule.changed`,
+  `course.changed`, `enrolment.changed`, `assessment.changed`,
+  `assignment.changed`, `calendar.changed`).
+  `subscribe_tk(event, widget, callback)` marshals callbacks onto
+  the widget's Tk loop via `after_idle` and auto-unsubscribes on
+  `<Destroy>`. Writers in all five GUIs publish on save; the four
+  main apps subscribe and re-pull their cached views, so changes
+  in one open window propagate to the others without manual
+  refresh.
+
+- **Five shared cross-domain services.** New
+  `gui/_cross_services.py` + `gui/_cross_dialogs.py`:
+  * `find_conflicts_for_module` / `find_conflicts_for_course` wrap
+    the canonical `ConflictDetector` and surface a single
+    cross-GUI conflict report (Exam *Tools → Conflicts*, Course
+    *Cross-Domain → Show conflicts*, etc.).
+  * `check_prerequisites(student_id, module_code)` reads
+    `course_prerequisites` (module-level rows) and the student's
+    passed-modules set across `module_grades` + `student_grades`,
+    returning `{ok, missing, reason}`. Wired into
+    `student_crud_gui`'s per-student module-update path so
+    enrolment now drops modules whose required prereqs aren't met
+    and surfaces the rejected list in a single warning.
+  * `instructor_workload(instructor_id)` aggregates
+    `module_schedule` slots, `exam_external_examiners` panels, and
+    recent `student_grades` activity into one workload summary +
+    Tk dialog reachable from every GUI.
+  * `at_risk_students_unified(module_code=None)` reads the
+    `early_warning_indicators` rows that Grade Tracking writes via
+    `flag_at_risk_student`, surfaced in a Tk dialog from every GUI.
+    The Exam Scheduler's existing At-Risk Audit tab now reads from
+    the same source.
+  * `module_timeline(module_code)` joins lecture slots,
+    assessments and exams into one chronological view openable
+    from Module / Course / Grade / Exam / Assignment GUIs.
+
+- **Step 1 — attendance ↔ exam eligibility single source of truth.**
+  New `gui/_attendance_eligibility.py` owns the schema for a new
+  `exam_eligibility` table (`UNIQUE(student_id, module_code, exam_id)`
+  with `exam_id=0` as the "module-level only" sentinel — SQLite
+  doesn't allow expressions inside an inline UNIQUE clause).
+  `compute_exam_eligibility(student_id, module_code, *, exam_id=None,
+  threshold=75.0, cutoff_date=None, persist=True)` is the canonical
+  calculator: counts Present/Late/Excused over total sessions,
+  returns the verdict dict, upserts the row.
+  `get_exam_eligibility(...)` is the read entry point;
+  `bulk_recompute_for_exam(exam_id)` runs it for every enrolled
+  student and fires `EVENT_ENROLMENT_CHANGED`. The Exam Scheduler's
+  Eligibility tab now delegates per-student calculation to the
+  adapter (`persist=True`) so the table stays current.
+
+- **Step 2 — authorised absence on exam day → auto-deferred resit.**
+  New `gui/_absence_to_deferred.defer_exam_for_authorised_absence(
+  student_id, module_code, *, absence_date, exam_id=None,
+  decided_by=None, default_offset_days=14, auto_attach=True)`
+  mirrors the deferred-tab's interactive resit-creation flow but
+  headless. Looks up matching exams (by `exam_id` if supplied, else
+  by `(module_code, date)` filtered by roster), attaches to an
+  existing resit when one exists, otherwise inserts a new resit row
+  offset by `default_offset_days` with the start time copied and the
+  end time extended via `accommodations.compute_extended_end_time`.
+  Clones `exam_accommodations` via the canonical service, publishes
+  `EVENT_EXAM_CHANGED`. Hooked into `AbsenceTracker.decide_request`
+  so flipping a request to `approved` fires the adapter
+  automatically. Idempotent — a duplicate approval returns
+  `action='skipped'`.
+
+- **Step 3 — exam day → attendance row (loop closer).** New
+  `gui/_exam_attendance_writer.py`: `record_exam_attendance(exam_id,
+  student_id, status, *, recorded_by, notes=None)` upserts one
+  `attendance_records` row keyed on `(student, module, date,
+  session_id='EXAM-<id>')` with `check_in_method='exam_invigilation'`.
+  `record_exam_attendance_bulk(exam, present_ids, ...)` marks every
+  enrolled student Present or Absent in one call. Hooked into
+  `apply_exam_results` so each results-entry flow auto-mirrors
+  attendance: students in the results dict get Present, the rest
+  get Absent. After bulk write, fires `EVENT_ENROLMENT_CHANGED` and
+  calls `bulk_recompute_for_exam` to keep `exam_eligibility` in
+  sync, closing the loop that started with step 1.
+
+- **Test data.** Added 10 first-year students (`U2026001`–
+  `U2026010`, 5 CS + 5 DS) with `C<student_id>@tees.ac.uk` emails,
+  enrolled in 6 modules each (2 compulsory + 2 rotated optionals
+  + 2 course-specific from the appropriate `CIS2xxx`/`CIS3xxx`
+  pool). Added 10 instructors across Computing / Data Science /
+  Software Engineering / Mathematics / Statistics. Added matching
+  shared-auth user accounts (`student123` password) wired to
+  `university:student` in `user_systems`.
+
+- **Login analytics writer.** `UserAuth.login` now records every
+  attempt into the university DB's `login_attempts` table via a
+  new `_record_login_attempt` helper. Wraps the original login
+  body so success and `AuthError` paths both publish — this fixed
+  the dashboard's analytics tab showing 0 logins despite real
+  users signing in.
+
+#### Fixed
+
+- **MFA-enabled admins were silently bypassing MFA.** The unified
+  login in `shared/auth/core.py` checked only the shared
+  `mfa_secrets` table; users enrolled via the university
+  `mfa_user_settings` / `mfa_methods` tables were treated as having
+  no MFA. The login flow now consults both, and the
+  `login_gui._show_mfa` dialog's `masked_email` is computed in the
+  has-email branch (was wrongly placed in the no-email branch and
+  raising `AttributeError` swallowed by an outer `except`).
+
+- **Email-only MFA users crashing on verify.** `verify_totp` raises
+  `MFAError` when no TOTP secret is configured; the GUI's
+  `except AuthError` didn't catch it (`MFAError` is a sibling, not
+  a subclass). `verify_mfa` now wraps both `verify_totp` and
+  `verify_recovery_code` in `except MFAError` blocks and the GUI
+  catches both exception types.
+
+- **`notification_actions` FK pointed at non-existent column.** Old
+  DBs had `FOREIGN KEY (notification_id) REFERENCES notifications(id)`
+  but the parent's PK is `notification_id`, so SQLite refused every
+  `DELETE FROM notifications` with "foreign key mismatch". Source
+  CREATE TABLE fixed; new `_heal_notification_actions_schema`
+  detects the broken FK via `PRAGMA foreign_key_list` and rebuilds
+  the table via SQLite's 12-step ALTER recipe with `ON DELETE CASCADE`.
+
+- **`ocr_results` FK referenced a non-existent table.** Same shape —
+  older deployments shipped `REFERENCES student_documents(...)` but
+  the table is `documents`. `save_ocr_results` now self-heals before
+  the INSERT.
+
+- **`documents.type_id` reference in document-manager report.** The
+  Requirements Check subquery missed the `CAST(document_type AS
+  INTEGER)` bridge every other site in the file already uses.
+
+- **OCR sync `'sqlite3.Row' object has no attribute 'get'`.** Both
+  sync directions in `assessment_service.py` now `dict()` the
+  fetched Row before calling `.get(default)`.
+
+- **8 academic GUIs leaked theme into the parent app.**
+  `ttk.Style.theme_use()` is process-global, so attendance /
+  blockchain / parent_portal / library / exam-portal /
+  exam-management-app / assignment-system / ai-detector /
+  academic-calendar all restyled the parent dashboard. Each GUI
+  now only switches themes when standalone, snapshots the prior
+  theme, and binds a `<Destroy>` handler to restore it.
+
+- **Document-manager activity tree raised on destroyed widgets.**
+  Post-upload refresh fired after the dashboard was closed; the
+  tree handle pointed at a destroyed Tk command. Now guarded by
+  `winfo_exists()` and a `tk.TclError` catch.
+
+- **Activity-log query NULL crash.** `result.get('details', '')`
+  returns `None` when the column is NULL (not missing); `len(None)`
+  blew up the slice. All cells now coerce via a small `_s` helper.
+
+- **Exam scheduler "database is locked".** `transaction()`'s
+  `BEGIN IMMEDIATE` retry budget bumped from 3 attempts (1.75s) to
+  5 attempts with exponential backoff (~15.5s extra) on top of
+  SQLite's own 30s `busy_timeout`. The exam-scheduler success
+  dialog now wraps `messagebox.showinfo` in `try/except
+  tk.TclError` so a destroyed parent doesn't crash the handler.
+
+#### Changed
+
+- **Grade Tracking GUI dedup.** `grade_manager.calculate_all_gpas`
+  now delegates per-student GPA math to
+  `grade_calculation.gpa.calculate_student_gpa`;
+  `analytics_manager/risk.identify_at_risk_students` delegates to
+  `predictive_analytics.calculate_dropout_risk_score` +
+  `calculate_risk_factors`. `module_manager` and
+  `assessment_manager` grow the same `audit_helpers` /
+  `safe_log_security_event` instrumentation `grade_manager`
+  already used, so RECORD_CREATE / UPDATE / DELETE for modules and
+  assessments leave the FERPA trail.
+
+- **Submissions adapter for grade-tracking analytics.** New
+  `grade_tracking/integrations/submissions.py` exposes
+  `fetch_assignment_submissions` /
+  `fetch_graded_submission_count` as the canonical read entry.
+  `analytics_manager/performance` docstring steers new callers
+  toward the adapter; existing UNION queries with `grades` are
+  deliberately left in place because they merge two legacy
+  grade-source tables.
+
+- **README default-account table.** Replaced the previously
+  incorrect list with the verified twelve seeded accounts across
+  University / Sixth Form College / Secondary School / Primary
+  School plus the cross-system `superadmin`. All thirteen verified
+  by single targeted `UserAuth.login` calls against the live
+  `auth.db`.
 
 ---
 
