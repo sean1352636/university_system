@@ -320,6 +320,26 @@ class LeaveManager:
 
             log_activity('approve', 'leave_request',
                         details={'request_id': request_id, 'approver': approver_id})
+            try:
+                from education_system.university_system.modules.services.integration_bus import (
+                    publish_leave_decision,
+                )
+                end_row = conn.execute(
+                    "SELECT start_date, end_date, leave_type_id FROM leave_requests "
+                    "WHERE request_id = ?",
+                    (request_id,),
+                ).fetchone()
+                if end_row:
+                    publish_leave_decision(
+                        user_id,
+                        action="approved",
+                        start_date=end_row[0],
+                        end_date=end_row[1],
+                        leave_type=str(end_row[2]) if end_row[2] is not None else None,
+                        source="leave",
+                    )
+            except Exception:
+                pass
             return True
 
     @staticmethod

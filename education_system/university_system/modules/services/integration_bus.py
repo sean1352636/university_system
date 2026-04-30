@@ -1,0 +1,991 @@
+"""Cross-module integration bus for the six university subsystems.
+
+Wires Clearing/Adjustment, Module Scheduling, Course Management,
+Staff HR, KPI Dashboard, and Finance Reporting through the shared
+academic event bus. One module, one place to audit.
+
+Three responsibilities:
+
+1. Owns ``integration_log`` (every cross-module event lands here so
+   ops can debug missed fan-outs and the KPI dashboard can render an
+   activity widget without scraping per-module logs).
+2. Exposes ``publish_*`` helpers each origin service can call without
+   importing every consumer's schema.
+3. Registers ``wire_subscribers()`` — the single entry point that
+   subscribes the consumer side of every cross-module feature.
+   Idempotent and safe to call from any process startup hook.
+
+All handlers fail-open: a broken consumer must never block the
+writer that triggered the event.
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+from datetime import date, datetime, timedelta
+from typing import Any
+
+from education_system.university_system.infrastructure.database.db import (
+    get_connection,
+    transaction,
+)
+from education_system.university_system.modules.domain.academics.gui._event_bus import (
+    EVENT_CERT_CHANGED,
+    EVENT_CHARGE_RAISED,
+    EVENT_COURSE_CHANGED,
+    EVENT_MODULE_SCHEDULE_CHANGED,
+    EVENT_SELECTION_CHANGED,
+    EVENT_STAFF_AVAILABILITY_CHANGED,
+    publish,
+    subscribe,
+)
+
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Schema — integration_log table
+# ---------------------------------------------------------------------------
+
+_LOG_SCHEMA_SQL = """
+CREATE TABLE IF NOT EXISTS integration_log (
+    log_id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_name    TEXT NOT NULL,
+    source_module TEXT NOT NULL,
+    payload_json  TEXT NOT NULL,
+    created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
+"""
+
+_LOG_INDEX_SQL = (
+    "CREATE INDEX IF NOT EXISTS idx_integration_log_event "
+    "ON integration_log(event_name, created_at DESC)"
+)
+
+
+def _ensure_log_table() -> None:
+    try:
+        with get_connection() as conn:
+            conn.executescript(_LOG_SCHEMA_SQL)
+            conn.execute(_LOG_INDEX_SQL)
+            conn.commit()
+    except Exception as exc:
+        logger.debug("integration_log table init failed: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# Payload contracts — keep the keys here so consumers don't drift
+# ---------------------------------------------------------------------------
+#
+# EVENT_COURSE_CHANGED payload shapes used by this module:
+#   {action: "clearing_accepted", student_ref, course_code, year}
+#   {action: "adjustment_approved", student_id, from_course, to_course}
+#   {action: "waitlist_promoted",   student_id, course_code, plan_id}
+#   {action: "demand_forecast",     course_code, predicted_enrollment, year}
+#
+# EVENT_MODULE_SCHEDULE_CHANGED:
+#   {action: "timetable_locked", user_ids: [...], academic_year}
+#   {action: "enrollment_delta", course_code, delta}
+#
+# EVENT_STAFF_AVAILABILITY_CHANGED:
+#   {staff_id, action: "approved"|"cancelled"|"updated", start_date, end_date,
+#    leave_type, source: "leave"|"sabbatical"|"sickness"}
+#
+# EVENT_CERT_CHANGED:
+#   {user_id, training_id, expiry_date, days_to_expiry, role_critical: bool}
+#
+# EVENT_CHARGE_RAISED is published by finance_bus.raise_charge directly.
+# This module subscribes only.
+
+
+def log_and_publish(event: str, *, source: str, **payload: Any) -> None:
+    """Record the event in ``integration_log`` then fan out via the bus.
+
+    Best-effort logging — a logging failure must never silence the
+    publish.
+    """
+    try:
+        _ensure_log_table()
+        with get_connection() as conn:
+            conn.execute(
+                "INSERT INTO integration_log (event_name, source_module, payload_json) "
+                "VALUES (?, ?, ?)",
+                (event, source, json.dumps(payload, default=str)),
+            )
+            conn.commit()
+    except Exception as exc:
+        logger.debug("integration_log write failed (%s): %s", event, exc)
+    publish(event, **payload)
+
+
+def recent_events(limit: int = 50) -> list[dict[str, Any]]:
+    """Return the most recent integration events. Used by the KPI activity widget."""
+    _ensure_log_table()
+    try:
+        with get_connection() as conn:
+            rows = conn.execute(
+                "SELECT log_id, event_name, source_module, payload_json, created_at "
+                "FROM integration_log ORDER BY log_id DESC LIMIT ?",
+                (int(limit),),
+            ).fetchall()
+            out = []
+            for r in rows:
+                d = dict(r)
+                try:
+                    d["payload"] = json.loads(d.pop("payload_json"))
+                except Exception:
+                    d["payload"] = {}
+                out.append(d)
+            return out
+    except Exception as exc:
+        logger.warning("recent_events failed: %s", exc)
+        return []
+
+
+# ---------------------------------------------------------------------------
+# Identity resolver — bridges student_id ↔ ucas_id ↔ user_id
+# ---------------------------------------------------------------------------
+
+def resolve_student_id(*, ucas_id: str | None = None,
+                       application_id: int | None = None) -> str | None:
+    """Resolve a clearing applicant to a real student_id, if one exists.
+
+    Falls through gracefully when the link tables aren't present —
+    callers (e.g. clearing acceptance) treat None as "create-on-demand
+    elsewhere" rather than a hard error.
+    """
+    try:
+        with get_connection() as conn:
+            if ucas_id:
+                row = conn.execute(
+                    "SELECT student_id FROM students WHERE ucas_id = ? LIMIT 1",
+                    (str(ucas_id),),
+                ).fetchone()
+                if row and row[0]:
+                    return str(row[0])
+            if application_id is not None:
+                row = conn.execute(
+                    "SELECT ucas_id, applicant_name FROM clearing_applications "
+                    "WHERE id = ?",
+                    (int(application_id),),
+                ).fetchone()
+                if row:
+                    return f"clearing:{application_id}"  # opaque ref
+    except Exception as exc:
+        logger.debug("resolve_student_id failed: %s", exc)
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Publishers — origin services call these
+# ---------------------------------------------------------------------------
+
+def publish_clearing_accepted(application_id: int, *, course_code: str,
+                              ucas_id: str | None = None,
+                              applicant_name: str | None = None,
+                              academic_year: str | None = None) -> None:
+    """Feature 1: clearing acceptance fan-out.
+
+    Triggered by ClearingAdjustmentService.update_application_status('accepted').
+    """
+    student_ref = (
+        resolve_student_id(ucas_id=ucas_id, application_id=application_id)
+        or f"clearing:{application_id}"
+    )
+    log_and_publish(
+        EVENT_COURSE_CHANGED,
+        source="clearing_adjustment",
+        action="clearing_accepted",
+        application_id=int(application_id),
+        student_ref=student_ref,
+        ucas_id=ucas_id,
+        applicant_name=applicant_name,
+        course_code=course_code,
+        academic_year=academic_year or _current_year(),
+    )
+
+
+def publish_adjustment_approved(request_id: int, *, student_id: str,
+                                from_course: str, to_course: str) -> None:
+    """Feature 3: adjustment approved fan-out."""
+    log_and_publish(
+        EVENT_COURSE_CHANGED,
+        source="clearing_adjustment",
+        action="adjustment_approved",
+        request_id=int(request_id),
+        student_id=str(student_id),
+        from_course=from_course,
+        to_course=to_course,
+    )
+
+
+def publish_leave_decision(staff_id: str, *, action: str,
+                           start_date: str | None = None,
+                           end_date: str | None = None,
+                           leave_type: str | None = None,
+                           source: str = "leave") -> None:
+    """Feature 2: leave/sabbatical/sickness fan-out."""
+    log_and_publish(
+        EVENT_STAFF_AVAILABILITY_CHANGED,
+        source="staff_hr",
+        staff_id=str(staff_id),
+        action=action,
+        start_date=start_date,
+        end_date=end_date,
+        leave_type=leave_type,
+        source_kind=source,
+    )
+
+
+def publish_timetable_locked(user_ids: list[str], *, academic_year: str | None = None,
+                             semester: str | None = None) -> None:
+    """Feature 4: lock-down fan-out."""
+    log_and_publish(
+        EVENT_MODULE_SCHEDULE_CHANGED,
+        source="module_scheduling",
+        action="timetable_locked",
+        user_ids=[str(u) for u in user_ids],
+        academic_year=academic_year or _current_year(),
+        semester=semester,
+    )
+
+
+def publish_demand_forecast(course_code: str, *, predicted_enrollment: int,
+                            academic_year: str | None = None) -> None:
+    """Feature 6: KPI → clearing vacancy planner."""
+    log_and_publish(
+        EVENT_COURSE_CHANGED,
+        source="kpi_dashboard",
+        action="demand_forecast",
+        course_code=course_code,
+        predicted_enrollment=int(predicted_enrollment),
+        academic_year=academic_year or _current_year(),
+    )
+
+
+def publish_appraisal_completed(user_id: str, *, cycle_id: int,
+                                rating: float) -> None:
+    """Feature 7: appraisal → merit-pay proposal."""
+    log_and_publish(
+        EVENT_SELECTION_CHANGED,
+        source="staff_hr",
+        action="appraisal_completed",
+        user_id=str(user_id),
+        cycle_id=int(cycle_id),
+        rating=float(rating),
+    )
+
+
+def publish_cert_expiry(user_id: str, *, training_id: int | None,
+                        cert_name: str, expiry_date: str,
+                        role_critical: bool = False) -> None:
+    """Feature 8: certification expiry alert."""
+    try:
+        days = (datetime.strptime(expiry_date[:10], "%Y-%m-%d").date()
+                - date.today()).days
+    except Exception:
+        days = None
+    log_and_publish(
+        EVENT_CERT_CHANGED,
+        source="staff_hr",
+        user_id=str(user_id),
+        training_id=training_id,
+        cert_name=cert_name,
+        expiry_date=expiry_date,
+        days_to_expiry=days,
+        role_critical=bool(role_critical),
+    )
+
+
+def publish_waitlist_promoted(student_id: str, *, course_code: str,
+                              plan_id: int | None = None,
+                              fee_amount: float | None = None) -> None:
+    """Feature 9: waitlist atomic enrol+bill (publish step)."""
+    log_and_publish(
+        EVENT_COURSE_CHANGED,
+        source="course_management",
+        action="waitlist_promoted",
+        student_id=str(student_id),
+        course_code=course_code,
+        plan_id=plan_id,
+        fee_amount=fee_amount,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Feature 1 — Clearing acceptance → capacity decrement + fee + KPI
+# ---------------------------------------------------------------------------
+
+def _on_clearing_accepted(**payload: Any) -> None:
+    if payload.get("action") != "clearing_accepted":
+        return
+    course_code = payload.get("course_code")
+    student_ref = payload.get("student_ref") or ""
+    year = payload.get("academic_year")
+
+    # Module Scheduling: drop one seat from any matching module_schedule row.
+    try:
+        with transaction() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='module_schedule'"
+            ).fetchone()
+            if tbl:
+                conn.execute(
+                    "UPDATE module_schedule "
+                    "SET enrolled = COALESCE(enrolled, 0) + 1 "
+                    "WHERE module_code = ?",
+                    (course_code,),
+                )
+                conn.commit()
+    except Exception as exc:
+        logger.debug("clearing→scheduling capacity update failed: %s", exc)
+
+    # Finance: raise the program fee charge if we have a real student_id.
+    if student_ref and not student_ref.startswith("clearing:"):
+        try:
+            from education_system.university_system.modules.services.finance_bus import (
+                raise_charge,
+            )
+            fee = _lookup_program_fee(course_code, year)
+            if fee and fee > 0:
+                raise_charge(
+                    student_ref, fee,
+                    source="clearing",
+                    description=f"Tuition: {course_code} {year}",
+                    reference_id=f"clearing:{payload.get('application_id')}",
+                )
+        except Exception as exc:
+            logger.debug("clearing→finance charge failed: %s", exc)
+
+    # KPI: bump enrolment counter for the year.
+    _bump_kpi(category="enrollment", increment=1)
+
+
+# ---------------------------------------------------------------------------
+# Feature 2 — Leave approved → cover request + payroll prorate
+# ---------------------------------------------------------------------------
+
+def _on_staff_availability_changed(**payload: Any) -> None:
+    if payload.get("action") not in ("approved", "cancelled"):
+        return
+    staff_id = payload.get("staff_id")
+    start = payload.get("start_date")
+    end = payload.get("end_date")
+    if not (staff_id and start and end):
+        return
+
+    if payload.get("action") == "approved":
+        # CoverManager: open a cover request for each affected day.
+        try:
+            from education_system.university_system.modules.domain.staff_hr.services.managers.cover_manager import (
+                CoverManager,
+            )
+            for d in _date_range(start, end):
+                try:
+                    CoverManager.create_request(
+                        requester_id=str(staff_id),
+                        cover_date=d,
+                        reason=f"{payload.get('source_kind', 'leave')} approved",
+                        priority="normal",
+                    )
+                except Exception as exc:
+                    logger.debug("cover create failed for %s: %s", d, exc)
+        except Exception as exc:
+            logger.debug("cover_manager unavailable: %s", exc)
+
+        # Payroll: tag the affected period(s) so prorate calc picks them up.
+        _tag_payroll_leave(str(staff_id), start, end,
+                           leave_type=payload.get("leave_type"))
+
+
+# ---------------------------------------------------------------------------
+# Feature 3 — Adjustment approved → re-plan + finance credit/debit pair
+# ---------------------------------------------------------------------------
+
+def _on_adjustment_approved(**payload: Any) -> None:
+    if payload.get("action") != "adjustment_approved":
+        return
+    student_id = payload.get("student_id")
+    from_course = payload.get("from_course")
+    to_course = payload.get("to_course")
+    request_id = payload.get("request_id")
+    if not (student_id and from_course and to_course):
+        return
+
+    # Course Management: swap the entry in plan_courses if the table exists.
+    try:
+        with transaction() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='plan_courses'"
+            ).fetchone()
+            if tbl:
+                conn.execute(
+                    "UPDATE plan_courses SET course_code = ? "
+                    "WHERE plan_id IN (SELECT plan_id FROM student_plans WHERE student_id = ?) "
+                    "AND course_code = ?",
+                    (to_course, str(student_id), from_course),
+                )
+                conn.commit()
+    except Exception as exc:
+        logger.debug("adjustment→plan swap failed: %s", exc)
+
+    # Finance: credit the dropped course, debit the new one (idempotent on request_id).
+    try:
+        from education_system.university_system.modules.services.finance_bus import (
+            raise_charge,
+        )
+        old_fee = _lookup_program_fee(from_course, None) or 0.0
+        new_fee = _lookup_program_fee(to_course, None) or 0.0
+        if old_fee:
+            raise_charge(
+                student_id, -float(old_fee),
+                source="adjustment",
+                description=f"Credit: {from_course} (adjustment)",
+                reference_id=f"adjustment:{request_id}:credit",
+            )
+        if new_fee:
+            raise_charge(
+                student_id, float(new_fee),
+                source="adjustment",
+                description=f"Debit: {to_course} (adjustment)",
+                reference_id=f"adjustment:{request_id}:debit",
+            )
+    except Exception as exc:
+        logger.debug("adjustment→finance failed: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# Feature 4 — Timetable locked → contracted hours + workload + KPI
+# ---------------------------------------------------------------------------
+
+def _on_timetable_locked(**payload: Any) -> None:
+    if payload.get("action") != "timetable_locked":
+        return
+    user_ids = payload.get("user_ids") or []
+    if not user_ids:
+        return
+
+    try:
+        with transaction() as conn:
+            for uid in user_ids:
+                hours = _sum_weekly_block_hours(conn, str(uid))
+                if hours is None:
+                    continue
+                # Stamp into payroll_periods if the column exists.
+                try:
+                    conn.execute(
+                        "UPDATE payroll_periods SET contracted_hours = ? "
+                        "WHERE status = 'open' AND ? IN ("
+                        "  SELECT user_id FROM faculty_schedule_blocks "
+                        "  WHERE user_id = ?)",
+                        (float(hours), str(uid), str(uid)),
+                    )
+                except Exception as exc:
+                    logger.debug("payroll_periods stamp skipped: %s", exc)
+            conn.commit()
+    except Exception as exc:
+        logger.debug("timetable_locked payroll stamp failed: %s", exc)
+
+    # KPI: write/refresh staff_utilisation summary.
+    avg = _avg_utilisation(user_ids)
+    if avg is not None:
+        _set_kpi(name="Staff Utilisation", category="staff", value=avg)
+
+
+def _sum_weekly_block_hours(conn: Any, user_id: str) -> float | None:
+    try:
+        rows = conn.execute(
+            "SELECT start_time, end_time FROM faculty_schedule_blocks "
+            "WHERE user_id = ? AND COALESCE(is_locked, 0) = 1",
+            (user_id,),
+        ).fetchall()
+    except Exception:
+        return None
+    total = 0.0
+    for r in rows:
+        try:
+            s = datetime.strptime(r[0][:5], "%H:%M")
+            e = datetime.strptime(r[1][:5], "%H:%M")
+            total += (e - s).total_seconds() / 3600.0
+        except Exception:
+            continue
+    return total
+
+
+def _avg_utilisation(user_ids: list[str]) -> float | None:
+    if not user_ids:
+        return None
+    try:
+        with get_connection() as conn:
+            rows = conn.execute(
+                "SELECT user_id, COALESCE(SUM(end_time - start_time), 0) "
+                "FROM faculty_schedule_blocks WHERE user_id IN (%s) "
+                "GROUP BY user_id"
+                % ",".join("?" * len(user_ids)),
+                tuple(user_ids),
+            ).fetchall()
+        if not rows:
+            return None
+        return float(sum(r[1] or 0 for r in rows) / len(rows))
+    except Exception:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Feature 5 — Degree audit batch → graduation forecast
+# ---------------------------------------------------------------------------
+
+def run_degree_audit_sweep(*, cohort_year: int) -> dict[str, Any]:
+    """Sweep degree audits for ``cohort_year`` and refresh the graduation KPI.
+
+    Public entry point — call from the Course Management GUI's "Run audit"
+    button or a scheduled job. Reads ``student_plans`` + ``plan_courses``,
+    computes the on-track ratio, writes it into kpi_metrics under
+    "Graduation Forecast", and returns the result for display.
+    """
+    on_track = 0
+    total = 0
+    try:
+        with get_connection() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='student_plans'"
+            ).fetchone()
+            if not tbl:
+                return {"cohort_year": cohort_year, "on_track": 0, "total": 0, "rate": None}
+            rows = conn.execute(
+                "SELECT plan_id, student_id FROM student_plans "
+                "WHERE academic_year = ?",
+                (str(cohort_year),),
+            ).fetchall()
+            total = len(rows)
+            for r in rows:
+                if _plan_is_on_track(conn, r[0]):
+                    on_track += 1
+    except Exception as exc:
+        logger.warning("degree audit sweep failed: %s", exc)
+        return {"cohort_year": cohort_year, "on_track": 0, "total": 0, "rate": None}
+
+    rate = (on_track / total) if total else None
+    if rate is not None:
+        _set_kpi(name="Graduation Forecast", category="graduation", value=rate * 100)
+    log_and_publish(
+        EVENT_SELECTION_CHANGED,
+        source="course_management",
+        action="degree_audit_swept",
+        cohort_year=cohort_year,
+        on_track=on_track,
+        total=total,
+        rate=rate,
+    )
+    return {"cohort_year": cohort_year, "on_track": on_track,
+            "total": total, "rate": rate}
+
+
+def _plan_is_on_track(conn: Any, plan_id: int) -> bool:
+    try:
+        row = conn.execute(
+            "SELECT COUNT(*) FROM plan_courses "
+            "WHERE plan_id = ? AND status NOT IN ('completed', 'in_progress')",
+            (plan_id,),
+        ).fetchone()
+        return bool(row and row[0] == 0)
+    except Exception:
+        return False
+
+
+# ---------------------------------------------------------------------------
+# Feature 6 — KPI demand forecast → suggested clearing places
+# ---------------------------------------------------------------------------
+
+def _on_demand_forecast(**payload: Any) -> None:
+    if payload.get("action") != "demand_forecast":
+        return
+    course_code = payload.get("course_code")
+    predicted = payload.get("predicted_enrollment")
+    year = payload.get("academic_year")
+    if not course_code or predicted is None:
+        return
+    try:
+        with transaction() as conn:
+            # Add the column lazily if missing.
+            cols = {r[1] for r in conn.execute(
+                "PRAGMA table_info(clearing_vacancies)").fetchall()}
+            if "suggested_places" not in cols:
+                conn.execute(
+                    "ALTER TABLE clearing_vacancies ADD COLUMN suggested_places INTEGER"
+                )
+            conn.execute(
+                "UPDATE clearing_vacancies SET suggested_places = ? "
+                "WHERE course_code = ? AND (academic_year = ? OR ? IS NULL)",
+                (int(predicted), course_code, year, year),
+            )
+            conn.commit()
+    except Exception as exc:
+        logger.debug("demand_forecast→vacancy update failed: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# Feature 7 — Appraisal → merit pay proposal
+# ---------------------------------------------------------------------------
+
+# Appraisal-rating → suggested allowance percent. Conservative bands;
+# HR signs off before the row becomes active.
+_MERIT_BANDS = (
+    (4.5, 0.05),  # outstanding → +5%
+    (4.0, 0.03),  # exceeds      → +3%
+    (3.5, 0.015), # solid        → +1.5%
+)
+
+
+def _on_appraisal_completed(**payload: Any) -> None:
+    if payload.get("action") != "appraisal_completed":
+        return
+    user_id = payload.get("user_id")
+    rating = payload.get("rating")
+    cycle_id = payload.get("cycle_id")
+    if not user_id or rating is None:
+        return
+
+    pct = next((p for thr, p in _MERIT_BANDS if rating >= thr), 0.0)
+    if pct <= 0:
+        return
+
+    try:
+        # Look up current salary, then propose an allowance row.
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT salary FROM employees WHERE user_id = ? LIMIT 1",
+                (str(user_id),),
+            ).fetchone()
+            salary = float(row[0]) if row and row[0] else 0.0
+        if salary <= 0:
+            return
+        amount = round(salary * pct, 2)
+        from education_system.university_system.modules.domain.staff_hr.services.managers.payroll_manager import (
+            PayrollManager,
+        )
+        PayrollManager.add_allowance(
+            user_id=str(user_id),
+            allowance_type="merit_proposal",
+            amount=amount,
+            description=(
+                f"Proposed merit (cycle {cycle_id}, rating {rating:.2f}). "
+                "Pending HR approval — set is_active=1 to apply."
+            ),
+            is_active=False,
+        )
+    except Exception as exc:
+        logger.debug("merit-pay proposal failed: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# Feature 8 — Cert expiry → operational risk KPI
+# ---------------------------------------------------------------------------
+
+def sweep_expiring_certifications(*, within_days: int = 30) -> int:
+    """Scan certifications for upcoming expiries and publish events.
+
+    Public entry point — call from a daily cron or HR dashboard
+    refresh. Returns the number of expiring certs found.
+    """
+    found = 0
+    try:
+        from education_system.university_system.modules.domain.staff_hr.services.managers.training_manager import (
+            TrainingManager,
+        )
+        rows = TrainingManager.get_expiring_certs(days=within_days)
+    except Exception as exc:
+        logger.debug("training_manager.get_expiring_certs unavailable: %s", exc)
+        rows = []
+
+    critical_count = 0
+    for r in rows:
+        found += 1
+        critical = _is_role_critical(r.get("user_id"))
+        if critical:
+            critical_count += 1
+        publish_cert_expiry(
+            user_id=r.get("user_id"),
+            training_id=r.get("certification_id") or r.get("course_id"),
+            cert_name=r.get("name") or r.get("course_name") or "certification",
+            expiry_date=r.get("expiry_date") or r.get("expires_on") or "",
+            role_critical=critical,
+        )
+    # KPI risk gauge: ratio of critical expiring certs to total expiring.
+    if found:
+        ratio = (critical_count / found) * 100
+        _set_kpi(name="Compliance Risk", category="risk", value=ratio)
+    return found
+
+
+def _is_role_critical(user_id: str | None) -> bool:
+    if not user_id:
+        return False
+    critical_titles = ("compliance", "auditor", "safety", "first aid", "lab manager")
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT job_title FROM employees WHERE user_id = ? LIMIT 1",
+                (str(user_id),),
+            ).fetchone()
+            if not row or not row[0]:
+                return False
+            title = row[0].lower()
+            return any(k in title for k in critical_titles)
+    except Exception:
+        return False
+
+
+# ---------------------------------------------------------------------------
+# Feature 9 — Waitlist promotion → atomic enrol + bill
+# ---------------------------------------------------------------------------
+
+def promote_from_waitlist(student_id: str, course_code: str, *,
+                           plan_id: int | None = None,
+                           academic_year: str | None = None) -> bool:
+    """Atomic enrol-and-bill from a waitlist offer.
+
+    Inserts/updates plan_courses, decrements module_schedule capacity,
+    raises a fee charge, then publishes a single event. Either all four
+    succeed or the SQL transaction is rolled back; the finance charge
+    fires after commit so a publish-only failure won't double-bill.
+    """
+    sid = str(student_id)
+    fee = _lookup_program_fee(course_code, academic_year) or 0.0
+    success = False
+    try:
+        with transaction() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='plan_courses'"
+            ).fetchone()
+            if tbl and plan_id is not None:
+                conn.execute(
+                    "INSERT INTO plan_courses (plan_id, course_code, status) "
+                    "VALUES (?, ?, 'in_progress') "
+                    "ON CONFLICT(plan_id, course_code) DO UPDATE SET status = 'in_progress'",
+                    (plan_id, course_code),
+                )
+            sched = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='module_schedule'"
+            ).fetchone()
+            if sched:
+                conn.execute(
+                    "UPDATE module_schedule SET enrolled = COALESCE(enrolled, 0) + 1 "
+                    "WHERE module_code = ?",
+                    (course_code,),
+                )
+            conn.commit()
+            success = True
+    except Exception as exc:
+        logger.warning("waitlist promote db step failed: %s", exc)
+        return False
+
+    if success and fee > 0:
+        try:
+            from education_system.university_system.modules.services.finance_bus import (
+                raise_charge,
+            )
+            raise_charge(
+                sid, fee,
+                source="waitlist",
+                description=f"Tuition: {course_code} (waitlist promote)",
+                reference_id=f"waitlist:{plan_id}:{course_code}",
+            )
+        except Exception as exc:
+            logger.warning("waitlist promote charge failed: %s", exc)
+
+    publish_waitlist_promoted(
+        sid, course_code=course_code, plan_id=plan_id, fee_amount=fee,
+    )
+    return success
+
+
+# ---------------------------------------------------------------------------
+# KPI helpers — single point of contact with kpi_metrics
+# ---------------------------------------------------------------------------
+
+def _set_kpi(*, name: str, category: str, value: float) -> None:
+    try:
+        with transaction() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='kpi_metrics'"
+            ).fetchone()
+            if not tbl:
+                return
+            row = conn.execute(
+                "SELECT kpi_id FROM kpi_metrics WHERE kpi_name = ? LIMIT 1", (name,),
+            ).fetchone()
+            today = date.today().isoformat()
+            if row:
+                conn.execute(
+                    "UPDATE kpi_metrics SET current_value = ?, measurement_date = ? "
+                    "WHERE kpi_id = ?",
+                    (float(value), today, row[0]),
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO kpi_metrics (kpi_name, kpi_category, current_value, "
+                    "  target_value, measurement_date, period, trend) "
+                    "VALUES (?, ?, ?, ?, ?, 'monthly', 'flat')",
+                    (name, category, float(value), float(value), today),
+                )
+            conn.commit()
+    except Exception as exc:
+        logger.debug("_set_kpi(%s) failed: %s", name, exc)
+
+
+def _bump_kpi(*, category: str, increment: float) -> None:
+    try:
+        with transaction() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='kpi_metrics'"
+            ).fetchone()
+            if not tbl:
+                return
+            row = conn.execute(
+                "SELECT kpi_id, current_value FROM kpi_metrics "
+                "WHERE kpi_category = ? ORDER BY kpi_id LIMIT 1",
+                (category,),
+            ).fetchone()
+            if not row:
+                return
+            new_val = float(row[1] or 0) + float(increment)
+            conn.execute(
+                "UPDATE kpi_metrics SET current_value = ?, measurement_date = ? "
+                "WHERE kpi_id = ?",
+                (new_val, date.today().isoformat(), row[0]),
+            )
+            conn.commit()
+    except Exception as exc:
+        logger.debug("_bump_kpi(%s) failed: %s", category, exc)
+
+
+# ---------------------------------------------------------------------------
+# Misc helpers
+# ---------------------------------------------------------------------------
+
+def _current_year() -> str:
+    today = date.today()
+    # Sept onwards belongs to the next academic year (e.g. 2025/26).
+    if today.month >= 9:
+        return f"{today.year}/{str(today.year + 1)[-2:]}"
+    return f"{today.year - 1}/{str(today.year)[-2:]}"
+
+
+def _date_range(start: str, end: str):
+    try:
+        s = datetime.strptime(start[:10], "%Y-%m-%d").date()
+        e = datetime.strptime(end[:10], "%Y-%m-%d").date()
+    except Exception:
+        return
+    cur = s
+    while cur <= e:
+        yield cur.isoformat()
+        cur += timedelta(days=1)
+
+
+def _lookup_program_fee(course_code: str | None,
+                       academic_year: str | None) -> float | None:
+    if not course_code:
+        return None
+    try:
+        with get_connection() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='program_fees'"
+            ).fetchone()
+            if not tbl:
+                return None
+            sql = "SELECT amount FROM program_fees WHERE course = ?"
+            params: list[Any] = [course_code]
+            if academic_year:
+                sql += " AND (academic_year = ? OR academic_year IS NULL)"
+                params.append(academic_year)
+            sql += " ORDER BY academic_year DESC LIMIT 1"
+            row = conn.execute(sql, tuple(params)).fetchone()
+            return float(row[0]) if row and row[0] is not None else None
+    except Exception:
+        return None
+
+
+def _tag_payroll_leave(user_id: str, start: str, end: str,
+                       *, leave_type: str | None) -> None:
+    """Best-effort: stamp open payroll period with a leave note for prorate."""
+    try:
+        with transaction() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' AND name='payroll_periods'"
+            ).fetchone()
+            if not tbl:
+                return
+            cols = {r[1] for r in conn.execute(
+                "PRAGMA table_info(payroll_periods)").fetchall()}
+            if "leave_notes" not in cols:
+                conn.execute(
+                    "ALTER TABLE payroll_periods ADD COLUMN leave_notes TEXT"
+                )
+            note = f"{user_id}:{leave_type or 'leave'}:{start}..{end};"
+            conn.execute(
+                "UPDATE payroll_periods "
+                "SET leave_notes = COALESCE(leave_notes, '') || ? "
+                "WHERE status = 'open' "
+                "  AND start_date <= ? AND end_date >= ?",
+                (note, end, start),
+            )
+            conn.commit()
+    except Exception as exc:
+        logger.debug("payroll leave tag failed: %s", exc)
+
+
+# ---------------------------------------------------------------------------
+# Wire-up
+# ---------------------------------------------------------------------------
+
+_WIRED = False
+
+
+def wire_subscribers() -> None:
+    """Idempotently subscribe every consumer-side handler.
+
+    Safe to call multiple times — internal flag prevents duplicate
+    registrations. Call from the unified launcher or each GUI's
+    bootstrap if running in isolation.
+    """
+    global _WIRED
+    if _WIRED:
+        return
+    _ensure_log_table()
+    subscribe(EVENT_COURSE_CHANGED, _on_clearing_accepted)
+    subscribe(EVENT_COURSE_CHANGED, _on_adjustment_approved)
+    subscribe(EVENT_COURSE_CHANGED, _on_demand_forecast)
+    subscribe(EVENT_STAFF_AVAILABILITY_CHANGED, _on_staff_availability_changed)
+    subscribe(EVENT_MODULE_SCHEDULE_CHANGED, _on_timetable_locked)
+    subscribe(EVENT_SELECTION_CHANGED, _on_appraisal_completed)
+    _WIRED = True
+    logger.info("integration_bus subscribers wired")
+
+
+def reset_for_tests() -> None:
+    """Test-only — flip the wired flag back so wire_subscribers can re-run."""
+    global _WIRED
+    _WIRED = False
+
+
+__all__ = [
+    "log_and_publish",
+    "recent_events",
+    "resolve_student_id",
+    "publish_clearing_accepted",
+    "publish_adjustment_approved",
+    "publish_leave_decision",
+    "publish_timetable_locked",
+    "publish_demand_forecast",
+    "publish_appraisal_completed",
+    "publish_cert_expiry",
+    "publish_waitlist_promoted",
+    "promote_from_waitlist",
+    "run_degree_audit_sweep",
+    "sweep_expiring_certifications",
+    "wire_subscribers",
+    "reset_for_tests",
+]

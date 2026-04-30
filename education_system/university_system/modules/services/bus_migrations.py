@@ -157,6 +157,7 @@ def bootstrap_all_bus_subscribers() -> None:
         "housing_finance", "loyalty_bus", "parking_bus",
         "restaurant_bus", "risk_bus", "staff_hr_bus",
         "student_union_bus", "trip_bus",
+        "integration_bus",
     )
     for name in bus_names:
         try:
@@ -165,6 +166,15 @@ def bootstrap_all_bus_subscribers() -> None:
             )
         except Exception as exc:
             logger.debug("bus import %s failed: %s", name, exc)
+
+    # integration_bus subscribers must be wired explicitly — its
+    # handlers fan one event out to multiple consumer modules, so the
+    # registration sits behind a flag rather than at module import.
+    try:
+        from education_system.university_system.modules.services import integration_bus
+        integration_bus.wire_subscribers()
+    except Exception as exc:
+        logger.debug("integration_bus wire failed: %s", exc)
 
 
 __all__ = ["ensure_all_bus_schemas", "bootstrap_all_bus_subscribers"]

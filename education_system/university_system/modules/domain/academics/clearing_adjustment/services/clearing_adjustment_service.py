@@ -124,6 +124,7 @@ class ClearingAdjustmentService:
             return [dict(r) for r in rows]
 
     def update_application_status(self, app_id: int, status: str, processed_by: str = None) -> bool:
+        accepted_app: Optional[Dict] = None
         with transaction() as conn:
             conn.execute(
                 "UPDATE clearing_applications SET status = ?, processed_by = ?, processed_at = ? WHERE id = ?",
@@ -136,8 +137,22 @@ class ClearingAdjustmentService:
                         "UPDATE clearing_vacancies SET available_places = MAX(available_places - 1, 0) WHERE course_name = ? OR course_code = ?",
                         (app['preferred_course'], app['preferred_course'])
                     )
+                    accepted_app = app
             conn.commit()
-            return True
+        if accepted_app:
+            try:
+                from education_system.university_system.modules.services.integration_bus import (
+                    publish_clearing_accepted,
+                )
+                publish_clearing_accepted(
+                    app_id,
+                    course_code=accepted_app.get('preferred_course') or '',
+                    ucas_id=accepted_app.get('ucas_id'),
+                    applicant_name=accepted_app.get('applicant_name'),
+                )
+            except Exception:
+                pass
+        return True
 
     def auto_shortlist(self) -> List[Dict]:
         """Auto-shortlist applications matching tariff requirements."""
@@ -175,13 +190,32 @@ class ClearingAdjustmentService:
             return [dict(r) for r in rows]
 
     def process_adjustment(self, request_id: int, status: str, decided_by: str = None) -> bool:
+        approved_row: Optional[Dict] = None
         with transaction() as conn:
+            row = conn.execute(
+                "SELECT * FROM adjustment_requests WHERE id = ?", (request_id,)
+            ).fetchone()
             conn.execute(
                 "UPDATE adjustment_requests SET status = ?, decided_by = ?, decided_at = ? WHERE id = ?",
                 (status, decided_by, datetime.now().isoformat(), request_id)
             )
             conn.commit()
-            return True
+            if row and status == 'approved':
+                approved_row = dict(row)
+        if approved_row:
+            try:
+                from education_system.university_system.modules.services.integration_bus import (
+                    publish_adjustment_approved,
+                )
+                publish_adjustment_approved(
+                    request_id,
+                    student_id=approved_row.get('student_id') or '',
+                    from_course=approved_row.get('original_course') or '',
+                    to_course=approved_row.get('requested_course') or '',
+                )
+            except Exception:
+                pass
+        return True
 
     def get_clearing_statistics(self) -> Dict:
         with get_connection() as conn:

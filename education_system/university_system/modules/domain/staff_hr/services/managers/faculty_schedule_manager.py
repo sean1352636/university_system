@@ -119,6 +119,18 @@ class FacultyScheduleManager:
             log_activity('update', 'faculty_schedule_block', details={
                 'block_id': block_id, 'updated_fields': list(data.keys())
             })
+        if data.get('is_locked'):
+            try:
+                from education_system.university_system.modules.services.integration_bus import (
+                    publish_timetable_locked,
+                )
+                publish_timetable_locked(
+                    [existing['user_id']],
+                    academic_year=existing.get('academic_year'),
+                    semester=existing.get('semester'),
+                )
+            except Exception:
+                pass
 
     @staticmethod
     def delete_block(block_id) -> None:

@@ -156,7 +156,17 @@ class PerformanceManager:
             log_activity('submit', 'manager_review', details={
                 'reviewer': reviewer_id, 'user_id': user_id, 'cycle_id': cycle_id
             })
-            return True
+        try:
+            from education_system.university_system.modules.services.integration_bus import (
+                publish_appraisal_completed,
+            )
+            publish_appraisal_completed(
+                user_id, cycle_id=cycle_id,
+                rating=float(data.get('final_rating', manager_rating)),
+            )
+        except Exception:
+            pass
+        return True
 
     @staticmethod
     def get_goals(user_id: str, cycle_id: Optional[int] = None) -> List[Dict[str, Any]]:

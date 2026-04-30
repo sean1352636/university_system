@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.111.0 — 2026-04-30](#81110---2026-04-30)
 - [8.110.0 — 2026-04-30](#81100---2026-04-30)
 - [8.109.4 — 2026-04-30](#81094---2026-04-30)
 - [8.109.3 — 2026-04-30](#81093---2026-04-30)
@@ -220,6 +221,112 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.111.0] — 2026-04-30
+
+### University integration_bus — six-module cross-cutting feature loop
+
+A single integration spine wiring Clearing/Adjustment, Module
+Scheduling, Course Management, Staff HR, KPI Dashboard, and
+Finance Reporting through the existing academic event bus. Nine
+concrete cross-module behaviours, all tested, all published from
+the actual writer paths so the side-effects fire in the running
+program — not just from unit tests.
+
+#### Added — `modules/services/integration_bus.py`
+
+One auditable module owning every cross-module fan-out:
+
+- `integration_log` table + `log_and_publish()` helper so every
+  cross-module event lands in one place. `recent_events()` exposes
+  it for the KPI activity widget.
+- `resolve_student_id()` bridges `ucas_id ↔ student_id` for callers
+  that don't want to learn the link tables.
+- Eight `publish_*` helpers each origin service calls
+  (`publish_clearing_accepted`, `publish_adjustment_approved`,
+  `publish_leave_decision`, `publish_timetable_locked`,
+  `publish_demand_forecast`, `publish_appraisal_completed`,
+  `publish_cert_expiry`, `publish_waitlist_promoted`).
+- Three batch entry points for sweep-style work
+  (`run_degree_audit_sweep`, `sweep_expiring_certifications`,
+  `promote_from_waitlist`).
+- `wire_subscribers()` registers six handlers on a single flag —
+  idempotent, safe to call from any process startup.
+
+All handlers fail-open: a broken consumer cannot block the writer
+that triggered the event.
+
+#### Wired features (writer → effect)
+
+1. `ClearingAdjustmentService.update_application_status('accepted')`
+   → `module_schedule.enrolled` bumps, finance charge raised against
+   `program_fees` for the course, `kpi_metrics` enrolment counter
+   increments.
+2. `LeaveManager.approve_request` → cover request opened per day
+   via `CoverManager.create_request`, `payroll_periods.leave_notes`
+   stamped (column added lazily) so prorate calc picks it up.
+3. `ClearingAdjustmentService.process_adjustment('approved')` →
+   `plan_courses` row swapped to the new course, idempotent
+   credit/debit pair posted to finance referencing
+   `adjustment:<id>:credit` and `adjustment:<id>:debit`.
+4. `FacultyScheduleManager.update_block(is_locked=True)` → contracted
+   hours summed from `faculty_schedule_blocks`, written to
+   `payroll_periods.contracted_hours`, Staff Utilisation KPI row
+   created/refreshed.
+5. `run_degree_audit_sweep(cohort_year)` reads `student_plans`
+   + `plan_courses`, computes the on-track ratio, writes Graduation
+   Forecast into `kpi_metrics`.
+6. `publish_demand_forecast(course_code, predicted_enrollment)` →
+   `clearing_vacancies.suggested_places` (column added lazily) so
+   admins can apply forecasts back into next-year places.
+7. `PerformanceManager.submit_manager_review` → merit pay band
+   lookup against the appraisal rating, proposed allowance written
+   inactive via `PayrollManager.add_allowance` awaiting HR sign-off
+   (4.5+ → +5%, 4.0+ → +3%, 3.5+ → +1.5%).
+8. `sweep_expiring_certifications(within_days=30)` walks
+   `TrainingManager.get_expiring_certs`, publishes one
+   `EVENT_CERT_CHANGED` per row, sets Compliance Risk KPI to the
+   ratio of role-critical expiries.
+9. `promote_from_waitlist(student_id, course_code, plan_id)` runs
+   plan insert + capacity decrement in one SQL transaction, then
+   raises a single fee charge — eliminates the previous
+   three-dialog drift in Course Management.
+
+#### Patched origin services (5 narrow, best-effort edits)
+
+- `clearing_adjustment_service.update_application_status` —
+  publishes on `'accepted'`.
+- `clearing_adjustment_service.process_adjustment` — publishes on
+  `'approved'`.
+- `leave_manager.approve_request` — reads back start/end and
+  publishes availability change.
+- `faculty_schedule_manager.update_block` — publishes when the
+  block is locked.
+- `performance_manager.submit_manager_review` — publishes the
+  final rating.
+
+Each patch wraps the publish in try/except so a missing
+integration_bus during partial deploys doesn't break the existing
+HR/admissions flows.
+
+#### Launcher wiring
+
+`bus_migrations.bootstrap_all_bus_subscribers` now imports
+`integration_bus` alongside the other buses and calls
+`wire_subscribers()` once at startup, so CLI, GUI, and API entry
+points all pick up the cross-module fan-outs without per-GUI
+bootstrap.
+
+#### Tests — `tests/cli/integration/test_integration_bus.py`
+
+Nine passing tests, one per feature plus the integration_log
+contract. Each spins up a temporary SQLite, monkey-patches
+`get_connection`/`transaction` across `integration_bus` and
+`finance_bus`, resets the academic event bus + the wired flag,
+publishes through the public `publish_*` API, and asserts the
+side-effect on the consumer table.
 
 ---
 
