@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.113.0 — 2026-04-30](#81130---2026-04-30)
 - [8.112.0 — 2026-04-30](#81120---2026-04-30)
 - [8.111.0 — 2026-04-30](#81110---2026-04-30)
 - [8.110.0 — 2026-04-30](#81100---2026-04-30)
@@ -222,6 +223,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.113.0] — 2026-04-30
+
+### integration_bus Tier-1: safeguarding, accommodation, full disciplinary coverage
+
+Three compliance-grade cross-module flows that previously only ran
+inside their origin domains. Disciplinary now fans out for every
+action type (not just fines/suspensions/warnings); high-risk
+health assessments auto-open a safeguarding case and email the
+DSL; approved accessibility accommodations tag matching
+in-progress exam attempts and bump their time_remaining.
+
+#### Added — `integration_bus` extensions
+
+- `publish_health_risk_assessment(student_id, assessment_type,
+  risk_score, …)` — origin: health portal `conduct_risk_assessment`.
+  Subscriber escalates rows with `risk_score >= 70` (default) by
+  calling `cases_bus.open_case(kind='safeguarding', …)` and
+  emailing the designated safeguarding lead via
+  `email_bus.send_templated('hs.incident.logged', …)`. Below the
+  threshold, no auto-escalation — the row still saves locally.
+- `publish_accommodation_decision(request_id, student_id, status,
+  accommodation_type, extended_time_pct, separate_room,
+  reader_scribe, assistive_technology, exam_id)` — origin:
+  `AccommodationRequestManager.review_request` and
+  `ExamAccommodationManager.create_accommodation`. Subscriber
+  appends an `accommodation_notes` column to
+  `exam_portal_attempts` (added lazily on first use), tags
+  in-progress / pending / scheduled attempts with the
+  accommodation summary, and proportionally extends
+  `time_remaining` when an `extended_time_pct` is given. Graded
+  attempts are immune — accommodations can't retroactively change
+  a finalised score.
+- `_designated_safeguarding_lead()` resolves the DSL via a `users`
+  row with `role='safeguarding_lead'` / `'dsl'` /
+  `'designated_lead'`; falls back to admin recipient.
+- `_severity_for_score()` maps risk scores to incident severity
+  bands (≥85 critical, ≥70 high, ≥40 medium, else low).
+
+#### Wired features (writer → effect)
+
+- **Disciplinary:** `disciplinary_portal.add_action` action_type
+  mapping extended. `expulsion` joins `suspension`/`exclusion` for
+  finance hold; `probation`, `community service`, `reprimand`,
+  `censure` join the warning band; **unknown action types now
+  fall through to a warning publish** so no sanction is silently
+  swallowed by the bus router.
+- **Health:** `data_privacy.conduct_risk_assessment` publishes
+  through `publish_health_risk_assessment` after committing the
+  `risk_assessments` row. Safeguarding case opens via
+  `cases_bus.open_case` (lands in `disciplinary_records` for
+  non-AM kinds). DSL receives email through the existing
+  `hs.incident.logged` template.
+- **Accessibility:** `AccommodationRequestManager.review_request`
+  reads back the `student_id` + `accommodation_type` from
+  `accommodation_requests` and publishes the decision (approved
+  or rejected). `ExamAccommodationManager.create_accommodation`
+  publishes a synthetic `'approved'` decision so directly-created
+  exam accommodations follow the same code path.
+
+#### Tests — `tests/cli/integration/test_integration_bus_tier1.py`
+
+5 passing tests:
+- High-risk assessment opens a `disciplinary_records` row and
+  emails the DSL via the `hs.incident.logged` template.
+- Low-risk assessment (<70) does NOT escalate — both
+  `disciplinary_records` and `email_log` stay empty.
+- Approved accommodation appends notes and bumps `time_remaining`
+  by the right percentage on in-progress attempts (3600s + 25% =
+  4500s).
+- Approved accommodation leaves graded attempts alone (the
+  accommodation can't retroactively change them).
+- Rejected accommodation is a no-op.
+
+Combined integration suite: 22 passing (Tier 0 + 8.112 + Tier 1).
 
 ---
 

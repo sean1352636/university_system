@@ -120,8 +120,29 @@ class AccommodationRequestManager:
                         VALUES (?, ?, ?)
                     ''', (request_id, reviewer_id, notes))
 
+                # Pull the request so we can broadcast the decision.
+                row = cursor.execute(
+                    "SELECT student_id, accommodation_type FROM accommodation_requests "
+                    "WHERE request_id = ?",
+                    (request_id,),
+                ).fetchone()
+
                 log_activity('update', 'accommodation_request', request_id=request_id,
                            details={'status': status, 'reviewer_id': reviewer_id})
+
+            if row:
+                try:
+                    from education_system.university_system.modules.services.integration_bus import (
+                        publish_accommodation_decision,
+                    )
+                    publish_accommodation_decision(
+                        request_id,
+                        student_id=str(row[0]),
+                        status=status,
+                        accommodation_type=row[1] or "general",
+                    )
+                except Exception:
+                    pass
         except Exception as e:
             raise Exception(f"Error reviewing request: {e}")
 
@@ -171,7 +192,24 @@ class ExamAccommodationManager:
                 log_activity('create', 'exam_accommodation',
                            accommodation_id=accommodation_id,
                            details={'student_id': student_id})
-                return accommodation_id
+            try:
+                from education_system.university_system.modules.services.integration_bus import (
+                    publish_accommodation_decision,
+                )
+                publish_accommodation_decision(
+                    accommodation_id,
+                    student_id=str(student_id),
+                    status="approved",
+                    accommodation_type="exam_accommodation",
+                    extended_time_pct=int(extended_time or 0),
+                    separate_room=bool(separate_room),
+                    reader_scribe=bool(reader_scribe),
+                    assistive_technology=assistive_technology,
+                    exam_id=exam_id,
+                )
+            except Exception:
+                pass
+            return accommodation_id
         except Exception as e:
             raise Exception(f"Error creating accommodation: {e}")
 

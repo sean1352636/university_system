@@ -2160,6 +2160,21 @@ def conduct_risk_assessment(auth):
 
     conn.close()
 
+    try:
+        from education_system.university_system.modules.services.integration_bus import (
+            publish_health_risk_assessment,
+        )
+        publish_health_risk_assessment(
+            student_id=str(student_id),
+            assessment_type=assessment_type,
+            risk_score=int(risk_score),
+            risk_factors=risk_factors,
+            follow_up_date=follow_up_date,
+            assessed_by=auth.current_user['username'],
+        )
+    except Exception:
+        pass
+
 def calculate_risk_score(assessment_type, age, conditions, allergies, latest_bmi):
     """Calculate risk score based on assessment type and health data"""
     base_score = 0

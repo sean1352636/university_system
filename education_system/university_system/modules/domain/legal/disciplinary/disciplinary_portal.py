@@ -381,13 +381,23 @@ class DatabaseManager:
                     kwargs["amount"] = float(duration or 0)
                 except Exception:
                     kwargs["amount"] = 0.0
-            elif mapped in ("suspension", "suspend", "exclusion"):
+            elif mapped in ("suspension", "suspend", "exclusion", "expulsion"):
                 sanction = "suspension"
                 try:
                     kwargs["duration_days"] = int(duration or 0)
                 except Exception:
                     pass
-            elif mapped in ("warning", "verbal warning", "written warning"):
+            elif mapped in ("warning", "verbal warning", "written warning",
+                            "probation", "community service", "reprimand",
+                            "censure"):
+                # Lower-tier sanctions still need to fire the bus so
+                # email + cases subscribers see them; they just don't
+                # touch finance.
+                sanction = "warning"
+            else:
+                # Unknown action type — publish generically so the
+                # event isn't silently swallowed. Treats it as a
+                # warning so finance stays untouched.
                 sanction = "warning"
             if sanction and subject_id:
                 apply_sanction(

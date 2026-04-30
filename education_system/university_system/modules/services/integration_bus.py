@@ -1411,6 +1411,222 @@ def _on_enrolment_withdrew(**payload: Any) -> None:
         logger.debug("withdraw → refund preview failed: %s", exc)
 
 
+# ===========================================================================
+# Tier-1 safeguarding / accommodation features
+# ===========================================================================
+
+# Default risk-score floor that promotes a health risk_assessment row
+# to a safeguarding event. Tunable via the kpi_metrics row
+# 'Safeguarding Risk Threshold' if an admin wants to tighten it.
+_SAFEGUARDING_THRESHOLD = 70
+
+
+def publish_health_risk_assessment(student_id: str, *, assessment_type: str,
+                                    risk_score: int,
+                                    risk_factors: list[str] | None = None,
+                                    follow_up_date: str | None = None,
+                                    assessed_by: str | None = None) -> None:
+    """Publish a health risk assessment.
+
+    Origin: ``health.portal.data_privacy.conduct_risk_assessment``.
+    Subscribers (this module) raise an incident and an open case
+    when the score crosses the safeguarding threshold.
+    """
+    log_and_publish(
+        EVENT_INCIDENT_LOGGED,
+        source="health",
+        kind="health_risk_assessment",
+        severity=_severity_for_score(risk_score),
+        student_id=str(student_id),
+        assessment_type=assessment_type,
+        risk_score=int(risk_score),
+        risk_factors=risk_factors or [],
+        follow_up_date=follow_up_date,
+        assessed_by=assessed_by,
+    )
+
+
+def _severity_for_score(score: int) -> str:
+    if score >= 85:
+        return "critical"
+    if score >= _SAFEGUARDING_THRESHOLD:
+        return "high"
+    if score >= 40:
+        return "medium"
+    return "low"
+
+
+def _on_health_risk_assessment(**payload: Any) -> None:
+    if payload.get("kind") != "health_risk_assessment":
+        return
+    score = int(payload.get("risk_score") or 0)
+    if score < _SAFEGUARDING_THRESHOLD:
+        return  # below threshold — no auto-escalation
+    student_id = payload.get("student_id")
+    if not student_id:
+        return
+
+    # 1. Open a safeguarding case via cases_bus (idempotent on
+    # subject_id+kind so repeat assessments don't pile up cases).
+    try:
+        from education_system.university_system.modules.services.cases_bus import (
+            open_case,
+        )
+        open_case(
+            kind="safeguarding",
+            subject_id=str(student_id),
+            severity=payload.get("severity") or "high",
+            description=(
+                f"Health risk assessment: {payload.get('assessment_type')} "
+                f"score {score}"
+            ),
+            opened_by=payload.get("assessed_by") or "health_portal",
+        )
+    except Exception as exc:
+        logger.debug("cases_bus open_case failed: %s", exc)
+
+    # 2. Email the designated safeguarding lead.
+    try:
+        from education_system.university_system.modules.services.email_bus import (
+            send_templated,
+        )
+        dsl = _designated_safeguarding_lead() or _admin_user_id() or "admin"
+        send_templated(
+            dsl, "hs.incident.logged",
+            {
+                "incident_id": f"health:{student_id}:{score}",
+                "severity": payload.get("severity") or "high",
+                "location": "health portal",
+            },
+            related_to=f"safeguarding:{student_id}",
+            force=True,
+        )
+    except Exception as exc:
+        logger.debug("safeguarding email failed: %s", exc)
+
+
+def _designated_safeguarding_lead() -> str | None:
+    """Look up the DSL user_id. Falls back to None if not configured.
+
+    The convention here is a row in ``users`` with
+    ``role='safeguarding_lead'``; if that role doesn't exist, callers
+    fall through to the admin recipient.
+    """
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT user_id FROM users "
+                "WHERE LOWER(role) IN ('safeguarding_lead', 'dsl', 'designated_lead') "
+                "AND email IS NOT NULL LIMIT 1"
+            ).fetchone()
+            return str(row[0]) if row else None
+    except Exception:
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Tier-1 Item 3 — accessibility accommodation → exam tag
+# ---------------------------------------------------------------------------
+
+def publish_accommodation_decision(request_id: int, *, student_id: str,
+                                    status: str, accommodation_type: str,
+                                    extended_time_pct: int = 0,
+                                    separate_room: bool = False,
+                                    reader_scribe: bool = False,
+                                    assistive_technology: str | None = None,
+                                    exam_id: int | None = None) -> None:
+    """Publish an accommodation decision.
+
+    Origin: ``AccommodationRequestManager.review_request`` and
+    ``ExamAccommodationManager.create_accommodation``. Subscribers
+    (this module) tag matching ``exam_portal_attempts`` rows so the
+    invigilator knows extra time / reader service applies, and they
+    extend the per-attempt ``time_remaining`` proportionally.
+    """
+    log_and_publish(
+        EVENT_SELECTION_CHANGED,
+        source="student_affairs",
+        action="accommodation_decided",
+        request_id=int(request_id),
+        student_id=str(student_id),
+        status=status,
+        accommodation_type=accommodation_type,
+        extended_time_pct=int(extended_time_pct or 0),
+        separate_room=bool(separate_room),
+        reader_scribe=bool(reader_scribe),
+        assistive_technology=assistive_technology,
+        exam_id=exam_id,
+    )
+
+
+def _on_accommodation_decided(**payload: Any) -> None:
+    if payload.get("action") != "accommodation_decided":
+        return
+    if payload.get("status") != "approved":
+        return
+    student_id = payload.get("student_id")
+    if not student_id:
+        return
+    extra_pct = int(payload.get("extended_time_pct") or 0)
+
+    try:
+        with transaction() as conn:
+            tbl = conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name='exam_portal_attempts'"
+            ).fetchone()
+            if not tbl:
+                return
+            cols = {r[1] for r in conn.execute(
+                "PRAGMA table_info(exam_portal_attempts)").fetchall()}
+            if "accommodation_notes" not in cols:
+                conn.execute(
+                    "ALTER TABLE exam_portal_attempts "
+                    "ADD COLUMN accommodation_notes TEXT"
+                )
+            note = _format_accommodation_note(payload)
+
+            # Tag any in-progress / not-yet-started attempts. Done
+            # attempts stay untouched — the accommodation can't
+            # retroactively change a graded score.
+            sql_filter = "student_id = ? AND status IN ('in_progress', 'pending', 'scheduled')"
+            params: list[Any] = [str(student_id)]
+            if payload.get("exam_id") is not None:
+                sql_filter += " AND exam_id = ?"
+                params.append(int(payload["exam_id"]))
+
+            conn.execute(
+                f"UPDATE exam_portal_attempts "
+                f"SET accommodation_notes = COALESCE(accommodation_notes, '') || ? "
+                f"WHERE {sql_filter}",
+                (note + "; ", *params),
+            )
+            if extra_pct > 0:
+                conn.execute(
+                    f"UPDATE exam_portal_attempts "
+                    f"SET time_remaining = CAST("
+                    f"  COALESCE(time_remaining, 0) * (1 + ?/100.0) AS INTEGER) "
+                    f"WHERE {sql_filter}",
+                    (extra_pct, *params),
+                )
+            conn.commit()
+    except Exception as exc:
+        logger.debug("accommodation→exam tag failed: %s", exc)
+
+
+def _format_accommodation_note(payload: dict[str, Any]) -> str:
+    bits = [payload.get("accommodation_type") or "accommodation"]
+    if payload.get("extended_time_pct"):
+        bits.append(f"+{payload['extended_time_pct']}% time")
+    if payload.get("separate_room"):
+        bits.append("separate room")
+    if payload.get("reader_scribe"):
+        bits.append("reader/scribe")
+    if payload.get("assistive_technology"):
+        bits.append(f"AT: {payload['assistive_technology']}")
+    return ", ".join(bits)
+
+
 # ---------------------------------------------------------------------------
 # Wire-up
 # ---------------------------------------------------------------------------
@@ -1439,6 +1655,8 @@ def wire_subscribers() -> None:
     subscribe(EVENT_EXAM_CHANGED, _on_exam_event)
     subscribe(EVENT_TERM_CHANGED, _on_term_changed)
     subscribe(EVENT_ENROLMENT_CHANGED, _on_enrolment_withdrew)
+    subscribe(EVENT_INCIDENT_LOGGED, _on_health_risk_assessment)
+    subscribe(EVENT_SELECTION_CHANGED, _on_accommodation_decided)
     _WIRED = True
     logger.info("integration_bus subscribers wired")
 
@@ -1470,6 +1688,8 @@ __all__ = [
     "sweep_ungraded_exams",
     "is_exam_within_term",
     "publish_enrolment_withdrew",
+    "publish_health_risk_assessment",
+    "publish_accommodation_decision",
     "wire_subscribers",
     "reset_for_tests",
 ]
