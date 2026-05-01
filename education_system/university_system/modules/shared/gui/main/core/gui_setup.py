@@ -2,6 +2,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import logging
+import json
+from pathlib import Path
 
 # GUI managers — imported lazily via _lazy_import() to speed up startup
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import _lazy_import
@@ -16,6 +18,27 @@ from education_system.university_system.modules.shared.gui.main.imports.gui_impo
 )
 
 logger = logging.getLogger(__name__)
+
+_PIN_FILE = Path.home() / ".config" / "edu_system" / "university_pinned.json"
+
+
+def _load_pinned():
+    try:
+        if _PIN_FILE.exists():
+            data = json.loads(_PIN_FILE.read_text())
+            if isinstance(data, list):
+                return data
+    except Exception as e:
+        logger.debug(f"Could not load pinned: {e}")
+    return []
+
+
+def _save_pinned(pins):
+    try:
+        _PIN_FILE.parent.mkdir(parents=True, exist_ok=True)
+        _PIN_FILE.write_text(json.dumps(list(pins)))
+    except Exception as e:
+        logger.warning(f"Could not save pinned: {e}")
 
 def create_fallback_interface(self):
     """Create minimal fallback interface"""
@@ -185,7 +208,7 @@ def create_navigation_panel(self, parent):
     # (section_label, [(button_name, label, command), ...]) tuples; the
     # section header is rendered above its buttons when there is more than
     # one visible section. Sections with no visible buttons are dropped.
-    def open_grouped_category_window(group_title, sections):
+    def open_grouped_category_window(group_title, sections, layout='sections'):
         visible_sections = []
         for section_label, buttons_data in sections:
             visible_btns = [
@@ -213,26 +236,8 @@ def create_navigation_panel(self, parent):
         header.pack_propagate(False)
         tk.Label(header, text=group_title, font=('Arial', 16, 'bold'),
                  bg='#2c3e50', fg='white').pack(expand=True)
-
-        canvas = tk.Canvas(cat_window, highlightthickness=0)
-        scrollbar = ttk.Scrollbar(cat_window, orient="vertical", command=canvas.yview)
-        scrollable = ttk.Frame(canvas)
-        scrollable.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all")),
-        )
-        canvas_win = canvas.create_window((0, 0), window=scrollable, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        def _resize_inner(event):
-            canvas.itemconfig(canvas_win, width=event.width)
-        canvas.bind('<Configure>', _resize_inner)
-
-        canvas.pack(side="left", fill="both", expand=True, padx=10, pady=10)
-        scrollbar.pack(side="right", fill="y")
-
-        for c in range(cols):
-            scrollable.columnconfigure(c, weight=1)
+        tk.Label(cat_window, text="Tip: right-click any button to pin it to the sidebar.",
+                 font=('Arial', 9, 'italic'), fg='#555').pack(pady=(4, 0))
 
         def make_command(command, window):
             def wrapped_cmd():
@@ -240,27 +245,106 @@ def create_navigation_panel(self, parent):
                 command()
             return wrapped_cmd
 
-        show_section_headers = len(visible_sections) > 1
-        row = 0
-        for section_label, btns in visible_sections:
-            if show_section_headers:
-                tk.Label(
-                    scrollable, text=section_label,
-                    font=('Arial', 11, 'bold'), anchor='w',
-                ).grid(row=row, column=0, columnspan=cols,
-                       sticky='ew', padx=4, pady=(12, 4))
-                row += 1
+        def _toggle_pin(name):
+            pins = _load_pinned()
+            if name in pins:
+                pins.remove(name)
+            else:
+                pins.append(name)
+            _save_pinned(pins)
+            cat_window.destroy()
+            self.rebuild_navigation_panel()
 
-            for idx, (name, text, cmd) in enumerate(btns):
-                col = idx % cols
-                btn_row = row + (idx // cols)
-                ttk.Button(
-                    scrollable, text=text,
-                    command=make_command(cmd, cat_window),
-                    style='Large.TButton',
-                ).grid(row=btn_row, column=col, padx=4, pady=4, sticky='nsew')
+        def _bind_pin_menu(widget, name):
+            def _show_menu(event):
+                m = tk.Menu(cat_window, tearoff=0)
+                pins = _load_pinned()
+                label = "Unpin from sidebar" if name in pins else "Pin to sidebar"
+                m.add_command(label=label, command=lambda n=name: _toggle_pin(n))
+                try:
+                    m.tk_popup(event.x_root, event.y_root)
+                finally:
+                    m.grab_release()
+            widget.bind('<Button-3>', _show_menu)
 
-            row += (len(btns) + cols - 1) // cols
+        if layout == 'notebook' and len(visible_sections) > 1:
+            notebook = ttk.Notebook(cat_window)
+            notebook.pack(fill='both', expand=True, padx=10, pady=10)
+            for section_label, btns in visible_sections:
+                tab_outer = ttk.Frame(notebook)
+                notebook.add(tab_outer, text=section_label)
+
+                # scrollable tab
+                tab_canvas = tk.Canvas(tab_outer, highlightthickness=0)
+                tab_sb = ttk.Scrollbar(tab_outer, orient='vertical',
+                                       command=tab_canvas.yview)
+                tab_inner = ttk.Frame(tab_canvas)
+                tab_inner.bind('<Configure>', lambda e, c=tab_canvas:
+                               c.configure(scrollregion=c.bbox('all')))
+                tab_win = tab_canvas.create_window((0, 0), window=tab_inner,
+                                                   anchor='nw')
+                tab_canvas.configure(yscrollcommand=tab_sb.set)
+                tab_canvas.bind('<Configure>',
+                                lambda e, c=tab_canvas, w=tab_win:
+                                c.itemconfig(w, width=e.width))
+                tab_canvas.pack(side='left', fill='both', expand=True)
+                tab_sb.pack(side='right', fill='y')
+
+                for c in range(cols):
+                    tab_inner.columnconfigure(c, weight=1)
+                for idx, (name, text, cmd) in enumerate(btns):
+                    r, col = idx // cols, idx % cols
+                    btn = ttk.Button(
+                        tab_inner, text=text,
+                        command=make_command(cmd, cat_window),
+                        style='Large.TButton',
+                    )
+                    btn.grid(row=r, column=col, padx=4, pady=4, sticky='nsew')
+                    _bind_pin_menu(btn, name)
+        else:
+            canvas = tk.Canvas(cat_window, highlightthickness=0)
+            scrollbar = ttk.Scrollbar(cat_window, orient="vertical", command=canvas.yview)
+            scrollable = ttk.Frame(canvas)
+            scrollable.bind(
+                "<Configure>",
+                lambda e: canvas.configure(scrollregion=canvas.bbox("all")),
+            )
+            canvas_win = canvas.create_window((0, 0), window=scrollable, anchor="nw")
+            canvas.configure(yscrollcommand=scrollbar.set)
+
+            def _resize_inner(event):
+                canvas.itemconfig(canvas_win, width=event.width)
+            canvas.bind('<Configure>', _resize_inner)
+
+            canvas.pack(side="left", fill="both", expand=True, padx=10, pady=10)
+            scrollbar.pack(side="right", fill="y")
+
+            for c in range(cols):
+                scrollable.columnconfigure(c, weight=1)
+
+            show_section_headers = len(visible_sections) > 1
+            row = 0
+            for section_label, btns in visible_sections:
+                if show_section_headers:
+                    tk.Label(
+                        scrollable, text=section_label,
+                        font=('Arial', 11, 'bold'), anchor='w',
+                    ).grid(row=row, column=0, columnspan=cols,
+                           sticky='ew', padx=4, pady=(12, 4))
+                    row += 1
+
+                for idx, (name, text, cmd) in enumerate(btns):
+                    col = idx % cols
+                    btn_row = row + (idx // cols)
+                    btn = ttk.Button(
+                        scrollable, text=text,
+                        command=make_command(cmd, cat_window),
+                        style='Large.TButton',
+                    )
+                    btn.grid(row=btn_row, column=col, padx=4, pady=4, sticky='nsew')
+                    _bind_pin_menu(btn, name)
+
+                row += (len(btns) + cols - 1) // cols
 
         ttk.Button(
             cat_window, text=_t("common.close"), command=cat_window.destroy,
@@ -290,6 +374,7 @@ def create_navigation_panel(self, parent):
 
     # ---------- Academic Management ----------
     academic_buttons_data = [
+        ('academic_hub', '🏛 Academic Hub', self.show_academic_hub),
         ('course_management', _t("nav.buttons.course_management"), self.show_course_management),
         ('module_management', _t("nav.buttons.module_management"), self.show_module_management),
         ('assignments', _t("nav.buttons.assignments"), self.show_assignments),
@@ -344,6 +429,7 @@ def create_navigation_panel(self, parent):
         ('events_discovery', _t("nav.buttons.events_discovery"), self.show_events_discovery_gui),
         ('facilities_management', _t("nav.buttons.facilities"), self.show_facilities_management_gui),
         ('new_feature_room_booking', 'Room Booking', self.show_new_feature_room_booking),
+        ('new_feature_building_management', 'Building Management', self.show_new_feature_building_management),
         ('equipment', _t("nav.buttons.equipment"), self.show_equipment_gui),
     ]
 
@@ -506,24 +592,28 @@ def create_navigation_panel(self, parent):
         ('certificates', 'Certificates', self.show_certificates_gui),
     ]
 
-    # 8 top-level groups (was 25 flat categories). Each group's category
-    # window shows the listed sub-sections with bold section headers when
-    # more than one section is visible to the current role. Ordered by
-    # use frequency: classroom-first, life/services in the middle,
-    # admin tooling last.
+    # 10 top-level groups (re-balanced). Each entry is
+    # (group_label, sections, layout). Layout 'notebook' renders sections
+    # as Notebook tabs in the popup (used for the wide Campus Life group);
+    # 'sections' (default) renders them as stacked headers in one scroll.
     top_level_groups = [
-        ("Academics", [
+        ("🎓 Academics", [
             (_t("nav.categories.academic"), academic_buttons_data),
             (_t("nav.categories.scheduling"), sched_buttons_data),
-        ]),
-        ("People", [
+        ], 'sections'),
+        ("👥 People", [
             (_t("nav.categories.student_management"), student_mgmt_buttons_data),
             (_t("nav.categories.human_resources"), human_resources_buttons_data),
-        ]),
-        ("Finance", [
+        ], 'sections'),
+        ("💰 Finance", [
             (_t("nav.categories.finance"), finance_buttons_data),
-        ]),
-        ("Student Life", [
+        ], 'sections'),
+        ("🛟 Student Support", [
+            (_t("nav.categories.services"), student_services_buttons_data),
+            (_t("nav.categories.family_legal"), family_and_legal_buttons_data),
+            (_t("nav.categories.communication"), communication_buttons_data),
+        ], 'sections'),
+        ("🏠 Campus Life", [
             (_t("nav.categories.health"), health_buttons_data),
             (_t("nav.categories.accommodation"), accommodation_buttons_data),
             (_t("nav.categories.campus"), campus_buttons_data),
@@ -533,37 +623,128 @@ def create_navigation_panel(self, parent):
             (_t("nav.categories.transportation"), transport_buttons_data),
             (_t("nav.categories.entertainment"), entertainment_buttons_data),
             (_t("nav.categories.community"), community_services_buttons_data),
-        ]),
-        ("Support & Wellbeing", [
-            (_t("nav.categories.services"), student_services_buttons_data),
+        ], 'notebook'),
+        ("💼 Career", [
             (_t("nav.categories.career_alumni"), career_and_alumni_buttons_data),
-            (_t("nav.categories.family_legal"), family_and_legal_buttons_data),
-            (_t("nav.categories.communication"), communication_buttons_data),
-        ]),
-        ("Reports & Data", [
+        ], 'sections'),
+        ("📊 Analytics & Reports", [
             (_t("nav.categories.analytics"), analytics_and_reporting_buttons_data),
             (_t("nav.categories.documents"), documents_and_export_buttons_data),
             (_t("nav.categories.tools"), ai_and_advanced_tools_buttons_data),
-        ]),
-        ("Administration", [
+        ], 'sections'),
+        ("🏛 Cross-System", [
+            ("Cross-System", cross_system_buttons_data),
+        ], 'sections'),
+        ("⚙ Administration", [
             (_t("nav.categories.administration"), administration_buttons_data),
             (_t("nav.categories.security_safety"), security_and_safety_buttons_data),
-            ("Cross-System", cross_system_buttons_data),
-        ]),
-        ("Account", [
+        ], 'sections'),
+        ("🔐 Account", [
             (_t("nav.categories.authentication"), authentication_buttons_data),
-        ]),
+        ], 'sections'),
     ]
 
-    for group_label, sections in top_level_groups:
+    # ---------- Search bar (filters across all visible actions) ----------
+    search_var = tk.StringVar()
+    search_entry = ttk.Entry(scrollable_frame, textvariable=search_var)
+    search_entry.pack(fill=tk.X, padx=5, pady=(2, 4))
+
+    _SEARCH_PLACEHOLDER = "🔍 Search features..."
+
+    def _set_placeholder():
+        search_entry.delete(0, tk.END)
+        search_entry.insert(0, _SEARCH_PLACEHOLDER)
+        try:
+            search_entry.config(foreground='gray')
+        except Exception:
+            pass
+
+    def _on_search_focus_in(_e):
+        if search_var.get() == _SEARCH_PLACEHOLDER:
+            search_entry.delete(0, tk.END)
+            try:
+                search_entry.config(foreground='black')
+            except Exception:
+                pass
+
+    def _on_search_focus_out(_e):
+        if not search_var.get().strip():
+            _set_placeholder()
+
+    search_entry.bind('<FocusIn>', _on_search_focus_in)
+    search_entry.bind('<FocusOut>', _on_search_focus_out)
+    _set_placeholder()
+
+    search_results_frame = ttk.Frame(scrollable_frame)
+    search_results_frame.pack(fill=tk.X, padx=5)
+
+    # Flat index of every visible action across all groups.
+    all_actions = []
+    for _gl, _secs, _lay in top_level_groups:
+        for _sl, _btns in _secs:
+            for _nm, _txt, _cmd in _btns:
+                if _nm in visible_buttons:
+                    all_actions.append((_txt, _nm, _cmd))
+
+    def _on_search_change(*_):
+        for w in search_results_frame.winfo_children():
+            w.destroy()
+        q = search_var.get().strip().lower()
+        if not q or q == _SEARCH_PLACEHOLDER.lower():
+            return
+        seen_names = set()
+        matches = []
+        for txt, name, cmd in all_actions:
+            if name in seen_names:
+                continue
+            if q in txt.lower():
+                matches.append((txt, name, cmd))
+                seen_names.add(name)
+        for txt, name, cmd in matches[:25]:
+            ttk.Button(search_results_frame, text=txt,
+                       command=cmd).pack(fill=tk.X, pady=1)
+
+    search_var.trace_add('write', _on_search_change)
+
+    # ---------- Pinned shortcuts ----------
+    pinned_names = _load_pinned()
+    if pinned_names:
+        actions_by_name = {n: (t, c) for (t, n, c) in all_actions}
+        pinned_visible = [(actions_by_name[n][0], n, actions_by_name[n][1])
+                          for n in pinned_names if n in actions_by_name]
+        if pinned_visible:
+            pin_frame = ttk.LabelFrame(scrollable_frame, text="★ Pinned",
+                                       padding=3)
+            pin_frame.pack(fill=tk.X, padx=5, pady=(4, 6))
+
+            def _make_unpin(n):
+                def _do():
+                    pins = _load_pinned()
+                    if n in pins:
+                        pins.remove(n)
+                        _save_pinned(pins)
+                    self.rebuild_navigation_panel()
+                return _do
+
+            for txt, name, cmd in pinned_visible:
+                row = ttk.Frame(pin_frame)
+                row.pack(fill=tk.X, pady=1)
+                ttk.Button(row, text=txt, command=cmd).pack(
+                    side=tk.LEFT, fill=tk.X, expand=True)
+                ttk.Button(row, text="✕", width=2,
+                           command=_make_unpin(name)).pack(side=tk.RIGHT,
+                                                            padx=(2, 0))
+
+    # ---------- Group buttons ----------
+    for group_label, sections, layout in top_level_groups:
         if not any(name in visible_buttons
                    for _, btns in sections for name, _, _ in btns):
             continue
         ttk.Button(
             scrollable_frame,
             text=group_label + " ▶",
-            command=(lambda gl=group_label, secs=sections:
-                     open_grouped_category_window(gl, secs)),
+            command=(lambda gl=group_label, secs=sections, lay=layout:
+                     open_grouped_category_window(gl, secs, lay)),
             style='Large.TButton',
         ).pack(fill=tk.X, pady=2, padx=5)
 
@@ -715,7 +896,10 @@ def get_visible_buttons_for_role(self, role=None):
         'new_feature_kpi_dashboard',
         'new_feature_mentoring_matching',
         'new_feature_room_booking',
+        'new_feature_building_management',
         'new_feature_tutor_groups',
+        # Academic Operations Hub — visible to all logged-in users
+        'academic_hub',
         # Standalone Tk apps moved from /add 2026-04
         'new_feature_apprenticeship_system',
         'new_feature_placement_tracker',

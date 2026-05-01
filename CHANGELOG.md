@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.0 — 2026-05-01](#81170---2026-05-01)
 - [8.116.0 — 2026-04-30](#81160---2026-04-30)
 - [8.115.0 — 2026-04-30](#81150---2026-04-30)
 - [8.114.0 — 2026-04-30](#81140---2026-04-30)
@@ -228,6 +229,148 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.0] — 2026-05-01
+
+### Academic operations UX overhaul + Building Management module
+
+Rebalances the unified GUI sidebar (search + pinned shortcuts + 10
+re-categorised groups), adds a dedicated **Building Management**
+domain module, and links the six core academic GUIs (Course Mgmt,
+Module Scheduling, Timetable, Building Mgmt, Attendance, Study
+Matching) with a shared quick-switch toolbar, an Academic
+Operations Hub dashboard, and right-click cross-navigation with
+context passing.
+
+#### Added — Sidebar navigation overhaul (`gui_setup.py`)
+
+- **Live search bar** at the top of the navigation panel — filters
+  across every visible action (capped at 25 results, case-insensitive
+  substring on labels). Placeholder text auto-restores on blur.
+- **★ Pinned shortcuts** persisted to
+  `~/.config/edu_system/university_pinned.json`. Right-click any
+  button inside a category popup to pin/unpin; sidebar shows a
+  removable row per pin.
+- **10 re-categorised top-level groups** replacing the previous 8
+  imbalanced ones: 🎓 Academics, 👥 People, 💰 Finance, 🛟 Student
+  Support, 🏠 Campus Life, 💼 Career, 📊 Analytics & Reports,
+  🏛 Cross-System (promoted out of Admin), ⚙ Administration,
+  🔐 Account.
+- **Notebook layout for Campus Life** — its 9 sub-sections (Health,
+  Accommodation, Campus, Dining, Shops, Personal Services, Transport,
+  Entertainment, Community) render as tabs inside the popup instead
+  of one long scroll, so the wall-of-buttons problem is gone.
+
+#### Added — Building Management (`modules/domain/campus/building_management/`)
+
+- New standalone Tk app launched as a subprocess, surfaced under
+  Campus Life → Campus, also visible in the always-on permission
+  set. Wired through `_NEW_FEATURE_MODULES` in `main_gui.py`.
+- 8 Notebook tabs, each backed by a CRUD pattern (Treeview + form +
+  Add/Update/Delete/Refresh), reusing existing tables where they
+  exist and only adding two `bm_`-prefixed tables for genuinely new
+  features:
+  - **Buildings** — `buildings` (existing, PK `building_id`)
+  - **Rooms** — `rooms` (existing, PK `id`, FK `building_id`)
+  - **Utilities** — `energy_usage` (existing, per-utility readings:
+    electricity / water / gas / heating)
+  - **Cleaning** — `bm_cleaning_schedules` (NEW)
+  - **Maintenance** — `maintenance_requests` (existing, with
+    location_type/priority/cost/scheduled & completion dates)
+  - **Occupancy** — `bm_occupancy_records` (NEW) — auto-computes
+    `utilization_pct` and shows a per-building avg/peak summary
+  - **Access Cards** — `access_cards` (existing, per-card model with
+    `buildings_access` CSV)
+  - **Inspections** — `housing_inspections` (existing, with
+    auto-generated `inspection_id` of form `INS-YYYYMMDDHHMMSS-NNNN`)
+- Writes to the central `data/db_files/student_records.db`. Only the
+  two `bm_*` tables are created (`CREATE TABLE IF NOT EXISTS`); no
+  existing tables are modified.
+- Comprehensive error handling: `_safe()` wrapper around every CRUD
+  handler converts `IntegrityError` → validation dialog, `ValueError`
+  → input warning, anything else → error dialog + `logger.exception`.
+- Auth piggybacks on EDU_AUTH_* env vars from the parent GUI;
+  falls back to in-process global auth.
+
+#### Added — Cross-module link bar + Academic Hub
+
+- **`features/academic_link_bar.py`** — colour-coded toolbar attached
+  to the top of every linked academic window via `attach_quickbar()`.
+  Building Management (subprocess) uses `attach_subprocess_quickbar()`
+  which writes to `~/.cache/edu_system/academic_open_request.json`;
+  the parent GUI's `start_ipc_poller()` (started from
+  `UnifiedManagementGUI.__init__`) reads/dispatches/deletes the
+  request every ~1.5 s.
+- **`features/academic_hub.py`** — new Toplevel landing page with a
+  6-tile module grid + a 6-step "Plan → Schedule → Run → Track"
+  workflow panel. Surfaced as **🏛 Academic Hub** at the top of the
+  Academics category.
+- Quick-switch bar injected into Course Management, Module
+  Scheduling, Attendance, Timetable, Building Management, Study
+  Matching and the Hub itself. Current-module button is highlighted.
+- For Study Matching, the bar packs above `gui.notebook` via the new
+  `before=` arg so it sits at the top of the GUI's internally-created
+  Toplevel.
+
+#### Added — Context-passing cross-module navigation
+
+- `_dispatch()` accepts an optional `context` dict and stashes it on
+  the parent as `_last_academic_context` (always set, including
+  `None`, so a stale value can't bleed across plain bar clicks).
+- New helpers `consume_context(parent_app)` and `format_context(ctx)`
+  for receiver-side use. The four in-process launchers (Course /
+  Module Scheduling / Attendance / Timetable) plus Study Matching
+  consume the context and append a friendly suffix to the window
+  title (e.g. `My Timetable  ◆ Room #42`).
+- IPC poller now plumbs `data["context"]` through to the dispatcher.
+- BM's `CRUDTab` base class binds `<Button-3>` to a context menu
+  populated by each tab's `_cross_links()` override:
+  - Buildings → Show modules in Scheduling / Open Timetable / Open
+    Attendance (with `building_id`)
+  - Rooms → Show bookings in Scheduling / Open Attendance / Open
+    Timetable / Find course in Course Mgmt (with `room_id`)
+  - Maintenance → Looks up `room_id`+`building_id` from the request,
+    offers Scheduling / Attendance jumps
+  - Inspections → Open Scheduling / Attendance / Timetable for the
+    inspected room
+
+#### Fixed
+
+- `parent_notifications` schema collision between the parent-portal
+  module (which created the table with `parent_id /
+  notification_content / created_date / read_status`) and the
+  attendance tracker (which assumed `parent_name / method / status /
+  subject / sent_at`). New
+  `_ensure_parent_notifications_columns()` helper in
+  `attendance_tracker/notifications_windows.py` runs idempotent
+  `ALTER TABLE … ADD COLUMN` for the 5 missing columns at every
+  read/write site, ignoring duplicate-column errors. Fixes
+  `sqlite3.OperationalError: no such column: sent_at` when opening
+  the Attendance Notifications history view.
+- Auth `SECURITY` log noise: `shared_context.get_auth()` previously
+  emitted an ERROR-level log every time it was called before
+  `initialize_auth()` — and ~120 legacy modules call `get_auth()` at
+  module-import time inside `try/except` blocks, producing 7+
+  duplicate ERROR entries during every startup. Now logs once per
+  process at WARNING with explanatory text. Behaviour for actual
+  misuse is unchanged: `AuthenticationNotInitializedError` still
+  raises with the full security message, and unguarded callers still
+  surface the failure via Python's default unhandled-exception
+  traceback.
+
+#### Files
+
+- New: `modules/domain/campus/building_management/__init__.py`,
+  `building_management_app.py`
+- New: `modules/shared/gui/main/features/academic_link_bar.py`,
+  `academic_hub.py`
+- Modified: `modules/shared/gui/main/main_gui.py`,
+  `modules/shared/gui/main/core/gui_setup.py`,
+  `modules/shared/gui/main/features/academic_launchers_gui.py`,
+  `modules/shared/gui/main/features/student_success_gui.py`,
+  `modules/domain/academics/gui/attendance_tracker/notifications_windows.py`,
+  `infrastructure/shared_context.py`
+
 
 ## [8.116.0] — 2026-04-30
 

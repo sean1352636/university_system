@@ -900,6 +900,31 @@ def show_certificates_gui(self):
 
 UnifiedManagementGUI.show_certificates_gui = show_certificates_gui
 
+
+# Academic Operations Hub + cross-module link bar.
+from education_system.university_system.modules.shared.gui.main.features.academic_hub import (  # noqa: E402
+    show_academic_hub,
+)
+from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (  # noqa: E402
+    start_ipc_poller as _start_academic_ipc_poller,
+)
+UnifiedManagementGUI.show_academic_hub = show_academic_hub
+
+
+_orig_unified_init = UnifiedManagementGUI.__init__
+
+
+def _patched_unified_init(self, auth_manager):
+    _orig_unified_init(self, auth_manager)
+    try:
+        if getattr(self, "root", None) is not None:
+            _start_academic_ipc_poller(self)
+    except Exception:
+        logger.exception("Failed to start academic IPC poller")
+
+
+UnifiedManagementGUI.__init__ = _patched_unified_init
+
 # New features (modules 21-30)
 UnifiedManagementGUI.show_hesa_export_gui = show_hesa_export_gui
 UnifiedManagementGUI.show_student_app_gui = show_student_app_gui
@@ -962,6 +987,8 @@ _NEW_FEATURE_MODULES = [
      "education_system.university_system.modules.domain.student_affairs.student_union.services.mentoring_matching.mentoring_matching_app"),
     ("room_booking", "Room Booking",
      "education_system.university_system.modules.domain.campus.room_booking.room_booking_app"),
+    ("building_management", "Building Management",
+     "education_system.university_system.modules.domain.campus.building_management.building_management_app"),
     ("tutor_groups", "Tutor Groups",
      "education_system.university_system.modules.domain.academics.tutor_groups.tutor_groups_app"),
     # Standalone Tk apps moved from /add 2026-04

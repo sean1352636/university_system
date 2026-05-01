@@ -1,0 +1,211 @@
+"""Quick-switch toolbar + cross-process IPC for the 6 linked academic modules.
+
+Modules surfaced on the bar:
+    course_mgmt, module_scheduling, timetable,
+    building_mgmt, attendance, study_matching, hub
+
+In-process windows attach the bar via :func:`attach_quickbar`. Each
+button calls a ``show_*`` method on the parent ``UnifiedManagementGUI``.
+
+Building Management runs as a subprocess so it can't call the parent
+directly. It writes a JSON request to :data:`IPC_FILE`; the parent's
+poller (started by :func:`start_ipc_poller` from ``main_gui``) reads
+the file every ~1.5 s, dispatches, and deletes it.
+"""
+from __future__ import annotations
+
+import json
+import logging
+import pathlib
+import tkinter as tk
+
+logger = logging.getLogger(__name__)
+
+IPC_FILE = (pathlib.Path.home() / ".cache" / "edu_system"
+            / "academic_open_request.json")
+
+
+# (key, button label, attribute on parent app to dispatch to)
+_MODULES = [
+    ("hub",               "🏛 Hub",        "show_academic_hub"),
+    ("course_mgmt",       "🎓 Courses",    "show_course_management"),
+    ("module_scheduling", "🗓 Scheduling", "show_module_scheduling"),
+    ("timetable",         "📅 Timetable",  "show_student_timetable_gui"),
+    ("building_mgmt",     "🏢 Buildings",  "show_new_feature_building_management"),
+    ("attendance",        "✅ Attendance", "open_attendance_gui"),
+    ("study_matching",    "🤝 Study Match","show_study_matching_gui"),
+]
+
+
+def attach_quickbar(window, parent_app, current: str = "", before=None):
+    """Pack a colour-coded quick-switch toolbar at the top of *window*.
+
+    *parent_app* must be a ``UnifiedManagementGUI`` instance. *current*
+    is the key of the module the window represents — that button is
+    highlighted to show 'you are here'. If *before* is given, the bar is
+    packed above that already-packed widget (useful when the inner GUI
+    has already packed a notebook before we get a chance to add the bar).
+    """
+    try:
+        bar = tk.Frame(window, bg="#34495e")
+        if before is not None:
+            bar.pack(side="top", fill="x", before=before)
+        else:
+            bar.pack(side="top", fill="x")
+        tk.Label(bar, text="Linked academic modules:",
+                 bg="#34495e", fg="white",
+                 font=("Arial", 9, "bold")).pack(side="left",
+                                                  padx=(8, 6), pady=4)
+        for key, label, attr in _MODULES:
+            is_current = (key == current)
+            btn = tk.Button(
+                bar, text=label,
+                relief="flat",
+                bg="#1abc9c" if is_current else "#ecf0f1",
+                fg="white" if is_current else "#2c3e50",
+                font=("Arial", 9, "bold" if is_current else "normal"),
+                padx=8, pady=2,
+                command=(lambda a=attr: _dispatch(parent_app, a)),
+            )
+            btn.pack(side="left", padx=2, pady=3)
+    except Exception:
+        logger.exception("attach_quickbar failed")
+
+
+def _dispatch(parent_app, attr: str, context: dict | None = None):
+    """Dispatch a quickbar / IPC click to the parent's ``show_*`` method.
+
+    Context (e.g. ``{"room_id": 42}``) is stashed on the parent as
+    ``_last_academic_context`` before the handler runs. Handlers that
+    are context-aware can read+consume it; handlers that aren't simply
+    ignore it. Always set (including ``None``) so a stale context from a
+    prior dispatch can't bleed into the next plain bar click.
+    """
+    try:
+        try:
+            parent_app._last_academic_context = context
+        except Exception:
+            pass
+        fn = getattr(parent_app, attr, None)
+        if not callable(fn):
+            logger.warning("Quickbar dispatch: %s missing on parent", attr)
+            return
+        fn()
+    except Exception:
+        logger.exception("Quickbar dispatch %s failed", attr)
+
+
+def consume_context(parent_app) -> dict | None:
+    """Pop and return the pending academic context, if any.
+
+    Receiver-side helper — call from a ``show_*`` method right after the
+    Toplevel is created to find out if the user came from a contextual
+    right-click."""
+    ctx = getattr(parent_app, "_last_academic_context", None)
+    try:
+        parent_app._last_academic_context = None
+    except Exception:
+        pass
+    return ctx or None
+
+
+def format_context(ctx: dict | None) -> str:
+    """Pretty-print a context dict for window-title suffixes."""
+    if not ctx:
+        return ""
+    parts = []
+    for k, v in ctx.items():
+        if k == "room_id":
+            parts.append(f"Room #{v}")
+        elif k == "building_id":
+            parts.append(f"Building #{v}")
+        elif k == "course_id":
+            parts.append(f"Course #{v}")
+        elif k == "module_id":
+            parts.append(f"Module #{v}")
+        else:
+            parts.append(f"{k}={v}")
+    return " · ".join(parts)
+
+
+# ---------------------------------------------------------------------------
+# Cross-process IPC (used by Building Management subprocess)
+# ---------------------------------------------------------------------------
+def request_open(action: str, context: dict | None = None) -> None:
+    """From a subprocess, ask the parent GUI to open another module."""
+    try:
+        IPC_FILE.parent.mkdir(parents=True, exist_ok=True)
+        IPC_FILE.write_text(json.dumps(
+            {"action": action, "context": context or {}}))
+        logger.info("IPC open request: %s", action)
+    except Exception:
+        logger.exception("request_open failed")
+
+
+def start_ipc_poller(parent_app, interval_ms: int = 1500) -> None:
+    """Start the parent-side poller. Call once from main GUI startup."""
+    valid = {key: attr for key, _, attr in _MODULES}
+
+    def _tick():
+        try:
+            if IPC_FILE.exists():
+                data = {}
+                try:
+                    data = json.loads(IPC_FILE.read_text() or "{}")
+                except Exception:
+                    logger.exception("IPC: malformed request file")
+                try:
+                    IPC_FILE.unlink()
+                except Exception:
+                    pass
+                action = data.get("action")
+                ctx = data.get("context") or None
+                if action in valid:
+                    try:
+                        parent_app.root.lift()
+                        parent_app.root.focus_force()
+                    except Exception:
+                        pass
+                    _dispatch(parent_app, valid[action], context=ctx)
+        except Exception:
+            logger.exception("IPC poller tick failed")
+        finally:
+            try:
+                parent_app.root.after(interval_ms, _tick)
+            except Exception:
+                logger.exception("IPC poller scheduling failed")
+
+    try:
+        parent_app.root.after(interval_ms, _tick)
+        logger.info("Academic IPC poller started")
+    except Exception:
+        logger.exception("Could not start IPC poller")
+
+
+# ---------------------------------------------------------------------------
+# Subprocess-side helper: build a Tk-only quickbar that uses request_open
+# ---------------------------------------------------------------------------
+def attach_subprocess_quickbar(window, current: str = ""):
+    """Variant of :func:`attach_quickbar` for subprocess apps. Each
+    button writes an IPC request instead of calling a parent method."""
+    try:
+        bar = tk.Frame(window, bg="#34495e")
+        bar.pack(side="top", fill="x")
+        tk.Label(bar, text="Linked academic modules:",
+                 bg="#34495e", fg="white",
+                 font=("Arial", 9, "bold")).pack(side="left",
+                                                  padx=(8, 6), pady=4)
+        for key, label, _attr in _MODULES:
+            is_current = (key == current)
+            btn = tk.Button(
+                bar, text=label,
+                relief="flat",
+                bg="#1abc9c" if is_current else "#ecf0f1",
+                fg="white" if is_current else "#2c3e50",
+                font=("Arial", 9, "bold" if is_current else "normal"),
+                padx=8, pady=2,
+                command=(lambda k=key: request_open(k)),
+            )
+            btn.pack(side="left", padx=2, pady=3)
+    except Exception:
+        logger.exception("attach_subprocess_quickbar failed")

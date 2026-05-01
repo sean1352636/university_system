@@ -5,6 +5,26 @@ import logging
 import sys
 import subprocess
 
+from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
+    attach_quickbar as _attach_academic_quickbar,
+    consume_context as _consume_academic_context,
+    format_context as _format_academic_context,
+)
+
+
+def _apply_academic_context(window, parent_app):
+    """Append a context suffix to the window title if a contextual
+    right-click brought the user here. Returns the consumed context
+    (or None) so the caller can use it for further filtering if able."""
+    ctx = _consume_academic_context(parent_app)
+    if not ctx:
+        return None
+    try:
+        window.title(window.title() + f"  ◆ {_format_academic_context(ctx)}")
+    except Exception:
+        pass
+    return ctx
+
 # Import PDF export functionality
 try:
     from education_system.university_system.modules.shared.gui.pdf_export_gui import show_pdf_export_gui as _pdf_export_gui_func
@@ -211,6 +231,9 @@ def show_course_management(self):
             except Exception:
                 pass  # Continue if transient fails
 
+            _attach_academic_quickbar(course_window, self, current="course_mgmt")
+            _apply_academic_context(course_window, self)
+
             # Initialize the Course Management GUI in the new window
             # Pass auth_system during construction for proper initialization
             course_gui = CourseManagementGUI(course_window, auth_system=self.auth)
@@ -301,6 +324,8 @@ def show_module_scheduling(self):
         try:
             top = tk.Toplevel(self.root)
             top.title(_t("academic_launchers.titles.module_scheduling"))
+            _attach_academic_quickbar(top, self, current="module_scheduling")
+            _apply_academic_context(top, self)
             app = ModuleSchedulingGUI(top) if 'ModuleSchedulingGUI' in globals() and ModuleSchedulingGUI else None
             # Pass auth context if supported
             try:
@@ -476,6 +501,8 @@ def open_attendance_gui(self):
         # Create a child window for the attendance UI
         win = tk.Toplevel(self.root)
         win.transient(self.root)
+        _attach_academic_quickbar(win, self, current="attendance")
+        _apply_academic_context(win, self)
         try:
             # Instantiate the attendance GUI on the new window
             AttendanceGUI(win, auth_manager=self.auth)
@@ -610,6 +637,8 @@ def show_student_timetable_gui(self):
             window.transient(self.root)
         except Exception:
             pass
+        _attach_academic_quickbar(window, self, current="timetable")
+        _apply_academic_context(window, self)
         StudentTimetableGUI(window, auth_instance=self.auth)
         print("Student Timetable GUI opened")
     except Exception as e:

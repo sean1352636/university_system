@@ -24,6 +24,7 @@ from education_system.university_system.infrastructure.auth import UserAuth
 # Thread-safe global auth instance
 _auth_instance: Optional[UserAuth] = None
 _auth_lock = threading.Lock()
+_security_warning_emitted = False
 _auth_initialized = False
 
 logger = logging.getLogger(__name__)
@@ -55,10 +56,22 @@ def get_auth() -> UserAuth:
     # Slow path - acquire lock and check again
     with _auth_lock:
         if _auth_instance is None:
-            logger.error(
-                "SECURITY: Authentication system accessed before initialization! "
-                "Call initialize_auth() or set_auth() before using get_auth()"
-            )
+            # Log the SECURITY warning at most once per process. Many
+            # legacy modules call ``get_auth()`` at import time inside
+            # a try/except so they can fall back to ``auth = None``;
+            # logging on every such call floods the log without adding
+            # signal. The exception itself still carries the full
+            # security message, so any caller that doesn't catch it
+            # still surfaces the failure loudly.
+            global _security_warning_emitted
+            if not _security_warning_emitted:
+                _security_warning_emitted = True
+                logger.warning(
+                    "SECURITY: Authentication system accessed before "
+                    "initialization! Call initialize_auth() or set_auth() "
+                    "before using get_auth(). (Subsequent pre-init "
+                    "accesses will be silent — exceptions still raised.)"
+                )
             raise AuthenticationNotInitializedError(
                 "Authentication system not initialized! "
                 "Call initialize_auth() or set_auth() before using get_auth(). "

@@ -87,10 +87,32 @@ def show_scholarship_finder_gui(self):
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Scholarship Finder", error=str(e)))
 
 def show_study_matching_gui(self):
-    """Launch Peer Study Matching GUI"""
+    """Launch Peer Study Matching GUI with the academic quick-switch bar
+    injected at the top of the GUI's internal Toplevel."""
     try:
         from education_system.university_system.modules.domain.academics.study_matching.gui.study_matching_gui import StudyMatchingGUI
+        from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
+            attach_quickbar, consume_context, format_context,
+        )
         gui = StudyMatchingGUI(parent=self.root, auth=self.auth)
+        # The GUI stores its Toplevel as `gui.window` and packs a notebook
+        # as the first child; inject the bar above that notebook.
+        try:
+            window = getattr(gui, "window", None)
+            notebook = getattr(gui, "notebook", None)
+            if window is not None:
+                attach_quickbar(window, self,
+                                current="study_matching",
+                                before=notebook)
+                ctx = consume_context(self)
+                if ctx:
+                    try:
+                        window.title(window.title()
+                                     + f"  ◆ {format_context(ctx)}")
+                    except Exception:
+                        pass
+        except Exception:
+            logger.exception("Could not attach quickbar to Study Matching")
     except ImportError as e:
         logger.error(f"Failed to import Study Matching GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Study Matching", error=str(e)))

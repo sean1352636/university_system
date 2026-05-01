@@ -40,6 +40,50 @@ init_i18n()
 # Import path constants
 from education_system.university_system.modules.shared.constants.paths import BACKUP_DIR, DEFAULT_DB_PATH, LOG_DIR
 
+
+# Columns this module needs on parent_notifications. The table may have
+# been created earlier by the parent-portal code with a different schema
+# (parent_id / notification_content / created_date / read_status), so we
+# additively migrate it on first use. ALTER TABLE … ADD COLUMN is
+# idempotent here via the duplicate-column catch.
+_PARENT_NOTIF_COLS = [
+    ("sent_at", "TEXT DEFAULT CURRENT_TIMESTAMP"),
+    ("parent_name", "TEXT"),
+    ("method", "TEXT"),
+    ("status", "TEXT"),
+    ("subject", "TEXT"),
+]
+
+
+def _ensure_parent_notifications_columns(conn):
+    """Add the columns this GUI relies on if missing. Safe to call
+    repeatedly; ignores duplicate-column errors."""
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "CREATE TABLE IF NOT EXISTS parent_notifications ("
+            "id INTEGER PRIMARY KEY AUTOINCREMENT)"
+        )
+        existing = {row[1] for row in cur.execute(
+            "PRAGMA table_info(parent_notifications)").fetchall()}
+        for col, decl in _PARENT_NOTIF_COLS:
+            if col in existing:
+                continue
+            try:
+                cur.execute(
+                    f"ALTER TABLE parent_notifications ADD COLUMN {col} {decl}"
+                )
+            except sqlite3.OperationalError as e:
+                # Race or pre-existing column under a different cast —
+                # safe to ignore.
+                if "duplicate column" not in str(e).lower():
+                    logger.debug(
+                        "ALTER parent_notifications ADD %s skipped: %s",
+                        col, e)
+        conn.commit()
+    except Exception:
+        logger.exception("parent_notifications schema migration failed")
+
 # Import authentication system
 from education_system.university_system.infrastructure.auth import UserAuth
 
@@ -551,21 +595,8 @@ class ParentNotificationWindow:
         """Log notification to database"""
         try:
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                _ensure_parent_notifications_columns(conn)
                 cursor = conn.cursor()
-
-                # Create notifications table if it doesn't exist
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS parent_notifications (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        student_id TEXT,
-                        parent_name TEXT,
-                        notification_type TEXT,
-                        method TEXT,
-                        subject TEXT,
-                        status TEXT,
-                        sent_at TEXT DEFAULT CURRENT_TIMESTAMP
-                    )
-                """)
 
                 cursor.execute("""
                     INSERT INTO parent_notifications (student_id, parent_name, notification_type, method, subject, status)
@@ -706,6 +737,7 @@ class ParentNotificationWindow:
             end_date = self.history_end_var.get()
 
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
+                _ensure_parent_notifications_columns(conn)
                 cursor = conn.cursor()
                 cursor.execute("""
                     SELECT
