@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.4 — 2026-05-01](#81174---2026-05-01)
 - [8.117.3 — 2026-05-01](#81173---2026-05-01)
 - [8.117.2 — 2026-05-01](#81172---2026-05-01)
 - [8.117.1 — 2026-05-01](#81171---2026-05-01)
@@ -232,6 +233,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.4] — 2026-05-01
+
+### Fixed
+
+- **Library window was missing the academic quickbar.** When the bar
+  was first wired across the in-process launchers in 8.117.0,
+  ``show_library_management`` was the fifth launcher and got skipped.
+  Added the matching ``_attach_academic_quickbar(library_window, self,
+  current="library")`` + ``_apply_academic_context(...)`` calls so the
+  📚 Library button is highlighted when the Library is open and the
+  user can switch to any of the other 6 academic GUIs from the bar.
+
+### Added — Seed CS / DS degree programmes
+
+- New ``seed_courses(cursor)`` function in
+  ``modules/scripts/seed_demo_data.py`` populates the two top-level
+  degree programmes the Degree Audit GUI queries by code: ``CS``
+  (Computer Science) and ``DS`` (Data Science). Idempotent
+  (``INSERT OR IGNORE`` keyed on the UNIQUE ``code`` column), so
+  re-running on a populated DB is a no-op.
+- Wired into ``run_seed()`` ahead of the other seeders so that
+  module-enrolment seeding has the parent courses available.
+- Resolves "No CS/DS courses found in database" warning when opening
+  the Course Management → Degree Audit GUI on a fresh DB.
+
+#### Files
+
+- Modified: ``modules/scripts/seed_demo_data.py``,
+  ``modules/shared/gui/main/features/academic_launchers_gui.py``
+
 
 ## [8.117.3] — 2026-05-01
 

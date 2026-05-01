@@ -115,6 +115,9 @@ def show_library_management(self):
             except Exception:
                 pass  # Continue if transient fails
 
+            _attach_academic_quickbar(library_window, self, current="library")
+            _apply_academic_context(library_window, self)
+
             # Initialize the Library GUI in the new window
             library_gui = LibraryGUI(library_window)
 

@@ -877,6 +877,68 @@ def seed_s12345_modules(cursor: sqlite3.Cursor) -> int:
     return inserted
 
 
+def seed_courses(cursor: sqlite3.Cursor) -> int:
+    """Seed the two top-level degree programmes the Degree Audit GUI
+    queries by code (CS / DS).
+
+    Idempotent — uses ``INSERT OR IGNORE`` keyed on ``code`` (UNIQUE),
+    so re-running on a populated DB is a no-op.
+    """
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    courses = [
+        {
+            "id": "CS",
+            "code": "CS",
+            "name": "Computer Science",
+            "credits": 360,
+            "department": "School of Computing",
+            "status": "active",
+            "date_added": now,
+            "course_code": "CS",
+            "course_name": "Computer Science",
+            "level": "Undergraduate",
+            "credit_hours": 360,
+            "description": (
+                "BSc Computer Science — covers programming, algorithms, "
+                "systems, software engineering, AI, and theory of "
+                "computation."),
+            "duration": "3 years",
+            "course_type": "Bachelors",
+            "max_enrollment": 120,
+        },
+        {
+            "id": "DS",
+            "code": "DS",
+            "name": "Data Science",
+            "credits": 360,
+            "department": "School of Computing",
+            "status": "active",
+            "date_added": now,
+            "course_code": "DS",
+            "course_name": "Data Science",
+            "level": "Undergraduate",
+            "credit_hours": 360,
+            "description": (
+                "BSc Data Science — covers statistics, machine learning, "
+                "data engineering, visualisation, and applied analytics."),
+            "duration": "3 years",
+            "course_type": "Bachelors",
+            "max_enrollment": 90,
+        },
+    ]
+
+    cols = list(courses[0].keys())
+    placeholders = ",".join("?" * len(cols))
+    sql = (f"INSERT OR IGNORE INTO courses({','.join(cols)}) "
+           f"VALUES ({placeholders})")
+    inserted = 0
+    for c in courses:
+        cursor.execute(sql, [c[k] for k in cols])
+        if cursor.rowcount:
+            inserted += cursor.rowcount
+    return inserted
+
+
 def run_seed(db_path: str = None):
     """Run all seed functions inside a single transaction."""
     path = db_path or DB_PATH
@@ -888,6 +950,11 @@ def run_seed(db_path: str = None):
 
     total = 0
     try:
+        print("  Seeding degree programmes (CS / DS)...")
+        n = seed_courses(cursor)
+        print(f"    -> {n} rows")
+        total += n
+
         print("  Seeding attendance data...")
         n = seed_attendance(cursor)
         print(f"    -> {n} rows")
