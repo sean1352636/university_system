@@ -216,8 +216,22 @@ def load_audit_log(self, tree, user_filter="", action_filter=""):
 
             cursor = conn.cursor()
 
+            # The actual audit_log schema uses `table_name` (not
+            # `table_affected`) and has no `success` column. Alias the
+            # column and synthesise success from `details` (rows whose
+            # detail text mentions "error"/"fail" are flagged as failed;
+            # everything else defaults to success).
             query = '''
-            SELECT timestamp, user_id, action, table_affected, success
+            SELECT timestamp,
+                   user_id,
+                   action,
+                   table_name AS table_affected,
+                   CASE
+                       WHEN details IS NOT NULL
+                            AND (LOWER(details) LIKE '%error%'
+                                 OR LOWER(details) LIKE '%fail%')
+                       THEN 0 ELSE 1
+                   END AS success
             FROM audit_log
             WHERE 1=1
             '''

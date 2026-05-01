@@ -310,15 +310,15 @@ class LibraryGUI:
         # ttk.Style is process-global. Only switch themes when this is
         # the standalone Tk root; inherit the parent's theme otherwise.
         prev_theme = style.theme_use()
-        if not isinstance(self.root, tk.Toplevel):
+        if not isinstance(self.master, tk.Toplevel):
             try:
                 style.theme_use('clam')
             except tk.TclError:
                 pass
-            self.root.bind(
+            self.master.bind(
                 "<Destroy>",
                 lambda _e, p=prev_theme, s=style: (
-                    s.theme_use(p) if _e.widget is self.root else None
+                    s.theme_use(p) if _e.widget is self.master else None
                 ),
                 add="+",
             )

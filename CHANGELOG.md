@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.2 — 2026-05-01](#81172---2026-05-01)
 - [8.117.1 — 2026-05-01](#81171---2026-05-01)
 - [8.117.0 — 2026-05-01](#81170---2026-05-01)
 - [8.116.0 — 2026-04-30](#81160---2026-04-30)
@@ -230,6 +231,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.2] — 2026-05-01
+
+### Added — Library report popup with email-to-admin
+
+- All 9 ``generate_*_report`` methods now also open a Toplevel
+  containing the report body and **exactly three action buttons**:
+  ``📧 Email to Admin``, ``💾 Save as TXT``, ``Close``. Previous
+  Export-JSON / Export-CSV / manual-recipient dialog have been removed.
+- Email path uses the shared ``send_email_as_system(...)`` service.
+  Recipients are every active university-system admin found in
+  ``student_records.db`` ``users`` table
+  (``role = 'admin'`` AND email is set). Confirms the recipient list
+  before sending and reports per-recipient success/failure.
+- Save path uses ``filedialog.asksaveasfilename`` with a sensible
+  default name (``<title>_YYYYMMDD_HHMM.txt``); UTF-8 write.
+- ``_show_report_message()`` (the placeholder helper used by the
+  not-yet-implemented reports such as User Activity / Popular Books)
+  also opens the popup, so every entry in the Reports tab now opens
+  in a window with the action buttons.
+
+### Fixed — Library GUI bugs surfaced during testing
+
+- ``LibraryGUI.setup_styles`` referenced ``self.root``, but the class
+  uses ``self.master`` everywhere else (the Toplevel-guard pattern
+  was copy-pasted from ``attendance_tracker`` without renaming).
+  Three references in ``library/base.py`` flipped to ``self.master``
+  → no more ``AttributeError`` when opening the Library window.
+- ``get_collection_report_data`` and the loans report's
+  ``SUM(CASE WHEN …)`` returned ``NULL`` against an empty ``books`` /
+  ``book_loans`` table, then crashed at the ``:,`` formatter.
+  Wrapped each ``SUM(…)`` in ``COALESCE(…, 0)`` so empty tables yield
+  zero counts instead of ``TypeError: unsupported format string
+  passed to NoneType.__format__``.
+- Library audit-log dialog (``maintenance.py``) queried
+  ``table_affected`` and ``success`` columns that don't exist in the
+  central ``audit_log`` table. Rewrote the SELECT to use the actual
+  ``table_name`` column (aliased to ``table_affected`` for the
+  downstream code) and synthesised ``success`` from the ``details``
+  text (rows mentioning ``error``/``fail`` flagged as failed,
+  everything else success).
+
+#### Files
+
+- Modified: ``modules/domain/academics/gui/library/base.py``,
+  ``library/maintenance.py``, ``library/reports.py``
+
 
 ## [8.117.1] — 2026-05-01
 

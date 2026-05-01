@@ -183,14 +183,25 @@ def generate_collection_report(self):
             report_data = "DEMO COLLECTION REPORT\n" + "="*50 + "\nTotal Books: 150\nAvailable: 120\nChecked Out: 25\nDamaged: 5"
 
         self.report_text.insert(tk.END, report_data)
+        self.show_report_in_window("Collection Overview Report", report_data)
 
     except (OSError, IOError, tk.TclError) as e:
         self.report_text.insert(tk.END, f"Error generating report: {str(e)}")
 
 def _show_report_message(self, title: str, body: str):
-    """Utility to display a formatted report message."""
-    self.report_text.delete("1.0", tk.END)
-    self.report_text.insert(tk.END, f"{title}\n{'=' * len(title)}\n\n{body}")
+    """Utility to display a formatted report message — populates the tab
+    AND opens the standalone report window with the 3 action buttons."""
+    composed = f"{title}\n{'=' * len(title)}\n\n{body}"
+    try:
+        self.report_text.delete("1.0", tk.END)
+        self.report_text.insert(tk.END, composed)
+    except Exception:
+        pass
+    try:
+        self.show_report_in_window(title, composed)
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("show_report_in_window failed")
 
 def _show_report_not_available(self, title: str):
     """Notify users that a requested report is not yet implemented."""
@@ -209,14 +220,16 @@ def get_collection_report_data(self):
         cursor = conn.cursor()
 
         # Collection statistics
+        # COALESCE each SUM — against an empty table SUM returns NULL,
+        # which then breaks the `:,` formatter below.
         cursor.execute('''
         SELECT
             COUNT(*) as total,
-            SUM(CASE WHEN status = 'available' THEN 1 ELSE 0 END) as available,
-            SUM(CASE WHEN status = 'checked_out' THEN 1 ELSE 0 END) as checked_out,
-            SUM(CASE WHEN status = 'reserved' THEN 1 ELSE 0 END) as reserved,
-            SUM(CASE WHEN status = 'damaged' THEN 1 ELSE 0 END) as damaged,
-            SUM(CASE WHEN status = 'lost' THEN 1 ELSE 0 END) as lost
+            COALESCE(SUM(CASE WHEN status = 'available' THEN 1 ELSE 0 END), 0) as available,
+            COALESCE(SUM(CASE WHEN status = 'checked_out' THEN 1 ELSE 0 END), 0) as checked_out,
+            COALESCE(SUM(CASE WHEN status = 'reserved' THEN 1 ELSE 0 END), 0) as reserved,
+            COALESCE(SUM(CASE WHEN status = 'damaged' THEN 1 ELSE 0 END), 0) as damaged,
+            COALESCE(SUM(CASE WHEN status = 'lost' THEN 1 ELSE 0 END), 0) as lost
         FROM books
         ''')
 
@@ -268,6 +281,7 @@ def generate_circulation_report(self):
             report_data = "DEMO CIRCULATION REPORT\n" + "="*50 + "\nActive Loans: 25\nReturns Today: 8\nOverdue: 3"
 
         self.report_text.insert(tk.END, report_data)
+        self.show_report_in_window("Circulation Report", report_data)
 
     except (tk.TclError, ValueError, TypeError) as e:
         self.report_text.insert(tk.END, f"Error generating report: {str(e)}")
@@ -336,6 +350,7 @@ def generate_overdue_report(self):
             report_data = "DEMO OVERDUE REPORT\n" + "="*50 + "\nNo overdue books in demo mode"
 
         self.report_text.insert(tk.END, report_data)
+        self.show_report_in_window("Overdue Report", report_data)
 
     except (tk.TclError, ValueError, TypeError) as e:
         self.report_text.insert(tk.END, f"Error generating report: {str(e)}")
@@ -468,7 +483,12 @@ def generate_fine_report(self):
         lines.append(f"Grand Total Outstanding Fines: £{grand_total:.2f}")
 
         self.report_text.delete("1.0", tk.END)
-        self.report_text.insert(tk.END, "\n".join(lines))
+        _report_body = "\n".join(lines)
+        self.report_text.insert(tk.END, _report_body)
+        self.show_report_in_window(
+            (lines[0].strip() if lines and lines[0].strip() else "Library Report"),
+            _report_body,
+        )
 
     except tk.TclError as e:
         self.report_text.delete("1.0", tk.END)
@@ -527,7 +547,12 @@ def generate_card_usage_report(self):
         lines.append(f"Total Unique Users: {len(rows)}")
 
         self.report_text.delete("1.0", tk.END)
-        self.report_text.insert(tk.END, "\n".join(lines))
+        _report_body = "\n".join(lines)
+        self.report_text.insert(tk.END, _report_body)
+        self.show_report_in_window(
+            (lines[0].strip() if lines and lines[0].strip() else "Library Report"),
+            _report_body,
+        )
 
     except tk.TclError as e:
         self.report_text.delete("1.0", tk.END)
@@ -632,7 +657,12 @@ def generate_health_report(self):
             lines.append("✓ All metrics are within healthy ranges")
 
         self.report_text.delete("1.0", tk.END)
-        self.report_text.insert(tk.END, "\n".join(lines))
+        _report_body = "\n".join(lines)
+        self.report_text.insert(tk.END, _report_body)
+        self.show_report_in_window(
+            (lines[0].strip() if lines and lines[0].strip() else "Library Report"),
+            _report_body,
+        )
 
     except tk.TclError as e:
         self.report_text.delete("1.0", tk.END)
@@ -757,7 +787,12 @@ def generate_maintenance_report(self):
         lines.append(f"Total Items Requiring Attention: {len(damaged_books) + len(incomplete_records)}")
 
         self.report_text.delete("1.0", tk.END)
-        self.report_text.insert(tk.END, "\n".join(lines))
+        _report_body = "\n".join(lines)
+        self.report_text.insert(tk.END, _report_body)
+        self.show_report_in_window(
+            (lines[0].strip() if lines and lines[0].strip() else "Library Report"),
+            _report_body,
+        )
 
     except tk.TclError as e:
         self.report_text.delete("1.0", tk.END)
@@ -914,212 +949,174 @@ def save_report_to_file(self):
         messagebox.showerror(_("common.error"), f"Failed to save report: {str(e)}")
 
 def show_report_in_window(self, title: str = "Library Report", report_content: str = None):
-    """Display report in a new window with export and email options."""
-    # Get report content from report_text if not provided
+    """Open the report in a Toplevel with three actions:
+    Email to Admin · Save as TXT · Close.
+
+    Recipients of the email are every active admin user found in the
+    central university DB (``student_records.db``, ``users`` table where
+    ``role = 'admin'`` and an email is set). Sent via the shared
+    ``send_email_as_system`` service.
+    """
+    # Pull from the in-tab text widget if no body was supplied.
     if report_content is None:
-        report_content = self.report_text.get("1.0", tk.END).strip()
+        try:
+            report_content = self.report_text.get("1.0", tk.END).strip()
+        except Exception:
+            report_content = ""
 
     if not report_content:
         messagebox.showwarning("No Report", "No report content to display.")
         return
 
-    # Create report window
+    # ---- Window scaffold -------------------------------------------------
     report_window = tk.Toplevel(self.master)
     report_window.title(f"Report: {title}")
-    report_window.geometry("800x600")
-    report_window.transient(self.master)
+    report_window.geometry("900x650")
+    report_window.minsize(700, 480)
+    try:
+        report_window.transient(self.master)
+    except Exception:
+        pass
 
-    # Main frame
-    main_frame = ttk.Frame(report_window, padding=10)
-    main_frame.pack(fill=tk.BOTH, expand=True)
+    header = tk.Frame(report_window, bg="#2c3e50", height=44)
+    header.pack(fill="x")
+    header.pack_propagate(False)
+    tk.Label(header, text=f"📄  {title}",
+             font=("Arial", 13, "bold"),
+             bg="#2c3e50", fg="white").pack(side="left", padx=12)
+    tk.Label(header,
+             text=f"Generated {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+             font=("Arial", 9, "italic"),
+             bg="#2c3e50", fg="#bdc3c7").pack(side="right", padx=12)
 
-    # Title
-    title_label = ttk.Label(main_frame, text=title, font=('Arial', 14, 'bold'))
-    title_label.pack(pady=(0, 10))
+    body_frame = ttk.Frame(report_window, padding=8)
+    body_frame.pack(fill="both", expand=True)
+    text = ScrolledText(body_frame, wrap=tk.WORD, font=("Consolas", 10))
+    text.pack(fill="both", expand=True)
+    text.insert(tk.END, report_content)
+    text.config(state=tk.DISABLED)
 
-    # Report content area
-    content_frame = ttk.Frame(main_frame)
-    content_frame.pack(fill=tk.BOTH, expand=True)
-
-    report_text_widget = ScrolledText(content_frame, wrap=tk.WORD, font=('Courier', 10))
-    report_text_widget.pack(fill=tk.BOTH, expand=True)
-    report_text_widget.insert(tk.END, report_content)
-    report_text_widget.config(state=tk.DISABLED)
-
-    # Button frame
-    button_frame = ttk.Frame(main_frame)
-    button_frame.pack(fill=tk.X, pady=(10, 0))
-
-    # Export functions
-    def export_to_txt():
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=".txt",
-            filetypes=[("Text files", "*.txt")],
-            initialfile=f"library_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
-        )
-        if file_path:
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(report_content)
-            messagebox.showinfo(_("common.success"), f"Report exported to:\n{file_path}")
-
-    def export_to_json():
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=".json",
-            filetypes=[("JSON files", "*.json")],
-            initialfile=f"library_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-        )
-        if file_path:
-            # Parse report content into structured data
-            report_data = {
-                "title": title,
-                "generated_at": datetime.now().isoformat(),
-                "content": report_content,
-                "sections": []
-            }
-            # Try to parse sections from report
-            lines = report_content.split('\n')
-            current_section = {"name": "Overview", "data": []}
-            for line in lines:
-                if line.strip() and (line.startswith('=') or line.startswith('-')):
-                    continue
-                elif line.strip().endswith(':') and line.isupper():
-                    if current_section["data"]:
-                        report_data["sections"].append(current_section)
-                    current_section = {"name": line.strip().rstrip(':'), "data": []}
-                elif line.strip():
-                    current_section["data"].append(line.strip())
-            if current_section["data"]:
-                report_data["sections"].append(current_section)
-
-            with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(report_data, f, indent=2)
-            messagebox.showinfo(_("common.success"), f"Report exported to:\n{file_path}")
-
-    def export_to_csv():
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv")],
-            initialfile=f"library_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-        )
-        if file_path:
-            import csv
-            lines = report_content.split('\n')
-            with open(file_path, 'w', newline='', encoding='utf-8') as f:
-                writer = csv.writer(f)
-                writer.writerow(["Report: " + title])
-                writer.writerow(["Generated: " + datetime.now().strftime('%Y-%m-%d %H:%M:%S')])
-                writer.writerow([])
-                for line in lines:
-                    if line.strip():
-                        # Try to split on colon for key-value pairs
-                        if ':' in line and not line.startswith('='):
-                            parts = line.split(':', 1)
-                            writer.writerow([parts[0].strip(), parts[1].strip() if len(parts) > 1 else ''])
-                        else:
-                            writer.writerow([line.strip()])
-            messagebox.showinfo(_("common.success"), f"Report exported to:\n{file_path}")
+    # ---- Action handlers -------------------------------------------------
+    def _admin_emails():
+        """All university admins from student_records.db users table."""
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            try:
+                rows = conn.execute(
+                    "SELECT email FROM users "
+                    "WHERE LOWER(role) = 'admin' "
+                    "AND email IS NOT NULL "
+                    "AND TRIM(email) != ''"
+                ).fetchall()
+            finally:
+                conn.close()
+            return [r[0] for r in rows if r and r[0]]
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "Could not fetch admin emails from %s", DEFAULT_DB_PATH)
+            return []
 
     def email_to_admin():
-        """Email report to administrator"""
+        if not EMAIL_SERVICE_AVAILABLE:
+            messagebox.showerror(
+                "Email unavailable",
+                "Email service is not available in this build.",
+                parent=report_window)
+            return
+        recipients = _admin_emails()
+        if not recipients:
+            messagebox.showwarning(
+                "No admin recipients",
+                "No university-system admins with an email address were "
+                "found in student_records.db (table: users, role=admin).",
+                parent=report_window)
+            return
+        if not messagebox.askyesno(
+                "Confirm",
+                f"Send this report to {len(recipients)} admin "
+                f"recipient{'s' if len(recipients) != 1 else ''}?\n\n"
+                + "\n".join(recipients),
+                parent=report_window):
+            return
+
+        subject = f"[Library] {title} — {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        message = (
+            f"Auto-generated library report.\n\n"
+            f"Title:     {title}\n"
+            f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"Recipients: {', '.join(recipients)}\n"
+            f"\n{'=' * 60}\n\n"
+            f"{report_content}\n"
+        )
+        sent_ok, failed = [], []
+        for addr in recipients:
+            try:
+                ok = send_email_as_system(
+                    addr, subject, message, system_name="Library")
+                (sent_ok if ok else failed).append(addr)
+            except Exception:
+                import logging
+                logging.getLogger(__name__).exception(
+                    "send_email_as_system failed for %s", addr)
+                failed.append(addr)
+
+        if sent_ok and not failed:
+            messagebox.showinfo(
+                "Email sent",
+                f"Report sent to {len(sent_ok)} admin "
+                f"recipient{'s' if len(sent_ok) != 1 else ''}:\n\n"
+                + "\n".join(sent_ok),
+                parent=report_window)
+        elif sent_ok and failed:
+            messagebox.showwarning(
+                "Partially sent",
+                f"Sent: {len(sent_ok)}\nFailed: {len(failed)}\n\n"
+                f"Sent to: {', '.join(sent_ok)}\n"
+                f"Failed:  {', '.join(failed)}",
+                parent=report_window)
+        else:
+            messagebox.showerror(
+                "Email failed",
+                "Could not deliver the report to any admin. Check the "
+                "email service configuration / app logs.",
+                parent=report_window)
+
+    def save_as_txt():
         try:
-            # Get admin email from database
-            conn = get_db_connection()
-            if not conn:
-                messagebox.showerror(_("common.error"), "Database connection unavailable")
-                return
-
-            cursor = conn.cursor()
-            # Try multiple sources for admin email
-            admin_email = None
-            admin_name = "Administrator"
-
-            # Try users table first
-            cursor.execute("""
-                SELECT email, username FROM users
-                WHERE role = 'admin' AND email IS NOT NULL AND email != ''
-                LIMIT 1
-            """)
-            result = cursor.fetchone()
-            if result:
-                admin_email = result[0]
-                admin_name = result[1]
-            else:
-                # Try user_accounts table
-                cursor.execute("""
-                    SELECT email, username FROM user_accounts
-                    WHERE role = 'admin' AND email IS NOT NULL AND email != ''
-                    LIMIT 1
-                """)
-                result = cursor.fetchone()
-                if result:
-                    admin_email = result[0]
-                    admin_name = result[1]
-
-            conn.close()
-
-            if not admin_email:
-                # Ask user to input email manually
-                admin_email = simpledialog.askstring(
-                    "Admin Email",
-                    "No admin email found in database.\nPlease enter administrator email:",
-                    parent=report_window
-                )
-                if not admin_email or '@' not in admin_email:
-                    return
-
-            # Confirm sending
-            if not messagebox.askyesno(
-                "Confirm Email",
-                f"Send report to {admin_name}?\n\nEmail: {admin_email}",
-                parent=report_window
-            ):
-                return
-
-            # Render email from template
-            from education_system.university_system.infrastructure.email.email_service import send_email
-            from education_system.university_system.infrastructure.email.template_utils import render_template
-
-            subject, body = render_template('library/library_report', {
-                'report_title': title,
-                'report_date': datetime.now().strftime('%Y-%m-%d'),
-                'separator': '='*50,
-                'report_content': report_content
-            })
-
-            # Fallback if template not found
-            if not subject or not body:
-                subject = f"Library Report: {title} - {datetime.now().strftime('%Y-%m-%d')}"
-                body = f"Library Report\n{'='*50}\n\n{report_content}"
-
-            success = send_email(
-                recipient_email=admin_email,
-                subject=subject,
-                body=body
+            default_name = (
+                title.lower().replace(" ", "_").replace("/", "_")
+                + f"_{datetime.now().strftime('%Y%m%d_%H%M')}.txt"
             )
+            path = filedialog.asksaveasfilename(
+                parent=report_window,
+                title="Save report as…",
+                defaultextension=".txt",
+                initialfile=default_name,
+                filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
+            )
+            if not path:
+                return
+            with open(path, "w", encoding="utf-8") as fh:
+                fh.write(report_content)
+            messagebox.showinfo(
+                "Saved", f"Report saved to:\n{path}", parent=report_window)
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).exception("Save as TXT failed")
+            messagebox.showerror(
+                "Save failed", f"Could not save:\n{exc}",
+                parent=report_window)
 
-            if success:
-                messagebox.showinfo(_("common.success"), f"Report emailed to {admin_email}", parent=report_window)
-            else:
-                messagebox.showerror(_("common.error"), "Failed to send email. Check email configuration.", parent=report_window)
-
-        except ImportError as e:
-            messagebox.showerror(_("common.error"), f"Email service not available: {e}", parent=report_window)
-        except Exception as e:
-            messagebox.showerror(_("common.error"), f"Failed to email report: {e}", parent=report_window)
-
-    # Export buttons
-    export_frame = ttk.LabelFrame(button_frame, text="Export Options", padding=5)
-    export_frame.pack(side=tk.LEFT, padx=5)
-
-    ttk.Button(export_frame, text="📄 Export TXT", command=export_to_txt).pack(side=tk.LEFT, padx=2)
-    ttk.Button(export_frame, text="📋 Export JSON", command=export_to_json).pack(side=tk.LEFT, padx=2)
-    ttk.Button(export_frame, text="📊 Export CSV", command=export_to_csv).pack(side=tk.LEFT, padx=2)
-
-    # Email button
-    ttk.Button(button_frame, text="📧 Email to Admin", command=email_to_admin).pack(side=tk.LEFT, padx=10)
-
-    # Close button
-    ttk.Button(button_frame, text=_("common.close"), command=report_window.destroy).pack(side=tk.RIGHT, padx=5)
+    # ---- Buttons (only the three the user wants) -------------------------
+    btn_bar = ttk.Frame(report_window, padding=(8, 4, 8, 10))
+    btn_bar.pack(fill="x")
+    ttk.Button(btn_bar, text="📧 Email to Admin",
+               command=email_to_admin).pack(side="left", padx=4)
+    ttk.Button(btn_bar, text="💾 Save as TXT",
+               command=save_as_txt).pack(side="left", padx=4)
+    ttk.Button(btn_bar, text="Close",
+               command=report_window.destroy).pack(side="right", padx=4)
 
 def open_current_report_window(self):
     """Open the current report (from report_text) in a new window."""
@@ -1172,13 +1169,15 @@ def generate_circulation_report_gui(self):
             end = end_date_var.get()
 
             # Get circulation stats
+            # COALESCE — empty result set makes SUM return NULL, which
+            # crashes the `:,` / `:,.2f` formatters below.
             cursor.execute('''
             SELECT
                 COUNT(*) as total_loans,
-                SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active,
-                SUM(CASE WHEN status = 'returned' THEN 1 ELSE 0 END) as returned,
-                SUM(CASE WHEN status = 'overdue' THEN 1 ELSE 0 END) as overdue,
-                SUM(COALESCE(fine_amount, 0)) as total_fines
+                COALESCE(SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END), 0) as active,
+                COALESCE(SUM(CASE WHEN status = 'returned' THEN 1 ELSE 0 END), 0) as returned,
+                COALESCE(SUM(CASE WHEN status = 'overdue' THEN 1 ELSE 0 END), 0) as overdue,
+                COALESCE(SUM(COALESCE(fine_amount, 0)), 0) as total_fines
             FROM book_loans
             WHERE checkout_date BETWEEN ? AND ?
             ''', (start, end))
