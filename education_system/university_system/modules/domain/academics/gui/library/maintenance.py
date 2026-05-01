@@ -196,6 +196,57 @@ def audit_log_dialog(self):
     audit_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
+    # Right-click: jump to the system-wide Audit Log Viewer with the
+    # selected entry's user_id as context (so the user knows which row
+    # to seek out in the system view).
+    def _audit_right_click(event):
+        try:
+            row = audit_tree.identify_row(event.y)
+            if row:
+                audit_tree.selection_set(row)
+            sel = audit_tree.selection()
+            if not sel:
+                return
+            values = audit_tree.item(sel[0]).get("values") or []
+            user_id = values[1] if len(values) > 1 else None
+            timestamp = values[0] if values else None
+            ctx = {}
+            if user_id:
+                ctx["user_id"] = str(user_id)
+            if timestamp:
+                ctx["timestamp"] = str(timestamp)
+            menu = tk.Menu(audit_tree, tearoff=0)
+            menu.add_command(
+                label="🔍 Open in System Audit Log Viewer",
+                command=lambda c=ctx: _open_in_system_audit_viewer(c, dialog),
+            )
+            try:
+                menu.tk_popup(event.x_root, event.y_root)
+            finally:
+                menu.grab_release()
+        except Exception:
+            logger.exception("audit right-click failed")
+
+    def _open_in_system_audit_viewer(context, parent_win):
+        try:
+            from education_system.university_system.modules.domain.academics.gui.library._cross_links import (
+                _jump,
+            )
+            _jump("audit_viewer", context)
+            messagebox.showinfo(
+                "Opening…",
+                "System Audit Log Viewer is opening — switch to it to "
+                "see the full audit log.",
+                parent=parent_win)
+        except Exception as exc:
+            logger.exception("audit viewer jump failed")
+            messagebox.showerror(
+                "Open failed",
+                f"Could not open System Audit Log Viewer:\n{exc}",
+                parent=parent_win)
+
+    audit_tree.bind("<Button-3>", _audit_right_click)
+
     # Load initial data
     self.load_audit_log(audit_tree)
 

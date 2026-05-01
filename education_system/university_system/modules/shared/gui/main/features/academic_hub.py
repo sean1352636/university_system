@@ -37,6 +37,9 @@ _TILES = [
     ("🤝", "Study Matching",
      "Pair students into study groups",
      "show_study_matching_gui"),
+    ("📚", "Library",
+     "Books, loans, fines, reading lists",
+     "show_library_management"),
 ]
 
 _WORKFLOW = [
@@ -98,7 +101,7 @@ def show_academic_hub(self):
         tiles.grid(row=0, column=0, sticky="nsew", padx=(0, 8))
         for c in range(3):
             tiles.columnconfigure(c, weight=1)
-        for r in range(2):
+        for r in range(3):
             tiles.rowconfigure(r, weight=1)
 
         for idx, (emoji, name, desc, attr) in enumerate(_TILES):

@@ -487,6 +487,25 @@ def show_student_details(self, student_id):
             academic_summary, na,
         )
 
+        # Library activity tab — embedded summary widget driven by the
+        # cross-module API. Renders an empty/zero panel when the
+        # student has no library records.
+        try:
+            from education_system.university_system.modules.domain.academics.gui.library.cross_module_api import (
+                LibrarySummaryFrame,
+            )
+            library_tab = ttk.Frame(notebook)
+            notebook.add(library_tab, text="📚 Library")
+            LibrarySummaryFrame(
+                library_tab,
+                user_id=student_id,
+                on_open_library=getattr(self, "show_library_management", None),
+            ).pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "Could not embed LibrarySummaryFrame")
+
         # Actions Tab
         actions_tab = ttk.Frame(notebook)
         notebook.add(actions_tab, text=_t("student_details.tab_actions"))

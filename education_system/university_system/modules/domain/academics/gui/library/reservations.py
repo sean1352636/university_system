@@ -152,6 +152,19 @@ def show_reservations(self):
     self.reservations_tree.configure(yscrollcommand=scrollbar.set)
 
     self.reservations_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+    # Right-click: jump to student record / email / course.
+    try:
+        from education_system.university_system.modules.domain.academics.gui.library import _cross_links
+        _cross_links.attach_cross_link_menu(
+            self.reservations_tree,
+            _cross_links.reservations_menu_items,
+            parent=self.master,
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            "Could not attach cross-link menu to reservations_tree")
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     # Load reservations

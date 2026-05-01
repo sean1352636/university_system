@@ -782,5 +782,49 @@ Contact: library@university.edu
     button_frame.pack(fill=tk.X, padx=10, pady=20)
 
     ttk.Button(button_frame, text="Export Card", command=export_card).pack(side=tk.LEFT, padx=5)
+
+    def open_access_card_in_bm():
+        """Cross-jump: open Building Management → Access Cards filtered
+        to this card's user. Resolves the user_id for the entered card
+        number / student id then writes an IPC request that the parent
+        GUI's poller picks up."""
+        from tkinter import messagebox
+        ident = card_input.get().strip()
+        if not ident:
+            messagebox.showwarning(_("common.warning"),
+                                   "Enter a card number or student ID first.",
+                                   parent=print_window)
+            return
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT student_id FROM library_cards "
+                "WHERE card_number = ? OR student_id = ?",
+                (ident, ident))
+            row = cur.fetchone()
+            conn.close()
+        except Exception:
+            row = None
+        user_id = row[0] if row else ident
+        try:
+            from education_system.university_system.modules.domain.academics.gui.library._cross_links import (
+                _jump,
+            )
+            _jump("building_mgmt", {"user_id": str(user_id)})
+            messagebox.showinfo(
+                "Opening…",
+                "Building Management is opening — switch to it and check "
+                "the Access Cards tab for this user.",
+                parent=print_window)
+        except Exception as exc:
+            messagebox.showerror(
+                _("common.error"),
+                f"Could not open Building Management:\n{exc}",
+                parent=print_window)
+
+    ttk.Button(button_frame, text="🏢 View Building Access Card",
+               command=open_access_card_in_bm).pack(side=tk.LEFT, padx=5)
+
     ttk.Button(button_frame, text=_("common.close"), command=print_window.destroy).pack(side=tk.RIGHT, padx=5)
 

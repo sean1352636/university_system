@@ -1265,6 +1265,19 @@ def view_loan_history_gui(self):
     self.loan_history_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
+    # Right-click: jump to student record / email / finance / course.
+    try:
+        from education_system.university_system.modules.domain.academics.gui.library import _cross_links
+        _cross_links.attach_cross_link_menu(
+            self.loan_history_tree,
+            _cross_links.loan_history_menu_items,
+            parent=self.master,
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            "Could not attach cross-link menu to loan_history_tree")
+
     # Load initial data
     self.load_loan_history()
 

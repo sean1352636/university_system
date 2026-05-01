@@ -34,7 +34,21 @@ _MODULES = [
     ("building_mgmt",     "🏢 Buildings",  "show_new_feature_building_management"),
     ("attendance",        "✅ Attendance", "open_attendance_gui"),
     ("study_matching",    "🤝 Study Match","show_study_matching_gui"),
+    ("library",           "📚 Library",    "show_library_management"),
 ]
+
+
+# Cross-module jump destinations available to right-click menus but not
+# rendered on the bar. Mapped just like _MODULES so the IPC poller can
+# dispatch to them.
+_EXTRA_DESTINATIONS = {
+    "student_records": "show_student_records",
+    "email_manager":   "show_email_manager",
+    "finance_mgmt":    "show_finance_management",
+    "student_finance": "show_student_finance_account",
+    "audit_viewer":    "show_audit_log_viewer",
+    "user_mgmt":       "show_user_management",
+}
 
 
 def attach_quickbar(window, parent_app, current: str = "", before=None):
@@ -260,6 +274,7 @@ def request_open(action: str, context: dict | None = None) -> None:
 def start_ipc_poller(parent_app, interval_ms: int = 1500) -> None:
     """Start the parent-side poller. Call once from main GUI startup."""
     valid = {key: attr for key, _, attr in _MODULES}
+    valid.update(_EXTRA_DESTINATIONS)
 
     def _tick():
         try:

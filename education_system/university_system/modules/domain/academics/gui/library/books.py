@@ -201,6 +201,31 @@ def show_books_context_menu(self, event):
     """Show context menu for books"""
     item = self.books_tree.selection()[0] if self.books_tree.selection() else None
     if item:
+        # Rebuild cross-link items each click for the selected row.
+        try:
+            from education_system.university_system.modules.domain.academics.gui.library import _cross_links
+            menu = self.books_context_menu
+            # Drop previously appended cross-link items (the original
+            # menu has 7 entries up to and including the trailing
+            # "View Loan History"; anything beyond that came from us).
+            try:
+                # Original menu ends at index 9 (View Loan History);
+                # delete anything beyond that — it must be ours from a
+                # previous right-click.
+                while (menu.index("end") is not None
+                       and menu.index("end") > 9):
+                    menu.delete("end")
+            except Exception:
+                pass
+            values = self.books_tree.item(item).get("values") or []
+            _cross_links.append_cross_links(
+                menu,
+                _cross_links.books_menu_items(values, parent=self.master),
+            )
+        except Exception:
+            import logging
+            logging.getLogger(__name__).exception(
+                "Could not append cross-link items")
         self.books_context_menu.post(event.x_root, event.y_root)
 
 def load_books_data(self, search_term=""):

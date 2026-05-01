@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.3 — 2026-05-01](#81173---2026-05-01)
 - [8.117.2 — 2026-05-01](#81172---2026-05-01)
 - [8.117.1 — 2026-05-01](#81171---2026-05-01)
 - [8.117.0 — 2026-05-01](#81170---2026-05-01)
@@ -231,6 +232,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.3] — 2026-05-01
+
+### Added — Library cross-module integrations
+
+Right-click context menus on the major Library tables now jump to
+related GUIs with row context attached, and a small cross-module API
+exposes Library data as embeddable widgets / read-only accessors.
+
+#### New: ``library/_cross_links.py``
+
+- ``send_overdue_notice(user_id, …)`` — Library-internal compose
+  dialog. Looks up the borrower's email via the existing
+  ``_get_user_email`` helper, prefills recipient + subject + a
+  template body that mentions the book title, days overdue, and
+  current fine amount where available. Sends via the shared
+  ``send_email_as_system`` service. No IPC — the user stays in
+  Library context.
+- ``show_reading_lists_with_book(book_id, …)`` — popup querying
+  ``reading_list_items`` joined to ``reading_lists`` to show every
+  list that includes a given book. Self-contained.
+- Menu builders for each tree: ``overdue_menu_items``,
+  ``books_menu_items``, ``loan_history_menu_items``,
+  ``reservations_menu_items``, ``fines_menu_items``. Each takes the
+  selected row's ``values`` tuple and returns ``(label, callable)``
+  pairs ready for ``tk.Menu.add_command``.
+- ``attach_cross_link_menu(tree, builder, parent=…)`` and
+  ``append_cross_links(menu, items)`` helpers for the two patterns
+  (fresh menu vs extending an existing one).
+
+#### New: ``library/cross_module_api.py``
+
+- ``get_library_summary(user_id) → LibrarySummary`` — read-only
+  snapshot (active loans, overdue count, lifetime loans, outstanding
+  fines, open reservations, last 10 recent loans). Returns safe zeros
+  on any DB error.
+- ``LibrarySummaryFrame(parent, user_id, on_open_library=…)`` —
+  embeddable ``ttk.LabelFrame`` widget any other GUI can drop in to
+  show a student's library activity. 5-stat grid + recent-activity
+  Treeview + Refresh + "Open Library →" buttons.
+- ``ReadingListPanel(parent, creator_id)`` — embeddable two-pane
+  widget (lists on the left, items in the selected list on the
+  right), backed by ``get_reading_lists_for_creator()`` and
+  ``get_reading_list_items()``.
+
+#### Wired sites
+
+| Library tree                              | Right-click adds                                                                                          |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Overdue (``overdue.py``)                  | Open student profile · Send overdue notice · Open finance account · Reading lists with book · Find course |
+| Books (``books.py``)                      | Reading lists with book · Find course using this book                                                     |
+| Loan history (``checkout_return.py``)     | Open student profile · Send overdue notice · Open finance · Reading lists with book                       |
+| Reservations (``reservations.py``)        | Open student profile · Send "item ready" notice · Reading lists with book                                 |
+| Fines (``fines/payments.py``)             | Open student profile · View on student finance account (with ``fine_amount`` + ``loan_id`` ctx) · Send overdue notice |
+| Audit log (``maintenance.py``)            | Open in System Audit Log Viewer (with ``user_id`` + ``timestamp`` ctx)                                    |
+
+Plus a new "🏢 View Building Access Card" button in the Print Library
+Card window — resolves ``student_id`` from the entered card number /
+student id via ``library_cards`` and IPC-jumps to Building Management
+with ``user_id`` context.
+
+Embedded **📚 Library** tab added to the Student Records detail
+window (next to Personal Info / Academic Records / Actions),
+populated by ``LibrarySummaryFrame``.
+
+Library is now a destination on the academic link bar (📚 Library)
+and a Hub tile (the Hub's tile grid expanded to 3 rows to fit it).
+
+#### IPC dispatcher extended
+
+- New ``_EXTRA_DESTINATIONS`` dict in ``academic_link_bar.py`` for
+  cross-module jumps that aren't on the bar:
+  ``student_records`` · ``email_manager`` · ``finance_mgmt`` ·
+  ``student_finance`` · ``audit_viewer`` · ``user_mgmt``.
+- ``start_ipc_poller`` now dispatches against
+  ``{**_MODULES, **_EXTRA_DESTINATIONS}`` so any of these can be the
+  target of a ``request_open(...)`` call from a subprocess (BM) or
+  in-process module (Library).
+
+#### Files
+
+- New: ``modules/domain/academics/gui/library/_cross_links.py``,
+  ``library/cross_module_api.py``
+- Modified: ``library/overdue.py``, ``library/books.py``,
+  ``library/checkout_return.py``, ``library/reservations.py``,
+  ``library/fines/payments.py``, ``library/maintenance.py``,
+  ``library/barcode_cards.py``,
+  ``shared/gui/main/features/academic_link_bar.py``,
+  ``shared/gui/main/features/academic_hub.py``,
+  ``shared/gui/main/students/student_records_gui.py``
+
 
 ## [8.117.2] — 2026-05-01
 

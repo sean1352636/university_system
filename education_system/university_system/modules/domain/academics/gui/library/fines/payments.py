@@ -418,6 +418,19 @@ def process_fine_payment_gui(self):
 
     fines_tree.pack(fill=tk.BOTH, expand=True)
 
+    # Right-click: jump to student finance with fine_amount / loan_id
+    # context, or send the borrower an overdue notice.
+    try:
+        from education_system.university_system.modules.domain.academics.gui.library import _cross_links
+        _cross_links.attach_cross_link_menu(
+            fines_tree, _cross_links.fines_menu_items,
+            parent=payment_window,
+        )
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception(
+            "Could not attach cross-link menu to fines_tree")
+
     def search_fines():
         for item in fines_tree.get_children():
             fines_tree.delete(item)
