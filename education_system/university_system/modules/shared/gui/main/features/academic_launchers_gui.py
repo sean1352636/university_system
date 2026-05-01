@@ -9,6 +9,7 @@ from education_system.university_system.modules.shared.gui.main.features.academi
     attach_quickbar as _attach_academic_quickbar,
     consume_context as _consume_academic_context,
     format_context as _format_academic_context,
+    style_guarded as _academic_style_guarded,
 )
 
 
@@ -236,7 +237,8 @@ def show_course_management(self):
 
             # Initialize the Course Management GUI in the new window
             # Pass auth_system during construction for proper initialization
-            course_gui = CourseManagementGUI(course_window, auth_system=self.auth)
+            with _academic_style_guarded(self.root, child_window=course_window):
+                course_gui = CourseManagementGUI(course_window, auth_system=self.auth)
 
             print(_t("academic_launchers.success.course_opened"))
 
@@ -326,7 +328,8 @@ def show_module_scheduling(self):
             top.title(_t("academic_launchers.titles.module_scheduling"))
             _attach_academic_quickbar(top, self, current="module_scheduling")
             _apply_academic_context(top, self)
-            app = ModuleSchedulingGUI(top) if 'ModuleSchedulingGUI' in globals() and ModuleSchedulingGUI else None
+            with _academic_style_guarded(self.root, child_window=top):
+                app = ModuleSchedulingGUI(top) if 'ModuleSchedulingGUI' in globals() and ModuleSchedulingGUI else None
             # Pass auth context if supported
             try:
                 if app and hasattr(app, 'set_auth'):
@@ -504,8 +507,11 @@ def open_attendance_gui(self):
         _attach_academic_quickbar(win, self, current="attendance")
         _apply_academic_context(win, self)
         try:
-            # Instantiate the attendance GUI on the new window
-            AttendanceGUI(win, auth_manager=self.auth)
+            # AttendanceGUI (and its absence-tab dependency) directly
+            # mutate base ttk style names — guard the parent so those
+            # changes don't bleed back into the main GUI.
+            with _academic_style_guarded(self.root, child_window=win):
+                AttendanceGUI(win, auth_manager=self.auth)
         except Exception as e:
             win.destroy()
             messagebox.showerror(_t("academic_launchers.titles.attendance"), _t("academic_launchers.errors.failed_open_attendance", error=e))
@@ -639,7 +645,8 @@ def show_student_timetable_gui(self):
             pass
         _attach_academic_quickbar(window, self, current="timetable")
         _apply_academic_context(window, self)
-        StudentTimetableGUI(window, auth_instance=self.auth)
+        with _academic_style_guarded(self.root, child_window=window):
+            StudentTimetableGUI(window, auth_instance=self.auth)
         print("Student Timetable GUI opened")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to open Timetable: {e}")

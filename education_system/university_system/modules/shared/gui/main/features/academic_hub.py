@@ -68,8 +68,8 @@ def show_academic_hub(self):
     try:
         win = tk.Toplevel(self.root)
         win.title("Academic Operations Hub")
-        win.geometry("1100x720")
-        win.minsize(960, 600)
+        win.geometry("1100x780")
+        win.minsize(900, 520)
         try:
             win.transient(self.root)
         except Exception:
@@ -119,11 +119,44 @@ def show_academic_hub(self):
                 w.bind("<Enter>", lambda e, t=tile: t.configure(bg="#d5dbdb"))
                 w.bind("<Leave>", lambda e, t=tile: t.configure(bg="#ecf0f1"))
 
-        # ---- Workflow ------------------------------------------------------
-        wf = ttk.LabelFrame(body, text="Suggested workflow", padding=10)
+        # ---- Workflow (scrollable so step 6 isn't clipped on short displays)
+        wf = ttk.LabelFrame(body, text="Suggested workflow", padding=4)
         wf.grid(row=0, column=1, sticky="nsew")
+        wf.columnconfigure(0, weight=1)
+        wf.rowconfigure(0, weight=1)
+
+        wf_canvas = tk.Canvas(wf, highlightthickness=0,
+                              borderwidth=0)
+        wf_canvas.grid(row=0, column=0, sticky="nsew")
+        wf_sb = ttk.Scrollbar(wf, orient="vertical",
+                              command=wf_canvas.yview)
+        wf_sb.grid(row=0, column=1, sticky="ns")
+        wf_canvas.configure(yscrollcommand=wf_sb.set)
+
+        wf_inner = ttk.Frame(wf_canvas, padding=6)
+        wf_window = wf_canvas.create_window(
+            (0, 0), window=wf_inner, anchor="nw")
+
+        def _wf_resize_inner(_e):
+            wf_canvas.configure(scrollregion=wf_canvas.bbox("all"))
+        wf_inner.bind("<Configure>", _wf_resize_inner)
+
+        def _wf_resize_canvas(e):
+            wf_canvas.itemconfig(wf_window, width=e.width)
+        wf_canvas.bind("<Configure>", _wf_resize_canvas)
+
+        # Mousewheel scrolling while pointer is over the workflow.
+        def _wf_on_mousewheel(e):
+            wf_canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
+        wf_canvas.bind(
+            "<Enter>",
+            lambda e: wf_canvas.bind_all("<MouseWheel>", _wf_on_mousewheel))
+        wf_canvas.bind(
+            "<Leave>",
+            lambda e: wf_canvas.unbind_all("<MouseWheel>"))
+
         for step, hint, attr in _WORKFLOW:
-            row = ttk.Frame(wf)
+            row = ttk.Frame(wf_inner)
             row.pack(fill="x", pady=4)
             ttk.Label(row, text=step,
                       font=("Arial", 10, "bold")).pack(anchor="w")

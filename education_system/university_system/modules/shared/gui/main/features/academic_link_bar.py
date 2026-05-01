@@ -109,6 +109,121 @@ def consume_context(parent_app) -> dict | None:
     return ctx or None
 
 
+# ---------------------------------------------------------------------------
+# Defensive ttk-style guard
+# ---------------------------------------------------------------------------
+# Several legacy GUIs (attendance_tracker, absence_tracking, exam_management,
+# blockchain_credentials, plagiarism, etc.) directly call
+# ``style.configure("TButton", …)`` / ``"Treeview"`` / ``"TLabelframe"`` on
+# base ttk style names. Because ``ttk.Style`` is process-global, those edits
+# bleed into every other widget in the running app — opening one of these
+# child windows visibly changes the parent GUI's button, frame, and box
+# colours. Patching each call site is impractical (50+ files); instead the
+# launcher snapshots the base styles before constructing the child and
+# restores them immediately after. The child keeps its own custom-named
+# styles (Primary.TButton, Custom.TNotebook.Tab, etc.) — only the shared
+# base styles are reverted.
+_BASE_TTK_STYLES = (
+    "TFrame", "TLabel", "TButton", "TLabelframe", "TLabelframe.Label",
+    "TNotebook", "TNotebook.Tab", "TEntry", "TCombobox",
+    "Treeview", "Treeview.Heading", "TScrollbar",
+    "TCheckbutton", "TRadiobutton", "TMenubutton",
+    "TSeparator", "TPanedwindow", "TProgressbar", "TScale", "TSpinbox",
+)
+
+
+def _snapshot_base_styles():
+    """Capture (theme_name, {style: (configure_dict, map_dict)})."""
+    try:
+        from tkinter import ttk
+        style = ttk.Style()
+        theme = None
+        try:
+            theme = style.theme_use()
+        except Exception:
+            pass
+        snap = {}
+        for name in _BASE_TTK_STYLES:
+            try:
+                cfg = dict(style.configure(name) or {})
+            except Exception:
+                cfg = {}
+            try:
+                mp = dict(style.map(name) or {})
+            except Exception:
+                mp = {}
+            snap[name] = (cfg, mp)
+        return theme, snap
+    except Exception:
+        logger.exception("snapshot_base_styles failed")
+        return None, {}
+
+
+def _restore_base_styles(theme, snap, parent=None):
+    """Re-apply each captured (configure, map) pair so any global mutations
+    a child window made are reverted. Forces a parent redraw at the end."""
+    try:
+        from tkinter import ttk
+        style = ttk.Style()
+        if theme:
+            try:
+                if style.theme_use() != theme:
+                    style.theme_use(theme)
+            except Exception:
+                pass
+        for name, (cfg, mp) in (snap or {}).items():
+            if cfg:
+                try:
+                    style.configure(name, **cfg)
+                except Exception:
+                    pass
+            if mp:
+                try:
+                    style.map(name, **mp)
+                except Exception:
+                    pass
+        if parent is not None:
+            try:
+                parent.update_idletasks()
+            except Exception:
+                pass
+    except Exception:
+        logger.exception("restore_base_styles failed")
+
+
+def style_guarded(parent_root, child_window=None):
+    """Context-manager: snapshot base ttk styles on enter, restore on exit
+    (and on the child window's ``<Destroy>`` if one is supplied).
+
+    Usage::
+
+        with style_guarded(self.root, child_window=win):
+            HeavyLegacyGUI(win, ...)
+    """
+    import contextlib
+
+    @contextlib.contextmanager
+    def _guard():
+        theme, snap = _snapshot_base_styles()
+        try:
+            yield
+        finally:
+            _restore_base_styles(theme, snap, parent=parent_root)
+            if child_window is not None:
+                # Re-restore once more when the child is closed, in case the
+                # child mutates styles dynamically after construction.
+                try:
+                    child_window.bind(
+                        "<Destroy>",
+                        lambda _e, t=theme, s=snap, p=parent_root:
+                            _restore_base_styles(t, s, parent=p),
+                        add="+",
+                    )
+                except Exception:
+                    pass
+    return _guard()
+
+
 def format_context(ctx: dict | None) -> str:
     """Pretty-print a context dict for window-title suffixes."""
     if not ctx:

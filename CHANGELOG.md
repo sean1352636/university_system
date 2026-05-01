@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.1 — 2026-05-01](#81171---2026-05-01)
 - [8.117.0 — 2026-05-01](#81170---2026-05-01)
 - [8.116.0 — 2026-04-30](#81160---2026-04-30)
 - [8.115.0 — 2026-04-30](#81150---2026-04-30)
@@ -229,6 +230,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.1] — 2026-05-01
+
+### Fixed
+
+- **Academic Hub workflow panel was clipped** on shorter displays —
+  the 6th step ("Match study groups") could not be reached. Wrapped
+  the workflow column in a scrollable Canvas with mousewheel
+  binding; reduced `minsize` to `900x520` so the window resizes
+  cleanly on smaller monitors.
+- **Parent GUI's button / box / Treeview colours changed when
+  opening Attendance (and other heavyweight GUIs).** Root cause:
+  ~10 academic GUIs (`absence_tracker.py`,
+  `absence_tracking/student_features.py`,
+  `absence_tracking/absence_enhancements.py`,
+  `blockchain_credentials_gui.py`,
+  `exam_management/app.py`,
+  `assignment_system/student_experience_manager.py`,
+  `course_planning/lesson_planner.py`, etc.) directly call
+  `style.configure("TButton" / "TLabelframe" / "Treeview" /
+  "Treeview.Heading", …)` on base ttk style names. Because
+  `ttk.Style` is process-global, those edits bleed into every
+  parent widget. Patching ~50 individual call sites isn't
+  practical, so added a defensive **`style_guarded()`** context
+  manager in `academic_link_bar.py` that snapshots the 20 base ttk
+  style configs (+ theme name) before constructing the child
+  Toplevel and restores them immediately after, plus re-restores
+  on the child's `<Destroy>` for any post-construction mutations.
+  Wrapped all five in-process academic launchers
+  (Attendance, Course Management, Module Scheduling, Timetable,
+  Study Matching). The child's own custom-named styles
+  (`Primary.TButton`, `Custom.TNotebook.Tab`, etc.) are left
+  untouched — only the shared base style names are reverted.
+
+#### Files
+
+- Modified: `modules/shared/gui/main/features/academic_hub.py`,
+  `academic_link_bar.py`, `academic_launchers_gui.py`,
+  `student_success_gui.py`
+
 
 ## [8.117.0] — 2026-05-01
 

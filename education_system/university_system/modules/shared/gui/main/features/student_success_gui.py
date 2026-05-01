@@ -92,9 +92,25 @@ def show_study_matching_gui(self):
     try:
         from education_system.university_system.modules.domain.academics.study_matching.gui.study_matching_gui import StudyMatchingGUI
         from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
-            attach_quickbar, consume_context, format_context,
+            attach_quickbar, consume_context, format_context, style_guarded,
         )
-        gui = StudyMatchingGUI(parent=self.root, auth=self.auth)
+        with style_guarded(self.root):
+            gui = StudyMatchingGUI(parent=self.root, auth=self.auth)
+        # Re-bind a Destroy guard once we have the real window handle.
+        try:
+            _w = getattr(gui, "window", None)
+            if _w is not None:
+                from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
+                    _snapshot_base_styles, _restore_base_styles,
+                )
+                _t, _s = _snapshot_base_styles()
+                _w.bind(
+                    "<Destroy>",
+                    lambda _e: _restore_base_styles(_t, _s, parent=self.root),
+                    add="+",
+                )
+        except Exception:
+            logger.exception("Could not bind style-guard destroy hook for Study Matching")
         # The GUI stores its Toplevel as `gui.window` and packs a notebook
         # as the first child; inject the bar above that notebook.
         try:
