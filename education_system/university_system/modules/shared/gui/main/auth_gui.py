@@ -39,17 +39,47 @@ def _is_superadmin_user(gui_self):
 def logout_user(self):
     """Logout current user and return to universal login.
 
-    Each step is wrapped so a failure (e.g. messagebox erroring, a Tk
-    callback raising during nav rebuild) can't strand the process with
-    `request_logout` un-signalled and the root undestroyed. We've seen
-    occasional hangs after the "Goodbye, …!" print where the GUI
-    appeared frozen — the most reliable mitigation is to make the
-    sequence advance to `root.destroy()` no matter what, and to
-    schedule a watchdog that force-exits if the dispatch loop's
-    relaunch can't bring up a fresh Tk root within a few seconds.
+    Pre-8.117.33 the click went straight through to logout. Now a
+    yes/no confirmation runs first — easy to misclick the header
+    button or the sidebar entry, and the rebuild + relogin cost is
+    real (~seconds). Yes proceeds with the existing flow; No just
+    dismisses the confirmation dialog and leaves the user logged in.
+
+    Each step below is wrapped so a failure (e.g. messagebox
+    erroring, a Tk callback raising during nav rebuild) can't strand
+    the process with ``request_logout`` un-signalled and the root
+    undestroyed. We've seen occasional hangs after the "Goodbye, …!"
+    print where the GUI appeared frozen — the most reliable
+    mitigation is to make the sequence advance to ``root.destroy()``
+    no matter what, and to schedule a watchdog that force-exits if
+    the dispatch loop's relaunch can't bring up a fresh Tk root
+    within a few seconds.
     """
     if not self.auth.current_user:
         return
+
+    # Confirm before logging out. messagebox.askyesno returns True for
+    # Yes / False for No (or for the user closing the dialog with the
+    # X button). False short-circuits the whole logout flow — the
+    # user stays logged in and the dialog is the only thing that
+    # gets dismissed.
+    try:
+        confirmed = messagebox.askyesno(
+            _t("common.confirm", default="Confirm"),
+            _t(
+                "gui.login.confirm_logout",
+                default="Are you sure you want to log out?",
+            ),
+            parent=getattr(self, "root", None),
+        )
+    except Exception:
+        # If the messagebox itself fails (very unusual — broken Tcl
+        # state), fall through to the legacy unconfirmed behaviour
+        # rather than silently swallowing the user's intent.
+        confirmed = True
+    if not confirmed:
+        return
+
     username = self.auth.current_user['username']
 
     # Revoke remember-me tokens (best-effort).

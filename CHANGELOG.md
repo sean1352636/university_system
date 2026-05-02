@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.33 — 2026-05-02](#811733---2026-05-02)
 - [8.117.32 — 2026-05-02](#811732---2026-05-02)
 - [8.117.31 — 2026-05-02](#811731---2026-05-02)
 - [8.117.30 — 2026-05-02](#811730---2026-05-02)
@@ -259,6 +260,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.33] — 2026-05-02
+
+### Added — Logout confirmation (yes/no)
+
+User report: misclicking the header **Logout** button (or the
+sidebar's logout entry, or the in-search Logout result) immediately
+tore down the session — no chance to back out, ~seconds of relogin
+to undo a mistake.
+
+#### Fix
+
+``logout_user`` now opens a ``messagebox.askyesno`` confirmation
+before doing anything irreversible:
+
+- **Yes** → existing logout flow runs (revoke remember-me tokens,
+  ``request_logout``, ``auth.logout``, goodbye dialog,
+  ``update_status``, cancel timers, ``root.destroy``).
+- **No** (or X-button on the dialog) → the dialog closes and the
+  function returns immediately. The user stays logged in,
+  nothing else changes.
+
+The confirmation is gated up front, before any of the existing
+"never strand the process" wrapping, so a No answer is a true
+no-op. If the messagebox itself errors (very unusual — broken Tcl
+state), the code falls through to the legacy unconfirmed flow
+rather than silently swallowing the user's intent.
+
+#### i18n
+
+Uses ``_t`` lookup with sensible English defaults via the
+``default=`` kwarg, so untranslated locales get coherent text:
+
+- Title: ``common.confirm`` → "Confirm"
+- Message: ``gui.login.confirm_logout`` → "Are you sure you want
+  to log out?"
+
+The keys can be added to the locale JSON files as a follow-up.
+
+#### Verified
+
+- Module imports cleanly.
+- End-to-end with mocked ``askyesno``:
+  - ``False`` (No) → ``auth.logout`` never runs, ``update_status``
+    never runs, the rest of the sequence is skipped. The user
+    stays logged in.
+  - ``True`` (Yes) → ``auth.logout`` runs, the existing flow
+    proceeds.
+
+#### Files
+
+- Modified: ``modules/shared/gui/main/auth_gui.py`` (``logout_user``
+  gains an ``askyesno`` gate at the top).
 
 ---
 
