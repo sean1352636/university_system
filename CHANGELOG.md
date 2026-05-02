@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.11 — 2026-05-02](#811711---2026-05-02)
 - [8.117.10 — 2026-05-02](#811710---2026-05-02)
 - [8.117.9 — 2026-05-02](#81179---2026-05-02)
 - [8.117.8 — 2026-05-02](#81178---2026-05-02)
@@ -237,6 +238,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.11] — 2026-05-02
+
+### Added — Library cross-links to Printing Services + Study Room Booking
+
+- Two new IPC destinations registered in
+  ``shared/gui/main/features/academic_link_bar.py``:
+  - ``printing`` → ``show_printing_services_gui``
+  - ``room_booking`` → ``show_study_room_booking_gui``
+- **Library Books rows** gain "🖨 Photocopy this book (Printing
+  Services)". ``show_printing_services_gui`` consumes the academic
+  context, selects the Submit Print Job tab (notebook index 1) and
+  drops the book title into ``file_entry`` so the print form is
+  half-filled out on arrival.
+- **Library Reservations rows** gain "🪑 Book a study room" — the
+  natural "I just reserved this book, now I need somewhere to read it"
+  pairing. ``show_study_room_booking_gui`` consumes (and discards) the
+  context to keep it from leaking into a later jump; no prefill is
+  attempted because the room GUI's filters (date / building / type)
+  don't take a student or book id today.
+
+### Decision — Building Management deliberately not wired
+
+- Building Management is dynamically dispatched as a subprocess (see
+  ``main_gui.py:_launch_new_feature_module``) so the parent's
+  ``_last_academic_context`` cannot cross the process boundary cleanly.
+- The library ``books`` table has only a free-text ``location`` column
+  with no structured ``building_id`` / ``room_id`` mapping, so a jump
+  there would degrade to "just open the building manager" — the same
+  thing the quickbar already does in one click. Adding it would have
+  been a no-op for the user; skipped to avoid menu noise.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/features/academic_link_bar.py``
+  (register two new destinations),
+  ``modules/domain/academics/gui/library/_cross_links.py``
+  (Photocopy item on books, Book-a-study-room item on reservations),
+  ``modules/shared/gui/main/features/student_success_gui.py``
+  (printing prefill: select tab + populate ``file_entry``;
+  study room: consume context to prevent bleed).
 
 ---
 

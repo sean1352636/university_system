@@ -374,7 +374,22 @@ def show_student_id_gui(self):
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Student ID", error=str(e)))
 
 def show_study_room_booking_gui(self):
-    """Launch Study Room Booking GUI"""
+    """Launch Study Room Booking GUI.
+
+    Consumes (and discards) any pending academic context so a stale
+    book/student id from a Library → "Book a study room" right-click
+    can't bleed into the next jump. The Study Room GUI's filters
+    (date / building / type) don't currently take a student or book
+    pre-filter, so no prefill happens — the user lands on today's
+    availability."""
+    try:
+        from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
+            consume_context as _consume,
+        )
+        _consume(self)
+    except Exception:
+        pass
+
     try:
         from education_system.university_system.modules.domain.campus.study_rooms.gui.study_room_gui import StudyRoomBookingGUI
         gui = StudyRoomBookingGUI(parent=self.root)
@@ -386,16 +401,49 @@ def show_study_room_booking_gui(self):
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Study Room Booking", error=str(e)))
 
 def show_printing_services_gui(self):
-    """Launch Printing Services GUI"""
+    """Launch Printing Services GUI.
+
+    If a contextual right-click brought the user here (e.g. Library →
+    "Photocopy this book"), the academic context's book title is
+    consumed and dropped into the Submit Print Job tab's file-name
+    entry so the print form is half-filled out on arrival."""
+    term = _consume_library_book_context(self)
     try:
         from education_system.university_system.modules.domain.campus.printing.gui.printing_gui import PrintingServicesGUI
         gui = PrintingServicesGUI(parent=self.root)
+        _prefill_printing_job(gui, term)
     except ImportError as e:
         logger.error(f"Failed to import Printing Services GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Printing Services", error=str(e)))
     except Exception as e:
         logger.error(f"Error launching Printing Services GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Printing Services", error=str(e)))
+
+
+def _prefill_printing_job(gui, term):
+    """Select the Submit Print Job tab (index 1) and pre-populate
+    ``file_entry`` with the supplied title. Best-effort — the GUI
+    layout could change; on any error the user just sees a vanilla
+    Quota tab."""
+    if not term:
+        return
+    try:
+        nb = getattr(gui, "notebook", None)
+        if nb is not None:
+            try:
+                nb.select(1)
+            except Exception:
+                pass
+        entry = getattr(gui, "file_entry", None)
+        if entry is None:
+            return
+        try:
+            entry.delete(0, "end")
+            entry.insert(0, str(term))
+        except Exception:
+            return
+    except Exception:
+        logger.debug("printing services prefill failed", exc_info=True)
 
 def show_textbook_store_gui(self):
     """Launch Textbook & Course Materials GUI.

@@ -21,6 +21,8 @@ destinations must already be registered in either ``_MODULES`` or
   - ``university_shop`` (show_university_shop)
   - ``textbook_store``  (show_textbook_store_gui)
   - ``marketplace``     (show_marketplace_gui)
+  - ``printing``        (show_printing_services_gui)
+  - ``room_booking``    (show_study_room_booking_gui)
 
 If the import of the link-bar module fails (e.g. running in CLI/test
 mode), every helper here degrades to a silent no-op so Library still
@@ -360,6 +362,10 @@ def books_menu_items(values, parent=None):
         ("🤝 Find on Student Marketplace",
          lambda c=shop_ctx: _jump("marketplace", c)),
     )
+    items.append(
+        ("🖨 Photocopy this book (Printing Services)",
+         lambda c=shop_ctx: _jump("printing", c)),
+    )
     return items
 
 
@@ -422,6 +428,12 @@ def reservations_menu_items(values, parent=None):
             ("📚 Reading lists containing this book",
              lambda b=book_id: show_reading_lists_with_book(b, parent=parent)),
         )
+    items.append(
+        ("🪑 Book a study room",
+         lambda u=user_id: _jump(
+             "room_booking",
+             {"student_id": str(u)} if u else {})),
+    )
     return items
 
 
