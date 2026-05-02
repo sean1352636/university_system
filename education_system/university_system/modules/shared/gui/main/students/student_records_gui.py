@@ -93,6 +93,19 @@ def show_student_records(self):
     # Bind double-click event
     tree.bind('<Double-1>', lambda event: self.on_student_double_click_window(event, tree))
 
+    # Right-click cross-jumps to every module keyed by student_id.
+    # The student record is the canonical hub — for the first time this
+    # tree points outward (Email Manager, Finance, Library, Audit Log,
+    # Loyalty / Careers snapshots, Course Mgmt) instead of just being
+    # the destination everything else jumps to.
+    try:
+        from education_system.university_system.modules.shared.gui.main.students._cross_links import (
+            attach_cross_link_menu,
+        )
+        attach_cross_link_menu(tree, parent=records_window)
+    except Exception:
+        logger.debug("student records cross-link menu unavailable", exc_info=True)
+
     # Store reference to this window's tree
     self.student_tree = tree
 
@@ -240,7 +253,28 @@ def on_student_double_click_window(self, event, tree):
     except Exception as e:
         messagebox.showerror(_t("common.error"), _t("student.error_occurred", error=str(e)))
 def show_student_details(self, student_id):
-    """Enhanced student details viewer with comprehensive information display"""
+    """Enhanced student details viewer with comprehensive information display.
+
+    Writes a GDPR-relevant audit entry naming the viewer + the subject
+    student before opening the window, so every read of a student
+    record is auditable. The write is best-effort — a transient audit
+    DB failure won't block the viewer from rendering, but a sustained
+    gap shows up as missing rows in the audit log itself which is a
+    different (and detectable) compliance signal."""
+    try:
+        from education_system.university_system.modules.shared.gui.main.students._cross_links import (
+            audit_student_view,
+        )
+        viewer = self.auth.current_user if self.auth else None
+        if viewer:
+            audit_student_view(
+                viewer.get('id'),
+                viewer.get('username'),
+                student_id,
+            )
+    except Exception:
+        logger.debug("student view audit hook failed", exc_info=True)
+
     detail_window = tk.Toplevel(self.root)
     detail_window.title(_t("student_details.window_title", student_id=student_id))
     detail_window.geometry("900x700")
@@ -398,17 +432,43 @@ def show_student_details(self, student_id):
         ac_inner.bind('<Configure>', _on_ac_inner)
         ac_canvas.bind('<Configure>', _on_ac_canvas)
 
+        # ── Mousewheel scrolling, scoped to the academic-tab canvas ──
+        # The previous implementation used ``bind_all`` (process-global)
+        # which leaked: closing this detail window did not unbind, so
+        # the next Toplevel's wheel events fired callbacks against a
+        # destroyed canvas and produced
+        # ``TclError: invalid command name ".!toplevel.!canvas"``
+        # on stderr. Now bound directly on the canvas + the inner frame
+        # + its children via ``bind`` (window-local), so they go away
+        # naturally when the detail window is destroyed.
         def _on_ac_wheel(event):
-            delta = -1 if getattr(event, 'num', None) == 5 or event.delta < 0 else 1
-            ac_canvas.yview_scroll(-delta, 'units')
+            try:
+                delta = -1 if (getattr(event, 'num', None) == 5
+                               or getattr(event, 'delta', 0) < 0) else 1
+                ac_canvas.yview_scroll(-delta, 'units')
+            except tk.TclError:
+                # Canvas already destroyed — race with window close.
+                pass
+            return "break"
 
-        for seq in ('<MouseWheel>', '<Button-4>', '<Button-5>'):
-            ac_canvas.bind_all(
-                seq,
-                lambda e, c=ac_canvas: _on_ac_wheel(e)
-                if str(c.winfo_containing(e.x_root, e.y_root)).startswith(str(c))
-                else None,
-            )
+        def _bind_wheel_recursive(widget):
+            try:
+                for seq in ('<MouseWheel>', '<Button-4>', '<Button-5>'):
+                    widget.bind(seq, _on_ac_wheel, add="+")
+                for child in widget.winfo_children():
+                    _bind_wheel_recursive(child)
+            except tk.TclError:
+                pass
+
+        # Bind on the canvas itself + the scrolling inner frame; the
+        # children-walk catches the Treeviews and labels added below
+        # so wheel events anywhere in the academic tab scroll the
+        # outer canvas. Re-bind whenever the inner frame's contents
+        # change so newly-added widgets pick up the binding.
+        ac_canvas.bind('<MouseWheel>', _on_ac_wheel, add="+")
+        ac_canvas.bind('<Button-4>', _on_ac_wheel, add="+")
+        ac_canvas.bind('<Button-5>', _on_ac_wheel, add="+")
+        ac_inner.bind('<Map>', lambda _e: _bind_wheel_recursive(ac_inner))
 
         # Three stacked panels with Treeviews (now inside the scrollable inner frame)
         modules_frame = ttk.LabelFrame(

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.15 — 2026-05-02](#811715---2026-05-02)
 - [8.117.14 — 2026-05-02](#811714---2026-05-02)
 - [8.117.13 — 2026-05-02](#811713---2026-05-02)
 - [8.117.12 — 2026-05-02](#811712---2026-05-02)
@@ -241,6 +242,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.15] — 2026-05-02
+
+### Fixed / Added — Student Records: GDPR audit, right-click jumps, mousewheel leak
+
+Three fixes / additions to ``shared/gui/main/students/student_records_gui.py``,
+the canonical hub view that nothing previously pointed outward from.
+
+#### 1. ``bind_all`` mousewheel leak (correctness bug)
+
+- The academic-tab Canvas in ``show_student_details`` bound
+  ``<MouseWheel>`` / ``<Button-4>`` / ``<Button-5>`` via
+  ``bind_all`` — process-global. Closing the detail window did NOT
+  unbind, so the next Toplevel's wheel events fired callbacks against
+  the destroyed Canvas and produced
+  ``TclError: invalid command name ".!toplevel.!canvas"``
+  on stderr (the same shape as the
+  ``invalid command name ".!toplevel5.!notebook…!scrollbar"``
+  noise the user reported earlier in this thread).
+- Replaced with window-local ``widget.bind`` calls on the canvas + a
+  ``<Map>``-driven recursive walk over the inner frame, so the
+  bindings die naturally with the window. ``_on_ac_wheel`` also
+  swallows ``tk.TclError`` to handle the destroy-race cleanly.
+
+#### 2. Right-click cross-jumps (UX)
+
+New module ``shared/gui/main/students/_cross_links.py`` — same shape
+as the library and academic-calendar cross-link modules. Right-click
+a row in the records tree to get:
+
+- 📨 Open in Email Manager
+- 💰 Open finance account
+- 📚 Open library activity
+- 🕓 View audit log for this student (GDPR)
+- ⭐ Loyalty snapshot (reuses 8.117.13 popup)
+- 💼 Careers engagements (reuses 8.117.13 popup)
+- 🎓 Open course management (only when a course is set)
+- ✉ Copy email address (only when an email is present)
+
+The student record was previously a one-way destination — every
+other module's right-clicks landed here, but nothing pointed *out*.
+This makes it a hub. All seven jump destinations were already
+registered in ``_EXTRA_DESTINATIONS`` from the library / calendar
+work in 8.117.6–8.117.14; no new dispatcher entries required.
+
+#### 3. GDPR audit on detail-window open (compliance)
+
+- Viewing a student record was previously invisible to the audit log.
+  GDPR treats reads of personal data as auditable events.
+- New ``_cross_links.audit_student_view`` wraps
+  ``infrastructure.security.audit_trail.get_audit_logger().log()``
+  with ``action='view_student_record'``, ``resource_type='student'``,
+  ``resource_id=<student_id>``, plus the viewer's user_id + username.
+- Called at the top of ``show_student_details`` before the Toplevel
+  is constructed. Best-effort: a transient audit DB hiccup logs at
+  debug and the viewer still renders. Sustained gaps surface as
+  missing rows in the audit log itself, which is a different and
+  detectable signal.
+- Verified end-to-end against the live ``audit_trail`` table:
+  ``audit_student_view(1, 'admin', 'S12345')`` increments
+  ``COUNT(*) WHERE action='view_student_record'`` by 1; smoke-test
+  row cleaned up.
+
+#### Items deferred (from the gap review)
+
+The fuller list of student-records improvements (positional column
+indexing, inline search box, column sorting, summary cards for
+finance / attendance / cases, dead duplicate ``view_students`` /
+``on_student_double_click`` paths, ``Actions`` tab → context-menu
+convergence) is documented in this thread but not in this commit.
+This patch is the three highest-leverage wins from that review:
+one real bug, one large UX gain, one compliance gap.
+
+#### Files
+
+- Added: ``modules/shared/gui/main/students/_cross_links.py``
+  (``audit_student_view``, ``student_menu_items``,
+  ``attach_cross_link_menu``, ``_open_loyalty_snapshot``,
+  ``_open_careers_snapshot``, ``_copy_to_clipboard``).
+- Modified: ``modules/shared/gui/main/students/student_records_gui.py``
+  (right-click attached on the records tree, mousewheel binding
+  scoped to canvas + inner frame instead of ``bind_all``,
+  ``audit_student_view`` call at the top of ``show_student_details``).
 
 ---
 
