@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.40 — 2026-05-02](#811740---2026-05-02)
 - [8.117.39 — 2026-05-02](#811739---2026-05-02)
 - [8.117.38 — 2026-05-02](#811738---2026-05-02)
 - [8.117.37 — 2026-05-02](#811737---2026-05-02)
@@ -266,6 +267,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.40] — 2026-05-02
+
+### Fixed — Student Records table cut off in workspace tab
+
+After 8.117.38 migrated Student Records to render inside the main
+GUI's content notebook, the table got cut off on the right and
+the user couldn't scroll horizontally to see what was missing.
+Two compounding issues:
+
+1. **Column widths summed to 1000px** (5 × 200) but the workspace
+   tab is ~900px wide. Pre-8.117.38 ran in a 1400px Toplevel where
+   1000px fit; the migration didn't tighten the defaults.
+2. **Pack ordering hid the horizontal scrollbar.** The tree was
+   packed first with ``side=LEFT, fill=BOTH, expand=True``, which
+   consumed the entire ``tree_frame`` before either scrollbar got
+   a chance to pack. Both scrollbars ended up at zero width — the
+   user had no way to scroll to the cut-off columns.
+
+#### Fix
+
+- **Per-column widths sized to content**: ID 90 / Name 220 /
+  Email 240 / Course 80 / Reg Date 100 = 730px total. Comfortable
+  fit inside a 900px workspace tab. ``stretch=True`` (ttk default)
+  distributes any extra width when the user resizes the window.
+- **Switched tree + scrollbars to grid layout** — the standard
+  Tkinter pattern for tree-with-scrollbars. Tree at (0, 0),
+  vertical scrollbar at (0, 1), horizontal scrollbar at (1, 0).
+  ``rowconfigure``/``columnconfigure`` give the tree row/column
+  the weight, so the tree expands and the scrollbars stay at
+  fixed natural width. Both scrollbars are now visible and
+  functional.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/students/student_records_gui.py``
+  (column widths tightened + per-column dict; tree + scrollbars
+  laid out with grid instead of pack).
 
 ---
 

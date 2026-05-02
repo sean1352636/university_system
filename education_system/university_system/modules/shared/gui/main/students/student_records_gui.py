@@ -301,19 +301,40 @@ def _build_student_records(self, host, close_action):
         except tk.TclError:
             pass
 
+    # Per-column widths sized to the actual content. Pre-8.117.40
+    # used a uniform 200px on every column = 1000px total, which
+    # overflowed the workspace tab's ~900px width — the table got
+    # cut off and the horizontal scrollbar never showed (see
+    # below). Tighter defaults fit inside the tab; ``stretch=True``
+    # (the ttk default) means any extra width gets distributed.
+    column_widths = {
+        _t("student.col_id"):       90,
+        _t("student.col_name"):     220,
+        _t("student.col_email"):    240,
+        _t("student.col_course"):   80,
+        _t("student.col_reg_date"): 100,
+    }
     for col in columns:
         tree.heading(col, text=col, command=lambda c=col: _sort_by(c))
-        tree.column(col, width=200)
+        tree.column(col, width=column_widths.get(col, 150),
+                    minwidth=60, stretch=True, anchor="w")
 
-    # Scrollbars
+    # Tree + scrollbars laid out via grid. Pre-8.117.40 packed them
+    # with side=LEFT/RIGHT/BOTTOM in that order — the tree's
+    # ``fill=BOTH, expand=True`` consumed the entire tree_frame
+    # before either scrollbar got a chance to pack, so both
+    # scrollbars rendered at zero width and the user couldn't
+    # scroll horizontally to see the cut-off columns. Grid keeps
+    # them in their assigned cells regardless of pack order.
     v_scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
     h_scrollbar = ttk.Scrollbar(tree_frame, orient=tk.HORIZONTAL, command=tree.xview)
     tree.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
 
-    # Pack widgets
-    tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-    v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-    h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+    tree.grid(row=0, column=0, sticky="nsew")
+    v_scrollbar.grid(row=0, column=1, sticky="ns")
+    h_scrollbar.grid(row=1, column=0, sticky="ew")
+    tree_frame.rowconfigure(0, weight=1)
+    tree_frame.columnconfigure(0, weight=1)
 
     # Bind double-click event
     tree.bind('<Double-1>', lambda event: self.on_student_double_click_window(event, tree))
