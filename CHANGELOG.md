@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.23 — 2026-05-02](#811723---2026-05-02)
 - [8.117.22 — 2026-05-02](#811722---2026-05-02)
 - [8.117.21 — 2026-05-02](#811721---2026-05-02)
 - [8.117.20 — 2026-05-02](#811720---2026-05-02)
@@ -249,6 +250,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.23] — 2026-05-02
+
+### Fixed — Tcl ``bgerror`` destroy-race noise (the other path)
+
+The 8.117.21 filter swallowed destroy-race ``TclError``s that
+surfaced through Python callback frames via
+``Tk.report_callback_exception``. But destroy races also fire
+through a **different** path that the filter didn't catch::
+
+    invalid command name "546947040448_tick"
+        while executing
+    "546947040448_tick"
+        ("after" script)
+
+This is Tcl's default ``bgerror`` proc dumping a background error
+to stderr. ``bgerror`` is invoked by Tcl when a failure happens
+inside an ``after`` script (or other Tcl-level handler) that has no
+Python frame on the stack — so the error never traverses
+``report_callback_exception`` and the 8.117.21 filter never sees it.
+
+#### Fix
+
+- Refactored ``install_destroy_race_filter`` into two halves:
+  - ``_install_python_callback_filter(root)`` — overrides
+    ``Tk.report_callback_exception`` (8.117.21 behaviour).
+  - ``_install_bgerror_filter(root)`` — registers a replacement
+    ``bgerror`` Tcl command via
+    ``root.tk.createcommand("bgerror", ...)``. Quietly drops the
+    destroy-race messages and forwards everything else to stderr as
+    ``"Tk background error: <msg>"``.
+- New string-level matcher ``_matches_bgerror_destroy_race`` (since
+  ``bgerror`` receives the raw Tcl message, not a ``TclError``
+  instance — Tcl's exception system isn't routed through Python's).
+  Same semantic as ``_is_destroy_race_error``, applied to the raw
+  text.
+- The single public entrypoint ``install_destroy_race_filter`` calls
+  both halves so existing wire-up sites
+  (``main_gui``, the four portal wrappers,
+  ``create_fallback_interface``) inherit the new behaviour with no
+  per-site changes.
+
+#### Verified
+
+- Five matcher cases pass: ``"<id>_tick"`` and dotted widget paths
+  swallowed; ``"some_thing_else"``, ``bad option`` errors, and the
+  empty string passed through.
+- Live test: ``root.tk.eval('bgerror {invalid command name "123_tick"}')``
+  produces no stderr output; ``root.tk.eval('bgerror {a real bug message}')``
+  produces ``"Tk background error: a real bug message"``.
+
+#### Files
+
+- Modified: ``modules/shared/gui/main/_tk_callback_filter.py``
+  (split into ``_install_python_callback_filter`` +
+  ``_install_bgerror_filter``; new ``_matches_bgerror_destroy_race``
+  helper; module docstring updated to document both paths).
 
 ---
 

@@ -1,4 +1,4 @@
-"""Quiet the upstream Tk destroy-race ``TclError`` noise.
+"""Quiet the upstream Tk destroy-race noise.
 
 When a Toplevel (or its inner Notebook tabs) is destroyed, Tk
 destroys its child widgets in dependency order — but any deferred
@@ -13,13 +13,29 @@ patterns:
   widget that owns the timer is gone, surfacing as
   ``invalid command name "1234567_tick"``.
 
-Both are upstream Tk quirks — many large Tk apps install an exception
-filter to swallow them rather than retro-fitting destroy protocols
-on every Treeview / scheduler in the app. This module gives every
-Tk root creator a one-call ``install`` that does exactly that, while
-still letting genuine exceptions surface to stderr unchanged.
+These come through **two** different paths and need two separate
+filters:
 
-Wire from every creator of a ``tk.Tk()``:
+1. **Python callback path** — Tk runs the registered Python callable
+   for an event, the callable raises, and Tk routes it through
+   ``Tk.report_callback_exception``. This is what
+   ``install_destroy_race_filter`` overrides.
+2. **Tcl background error (``bgerror``) path** — the failure happens
+   inside an ``after`` script or a Tcl-level handler that has no
+   Python frame on the stack, so it bypasses
+   ``report_callback_exception`` entirely. Tcl's default ``bgerror``
+   proc dumps the multi-line message to stderr in a format like::
+
+       invalid command name "546947040448_tick"
+           while executing
+       "546947040448_tick"
+           ("after" script)
+
+   ``install_bgerror_filter`` registers a replacement ``bgerror``
+   command that swallows the destroy-race patterns and lets
+   everything else through.
+
+Wire both from every creator of a ``tk.Tk()``:
 
     from education_system.university_system.modules.shared.gui.main._tk_callback_filter import (
         install_destroy_race_filter,
@@ -61,25 +77,94 @@ def _is_destroy_race_error(exc_val) -> bool:
 
 
 def install_destroy_race_filter(root) -> None:
-    """Attach ``report_callback_exception`` on *root* that quietly
-    swallows the destroy-race patterns documented at the top of this
-    module. Real exceptions are still logged to stderr in the same
-    format Tk's default handler uses, so genuine bugs aren't
-    silenced."""
+    """Attach the destroy-race filters on *root*.
+
+    Installs **both** the Python-callback filter
+    (``report_callback_exception``) and the Tcl ``bgerror`` filter so
+    the two distinct paths the destroy-race noise arrives through are
+    both quieted. Genuine exceptions still log to stderr in the same
+    format Tk's default handler uses, so real bugs aren't silenced."""
+    _install_python_callback_filter(root)
+    _install_bgerror_filter(root)
+
+
+def _install_python_callback_filter(root) -> None:
+    """Override ``Tk.report_callback_exception`` to swallow destroy-
+    race ``TclError``s that surface through Python callback frames."""
     def _handler(exc_type, exc_val, exc_tb):
         if _is_destroy_race_error(exc_val):
-            # Log at debug for diagnostic forensics — visible if
-            # someone bumps log level, but invisible by default.
             logger.debug("destroy-race TclError swallowed: %s", exc_val)
             return
-        # Default behaviour: print to stderr exactly the way Tk does.
         sys.stderr.write("Exception in Tkinter callback\n")
         traceback.print_exception(exc_type, exc_val, exc_tb)
-
     try:
         root.report_callback_exception = _handler
     except Exception:
-        logger.debug("could not install Tk destroy-race filter", exc_info=True)
+        logger.debug("could not install Python callback filter", exc_info=True)
 
 
-__all__ = ["install_destroy_race_filter", "_is_destroy_race_error"]
+def _install_bgerror_filter(root) -> None:
+    """Replace Tcl's default ``bgerror`` proc with one that drops the
+    destroy-race messages and forwards anything else to stderr.
+
+    ``bgerror`` is invoked by Tcl when a background error happens
+    inside an ``after`` script or other Tcl-level handler that has no
+    Python frame on the stack. Without this override, the multi-line
+    Tcl error message goes straight to stderr and bypasses
+    ``report_callback_exception`` entirely — which is what the user
+    sees in patterns like::
+
+        invalid command name "546947040448_tick"
+            while executing
+        "546947040448_tick"
+            ("after" script)
+    """
+    def _bgerror(msg):
+        # ``msg`` is the first line of the Tcl error (the human
+        # message). The "while executing" / "(after script)" trailer
+        # is in the ``errorInfo`` global on the Tcl side; Python
+        # doesn't see it here, but the head line is enough to
+        # classify the destroy races we want to drop.
+        try:
+            text = str(msg) if msg is not None else ""
+        except Exception:
+            text = ""
+        if _matches_bgerror_destroy_race(text):
+            logger.debug("destroy-race bgerror swallowed: %s", text)
+            return
+        # Pass-through: dump the head line to stderr in a format
+        # close to what Tcl's default bgerror produces. We can't
+        # easily fetch errorInfo back through Tk's Python binding
+        # without risking another exception in the handler, so the
+        # detailed "while executing" trailer is intentionally
+        # dropped — the head line is enough to triage real bugs.
+        sys.stderr.write(f"Tk background error: {text}\n")
+    try:
+        # Re-create the command — replaces any existing bgerror.
+        root.tk.createcommand("bgerror", _bgerror)
+    except Exception:
+        logger.debug("could not install Tcl bgerror filter", exc_info=True)
+
+
+def _matches_bgerror_destroy_race(text: str) -> bool:
+    """Same semantic as ``_is_destroy_race_error`` but operating on
+    the raw Tcl error message string (since ``bgerror`` doesn't get
+    a ``TclError`` instance — Tcl's exception system isn't routed
+    through Python's)."""
+    if "invalid command name" not in text:
+        return False
+    # ``invalid command name "<id>_tick"`` — after-timer race
+    if '_tick"' in text or text.rstrip().endswith('_tick'):
+        return True
+    # ``invalid command name ".!toplevel.!…!scrollbar"`` — widget
+    # destroy race; the dotted-path prefix is distinctive.
+    if '".' in text or '".!' in text:
+        return True
+    return False
+
+
+__all__ = [
+    "install_destroy_race_filter",
+    "_is_destroy_race_error",
+    "_matches_bgerror_destroy_race",
+]
