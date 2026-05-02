@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Version 8.x**
 
 - [8.117.34 — 2026-05-02](#811734---2026-05-02)
+- [8.117.35 — 2026-05-02](#811735---2026-05-02)
+- [8.117.34 — 2026-05-02](#811734---2026-05-02)
 - [8.117.33 — 2026-05-02](#811733---2026-05-02)
 - [8.117.32 — 2026-05-02](#811732---2026-05-02)
 - [8.117.31 — 2026-05-02](#811731---2026-05-02)
@@ -314,6 +316,78 @@ workspace's available width.
 - Modified:
   ``modules/shared/gui/main/features/academic_launchers_gui.py``
   (``show_library_management`` reverted to direct Toplevel path).
+
+---
+
+## [8.117.34] — 2026-05-02
+
+### Changed — Library reverts to a full-screen Toplevel
+
+8.117.18 migrated Library to ``open_in_workspace`` so it would
+render as a tab inside the main GUI's content notebook. User
+report: Library has its own dense layout — a notebook of notebooks
+with ~14 CRUD treeview tabs — and felt cramped inside the
+workspace's available width. Reverted: ``show_library_management``
+now opens a standalone ``tk.Toplevel(self.root)``.
+``LibraryGUI.__init__``'s cross-platform window maximisation
+handles the sizing.
+
+The ``open_in_workspace`` mechanism stays available for other
+launchers; only Library reverts.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  (``show_library_management`` reverted to direct Toplevel path).
+
+---
+
+## [8.117.35] — 2026-05-02
+
+### Fixed — Library window left a 25px gap on every side
+
+After 8.117.34 reverted Library to a Toplevel, the user reported
+the window still left a visible gap from the screen edge. Cause:
+``LibraryGUI.__init__``'s Linux/Unix maximisation fallback (added
+in 8.117.24) used::
+
+    self.master.geometry(f"{screen_width-50}x{screen_height-100}+25+25")
+
+The ``-50/-100`` was a defensive choice to "leave room for the
+taskbar" — but the call only fired *because* ``state('zoomed')``
+raised on Linux. The gap was the user-visible "doesn't fill the
+screen" complaint; modern WMs handle the taskbar via the work
+area, not by leaving margin around windows.
+
+#### Three-stage maximise chain
+
+1. **``state('zoomed')``** — Windows-style maximise. Verified
+   afterwards by re-reading ``self.master.state()`` so a silent
+   no-op doesn't masquerade as success.
+2. **``wm_attributes('-zoomed', True)``** — Linux/X11 EWMH zoom
+   (the proper Linux maximise — title bar stays, window fills the
+   work area, taskbar/dock not covered). Re-read via
+   ``attributes('-zoomed')`` so a WM that ignores the request
+   doesn't fool us into thinking it engaged.
+3. **``geometry(screen_w × screen_h + 0+0)``** — last-ditch full-
+   screen-sized manual geometry, no margin. Used only when neither
+   programmatic maximise engaged.
+
+The 25px-margin shape (``screen_w-50`` / ``screen_h-100``) is gone.
+
+#### Verified
+
+- All three stages exercise correctly in isolation; headless
+  environment (no cooperative WM) falls through to stage 3 and
+  lands on ``1366x768+0+0`` — the screen's full extent.
+- ``library/base.py`` still imports cleanly.
+
+#### Files
+
+- Modified: ``modules/domain/academics/gui/library/base.py``
+  (cross-platform maximise refactored from a 2-stage try/except
+  ladder to a 3-stage verified-each-step chain).
 
 ---
 
