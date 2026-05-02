@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Version 8.x**
 
 - [8.117.34 — 2026-05-02](#811734---2026-05-02)
+- [8.117.37 — 2026-05-02](#811737---2026-05-02)
 - [8.117.36 — 2026-05-02](#811736---2026-05-02)
 - [8.117.35 — 2026-05-02](#811735---2026-05-02)
 - [8.117.34 — 2026-05-02](#811734---2026-05-02)
@@ -341,6 +342,36 @@ launchers; only Library reverts.
 - Modified:
   ``modules/shared/gui/main/features/academic_launchers_gui.py``
   (``show_library_management`` reverted to direct Toplevel path).
+
+---
+
+## [8.117.37] — 2026-05-02
+
+### Changed — Main GUI window sizing matches Finance / Library
+
+Same one-line fix 8.117.36 applied to Library, applied to the main
+``UnifiedManagementGUI`` Tk root. Pre-8.117.37 used::
+
+    self.root.geometry("1200x800")
+    self.root.minsize(1000, 700)
+
+— noticeably smaller than Finance Management's window on the same
+display. Bumped to match the Finance shape::
+
+    self.root.geometry("1400x900")
+    self.root.minsize(1200, 800)
+
+On a typical desktop the request meets or exceeds the work area so
+Tk fills as much as it can, which the user perceives as "fills the
+screen". Same pattern Finance has used all along; same pattern
+Library adopted in 8.117.36.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/main_gui.py``
+  (Tk root geometry/minsize bumped from 1200x800/1000x700 to
+  1400x900/1200x800).
 
 ---
 

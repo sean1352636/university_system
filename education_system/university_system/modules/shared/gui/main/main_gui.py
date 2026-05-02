@@ -130,8 +130,15 @@ class UnifiedManagementGUI:
             # Initialize Tkinter
             self.root = tk.Tk()
             self.root.title(_t("gui.window_title"))
-            self.root.geometry("1200x800")
-            self.root.minsize(1000, 700)
+            # Sizing matches Finance Management (and Library, after
+            # 8.117.36): 1400x900 fixed geometry with a 1200x800
+            # minsize. On a typical desktop the request meets/
+            # exceeds the work area so Tk fills as much as it can,
+            # which the user perceives as "fills the screen". Pre-
+            # 8.117.37 used 1200x800/1000x700 — noticeably smaller
+            # than Finance/Library on the same display.
+            self.root.geometry("1400x900")
+            self.root.minsize(1200, 800)
             # Quiet upstream Tk destroy-race TclErrors (scrollbar /
             # tick callbacks firing after their target is gone).
             try:
