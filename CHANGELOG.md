@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.12 — 2026-05-02](#811712---2026-05-02)
 - [8.117.11 — 2026-05-02](#811711---2026-05-02)
 - [8.117.10 — 2026-05-02](#811710---2026-05-02)
 - [8.117.9 — 2026-05-02](#81179---2026-05-02)
@@ -238,6 +239,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.12] — 2026-05-02
+
+### Added — Library fines escalation: open disciplinary case in-process
+
+- The Library fines tab right-click menu gains
+  "🚨 Open disciplinary case (escalate)". Unlike the navigation jumps
+  added in 8.117.6–8.117.11 this is an **action** rather than a
+  ``_jump`` — it pops a small confirmation dialog (subject, severity,
+  offense type, pre-filled description) and calls
+  ``services.cases_bus.open_case(kind='disciplinary', …)`` directly
+  in-process.
+- The Disciplinary Portal itself is registered in
+  ``main_gui._NEW_FEATURE_MODULES`` and dispatched as a **subprocess**,
+  so a regular ``_EXTRA_DESTINATIONS`` jump cannot carry the parent's
+  ``_last_academic_context`` across the process boundary. The action
+  sidesteps that problem by going through the unified case-spine
+  ``cases_bus`` — same write path the portal reads from. The new row
+  is visible the next time anyone opens Disciplinary Portal, queries
+  ``disciplinary_records``, or hits the cases dashboard.
+- Default description is auto-built from the row context (book title,
+  days overdue, fine amount, ``loan_id``) so the librarian rarely has
+  to type more than tweak the severity. Confirmation dialog before
+  the write so an accidental right-click can't open a case.
+- Verified end-to-end: ``open_case(kind='disciplinary', …)`` increments
+  ``COUNT(*) FROM disciplinary_records`` by 1 and returns the new row
+  id; smoke-test row cleaned up after verification.
+
+#### Files
+
+- Modified:
+  ``modules/domain/academics/gui/library/_cross_links.py``
+  (new ``open_disciplinary_case_for_loan`` action helper, fines
+  menu builder, module docstring updated to surface the action
+  alongside the navigation destinations).
 
 ---
 

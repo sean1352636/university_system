@@ -24,6 +24,14 @@ destinations must already be registered in either ``_MODULES`` or
   - ``printing``        (show_printing_services_gui)
   - ``room_booking``    (show_study_room_booking_gui)
 
+In addition to navigation jumps the fines menu also exposes an
+**action**: :func:`open_disciplinary_case_for_loan` raises a
+disciplinary record via ``services.cases_bus.open_case`` directly
+in-process. The Disciplinary Portal itself is a subprocess launcher
+so we can't pass academic context across the process boundary — the
+in-process action sidesteps that by writing the row through the same
+unified case-spine the portal reads from.
+
 If the import of the link-bar module fails (e.g. running in CLI/test
 mode), every helper here degrades to a silent no-op so Library still
 opens.
@@ -167,6 +175,144 @@ def send_overdue_notice(user_id, book_title=None, days_overdue=None,
                 "configuration / app log.", parent=win)
 
     ttk.Button(bar, text="📤 Send", command=_do_send).pack(side="left")
+    ttk.Button(bar, text="Cancel", command=win.destroy).pack(side="right")
+
+
+def open_disciplinary_case_for_loan(user_id, *, loan_id=None, book_title=None,
+                                    fine_amount=None, days_overdue=None,
+                                    parent=None):
+    """Confirm + raise a disciplinary case via ``cases_bus.open_case``.
+
+    Used as a right-click escalation from the Library fines tab when a
+    fine is persistently unpaid or a borrower has racked up multiple
+    overdue items. Goes through the unified case spine
+    (``services.cases_bus``) — same write path Disciplinary Portal
+    uses — so the case shows up wherever existing dashboards already
+    read from ``disciplinary_records``. No subprocess hop required.
+
+    The Disciplinary Portal itself is a subprocess launcher (see
+    ``main_gui._launch_new_feature_module``); a navigation-style jump
+    there can't carry the parent's academic context across the process
+    boundary, so this action *creates the row* in-process and offers a
+    follow-up "Open Disciplinary Portal" button to view it. That button
+    is a plain quickbar-style launcher with no context payload — the
+    user finds the new case by date in the portal."""
+    if not user_id:
+        return
+    import tkinter as tk
+    from tkinter import ttk, messagebox
+
+    try:
+        from education_system.university_system.modules.services.cases_bus import (
+            open_case,
+        )
+    except Exception:
+        logger.exception("cases_bus unavailable; cannot escalate")
+        messagebox.showerror(
+            "Disciplinary unavailable",
+            "The cases bus could not be loaded; the case was not "
+            "raised.", parent=parent)
+        return
+
+    # Build a sensible default description from whatever the row gave us.
+    bits = []
+    if book_title:
+        bits.append(f'"{book_title}"')
+    if days_overdue:
+        try:
+            bits.append(f"{int(days_overdue)} days overdue")
+        except (TypeError, ValueError):
+            pass
+    if fine_amount:
+        try:
+            bits.append(f"£{float(fine_amount):.2f} unpaid")
+        except (TypeError, ValueError):
+            pass
+    if loan_id:
+        bits.append(f"loan_id={loan_id}")
+    default_desc = ("Library escalation: " + ", ".join(bits)) if bits else \
+                   "Library escalation: persistent overdue / unpaid fine"
+
+    win = tk.Toplevel(parent)
+    win.title(f"Open disciplinary case → student {user_id}")
+    win.geometry("600x420")
+    if parent is not None:
+        try:
+            win.transient(parent)
+        except Exception:
+            pass
+
+    form = ttk.Frame(win, padding=10)
+    form.pack(fill="both", expand=True)
+
+    ttk.Label(form, text=f"Subject student: {user_id}",
+              font=("Arial", 10, "bold")).grid(row=0, column=0,
+                                                columnspan=2, sticky="w",
+                                                pady=(0, 8))
+
+    ttk.Label(form, text="Severity:").grid(row=1, column=0, sticky="w")
+    sev_var = tk.StringVar(value="Minor")
+    ttk.Combobox(form, textvariable=sev_var,
+                 values=["Minor", "Moderate", "Major"],
+                 state="readonly", width=15).grid(
+        row=1, column=1, sticky="w", padx=(8, 0))
+
+    ttk.Label(form, text="Offense type:").grid(row=2, column=0, sticky="w",
+                                                pady=(6, 0))
+    off_var = tk.StringVar(value="Library — overdue / unpaid fine")
+    ttk.Entry(form, textvariable=off_var, width=50).grid(
+        row=2, column=1, sticky="ew", padx=(8, 0), pady=(6, 0))
+    form.columnconfigure(1, weight=1)
+
+    ttk.Label(form, text="Description:").grid(row=3, column=0,
+                                                sticky="nw", pady=(6, 0))
+    from tkinter.scrolledtext import ScrolledText
+    desc_text = ScrolledText(form, wrap="word", height=10)
+    desc_text.grid(row=4, column=0, columnspan=2, sticky="nsew",
+                   pady=(2, 6))
+    desc_text.insert("1.0", default_desc)
+    form.rowconfigure(4, weight=1)
+
+    bar = ttk.Frame(win, padding=(10, 0, 10, 10))
+    bar.pack(fill="x")
+
+    def _do_open():
+        if not messagebox.askyesno(
+            "Confirm",
+            f"Open a disciplinary case for student {user_id}?\n\n"
+            "This will write to disciplinary_records and the case "
+            "will appear in the Disciplinary Portal.",
+            parent=win):
+            return
+        try:
+            new_id = open_case(
+                kind="disciplinary",
+                subject_id=str(user_id),
+                description=desc_text.get("1.0", "end-1c").strip(),
+                severity=sev_var.get().strip() or "Minor",
+                offense_type=off_var.get().strip() or "Library escalation",
+            )
+        except Exception as exc:
+            logger.exception("open_case failed")
+            messagebox.showerror("Failed",
+                                 f"Could not raise the case:\n{exc}",
+                                 parent=win)
+            return
+        if not new_id:
+            messagebox.showerror(
+                "Failed",
+                "The cases bus returned no record id. The case may "
+                "not have been created — check the application log.",
+                parent=win)
+            return
+        messagebox.showinfo(
+            "Case opened",
+            f"Disciplinary record #{new_id} opened for student "
+            f"{user_id}.", parent=win)
+        win.destroy()
+
+    ttk.Button(bar, text="🚨 Open case",
+               command=_do_open).pack(side="left")
     ttk.Button(bar, text="Cancel", command=win.destroy).pack(side="right")
 
 
@@ -482,6 +628,15 @@ def fines_menu_items(values, parent=None):
         items.append(
             ("🕓 View audit log for this fine",
              lambda l=loan_id: _jump("audit_viewer", {"loan_id": str(l)})),
+        )
+    if user_id:
+        items.append(
+            ("🚨 Open disciplinary case (escalate)",
+             lambda u=user_id, l=loan_id, t=book_title,
+                    f=fine_amount, d=days_overdue:
+                 open_disciplinary_case_for_loan(
+                     u, loan_id=l, book_title=t,
+                     fine_amount=f, days_overdue=d, parent=parent)),
         )
     return items
 
