@@ -152,7 +152,16 @@ def _load_students_into(self, tree, *, search_term=None, search_field=None):
             pass
 
 def show_student_records(self):
-    """Show student records interface in a new window"""
+    """Show student records interface inside the main GUI's content
+    area when a workspace is available, or as a Toplevel otherwise.
+
+    Pre-8.117.38 always opened a 1400×800 ``tk.Toplevel(self.root)``.
+    User asked for it to fit inside the main content section instead.
+    Now goes through ``UnifiedManagementGUI.open_in_workspace``
+    (8.117.18 mechanism) when the post-login workspace notebook is
+    alive — Library uses Toplevel-style sizing (8.117.34), but the
+    Student Records list view fits a tab-frame nicely (less dense
+    than Library's notebook-of-notebooks)."""
     # Check if current user is a student - if so, show only their own record
     if self.auth and self.auth.current_user:
         user_role = self.auth.current_user.get('role', '')
@@ -168,15 +177,52 @@ def show_student_records(self):
                 messagebox.showerror(_t("common.error"), _t("student.unable_retrieve_id"))
                 return
 
-    # For staff/admin: Create new window with full student list
+    title = _t("student.records_management")
+
+    def _build(host, close_action):
+        """Construct the records UI inside *host*. *close_action* is
+        a callable supplied by the caller — calls ``nb.forget(host)``
+        when ``host`` is a workspace tab frame, ``host.destroy()``
+        when it's a Toplevel inner frame."""
+        _build_student_records(self, host, close_action)
+
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        # Workspace path: tab inside the main GUI's content notebook.
+        # ``open_in_workspace`` returns the new tab Frame; the
+        # close-action removes that tab.
+        nb = getattr(self, "workspace_notebook", None)
+        def _close_tab(host=None, _nb=nb):
+            try:
+                if _nb is not None and host is not None:
+                    _nb.forget(host)
+            except Exception:
+                pass
+        # Builder receives the tab frame + the close action bound
+        # to it.
+        opener(title, lambda host: _build(host, lambda: _close_tab(host)))
+        return
+
+    # Fallback: classic Toplevel — same shape as pre-8.117.38.
     records_window = tk.Toplevel(self.root)
     _install_clean_close(records_window)
-    records_window.title(_t("student.records_management"))
+    records_window.title(title)
     records_window.geometry("1400x800")
     records_window.transient(self.root)
+    main_outer = ttk.Frame(records_window)
+    main_outer.pack(fill=tk.BOTH, expand=True)
+    _build(main_outer, lambda: records_window.destroy())
 
-    # Main frame
-    main_frame = ttk.Frame(records_window, padding=10)
+
+def _build_student_records(self, host, close_action):
+    """Internal: build the records list UI inside *host*. Refactored
+    out of ``show_student_records`` (8.117.38) so the same widget
+    construction works whether *host* is a workspace tab Frame or a
+    Toplevel inner frame.
+
+    *close_action* is a no-arg callable that closes the host —
+    forgetting the workspace tab or destroying the Toplevel."""
+    main_frame = ttk.Frame(host, padding=10)
     main_frame.pack(fill=tk.BOTH, expand=True)
 
     # Title
@@ -194,7 +240,7 @@ def show_student_records(self):
     ttk.Button(button_frame, text=_t("gui.refresh"),
               command=lambda: self.view_students_in_window(tree)).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("gui.close"),
-              command=records_window.destroy).pack(side=tk.RIGHT, padx=5)
+              command=close_action).pack(side=tk.RIGHT, padx=5)
 
     # Inline search bar — replaces the modal search dialog. Filters the
     # currently-loaded rows in-memory on KeyRelease so the result set
@@ -281,7 +327,7 @@ def show_student_records(self):
         from education_system.university_system.modules.shared.gui.main.students._cross_links import (
             attach_cross_link_menu,
         )
-        attach_cross_link_menu(tree, parent=records_window, app=self)
+        attach_cross_link_menu(tree, parent=host, app=self)
     except Exception:
         logger.debug("student records cross-link menu unavailable", exc_info=True)
 

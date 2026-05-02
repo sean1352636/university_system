@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.38 — 2026-05-02](#811738---2026-05-02)
 - [8.117.37 — 2026-05-02](#811737---2026-05-02)
 - [8.117.36 — 2026-05-02](#811736---2026-05-02)
 - [8.117.35 — 2026-05-02](#811735---2026-05-02)
@@ -264,6 +265,73 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.38] — 2026-05-02
+
+### Changed — Student Records + System Administration render in the workspace
+
+User asked for both to fit inside the main GUI's content section
+instead of opening as full-screen Toplevels. Migrated both to the
+``open_in_workspace`` mechanism (8.117.18). Library reverted from
+this pattern in 8.117.34 because its dense notebook-of-notebooks
+layout felt cramped, but Student Records (single treeview + search
+bar + buttons) and System Administration (5 tabs in their own
+notebook) fit a workspace tab fine.
+
+#### Student Records (``show_student_records``)
+
+- Widget construction extracted into a new ``_build_student_records``
+  helper. Same signature for both paths: ``(self, host, close_action)``.
+- ``records_window`` references swapped to ``host`` (Frame parent)
+  inside the builder; the cross-link menu's ``parent=`` argument
+  switched accordingly.
+- The Close button calls ``close_action`` instead of
+  ``records_window.destroy``. Workspace path: ``close_action`` runs
+  ``notebook.forget(host)``. Toplevel-fallback path:
+  ``host.master.destroy()`` via a closure on the Toplevel.
+
+#### System Administration (``show_system_administration_gui``)
+
+- Same shape: 5-tab notebook (Database / Users / Monitoring /
+  Configuration / Operations) + Close button extracted into a
+  ``_build`` closure inside the launcher.
+- Workspace path opens it as a tab; Toplevel fallback preserves
+  the pre-8.117.38 1400×900 geometry exactly so unmigrated
+  callsites still work.
+
+#### Why these and not Library
+
+Library is a notebook of notebooks (~14 CRUD treeview tabs) — it
+needs more horizontal real estate than a workspace tab can give it
+on a 1366-wide screen. Student Records' table + search and System
+Admin's 5 tabs are flatter; they fit naturally.
+
+The mechanism is a per-launcher decision. To migrate any other
+launcher: extract its widget construction into a builder accepting
+``(host, close_action)``, route through ``open_in_workspace`` if
+available, fall back to a Toplevel otherwise.
+
+#### Verified
+
+- Both modules import cleanly.
+- Live test with a stub ``UnifiedManagementGUI`` confirms each
+  launcher calls ``open_in_workspace`` with the correct title when
+  a workspace notebook is present.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/students/student_records_gui.py``
+  (``show_student_records`` routes through ``open_in_workspace``;
+  widget construction moved into ``_build_student_records``;
+  Close button + cross-link parent updated for the host-frame
+  pattern),
+  ``modules/shared/gui/main/admin/system_admin_gui.py``
+  (``show_system_administration_gui`` routes through
+  ``open_in_workspace``; Toplevel fallback preserves pre-8.117.38
+  geometry).
 
 ---
 

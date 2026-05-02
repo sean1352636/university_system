@@ -25,57 +25,86 @@ def show_system_admin(self):
     admin_frame = ttk.LabelFrame(self.content_frame, text=_t("system_admin_gui.frames.administration_tools"), padding="15")
     admin_frame.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 def show_system_administration_gui(self):
-    """Launch comprehensive system administration GUI"""
+    """Launch comprehensive system administration GUI inside the
+    main GUI's content area when a workspace is available, or as a
+    Toplevel otherwise.
+
+    Pre-8.117.38 always opened a 1400×900 ``tk.Toplevel(self.root)``.
+    User asked for it to fit inside the main content section instead.
+    Now goes through ``UnifiedManagementGUI.open_in_workspace``
+    (8.117.18 mechanism) when the post-login workspace notebook is
+    alive. The 5 admin tabs (Database / Users / Monitoring /
+    Configuration / Operations) sit naturally inside a workspace
+    tab — they're already a notebook themselves.
+    """
     if not self.auth.current_user or self.auth.current_user.get('role') != 'admin':
         messagebox.showerror(_t("system_admin_gui.errors.access_denied_title"), _t("system_admin_gui.errors.administrator_access_required"))
         return
 
     try:
+        title = _t("system_admin_gui.window.title")
+
+        def _build(host, close_action):
+            """Construct the admin notebook + 5 tabs + Close button
+            inside *host*. *close_action* closes either the workspace
+            tab or the Toplevel depending on host type."""
+            notebook = ttk.Notebook(host, padding="10")
+            notebook.pack(fill=tk.BOTH, expand=True)
+
+            db_frame = ttk.Frame(notebook)
+            notebook.add(db_frame, text=_t("system_admin_gui.tabs.database_management"))
+            self.create_database_admin_tab(db_frame)
+
+            user_frame = ttk.Frame(notebook)
+            notebook.add(user_frame, text=_t("system_admin_gui.tabs.user_management"))
+            self.create_user_admin_tab(user_frame)
+
+            monitor_frame = ttk.Frame(notebook)
+            notebook.add(monitor_frame, text=_t("system_admin_gui.tabs.system_monitoring"))
+            self.create_monitoring_tab(monitor_frame)
+
+            config_frame = ttk.Frame(notebook)
+            notebook.add(config_frame, text=_t("system_admin_gui.tabs.configuration"))
+            self.create_config_tab(config_frame)
+
+            ops_frame = ttk.Frame(notebook)
+            notebook.add(ops_frame, text="Operations")
+            self.create_operations_tab(ops_frame)
+
+            button_frame = ttk.Frame(host, padding="10")
+            button_frame.pack(side=tk.BOTTOM, fill=tk.X)
+            ttk.Button(
+                button_frame,
+                text=_t("system_admin_gui.buttons.close"),
+                command=close_action,
+            ).pack(side=tk.RIGHT)
+
+        opener = getattr(self, "open_in_workspace", None)
+        if callable(opener):
+            nb = getattr(self, "workspace_notebook", None)
+            def _close_tab(host=None, _nb=nb):
+                try:
+                    if _nb is not None and host is not None:
+                        _nb.forget(host)
+                except Exception:
+                    pass
+            opener(title, lambda host: _build(host, lambda: _close_tab(host)))
+            print(_t("system_admin_gui.messages.gui_opened_successfully"))
+            return
+
+        # Fallback: Toplevel matching pre-8.117.38 geometry.
         admin_window = tk.Toplevel(self.root)
         _install_clean_close(admin_window)
-        admin_window.title(_t("system_admin_gui.window.title"))
+        admin_window.title(title)
         admin_window.geometry("1400x900")
         admin_window.minsize(1200, 700)
-
         try:
             admin_window.transient(self.root)
         except Exception as e:
             logger.debug(f"Could not set admin_window as transient: {e}")
-
-        # Create notebook for different admin sections
-        notebook = ttk.Notebook(admin_window, padding="10")
-        notebook.pack(fill=tk.BOTH, expand=True)
-
-        # Database Management Tab
-        db_frame = ttk.Frame(notebook)
-        notebook.add(db_frame, text=_t("system_admin_gui.tabs.database_management"))
-        self.create_database_admin_tab(db_frame)
-
-        # User Management Tab
-        user_frame = ttk.Frame(notebook)
-        notebook.add(user_frame, text=_t("system_admin_gui.tabs.user_management"))
-        self.create_user_admin_tab(user_frame)
-
-        # System Monitoring Tab
-        monitor_frame = ttk.Frame(notebook)
-        notebook.add(monitor_frame, text=_t("system_admin_gui.tabs.system_monitoring"))
-        self.create_monitoring_tab(monitor_frame)
-
-        # Configuration Tab
-        config_frame = ttk.Frame(notebook)
-        notebook.add(config_frame, text=_t("system_admin_gui.tabs.configuration"))
-        self.create_config_tab(config_frame)
-
-        # Operations Tab (moved from main navigation)
-        ops_frame = ttk.Frame(notebook)
-        notebook.add(ops_frame, text="Operations")
-        self.create_operations_tab(ops_frame)
-
-        # Add close button at the bottom
-        button_frame = ttk.Frame(admin_window, padding="10")
-        button_frame.pack(side=tk.BOTTOM, fill=tk.X)
-        ttk.Button(button_frame, text=_t("system_admin_gui.buttons.close"), command=admin_window.destroy).pack(side=tk.RIGHT)
-
+        outer = ttk.Frame(admin_window)
+        outer.pack(fill=tk.BOTH, expand=True)
+        _build(outer, lambda: admin_window.destroy())
         print(_t("system_admin_gui.messages.gui_opened_successfully"))
 
     except Exception as e:
