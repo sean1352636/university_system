@@ -160,54 +160,27 @@ class LibraryGUI:
         # ``tk.Tk`` and ``tk.Toplevel`` but not on plain frames, so
         # it's a clean discriminator.
         if hasattr(self.master, 'wm_state'):
-            # Try maximised state in order of platform support:
-            #   1. ``state('zoomed')`` — Windows, classic maximise.
-            #   2. ``wm_attributes('-zoomed', True)`` — Linux/X11 WMs
-            #      that support EWMH zoom (most modern ones do). This
-            #      is the proper Linux maximise — title bar stays,
-            #      window fills the work area, taskbar/dock not
-            #      covered. Equivalent to clicking the maximise button.
-            #   3. ``geometry(screen_w × screen_h + 0+0)`` — manual
-            #      fullscreen-sized geometry as the last-ditch
-            #      fallback. No margin (the pre-8.117.35 ``-50/-100``
-            #      gap was the user-visible "doesn't fill the screen"
-            #      complaint and was a defensive choice with no real
-            #      need — modern WMs handle the taskbar via the work
-            #      area, not by leaving margins around the window).
-            zoomed = False
-            # 1) Windows-style state('zoomed').
+            # Match Finance Management's sizing approach: a fixed
+            # 1400x900 with a 1200x800 minsize, no programmatic
+            # maximise. On a typical 1366x768 desktop Tk clips the
+            # request to the work area, which the user perceives as
+            # "fills the screen" — same shape Finance uses.
+            #
+            # Pre-8.117.36 tried a 3-stage chain (state('zoomed') →
+            # wm_attributes('-zoomed') → screen-sized geometry).
+            # That was inconsistent with the rest of the app, and on
+            # WMs where the maximised state stuck, the window
+            # animated to maximised after construction — visible
+            # flicker. The plain geometry call is what Finance does
+            # and matches what the user asked for.
             try:
-                self.master.state('zoomed')
-                # Verify it actually took — some WMs accept the call
-                # silently without engaging.
-                if str(self.master.state()) == 'zoomed':
-                    zoomed = True
+                self.master.geometry("1400x900")
             except tk.TclError:
                 pass
-            # 2) Linux/X11 -zoomed attribute. ``attributes('-zoomed', True)``
-            # may not raise on environments without a cooperative WM;
-            # re-read the attribute afterwards to confirm it engaged.
-            if not zoomed:
-                try:
-                    self.master.attributes('-zoomed', True)
-                    if int(self.master.attributes('-zoomed') or 0) == 1:
-                        zoomed = True
-                except tk.TclError:
-                    pass
-            # 3) Last-ditch: full-screen-sized manual geometry, no
-            # margin. Pre-8.117.35 used (-50/-100) to "leave room for
-            # the taskbar" — that was the user-visible gap. Modern WMs
-            # respect the work area regardless, so 0,0+screen is the
-            # right shape when programmatic maximise didn't engage.
-            if not zoomed:
-                try:
-                    screen_width = self.master.winfo_screenwidth()
-                    screen_height = self.master.winfo_screenheight()
-                    self.master.geometry(
-                        f"{screen_width}x{screen_height}+0+0"
-                    )
-                except tk.TclError:
-                    self.master.geometry("1400x900")
+            try:
+                self.master.minsize(1200, 800)
+            except tk.TclError:
+                pass
 
         # Set up styling
         self.setup_styles()

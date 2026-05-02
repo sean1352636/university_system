@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 **Version 8.x**
 
 - [8.117.34 — 2026-05-02](#811734---2026-05-02)
+- [8.117.36 — 2026-05-02](#811736---2026-05-02)
 - [8.117.35 — 2026-05-02](#811735---2026-05-02)
 - [8.117.34 — 2026-05-02](#811734---2026-05-02)
 - [8.117.33 — 2026-05-02](#811733---2026-05-02)
@@ -340,6 +341,43 @@ launchers; only Library reverts.
 - Modified:
   ``modules/shared/gui/main/features/academic_launchers_gui.py``
   (``show_library_management`` reverted to direct Toplevel path).
+
+---
+
+## [8.117.36] — 2026-05-02
+
+### Changed — Library window sizing matches Finance Management
+
+User report: "make it fill the screen like what Finance GUI does."
+Looking at how Finance actually sizes its window
+(``finance_management_gui.py:96-103``), it just sets::
+
+    win.geometry("1400x900")
+    win.minsize(1200, 800)
+
+— no programmatic maximise. On a typical desktop the requested
+geometry meets or exceeds the work area, so Tk fills as much as it
+can and the user perceives it as "fills the screen".
+
+Pre-8.117.36 Library tried a 3-stage maximise chain (``state('zoomed')``
+→ ``wm_attributes('-zoomed', True)`` → screen-sized manual
+geometry). On WMs where ``-zoomed`` engaged, the window animated to
+maximised after construction — visible flicker. On the user's WM
+the chain wasn't producing the same shape Finance gets with its
+plain geometry call.
+
+Replaced the chain with the Finance pattern: ``geometry("1400x900")``
++ ``minsize(1200, 800)``. The ``hasattr(self.master, 'wm_state')``
+gate stays so workspace ``Frame`` / ``LabelFrame`` masters still
+skip the block (the 8.117.18-era safety net — even though Library
+reverted from workspace tabs in 8.117.34, the constructor stays
+defensive in case anything else still hands it a non-Toplevel).
+
+#### Files
+
+- Modified: ``modules/domain/academics/gui/library/base.py``
+  (3-stage maximise chain replaced with the Finance-style 2-line
+  geometry/minsize pair).
 
 ---
 
