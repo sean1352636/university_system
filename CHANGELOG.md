@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.8 — 2026-05-02](#81178---2026-05-02)
 - [8.117.7 — 2026-05-02](#81177---2026-05-02)
 - [8.117.6 — 2026-05-02](#81176---2026-05-02)
 - [8.117.5 — 2026-05-02](#81175---2026-05-02)
@@ -234,6 +235,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.8] — 2026-05-02
+
+### Fixed — `LibrarySummary.recent` lookup crashed with "no such column: b.id"
+
+- ``get_library_summary`` (in
+  ``modules/domain/academics/gui/library/cross_module_api.py``) joined
+  ``books`` on ``b.id = bl.book_id`` for the recent-loans subquery,
+  but the ``books`` table's PK column is ``book_id`` (no ``id``
+  column). The query raised ``OperationalError`` on every embed of
+  ``LibrarySummaryFrame`` outside the Library window. Fixed to
+  ``b.book_id = bl.book_id`` to match the schema (and the existing
+  reading-list-items join in the same file at line 275).
+- Verified ``get_library_summary('S12345')`` now returns a populated
+  summary instead of logging the traceback.
+
+#### Files
+
+- Modified: ``modules/domain/academics/gui/library/cross_module_api.py``
 
 ---
 

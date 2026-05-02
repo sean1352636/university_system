@@ -111,7 +111,7 @@ def get_library_summary(user_id) -> LibrarySummary:
                 "SELECT bl.book_id, COALESCE(b.title, ''), bl.status, "
                 "bl.due_date, bl.return_date "
                 "FROM book_loans bl "
-                "LEFT JOIN books b ON b.id = bl.book_id "
+                "LEFT JOIN books b ON b.book_id = bl.book_id "
                 "WHERE bl.user_id = ? "
                 "ORDER BY bl.checkout_date DESC LIMIT 10",
                 (str(user_id),)).fetchall()
