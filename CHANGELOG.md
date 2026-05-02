@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.17 — 2026-05-02](#811717---2026-05-02)
 - [8.117.16 — 2026-05-02](#811716---2026-05-02)
 - [8.117.15 — 2026-05-02](#811715---2026-05-02)
 - [8.117.14 — 2026-05-02](#811714---2026-05-02)
@@ -243,6 +244,92 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.17] — 2026-05-02
+
+### Changed — Main GUI: inline accordion replaces popup-per-category
+
+Closes the "two-click latency to launch anything" item from the
+8.117.16 layout review. Pre-8.117.17 the main GUI's left navigation
+worked like this:
+
+1. User clicks a category button (e.g. "Academic Management ▶").
+2. A 900×600 modal Toplevel pops up containing the actual feature
+   buttons in a 4-column grid.
+3. User clicks the feature; the popup destroys itself and the
+   feature opens.
+
+That's two clicks plus a window-creation hit plus losing the sidebar
+context every time. Pinning helped (1-click for favourites), search
+helped (Ctrl-K-style), but the popup was still the dominant default
+path — and users routinely missed the affordances.
+
+#### What changed
+
+- The popup-per-category function ``open_grouped_category_window``
+  has been removed from ``create_navigation_panel`` and replaced with
+  three inline helpers:
+  - ``_filter_visible_sections`` — same role-aware filtering, factored
+    out so the toggle path uses it too.
+  - ``_populate_category_subframe`` — packs the feature buttons (and
+    section labels when there's >1 section) into a sub-frame
+    in single-column layout suitable for the narrow sidebar.
+  - per-category ``_make_toggle`` closure — flips the sub-frame's
+    ``pack``/``pack_forget`` state and toggles the trailing
+    ``▶/▼`` marker.
+- Each category is now a small container Frame holding
+  [toggle button][hidden sub-frame]. First click expands the
+  sub-frame inline; second click collapses. The sub-frame is built
+  *lazily* on first expand — for a logged-in admin with ~15 visible
+  categories that's roughly 150 widgets we don't materialise until
+  the user actually opens that section.
+- Right-click pin/unpin on a feature button still works the same way
+  it did inside the popup; the bind goes through a new
+  ``_bind_pin_menu_inline`` (same logic, no Toplevel reference to
+  destroy on confirm).
+- After expand, the canvas's ``scrollregion`` is re-measured so the
+  sidebar's scrollbar updates immediately and long sections become
+  scrollable rather than getting clipped.
+
+#### What this means in practice
+
+- Launching anything outside the Pinned section is still nominally
+  two clicks, but the second one lands on the actual feature
+  immediately — no Toplevel construction, no
+  ``transient(self.root)`` flicker, no "where am I" once the popup
+  takes focus, no destroy callback round-trip.
+- Subsequent launches inside the same category stay 1-click as long
+  as the section is left open — the user can keep "Academic
+  Management" expanded and fire several features in a row.
+- The 4-column popup grid is gone (sidebar's ~250px wide); it's now
+  a single column with section labels above their buttons. ~10
+  features fit on screen vertically without scrolling for typical
+  categories; longer ones use the existing sidebar scrollbar.
+
+#### Deferred (still open from the 8.117.16 layout review)
+
+- Replacing Toplevels with workspace tabs (would touch every
+  ``show_*`` method on ``UnifiedManagementGUI``).
+- Top command bar with quick-open palette + bottom status bar
+  (cosmetic but invasive — every header call site to update).
+- Auto-populated "🕓 Recently used" sidebar section.
+- Role-aware default dashboard.
+- ``bind_all('<MouseWheel>')`` leak on the navigation canvas
+  (line 176-177) — same bug class as 8.117.15 but not addressed
+  in this commit.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/core/gui_setup.py``
+  (``create_navigation_panel`` only:
+  ``open_grouped_category_window`` removed,
+  ``_filter_visible_sections``, ``_toggle_pin_inline``,
+  ``_bind_pin_menu_inline``, ``_populate_category_subframe`` added,
+  category-button rendering rewritten to the toggle-and-expand
+  pattern).
 
 ---
 

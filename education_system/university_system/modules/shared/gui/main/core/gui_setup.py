@@ -204,11 +204,21 @@ def create_navigation_panel(self, parent):
             return True
         return False
 
-    # Helper to open a grouped category window. Each "group" is a list of
-    # (section_label, [(button_name, label, command), ...]) tuples; the
-    # section header is rendered above its buttons when there is more than
-    # one visible section. Sections with no visible buttons are dropped.
-    def open_grouped_category_window(group_title, sections, layout='sections'):
+    # ── Inline category renderer (replaces the popup-per-category) ──
+    # Pre-8.117.17 each category button (e.g. "Academic Management ▶")
+    # opened a 900×600 modal Toplevel containing the actual feature
+    # buttons. Two clicks to launch anything, plus a window-creation
+    # latency hit, plus losing the sidebar context while the popup was
+    # open. The sub-frame is built lazily on first expand and packed
+    # inline below the category's toggle button — same right-click
+    # pin/unpin affordance, but feature-launching is now immediate
+    # and subsequent launches in the same category stay 1-click as
+    # long as the section is left open.
+    def _filter_visible_sections(sections):
+        """Drop sections whose buttons aren't visible to the current
+        user, then drop empty sections. Returns the list of
+        ``(section_label, [(name, text, cmd), ...])`` tuples that
+        actually need rendering."""
         visible_sections = []
         for section_label, buttons_data in sections:
             visible_btns = [
@@ -217,138 +227,52 @@ def create_navigation_panel(self, parent):
             ]
             if visible_btns:
                 visible_sections.append((section_label, visible_btns))
+        return visible_sections
 
-        if not visible_sections:
-            messagebox.showinfo(
-                _t("common.info"),
-                _t("gui.nav.no_features_available").format(category=group_title),
-            )
-            return
-
-        cols = 4
-        cat_window = tk.Toplevel(self.root)
-        cat_window.title(group_title)
-        cat_window.geometry("900x600")
-        cat_window.transient(self.root)
-
-        header = tk.Frame(cat_window, bg='#2c3e50', height=50)
-        header.pack(fill='x')
-        header.pack_propagate(False)
-        tk.Label(header, text=group_title, font=('Arial', 16, 'bold'),
-                 bg='#2c3e50', fg='white').pack(expand=True)
-        tk.Label(cat_window, text="Tip: right-click any button to pin it to the sidebar.",
-                 font=('Arial', 9, 'italic'), fg='#555').pack(pady=(4, 0))
-
-        def make_command(command, window):
-            def wrapped_cmd():
-                window.destroy()
-                command()
-            return wrapped_cmd
-
-        def _toggle_pin(name):
-            pins = _load_pinned()
-            if name in pins:
-                pins.remove(name)
-            else:
-                pins.append(name)
-            _save_pinned(pins)
-            cat_window.destroy()
-            self.rebuild_navigation_panel()
-
-        def _bind_pin_menu(widget, name):
-            def _show_menu(event):
-                m = tk.Menu(cat_window, tearoff=0)
-                pins = _load_pinned()
-                label = "Unpin from sidebar" if name in pins else "Pin to sidebar"
-                m.add_command(label=label, command=lambda n=name: _toggle_pin(n))
-                try:
-                    m.tk_popup(event.x_root, event.y_root)
-                finally:
-                    m.grab_release()
-            widget.bind('<Button-3>', _show_menu)
-
-        if layout == 'notebook' and len(visible_sections) > 1:
-            notebook = ttk.Notebook(cat_window)
-            notebook.pack(fill='both', expand=True, padx=10, pady=10)
-            for section_label, btns in visible_sections:
-                tab_outer = ttk.Frame(notebook)
-                notebook.add(tab_outer, text=section_label)
-
-                # scrollable tab
-                tab_canvas = tk.Canvas(tab_outer, highlightthickness=0)
-                tab_sb = ttk.Scrollbar(tab_outer, orient='vertical',
-                                       command=tab_canvas.yview)
-                tab_inner = ttk.Frame(tab_canvas)
-                tab_inner.bind('<Configure>', lambda e, c=tab_canvas:
-                               c.configure(scrollregion=c.bbox('all')))
-                tab_win = tab_canvas.create_window((0, 0), window=tab_inner,
-                                                   anchor='nw')
-                tab_canvas.configure(yscrollcommand=tab_sb.set)
-                tab_canvas.bind('<Configure>',
-                                lambda e, c=tab_canvas, w=tab_win:
-                                c.itemconfig(w, width=e.width))
-                tab_canvas.pack(side='left', fill='both', expand=True)
-                tab_sb.pack(side='right', fill='y')
-
-                for c in range(cols):
-                    tab_inner.columnconfigure(c, weight=1)
-                for idx, (name, text, cmd) in enumerate(btns):
-                    r, col = idx // cols, idx % cols
-                    btn = ttk.Button(
-                        tab_inner, text=text,
-                        command=make_command(cmd, cat_window),
-                        style='Large.TButton',
-                    )
-                    btn.grid(row=r, column=col, padx=4, pady=4, sticky='nsew')
-                    _bind_pin_menu(btn, name)
+    def _toggle_pin_inline(name):
+        pins = _load_pinned()
+        if name in pins:
+            pins.remove(name)
         else:
-            canvas = tk.Canvas(cat_window, highlightthickness=0)
-            scrollbar = ttk.Scrollbar(cat_window, orient="vertical", command=canvas.yview)
-            scrollable = ttk.Frame(canvas)
-            scrollable.bind(
-                "<Configure>",
-                lambda e: canvas.configure(scrollregion=canvas.bbox("all")),
-            )
-            canvas_win = canvas.create_window((0, 0), window=scrollable, anchor="nw")
-            canvas.configure(yscrollcommand=scrollbar.set)
+            pins.append(name)
+        _save_pinned(pins)
+        # Rebuild so the Pinned section reflects the change. The
+        # currently-expanded category collapses on rebuild, which is
+        # the same behaviour as the previous popup (which closed on
+        # pin) so muscle memory is preserved.
+        self.rebuild_navigation_panel()
 
-            def _resize_inner(event):
-                canvas.itemconfig(canvas_win, width=event.width)
-            canvas.bind('<Configure>', _resize_inner)
+    def _bind_pin_menu_inline(widget, name):
+        def _show_menu(event):
+            m = tk.Menu(widget, tearoff=0)
+            pins = _load_pinned()
+            label = "Unpin from sidebar" if name in pins else "Pin to sidebar"
+            m.add_command(label=label,
+                          command=lambda n=name: _toggle_pin_inline(n))
+            try:
+                m.tk_popup(event.x_root, event.y_root)
+            finally:
+                m.grab_release()
+        widget.bind('<Button-3>', _show_menu)
 
-            canvas.pack(side="left", fill="both", expand=True, padx=10, pady=10)
-            scrollbar.pack(side="right", fill="y")
-
-            for c in range(cols):
-                scrollable.columnconfigure(c, weight=1)
-
-            show_section_headers = len(visible_sections) > 1
-            row = 0
-            for section_label, btns in visible_sections:
-                if show_section_headers:
-                    tk.Label(
-                        scrollable, text=section_label,
-                        font=('Arial', 11, 'bold'), anchor='w',
-                    ).grid(row=row, column=0, columnspan=cols,
-                           sticky='ew', padx=4, pady=(12, 4))
-                    row += 1
-
-                for idx, (name, text, cmd) in enumerate(btns):
-                    col = idx % cols
-                    btn_row = row + (idx // cols)
-                    btn = ttk.Button(
-                        scrollable, text=text,
-                        command=make_command(cmd, cat_window),
-                        style='Large.TButton',
-                    )
-                    btn.grid(row=btn_row, column=col, padx=4, pady=4, sticky='nsew')
-                    _bind_pin_menu(btn, name)
-
-                row += (len(btns) + cols - 1) // cols
-
-        ttk.Button(
-            cat_window, text=_t("common.close"), command=cat_window.destroy,
-        ).pack(pady=10)
+    def _populate_category_subframe(sub_frame, visible_sections):
+        """Render the category's section labels + feature buttons
+        inside *sub_frame*. Single-column packing — the sidebar is
+        narrow, so the previous 4-column grid doesn't fit. Section
+        labels are only rendered when there's more than one
+        section."""
+        show_headers = len(visible_sections) > 1
+        for section_label, btns in visible_sections:
+            if show_headers:
+                ttk.Label(
+                    sub_frame, text=section_label,
+                    font=('Arial', 9, 'bold'), foreground='#555555',
+                    anchor='w',
+                ).pack(fill=tk.X, padx=(14, 4), pady=(6, 2))
+            for name, text, cmd in btns:
+                btn = ttk.Button(sub_frame, text=text, command=cmd)
+                btn.pack(fill=tk.X, padx=(14, 4), pady=1)
+                _bind_pin_menu_inline(btn, name)
 
     # ---------- Authentication ----------
     authentication_buttons_data = [
@@ -735,18 +659,63 @@ def create_navigation_panel(self, parent):
                            command=_make_unpin(name)).pack(side=tk.RIGHT,
                                                             padx=(2, 0))
 
-    # ---------- Group buttons ----------
-    for group_label, sections, layout in top_level_groups:
-        if not any(name in visible_buttons
-                   for _, btns in sections for name, _, _ in btns):
+    # ---------- Group buttons (inline accordion) ----------
+    # Each top-level category renders as a toggle button + an
+    # initially-hidden sub-frame, both inside a per-category container
+    # frame. Click toggles the sub-frame's pack state and flips the
+    # ▶/▼ marker. Sub-frame contents are populated lazily on first
+    # expand so we don't pay the layout cost for every category up
+    # front (~15 categories × ~10 buttons = 150 widgets we don't need
+    # until the user looks at them).
+    for group_label, sections, _layout in top_level_groups:
+        visible_sections = _filter_visible_sections(sections)
+        if not visible_sections:
             continue
-        ttk.Button(
-            scrollable_frame,
-            text=group_label + " ▶",
-            command=(lambda gl=group_label, secs=sections, lay=layout:
-                     open_grouped_category_window(gl, secs, lay)),
+
+        cat_container = ttk.Frame(scrollable_frame)
+        cat_container.pack(fill=tk.X, pady=2, padx=5)
+
+        # State held on the container itself so the toggle closure
+        # can mutate it without a nonlocal dance.
+        cat_container._expanded = False
+        cat_container._sub = None
+
+        toggle_btn = ttk.Button(
+            cat_container,
+            text=group_label + "  ▶",
             style='Large.TButton',
-        ).pack(fill=tk.X, pady=2, padx=5)
+        )
+        toggle_btn.pack(fill=tk.X)
+
+        def _make_toggle(container, btn, label, sects):
+            def _toggle():
+                if container._expanded:
+                    if container._sub is not None:
+                        container._sub.pack_forget()
+                    btn.configure(text=label + "  ▶")
+                    container._expanded = False
+                else:
+                    if container._sub is None:
+                        sub = ttk.Frame(container)
+                        _populate_category_subframe(sub, sects)
+                        container._sub = sub
+                    container._sub.pack(fill=tk.X, pady=(2, 4))
+                    btn.configure(text=label + "  ▼")
+                    container._expanded = True
+                    # The newly-expanded section may extend past the
+                    # canvas's current view; re-measure scroll region
+                    # so the sidebar's scrollbar updates immediately.
+                    try:
+                        scrollable_frame.update_idletasks()
+                        canvas.configure(scrollregion=canvas.bbox("all"))
+                    except Exception:
+                        pass
+            return _toggle
+
+        toggle_btn.configure(
+            command=_make_toggle(cat_container, toggle_btn,
+                                 group_label, visible_sections)
+        )
 
     # The "New Features" sidebar bucket has been retired. Every
     # standalone Tk app it used to host has been redistributed into
