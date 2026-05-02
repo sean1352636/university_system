@@ -14,6 +14,7 @@ destinations must already be registered in either ``_MODULES`` or
 
   - ``student_records`` (show_student_records)
   - ``email_manager``   (show_email_manager)
+  - ``audit_viewer``    (show_audit_log_viewer)
   - ``finance_mgmt``    (show_finance_management)
   - ``student_finance`` (show_student_finance_account)
   - ``course_mgmt``     (show_course_management)
@@ -286,6 +287,8 @@ def overdue_menu_items(values, parent=None):
              lambda u=user_id, t=title, d=days_overdue, f=fine_amount:
                  send_overdue_notice(u, book_title=t, days_overdue=d,
                                      fine_amount=f, parent=parent)),
+            ("📨 Open in Email Manager",
+             lambda u=user_id: _jump("email_manager", {"student_id": str(u)})),
             ("💰 Open finance account",
              lambda u=user_id, f=fine_amount: _jump(
                  "student_finance",
@@ -300,6 +303,10 @@ def overdue_menu_items(values, parent=None):
         items.append(
             ("🎓 Find course using this book",
              lambda b=book_id: _jump("course_mgmt", {"book_id": str(b)})),
+        )
+        items.append(
+            ("🕓 View audit log for this book",
+             lambda b=book_id: _jump("audit_viewer", {"book_id": str(b)})),
         )
     return items
 
@@ -316,6 +323,8 @@ def books_menu_items(values, parent=None):
          lambda b=book_id: show_reading_lists_with_book(b, parent=parent)),
         ("🎓 Find course using this book",
          lambda b=book_id: _jump("course_mgmt", {"book_id": str(b)})),
+        ("🕓 View audit log for this book",
+         lambda b=book_id: _jump("audit_viewer", {"book_id": str(b)})),
     ]
 
 
@@ -324,6 +333,7 @@ def loan_history_menu_items(values, parent=None):
     Due Date, Return Date, Status"""
     if not values:
         return []
+    loan_id = values[0] if len(values) > 0 else None
     user_id = values[1] if len(values) > 1 else None
     book_id = values[2] if len(values) > 2 else None
     title = values[3] if len(values) > 3 else None
@@ -335,6 +345,8 @@ def loan_history_menu_items(values, parent=None):
             ("📧 Send overdue notice",
              lambda u=user_id, t=title:
                  send_overdue_notice(u, book_title=t, parent=parent)),
+            ("📨 Open in Email Manager",
+             lambda u=user_id: _jump("email_manager", {"student_id": str(u)})),
             ("💰 Open finance account",
              lambda u=user_id: _jump("student_finance",
                                      {"student_id": str(u)})),
@@ -343,6 +355,11 @@ def loan_history_menu_items(values, parent=None):
         items.append(
             ("📚 Reading lists containing this book",
              lambda b=book_id: show_reading_lists_with_book(b, parent=parent)),
+        )
+    if loan_id:
+        items.append(
+            ("🕓 View loan audit log",
+             lambda l=loan_id: _jump("audit_viewer", {"loan_id": str(l)})),
         )
     return items
 
@@ -362,6 +379,8 @@ def reservations_menu_items(values, parent=None):
             ("📧 Send notice (item ready)",
              lambda u=user_id, t=title:
                  send_overdue_notice(u, book_title=t, parent=parent)),
+            ("📨 Open in Email Manager",
+             lambda u=user_id: _jump("email_manager", {"student_id": str(u)})),
         ])
     if book_id:
         items.append(
@@ -407,6 +426,15 @@ def fines_menu_items(values, parent=None):
              lambda u=user_id, t=book_title, d=days_overdue, f=fine_amount:
                  send_overdue_notice(u, book_title=t, days_overdue=d,
                                      fine_amount=f, parent=parent)),
+        )
+        items.append(
+            ("📨 Open in Email Manager",
+             lambda u=user_id: _jump("email_manager", {"student_id": str(u)})),
+        )
+    if loan_id:
+        items.append(
+            ("🕓 View audit log for this fine",
+             lambda l=loan_id: _jump("audit_viewer", {"loan_id": str(l)})),
         )
     return items
 

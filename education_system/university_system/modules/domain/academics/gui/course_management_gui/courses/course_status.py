@@ -428,6 +428,8 @@ class ManageCourseStatusDialog:
         self.course_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
+        self._attach_course_cross_links(self.course_tree)
+
         # Status change controls
         controls_frame = ttk.Frame(main_frame)
         controls_frame.pack(fill=tk.X, pady=10)
@@ -451,6 +453,53 @@ class ManageCourseStatusDialog:
         ttk.Button(button_frame, text="Close", command=self.dialog.destroy).pack(side=tk.RIGHT, padx=5)
 
         self.load_courses()
+
+    def _attach_course_cross_links(self, tree):
+        """Right-click menu: jump from a course row to its Library
+        reading lists. Wired through the academic IPC bridge so the
+        Library window opens (or surfaces) inside the host
+        UnifiedManagementGUI process."""
+        try:
+            from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
+                request_open as _request_open,
+            )
+        except Exception:
+            return
+
+        def _show(event):
+            try:
+                row = tree.identify_row(event.y)
+                if not row:
+                    return
+                tree.selection_set(row)
+                values = tree.item(row).get("values") or []
+                if not values:
+                    return
+                course_id = values[0] if len(values) > 0 else None
+                course_code = values[1] if len(values) > 1 else None
+                if not (course_id or course_code):
+                    return
+                ctx = {}
+                if course_id:
+                    ctx["course_id"] = str(course_id)
+                if course_code:
+                    ctx["course_code"] = str(course_code)
+                menu = tk.Menu(tree, tearoff=0)
+                menu.add_command(
+                    label="📚 Open reading lists in Library",
+                    command=lambda c=ctx: _request_open("library", c),
+                )
+                try:
+                    menu.tk_popup(event.x_root, event.y_root)
+                finally:
+                    menu.grab_release()
+            except Exception:
+                pass
+
+        try:
+            tree.bind("<Button-3>", _show, add="+")
+        except Exception:
+            pass
 
     def load_courses(self):
         try:

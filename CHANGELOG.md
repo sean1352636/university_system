@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.6 — 2026-05-02](#81176---2026-05-02)
 - [8.117.5 — 2026-05-02](#81175---2026-05-02)
 - [8.117.4 — 2026-05-01](#81174---2026-05-01)
 - [8.117.3 — 2026-05-01](#81173---2026-05-01)
@@ -232,6 +233,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.6] — 2026-05-02
+
+### Added — Library cross-link gaps closed (Email Manager, Audit Viewer, inbound from Course Management)
+
+- **Email Manager from library rows.** Right-click on Overdue, Loan
+  History, Reservations and Fines rows now exposes "📨 Open in Email
+  Manager" alongside the existing local "Send overdue notice" compose
+  dialog. The local dialog is still the fast path for the templated
+  notice; the new item jumps to the full Email Manager (with the
+  borrower's ``student_id`` attached as context) for richer composition,
+  template selection and history.
+- **Audit Viewer from library rows.** Books and Books-in-Overdue rows
+  gain "🕓 View audit log for this book"; Loan History rows gain
+  "🕓 View loan audit log"; Fines rows gain "🕓 View audit log for
+  this fine". Each carries a ``book_id`` / ``loan_id`` context tag so
+  the audit window's title shows what the user came in looking for.
+- **Course Management → Library inbound jump.** Right-click on a row in
+  the "Manage Course Status" course tree now offers "📚 Open reading
+  lists in Library", carrying ``course_id`` + ``course_code`` as
+  context. ``show_library_management`` consumes the context, navigates
+  the new Library window to the Reading Lists tab, and (if a
+  ``reading_list_id`` was supplied) double-clicks into that list
+  automatically. Library was previously a one-way source — other GUIs
+  could only be jumped *to* from it. This is the first inbound
+  contextual jump.
+- All three changes use the existing IPC bridge — no new destinations
+  were added; ``email_manager`` and ``audit_viewer`` were already in
+  ``_EXTRA_DESTINATIONS`` but had no library row pointing at them, and
+  ``library`` was already in ``_MODULES`` but ``show_library_management``
+  ignored its inbound context dict.
+
+#### Files
+
+- Modified: ``modules/domain/academics/gui/library/_cross_links.py``
+  (new menu items in overdue / books / loan-history / reservations /
+  fines builders),
+  ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  (capture context from ``_apply_academic_context``, new
+  ``_open_library_reading_lists`` helper),
+  ``modules/domain/academics/gui/course_management_gui/courses/course_status.py``
+  (``_attach_course_cross_links`` right-click menu on the course tree).
 
 ---
 

@@ -26,6 +26,52 @@ def _apply_academic_context(window, parent_app):
         pass
     return ctx
 
+
+def _open_library_reading_lists(library_gui, ctx):
+    """Navigate a freshly-opened LibraryGUI to its Reading Lists tab and,
+    if a reading_list_id was supplied, double-click into that list.
+
+    Used when another module (e.g. Course Management) right-clicks a row
+    and asks Library to surface the relevant reading list. Best-effort —
+    if the GUI doesn't yet expose ``show_reading_lists`` (e.g. the user
+    lacks ``manage_reading_lists`` permission and it short-circuited)
+    the helper logs and returns silently."""
+    try:
+        show = getattr(library_gui, "show_reading_lists", None)
+        if not callable(show):
+            logger.debug("LibraryGUI has no show_reading_lists; skipping context jump")
+            return
+        show()
+    except Exception:
+        logger.exception("show_reading_lists failed during context jump")
+        return
+
+    list_id = ctx.get("reading_list_id")
+    if not list_id:
+        return
+
+    # Try to select the row matching list_id and trigger view-details.
+    try:
+        tree = getattr(library_gui, "reading_lists_tree", None)
+        if tree is None:
+            return
+        target = str(list_id)
+        for iid in tree.get_children():
+            try:
+                vals = tree.item(iid).get("values") or []
+                if vals and str(vals[0]) == target:
+                    tree.selection_set(iid)
+                    tree.focus(iid)
+                    tree.see(iid)
+                    view = getattr(library_gui, "view_reading_list_details", None)
+                    if callable(view):
+                        view()
+                    return
+            except Exception:
+                continue
+    except Exception:
+        logger.exception("reading_list_id row select failed")
+
 # Import PDF export functionality
 try:
     from education_system.university_system.modules.shared.gui.pdf_export_gui import show_pdf_export_gui as _pdf_export_gui_func
@@ -116,7 +162,7 @@ def show_library_management(self):
                 pass  # Continue if transient fails
 
             _attach_academic_quickbar(library_window, self, current="library")
-            _apply_academic_context(library_window, self)
+            ctx = _apply_academic_context(library_window, self)
 
             # Initialize the Library GUI in the new window
             library_gui = LibraryGUI(library_window)
@@ -126,6 +172,22 @@ def show_library_management(self):
                 library_gui.set_auth(self.auth)
             elif hasattr(library_gui, 'auth'):
                 library_gui.auth = self.auth
+
+            # Inbound contextual jump (e.g. Course Mgmt → Library reading
+            # lists for course X). If the right-click that brought the
+            # user here carried a reading_list_id / course_id /
+            # course_code, navigate to the Reading Lists tab and let it
+            # filter to that scope.
+            if ctx and (ctx.get("reading_list_id")
+                        or ctx.get("course_id")
+                        or ctx.get("course_code")):
+                try:
+                    library_window.after(
+                        50,
+                        lambda g=library_gui, c=ctx: _open_library_reading_lists(g, c),
+                    )
+                except Exception:
+                    logger.exception("Library context navigation failed")
 
             print(_t("academic_launchers.success.library_opened"))
 
