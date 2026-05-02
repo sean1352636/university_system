@@ -6,11 +6,37 @@ import sys
 import subprocess
 
 from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
-    attach_quickbar as _attach_academic_quickbar,
     consume_context as _consume_academic_context,
     format_context as _format_academic_context,
     style_guarded as _academic_style_guarded,
 )
+
+
+def _attach_back_to_hub_button(host, parent_app, *, before=None):
+    """Pack a single "← Back to Academic Hub" button at the top of
+    *host*. Lighter-weight replacement for ``attach_quickbar`` (which
+    rendered ~8 ``tk.Button``s with custom bg colours and noticeably
+    slowed window close — every button has a closure holding a
+    reference to ``parent_app``, plus tk-rather-than-ttk colour
+    configuration that has to be cleaned up on destroy).
+
+    *before* is forwarded to ``pack`` so the button can land above an
+    already-packed widget (e.g. Study Matching has a notebook packed
+    by the time we get here)."""
+    try:
+        bar = ttk.Frame(host)
+        if before is not None:
+            bar.pack(side="top", fill="x", padx=4, pady=(2, 4),
+                     before=before)
+        else:
+            bar.pack(side="top", fill="x", padx=4, pady=(2, 4))
+        ttk.Button(
+            bar,
+            text="← Back to Academic Hub",
+            command=lambda: parent_app.show_academic_hub(),
+        ).pack(side="left", padx=4, pady=2)
+    except Exception:
+        logger.debug("back-to-hub button attach failed", exc_info=True)
 
 
 def _apply_academic_context(window, parent_app):
@@ -231,10 +257,15 @@ def show_library_management(self):
             pass
 
     def _build_library(host):
-        try:
-            _attach_academic_quickbar(host, self, current="library")
-        except Exception:
-            logger.debug("quickbar attach failed", exc_info=True)
+        # Pre-8.117.26 this attached the full academic quickbar
+        # (~8 tk.Buttons with custom bg colours + closure references
+        # to parent_app). Closing the Library noticeably stalled
+        # because every button's closure had to be torn down + the
+        # custom-styled tk widgets cleaned up. Replaced with a
+        # single "← Back to Academic Hub" button — same useful
+        # affordance (return to the launcher dashboard) without the
+        # close-time cost.
+        _attach_back_to_hub_button(host, self)
 
         library_gui = LibraryGUI(host)
         if hasattr(library_gui, 'set_auth'):
@@ -372,7 +403,7 @@ def show_course_management(self):
             except Exception:
                 pass  # Continue if transient fails
 
-            _attach_academic_quickbar(course_window, self, current="course_mgmt")
+            _attach_back_to_hub_button(course_window, self)
             _apply_academic_context(course_window, self)
 
             # Initialize the Course Management GUI in the new window
@@ -466,7 +497,7 @@ def show_module_scheduling(self):
         try:
             top = tk.Toplevel(self.root)
             top.title(_t("academic_launchers.titles.module_scheduling"))
-            _attach_academic_quickbar(top, self, current="module_scheduling")
+            _attach_back_to_hub_button(top, self)
             _apply_academic_context(top, self)
             with _academic_style_guarded(self.root, child_window=top):
                 app = ModuleSchedulingGUI(top) if 'ModuleSchedulingGUI' in globals() and ModuleSchedulingGUI else None
@@ -644,7 +675,7 @@ def open_attendance_gui(self):
         # Create a child window for the attendance UI
         win = tk.Toplevel(self.root)
         win.transient(self.root)
-        _attach_academic_quickbar(win, self, current="attendance")
+        _attach_back_to_hub_button(win, self)
         _apply_academic_context(win, self)
         try:
             # AttendanceGUI (and its absence-tab dependency) directly
@@ -783,7 +814,7 @@ def show_student_timetable_gui(self):
             window.transient(self.root)
         except Exception:
             pass
-        _attach_academic_quickbar(window, self, current="timetable")
+        _attach_back_to_hub_button(window, self)
         _apply_academic_context(window, self)
         with _academic_style_guarded(self.root, child_window=window):
             StudentTimetableGUI(window, auth_instance=self.auth)

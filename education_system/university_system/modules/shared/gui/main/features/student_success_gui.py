@@ -112,14 +112,16 @@ def show_study_matching_gui(self):
         except Exception:
             logger.exception("Could not bind style-guard destroy hook for Study Matching")
         # The GUI stores its Toplevel as `gui.window` and packs a notebook
-        # as the first child; inject the bar above that notebook.
+        # as the first child; inject the back-to-hub button above that
+        # notebook.
         try:
             window = getattr(gui, "window", None)
             notebook = getattr(gui, "notebook", None)
             if window is not None:
-                attach_quickbar(window, self,
-                                current="study_matching",
-                                before=notebook)
+                from education_system.university_system.modules.shared.gui.main.features.academic_launchers_gui import (
+                    _attach_back_to_hub_button,
+                )
+                _attach_back_to_hub_button(window, self, before=notebook)
                 ctx = consume_context(self)
                 if ctx:
                     try:

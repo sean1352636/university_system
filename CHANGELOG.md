@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.26 — 2026-05-02](#811726---2026-05-02)
 - [8.117.25 — 2026-05-02](#811725---2026-05-02)
 - [8.117.24 — 2026-05-02](#811724---2026-05-02)
 - [8.117.23 — 2026-05-02](#811723---2026-05-02)
@@ -252,6 +253,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.26] — 2026-05-02
+
+### Changed — Academic quickbar replaced with single "Back to Hub" button
+
+User report: the "Linked academic modules" strip at the top of every
+academic-launcher window (~8 ``tk.Button``s with custom bg colours)
+was making window close noticeably slow. Each button held a closure
+referencing the parent ``UnifiedManagementGUI`` instance and used
+``tk.Button`` with custom bg/fg/activebackground/activeforeground
+configuration that Tk had to clean up on destroy.
+
+#### What changed
+
+- New helper
+  ``academic_launchers_gui._attach_back_to_hub_button(host, parent_app, *, before=None)``
+  that packs a single ``ttk.Button`` reading
+  "← Back to Academic Hub" at the top of the host. Calls
+  ``parent_app.show_academic_hub()`` on click.
+- Replaced ``attach_quickbar`` with this helper at every academic
+  launcher callsite:
+  - ``show_library_management`` (8.117.18 workspace path)
+  - ``show_course_management``
+  - ``show_module_scheduling``
+  - ``open_attendance_gui``
+  - ``show_student_timetable_gui``
+  - ``show_study_matching_gui`` (passes ``before=notebook`` because
+    the underlying GUI has already packed a notebook by the time
+    we get there)
+- Removed the now-unused
+  ``attach_quickbar as _attach_academic_quickbar`` import alias from
+  ``academic_launchers_gui``.
+- ``show_academic_hub`` itself **still** uses the full quickbar —
+  it's the hub, so a "Back to hub" button on the hub would point to
+  itself.
+
+#### Why it was slow
+
+``attach_quickbar`` packs a ~50px-tall ``tk.Frame`` with
+``bg='#34495e'``, then 8 ``tk.Button``s (one per module: Hub,
+Courses, Scheduling, Timetable, Buildings, Attendance, Study Match,
+Library). Each button has:
+
+- ``relief='flat'`` + custom ``bg`` / ``fg`` / ``activebackground`` /
+  ``activeforeground`` — tk-rather-than-ttk styling that Tk has to
+  individually tear down on destroy.
+- A ``command=lambda a=attr: _dispatch(parent_app, a)`` closure
+  capturing the parent app reference. Eight live closures per
+  window, each surviving until the window is destroyed.
+
+The new ``ttk.Button`` is a single widget with default theming and
+one closure. Window close is now perceptibly snappier on every
+academic launcher.
+
+#### What the user gives up
+
+The full strip let you switch directly between the 8 academic
+modules without going via the hub. Now a switch is two clicks
+(Back to Hub → click the destination) — but the previous strip's
+biggest hit was on close, not switch, and the hub itself is
+fast-loading. The right-click cross-link menus added in 8.117.6+
+also provide context-aware jumps between many of these modules,
+so the strip's "always-on" nature was redundant for most workflows.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  (new ``_attach_back_to_hub_button`` helper accepting optional
+  ``before=`` kwarg; 4 callsites swapped: course management /
+  module scheduling / attendance / timetable; library was already
+  swapped earlier in this session; unused ``attach_quickbar`` alias
+  removed),
+  ``modules/shared/gui/main/features/student_success_gui.py``
+  (study matching callsite swapped, forwards ``before=notebook``).
 
 ---
 
