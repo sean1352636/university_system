@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.32 — 2026-05-02](#811732---2026-05-02)
 - [8.117.31 — 2026-05-02](#811731---2026-05-02)
 - [8.117.30 — 2026-05-02](#811730---2026-05-02)
 - [8.117.29 — 2026-05-02](#811729---2026-05-02)
@@ -258,6 +259,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.32] — 2026-05-02
+
+### Removed — Academic Operations Hub
+
+Decision: option **A** from the hub-design review.
+
+The Academic Operations Hub (``shared/gui/main/features/academic_hub.py``,
+~177 lines) was a tile launcher dressed as a dashboard — 7 tiles
+(Course Mgmt / Module Scheduling / Timetable / Buildings /
+Attendance / Study Match / Library) plus a 5-step numbered workflow.
+Each tile/step opened the matching module via the parent
+``UnifiedManagementGUI``. It had no operational state of its own —
+just navigation duplicated by the sidebar accordion (8.117.17) and
+Ctrl+K (8.117.20).
+
+In daily use it added a hop most experienced users skipped, and the
+"← Back to Academic Hub" buttons on every academic launcher
+(8.117.26) led to a screen that no longer earned its width. Either
+turn it into a real operations dashboard (option C in the review)
+or delete it. **A first, C later** if/when there's a real demand.
+
+#### What got removed
+
+- ``modules/shared/gui/main/features/academic_hub.py`` — file
+  deleted (~177 lines).
+- ``main_gui.py`` — import + ``UnifiedManagementGUI.show_academic_hub``
+  binding removed.
+- ``core/gui_setup.py`` — sidebar entry
+  ``('academic_hub', '🏛 Academic Hub', self.show_academic_hub)``
+  in ``academic_buttons_data`` and ``'academic_hub'`` in the
+  visible-buttons set both removed.
+- ``features/academic_link_bar.py`` — the
+  ``("hub", "🏛 Hub", "show_academic_hub")`` entry in ``_MODULES``
+  removed (the quickbar function itself stays — 8.117.26 already
+  removed all its in-app callsites).
+- ``features/academic_launchers_gui.py`` — the
+  ``_attach_back_to_hub_button`` helper deleted, plus its 5
+  callsites (Library / Course Management / Module Scheduling /
+  Attendance / Timetable).
+- ``features/student_success_gui.py`` — the matching helper call
+  in Study Matching removed; the inbound-context handling kept
+  (window title still gets the ``◆ <tag>`` suffix from a
+  contextual jump).
+
+#### What stayed and why
+
+- ``style_guarded`` and the cross-module IPC poller in
+  ``academic_link_bar.py`` are still there — they're unrelated
+  infrastructure that happens to live in the same file.
+- ``_install_clean_close`` calls on every academic Toplevel
+  (8.117.27/28) were preserved. The back-to-hub helper used to
+  walk up to install clean-close as a side effect; 8.117.28's
+  sweep already added direct calls at every Toplevel construction
+  site, so removing the helper has no close-speed regression.
+- The 8.117.31 assignment-dashboard topbar (Cross-domain ▾ + About)
+  is unrelated and stays — it groups the assignment system's own
+  cross-module jumps, not the ex-hub's tiles.
+
+#### Verified
+
+- All five touched modules import cleanly.
+- ``UnifiedManagementGUI`` no longer has ``show_academic_hub``.
+- ``_MODULES`` quickbar table went from 8 entries to 7 (no ``hub``).
+- Only remaining occurrence of "Academic Hub" in the GUI tree is
+  one audit-trail comment in ``academic_launchers_gui.py``
+  documenting the removal.
+
+#### Files
+
+- Deleted: ``modules/shared/gui/main/features/academic_hub.py``.
+- Modified: ``modules/shared/gui/main/main_gui.py``,
+  ``modules/shared/gui/main/core/gui_setup.py``,
+  ``modules/shared/gui/main/features/academic_link_bar.py``,
+  ``modules/shared/gui/main/features/academic_launchers_gui.py``,
+  ``modules/shared/gui/main/features/student_success_gui.py``.
 
 ---
 

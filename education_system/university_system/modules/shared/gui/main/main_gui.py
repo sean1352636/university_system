@@ -916,14 +916,12 @@ def show_certificates_gui(self):
 UnifiedManagementGUI.show_certificates_gui = show_certificates_gui
 
 
-# Academic Operations Hub + cross-module link bar.
-from education_system.university_system.modules.shared.gui.main.features.academic_hub import (  # noqa: E402
-    show_academic_hub,
-)
+# Cross-module link bar (academic hub itself was removed in 8.117.32 —
+# the sidebar accordion + Ctrl+K already cover navigation; the hub
+# was a glorified tile-launcher with no operational state of its own).
 from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (  # noqa: E402
     start_ipc_poller as _start_academic_ipc_poller,
 )
-UnifiedManagementGUI.show_academic_hub = show_academic_hub
 
 
 _orig_unified_init = UnifiedManagementGUI.__init__

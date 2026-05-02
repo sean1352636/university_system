@@ -26,8 +26,11 @@ IPC_FILE = (pathlib.Path.home() / ".cache" / "edu_system"
 
 
 # (key, button label, attribute on parent app to dispatch to)
+# The "hub" entry was removed in 8.117.32 along with the Academic
+# Operations Hub itself — the sidebar accordion + Ctrl+K cover
+# navigation, the hub was a glorified tile-launcher with no
+# operational state of its own.
 _MODULES = [
-    ("hub",               "🏛 Hub",        "show_academic_hub"),
     ("course_mgmt",       "🎓 Courses",    "show_course_management"),
     ("module_scheduling", "🗓 Scheduling", "show_module_scheduling"),
     ("timetable",         "📅 Timetable",  "show_student_timetable_gui"),

@@ -498,7 +498,6 @@ def create_navigation_panel(self, parent):
 
     # ---------- Academic Management ----------
     academic_buttons_data = [
-        ('academic_hub', '🏛 Academic Hub', self.show_academic_hub),
         ('course_management', _t("nav.buttons.course_management"), self.show_course_management),
         ('module_management', _t("nav.buttons.module_management"), self.show_module_management),
         ('assignments', _t("nav.buttons.assignments"), self.show_assignments),
@@ -1088,8 +1087,6 @@ def get_visible_buttons_for_role(self, role=None):
         'new_feature_room_booking',
         'new_feature_building_management',
         'new_feature_tutor_groups',
-        # Academic Operations Hub — visible to all logged-in users
-        'academic_hub',
         # Standalone Tk apps moved from /add 2026-04
         'new_feature_apprenticeship_system',
         'new_feature_placement_tracker',

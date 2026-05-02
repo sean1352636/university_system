@@ -112,17 +112,13 @@ def show_study_matching_gui(self):
                 )
         except Exception:
             logger.exception("Could not bind style-guard destroy hook for Study Matching")
-        # The GUI stores its Toplevel as `gui.window` and packs a notebook
-        # as the first child; inject the back-to-hub button above that
-        # notebook.
+        # 8.117.32: removed the academic-hub topbar attachment that
+        # used to live here. The hub itself was deleted — sidebar
+        # accordion + Ctrl+K cover navigation. Inbound context is
+        # still consumed and tagged onto the window title.
         try:
             window = getattr(gui, "window", None)
-            notebook = getattr(gui, "notebook", None)
             if window is not None:
-                from education_system.university_system.modules.shared.gui.main.features.academic_launchers_gui import (
-                    _attach_back_to_hub_button,
-                )
-                _attach_back_to_hub_button(window, self, before=notebook)
                 ctx = consume_context(self)
                 if ctx:
                     try:
@@ -131,7 +127,7 @@ def show_study_matching_gui(self):
                     except Exception:
                         pass
         except Exception:
-            logger.exception("Could not attach quickbar to Study Matching")
+            logger.exception("Could not apply context to Study Matching")
     except ImportError as e:
         logger.error(f"Failed to import Study Matching GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Study Matching", error=str(e)))
