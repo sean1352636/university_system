@@ -12,13 +12,42 @@ from education_system.university_system.modules.shared.gui.main.features.academi
 )
 
 
+def _install_clean_close(window):
+    """Make close visually instant: ``withdraw`` first, then
+    ``destroy``.
+
+    Without this, Tk's default close path destroys children one at a
+    time on the user-visible window, so the user *watches* the
+    Toplevel dismantle section by section before it disappears.
+    Withdraw yanks the window off-screen immediately, ``update_idletasks``
+    flushes that to the display, then ``destroy`` does the slow
+    teardown in private.
+
+    Hooks ``WM_DELETE_WINDOW`` (the protocol the window manager fires
+    when the user clicks the close button). Idempotent — safe to
+    call repeatedly on the same window."""
+    try:
+        if not hasattr(window, "protocol"):
+            return  # Frame/LabelFrame — not a Toplevel
+        def _close():
+            try:
+                window.withdraw()
+                window.update_idletasks()
+            except tk.TclError:
+                pass
+            try:
+                window.destroy()
+            except tk.TclError:
+                pass
+        window.protocol("WM_DELETE_WINDOW", _close)
+    except Exception:
+        logger.debug("clean-close install failed", exc_info=True)
+
+
 def _attach_back_to_hub_button(host, parent_app, *, before=None):
     """Pack a single "← Back to Academic Hub" button at the top of
-    *host*. Lighter-weight replacement for ``attach_quickbar`` (which
-    rendered ~8 ``tk.Button``s with custom bg colours and noticeably
-    slowed window close — every button has a closure holding a
-    reference to ``parent_app``, plus tk-rather-than-ttk colour
-    configuration that has to be cleaned up on destroy).
+    *host*, and install the clean-close protocol on the host's
+    enclosing Toplevel so close is visually instant.
 
     *before* is forwarded to ``pack`` so the button can land above an
     already-packed widget (e.g. Study Matching has a notebook packed
@@ -35,6 +64,17 @@ def _attach_back_to_hub_button(host, parent_app, *, before=None):
             text="← Back to Academic Hub",
             command=lambda: parent_app.show_academic_hub(),
         ).pack(side="left", padx=4, pady=2)
+        # If the host *is* a Toplevel, hook clean-close on it
+        # directly. If the host is a Frame inside a Toplevel (e.g.
+        # workspace tab path), walk up to the enclosing Toplevel.
+        target = host
+        try:
+            while target is not None and not hasattr(target, 'protocol'):
+                target = target.master
+        except Exception:
+            target = None
+        if target is not None:
+            _install_clean_close(target)
     except Exception:
         logger.debug("back-to-hub button attach failed", exc_info=True)
 
@@ -336,6 +376,7 @@ def show_academic_calendar(self):
 
         # Create calendar GUI with embedded approach
         calendar_window = tk.Toplevel(self.root)
+        _install_clean_close(calendar_window)
         calendar_window.title(_t("academic_launchers.titles.calendar"))
         calendar_window.geometry("1400x900")
         calendar_window.minsize(1000, 600)

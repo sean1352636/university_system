@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.27 — 2026-05-02](#811727---2026-05-02)
 - [8.117.26 — 2026-05-02](#811726---2026-05-02)
 - [8.117.25 — 2026-05-02](#811725---2026-05-02)
 - [8.117.24 — 2026-05-02](#811724---2026-05-02)
@@ -253,6 +254,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.27] — 2026-05-02
+
+### Fixed — Visible "section-by-section" close cascade on academic windows
+
+User report: "they seem to remove content section by section and
+then close". The cascade was already explained in the previous
+analysis as "notebook-of-notebooks teardown with intermediate
+``<Configure>`` redraws" — Tk destroys child widgets in dependency
+order on the user-visible window, so each Treeview, scrollbar, and
+inner notebook gets painted off the screen before the next one
+disappears.
+
+Standard Tk fix: ``withdraw()`` the window before ``destroy()``.
+Withdraw yanks the window off-screen instantly and the user's
+display flushes; the actual teardown then happens in private and
+the user just sees the window "vanish".
+
+#### What changed
+
+- New helper
+  ``academic_launchers_gui._install_clean_close(window)``:
+  installs a ``WM_DELETE_WINDOW`` protocol that does
+  ``withdraw → update_idletasks → destroy``. Idempotent, no-ops on
+  non-Toplevel widgets (workspace tab Frames don't have
+  ``protocol``).
+- ``_attach_back_to_hub_button`` now also walks up from the host
+  to the enclosing Toplevel and installs ``_install_clean_close``
+  there. This means the 5 launchers migrated in 8.117.26 (Library,
+  Course Mgmt, Module Scheduling, Attendance, Timetable) plus
+  Study Matching automatically inherit the fix.
+- Academic Calendar (``show_academic_calendar``) gets
+  ``_install_clean_close`` called explicitly on its Toplevel
+  because it doesn't go through the back-to-hub helper.
+
+#### What this does NOT fix (yet)
+
+The slowness *cause* is unchanged — Tk still does the same teardown
+work, the same number of widgets get destroyed, the same
+destroy-race callbacks still fire (and the 8.117.21/23 filter still
+swallows them). The fix just hides the visible drama: the window
+goes away instantly, then Tk does its slow work in private.
+
+If actual close-time CPU is still a problem (background threads
+holding things up, the destroy-race work itself causing real
+delay), a follow-up commit needs to address those — see the
+honest-causes analysis in the previous response. ``withdraw`` is
+the cosmetic fix; reducing the underlying work is the substantive
+fix.
+
+#### Other launchers not yet covered
+
+There are 22 ``tk.Toplevel(self.root)`` sites in
+``academic_launchers_gui.py``. The 5 back-to-hub launchers + the
+Calendar one in this commit cover the heaviest user paths. The
+remaining 16 (Module Management, Assignments, AI Detector, Office
+Hours, Virtual Classroom, etc.) can adopt the same pattern by
+calling ``_install_clean_close`` immediately after their
+``tk.Toplevel(self.root)`` line — one line each, idempotent,
+defensive. Will add as users hit slow-close on them rather than
+applying speculatively.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  (new ``_install_clean_close`` helper;
+  ``_attach_back_to_hub_button`` now walks up to install on the
+  enclosing Toplevel; explicit call added for Academic Calendar).
 
 ---
 
