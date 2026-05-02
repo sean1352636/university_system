@@ -212,13 +212,36 @@ def _restore_base_styles(theme, snap, parent=None):
 
 
 def style_guarded(parent_root, child_window=None):
-    """Context-manager: snapshot base ttk styles on enter, restore on exit
-    (and on the child window's ``<Destroy>`` if one is supplied).
+    """Context-manager: snapshot base ttk styles on enter, restore on exit.
 
     Usage::
 
         with style_guarded(self.root, child_window=win):
             HeavyLegacyGUI(win, ...)
+
+    Pre-8.117.29 also bound ``_restore_base_styles`` to the child
+    window's ``<Destroy>`` event so any styles the child mutated
+    *after* construction would be reverted on close. That bind was
+    the dominant cost of closing Course Management and Module
+    Scheduling: on every destroy it iterated 22 base ttk styles,
+    called ``style.configure()`` + ``style.map()`` for each, then
+    forced ``parent.update_idletasks()`` — the visible
+    "section-by-section" cascade the 8.117.27 ``withdraw``-then-
+    ``destroy`` couldn't hide because it fired *during* destroy.
+
+    The bind is removed. The exit-side restore (which fires when
+    the ``with`` block ends, immediately after the child GUI's
+    construction) catches the common case where a child mutates
+    styles inside its constructor. The rare case of post-
+    construction style mutation (a handful of legacy GUIs:
+    attendance_tracker, absence_tracking, exam_management,
+    blockchain_credentials, plagiarism per the original comment)
+    is left as a future fix at the offending sites — that's far
+    cheaper than paying the close-time cost on every child
+    window's destruction.
+
+    *child_window* is kept in the signature for backward compat
+    with existing callers; it's intentionally unused now.
     """
     import contextlib
 
@@ -229,18 +252,6 @@ def style_guarded(parent_root, child_window=None):
             yield
         finally:
             _restore_base_styles(theme, snap, parent=parent_root)
-            if child_window is not None:
-                # Re-restore once more when the child is closed, in case the
-                # child mutates styles dynamically after construction.
-                try:
-                    child_window.bind(
-                        "<Destroy>",
-                        lambda _e, t=theme, s=snap, p=parent_root:
-                            _restore_base_styles(t, s, parent=p),
-                        add="+",
-                    )
-                except Exception:
-                    pass
     return _guard()
 
 

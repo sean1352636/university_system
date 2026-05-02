@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.29 — 2026-05-02](#811729---2026-05-02)
 - [8.117.28 — 2026-05-02](#811728---2026-05-02)
 - [8.117.27 — 2026-05-02](#811727---2026-05-02)
 - [8.117.26 — 2026-05-02](#811726---2026-05-02)
@@ -255,6 +256,105 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.29] — 2026-05-02
+
+### Fixed — Course Management close cascade (real cause)
+
+User report: Course Management still showed the section-by-section
+close cascade after 8.117.27/28's ``withdraw``-then-``destroy``
+trick was supposedly applied to every Toplevel.
+
+The clean-close protocol *was* installed correctly. The cascade
+fired anyway because of a heavy ``<Destroy>``-bound handler that
+ran *during* destroy — after withdraw had already finished but
+before the window was fully gone. The visible cascade was the
+parent root being repainted while the child was still tearing down.
+
+#### Root cause
+
+``style_guarded`` (in ``academic_link_bar.py``) is a context manager
+used by Course Management, Module Scheduling, AI Detector, and
+Office Hours to insulate their construction from style leaks into
+the parent. On exit it restored 22 base ttk styles (correct), but
+*also* registered a ``<Destroy>`` handler on the child window that
+re-ran the same restore::
+
+    child_window.bind(
+        "<Destroy>",
+        lambda _e, t=theme, s=snap, p=parent_root:
+            _restore_base_styles(t, s, parent=p),
+        add="+",
+    )
+
+``_restore_base_styles`` iterates 22 styles, calls
+``style.configure()`` + ``style.map()`` on each, then forces
+``parent.update_idletasks()`` — the parent's redraw is the visible
+cascade. ``withdraw``-then-``destroy`` couldn't hide it because the
+``<Destroy>`` event fires *during* destroy, after withdraw already
+ran.
+
+The bind existed to handle dynamic style mutation — a child GUI
+that runs ``style.configure(...)`` *after* its constructor returns
+would leak that change to the parent forever otherwise. The
+original comment names ~5 legacy modules that do this:
+``attendance_tracker``, ``absence_tracking``, ``exam_management``,
+``blockchain_credentials``, ``plagiarism``.
+
+#### Fix
+
+The ``<Destroy>`` bind is removed. The exit-side restore (fired
+when the ``with`` block ends — immediately after the child GUI's
+constructor returns) catches the common case where a child
+mutates styles inside its constructor. The rare post-construction
+case is left to be fixed at the offending sites individually if
+it matters; that's far cheaper than paying the per-window cost on
+every Toplevel close.
+
+The ``child_window`` parameter is kept on the function signature
+for backward compatibility with existing callers (it's silently
+unused now); 5 callsites in ``academic_launchers_gui.py`` plus 1
+in ``student_success_gui.py`` continue to work without changes.
+
+#### What this fixes
+
+The visible "remove content section by section" cascade on:
+
+- Course Management
+- Module Scheduling
+- AI Detector
+- Office Hours
+- (and any other future caller of ``style_guarded`` with a
+  ``child_window=`` argument)
+
+#### What if a legacy GUI now leaks styles
+
+If you notice a window that, after 8.117.29, leaves the parent's
+buttons / treeviews looking different after it closes, that's one
+of the post-construction style mutators the bind used to catch.
+The fix is targeted: in the offending GUI's constructor or anywhere
+it calls ``style.configure(...)`` on a base style name, switch to
+a custom style name (``MyGUI.TButton`` instead of ``TButton``).
+Search for ``style.configure("TButton"`` etc. in the legacy module
+to find the call sites.
+
+#### Verified
+
+- ``style_guarded`` still works as a context manager with and
+  without ``child_window``.
+- After ``with style_guarded(root, child_window=top):`` exits,
+  ``top.bind('<Destroy>')`` returns empty — the heavy handler is
+  gone.
+- All three modules using it (``academic_link_bar``,
+  ``academic_launchers_gui``, ``student_success_gui``) import
+  cleanly.
+
+#### Files
+
+- Modified: ``modules/shared/gui/main/features/academic_link_bar.py``
+  (``style_guarded`` no longer binds ``<Destroy>``).
 
 ---
 
