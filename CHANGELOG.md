@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.5 — 2026-05-02](#81175---2026-05-02)
 - [8.117.4 — 2026-05-01](#81174---2026-05-01)
 - [8.117.3 — 2026-05-01](#81173---2026-05-01)
 - [8.117.2 — 2026-05-01](#81172---2026-05-01)
@@ -231,6 +232,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.5] — 2026-05-02
+
+### Fixed — `run.py --gui` startup ~11s → ~0.6s
+
+- Two package ``__init__.py`` files eagerly re-exported heavy GUI
+  classes for "convenience". Every importer of the parent package paid
+  the full transitive cost — including ``bus_migrations`` which runs at
+  every launcher startup, so the login dialog blocked for ~11 s on
+  cold start.
+- ``modules/services/__init__.py`` re-exported ``HealthPortalGUI``
+  (from ``services.gui``) and seven CLI helpers (from
+  ``services.cli``). Resolving those names cascaded into
+  ``health_portal_gui`` (~3.9 s), ``betting_shop_cli`` →
+  ``betting_shop_gui`` (~5.6 s), plus ``boto3``, ``numpy``,
+  ``matplotlib``, ``pandas``, ``openpyxl``.
+- ``modules/domain/academics/gui/__init__.py`` re-exported four
+  launchers; one of them transitively pulled the entire AI-detector
+  view tree (every view re-imports ``docx`` + ``textract``) — another
+  ~3.8 s.
+- Both ``__init__.py`` files now use PEP 562 lazy ``__getattr__``.
+  Public names still resolve on first access; nothing outside the
+  packages relied on the top-level re-exports (verified by grep).
+- Measured pre-GUI startup (bus bootstrap + launcher imports + i18n)
+  dropped from ~11 s to ~0.6 s.
+
+#### Files
+
+- Modified: ``education_system/university_system/modules/services/__init__.py``,
+  ``education_system/university_system/modules/domain/academics/gui/__init__.py``
 
 ---
 

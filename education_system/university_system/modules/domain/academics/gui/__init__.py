@@ -2,9 +2,17 @@
 Academics GUI Module
 
 GUI interfaces for academic management.
+
+Launchers are exposed via PEP 562 lazy ``__getattr__`` so that importing
+this package (e.g. via ``_event_bus`` from the cross-domain bus modules
+during launcher startup) does not pull in the entire AI-detector view
+tree, ``docx``, ``textract`` etc. before any user has opened a GUI.
+Eager imports here added ~3.8s to ``run.py --gui`` startup.
 """
 
 from __future__ import annotations
+
+import importlib
 
 __all__ = [
     'launch_blockchain_credentials_gui',
@@ -13,23 +21,36 @@ __all__ = [
     'ai_detector_gui',
 ]
 
-# Import main launchers
-try:
-    from education_system.university_system.modules.domain.academics.gui.blockchain_credentials_gui import launch_blockchain_credentials_gui
-except ImportError:
-    launch_blockchain_credentials_gui = None
+_LAZY = {
+    'launch_blockchain_credentials_gui': (
+        'education_system.university_system.modules.domain.academics.gui.blockchain_credentials_gui',
+        'launch_blockchain_credentials_gui',
+    ),
+    'GradeTrackingManagementGUI': (
+        'education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui',
+        'GradeTrackingManagementGUI',
+    ),
+    'CalendarGUI': (
+        'education_system.university_system.modules.domain.academics.gui.academic_calendar.main_gui',
+        'CalendarGUI',
+    ),
+    'ai_detector_gui': (
+        'education_system.university_system.modules.domain.academics.gui.ai_detector_gui',
+        None,
+    ),
+}
 
-try:
-    from education_system.university_system.modules.domain.academics.gui.grade_tracking_management_gui import GradeTrackingManagementGUI
-except ImportError:
-    GradeTrackingManagementGUI = None
 
-try:
-    from education_system.university_system.modules.domain.academics.gui.academic_calendar.main_gui import CalendarGUI
-except ImportError:
-    CalendarGUI = None
-
-try:
-    from education_system.university_system.modules.domain.academics.gui import ai_detector_gui
-except ImportError:
-    ai_detector_gui = None
+def __getattr__(name):
+    spec = _LAZY.get(name)
+    if spec is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module_path, attr = spec
+    try:
+        mod = importlib.import_module(module_path)
+    except ImportError:
+        globals()[name] = None
+        return None
+    value = mod if attr is None else getattr(mod, attr, None)
+    globals()[name] = value
+    return value
