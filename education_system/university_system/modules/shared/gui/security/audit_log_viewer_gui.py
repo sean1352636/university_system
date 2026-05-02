@@ -147,7 +147,8 @@ class AuditLogViewerGUI(tk.Toplevel):
     Comprehensive Audit Log Viewer with search, filter, export, and anomaly detection.
     """
 
-    def __init__(self, parent, admin_user_id: Optional[int] = None):
+    def __init__(self, parent, admin_user_id: Optional[int] = None,
+                 prefilter: Optional[dict] = None):
         super().__init__(parent)
 
         self.admin_user_id = admin_user_id
@@ -164,6 +165,7 @@ class AuditLogViewerGUI(tk.Toplevel):
 
         self._create_widgets()
         self._load_filter_options()
+        self._apply_prefilter(prefilter)
         self._search_logs()
 
         # Center window
@@ -1008,19 +1010,48 @@ class AuditLogViewerGUI(tk.Toplevel):
         self._stop_auto_refresh()
         self.destroy()
 
+    def _apply_prefilter(self, prefilter: Optional[dict]) -> None:
+        """Pre-populate the search box from a context dict.
 
-def show_audit_log_viewer(parent, admin_user_id: Optional[int] = None):
+        ``prefilter`` is the same kind of dict the academic IPC bridge
+        passes between modules — e.g. ``{"book_id": "42"}`` from a
+        Library books-row right-click, or ``{"loan_id": "1001"}`` from
+        a fines row. The free-text ``search`` field already does a
+        ``LIKE`` against ``resource_id`` / ``details`` / ``error_message``
+        (see ``_search_logs``), so the cheapest accurate filter is to
+        drop the most-specific id straight into that box. Order matters:
+        loan_id is more specific than book_id which is more specific
+        than student_id; we use the first one present."""
+        if not prefilter:
+            return
+        for key in ("loan_id", "fine_id", "book_id", "reservation_id",
+                    "reading_list_id", "student_id", "course_id",
+                    "course_code", "user_id"):
+            value = prefilter.get(key)
+            if value is None or value == "":
+                continue
+            try:
+                self.search_var.set(str(value))
+            except Exception:
+                logger.debug("audit prefilter: could not set search_var")
+            break
+
+
+def show_audit_log_viewer(parent, admin_user_id: Optional[int] = None,
+                          prefilter: Optional[dict] = None):
     """
     Show the audit log viewer GUI.
 
     Args:
         parent: Parent tkinter window
         admin_user_id: Optional admin user ID for context
+        prefilter: Optional context dict whose most-specific id is
+            dropped into the search box before the initial query runs.
 
     Returns:
         AuditLogViewerGUI instance
     """
-    viewer = AuditLogViewerGUI(parent, admin_user_id)
+    viewer = AuditLogViewerGUI(parent, admin_user_id, prefilter=prefilter)
     return viewer
 
 

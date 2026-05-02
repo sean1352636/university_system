@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.7 — 2026-05-02](#81177---2026-05-02)
 - [8.117.6 — 2026-05-02](#81176---2026-05-02)
 - [8.117.5 — 2026-05-02](#81175---2026-05-02)
 - [8.117.4 — 2026-05-01](#81174---2026-05-01)
@@ -233,6 +234,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.7] — 2026-05-02
+
+### Added — Audit Log Viewer pre-filtering from cross-module context
+
+- ``AuditLogViewerGUI.__init__`` and the module-level
+  ``show_audit_log_viewer`` helper both accept a new ``prefilter`` dict.
+  A new ``_apply_prefilter`` step (run after ``_create_widgets`` and
+  ``_load_filter_options``, before the first ``_search_logs`` call)
+  walks a priority list — ``loan_id``, ``fine_id``, ``book_id``,
+  ``reservation_id``, ``reading_list_id``, ``student_id``, ``course_id``,
+  ``course_code``, ``user_id`` — and drops the first present value
+  into the free-text search box. The viewer's existing ``LIKE`` query
+  already covers ``resource_id`` / ``details`` / ``error_message``, so
+  this is enough to land on the right rows without any schema work.
+- ``UnifiedManagementGUI.show_audit_log_viewer`` (in
+  ``main/admin/config_gui.py``) now consumes ``_last_academic_context``
+  via ``academic_link_bar.consume_context`` and forwards it as
+  ``prefilter``. Inbound right-clicks from 8.117.6 — "View audit log
+  for this book / loan / fine" — therefore arrive with the relevant
+  id already populating the search box and the result set already
+  scoped, instead of just a tagged title and an empty filter.
+- Behaviour without context is unchanged: an empty/missing dict
+  short-circuits in ``_apply_prefilter`` and the viewer opens with all
+  filters empty as before.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/security/audit_log_viewer_gui.py``
+  (``prefilter`` parameter, new ``_apply_prefilter`` method),
+  ``modules/shared/gui/main/admin/config_gui.py``
+  (consume academic context, forward to viewer).
 
 ---
 

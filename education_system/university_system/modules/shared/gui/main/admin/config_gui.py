@@ -399,7 +399,13 @@ def show_security_dashboard(self):
     except Exception as e:
         messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.errors.failed_to_open_security_dashboard", error=str(e)))
 def show_audit_log_viewer(self):
-    """Launch audit log viewer for searching and analyzing audit logs"""
+    """Launch audit log viewer for searching and analyzing audit logs.
+
+    If a contextual right-click brought the user here (e.g. Library →
+    "View audit log for this book"), the pending academic context dict
+    on ``self._last_academic_context`` is consumed and forwarded as a
+    ``prefilter`` so the most-specific id is dropped into the search
+    box before the initial query runs."""
     if not self.auth.current_user or self.auth.current_user.get('role') != 'admin':
         messagebox.showerror(_t("config_gui.access.denied"), _t("config_gui.access.admin_required_audit_log"))
         return
@@ -408,9 +414,18 @@ def show_audit_log_viewer(self):
         messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.errors.audit_log_viewer_unavailable"))
         return
 
+    prefilter = None
+    try:
+        from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
+            consume_context as _consume_academic_context,
+        )
+        prefilter = _consume_academic_context(self)
+    except Exception:
+        logger.debug("audit viewer: could not consume academic context", exc_info=True)
+
     try:
         user_id = self.auth.current_user.get('id', 1)
-        viewer = _open_audit_log_viewer(self.root, user_id)
+        viewer = _open_audit_log_viewer(self.root, user_id, prefilter=prefilter)
         print(_t("config_gui.messages.audit_log_viewer_opened"))
     except Exception as e:
         messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.errors.failed_to_open_audit_log_viewer", error=str(e)))
