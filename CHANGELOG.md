@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.41 — 2026-05-02](#811741---2026-05-02)
 - [8.117.40 — 2026-05-02](#811740---2026-05-02)
 - [8.117.39 — 2026-05-02](#811739---2026-05-02)
 - [8.117.38 — 2026-05-02](#811738---2026-05-02)
@@ -267,6 +268,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.41] — 2026-05-02
+
+### Fixed — System Administration tabs scrollable in workspace tab
+
+User asked for the same fix 8.117.40 applied to Student Records.
+System Admin's 5 tabs are mostly button grids and scrolled text
+widgets — no Treeviews to apply column-width tightening to — so the
+analogous fix is to wrap each tab in a scrollable canvas. After
+8.117.38 the GUI renders inside the ~900px workspace tab (was
+1400px Toplevel), so any tab whose content was authored for the
+old wider layout was getting cut off with no way to scroll.
+
+#### Fix
+
+In ``show_system_administration_gui``'s ``_build`` closure:
+
+- New inner helper ``_make_scrollable_tab()``: builds an outer
+  ``ttk.Frame``, an inner ``ttk.Canvas`` with horizontal +
+  vertical ``ttk.Scrollbar`` on **grid layout** (same pattern
+  8.117.40 used for Student Records — pack-ordered scrollbars
+  squeeze to zero width). Returns ``(outer, inner)``: the outer
+  goes to ``notebook.add(...)``, the inner is what the tab
+  builder packs widgets into.
+- Each of the 5 tab adds (Database / Users / Monitoring /
+  Configuration / Operations) now uses
+  ``_make_scrollable_tab()`` instead of a plain ``ttk.Frame``.
+  The tab builder methods (``create_database_admin_tab`` etc.)
+  see the inner Frame as their parent and don't need any
+  changes — they pack into it the same way they always did.
+- The Close ``button_frame`` is now packed *first* with
+  ``side=BOTTOM`` so it claims its row before the notebook
+  fills the rest. Previously packed after the notebook, which
+  meant on small windows the bottom row could get squeezed by
+  the notebook's ``expand=True``.
+- Canvas re-binds its ``<Configure>`` so the inner frame's
+  width tracks the canvas width when the canvas grows wider
+  than the natural content. Stops left-aligned widgets from
+  clinging to the left edge with empty space on the right.
+
+#### What this means in practice
+
+Open System Administration. If a tab's content extends beyond
+the visible area (button grid wrapping awkwardly, long
+descriptions, ScrolledText overflowing), horizontal and vertical
+scrollbars appear automatically and the user can reach
+everything. Resizing the main window expands the tab canvas, and
+content reflows.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/admin/system_admin_gui.py``
+  (``show_system_administration_gui._build`` rewires each tab
+  through ``_make_scrollable_tab``; Close button row reordered
+  to claim space before the notebook).
 
 ---
 

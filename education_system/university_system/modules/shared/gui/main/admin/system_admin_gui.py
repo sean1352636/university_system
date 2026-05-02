@@ -47,30 +47,20 @@ def show_system_administration_gui(self):
         def _build(host, close_action):
             """Construct the admin notebook + 5 tabs + Close button
             inside *host*. *close_action* closes either the workspace
-            tab or the Toplevel depending on host type."""
-            notebook = ttk.Notebook(host, padding="10")
-            notebook.pack(fill=tk.BOTH, expand=True)
+            tab or the Toplevel depending on host type.
 
-            db_frame = ttk.Frame(notebook)
-            notebook.add(db_frame, text=_t("system_admin_gui.tabs.database_management"))
-            self.create_database_admin_tab(db_frame)
-
-            user_frame = ttk.Frame(notebook)
-            notebook.add(user_frame, text=_t("system_admin_gui.tabs.user_management"))
-            self.create_user_admin_tab(user_frame)
-
-            monitor_frame = ttk.Frame(notebook)
-            notebook.add(monitor_frame, text=_t("system_admin_gui.tabs.system_monitoring"))
-            self.create_monitoring_tab(monitor_frame)
-
-            config_frame = ttk.Frame(notebook)
-            notebook.add(config_frame, text=_t("system_admin_gui.tabs.configuration"))
-            self.create_config_tab(config_frame)
-
-            ops_frame = ttk.Frame(notebook)
-            notebook.add(ops_frame, text="Operations")
-            self.create_operations_tab(ops_frame)
-
+            Each tab's content is wrapped in a scrollable canvas
+            (horizontal + vertical scrollbars on grid layout) — same
+            shape as 8.117.40 fixed for Student Records. The
+            workspace tab is ~900px wide, narrower than the
+            pre-8.117.38 1400px Toplevel, so any tab whose content
+            grew wider than that would be cut off without a way to
+            scroll. Wrapping per-tab keeps the notebook's tab strip
+            compact while letting individual tabs spill their
+            content."""
+            # Bottom button row — packed first so it claims its space
+            # before the notebook fills the rest. Close button stays
+            # visible regardless of how the notebook contents flow.
             button_frame = ttk.Frame(host, padding="10")
             button_frame.pack(side=tk.BOTTOM, fill=tk.X)
             ttk.Button(
@@ -78,6 +68,66 @@ def show_system_administration_gui(self):
                 text=_t("system_admin_gui.buttons.close"),
                 command=close_action,
             ).pack(side=tk.RIGHT)
+
+            notebook = ttk.Notebook(host, padding="10")
+            notebook.pack(fill=tk.BOTH, expand=True)
+
+            def _make_scrollable_tab():
+                """Build a tab wrapper: ttk.Frame outer container,
+                ttk.Canvas + h/v scrollbars on grid, ttk.Frame inner
+                that the tab builder packs its widgets into. Returns
+                ``(outer_for_notebook_add, inner_for_builder)``."""
+                outer = ttk.Frame(notebook)
+                canvas = tk.Canvas(outer, highlightthickness=0)
+                vsb = ttk.Scrollbar(outer, orient="vertical",
+                                    command=canvas.yview)
+                hsb = ttk.Scrollbar(outer, orient="horizontal",
+                                    command=canvas.xview)
+                inner = ttk.Frame(canvas)
+                # Update scrollregion when inner frame resizes (e.g.
+                # builder packs more widgets).
+                inner.bind(
+                    "<Configure>",
+                    lambda _e, c=canvas: c.configure(scrollregion=c.bbox("all")),
+                )
+                canvas_window = canvas.create_window(
+                    (0, 0), window=inner, anchor="nw")
+                # Keep inner frame's width ≥ canvas width so simple
+                # left-aligned content stretches edge-to-edge instead
+                # of clinging to the left.
+                canvas.bind(
+                    "<Configure>",
+                    lambda e, c=canvas, w=canvas_window:
+                        c.itemconfig(w, width=max(e.width, inner.winfo_reqwidth())),
+                )
+                canvas.configure(yscrollcommand=vsb.set,
+                                 xscrollcommand=hsb.set)
+                canvas.grid(row=0, column=0, sticky="nsew")
+                vsb.grid(row=0, column=1, sticky="ns")
+                hsb.grid(row=1, column=0, sticky="ew")
+                outer.rowconfigure(0, weight=1)
+                outer.columnconfigure(0, weight=1)
+                return outer, inner
+
+            db_outer, db_frame = _make_scrollable_tab()
+            notebook.add(db_outer, text=_t("system_admin_gui.tabs.database_management"))
+            self.create_database_admin_tab(db_frame)
+
+            user_outer, user_frame = _make_scrollable_tab()
+            notebook.add(user_outer, text=_t("system_admin_gui.tabs.user_management"))
+            self.create_user_admin_tab(user_frame)
+
+            monitor_outer, monitor_frame = _make_scrollable_tab()
+            notebook.add(monitor_outer, text=_t("system_admin_gui.tabs.system_monitoring"))
+            self.create_monitoring_tab(monitor_frame)
+
+            config_outer, config_frame = _make_scrollable_tab()
+            notebook.add(config_outer, text=_t("system_admin_gui.tabs.configuration"))
+            self.create_config_tab(config_frame)
+
+            ops_outer, ops_frame = _make_scrollable_tab()
+            notebook.add(ops_outer, text="Operations")
+            self.create_operations_tab(ops_frame)
 
         opener = getattr(self, "open_in_workspace", None)
         if callable(opener):
