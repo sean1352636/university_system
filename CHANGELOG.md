@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.16 — 2026-05-02](#811716---2026-05-02)
 - [8.117.15 — 2026-05-02](#811715---2026-05-02)
 - [8.117.14 — 2026-05-02](#811714---2026-05-02)
 - [8.117.13 — 2026-05-02](#811713---2026-05-02)
@@ -242,6 +243,131 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.16] — 2026-05-02
+
+### Reshaped — Student Records: deferred items from the 8.117.15 review
+
+Closes the six items deferred at the bottom of the 8.117.15 changelog:
+positional indexing, inline search, column sort, summary cards, dead
+duplicate paths, Actions tab convergence.
+
+#### 1. Single canonical loader, no more positional column access
+
+- New ``_load_students_into(self, tree, *, search_term, search_field)``
+  is the single source of truth for the records list. Always uses an
+  explicit named SELECT (``_LIST_COLS_SQL``) — never ``SELECT *`` —
+  so a future ALTER TABLE on ``students`` cannot silently shift
+  indices and break this view. Server-side ``WHERE`` narrowing for
+  in-memory inline search.
+- ``view_students`` (panel-mode hook still called from
+  ``student_crud_gui`` after CRUD) and ``view_students_in_window``
+  are now thin delegates over it. Same for the duplicate
+  ``on_student_double_click`` / ``on_student_double_click_window`` →
+  one ``_double_click_handler``.
+- New ``_row_get(row, key, default=None)`` wraps ``sqlite3.Row``
+  access so a missing column returns the default instead of raising.
+- ``show_student_details`` sets ``conn.row_factory = sqlite3.Row``
+  and replaces every ``student[0]``..``student[10]`` reference with
+  named lookups (``s_id``, ``s_email``, ``s_first``, …). Adding a
+  schema column no longer risks silently breaking the personal-info
+  cards or the action-button arg lists.
+
+#### 2. Inline search bar (replaces modal)
+
+- New search ``Entry`` + status label above the records tree.
+  KeyRelease filters the loaded snapshot in-memory so the result set
+  narrows as the user types — no DB round-trip per keystroke. ``Esc``
+  clears the filter; the ✕ button next to the field does the same.
+- Status label shows ``"N student(s)"`` or ``"N of M student(s)"``
+  when the filter is narrowing — first row-count indicator this view
+  has had.
+- The legacy modal ``search_students_dialog`` is still defined for
+  external callers but the records window no longer surfaces it as a
+  button.
+
+#### 3. Column sorting
+
+- Each column heading is now clickable. First click sorts ascending,
+  second click reverses. Numeric-aware comparator so "10" sorts after
+  "9" rather than before. Visual marker (``▲ / ▼``) on the active
+  column.
+
+#### 4. Summary tab
+
+- New 📊 Summary tab on the detail window: three at-a-glance tiles
+  rendered from a single helper ``_build_student_summary``.
+  - 💰 Outstanding balance — ``COUNT(*) + SUM(amount)`` over open
+    ``student_fees``. Red >£500, amber >£0, green for clear.
+  - ✅ Attendance — ratio of ``status='present'`` over
+    ``COUNT(*)`` from ``attendance_records``. Red <60%, amber <85%,
+    green ≥85%.
+  - 🚨 Open cases — sum of open
+    ``disciplinary_records.status != 'Closed'`` and
+    ``academic_misconduct_cases.status != 'Closed'``. Red if any
+    open, green if zero.
+- Each tile tolerates the underlying table being absent (older
+  deployments) — falls back to ``"—"`` rather than crashing.
+- Finance and Attendance tiles include "Open →" buttons that jump
+  through to the existing finance / attendance launchers.
+
+#### 5. Actions tab convergence with right-click
+
+- ``student_menu_items`` (and ``attach_cross_link_menu``) now take an
+  optional ``app=`` argument. When supplied, six permission-gated
+  action items are appended to the right-click menu:
+  Edit student record (``update_any_student``), Manage grades
+  (``manage_grades``), View attendance record (``manage_attendance``
+  or own record), View timetable, Export this student's data
+  (``export_data``), Send email (templated).
+- Same items still live on the detail window's Actions tab — but the
+  user can now fire them straight from the records list without
+  drilling in. The detail window's Actions tab keeps its existence
+  for users who haven't found the right-click yet, so this is purely
+  additive.
+- Permission gates run at click time, on the actual ``UnifiedManagementGUI.auth``
+  the menu was attached to. Items the current user can't fire are
+  omitted from the menu rather than greyed out so the menu stays
+  tight.
+
+#### 6. Dead-code dedupe
+
+Verified ``view_students`` is still called from ``student_crud_gui``
+after CRUD operations; not actually dead. Both legacy entry points
+(``view_students``, ``view_students_in_window``,
+``on_student_double_click``, ``on_student_double_click_window``) kept
+as thin delegates so external callers continue to work — but the SQL
++ logic now lives in one place. ``create_student_treeview`` (also
+imported by ``main_gui.py``) was left untouched as it's a different
+panel-mode tree builder, not a duplicate.
+
+#### Verified
+
+- ``_load_students_into`` against the live DB: loads 13 seeded
+  students, server-side search ``student_id=S12345`` narrows to 1.
+- ``student_menu_items`` returns 8 base items without ``app``,
+  14 items with a stub ``app`` whose auth grants every permission.
+- ``_split_name``: handles ``None``, single-word, and multi-word
+  cleanly.
+- ``_row_get``: returns the column on hit, the supplied default on
+  miss — no IndexError on schema absence.
+
+#### Files
+
+- Modified: ``modules/shared/gui/main/students/_cross_links.py``
+  (``student_menu_items`` + ``attach_cross_link_menu`` now take
+  ``app``; six permission-gated action items appended;
+  ``_split_name`` helper).
+- Modified: ``modules/shared/gui/main/students/student_records_gui.py``
+  (``_LIST_COLS_SQL``, ``_row_get``, ``_load_students_into``,
+  ``_double_click_handler``, ``_build_student_summary``,
+  ``view_students`` / ``view_students_in_window`` /
+  ``on_student_double_click`` / ``on_student_double_click_window``
+  collapsed to thin delegates; inline search + column sort in
+  ``show_student_records``; named-column access in
+  ``show_student_details``; new Summary tab; Actions tab kept).
 
 ---
 

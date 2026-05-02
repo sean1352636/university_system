@@ -79,15 +79,21 @@ def audit_student_view(viewer_user_id, viewer_username, student_id,
 # Right-click menu builder
 # ---------------------------------------------------------------------------
 
-def student_menu_items(values, parent=None):
+def student_menu_items(values, *, parent=None, app=None):
     """Return ``(label, callable)`` pairs for a right-click on a
     student record row.
 
     *values* is the row's ``values`` tuple — by convention the records
     tree uses
     ``(student_id, full_name, email_address, course, registration_date)``.
-    Items that don't apply to the row are omitted rather than greyed
-    out so the menu stays tight.
+
+    *app* is the ``UnifiedManagementGUI`` instance. When supplied,
+    permission-checked action items are appended (Edit / Manage Grades
+    / View Attendance / View Timetable / Export / Send Email) — the
+    same list the detail-window's Actions tab exposes, surfaced here
+    so users don't have to drill into the detail window just to fire
+    one. Items that don't apply (no email, no course, missing perms)
+    are omitted rather than greyed out so the menu stays tight.
     """
     if not values:
         return []
@@ -143,7 +149,68 @@ def student_menu_items(values, parent=None):
              lambda e=email: _copy_to_clipboard(e, parent=parent)),
         )
 
+    # ── Action items folded in from the detail-window's Actions tab ──
+    # All gated on permissions; absent perms means the item simply
+    # isn't appended. Names are a (first, last) tuple split from the
+    # full_name column for callsites that want them separated.
+    if app is not None:
+        first, last = _split_name(full_name)
+        auth = getattr(app, "auth", None)
+        own_record = (auth and auth.current_user and
+                      auth.current_user.get('student_id') == sid)
+
+        def _has(perm):
+            try:
+                return bool(auth and auth.check_permission(perm))
+            except Exception:
+                return False
+
+        if _has('update_any_student'):
+            items.append(
+                ("✏ Edit student record",
+                 lambda u=sid: app.update_student_dialog(u)),
+            )
+        if _has('manage_grades'):
+            items.append(
+                ("📊 Manage grades",
+                 lambda u=sid, f=first, l=last: app.manage_student_grades(u, f, l)),
+            )
+        if _has('manage_attendance') or own_record:
+            items.append(
+                ("✅ View attendance record",
+                 lambda u=sid, e=email, f=first, l=last:
+                     app.view_student_attendance(u, e, f, l)),
+            )
+        items.append(
+            ("📅 View timetable",
+             lambda u=sid, f=first, l=last: app.view_student_timetable(u, f, l)),
+        )
+        if _has('export_data'):
+            items.append(
+                ("⬇ Export this student's data",
+                 lambda u=sid, f=first, l=last:
+                     app.export_individual_student_data(u, f, l)),
+            )
+        if email:
+            items.append(
+                ("📧 Send email (templated)",
+                 lambda e=email, f=first, l=last:
+                     app.send_email_to_student(e, f, l)),
+            )
+
     return items
+
+
+def _split_name(full_name):
+    """Best-effort first/last split from a single string. The records
+    tree stores the full name as a single column; callees that want
+    them separated do this on-the-fly. Empty input returns ('', '')."""
+    if not full_name:
+        return "", ""
+    parts = str(full_name).strip().split()
+    if len(parts) == 1:
+        return parts[0], ""
+    return parts[0], parts[-1]
 
 
 def _open_loyalty_snapshot(user_id, parent=None):
@@ -183,10 +250,15 @@ def _copy_to_clipboard(text, parent=None):
         logger.debug("clipboard copy failed", exc_info=True)
 
 
-def attach_cross_link_menu(tree, parent=None):
+def attach_cross_link_menu(tree, *, parent=None, app=None):
     """Bind a fresh right-click menu on *tree*. Same shape as the
     library helper of the same name — the menu is rebuilt per click
-    so items can omit themselves based on the selected row's data."""
+    so items can omit themselves based on the selected row's data
+    *and* the current user's permissions.
+
+    *app* (the ``UnifiedManagementGUI`` instance) is forwarded into
+    ``student_menu_items`` so permission-checked action items can
+    invoke methods on it."""
     def _show(event):
         try:
             row_iid = tree.identify_row(event.y)
@@ -196,7 +268,7 @@ def attach_cross_link_menu(tree, parent=None):
             if not sel:
                 return
             values = tree.item(sel[0]).get("values") or []
-            items = student_menu_items(values, parent=parent)
+            items = student_menu_items(values, parent=parent, app=app)
             if not items:
                 return
             menu = tk.Menu(tree, tearoff=0)

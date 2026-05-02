@@ -18,6 +18,138 @@ from education_system.university_system.core.sql_safety import validate_identifi
 
 logger = logging.getLogger(__name__)
 
+
+# ---------------------------------------------------------------------------
+# Internal helpers — single source of truth for student-row loading and
+# column access.
+#
+# Pre-8.117.16 this file had two near-identical loaders (``view_students``,
+# ``view_students_in_window``) and two near-identical double-click handlers.
+# The records list also drilled into ``students[0]``..``students[10]``
+# positionally, which broke whenever the schema gained a column. Both
+# loaders now delegate to ``_load_students_into`` and ``show_student_details``
+# uses ``_row_get`` for column access — so adding a column is no longer a
+# silent risk.
+# ---------------------------------------------------------------------------
+
+# Canonical column list for the records list view. Matches what the tree
+# treeview headers expect (id / full_name / email / course / reg_date).
+_LIST_COLS_SQL = (
+    "student_id, first_name, middle_name, last_name, "
+    "email_address, course, registration_datetime"
+)
+
+
+def _row_get(row, key, default=None):
+    """Read a column from a sqlite3 row by name with a graceful fallback.
+
+    ``sqlite3.Row`` doesn't expose ``.get`` so a missing column raises
+    IndexError. This wrapper turns that into the supplied default so
+    we can read newer columns without breaking on older databases."""
+    try:
+        return row[key]
+    except (IndexError, KeyError, TypeError):
+        return default
+
+
+def _load_students_into(self, tree, *, search_term=None, search_field=None):
+    """Single canonical loader for the records list treeview.
+
+    Used by ``view_students`` (legacy panel hook used by
+    ``student_crud_gui`` after CRUD), ``view_students_in_window`` (the
+    Toplevel records window) and the inline search filter. Always
+    selects an explicit named column list — never ``SELECT *`` — so
+    schema additions can't shift indices.
+
+    *search_term* + *search_field*, when given, narrow the result set
+    server-side. Field is validated against an allow-list before being
+    interpolated into the SQL because parameter substitution doesn't
+    apply to identifiers."""
+    if tree is None:
+        return
+    try:
+        if not tree.winfo_exists():
+            return
+    except tk.TclError:
+        return
+
+    # Clear existing rows
+    try:
+        for item in tree.get_children():
+            tree.delete(item)
+    except tk.TclError:
+        return
+
+    conn = None
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            messagebox.showerror(
+                _t("common.error"),
+                _t("student.failed_load_student_data",
+                   error="database connection unavailable"),
+            )
+            return
+
+        # Default ordering (by surname, forename); search overrides
+        # the WHERE clause but keeps the same SELECT list + ORDER BY.
+        params = []
+        where = ""
+        if self.auth and not self.auth.check_permission('view_any_student'):
+            where = "WHERE student_id = ?"
+            params.append(self.auth.current_user.get('student_id'))
+        elif search_term and search_field:
+            allowed = {
+                'first_name', 'last_name', 'student_id',
+                'course', 'email_address',
+            }
+            if search_field in allowed:
+                safe = validate_identifier(search_field, "column")
+                if search_field == 'student_id':
+                    where = f"WHERE [{safe}] = ?"
+                    params.append(search_term)
+                else:
+                    where = f"WHERE LOWER([{safe}]) LIKE LOWER(?)"
+                    params.append(f"%{search_term}%")
+
+        sql = (
+            f"SELECT {_LIST_COLS_SQL} FROM students "
+            f"{where} ORDER BY last_name, first_name"
+        )
+        cursor = conn.cursor()
+        cursor.execute(sql, params)
+
+        for r in cursor.fetchall():
+            # Tuple-positional but bound to our explicit SELECT list,
+            # not to the underlying schema — order matches _LIST_COLS_SQL.
+            sid, first, middle, last, email, course, reg = r
+            full_name = " ".join(
+                p for p in (first, middle, last) if p
+            ).strip() or sid
+            tree.insert(
+                "", tk.END,
+                values=(
+                    sid,
+                    full_name,
+                    email or "",
+                    course or "",
+                    (reg[:10] if reg else "N/A"),
+                ),
+            )
+    except tk.TclError:
+        return
+    except Exception as exc:
+        messagebox.showerror(
+            _t("common.error"),
+            _t("student.failed_load_student_data", error=str(exc)),
+        )
+    finally:
+        try:
+            if conn is not None:
+                conn.close()
+        except Exception:
+            pass
+
 def show_student_records(self):
     """Show student records interface in a new window"""
     # Check if current user is a student - if so, show only their own record
@@ -55,14 +187,30 @@ def show_student_records(self):
 
     ttk.Button(button_frame, text=_t("student.create_student"),
               command=self.create_student_dialog).pack(side=tk.LEFT, padx=5)
-    ttk.Button(button_frame, text=_t("student.search_students"),
-              command=self.search_students_dialog).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("student.export_data"),
               command=self.export_data_dialog).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("gui.refresh"),
               command=lambda: self.view_students_in_window(tree)).pack(side=tk.LEFT, padx=5)
     ttk.Button(button_frame, text=_t("gui.close"),
               command=records_window.destroy).pack(side=tk.RIGHT, padx=5)
+
+    # Inline search bar — replaces the modal search dialog. Filters the
+    # currently-loaded rows in-memory on KeyRelease so the result set
+    # narrows as the user types. The legacy ``search_students_dialog``
+    # is still defined for any external caller but the records window
+    # no longer surfaces it as a button.
+    search_bar = ttk.Frame(main_frame)
+    search_bar.pack(fill=tk.X, pady=(0, 6))
+    ttk.Label(search_bar, text=_t("student.search_term")).pack(side=tk.LEFT, padx=(0, 6))
+    search_var = tk.StringVar()
+    search_entry = ttk.Entry(search_bar, textvariable=search_var, width=40)
+    search_entry.pack(side=tk.LEFT)
+    status_var = tk.StringVar(value="")
+    ttk.Label(search_bar, textvariable=status_var,
+              foreground='#555555').pack(side=tk.LEFT, padx=(12, 0))
+    ttk.Button(search_bar, text="✕",
+               command=lambda: search_var.set(""),
+               width=3).pack(side=tk.LEFT, padx=(6, 0))
 
     # Create student list interface
     records_frame = ttk.LabelFrame(main_frame, text=_t("student.records"), padding="10")
@@ -75,9 +223,38 @@ def show_student_records(self):
     columns = (_t("student.col_id"), _t("student.col_name"), _t("student.col_email"), _t("student.col_course"), _t("student.col_reg_date"))
     tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=30)
 
-    # Configure columns
+    # Configure columns + bind heading-clicks for ascending/descending
+    # sort by column. Standard ttk pattern — store the most-recent
+    # sort direction per column so a second click reverses.
+    sort_state = {"col": None, "reverse": False}
+
+    def _sort_by(col):
+        try:
+            data = [
+                (tree.set(k, col), k) for k in tree.get_children("")
+            ]
+            # Numeric-aware sort: try to coerce so "10" sorts after "9"
+            def _key(pair):
+                v = pair[0]
+                try:
+                    return (0, float(v))
+                except (TypeError, ValueError):
+                    return (1, (v or "").lower())
+            reverse = sort_state["col"] == col and not sort_state["reverse"]
+            data.sort(key=_key, reverse=reverse)
+            for index, (_v, k) in enumerate(data):
+                tree.move(k, "", index)
+            sort_state["col"] = col
+            sort_state["reverse"] = reverse
+            # Visual marker so the user can see sort state
+            for c in columns:
+                tree.heading(c, text=c)
+            tree.heading(col, text=f"{col}  {'▼' if reverse else '▲'}")
+        except tk.TclError:
+            pass
+
     for col in columns:
-        tree.heading(col, text=col)
+        tree.heading(col, text=col, command=lambda c=col: _sort_by(c))
         tree.column(col, width=200)
 
     # Scrollbars
@@ -102,7 +279,7 @@ def show_student_records(self):
         from education_system.university_system.modules.shared.gui.main.students._cross_links import (
             attach_cross_link_menu,
         )
-        attach_cross_link_menu(tree, parent=records_window)
+        attach_cross_link_menu(tree, parent=records_window, app=self)
     except Exception:
         logger.debug("student records cross-link menu unavailable", exc_info=True)
 
@@ -111,6 +288,59 @@ def show_student_records(self):
 
     # Load student data
     self.view_students_in_window(tree)
+
+    # ── Inline search filter ────────────────────────────────────────
+    # Snapshot every loaded row so KeyRelease can rebuild from the
+    # cached snapshot rather than re-querying the DB on every
+    # keystroke. Refreshing the tree (e.g. after a CRUD operation)
+    # rebuilds the snapshot.
+    full_rows: list[tuple] = []
+
+    def _snapshot():
+        full_rows.clear()
+        for iid in tree.get_children(""):
+            full_rows.append(tuple(tree.item(iid, "values") or ()))
+
+    def _refresh_status():
+        n = len(tree.get_children(""))
+        total = len(full_rows)
+        if n == total:
+            status_var.set(f"{n} student(s)")
+        else:
+            status_var.set(f"{n} of {total} student(s)")
+
+    def _apply_filter(*_args):
+        term = (search_var.get() or "").strip().lower()
+        try:
+            for iid in tree.get_children(""):
+                tree.delete(iid)
+        except tk.TclError:
+            return
+        for row in full_rows:
+            if not term or any(term in str(v).lower() for v in row):
+                tree.insert("", tk.END, values=row)
+        _refresh_status()
+
+    _snapshot()
+    _refresh_status()
+    search_var.trace_add("write", _apply_filter)
+    search_entry.bind("<Escape>", lambda _e: search_var.set(""))
+
+    # Wrap the existing refresh button so a re-load also re-snapshots
+    # for the in-memory filter. Walk the buttons in button_frame to
+    # find the Refresh widget by its translated label.
+    refresh_label = _t("gui.refresh")
+    for child in button_frame.winfo_children():
+        try:
+            if isinstance(child, ttk.Button) and child.cget("text") == refresh_label:
+                child.configure(command=lambda: (
+                    self.view_students_in_window(tree),
+                    _snapshot(),
+                    _apply_filter(),
+                ))
+                break
+        except tk.TclError:
+            pass
 def create_student_treeview(self, parent):
     """Create treeview widget for displaying student data"""
     tree_frame = ttk.Frame(parent)
@@ -137,121 +367,50 @@ def create_student_treeview(self, parent):
     # Bind events
     self.student_tree.bind('<Double-1>', self.on_student_double_click)
 def view_students(self):
-    """Load and display student data in treeview"""
-    try:
-        # Check if student_tree exists and is still valid
-        if not hasattr(self, 'student_tree') or not self.student_tree:
-            return
-        if not self.student_tree.winfo_exists():
-            return
+    """Refresh the panel-mode student tree (used by ``student_crud_gui``
+    after create / update / delete operations). Thin delegate over
+    :func:`_load_students_into` — kept as a method for backward compat
+    with ``hasattr(self, 'view_students')`` checks elsewhere."""
+    tree = getattr(self, 'student_tree', None)
+    if tree is None:
+        return
+    _load_students_into(self, tree)
 
-        # Clear existing data
-        for item in self.student_tree.get_children():
-            self.student_tree.delete(item)
 
-        # Fetch data from database
-        conn = get_db_connection()
-        if conn:
-            cursor = conn.cursor()
-            if self.auth.check_permission('view_any_student'):
-                cursor.execute('SELECT * FROM students ORDER BY last_name, first_name')
-            else:
-                cursor.execute('SELECT * FROM students WHERE student_id = ?',
-                             (self.auth.current_user.get('student_id'),))
-
-            students = cursor.fetchall()
-
-            # Populate treeview
-            for student in students:
-                student_id = student[0]
-                email_address = student[1]
-                first_name = student[3] or ''
-                middle_name = student[4] or ''
-                last_name = student[5] or ''
-                course = student[9]
-                reg_date = student[10]
-                full_name = f"{first_name} {middle_name} {last_name}".replace('  ', ' ').strip()
-
-                self.student_tree.insert('', tk.END, values=(
-                    student_id, full_name, email_address, course, reg_date[:10] if reg_date else 'N/A'
-                ))
-
-            conn.close()
-
-    except tk.TclError:
-        pass  # Widget was destroyed, ignore
-    except Exception as e:
-        messagebox.showerror(_t("common.error"), _t("student.failed_load_student_data", error=str(e)))
 def view_students_in_window(self, tree):
-    """Load and display student data in a specific treeview widget"""
+    """Refresh the records-window tree. Thin delegate."""
+    _load_students_into(self, tree)
+
+
+def _double_click_handler(self, tree):
+    """Shared double-click handler — drills the selected student into
+    the detail window. Used by both the panel-mode and window-mode
+    trees; previously had two near-identical copies."""
     try:
-        # Check if tree widget is still valid
-        if not tree.winfo_exists():
+        if tree is None or not tree.winfo_exists():
             return
-
-        # Clear existing data
-        for item in tree.get_children():
-            tree.delete(item)
-
-        # Fetch data from database
-        conn = get_db_connection()
-        if conn:
-            cursor = conn.cursor()
-            select_cols = 'student_id, first_name, middle_name, last_name, email_address, course, registration_datetime'
-            if self.auth.check_permission('view_any_student'):
-                cursor.execute(f'SELECT {select_cols} FROM students ORDER BY last_name, first_name')
-            else:
-                cursor.execute(f'SELECT {select_cols} FROM students WHERE student_id = ?',
-                             (self.auth.current_user.get('student_id'),))
-
-            students = cursor.fetchall()
-
-            # Populate treeview
-            for student in students:
-                student_id, first_name, middle_name, last_name, email_address, course, reg_date = student
-                full_name = f"{first_name or ''} {middle_name or ''} {last_name or ''}".replace('  ', ' ').strip()
-
-                tree.insert('', tk.END, values=(
-                    student_id, full_name, email_address, course, reg_date[:10] if reg_date else 'N/A'
-                ))
-
-            conn.close()
-
-    except tk.TclError:
-        pass  # Widget was destroyed, ignore
-    except Exception as e:
-        messagebox.showerror(_t("common.error"), _t("student.failed_load_student_data", error=str(e)))
-def on_student_double_click(self, event):
-    """Handle double-click on student record"""
-    try:
-        if not hasattr(self, 'student_tree') or not self.student_tree:
-            return
-
-        selection = self.student_tree.selection()
-        if selection:
-            item = self.student_tree.item(selection[0])
-            student_values = item.get('values', [])
-            if student_values:
-                student_id = student_values[0]
-                self.show_student_details(student_id)
-    except (AttributeError, IndexError, tk.TclError) as e:
-        messagebox.showerror(_t("common.error"), _t("student.unable_access_details"))
-    except Exception as e:
-        messagebox.showerror(_t("common.error"), _t("student.error_occurred", error=str(e)))
-def on_student_double_click_window(self, event, tree):
-    """Handle double-click on student record in separate window"""
-    try:
         selection = tree.selection()
-        if selection:
-            item = tree.item(selection[0])
-            student_values = item.get('values', [])
-            if student_values:
-                student_id = student_values[0]
-                self.show_student_details(student_id)
-    except (AttributeError, IndexError, tk.TclError) as e:
-        messagebox.showerror(_t("common.error"), _t("student.unable_access_details"))
+        if not selection:
+            return
+        values = tree.item(selection[0]).get('values', []) or []
+        if values:
+            self.show_student_details(values[0])
+    except (AttributeError, IndexError, tk.TclError):
+        messagebox.showerror(_t("common.error"),
+                              _t("student.unable_access_details"))
     except Exception as e:
-        messagebox.showerror(_t("common.error"), _t("student.error_occurred", error=str(e)))
+        messagebox.showerror(_t("common.error"),
+                              _t("student.error_occurred", error=str(e)))
+
+
+def on_student_double_click(self, event):
+    """Panel-mode double-click handler."""
+    _double_click_handler(self, getattr(self, 'student_tree', None))
+
+
+def on_student_double_click_window(self, event, tree):
+    """Window-mode double-click handler."""
+    _double_click_handler(self, tree)
 def show_student_details(self, student_id):
     """Enhanced student details viewer with comprehensive information display.
 
@@ -287,6 +446,15 @@ def show_student_details(self, student_id):
             detail_window.destroy()
             return
 
+        # Switch to a Row factory so we can index columns by name
+        # (``student['first_name']``) instead of position. Column
+        # additions in the schema can no longer shift indices and
+        # silently break this view.
+        import sqlite3 as _sqlite3
+        try:
+            conn.row_factory = _sqlite3.Row
+        except Exception:
+            pass
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM students WHERE student_id = ?', (student_id,))
         student = cursor.fetchone()
@@ -306,14 +474,26 @@ def show_student_details(self, student_id):
 
         # ── Personal info tab: structured cards instead of monospaced blob ──
         na = _t("student_details.na")
-        title = student[2] if student[2] else na
-        first_name = student[3] if student[3] else na
-        middle_name = student[4] if student[4] else ''
-        last_name = student[5] if student[5] else na
-        gender = student[6].title() if student[6] else na
-        course = student[9] if student[9] else na
+        s_id = _row_get(student, 'student_id')
+        s_email = _row_get(student, 'email_address')
+        s_title = _row_get(student, 'title')
+        s_first = _row_get(student, 'first_name')
+        s_middle = _row_get(student, 'middle_name')
+        s_last = _row_get(student, 'last_name')
+        s_gender = _row_get(student, 'gender')
+        s_dob = _row_get(student, 'dob')
+        s_age = _row_get(student, 'age')
+        s_course = _row_get(student, 'course')
+        s_reg = _row_get(student, 'registration_datetime')
 
-        name_parts = [p for p in (student[2], student[3], student[4], student[5]) if p]
+        title = s_title if s_title else na
+        first_name = s_first if s_first else na
+        middle_name = s_middle if s_middle else ''
+        last_name = s_last if s_last else na
+        gender = s_gender.title() if s_gender else na
+        course = s_course if s_course else na
+
+        name_parts = [p for p in (s_title, s_first, s_middle, s_last) if p]
         full_name = ' '.join(name_parts) if name_parts else na
 
         # Hero header
@@ -321,12 +501,12 @@ def show_student_details(self, student_id):
         hero.pack(fill=tk.X, padx=10, pady=(10, 0))
         ttk.Label(hero, text=full_name, font=('Arial', 18, 'bold')).pack(anchor='w')
         sub_bits = []
-        if student[0]:
-            sub_bits.append(f"ID: {student[0]}")
+        if s_id:
+            sub_bits.append(f"ID: {s_id}")
         if course not in (na, ''):
             sub_bits.append(course)
-        if student[1]:
-            sub_bits.append(student[1])
+        if s_email:
+            sub_bits.append(s_email)
         if sub_bits:
             ttk.Label(hero, text=' · '.join(sub_bits),
                       font=('Arial', 10), foreground='#555555').pack(anchor='w', pady=(2, 0))
@@ -364,8 +544,8 @@ def show_student_details(self, student_id):
         identity.pack(fill=tk.X, pady=6)
         identity.columnconfigure(1, weight=1)
         years_text = _t("student_details.label_years")
-        _add_field(identity, 0, _t("student_details.label_student_id"), student[0] or na)
-        _add_field(identity, 1, _t("student_details.label_email_address"), student[1] or na)
+        _add_field(identity, 0, _t("student_details.label_student_id"), s_id or na)
+        _add_field(identity, 1, _t("student_details.label_email_address"), s_email or na)
         _add_field(identity, 2, _t("student_details.label_title"), title)
         _add_field(identity, 3, _t("student_details.label_first_name"), first_name)
         _add_field(identity, 4, _t("student_details.label_middle_name"), middle_name or na)
@@ -378,10 +558,10 @@ def show_student_details(self, student_id):
         demographics.pack(fill=tk.X, pady=6)
         demographics.columnconfigure(1, weight=1)
         age_value = (
-            f"{student[8]} {years_text}" if student[8] not in (None, '') else na
+            f"{s_age} {years_text}" if s_age not in (None, '') else na
         )
         _add_field(demographics, 0, _t("student_details.label_gender"), gender)
-        _add_field(demographics, 1, _t("student_details.label_date_of_birth"), student[7] or na)
+        _add_field(demographics, 1, _t("student_details.label_date_of_birth"), s_dob or na)
         _add_field(demographics, 2, _t("student_details.label_age"), age_value)
 
         # Card 3 — Academic info
@@ -391,7 +571,7 @@ def show_student_details(self, student_id):
         academic_info_card.columnconfigure(1, weight=1)
         _add_field(academic_info_card, 0, _t("student_details.label_course"), course)
         _add_field(academic_info_card, 1, _t("student_details.label_registration"),
-                   student[10] or na)
+                   s_reg or na)
 
         # Academic Information Tab
         academic_tab = ttk.Frame(notebook)
@@ -566,14 +746,40 @@ def show_student_details(self, student_id):
             logging.getLogger(__name__).exception(
                 "Could not embed LibrarySummaryFrame")
 
-        # Actions Tab
+        # ── Summary tab ─────────────────────────────────────────
+        # Cross-domain at-a-glance metrics: finance / attendance /
+        # disciplinary cases. Same shape as the Library tab — small
+        # in-process panel that reads bus-side tables directly. Keeps
+        # the user from having to drill into 4 separate windows just
+        # to see "is this student in trouble".
+        try:
+            summary_tab = ttk.Frame(notebook)
+            notebook.add(summary_tab, text="📊 Summary")
+            _build_student_summary(
+                summary_tab, student_id, na,
+                on_open_finance=lambda: self.show_student_finance_account()
+                    if hasattr(self, 'show_student_finance_account') else None,
+                on_open_attendance=lambda: self.view_student_attendance(
+                    student_id, s_email, s_first, s_last)
+                    if hasattr(self, 'view_student_attendance') else None,
+            )
+        except Exception:
+            logger.exception("Could not build student summary tab")
+
+        # ── Actions tab ─────────────────────────────────────────
+        # Reduced from the 8.117.15 footprint: the Edit / Manage Grades
+        # / View Attendance / View Timetable / Export / Send Email
+        # actions are also exposed on the records-list right-click
+        # menu (8.117.16) so the user rarely needs to drill in just to
+        # fire one. The tab is kept for the contact pane and as a
+        # discoverability surface for users who haven't found the
+        # right-click yet.
         actions_tab = ttk.Frame(notebook)
         notebook.add(actions_tab, text=_t("student_details.tab_actions"))
 
         actions_frame = ttk.LabelFrame(actions_tab, text=_t("student_details.available_actions"), padding=20)
         actions_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # Action buttons
         if self.auth.check_permission('update_any_student'):
             ttk.Button(actions_frame, text=_t("student_details.btn_edit_student"),
                       command=lambda: self.update_student_dialog(student_id),
@@ -581,33 +787,30 @@ def show_student_details(self, student_id):
 
         if self.auth.check_permission('manage_grades'):
             ttk.Button(actions_frame, text=_t("student_details.btn_manage_grades"),
-                      command=lambda: self.manage_student_grades(student_id, student[3], student[5]),
+                      command=lambda: self.manage_student_grades(student_id, s_first, s_last),
                       width=30).pack(pady=5)
 
-        # Show attendance button for staff with manage_attendance, or students viewing their own record
         own_record = self.auth.current_user and self.auth.current_user.get('student_id') == student_id
         if self.auth.check_permission('manage_attendance') or own_record:
             ttk.Button(actions_frame, text=_t("student_details.btn_view_attendance"),
-                      command=lambda: self.view_student_attendance(student_id, student[1], student[3], student[5]),
+                      command=lambda: self.view_student_attendance(student_id, s_email, s_first, s_last),
                       width=30).pack(pady=5)
 
-        # View Timetable button (available to all users)
         ttk.Button(actions_frame, text=_t("student_details.btn_view_timetable"),
-                  command=lambda: self.view_student_timetable(student_id, student[3], student[5]),
+                  command=lambda: self.view_student_timetable(student_id, s_first, s_last),
                   width=30).pack(pady=5)
 
         if self.auth.check_permission('export_data'):
             ttk.Button(actions_frame, text=_t("student_details.btn_export_data"),
-                      command=lambda: self.export_individual_student_data(student_id, student[3], student[5]),
+                      command=lambda: self.export_individual_student_data(student_id, s_first, s_last),
                       width=30).pack(pady=5)
 
-        # Contact information if available
         contact_frame = ttk.LabelFrame(actions_tab, text=_t("student_details.contact_information"), padding=20)
         contact_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
 
-        ttk.Label(contact_frame, text=f"{_t('student_details.label_email')} {student[1]}").pack(anchor=tk.W)
+        ttk.Label(contact_frame, text=f"{_t('student_details.label_email')} {s_email}").pack(anchor=tk.W)
         ttk.Button(contact_frame, text=_t("student_details.btn_send_email"),
-                  command=lambda: self.send_email_to_student(student[1], student[3], student[5]),
+                  command=lambda: self.send_email_to_student(s_email, s_first, s_last),
                   width=20).pack(pady=5)
 
         conn.close()
@@ -763,6 +966,164 @@ def _load_academic_data(self, student_id, modules_tree, grades_tree,
     except Exception as e:
         summary_label.config(text=f"Error loading academic data: {e}",
                              foreground='#b00020')
+
+def _build_student_summary(tab, student_id, na,
+                           *, on_open_finance=None, on_open_attendance=None):
+    """Render the cross-domain summary tab.
+
+    Pulls one-shot counters for finance (open student_fees, total
+    outstanding balance), attendance (recent rate %), and disciplinary
+    + academic-misconduct cases (open count). All queries are scoped
+    by ``student_id`` and tolerate missing tables — older deployments
+    that don't have ``disciplinary_records`` / ``student_fees`` see an
+    "n/a" tile rather than a stack trace."""
+    import sqlite3
+    from education_system.university_system.modules.shared.constants.paths import (
+        DEFAULT_DB_PATH,
+    )
+
+    title_lbl = ttk.Label(tab, text="At-a-glance summary",
+                          font=('Arial', 14, 'bold'))
+    title_lbl.pack(anchor='w', padx=14, pady=(14, 6))
+    ttk.Label(tab, text=f"Cross-domain status for {student_id} — drawn live "
+              "from the finance, attendance, and cases tables.",
+              foreground='#555555').pack(anchor='w', padx=14, pady=(0, 12))
+
+    grid = ttk.Frame(tab, padding=10)
+    grid.pack(fill='both', expand=True)
+    for col in range(3):
+        grid.columnconfigure(col, weight=1)
+
+    def _tile(parent, row, col, title, value, sub="", color=None,
+              on_click=None):
+        card = ttk.LabelFrame(parent, text=title, padding=14)
+        card.grid(row=row, column=col, sticky='nsew', padx=8, pady=8)
+        big = tk.Label(card, text=str(value),
+                       font=('Arial', 22, 'bold'),
+                       fg=color or "#222222", anchor='w')
+        big.pack(anchor='w')
+        if sub:
+            tk.Label(card, text=sub, fg='#555555',
+                     font=('Arial', 9)).pack(anchor='w', pady=(2, 0))
+        if callable(on_click):
+            ttk.Button(card, text="Open →",
+                       command=on_click).pack(anchor='e', pady=(8, 0))
+        return card
+
+    open_fines = "—"
+    finance_balance = "—"
+    finance_color = None
+    try:
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*), COALESCE(SUM(amount), 0) "
+                "FROM student_fees WHERE student_id = ? "
+                "AND status != 'paid'",
+                (str(student_id),)
+            ).fetchone()
+            if row:
+                open_fines = int(row[0] or 0)
+                bal = float(row[1] or 0.0)
+                finance_balance = f"£{bal:,.2f}"
+                if bal > 500:
+                    finance_color = "#b00020"
+                elif bal > 0:
+                    finance_color = "#b87a00"
+                else:
+                    finance_color = "#1b7f3a"
+        except sqlite3.OperationalError:
+            open_fines = na
+        conn.close()
+    except Exception:
+        logger.debug("finance summary lookup failed", exc_info=True)
+
+    _tile(grid, 0, 0, "💰 Outstanding balance",
+          finance_balance,
+          sub=f"{open_fines} open fee(s)" if open_fines != "—" else "",
+          color=finance_color,
+          on_click=on_open_finance if callable(on_open_finance) else None)
+
+    att_rate = "—"
+    att_sub = ""
+    att_color = None
+    try:
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        try:
+            row = conn.execute(
+                "SELECT "
+                " SUM(CASE WHEN LOWER(status)='present' THEN 1 ELSE 0 END), "
+                " COUNT(*) "
+                "FROM attendance_records WHERE student_id = ?",
+                (str(student_id),)
+            ).fetchone()
+            if row and row[1]:
+                pct = (float(row[0] or 0) / float(row[1])) * 100
+                att_rate = f"{pct:.0f}%"
+                att_sub = f"{int(row[0] or 0)} present of {int(row[1])}"
+                if pct >= 85:
+                    att_color = "#1b7f3a"
+                elif pct >= 60:
+                    att_color = "#b87a00"
+                else:
+                    att_color = "#b00020"
+            elif row:
+                att_rate = na
+                att_sub = "no records yet"
+        except sqlite3.OperationalError:
+            att_rate = na
+        conn.close()
+    except Exception:
+        logger.debug("attendance summary lookup failed", exc_info=True)
+
+    _tile(grid, 0, 1, "✅ Attendance",
+          att_rate, sub=att_sub, color=att_color,
+          on_click=on_open_attendance if callable(on_open_attendance) else None)
+
+    open_cases = 0
+    case_sub = ""
+    case_color = None
+    case_seen = False
+    try:
+        conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM disciplinary_records "
+                "WHERE user_id = ? AND COALESCE(status, 'Open') != 'Closed'",
+                (str(student_id),)
+            ).fetchone()
+            if row:
+                open_cases += int(row[0] or 0)
+                case_seen = True
+        except sqlite3.OperationalError:
+            pass
+        try:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM academic_misconduct_cases "
+                "WHERE student_id = ? AND COALESCE(status, '') != 'Closed'",
+                (str(student_id),)
+            ).fetchone()
+            if row:
+                open_cases += int(row[0] or 0)
+                case_seen = True
+        except sqlite3.OperationalError:
+            pass
+        conn.close()
+        if case_seen:
+            case_sub = "open disciplinary + AM cases"
+            if open_cases > 0:
+                case_color = "#b00020"
+            else:
+                case_color = "#1b7f3a"
+        else:
+            open_cases = na
+            case_sub = ""
+    except Exception:
+        logger.debug("cases summary lookup failed", exc_info=True)
+
+    _tile(grid, 0, 2, "🚨 Open cases",
+          open_cases, sub=case_sub, color=case_color)
+
 
 def search_students_dialog(self):
     """Create search dialog"""
