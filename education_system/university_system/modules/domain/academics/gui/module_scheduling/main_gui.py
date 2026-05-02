@@ -92,8 +92,32 @@ class ModuleSchedulingGUI:
         # Status bar
         self.create_status_bar()
 
-        # Load initial data
-        self.refresh_all_data()
+        # ── Defer the heavy initial population to after first paint ──
+        # Pre-8.117.30 ``refresh_all_data`` (8 sequential DB-hitting
+        # refresh methods) ran synchronously inside __init__, so the
+        # window didn't appear until every tab's data was loaded —
+        # the user perceived "Module Scheduling takes ages to load".
+        # Schedule it via ``after(0, ...)`` so the empty window paints
+        # first and Tk's event loop fills the data on the next idle
+        # tick. Same trick used for the bus subscriptions below
+        # (those touch ttk widget identities that don't need to exist
+        # before the window is visible).
+        try:
+            self.root.after(0, self._deferred_initial_load)
+        except tk.TclError:
+            # Window already gone (very fast logout race); fall back
+            # to synchronous load so we don't silently leave the GUI
+            # empty.
+            self._deferred_initial_load()
+            return
+
+    def _deferred_initial_load(self):
+        """Initial data + bus subscriptions, deferred to first idle
+        tick so the window can paint before doing the slow work."""
+        try:
+            self.refresh_all_data()
+        except Exception:
+            pass
 
         # Live refresh: course list / enrolments / exam / grade events
         # in sibling windows can invalidate this view's data, so re-pull.

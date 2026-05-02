@@ -559,8 +559,25 @@ def export_all_schedules_to_csv(self):
 
 ModuleSchedulingGUI.export_all_schedules_to_csv = export_all_schedules_to_csv
 
+# Module-level latch — the migration block below is idempotent
+# (CREATE TABLE IF NOT EXISTS + conditional ALTER TABLE), so re-running
+# is safe. But it does ~8 PRAGMA round-trips even when nothing has
+# changed, which dominates the GUI's open time on a warm DB. Skip
+# after the first successful run per process.
+_MIGRATIONS_DONE = False
+
+
 def _migrate_database(self):
-    """Migrate existing database tables to add missing columns for GUI compatibility"""
+    """Migrate existing database tables to add missing columns for GUI compatibility.
+
+    Runs once per process. Subsequent calls short-circuit because the
+    migrations are already idempotent and the per-call cost (~8
+    ``PRAGMA table_info`` round-trips + the surrounding sqlite open)
+    was the dominant component of Module Scheduling's GUI load time.
+    """
+    global _MIGRATIONS_DONE
+    if _MIGRATIONS_DONE:
+        return
     try:
         with get_connection(str(DEFAULT_DB_PATH), row_factory=False) as conn:
             cursor = conn.cursor()
@@ -737,6 +754,9 @@ def _migrate_database(self):
                             print(f"GUI Migration failed: {migration} - {e}")
 
                 conn.commit()
+
+        # Successful pass — latch so future opens skip the work.
+        _MIGRATIONS_DONE = True
 
     except Exception as e:
         print(f"GUI Migration error: {e}")

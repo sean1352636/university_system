@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.30 — 2026-05-02](#811730---2026-05-02)
 - [8.117.29 — 2026-05-02](#811729---2026-05-02)
 - [8.117.28 — 2026-05-02](#811728---2026-05-02)
 - [8.117.27 — 2026-05-02](#811727---2026-05-02)
@@ -256,6 +257,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.30] — 2026-05-02
+
+### Fixed — Module Scheduling GUI took ages to open
+
+User report: "Module Scheduling GUI takes ages to load." Two
+causes, both fixed:
+
+#### 1. Schema migrations re-running on every open (~570ms)
+
+``ModuleSchedulingGUI.__init__`` called ``_migrate_database`` —
+182 lines of conditional ``ALTER TABLE`` / ``CREATE TABLE IF NOT
+EXISTS`` / ``PRAGMA table_info`` checks. The migrations are
+idempotent so re-running them was safe, but the per-call cost
+(~8 ``PRAGMA`` round-trips + the surrounding sqlite open + the
+conditional checks) was a real ~570ms hit on every open.
+
+Added a module-level ``_MIGRATIONS_DONE`` latch in
+``management_tab.py``. Set on the first successful pass; subsequent
+calls short-circuit immediately. **Measured: first call 572ms,
+second call 0ms.** Migrations now run once per process.
+
+#### 2. ``refresh_all_data`` blocking ``__init__`` (8 sequential refreshes)
+
+``__init__`` synchronously called ``refresh_all_data`` which runs
+8 refresh methods in sequence (dashboard / schedules / rooms /
+instructors / conflicts / holidays / settings / modules), each
+hitting the DB and populating widgets. The window didn't appear
+until every tab's data was loaded — the user perceived this as
+"takes ages to load" because nothing was visible.
+
+Refactored: the heavy initial-load work + the bus-event
+subscriptions are now scheduled via ``self.root.after(0, ...)``
+through a new ``_deferred_initial_load`` method. The empty window
+appears immediately; data fills in on the next idle tick of Tk's
+event loop.
+
+#### Combined effect
+
+- Cold start (first open in process): ``__init__`` returns
+  quickly, the user sees an empty window with tabs immediately,
+  data populates over the next ~hundreds of ms while the user can
+  interact with the chrome (resize / move / start clicking).
+- Warm reopens (second time onwards): no migration cost, plus the
+  deferred-load → window appears effectively instantly.
+
+#### Files
+
+- Modified:
+  ``modules/domain/academics/gui/module_scheduling/management_tab.py``
+  (``_MIGRATIONS_DONE`` latch + early return in
+  ``_migrate_database``),
+  ``modules/domain/academics/gui/module_scheduling/main_gui.py``
+  (``__init__`` now schedules ``_deferred_initial_load`` via
+  ``after(0)`` instead of running ``refresh_all_data`` + bus
+  subscriptions inline).
+
+#### Pattern note
+
+This same shape (heavy ``__init__`` doing migrations + sequential
+DB refreshes before the window paints) probably exists in other
+launchers. If you hit slow load on another GUI, the same two fixes
+apply: latch idempotent migrations, defer initial data load with
+``after(0, ...)``.
 
 ---
 
