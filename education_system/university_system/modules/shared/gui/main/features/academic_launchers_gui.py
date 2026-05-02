@@ -174,12 +174,20 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 logger = logging.getLogger(__name__)
 
 def show_library_management(self):
-    """Launch the Library Management GUI in a new window"""
+    """Launch the Library Management GUI.
+
+    First migrated user of ``UnifiedManagementGUI.open_in_workspace``
+    (added 8.117.18) — Library now renders as a tab inside the
+    dashboard's notebook when one is available, falling back to the
+    classic Toplevel when it isn't (pre-login, content area cleared,
+    etc.). Closes the "right content panel is decorative" gap from
+    the 8.117.16 layout review for this launcher; the same migration
+    pattern can be applied to other launchers in future commits.
+    """
     if not self.auth.current_user:
         messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.login_required_library"))
         return
 
-    # Check permissions
     if not (self.auth.check_permission('view_books') or
             self.auth.check_permission('manage_books') or
             self.auth.check_permission('manage_loans') or
@@ -187,67 +195,89 @@ def show_library_management(self):
         messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.no_permission_library"))
         return
 
+    if not LIBRARY_GUI_AVAILABLE:
+        # Fallback to CLI menu — same as before, no UI host involved.
+        messagebox.showinfo(_t("academic_launchers.titles.library_short"),
+                            _t("academic_launchers.fallback.library_gui_unavailable",
+                               error=LIBRARY_GUI_IMPORT_ERROR))
+        try:
+            from education_system.university_system.modules.domain.academics.services.library.menu import display_library_menu
+            display_library_menu()
+        except ImportError:
+            messagebox.showerror(_t("academic_launchers.errors.title"),
+                                 _t("academic_launchers.errors.library_unavailable"))
+        return
+
+    # Consume the inbound academic context up front (so a stale
+    # context can't bleed into a later jump) and bake any non-empty
+    # tag into the tab/window title so the user knows what scoped
+    # them here.
     try:
-        if LIBRARY_GUI_AVAILABLE:
-            # Create a new window for the Library GUI
+        from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
+            consume_context as _consume_academic_context,
+            format_context as _format_academic_context_fn,
+        )
+        ctx = _consume_academic_context(self)
+    except Exception:
+        ctx = None
+
+    title = _t("academic_launchers.titles.library")
+    if ctx:
+        try:
+            tag = _format_academic_context_fn(ctx)
+            if tag:
+                title = f"{title}  ◆ {tag}"
+        except Exception:
+            pass
+
+    def _build_library(host):
+        try:
+            _attach_academic_quickbar(host, self, current="library")
+        except Exception:
+            logger.debug("quickbar attach failed", exc_info=True)
+
+        library_gui = LibraryGUI(host)
+        if hasattr(library_gui, 'set_auth'):
+            library_gui.set_auth(self.auth)
+        elif hasattr(library_gui, 'auth'):
+            library_gui.auth = self.auth
+
+        if ctx and (ctx.get("reading_list_id") or ctx.get("course_id")
+                    or ctx.get("course_code") or ctx.get("book_title")
+                    or ctx.get("isbn") or ctx.get("book_id")):
+            try:
+                host.after(
+                    50,
+                    lambda g=library_gui, c=ctx: _apply_library_inbound_context(g, c),
+                )
+            except Exception:
+                logger.exception("Library context navigation failed")
+
+    try:
+        opener = getattr(self, "open_in_workspace", None)
+        if callable(opener):
+            opener(title, _build_library)
+        else:
+            # open_in_workspace not wired on this build — fall back
+            # to a hand-rolled Toplevel matching the pre-8.117.18
+            # geometry exactly so visual behaviour is unchanged.
             library_window = tk.Toplevel(self.root)
-            library_window.title(_t("academic_launchers.titles.library"))
+            library_window.title(title)
             library_window.geometry("1400x900")
             library_window.minsize(1200, 800)
-
-            # Center the window
             library_window.update_idletasks()
             x = (library_window.winfo_screenwidth() - library_window.winfo_width()) // 2
             y = (library_window.winfo_screenheight() - library_window.winfo_height()) // 2
             library_window.geometry(f"+{x}+{y}")
-
             try:
                 library_window.transient(self.root)
             except Exception:
-                pass  # Continue if transient fails
-
-            _attach_academic_quickbar(library_window, self, current="library")
-            ctx = _apply_academic_context(library_window, self)
-
-            # Initialize the Library GUI in the new window
-            library_gui = LibraryGUI(library_window)
-
-            # Pass the auth context if the LibraryGUI supports it
-            if hasattr(library_gui, 'set_auth'):
-                library_gui.set_auth(self.auth)
-            elif hasattr(library_gui, 'auth'):
-                library_gui.auth = self.auth
-
-            # Inbound contextual jump. If the right-click that brought
-            # the user here carried:
-            #   - reading_list_id / course_id / course_code →
-            #     navigate to the Reading Lists tab.
-            #   - book_id / book_title / isbn (e.g. from the University
-            #     Shop's "Check availability in Library") → navigate to
-            #     the All Books tab and pre-populate the search box.
-            if ctx:
-                try:
-                    library_window.after(
-                        50,
-                        lambda g=library_gui, c=ctx: _apply_library_inbound_context(g, c),
-                    )
-                except Exception:
-                    logger.exception("Library context navigation failed")
-
-            print(_t("academic_launchers.success.library_opened"))
-
-        else:
-            # Fallback to CLI menu
-            messagebox.showinfo(_t("academic_launchers.titles.library_short"),
-                              _t("academic_launchers.fallback.library_gui_unavailable", error=LIBRARY_GUI_IMPORT_ERROR))
-            try:
-                from education_system.university_system.modules.domain.academics.services.library.menu import display_library_menu
-                display_library_menu()
-            except ImportError:
-                messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.library_unavailable"))
-
+                pass
+            _build_library(library_window)
+        print(_t("academic_launchers.success.library_opened"))
     except Exception as e:
-        messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.failed_open_library", error=str(e)))
+        messagebox.showerror(_t("academic_launchers.errors.title"),
+                             _t("academic_launchers.errors.failed_open_library", error=str(e)))
         print(_t("academic_launchers.errors.library_error_log", error=e))
 def show_academic_calendar(self):
     """Launch the Academic Calendar GUI with proper initialization"""

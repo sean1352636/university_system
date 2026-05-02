@@ -38,9 +38,24 @@ def show_integrated_dashboard(self):
                            font=('Arial', 16, 'bold'))
     title_label.pack(pady=(0, 20))
 
-    # Create notebook for different dashboard sections
+    # Create notebook for different dashboard sections.
+    # ``self.workspace_notebook`` is exposed so feature launchers can
+    # opt into rendering inside this notebook as tabs (see
+    # ``open_in_workspace`` on UnifiedManagementGUI) — addresses the
+    # "right content panel is decorative" gap from the 8.117.16 layout
+    # review. The dashboard tabs below stay as the home view; any
+    # opted-in launcher appends new tabs to the right of them.
     notebook = ttk.Notebook(dashboard_frame)
     notebook.pack(fill=tk.BOTH, expand=True)
+    self.workspace_notebook = notebook
+    # Track tabs added by ``open_in_workspace`` so re-opens raise the
+    # existing tab instead of stacking duplicates. Keyed by title.
+    if not hasattr(self, 'workspace_tabs') or self.workspace_tabs is None:
+        self.workspace_tabs = {}
+    else:
+        # Wipe stale references — the previous notebook's tab ids are
+        # invalid against this freshly-built notebook.
+        self.workspace_tabs.clear()
 
     # Role-specific "My Dashboard" tab (inserted first)
     role = self.auth.current_user.get('role', '')

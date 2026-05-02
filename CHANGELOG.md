@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.18 — 2026-05-02](#811718---2026-05-02)
 - [8.117.17 — 2026-05-02](#811717---2026-05-02)
 - [8.117.16 — 2026-05-02](#811716---2026-05-02)
 - [8.117.15 — 2026-05-02](#811715---2026-05-02)
@@ -244,6 +245,109 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.18] — 2026-05-02
+
+### Added — Workspace tabs in the right content panel; Library opts in
+
+Closes the "right content panel earns ~40% of the width but does ~5%
+of the work" complaint from the 8.117.16 layout review. The dashboard
+post-login *did* render in the panel, but every feature launch
+opened a Toplevel and left the panel inert. Now feature launchers can
+opt into rendering as a tab inside the dashboard's existing notebook,
+keeping focus inside the main window.
+
+#### Workspace mechanism
+
+- ``show_integrated_dashboard`` now exposes its notebook as
+  ``self.workspace_notebook`` and tracks opt-in tabs in
+  ``self.workspace_tabs`` (keyed by tab title).
+- ``clear_content`` drops both references when the panel is wiped so
+  ``open_in_workspace`` doesn't try to add tabs to a destroyed
+  widget.
+- New ``UnifiedManagementGUI.open_in_workspace(title, builder, *,
+  focus=True)`` method:
+  - If the workspace notebook is alive, ``builder(tab_frame)`` runs
+    inside a new tab. Re-opening with the same title raises the
+    existing tab rather than duplicating.
+  - If no workspace is available (pre-login, content cleared,
+    pre-8.117.18 builds), falls back to a 1400×900 Toplevel matching
+    the historical launcher geometry — so unmigrated callers still
+    work.
+  - Right-click a tab title to close it (cheap close affordance —
+    Tk doesn't support per-tab close buttons natively without a
+    custom widget; right-click + position-aware index lookup gets
+    us 90% of the way).
+
+#### Library migrated as proof-of-concept
+
+- ``show_library_management`` rewritten to call ``open_in_workspace``.
+  Same auth + permission gates; same context consumption (the
+  inbound ``reading_list_id`` / ``book_title`` / ... handling from
+  8.117.6+ still applies); same quickbar attached at the top of the
+  host frame.
+- Window/tab title now appends the academic context tag (``◆ <tag>``)
+  exactly as the previous Toplevel path did, so users see what
+  scoped them here regardless of which host the launcher landed on.
+- Falls back to a Toplevel when ``open_in_workspace`` isn't bound
+  (defensive — covers any in-tree caller that's already constructed
+  the window itself rather than going through the workspace API).
+
+#### Verified
+
+- Mechanism test against a stub: Toplevel fallback when no workspace
+  notebook is set; first open creates a tab; second open with same
+  title raises the existing tab (no duplicate); third open with a
+  different title creates a second tab.
+- All four touched modules import cleanly; ``open_in_workspace`` is
+  bound on ``UnifiedManagementGUI``.
+
+#### What this means
+
+- Logging in shows the dashboard.
+- Clicking 📚 Library from the sidebar adds a "Library" tab next
+  to "My Dashboard / Overview / Statistics / Activity / Health".
+- The user can flip back to the dashboard via the same tab strip
+  rather than digging out the Toplevel from the window list.
+- Right-click jumps from elsewhere in the system that target
+  ``library`` (e.g. shop's "Check availability in Library", course
+  management's "Open reading lists in Library") still consume their
+  context payload and now land in a workspace tab too.
+- Other launchers continue to open Toplevels until migrated. The
+  pattern they need to follow is in this commit's
+  ``show_library_management``: peek/consume context up front, build
+  a builder closure, hand it to ``open_in_workspace(title, builder)``.
+
+#### Deferred
+
+- Migrating the rest of the launchers (~50+ ``show_*`` methods).
+  Each one is a small mechanical rewrite of the same shape Library
+  used; can be done in batches.
+- Custom tab-close UI (an ``×`` button on each tab title) — would
+  need a custom-themed Notebook subclass or an overlay frame; not
+  worth the scope for this commit. Right-click-to-close is the
+  intermediate.
+- Persisting open tabs across logout / app restart.
+- Splitting ``open_in_workspace`` into a "render in panel" vs
+  "render in Toplevel" decision the user controls via a setting —
+  some users may prefer the multi-window model.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/dashboard/dashboard_gui.py``
+  (notebook exposed as ``self.workspace_notebook`` +
+  ``self.workspace_tabs`` dict),
+  ``modules/shared/gui/main/core/gui_setup.py``
+  (``open_in_workspace`` added; ``clear_content`` drops the
+  workspace refs when wiped),
+  ``modules/shared/gui/main/main_gui.py``
+  (import + bind ``open_in_workspace`` on ``UnifiedManagementGUI``),
+  ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  (``show_library_management`` rewritten to use the workspace; old
+  Toplevel kept as the fallback path).
 
 ---
 
