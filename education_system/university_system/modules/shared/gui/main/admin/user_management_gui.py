@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import logging
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Alias for translation function
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
@@ -128,6 +129,7 @@ def refresh_user_list(self):
 def show_create_user(self):
     """Show create user dialog"""
     create_window = tk.Toplevel(self.root)
+    _install_clean_close(create_window)
     create_window.title(_t("user_management_gui.create_user.window_title"))
     create_window.geometry("500x400")
     create_window.transient(self.root)
@@ -238,6 +240,7 @@ def show_user_details(self):
 
     # Show user details in new window
     details_window = tk.Toplevel(self.root)
+    _install_clean_close(details_window)
     details_window.title(_t("user_management_gui.user_details.window_title", username=user['username']))
     details_window.geometry("600x500")
     details_window.transient(self.root)
@@ -294,6 +297,7 @@ def show_edit_user(self):
 
     # Create edit dialog
     dialog = tk.Toplevel(self.root)
+    _install_clean_close(dialog)
     dialog.title(_t("user_management_gui.edit_user.window_title", username=username))
     dialog.geometry("500x600")
     dialog.transient(self.root)
@@ -498,6 +502,7 @@ def reset_user_password(self):
 
     # Create password reset dialog
     dialog = tk.Toplevel(self.root)
+    _install_clean_close(dialog)
     dialog.title(_t("user_management_gui.reset_password.window_title", username=username))
     dialog.geometry("450x300")
     dialog.transient(self.root)
@@ -613,6 +618,7 @@ def view_all_users(self):
     """View all users in the system"""
     try:
         users_window = tk.Toplevel(self.root)
+        _install_clean_close(users_window)
         users_window.title(_t("user_management_gui.view_all_users.window_title"))
         users_window.geometry("900x600")
 
@@ -695,6 +701,7 @@ def manage_permissions(self):
             return
 
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title(_t("user_management_gui.manage_permissions.window_title"))
         window.geometry("900x640")
         window.transient(self.root)

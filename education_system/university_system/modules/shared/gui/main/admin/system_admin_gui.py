@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import logging
 import os
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Alias for translation function
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
@@ -31,6 +32,7 @@ def show_system_administration_gui(self):
 
     try:
         admin_window = tk.Toplevel(self.root)
+        _install_clean_close(admin_window)
         admin_window.title(_t("system_admin_gui.window.title"))
         admin_window.geometry("1400x900")
         admin_window.minsize(1200, 700)
@@ -381,6 +383,7 @@ def view_active_sessions(self):
     """View active user sessions"""
     try:
         sessions_window = tk.Toplevel(self.root)
+        _install_clean_close(sessions_window)
         sessions_window.title(_t("system_admin_gui.sessions.window_title"))
         sessions_window.geometry("700x400")
 
@@ -429,6 +432,7 @@ def view_system_logs(self):
     """View system logs"""
     try:
         logs_window = tk.Toplevel(self.root)
+        _install_clean_close(logs_window)
         logs_window.title(_t("system_admin_gui.logs.window_title"))
         logs_window.geometry("900x600")
 
@@ -471,6 +475,7 @@ def view_error_logs(self):
     """View error logs"""
     try:
         error_window = tk.Toplevel(self.root)
+        _install_clean_close(error_window)
         error_window.title(_t("system_admin_gui.error_logs.window_title"))
         error_window.geometry("900x600")
 

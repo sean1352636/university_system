@@ -4,6 +4,7 @@ from tkinter import ttk, messagebox, filedialog
 import logging
 import sys
 import subprocess
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Import from gui_imports
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import (
@@ -75,6 +76,7 @@ def open_parent_portal_gui(self):
 
         # Create a new window for the Parent Portal GUI
         parent_window = tk.Toplevel(self.root)
+        _install_clean_close(parent_window)
         parent_window.title(_t("student_affairs.parent_portal.window_title"))
         parent_window.geometry("1400x900")
         parent_window.minsize(1200, 800)
@@ -122,6 +124,7 @@ def open_alumni_portal_gui(self):
     try:
         # Open inside a child window so your main app stays up
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("student_affairs.alumni_portal.window_title"))
         win.geometry("1400x900")
         win.minsize(1200, 800)
@@ -156,6 +159,7 @@ def open_student_support_portal_gui(self):
 
         # Create a new window for the Student Support GUI
         support_window = tk.Toplevel(self.root)
+        _install_clean_close(support_window)
         support_window.title(_t("student_affairs.student_support.window_title"))
         support_window.geometry("1400x900")
         support_window.minsize(1200, 800)
@@ -201,6 +205,7 @@ def open_helpdesk_gui(self):
 
         # Child window
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("student_affairs.helpdesk.window_title"))
         win.geometry("1400x900")
 
@@ -245,6 +250,7 @@ def open_internship_portal_gui(self):
         return
     try:
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("student_affairs.internship_portal.window_title"))
         win.geometry("1200x800")
         try:
@@ -269,6 +275,7 @@ def show_trip_management_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("student_affairs.trip_management.window_title"))
         top.geometry("1200x800")
         try:
@@ -309,6 +316,7 @@ def show_legal_services_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("student_affairs.legal_services.window_title"))
         top.geometry("1400x900")
         top.minsize(1200, 800)
@@ -336,6 +344,7 @@ def show_betting_shop_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("student_affairs.betting_shop.window_title"))
         top.geometry("1400x900")
         top.minsize(1200, 800)
@@ -364,6 +373,7 @@ def show_mail_post_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("student_affairs.mail_post.window_title"))
         top.geometry("1400x900")
         top.minsize(1200, 800)
@@ -412,6 +422,7 @@ def show_communication_dashboard_gui(self):
     try:
         # Create communication window
         comm_window = tk.Toplevel(self.root)
+        _install_clean_close(comm_window)
         comm_window.title(_t("extras_gui.titles.communication_dashboard"))
         comm_window.geometry("1400x900")
         comm_window.minsize(1200, 700)
@@ -461,6 +472,7 @@ def show_police_station_gui(self):
     try:
         from education_system.university_system.modules.domain.campus.gui.security.police_station_gui import PoliceStationApp
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title(_t("extras_gui.titles.police_station"))
         window.geometry("1100x700")
         try:
@@ -478,6 +490,7 @@ def show_security_desk_gui(self):
     try:
         from education_system.university_system.modules.domain.campus.gui.security.security_desk_gui import SecurityDesk
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title(_t("extras_gui.titles.security_desk"))
         window.geometry("1000x700")
         try:
@@ -516,6 +529,7 @@ def show_church_management_gui(self):
     try:
         from education_system.university_system.modules.domain.campus.gui.community.church_management_gui import ChurchManagementSystem
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title(_t("extras_gui.titles.church_management"))
         window.geometry("1200x800")
         try:

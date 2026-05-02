@@ -163,8 +163,50 @@ def _matches_bgerror_destroy_race(text: str) -> bool:
     return False
 
 
+def install_clean_close(window) -> None:
+    """Make a Toplevel close visually instant: ``withdraw`` first,
+    then ``destroy``.
+
+    Without this, Tk's default close path destroys children one at a
+    time on the user-visible window — the user *watches* the
+    Toplevel dismantle section by section before it disappears.
+    Withdraw yanks the window off-screen immediately,
+    ``update_idletasks`` flushes that to the display, then
+    ``destroy`` does the slow teardown in private.
+
+    Hooks ``WM_DELETE_WINDOW`` (the protocol the window manager fires
+    when the user clicks the close button). Idempotent — safe to
+    call repeatedly on the same window. Silently no-ops on widgets
+    that have no ``protocol`` method (Frames, LabelFrames, etc.).
+
+    Wire after creating any ``tk.Toplevel`` you want to close
+    cleanly::
+
+        win = tk.Toplevel(self.root)
+        install_clean_close(win)
+    """
+    import tkinter as _tk
+    try:
+        if not hasattr(window, "protocol"):
+            return  # Frame/LabelFrame — not a Toplevel
+        def _close():
+            try:
+                window.withdraw()
+                window.update_idletasks()
+            except _tk.TclError:
+                pass
+            try:
+                window.destroy()
+            except _tk.TclError:
+                pass
+        window.protocol("WM_DELETE_WINDOW", _close)
+    except Exception:
+        logger.debug("install_clean_close failed", exc_info=True)
+
+
 __all__ = [
     "install_destroy_race_filter",
+    "install_clean_close",
     "_is_destroy_race_error",
     "_matches_bgerror_destroy_race",
 ]

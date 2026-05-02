@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import logging
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Import utility functions
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import (
@@ -275,6 +276,7 @@ def create_staff_dialog(self):
 def update_staff_dialog(self, user_id):
     """Update staff member dialog with editing capabilities"""
     dialog = tk.Toplevel(self.root)
+    _install_clean_close(dialog)
     dialog.title(f"Update Staff Member (ID: {user_id})")
     dialog.geometry("600x750")
     dialog.transient(self.root)

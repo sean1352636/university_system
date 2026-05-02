@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # GUI classes — imported lazily when each function is called
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import _lazy_import
@@ -77,6 +78,7 @@ def show_university_shop(self):
 
         # Create a new window for the University Shop GUI
         shop_window = tk.Toplevel(self.root)
+        _install_clean_close(shop_window)
         shop_window.title(_t("commerce_facilities.titles.university_shop_management"))
         shop_window.geometry("1200x800")
         shop_window.minsize(1000, 600)
@@ -159,6 +161,7 @@ def show_charity_shop(self):
 
         # Create a new window for the Charity Shop GUI
         charity_window = tk.Toplevel(self.root)
+        _install_clean_close(charity_window)
         charity_window.title(_t("commerce_facilities.titles.charity_shop_management"))
         charity_window.geometry("1100x650")
         charity_window.minsize(900, 550)
@@ -263,6 +266,7 @@ def show_parking_management(self):
 
         # Create a new window for the Parking Management GUI
         parking_window = tk.Toplevel(self.root)
+        _install_clean_close(parking_window)
         parking_window.title(_t("commerce_facilities.titles.parking_management_system"))
         parking_window.geometry("1200x800")
         parking_window.minsize(800, 600)
@@ -311,6 +315,7 @@ def show_housing_accommodations(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("commerce_facilities.titles.housing_accommodation_management"))
         top.geometry("1200x800")
         try:
@@ -357,6 +362,7 @@ def show_medical_accommodations(self):
 
         # Create a new window for the accommodation system
         accommodation_window = tk.Toplevel(self.root)
+        _install_clean_close(accommodation_window)
         accommodation_window.title(_t("commerce_facilities.titles.medical_accommodation_system"))
         accommodation_window.geometry("1200x800")
         accommodation_window.minsize(1000, 700)
@@ -417,6 +423,7 @@ def show_gym_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("commerce_facilities.titles.gym"))
         top.geometry("1400x900")
         top.minsize(1200, 800)
@@ -446,6 +453,7 @@ def show_dentist_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("commerce_facilities.titles.dentist"))
         top.geometry("1400x900")
         top.minsize(1200, 800)
@@ -475,6 +483,7 @@ def show_butcher_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("commerce_facilities.titles.butcher"))
         top.geometry("1400x900")
         top.minsize(1200, 800)
@@ -504,6 +513,7 @@ def show_barber_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("commerce_facilities.titles.barber"))
         top.geometry("1400x900")
         top.minsize(1200, 800)
@@ -533,6 +543,7 @@ def show_nailbar_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("commerce_facilities.titles.nailbar"))
         top.geometry("1400x900")
         top.minsize(1200, 800)
@@ -562,6 +573,7 @@ def show_carrental_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("commerce_facilities.titles.carrental"))
         top.geometry("1400x900")
         top.minsize(1200, 800)
@@ -591,6 +603,7 @@ def show_equipment_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("commerce_facilities.titles.equipment"))
         top.geometry("1400x900")
         top.minsize(1200, 800)
@@ -620,6 +633,7 @@ def show_phoneshop_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("commerce_facilities.titles.phoneshop"))
         top.geometry("1400x900")
         top.minsize(1200, 800)
@@ -649,6 +663,7 @@ def show_musicshop_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("commerce_facilities.titles.musicshop"))
         top.geometry("1400x900")
         top.minsize(1200, 800)
@@ -678,6 +693,7 @@ def show_taxi_booking_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("commerce_facilities.taxi.window_title"))
         top.geometry("1200x800")
         top.minsize(1000, 700)
@@ -707,6 +723,7 @@ def show_train_station_gui(self):
             return
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("commerce_facilities.train.window_title"))
         top.geometry("1000x700")
         top.minsize(900, 600)
@@ -740,6 +757,7 @@ def show_cinema_gui(self):
             init_cinema_database()
 
         top = tk.Toplevel(self.root)
+        _install_clean_close(top)
         top.title(_t("commerce_facilities.cinema.window_title"))
         top.geometry("1400x950")
         top.minsize(1100, 700)

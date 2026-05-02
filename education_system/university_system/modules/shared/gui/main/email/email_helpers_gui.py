@@ -1,6 +1,7 @@
 # Auto-generated module
 import tkinter as tk
 from tkinter import ttk, messagebox
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Import i18n
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
@@ -16,6 +17,7 @@ def compose_email(self, email_address):
             from education_system.university_system.modules.shared.gui.email.email_gui import EmailManagerGUI
 
             email_window = tk.Toplevel(self.root)
+            _install_clean_close(email_window)
             email_window.title(f"Compose Email to {email_address}")
             email_window.geometry("900x700")
             email_window.transient(self.root)
@@ -111,6 +113,7 @@ def _show_welcome_email_fallback(self, first_name, last_name, email_address, sub
     """Show fallback dialog with email details for manual sending"""
     try:
         fallback_window = tk.Toplevel(self.root)
+        _install_clean_close(fallback_window)
         fallback_window.title(_t("email_helpers.welcome_email_manual_title"))
         fallback_window.geometry("700x500")
         fallback_window.transient(self.root)
@@ -198,6 +201,7 @@ def _show_update_email_fallback(self, first_name, last_name, email_address, subj
     """Show fallback dialog for student update email"""
     try:
         fallback_window = tk.Toplevel(self.root)
+        _install_clean_close(fallback_window)
         fallback_window.title(_t("email_helpers.update_email_manual_title"))
         fallback_window.geometry("700x500")
         fallback_window.transient(self.root)

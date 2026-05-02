@@ -10,6 +10,7 @@ from education_system.university_system.infrastructure.database.db import sqlite
 from education_system.college_system.core.paths import DB_FILE as COLLEGE_DB_FILE
 from education_system.shared.transfer.academic_history import extract_college_history
 from datetime import datetime
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Import utility functions
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import (
@@ -603,6 +604,7 @@ Student Details:
 def update_student_dialog(self, student_id):
     """Comprehensive update student dialog with full editing capabilities and random course assignment"""
     dialog = tk.Toplevel(self.root)
+    _install_clean_close(dialog)
     dialog.title(_t("student.update_student_title", student_id=student_id))
     dialog.geometry("800x900")
     dialog.transient(self.root)
@@ -1130,6 +1132,7 @@ def delete_student_dialog(self, student_id=None):
             return
 
     dialog = tk.Toplevel(self.root)
+    _install_clean_close(dialog)
     dialog.title(_t("student.delete_student_title").replace("{student_id}", str(student_id)))
     dialog.geometry("900x900")  # Made bigger
     dialog.transient(self.root)
@@ -1439,6 +1442,7 @@ Registration Date: {student[10]}"""
 def select_student_for_deletion(self):
     """Show dialog to select student for deletion"""
     selection_dialog = tk.Toplevel(self.root)
+    _install_clean_close(selection_dialog)
     selection_dialog.title(_t("student.select_student_delete"))
     selection_dialog.geometry("1000x700")  # Made bigger
     selection_dialog.transient(self.root)
@@ -1553,6 +1557,7 @@ def manage_student_grades(self, student_id, first_name, last_name):
     """Display and manage student grades with assignments/assessments table"""
     try:
         grades_window = tk.Toplevel(self.root)
+        _install_clean_close(grades_window)
         grades_window.title(f"Manage Grades - {first_name} {last_name} ({student_id})")
         grades_window.geometry("1000x600")
         grades_window.transient(self.root)
@@ -1659,6 +1664,7 @@ def view_student_attendance(self, student_id, email, first_name, last_name):
     """Display student attendance table and send email if below 90%"""
     try:
         attendance_window = tk.Toplevel(self.root)
+        _install_clean_close(attendance_window)
         attendance_window.title(f"Attendance - {first_name} {last_name} ({student_id})")
         attendance_window.geometry("900x600")
         attendance_window.transient(self.root)
@@ -1793,6 +1799,7 @@ def view_student_timetable(self, student_id, first_name, last_name):
     """Display student's weekly timetable in grid format matching module scheduling GUI"""
     try:
         timetable_window = tk.Toplevel(self.root)
+        _install_clean_close(timetable_window)
         timetable_window.title(f"Timetable - {first_name} {last_name} ({student_id})")
         timetable_window.geometry("1400x800")
         timetable_window.transient(self.root)

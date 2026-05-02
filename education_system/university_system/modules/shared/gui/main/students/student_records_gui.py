@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext
 import logging
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Import utility functions
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import (
@@ -169,6 +170,7 @@ def show_student_records(self):
 
     # For staff/admin: Create new window with full student list
     records_window = tk.Toplevel(self.root)
+    _install_clean_close(records_window)
     records_window.title(_t("student.records_management"))
     records_window.geometry("1400x800")
     records_window.transient(self.root)
@@ -435,6 +437,7 @@ def show_student_details(self, student_id):
         logger.debug("student view audit hook failed", exc_info=True)
 
     detail_window = tk.Toplevel(self.root)
+    _install_clean_close(detail_window)
     detail_window.title(_t("student_details.window_title", student_id=student_id))
     detail_window.geometry("900x700")
     detail_window.transient(self.root)

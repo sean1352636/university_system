@@ -5,6 +5,7 @@ Each tile / workflow step opens the matching module via the parent
 ``UnifiedManagementGUI``.
 """
 from __future__ import annotations
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 import logging
 import tkinter as tk
@@ -70,6 +71,7 @@ def show_academic_hub(self):
     """Open the Academic Operations Hub as a Toplevel window."""
     try:
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title("Academic Operations Hub")
         win.geometry("1100x780")
         win.minsize(900, 520)

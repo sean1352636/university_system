@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.28 — 2026-05-02](#811728---2026-05-02)
 - [8.117.27 — 2026-05-02](#811727---2026-05-02)
 - [8.117.26 — 2026-05-02](#811726---2026-05-02)
 - [8.117.25 — 2026-05-02](#811725---2026-05-02)
@@ -254,6 +255,116 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.28] — 2026-05-02
+
+### Changed — Clean-close protocol applied across every Toplevel-creating GUI file
+
+Extends 8.117.27 from "the academic launchers" to "every
+``tk.Toplevel(self.root)`` call site in the main GUI tree". User
+report: the section-by-section close cascade was visible on more
+than just the academic windows — admin, commerce, student affairs,
+finance launchers all had it too.
+
+#### What changed
+
+- ``install_clean_close`` was promoted from a private helper in
+  ``academic_launchers_gui.py`` to a public function in the shared
+  ``modules/shared/gui/main/_tk_callback_filter.py`` (alongside the
+  destroy-race filters from 8.117.21/23 — same theme: Tk lifecycle
+  hygiene). ``academic_launchers_gui.py`` now imports it from there
+  instead of redefining it.
+- A one-shot sweep script walked every ``.py`` under
+  ``modules/shared/gui/main/`` that creates a Toplevel via
+  ``tk.Toplevel(self.root)``, added the import, and inserted
+  ``_install_clean_close(<varname>)`` immediately after each
+  Toplevel construction. The script is idempotent (skips files that
+  already have the import) and pattern-matches by indented
+  ``<var> = tk.Toplevel(self.root)`` lines, so unusual call shapes
+  weren't touched.
+
+#### Files patched
+
+19 files received the import + a total of 96 ``_install_clean_close``
+calls:
+
+| File | Toplevels patched |
+|---|---|
+| ``features/commerce_facilities_gui.py`` | 17 |
+| ``features/student_affairs_gui.py`` | 13 |
+| ``admin/admin_tools_gui.py`` | 14 |
+| ``admin/database_admin_gui.py`` | 6 |
+| ``admin/user_management_gui.py`` | 6 |
+| ``admin/config_gui.py`` | 6 |
+| ``admin/system_admin_gui.py`` | 4 |
+| ``students/student_crud_gui.py`` | 6 |
+| ``students/student_records_gui.py`` | 2 |
+| ``students/student_export_gui.py`` | 1 |
+| ``staff/staff_crud_gui.py`` | 1 |
+| ``features/finance_gui.py`` | 5 |
+| ``features/student_success_gui.py`` | 5 |
+| ``features/academic_hub.py`` | 1 |
+| ``email/email_helpers_gui.py`` | 3 |
+| ``auth_gui.py`` | 3 |
+| ``main_gui.py`` | 1 |
+| ``dashboard/dashboard_gui.py`` | 2 |
+| ``core/gui_setup.py`` | 2 |
+
+Already patched in earlier commits (covered via
+``_attach_back_to_hub_button`` walk-up or explicit calls):
+
+- ``features/academic_launchers_gui.py`` (22 Toplevels — done in
+  8.117.27 + earlier).
+
+Skipped (deliberately):
+
+- ``_tk_callback_filter.py`` itself (the helper module — doesn't
+  create Toplevels).
+
+#### Verified
+
+- All 21 modified modules import cleanly via
+  ``importlib.import_module``.
+- The sweep is conservative — only matches
+  ``^\s+<var> = tk.Toplevel(self.root)\n`` (indented assignment to
+  a single name with the exact ``self.root`` parent argument).
+  Other Toplevel construction shapes (``tk.Toplevel()``,
+  ``tk.Toplevel(some_other_parent)``, multi-line constructions)
+  weren't touched.
+
+#### Idempotency
+
+``install_clean_close`` is safe to call repeatedly on the same
+window — it just re-registers the ``WM_DELETE_WINDOW`` protocol
+with an identical handler. So callsites already covered by
+``_attach_back_to_hub_button`` (which walks up to the enclosing
+Toplevel and installs there) plus this commit's explicit calls
+overlap harmlessly on the academic launchers.
+
+#### What this fixes
+
+Every Toplevel-style GUI in the main tree now closes with
+``withdraw → update_idletasks → destroy``. The visible section-by-
+section dismantling is gone — the window vanishes immediately and
+Tk does its slow teardown work in private.
+
+What this does **not** fix is unchanged from 8.117.27: the Tk
+teardown work itself still happens, the destroy-race callbacks
+still fire (and 8.117.21/23 still swallows them). If close-time
+CPU is still a problem on any specific window, the substantive fix
+is per-window: cancel pending ``after()`` callbacks and clear
+``yscrollcommand`` bindings before destroy. Not done here.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/_tk_callback_filter.py``
+  (``install_clean_close`` added as a public function),
+  ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  (local definition replaced with an import),
+  plus the 19 sweep-target files listed above.
 
 ---
 

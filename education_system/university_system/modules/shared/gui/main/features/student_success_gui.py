@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Import GUI launchers
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import (
@@ -173,6 +174,7 @@ def show_campus_navigation_gui(self):
         from education_system.university_system.modules.domain.campus.campus_navigation.gui.navigation_gui import NavigationGUI
         # Create a new Toplevel window
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title(_t("student_success.windows.campus_navigation"))
         window.geometry("1200x800")
         gui = NavigationGUI(parent=window)
@@ -278,6 +280,7 @@ def show_events_discovery_gui(self):
         from education_system.university_system.modules.domain.events.gui.events_gui import EventsGUI
         # Create a new Toplevel window
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title(_t("student_success.windows.event_discovery"))
         window.geometry("1400x800")
         gui = EventsGUI(parent=window)
@@ -321,6 +324,7 @@ def show_notifications_hub_gui(self):
 
         # Create new window for email manager
         email_window = tk.Toplevel(self.root)
+        _install_clean_close(email_window)
         email_window.title(_t("student_success.windows.communication_center"))
         email_window.geometry("1200x800")
 
@@ -514,6 +518,7 @@ def show_todo_app_gui(self):
     try:
         from education_system.university_system.modules.shared.gui.tools.todo_app_gui import TodoApp
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title(_t("extras_gui.titles.todo_list"))
         window.geometry("500x600")
         try:
@@ -543,6 +548,7 @@ def _show_feature_gui(self, title, description, cli_instruction):
 
     try:
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title(title)
         window.geometry("900x600")
         window.minsize(800, 500)

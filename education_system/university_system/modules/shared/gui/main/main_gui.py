@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import ttk
 import logging
 from datetime import datetime
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Import authentication
 from education_system.university_system.infrastructure.auth import UserAuth, set_auth_instance
@@ -545,6 +546,7 @@ def show_security_questions(self):
         else:
             # Fallback: open in a new Toplevel window
             win = tk.Toplevel(self.root)
+            _install_clean_close(win)
             win.title("Security Questions")
             win.geometry("500x520")
             frame = SecurityQuestionsFrame(win, auth=self.auth)

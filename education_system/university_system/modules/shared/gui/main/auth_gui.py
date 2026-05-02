@@ -9,6 +9,7 @@ from tkinter import ttk, messagebox
 import os
 import logging
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t, get_current_language
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Language selection is now handled at startup via education_system.shared.i18n
 
@@ -128,6 +129,7 @@ def show_change_password(self):
         return
 
     password_window = tk.Toplevel(self.root)
+    _install_clean_close(password_window)
     password_window.title(_t("gui.password.change_password"))
     password_window.geometry("400x250")
     password_window.transient(self.root)
@@ -283,6 +285,7 @@ def switch_to_cli(self):
 def switch_system(self):
     """Show a dialog to switch to another education system."""
     dlg = tk.Toplevel(self.root)
+    _install_clean_close(dlg)
     dlg.title(_t("gui.switch_system.title"))
     dlg.geometry("400x420")
     dlg.resizable(False, False)
@@ -472,6 +475,7 @@ def show_mfa_setup(self):
                 has_saved_disabled_methods = False
 
         dialog = tk.Toplevel(self.root)
+        _install_clean_close(dialog)
         dialog.title(_t("gui.mfa.settings_title"))
         dialog.geometry("500x450")
         dialog.resizable(False, False)

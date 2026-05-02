@@ -5,6 +5,7 @@ import csv
 import logging
 from datetime import datetime
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Import database connection
 from education_system.university_system.infrastructure.database.db import get_db_connection, get_connection, transaction
@@ -322,6 +323,7 @@ def export_individual_student_data(self, student_id, first_name, last_name):
     try:
         # Create export format dialog
         export_dialog = tk.Toplevel(self.root)
+        _install_clean_close(export_dialog)
         export_dialog.title(_t("student_export.dialog.title"))
         export_dialog.geometry("400x250")
         export_dialog.transient(self.root)

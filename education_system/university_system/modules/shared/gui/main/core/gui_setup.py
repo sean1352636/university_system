@@ -4,6 +4,7 @@ from tkinter import ttk, messagebox, filedialog
 import logging
 import json
 from pathlib import Path
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # GUI managers — imported lazily via _lazy_import() to speed up startup
 from education_system.university_system.modules.shared.gui.main.imports.gui_imports import _lazy_import
@@ -81,6 +82,7 @@ def init_gui_managers(self):
 def create_themed_toplevel(self, title="", geometry=""):
     """Create a Toplevel window"""
     window = tk.Toplevel(self.root)
+    _install_clean_close(window)
     if title:
         window.title(title)
     if geometry:
@@ -1306,6 +1308,7 @@ def open_in_workspace(self, title, builder, *, focus=True):
     # behaviour so callers that haven't migrated still work.
     try:
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(title)
         win.geometry("1400x900")
         try:

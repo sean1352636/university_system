@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog, scrolledtext, simpledialog
 import logging
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Alias for translation function
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
@@ -46,6 +47,7 @@ def show_data_backup_gui(self):
     try:
         # Create backup window
         backup_window = tk.Toplevel(self.root)
+        _install_clean_close(backup_window)
         backup_window.title(_t("database_admin_gui.titles.backup_restore_system"))
         backup_window.geometry("800x600")
         backup_window.minsize(600, 500)
@@ -93,6 +95,7 @@ def show_batch_operations_gui(self):
     # Create window + init GUI
     try:
         batch_window = tk.Toplevel(self.root)
+        _install_clean_close(batch_window)
         batch_window.title(_t("database_admin_gui.titles.batch_operations"))
         batch_window.geometry("1000x700")
 
@@ -168,6 +171,7 @@ def run_integrity_check(self):
     try:
         # This is a placeholder - would need actual integrity check logic
         result_window = tk.Toplevel(self.root)
+        _install_clean_close(result_window)
         result_window.title(_t("database_admin_gui.titles.integrity_check_results"))
         result_window.geometry("600x400")
 
@@ -208,6 +212,7 @@ def show_db_statistics(self):
 
     try:
         stats_window = tk.Toplevel(self.root)
+        _install_clean_close(stats_window)
         stats_window.title(_t("database_admin_gui.titles.database_statistics"))
         stats_window.geometry("700x500")
 
@@ -256,6 +261,7 @@ def show_db_performance(self):
     """Show database performance metrics"""
     try:
         perf_window = tk.Toplevel(self.root)
+        _install_clean_close(perf_window)
         perf_window.title(_t("database_admin_gui.titles.database_performance"))
         perf_window.geometry("700x500")
 
@@ -385,6 +391,7 @@ def show_active_connections(self):
     """Show active database connections"""
     try:
         conn_window = tk.Toplevel(self.root)
+        _install_clean_close(conn_window)
         conn_window.title(_t("database_admin_gui.titles.active_connections"))
         conn_window.geometry("600x400")
 

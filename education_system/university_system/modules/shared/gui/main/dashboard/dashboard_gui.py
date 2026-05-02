@@ -4,6 +4,7 @@ from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
 from education_system.university_system.infrastructure.database.db import sqlite3
 import logging
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Import database connection
 from education_system.university_system.infrastructure.database.db import get_connection
@@ -512,6 +513,7 @@ def show_analytics(self):
         if STUDENT_ANALYTICS_GUI_AVAILABLE:
             # Create a child window for the analytics GUI
             analytics_window = tk.Toplevel(self.root)
+            _install_clean_close(analytics_window)
             analytics_window.transient(self.root)
 
             # Launch the GUI in the child window
@@ -544,6 +546,7 @@ def show_chatbot(self):
         # Use imported UniversityChatbotGUI if available
         if CHATBOT_GUI_AVAILABLE and UniversityChatbotGUI:
             chatbot_window = tk.Toplevel(self.root)
+            _install_clean_close(chatbot_window)
             chatbot_window.title(_("dashboard.chatbot.title"))
             chatbot_window.geometry("1000x700")
 

@@ -12,36 +12,9 @@ from education_system.university_system.modules.shared.gui.main.features.academi
 )
 
 
-def _install_clean_close(window):
-    """Make close visually instant: ``withdraw`` first, then
-    ``destroy``.
-
-    Without this, Tk's default close path destroys children one at a
-    time on the user-visible window, so the user *watches* the
-    Toplevel dismantle section by section before it disappears.
-    Withdraw yanks the window off-screen immediately, ``update_idletasks``
-    flushes that to the display, then ``destroy`` does the slow
-    teardown in private.
-
-    Hooks ``WM_DELETE_WINDOW`` (the protocol the window manager fires
-    when the user clicks the close button). Idempotent — safe to
-    call repeatedly on the same window."""
-    try:
-        if not hasattr(window, "protocol"):
-            return  # Frame/LabelFrame — not a Toplevel
-        def _close():
-            try:
-                window.withdraw()
-                window.update_idletasks()
-            except tk.TclError:
-                pass
-            try:
-                window.destroy()
-            except tk.TclError:
-                pass
-        window.protocol("WM_DELETE_WINDOW", _close)
-    except Exception:
-        logger.debug("clean-close install failed", exc_info=True)
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import (
+    install_clean_close as _install_clean_close,
+)
 
 
 def _attach_back_to_hub_button(host, parent_app, *, before=None):
@@ -333,6 +306,7 @@ def show_library_management(self):
             # to a hand-rolled Toplevel matching the pre-8.117.18
             # geometry exactly so visual behaviour is unchanged.
             library_window = tk.Toplevel(self.root)
+            _install_clean_close(library_window)
             library_window.title(title)
             library_window.geometry("1400x900")
             library_window.minsize(1200, 800)
@@ -430,6 +404,7 @@ def show_course_management(self):
         if COURSE_MANAGEMENT_GUI_AVAILABLE:
             # Create a new window for the Course Management GUI
             course_window = tk.Toplevel(self.root)
+            _install_clean_close(course_window)
             course_window.title(_t("academic_launchers.titles.course"))
             course_window.geometry("1200x800")
 
@@ -481,6 +456,7 @@ def show_module_management(self):
         if MODULE_SCHEDULING_GUI_AVAILABLE and ModuleSchedulingGUI:
             # Create a new window for the Module Scheduling GUI
             module_window = tk.Toplevel(self.root)
+            _install_clean_close(module_window)
             module_window.title(_t("academic_launchers.titles.module"))
             module_window.geometry("1400x900")
             module_window.minsize(1200, 800)
@@ -537,6 +513,7 @@ def show_module_scheduling(self):
         # Prefer embedding into a Toplevel to avoid creating a second Tk root.
         try:
             top = tk.Toplevel(self.root)
+            _install_clean_close(top)
             top.title(_t("academic_launchers.titles.module_scheduling"))
             _attach_back_to_hub_button(top, self)
             _apply_academic_context(top, self)
@@ -589,6 +566,7 @@ def show_assignments(self):
 
         # Create a new window for the Assignment GUI
         assignment_window = tk.Toplevel(self.root)
+        _install_clean_close(assignment_window)
         assignment_window.title(_t("academic_launchers.titles.assignment"))
         assignment_window.geometry("1200x800")
 
@@ -681,6 +659,7 @@ def show_ai_detector(self):
 
         # Create new window for AI Detector
         ai_window = tk.Toplevel(self.root)
+        _install_clean_close(ai_window)
         ai_window.title(_t("academic_launchers.titles.ai_detector"))
         ai_window.geometry("1000x700")
 
@@ -715,6 +694,7 @@ def open_attendance_gui(self):
             return
         # Create a child window for the attendance UI
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.transient(self.root)
         _attach_back_to_hub_button(win, self)
         _apply_academic_context(win, self)
@@ -771,6 +751,7 @@ def show_office_hours_gui(self):
             return
 
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.transient(self.root)
         try:
             OfficeHoursGUI(win, auth=self.auth)
@@ -795,6 +776,7 @@ def show_student_grades_gui(self):
             return
 
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title("My Grades & GPA")
         window.geometry("1200x800")
         try:
@@ -822,6 +804,7 @@ def show_student_outcomes_gui(self):
             return
 
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title("Learning Outcomes")
         window.geometry("1200x800")
         try:
@@ -849,6 +832,7 @@ def show_student_timetable_gui(self):
             return
 
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title("My Timetable")
         window.geometry("1200x800")
         try:
@@ -879,6 +863,7 @@ def show_student_registration_gui(self):
             return
 
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title("Module Registration")
         window.geometry("1200x800")
         try:
@@ -906,6 +891,7 @@ def show_student_dashboard_gui(self):
             return
 
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title("Student Dashboard")
         window.geometry("1300x900")
         try:
@@ -934,6 +920,7 @@ def show_virtual_classroom_gui(self):
 
         # Create a new window for the Virtual Classroom GUI
         classroom_window = tk.Toplevel(self.root)
+        _install_clean_close(classroom_window)
 
         # Initialize the comprehensive GUI with auth instance
         app = VirtualClassroomGUI(classroom_window, auth=self.auth)
@@ -953,6 +940,7 @@ def show_lms_gui(self):
     try:
         from education_system.shared.lms.lms_gui import LMSFrame
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title("Learning Management System")
         window.geometry("1100x700")
         try:
@@ -1006,6 +994,7 @@ def show_document_manager(self):
     try:
         if DOCUMENT_MANAGER_GUI_AVAILABLE and DocumentManagerGUI:
             win = tk.Toplevel(self.root)
+            _install_clean_close(win)
             win.title(_t("extras_gui.titles.document_manager"))
             if ctx:
                 tag = ctx.get("list_name") or ctx.get("reading_list_id") \
@@ -1077,6 +1066,7 @@ def show_enhanced_reporting_dashboard(self):
         # Prefer embedding into a Toplevel to avoid creating a second Tk root
         try:
             top = tk.Toplevel(self.root)
+            _install_clean_close(top)
             top.title(_t("extras_gui.titles.enhanced_reporting_dashboard"))
             top.geometry("1200x800")
             try:
@@ -1129,6 +1119,7 @@ def show_student_analytics_gui(self):
             return
 
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title("Student Analytics")
         window.geometry("1400x900")
         try:
@@ -1155,6 +1146,7 @@ def show_advanced_search_gui(self):
     try:
         # Create a new window for the Advanced Search GUI
         search_window = tk.Toplevel(self.root)
+        _install_clean_close(search_window)
         search_window.title(_t("extras_gui.titles.advanced_search"))
         search_window.geometry("1200x800")
         search_window.transient(self.root)
@@ -1206,6 +1198,7 @@ def show_exam_scheduler_gui(self):
             role = self.auth.current_user.get('role')
 
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title(_t("extras_gui.titles.exam_scheduler"))
         window.geometry("1100x700")
         try:
@@ -1232,6 +1225,7 @@ def show_exam_portal(self):
     try:
         from education_system.university_system.modules.domain.academics.gui.exam_management import ExamPortalGUI
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title("Exam Management")
         window.geometry("1200x800")
         try:

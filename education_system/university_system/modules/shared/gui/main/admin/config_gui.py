@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import logging
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Alias for translation function (ensure _t is available for i18n)
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
@@ -25,6 +26,7 @@ def edit_system_settings(self):
         shared_auth = _SharedAuth()
 
         settings_window = tk.Toplevel(self.root)
+        _install_clean_close(settings_window)
         settings_window.title(_t("config_gui.system_settings.title"))
         settings_window.geometry("650x550")
 
@@ -100,6 +102,7 @@ def configure_email(self):
         import os
 
         email_window = tk.Toplevel(self.root)
+        _install_clean_close(email_window)
         email_window.title(_t("config_gui.email.title"))
         email_window.geometry("550x480")
 
@@ -198,6 +201,7 @@ def configure_backup(self):
         shared_auth = _SharedAuth()
 
         backup_window = tk.Toplevel(self.root)
+        _install_clean_close(backup_window)
         backup_window.title(_t("config_gui.backup.title"))
         backup_window.geometry("600x520")
 
@@ -268,6 +272,7 @@ def configure_security(self):
     """Configure security settings with toggleable password reset policy"""
     try:
         security_window = tk.Toplevel(self.root)
+        _install_clean_close(security_window)
         security_window.title(_t("config_gui.security.title"))
         security_window.geometry("650x600")
 
@@ -448,6 +453,7 @@ def show_activity_logger(self):
 
         # Create a new window for the Activity Logger GUI
         logger_window = tk.Toplevel(self.root)
+        _install_clean_close(logger_window)
         logger_window.title(_t("config_gui.activity_logger.window_title"))
         logger_window.geometry("1400x900")
         logger_window.minsize(1200, 800)
@@ -487,6 +493,7 @@ def show_activity_log(self):
     try:
         # Open inside the existing app as a child window (no extra mainloop)
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("config_gui.log_management.title"))
         win.geometry("1200x800")
         LogManagementGUI(win, auth=self.auth)   # instantiate GUI from the file

@@ -2,6 +2,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import logging
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 # Alias for translation function (underscore names not exported by import *)
 from education_system.university_system.modules.shared.utils.i18n import get_text as _t
@@ -43,6 +44,7 @@ def show_finance_reporting_dashboard(self):
 
         # Create new window for Finance Reporting
         finance_window = tk.Toplevel(self.root)
+        _install_clean_close(finance_window)
         finance_window.title(_t("finance_gui.reporting.title"))
         finance_window.geometry("1200x800")
 
@@ -78,6 +80,7 @@ def show_student_finance_account(self):
 
         # Create window
         account_window = tk.Toplevel(self.root)
+        _install_clean_close(account_window)
         account_window.title(_t("finance_gui.account.title"))
         account_window.geometry("1000x800")
         account_window.minsize(900, 700)
@@ -386,6 +389,7 @@ def show_financial_aid(self):
     try:
         # Create new window for Financial Aid
         aid_window = tk.Toplevel(self.root)
+        _install_clean_close(aid_window)
         aid_window.title(_t("finance_gui.aid.title"))
         aid_window.geometry("1200x800")
 
@@ -420,6 +424,7 @@ def show_club_payment_management(self):
     try:
         # Create new window for Club Payment Management
         payment_window = tk.Toplevel(self.root)
+        _install_clean_close(payment_window)
         payment_window.title(_t("finance_gui.club_payment.title"))
         payment_window.geometry("1200x800")
 
@@ -541,6 +546,7 @@ def show_bank_app_gui(self):
     try:
         from education_system.university_system.modules.domain.finance.gui.bank_app import BankApp
         window = tk.Toplevel(self.root)
+        _install_clean_close(window)
         window.title(_t("extras_gui.titles.university_bank"))
         window.geometry("900x700")
         window.minsize(800, 600)

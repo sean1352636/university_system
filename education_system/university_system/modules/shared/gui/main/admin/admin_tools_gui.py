@@ -6,6 +6,7 @@ import os
 import json
 import csv
 from datetime import datetime, timedelta
+from education_system.university_system.modules.shared.gui.main._tk_callback_filter import install_clean_close as _install_clean_close
 
 from education_system.university_system.core.paths import (
     PROJECT_ROOT, DATA_DIR, CONFIG_DIR, DB_DIR, LOG_DIR, EMAIL_CONFIG_FILE,
@@ -55,6 +56,7 @@ def show_system_monitoring_dashboard(self):
 
     try:
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools.monitoring.title"))
         win.geometry("1000x700")
         win.transient(self.root)
@@ -245,6 +247,7 @@ def show_configuration_editor(self):
 
     try:
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools.config_editor.title"))
         win.geometry("900x650")
         win.transient(self.root)
@@ -551,6 +554,7 @@ def show_query_analyser(self):
 
     try:
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools.query_analyser.title"))
         win.geometry("1100x750")
         win.transient(self.root)
@@ -777,6 +781,7 @@ def show_capacity_planning(self):
         from education_system.university_system.infrastructure.database.db import get_connection
 
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools.capacity.title"))
         win.geometry("1000x700")
         win.transient(self.root)
@@ -993,6 +998,7 @@ def show_usage_adoption_reports(self):
         from education_system.university_system.infrastructure.database.db import get_connection
 
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools.usage.title"))
         win.geometry("1100x750")
         win.transient(self.root)
@@ -1249,6 +1255,7 @@ def show_custom_report_builder(self):
         from education_system.university_system.infrastructure.database.db import get_connection
 
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools_v2.report_builder.title"))
         win.geometry("1100x750")
         win.transient(self.root)
@@ -1599,6 +1606,7 @@ def show_api_documentation(self):
 
     try:
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools_v2.api_docs.title"))
         win.geometry("1100x750")
         win.transient(self.root)
@@ -1744,6 +1752,7 @@ def show_notification_template_manager(self):
 
     try:
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools_v2.templates.title"))
         win.geometry("1100x750")
         win.transient(self.root)
@@ -1933,6 +1942,7 @@ def show_data_retention_manager(self):
         from education_system.university_system.infrastructure.database.data_backup.retention import cleanup_old_backups
 
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools_v2.retention.title"))
         win.geometry("1000x700")
         win.transient(self.root)
@@ -2088,6 +2098,7 @@ def show_system_changelog(self):
                 changelog_content = f.read()
 
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools_v2.changelog.title"))
         win.geometry("900x700")
         win.transient(self.root)
@@ -2201,6 +2212,7 @@ def show_department_isolation(self):
         from education_system.university_system.infrastructure.database.db import get_connection
 
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools_v2.department.title"))
         win.geometry("1000x700")
         win.transient(self.root)
@@ -2357,6 +2369,7 @@ def show_integration_status_dashboard(self):
 
     try:
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools_v2.integration.title"))
         win.geometry("1100x700")
         win.transient(self.root)
@@ -2567,6 +2580,7 @@ def show_license_management(self):
             _save_json(licenses_path, default_licenses)
 
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools_v2.license.title"))
         win.geometry("1000x700")
         win.transient(self.root)
@@ -2774,6 +2788,7 @@ def show_disaster_recovery_plan(self):
             })
 
         win = tk.Toplevel(self.root)
+        _install_clean_close(win)
         win.title(_t("admin_tools_v2.disaster_recovery.title"))
         win.geometry("1000x750")
         win.transient(self.root)
