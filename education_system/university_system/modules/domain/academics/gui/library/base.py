@@ -149,21 +149,30 @@ class LibraryGUI:
         # Use provided auth or create new one if not provided
         self.auth = auth if auth else None
 
-        # Cross-platform window maximization
-        try:
-            # Try Windows-specific maximization first
-            self.master.state('zoomed')
-        except tk.TclError:
-            # Fallback for Linux/Unix systems
+        # Cross-platform window maximization — only meaningful when
+        # master is a toplevel-like window. After 8.117.18, master can
+        # also be a workspace ``Frame`` (or ``LabelFrame``); both lack
+        # ``geometry`` *and* their ``state`` is the ttk widget state
+        # setter rather than the WM state, so ``state('zoomed')``
+        # raises a confusing ``Invalid state name z`` (parsing the
+        # word as ttk state-spec characters). Skip the whole block
+        # for non-toplevel hosts. ``wm_state`` is present on
+        # ``tk.Tk`` and ``tk.Toplevel`` but not on plain frames, so
+        # it's a clean discriminator.
+        if hasattr(self.master, 'wm_state'):
             try:
-                # Get screen dimensions
-                screen_width = self.master.winfo_screenwidth()
-                screen_height = self.master.winfo_screenheight()
-                # Set window to nearly full screen (leave some space for taskbar)
-                self.master.geometry(f"{screen_width-50}x{screen_height-100}+25+25")
+                # Try Windows-specific maximization first
+                self.master.state('zoomed')
             except tk.TclError:
-                # Final fallback - just use the default size
-                self.master.geometry("1400x900")
+                # Fallback for Linux/Unix systems
+                try:
+                    screen_width = self.master.winfo_screenwidth()
+                    screen_height = self.master.winfo_screenheight()
+                    self.master.geometry(
+                        f"{screen_width-50}x{screen_height-100}+25+25"
+                    )
+                except tk.TclError:
+                    self.master.geometry("1400x900")
 
         # Set up styling
         self.setup_styles()
@@ -800,8 +809,18 @@ class LibraryGUI:
         self.update_user_display()
 
     def setup_event_handlers(self):
-        """Setup event handlers"""
-        self.master.protocol("WM_DELETE_WINDOW", self.exit_application)
+        """Setup event handlers.
+
+        ``protocol`` is a Toplevel-only method — when ``master`` is a
+        workspace ``Frame`` (8.117.18 path) the call would raise
+        ``AttributeError``. The frame doesn't have a window-manager
+        close button to intercept anyway; skip silently in that case.
+        Tab close is handled by the workspace notebook itself."""
+        if hasattr(self.master, 'protocol'):
+            try:
+                self.master.protocol("WM_DELETE_WINDOW", self.exit_application)
+            except (AttributeError, tk.TclError):
+                pass
 
     def return_to_main_menu(self):
         """Close this window so control returns to the launcher."""

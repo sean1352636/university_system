@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.24 — 2026-05-02](#811724---2026-05-02)
 - [8.117.23 — 2026-05-02](#811723---2026-05-02)
 - [8.117.22 — 2026-05-02](#811722---2026-05-02)
 - [8.117.21 — 2026-05-02](#811721---2026-05-02)
@@ -250,6 +251,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.24] — 2026-05-02
+
+### Fixed — ``LibraryGUI.__init__`` window-state + protocol calls on Frame master
+
+8.117.22 guarded the first two ``self.master`` chrome calls
+(``title`` / first ``geometry``) but missed two more later in the
+constructor that *also* assume a Toplevel-like master. The traceback:
+
+::
+
+    Invalid state name z
+    File ".../library/base.py", line 155, in __init__
+        self.master.state('zoomed')
+    ...
+    AttributeError: 'Frame' object has no attribute 'geometry'
+    File ".../library/base.py", line 163, in __init__
+        self.master.geometry(f"{screen_width-50}x{screen_height-100}+25+25")
+
+The ``state('zoomed')`` failure is particularly subtle — on a Frame
+the ``state`` method is the **ttk widget state setter**, not the
+window-manager state setter. So ``'zoomed'`` is parsed as a
+state-spec character sequence and rejects on the first letter
+(``z``). The except block then fell through to a ``geometry()``
+call that ``Frame`` doesn't have, raising the unguarded
+``AttributeError`` that propagated to ``open_in_workspace``.
+
+#### Fix
+
+- Wrapped the cross-platform window-maximisation block in
+  ``if hasattr(self.master, 'wm_state'):`` — ``wm_state`` is present
+  on ``tk.Tk`` and ``tk.Toplevel`` but not on plain frames, so it's
+  a clean discriminator. Frames now skip the whole maximisation
+  block (which is the right behaviour — a workspace tab can't
+  meaningfully maximise within its parent notebook).
+- ``setup_event_handlers`` similarly gated: ``protocol`` is a
+  Toplevel-only method. Frame masters skip the
+  ``WM_DELETE_WINDOW`` binding silently — workspace tabs are closed
+  via the notebook's own close affordance (8.117.18 right-click)
+  rather than a window-manager close button.
+
+#### Verified
+
+- All three master shapes pass through every chrome call without
+  raising:
+  - ``tk.Toplevel`` → title set, geometry set, ``state('zoomed')``
+    attempted, protocol bound (legacy path unchanged).
+  - ``ttk.Frame`` → all chrome silently skipped (workspace tab path).
+  - ``ttk.LabelFrame`` → same as Frame (covers any future workspace
+    host that uses a LabelFrame wrapper).
+
+#### Files
+
+- Modified: ``modules/domain/academics/gui/library/base.py``
+  (``__init__`` maximisation block guarded by
+  ``hasattr(self.master, 'wm_state')``; ``setup_event_handlers``
+  guarded by ``hasattr(self.master, 'protocol')``).
 
 ---
 
