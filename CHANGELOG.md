@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.34 — 2026-05-02](#811734---2026-05-02)
 - [8.117.33 — 2026-05-02](#811733---2026-05-02)
 - [8.117.32 — 2026-05-02](#811732---2026-05-02)
 - [8.117.31 — 2026-05-02](#811731---2026-05-02)
@@ -260,6 +261,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.34] — 2026-05-02
+
+### Changed — Library reverts to a full-screen Toplevel
+
+8.117.18 migrated Library to ``open_in_workspace`` so it would
+render as a tab inside the main GUI's content notebook (the "right
+panel is decorative" fix from the 8.117.16 layout review). User
+report: Library has its own dense layout — a notebook of notebooks
+with ~14 CRUD treeview tabs — and felt cramped inside the
+workspace's available width.
+
+#### What changed
+
+- ``show_library_management`` no longer calls
+  ``open_in_workspace``. Always opens a ``tk.Toplevel(self.root)``,
+  installs ``_install_clean_close`` on it, sets the title (with
+  the ``◆ <tag>`` context suffix when arriving from a cross-link),
+  hands it to ``LibraryGUI``.
+- The window fills the screen on its own:
+  ``LibraryGUI.__init__`` already does cross-platform window
+  maximisation (``state('zoomed')`` on Windows, screen-sized
+  ``geometry`` fallback on Linux/Unix; from 8.117.24's
+  ``library/base.py``). The launcher just hands it a Toplevel —
+  no explicit geometry call needed at the launcher level.
+
+#### What's preserved
+
+- Inbound academic context (``reading_list_id`` / ``book_title`` /
+  ``isbn`` / ``course_code`` etc. from cross-link jumps) still
+  consumes up front, tags the title, and dispatches to
+  ``_apply_library_inbound_context`` after Library finishes
+  building.
+- Permission gates and CLI fallback for
+  ``LIBRARY_GUI_AVAILABLE = False`` are unchanged.
+- Clean-close protocol (8.117.27) installed on the Toplevel.
+
+#### What stays in place for other migrations
+
+- ``UnifiedManagementGUI.open_in_workspace`` (8.117.18) is still
+  bound and functional. The ``self.workspace_notebook`` /
+  ``self.workspace_tabs`` plumbing in
+  ``show_integrated_dashboard`` is unchanged. Only Library
+  reverts; the mechanism remains available for any future
+  migration that does benefit from it.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  (``show_library_management`` reverted to direct Toplevel path).
 
 ---
 

@@ -178,15 +178,22 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 logger = logging.getLogger(__name__)
 
 def show_library_management(self):
-    """Launch the Library Management GUI.
+    """Launch the Library Management GUI as a full-screen Toplevel.
 
-    First migrated user of ``UnifiedManagementGUI.open_in_workspace``
-    (added 8.117.18) — Library now renders as a tab inside the
-    dashboard's notebook when one is available, falling back to the
-    classic Toplevel when it isn't (pre-login, content area cleared,
-    etc.). Closes the "right content panel is decorative" gap from
-    the 8.117.16 layout review for this launcher; the same migration
-    pattern can be applied to other launchers in future commits.
+    Pre-8.117.34 used ``open_in_workspace`` to render Library as a
+    tab inside the main GUI's content notebook (8.117.18 — the
+    "right content panel is decorative" fix). User reverted that
+    decision specifically for Library: it has its own dense layout
+    (notebook of notebooks, ~14 tabs of CRUD treeviews) and felt
+    cramped inside the workspace. Now opens as a standalone
+    Toplevel that fills the screen — ``LibraryGUI.__init__`` already
+    does cross-platform window maximisation
+    (``state('zoomed')`` on Windows, ``geometry(screen-50 × screen-100)``
+    on Linux/Unix; see ``library/base.py`` 8.117.24), so we just
+    hand it a Toplevel and let it size itself.
+
+    The ``open_in_workspace`` mechanism stays available for other
+    future migrations — only Library is reverted.
     """
     if not self.auth.current_user:
         messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.login_required_library"))
@@ -214,8 +221,9 @@ def show_library_management(self):
 
     # Consume the inbound academic context up front (so a stale
     # context can't bleed into a later jump) and bake any non-empty
-    # tag into the tab/window title so the user knows what scoped
-    # them here.
+    # tag into the window title so the user knows what scoped them
+    # here (e.g. arriving from a "Open reading lists in Library"
+    # cross-link).
     try:
         from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
             consume_context as _consume_academic_context,
@@ -234,12 +242,20 @@ def show_library_management(self):
         except Exception:
             pass
 
-    def _build_library(host):
-        # Pre-8.117.26 attached the full academic quickbar; 8.117.26
-        # replaced it with a "Back to Academic Hub" button; 8.117.32
-        # removed even that button (the hub itself was deleted —
-        # sidebar accordion + Ctrl+K already cover navigation).
-        library_gui = LibraryGUI(host)
+    try:
+        library_window = tk.Toplevel(self.root)
+        _install_clean_close(library_window)
+        library_window.title(title)
+        # No explicit geometry — LibraryGUI.__init__ runs its own
+        # cross-platform maximisation pass (state('zoomed') with
+        # a screen-sized geometry fallback) so the window fills
+        # the screen regardless of platform.
+        try:
+            library_window.transient(self.root)
+        except Exception:
+            pass
+
+        library_gui = LibraryGUI(library_window)
         if hasattr(library_gui, 'set_auth'):
             library_gui.set_auth(self.auth)
         elif hasattr(library_gui, 'auth'):
@@ -249,35 +265,13 @@ def show_library_management(self):
                     or ctx.get("course_code") or ctx.get("book_title")
                     or ctx.get("isbn") or ctx.get("book_id")):
             try:
-                host.after(
+                library_window.after(
                     50,
                     lambda g=library_gui, c=ctx: _apply_library_inbound_context(g, c),
                 )
             except Exception:
                 logger.exception("Library context navigation failed")
 
-    try:
-        opener = getattr(self, "open_in_workspace", None)
-        if callable(opener):
-            opener(title, _build_library)
-        else:
-            # open_in_workspace not wired on this build — fall back
-            # to a hand-rolled Toplevel matching the pre-8.117.18
-            # geometry exactly so visual behaviour is unchanged.
-            library_window = tk.Toplevel(self.root)
-            _install_clean_close(library_window)
-            library_window.title(title)
-            library_window.geometry("1400x900")
-            library_window.minsize(1200, 800)
-            library_window.update_idletasks()
-            x = (library_window.winfo_screenwidth() - library_window.winfo_width()) // 2
-            y = (library_window.winfo_screenheight() - library_window.winfo_height()) // 2
-            library_window.geometry(f"+{x}+{y}")
-            try:
-                library_window.transient(self.root)
-            except Exception:
-                pass
-            _build_library(library_window)
         print(_t("academic_launchers.success.library_opened"))
     except Exception as e:
         messagebox.showerror(_t("academic_launchers.errors.title"),
