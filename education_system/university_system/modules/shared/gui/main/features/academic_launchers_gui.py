@@ -27,6 +27,51 @@ def _apply_academic_context(window, parent_app):
     return ctx
 
 
+def _apply_library_inbound_context(library_gui, ctx):
+    """Route inbound academic context to the right Library tab.
+
+    Called ~50ms after LibraryGUI construction (so its base widgets
+    have finished laying out). Reading-list-shaped context goes to the
+    Reading Lists tab; book-shaped context (from University Shop and
+    similar) goes to the All Books tab with the search box pre-filled.
+    Mixed context is fine — both branches run independently."""
+    if not ctx:
+        return
+    if ctx.get("reading_list_id") or ctx.get("course_id") or ctx.get("course_code"):
+        _open_library_reading_lists(library_gui, ctx)
+    if ctx.get("book_title") or ctx.get("isbn") or ctx.get("book_id"):
+        _open_library_books_with_search(library_gui, ctx)
+
+
+def _open_library_books_with_search(library_gui, ctx):
+    """Open the All Books tab and run a search on the supplied title /
+    ISBN / book_id. Used by the Shop → Library contextual jump."""
+    try:
+        show = getattr(library_gui, "show_all_books", None)
+        if not callable(show):
+            logger.debug("LibraryGUI has no show_all_books; skipping books-tab jump")
+            return
+        show()
+    except Exception:
+        logger.exception("show_all_books failed during context jump")
+        return
+
+    try:
+        var = getattr(library_gui, "book_search_var", None)
+        if var is None:
+            return
+        term = (ctx.get("book_title") or ctx.get("isbn")
+                or ctx.get("book_id"))
+        if not term:
+            return
+        var.set(str(term))
+        do_search = getattr(library_gui, "search_books_table", None)
+        if callable(do_search):
+            do_search()
+    except Exception:
+        logger.exception("books-tab search prefill failed")
+
+
 def _open_library_reading_lists(library_gui, ctx):
     """Navigate a freshly-opened LibraryGUI to its Reading Lists tab and,
     if a reading_list_id was supplied, double-click into that list.
@@ -173,18 +218,18 @@ def show_library_management(self):
             elif hasattr(library_gui, 'auth'):
                 library_gui.auth = self.auth
 
-            # Inbound contextual jump (e.g. Course Mgmt → Library reading
-            # lists for course X). If the right-click that brought the
-            # user here carried a reading_list_id / course_id /
-            # course_code, navigate to the Reading Lists tab and let it
-            # filter to that scope.
-            if ctx and (ctx.get("reading_list_id")
-                        or ctx.get("course_id")
-                        or ctx.get("course_code")):
+            # Inbound contextual jump. If the right-click that brought
+            # the user here carried:
+            #   - reading_list_id / course_id / course_code →
+            #     navigate to the Reading Lists tab.
+            #   - book_id / book_title / isbn (e.g. from the University
+            #     Shop's "Check availability in Library") → navigate to
+            #     the All Books tab and pre-populate the search box.
+            if ctx:
                 try:
                     library_window.after(
                         50,
-                        lambda g=library_gui, c=ctx: _open_library_reading_lists(g, c),
+                        lambda g=library_gui, c=ctx: _apply_library_inbound_context(g, c),
                     )
                 except Exception:
                     logger.exception("Library context navigation failed")

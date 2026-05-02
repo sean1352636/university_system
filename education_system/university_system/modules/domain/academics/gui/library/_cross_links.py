@@ -18,6 +18,7 @@ destinations must already be registered in either ``_MODULES`` or
   - ``finance_mgmt``    (show_finance_management)
   - ``student_finance`` (show_student_finance_account)
   - ``course_mgmt``     (show_course_management)
+  - ``university_shop`` (show_university_shop)
 
 If the import of the link-bar module fails (e.g. running in CLI/test
 mode), every helper here degrades to a silent no-op so Library still
@@ -308,6 +309,13 @@ def overdue_menu_items(values, parent=None):
             ("🕓 View audit log for this book",
              lambda b=book_id: _jump("audit_viewer", {"book_id": str(b)})),
         )
+        shop_ctx = {"book_id": str(book_id)}
+        if title:
+            shop_ctx["book_title"] = str(title)
+        items.append(
+            ("🛒 Buy replacement in University Shop",
+             lambda c=shop_ctx: _jump("university_shop", c)),
+        )
     return items
 
 
@@ -316,9 +324,10 @@ def books_menu_items(values, parent=None):
     if not values:
         return []
     book_id = values[0] if len(values) > 0 else None
+    title = values[1] if len(values) > 1 else None
     if not book_id:
         return []
-    return [
+    items = [
         ("📚 Reading lists containing this book",
          lambda b=book_id: show_reading_lists_with_book(b, parent=parent)),
         ("🎓 Find course using this book",
@@ -326,6 +335,14 @@ def books_menu_items(values, parent=None):
         ("🕓 View audit log for this book",
          lambda b=book_id: _jump("audit_viewer", {"book_id": str(b)})),
     ]
+    shop_ctx = {"book_id": str(book_id)}
+    if title:
+        shop_ctx["book_title"] = str(title)
+    items.append(
+        ("🛒 Buy in University Shop",
+         lambda c=shop_ctx: _jump("university_shop", c)),
+    )
+    return items
 
 
 def loan_history_menu_items(values, parent=None):

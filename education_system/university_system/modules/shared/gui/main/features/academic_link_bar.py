@@ -48,6 +48,7 @@ _EXTRA_DESTINATIONS = {
     "student_finance": "show_student_finance_account",
     "audit_viewer":    "show_audit_log_viewer",
     "user_mgmt":       "show_user_management",
+    "university_shop": "show_university_shop",
 }
 
 

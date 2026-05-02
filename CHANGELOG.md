@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.9 — 2026-05-02](#81179---2026-05-02)
 - [8.117.8 — 2026-05-02](#81178---2026-05-02)
 - [8.117.7 — 2026-05-02](#81177---2026-05-02)
 - [8.117.6 — 2026-05-02](#81176---2026-05-02)
@@ -235,6 +236,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.9] — 2026-05-02
+
+### Added — Library ↔ University Shop bidirectional cross-links
+
+- **New IPC destination** ``university_shop`` added to
+  ``_EXTRA_DESTINATIONS`` in
+  ``shared/gui/main/features/academic_link_bar.py`` (mapped to
+  ``UnifiedManagementGUI.show_university_shop``). The destination
+  registry was the only thing missing — both GUIs already lived in
+  the same parent app, they just had no wiring between them.
+- **Library → Shop.** Books rows gain "🛒 Buy in University Shop";
+  overdue rows gain "🛒 Buy replacement in University Shop". Both
+  forward ``book_id`` and (when present) ``book_title`` as context.
+- **Shop ← context.** ``show_university_shop`` consumes
+  ``_last_academic_context`` via ``consume_context``, opens the product
+  browser, sets ``search_var`` to the book title / ISBN / book_id and
+  triggers ``search_products`` so the matching products surface
+  immediately. Window title gains a ``◆ <term>`` suffix.
+- **Shop → Library.** ``create_product_context_menu`` (in
+  ``shop_management_gui/product_manager.py``) gains
+  "📚 Check availability in Library", reading the selected row's Name
+  column and firing ``request_open("library", {"book_title": …})``.
+- **Library ← context expanded.** The 8.117.6 inbound handler now
+  branches via ``_apply_library_inbound_context``: reading-list-shaped
+  context (``reading_list_id`` / ``course_id`` / ``course_code``)
+  routes to the Reading Lists tab as before, and new book-shaped
+  context (``book_title`` / ``isbn`` / ``book_id``) routes to the
+  All Books tab with ``book_search_var`` pre-populated and
+  ``search_books_table`` triggered.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/features/academic_link_bar.py``
+  (register ``university_shop``),
+  ``modules/domain/academics/gui/library/_cross_links.py``
+  (Buy-in-Shop items on books + overdue),
+  ``modules/shared/gui/main/features/commerce_facilities_gui.py``
+  (consume context, prefill shop search),
+  ``modules/domain/commerce/gui/shop_management_gui/product_manager.py``
+  (Check-availability-in-Library context menu item),
+  ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  (``_apply_library_inbound_context`` dispatcher,
+  ``_open_library_books_with_search``).
 
 ---
 

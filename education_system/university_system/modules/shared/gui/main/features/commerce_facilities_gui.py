@@ -50,10 +50,25 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 logger = logging.getLogger(__name__)
 
 def show_university_shop(self):
-    """Launch the University Shop GUI in a child window"""
+    """Launch the University Shop GUI in a child window.
+
+    If a contextual right-click brought the user here (e.g. Library →
+    "Buy in University Shop"), the pending academic context dict on
+    ``self._last_academic_context`` is consumed and the shop's product
+    browser is navigated + its search box pre-populated with the book
+    title (or ISBN) so the matching products surface immediately."""
     if not self.auth.current_user:
         messagebox.showerror(_t("commerce_facilities.errors.error"), _t("commerce_facilities.errors.login_required_shop"))
         return
+
+    ctx = None
+    try:
+        from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
+            consume_context as _consume_academic_context,
+        )
+        ctx = _consume_academic_context(self)
+    except Exception:
+        logger.debug("university shop: could not consume academic context", exc_info=True)
 
     try:
         if not SHOP_GUI_AVAILABLE:
@@ -82,9 +97,55 @@ def show_university_shop(self):
         shop_gui = ShopManagementGUI(shop_window, self.auth)
         print(_t("commerce_facilities.messages.shop_opened_success"))
 
+        if ctx and (ctx.get("book_title") or ctx.get("isbn")
+                    or ctx.get("book_id")):
+            try:
+                shop_window.title(
+                    shop_window.title()
+                    + f"  ◆ {ctx.get('book_title') or ctx.get('isbn') or ctx.get('book_id')}"
+                )
+            except Exception:
+                pass
+            try:
+                shop_window.after(
+                    50,
+                    lambda g=shop_gui, c=ctx: _open_shop_with_book_context(g, c),
+                )
+            except Exception:
+                logger.exception("shop context navigation failed")
+
     except Exception as e:
         messagebox.showerror(_t("commerce_facilities.errors.error"), _t("commerce_facilities.errors.shop_open_failed").format(error=str(e)))
         print(_t("commerce_facilities.messages.shop_error").format(error=e))
+
+
+def _open_shop_with_book_context(shop_gui, ctx):
+    """Navigate a freshly-opened UniversityShopGUI to the product
+    browser and pre-fill the search box with the book title / ISBN /
+    book_id supplied by the academic context. Best-effort — if the
+    GUI doesn't expose the expected hooks the helper logs and returns."""
+    try:
+        browse = getattr(shop_gui, "show_product_browser", None) or \
+                 getattr(shop_gui, "browse_products", None)
+        if callable(browse):
+            browse()
+    except Exception:
+        logger.debug("shop context: could not open product browser", exc_info=True)
+
+    try:
+        search_var = getattr(shop_gui, "search_var", None)
+        if search_var is None:
+            return
+        term = (ctx.get("book_title") or ctx.get("isbn")
+                or ctx.get("book_id"))
+        if not term:
+            return
+        search_var.set(str(term))
+        do_search = getattr(shop_gui, "search_products", None)
+        if callable(do_search):
+            do_search()
+    except Exception:
+        logger.debug("shop context: search prefill failed", exc_info=True)
 def show_charity_shop(self):
     """Launch the Charity Shop GUI in a child window"""
     if not self.auth.current_user:

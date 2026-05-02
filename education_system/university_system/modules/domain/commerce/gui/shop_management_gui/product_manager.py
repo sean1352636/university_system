@@ -87,8 +87,42 @@ def create_product_context_menu(self):
         self.product_context_menu.add_command(label="Edit Product", command=self.edit_selected_product)
         self.product_context_menu.add_command(label="Update Stock", command=self.update_selected_stock)
 
+    # Cross-module jump: if the selected product looks like a book,
+    # offer "Check availability in Library". The handler reads the
+    # selected row's Name column and forwards it as book_title context.
+    self.product_context_menu.add_separator()
+    self.product_context_menu.add_command(
+        label="📚 Check availability in Library",
+        command=lambda: _shop_jump_to_library(self),
+    )
+
     # Bind right-click
     self.products_tree.bind('<Button-3>', self.show_product_context_menu)
+
+
+def _shop_jump_to_library(self):
+    """Read the selected products_tree row and ask the parent
+    UnifiedManagementGUI to open Library scoped to that book title.
+
+    Uses the shared ``request_open`` IPC bridge so the same code path
+    works whether the shop is running in-process (in which case the
+    parent's poller dispatches immediately) or in a subprocess (the
+    poller picks up the JSON file)."""
+    try:
+        sel = self.products_tree.selection()
+        if not sel:
+            return
+        values = self.products_tree.item(sel[0]).get("values") or []
+        # Columns: ID, Name, Category, Price, Stock, Description
+        product_name = values[1] if len(values) > 1 else None
+        if not product_name:
+            return
+        from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
+            request_open as _request_open,
+        )
+        _request_open("library", {"book_title": str(product_name)})
+    except Exception:
+        logger.debug("shop → library jump failed", exc_info=True)
 
 
 def show_manage_products(self):
