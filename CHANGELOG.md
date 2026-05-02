@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.25 — 2026-05-02](#811725---2026-05-02)
 - [8.117.24 — 2026-05-02](#811724---2026-05-02)
 - [8.117.23 — 2026-05-02](#811723---2026-05-02)
 - [8.117.22 — 2026-05-02](#811722---2026-05-02)
@@ -251,6 +252,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.25] — 2026-05-02
+
+### Fixed — ``LibraryGUI.create_menu_bar`` raised on Frame master
+
+Final ``self.master.<toplevel-only-method>`` call missed by 8.117.22
+and 8.117.24. ``create_menu_bar`` did::
+
+    menubar = tk.Menu(self.master)
+    self.master.config(menu=menubar)
+
+The ``-menu`` config option only exists on toplevel windows
+(``Tk`` / ``Toplevel``); frames have no menu-bar slot. After
+8.117.18 the Library workspace tab handed a ``Frame`` to
+``LibraryGUI``, and ``master.config(menu=...)`` raised
+``unknown option "-menu"``.
+
+Short-circuited ``create_menu_bar`` early when
+``hasattr(self.master, 'wm_state')`` is False — same Toplevel
+discriminator the maximisation block uses. The menu items are all
+reachable through the GUI itself and through the right-click
+cross-link menus added in 8.117.6+, so skipping the bar is
+functionally fine.
+
+Audited every remaining ``self.master.<method>`` call in
+``library/base.py`` to head off another whack-a-mole iteration:
+
+- ``title`` / first ``geometry`` — guarded in 8.117.22.
+- ``state('zoomed')`` + maximisation fallback ``geometry`` —
+  guarded in 8.117.24.
+- ``protocol(WM_DELETE_WINDOW, ...)`` — guarded in 8.117.24.
+- ``config(menu=...)`` — guarded in this commit.
+- ``bind('<Destroy>', ...)`` — works on ``Frame`` natively, no
+  guard needed.
+
+That should be the complete set. The same pattern (gate by
+``hasattr(self.master, 'wm_state')`` or ``isinstance(self.master,
+(tk.Tk, tk.Toplevel))``) applies to any other launcher migrated to
+the workspace pattern from 8.117.18 in future commits.
+
+#### Files
+
+- Modified: ``modules/domain/academics/gui/library/base.py``
+  (``create_menu_bar`` early return when master isn't a toplevel).
 
 ---
 

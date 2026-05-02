@@ -386,7 +386,18 @@ class LibraryGUI:
         self.initialize_main_content()
 
     def create_menu_bar(self):
-        """Create the application menu bar with role-based access"""
+        """Create the application menu bar with role-based access.
+
+        Tk only renders a menu bar attached to a toplevel window
+        (``Tk`` or ``Toplevel``); frames have no menu-bar slot so
+        ``master.config(menu=...)`` raises ``unknown option "-menu"``.
+        After 8.117.18 ``master`` can be a workspace ``Frame``;
+        short-circuit early in that case — the menu items are all
+        reachable through the GUI itself (and through the right-click
+        cross-link menus added in 8.117.6+), so skipping the bar is
+        functionally fine."""
+        if not hasattr(self.master, 'wm_state'):
+            return
         menubar = tk.Menu(self.master)
         self.master.config(menu=menubar)
 
