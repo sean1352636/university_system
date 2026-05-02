@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.10 — 2026-05-02](#811710---2026-05-02)
 - [8.117.9 — 2026-05-02](#81179---2026-05-02)
 - [8.117.8 — 2026-05-02](#81178---2026-05-02)
 - [8.117.7 — 2026-05-02](#81177---2026-05-02)
@@ -236,6 +237,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.10] — 2026-05-02
+
+### Added — Library cross-links to Textbook Exchange + Student Marketplace
+
+- Two new IPC destinations registered in
+  ``shared/gui/main/features/academic_link_bar.py``:
+  - ``textbook_store`` → ``show_textbook_store_gui``
+  - ``marketplace`` → ``show_marketplace_gui``
+  Both already had parent ``show_*`` handlers; the registry was the
+  only thing missing.
+- **Library Books rows** (``_cross_links.books_menu_items``) gain
+  "📖 Find used in Textbook Exchange" and
+  "🤝 Find on Student Marketplace" alongside the existing
+  "🛒 Buy in University Shop". Forwards ``book_id`` + ``book_title``.
+- **Overdue rows** (``overdue_menu_items``) gain matching
+  "Find used replacement" / "Find replacement on Marketplace" items so
+  a student who's lost a book can compare new / used / peer-to-peer in
+  one right-click.
+- Both ``show_textbook_store_gui`` and ``show_marketplace_gui``
+  consume ``_last_academic_context`` via a new shared helper
+  ``_consume_library_book_context``. The marketplace's ``search_var``
+  + ``perform_search`` is pre-filled; the textbook store's plain
+  ``search_entry`` (no StringVar) is populated via
+  ``entry.delete/insert`` and ``_search_textbooks`` is triggered. The
+  user lands on a filtered result set, not an empty browse view.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/features/academic_link_bar.py``
+  (register two new destinations),
+  ``modules/domain/academics/gui/library/_cross_links.py``
+  (Marketplace + Textbook Exchange items on books + overdue),
+  ``modules/shared/gui/main/features/student_success_gui.py``
+  (consume context, prefill search in both GUIs).
 
 ---
 

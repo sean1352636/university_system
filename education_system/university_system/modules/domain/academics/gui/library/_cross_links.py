@@ -19,6 +19,8 @@ destinations must already be registered in either ``_MODULES`` or
   - ``student_finance`` (show_student_finance_account)
   - ``course_mgmt``     (show_course_management)
   - ``university_shop`` (show_university_shop)
+  - ``textbook_store``  (show_textbook_store_gui)
+  - ``marketplace``     (show_marketplace_gui)
 
 If the import of the link-bar module fails (e.g. running in CLI/test
 mode), every helper here degrades to a silent no-op so Library still
@@ -316,6 +318,14 @@ def overdue_menu_items(values, parent=None):
             ("🛒 Buy replacement in University Shop",
              lambda c=shop_ctx: _jump("university_shop", c)),
         )
+        items.append(
+            ("📖 Find used replacement (Textbook Exchange)",
+             lambda c=shop_ctx: _jump("textbook_store", c)),
+        )
+        items.append(
+            ("🤝 Find replacement on Student Marketplace",
+             lambda c=shop_ctx: _jump("marketplace", c)),
+        )
     return items
 
 
@@ -341,6 +351,14 @@ def books_menu_items(values, parent=None):
     items.append(
         ("🛒 Buy in University Shop",
          lambda c=shop_ctx: _jump("university_shop", c)),
+    )
+    items.append(
+        ("📖 Find used in Textbook Exchange",
+         lambda c=shop_ctx: _jump("textbook_store", c)),
+    )
+    items.append(
+        ("🤝 Find on Student Marketplace",
+         lambda c=shop_ctx: _jump("marketplace", c)),
     )
     return items
 

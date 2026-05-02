@@ -194,16 +194,56 @@ def show_lost_found_gui(self):
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Lost & Found", error=str(e)))
 
 def show_marketplace_gui(self):
-    """Launch Student Marketplace GUI"""
+    """Launch Student Marketplace GUI.
+
+    If a contextual right-click brought the user here (e.g. Library →
+    "Find on Student Marketplace"), the academic context dict is
+    consumed and the marketplace's ``search_var`` is pre-filled with
+    the book title / ISBN before ``perform_search`` runs."""
+    ctx = _consume_library_book_context(self)
     try:
         from education_system.university_system.modules.domain.commerce.marketplace.gui.marketplace_gui import MarketplaceGUI
         gui = MarketplaceGUI(parent=self.root, auth=self.auth)
+        _prefill_marketplace_search(gui, ctx)
     except ImportError as e:
         logger.error(f"Failed to import Student Marketplace GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Student Marketplace", error=str(e)))
     except Exception as e:
         logger.error(f"Error launching Student Marketplace GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Student Marketplace", error=str(e)))
+
+
+def _consume_library_book_context(parent_app):
+    """Consume the pending academic context if it carries a book-shaped
+    payload (book_title / isbn / book_id). Returns the search term, or
+    None. Always clears the parent's pending context so later jumps are
+    not contaminated."""
+    try:
+        from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
+            consume_context as _consume,
+        )
+        ctx = _consume(parent_app) or {}
+    except Exception:
+        return None
+    return (ctx.get("book_title") or ctx.get("isbn")
+            or ctx.get("book_id") or None)
+
+
+def _prefill_marketplace_search(gui, term):
+    """If a search term is supplied, drop it into the Marketplace's
+    ``search_var`` and trigger ``perform_search``. Best-effort."""
+    if not term:
+        return
+    try:
+        var = getattr(gui, "search_var", None)
+        if var is None:
+            return
+        var.set(str(term))
+        do_search = getattr(gui, "perform_search", None)
+        if callable(do_search):
+            do_search()
+    except Exception:
+        logger.debug("marketplace prefill failed", exc_info=True)
 
 def show_wellness_hub_gui(self):
     """Launch Wellness Hub GUI"""
@@ -358,16 +398,45 @@ def show_printing_services_gui(self):
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Printing Services", error=str(e)))
 
 def show_textbook_store_gui(self):
-    """Launch Textbook & Course Materials GUI"""
+    """Launch Textbook & Course Materials GUI.
+
+    If a contextual right-click brought the user here, the search box
+    is pre-filled with the book title / ISBN and ``_search_textbooks``
+    is triggered so the matching exchange listings surface
+    immediately."""
+    term = _consume_library_book_context(self)
     try:
         from education_system.university_system.modules.domain.commerce.textbooks.gui.textbook_gui import TextbookStoreGUI
         gui = TextbookStoreGUI(parent=self.root)
+        _prefill_textbook_search(gui, term)
     except ImportError as e:
         logger.error(f"Failed to import Textbook Store GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Textbook Store", error=str(e)))
     except Exception as e:
         logger.error(f"Error launching Textbook Store GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Textbook Store", error=str(e)))
+
+
+def _prefill_textbook_search(gui, term):
+    """Drop the search term into the textbook store's search Entry
+    (which is a plain ``ttk.Entry``, not backed by a StringVar) and
+    trigger ``_search_textbooks``."""
+    if not term:
+        return
+    try:
+        entry = getattr(gui, "search_entry", None)
+        if entry is None:
+            return
+        try:
+            entry.delete(0, "end")
+            entry.insert(0, str(term))
+        except Exception:
+            return
+        do_search = getattr(gui, "_search_textbooks", None)
+        if callable(do_search):
+            do_search()
+    except Exception:
+        logger.debug("textbook store prefill failed", exc_info=True)
 
 def show_ai_features_gui(self):
     """Launch the Ai Features GUI"""

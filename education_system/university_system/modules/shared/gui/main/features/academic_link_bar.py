@@ -49,6 +49,8 @@ _EXTRA_DESTINATIONS = {
     "audit_viewer":    "show_audit_log_viewer",
     "user_mgmt":       "show_user_management",
     "university_shop": "show_university_shop",
+    "textbook_store":  "show_textbook_store_gui",
+    "marketplace":     "show_marketplace_gui",
 }
 
 
