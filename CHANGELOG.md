@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.13 — 2026-05-02](#811713---2026-05-02)
 - [8.117.12 — 2026-05-02](#811712---2026-05-02)
 - [8.117.11 — 2026-05-02](#811711---2026-05-02)
 - [8.117.10 — 2026-05-02](#811710---2026-05-02)
@@ -239,6 +240,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.13] — 2026-05-02
+
+### Added — Loyalty + Careers snapshots, Document Manager destination
+
+Closes the last two pending items from the library cross-link gap map:
+``Loyalty / Careers bus-event GUI surfaces`` and
+``Document Manager (reading-list attachments)``.
+
+#### Loyalty + Careers snapshots (in-process popups)
+
+- ``services.loyalty_bus`` and ``services.careers_bus`` have rich
+  public APIs but no GUI launchers of their own. Building full
+  launchers would be feature-sized work; the right minimum surface for
+  a Library cross-link is a read-only snapshot popup that runs off the
+  bus directly.
+- ``_cross_links.show_loyalty_snapshot(user_id, parent)`` reads
+  ``points_balance`` + ``tier`` + ``list_recent`` and renders a small
+  Toplevel: header shows the tier and balance, treeview shows the 25
+  most recent ``loyalty_ledger`` entries.
+- ``_cross_links.show_careers_snapshot(user_id, parent)`` reads
+  ``list_engagements`` and renders engagements (kind / role / employer
+  / dates / hours_logged-of-required / status).
+- Wired into the menu builders:
+  - **Loan history rows** gain "⭐ View loyalty snapshot" and
+    "💼 View careers engagements".
+  - **Fines rows** gain "⭐ View loyalty snapshot".
+- Verified end-to-end against the live DB: S12345 returns
+  ``points_balance() == 20`` so the popup is reading real data, not
+  empty schema.
+
+#### Document Manager destination
+
+- New IPC destination ``document_manager`` in
+  ``_EXTRA_DESTINATIONS`` (mapped to the existing
+  ``UnifiedManagementGUI.show_document_manager``).
+- Library Reading Lists tab's right-click context menu gains
+  "📁 Open document attachments". A new module-level helper
+  ``_reading_list_jump_to_documents`` reads the selected row's
+  ``ID`` + ``Name`` columns and fires
+  ``request_open("document_manager", {reading_list_id, list_name})``.
+- ``show_document_manager`` now consumes ``_last_academic_context``
+  via ``consume_context`` and surfaces the list name (or fall-back to
+  reading_list_id / course_code / course_id) as a ``◆ <tag>`` suffix
+  in the window title. The Document Manager itself doesn't take a
+  structured filter for ``reading_list_id`` today — bridging
+  ``reading_list_items`` to ``document_attachments`` would be a
+  schema-level change — so the title tag tells the user which list
+  scoped them there and they search manually from that hint.
+
+#### Files
+
+- Modified:
+  ``modules/domain/academics/gui/library/_cross_links.py``
+  (two new snapshot helpers + menu items on loan history + fines,
+  module docstring updated to surface the actions),
+  ``modules/domain/academics/gui/library/reading_lists.py``
+  (new context-menu item + ``_reading_list_jump_to_documents``),
+  ``modules/shared/gui/main/features/academic_link_bar.py``
+  (register ``document_manager`` destination),
+  ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  (``show_document_manager`` consumes context + adds title tag).
+
+#### Gap map status
+
+The library cross-link gap map is now closed, with two deliberate
+non-additions documented in 8.117.11 and 8.117.12 (Building
+Management, Disciplinary Portal — both subprocess-dispatched, both
+addressed via in-process actions where useful).
 
 ---
 

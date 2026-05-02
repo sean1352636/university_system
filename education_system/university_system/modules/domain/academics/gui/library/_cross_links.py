@@ -23,14 +23,22 @@ destinations must already be registered in either ``_MODULES`` or
   - ``marketplace``     (show_marketplace_gui)
   - ``printing``        (show_printing_services_gui)
   - ``room_booking``    (show_study_room_booking_gui)
+  - ``document_manager`` (show_document_manager)
 
-In addition to navigation jumps the fines menu also exposes an
-**action**: :func:`open_disciplinary_case_for_loan` raises a
-disciplinary record via ``services.cases_bus.open_case`` directly
-in-process. The Disciplinary Portal itself is a subprocess launcher
-so we can't pass academic context across the process boundary — the
-in-process action sidesteps that by writing the row through the same
-unified case-spine the portal reads from.
+In addition to navigation jumps the menu also exposes **actions** that
+write through the cross-domain buses directly in-process:
+
+  - :func:`open_disciplinary_case_for_loan` — raises a disciplinary
+    record via ``services.cases_bus.open_case``. The Disciplinary
+    Portal itself is a subprocess launcher so we can't pass academic
+    context across the process boundary; the in-process action
+    sidesteps that by writing through the same unified case-spine the
+    portal reads from.
+  - :func:`show_loyalty_snapshot` and :func:`show_careers_snapshot` —
+    read-only popups built directly off the loyalty / careers buses.
+    Neither bus has a full GUI launcher today; the snapshot is the
+    minimum useful surface and stays in-process so it can render
+    immediately from a right-click without spinning up a new window.
 
 If the import of the link-bar module fails (e.g. running in CLI/test
 mode), every helper here degrades to a silent no-op so Library still
@@ -316,6 +324,176 @@ def open_disciplinary_case_for_loan(user_id, *, loan_id=None, book_title=None,
     ttk.Button(bar, text="Cancel", command=win.destroy).pack(side="right")
 
 
+def show_loyalty_snapshot(user_id, parent=None):
+    """Read-only popup showing a student's loyalty balance, tier, and
+    the most recent ``loyalty_ledger`` entries. Driven entirely by
+    ``services.loyalty_bus`` — no schema or table assumptions here.
+
+    The loyalty bus has no GUI launcher of its own today; this popup
+    is the minimum useful surface and stays library-local so it
+    renders without a window-creation lag from a right-click."""
+    if not user_id:
+        return
+    import tkinter as tk
+    from tkinter import ttk, messagebox
+
+    try:
+        from education_system.university_system.modules.services.loyalty_bus import (
+            points_balance, tier, list_recent,
+        )
+    except Exception:
+        logger.exception("loyalty_bus unavailable")
+        messagebox.showerror(
+            "Loyalty unavailable",
+            "The loyalty bus could not be loaded.", parent=parent)
+        return
+
+    try:
+        balance = int(points_balance(user_id))
+        tier_name = tier(user_id) or "Bronze"
+        recent = list_recent(user_id, limit=25) or []
+    except Exception:
+        logger.exception("loyalty snapshot lookup failed")
+        balance, tier_name, recent = 0, "Bronze", []
+
+    win = tk.Toplevel(parent)
+    win.title(f"Loyalty snapshot — student {user_id}")
+    win.geometry("680x420")
+    if parent is not None:
+        try:
+            win.transient(parent)
+        except Exception:
+            pass
+
+    header = tk.Frame(win, bg="#2c3e50", height=56)
+    header.pack(fill="x")
+    header.pack_propagate(False)
+    tk.Label(header,
+             text=f"⭐  {tier_name} tier · {balance:,} points",
+             font=("Arial", 13, "bold"),
+             bg="#2c3e50", fg="white").pack(side="left", padx=14, pady=12)
+    tk.Label(header, text=f"Student {user_id}",
+             font=("Arial", 10), bg="#2c3e50",
+             fg="#bdc3c7").pack(side="right", padx=14)
+
+    body = ttk.Frame(win, padding=8)
+    body.pack(fill="both", expand=True)
+
+    cols = ("entry", "source", "points", "reference", "description", "when")
+    tree = ttk.Treeview(body, columns=cols, show="headings", height=14)
+    for c, w in zip(cols, (60, 110, 70, 110, 220, 120)):
+        tree.heading(c, text=c.replace("_", " ").title())
+        tree.column(c, width=w, anchor="w")
+    tree.pack(side="left", fill="both", expand=True)
+    sb = ttk.Scrollbar(body, orient="vertical", command=tree.yview)
+    sb.pack(side="right", fill="y")
+    tree.configure(yscrollcommand=sb.set)
+
+    if recent:
+        for r in recent:
+            tree.insert("", "end", values=(
+                r.get("entry_id", ""),
+                r.get("source", "") or "",
+                r.get("points", "") or 0,
+                r.get("reference_id", "") or "",
+                (r.get("description") or "")[:60],
+                (r.get("created_at") or "")[:19],
+            ))
+    else:
+        tree.insert("", "end", values=(
+            "—", "(no ledger entries yet)", 0, "", "", ""))
+
+    ttk.Button(win, text="Close",
+               command=win.destroy).pack(pady=(0, 10))
+
+
+def show_careers_snapshot(user_id, parent=None):
+    """Read-only popup listing a student's careers engagements
+    (apprenticeships, placements, internships, …) sourced from
+    ``services.careers_bus.list_engagements``. Same rationale as the
+    loyalty snapshot: no full GUI launcher exists yet, this is the
+    minimum useful surface."""
+    if not user_id:
+        return
+    import tkinter as tk
+    from tkinter import ttk, messagebox
+
+    try:
+        from education_system.university_system.modules.services.careers_bus import (
+            list_engagements,
+        )
+    except Exception:
+        logger.exception("careers_bus unavailable")
+        messagebox.showerror(
+            "Careers unavailable",
+            "The careers bus could not be loaded.", parent=parent)
+        return
+
+    try:
+        rows = list_engagements(student_id=user_id) or []
+    except Exception:
+        logger.exception("careers snapshot lookup failed")
+        rows = []
+
+    win = tk.Toplevel(parent)
+    win.title(f"Careers snapshot — student {user_id}")
+    win.geometry("820x420")
+    if parent is not None:
+        try:
+            win.transient(parent)
+        except Exception:
+            pass
+
+    header = tk.Frame(win, bg="#2c3e50", height=48)
+    header.pack(fill="x")
+    header.pack_propagate(False)
+    active = sum(1 for r in rows if (r.get("status") or "") == "active")
+    tk.Label(header,
+             text=f"💼  {len(rows)} engagement(s) · {active} active",
+             font=("Arial", 12, "bold"),
+             bg="#2c3e50", fg="white").pack(side="left", padx=14, pady=10)
+    tk.Label(header, text=f"Student {user_id}",
+             font=("Arial", 10), bg="#2c3e50",
+             fg="#bdc3c7").pack(side="right", padx=14)
+
+    body = ttk.Frame(win, padding=8)
+    body.pack(fill="both", expand=True)
+
+    cols = ("id", "kind", "role", "employer", "started", "ended",
+            "hours", "status")
+    tree = ttk.Treeview(body, columns=cols, show="headings", height=14)
+    widths = (60, 110, 160, 80, 100, 100, 90, 80)
+    for c, w in zip(cols, widths):
+        tree.heading(c, text=c.replace("_", " ").title())
+        tree.column(c, width=w, anchor="w")
+    tree.pack(side="left", fill="both", expand=True)
+    sb = ttk.Scrollbar(body, orient="vertical", command=tree.yview)
+    sb.pack(side="right", fill="y")
+    tree.configure(yscrollcommand=sb.set)
+
+    if rows:
+        for r in rows:
+            logged = r.get("hours_logged") or 0
+            req = r.get("hours_required") or 0
+            hours = f"{float(logged):.0f}/{float(req):.0f}" if req else f"{float(logged):.0f}"
+            tree.insert("", "end", values=(
+                r.get("engagement_id", ""),
+                r.get("kind", "") or "",
+                (r.get("role") or "")[:40],
+                r.get("employer_id", "") or "",
+                (r.get("started_on") or "")[:10],
+                (r.get("ended_on") or "")[:10],
+                hours,
+                r.get("status", "") or "",
+            ))
+    else:
+        tree.insert("", "end", values=(
+            "—", "(no engagements logged)", "", "", "", "", "", ""))
+
+    ttk.Button(win, text="Close",
+               command=win.destroy).pack(pady=(0, 10))
+
+
 def show_reading_lists_with_book(book_id, parent=None):
     """Pop a window listing every reading list that contains *book_id*.
     Self-contained — runs against ``student_records.db`` directly."""
@@ -548,6 +726,15 @@ def loan_history_menu_items(values, parent=None):
             ("🕓 View loan audit log",
              lambda l=loan_id: _jump("audit_viewer", {"loan_id": str(l)})),
         )
+    if user_id:
+        items.append(
+            ("⭐ View loyalty snapshot",
+             lambda u=user_id: show_loyalty_snapshot(u, parent=parent)),
+        )
+        items.append(
+            ("💼 View careers engagements",
+             lambda u=user_id: show_careers_snapshot(u, parent=parent)),
+        )
     return items
 
 
@@ -630,6 +817,10 @@ def fines_menu_items(values, parent=None):
              lambda l=loan_id: _jump("audit_viewer", {"loan_id": str(l)})),
         )
     if user_id:
+        items.append(
+            ("⭐ View loyalty snapshot",
+             lambda u=user_id: show_loyalty_snapshot(u, parent=parent)),
+        )
         items.append(
             ("🚨 Open disciplinary case (escalate)",
              lambda u=user_id, l=loan_id, t=book_title,

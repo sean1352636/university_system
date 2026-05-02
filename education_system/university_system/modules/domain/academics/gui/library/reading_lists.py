@@ -174,8 +174,39 @@ def create_reading_lists_context_menu(self):
     self.reading_lists_context_menu.add_separator()
     self.reading_lists_context_menu.add_command(label="Share List", command=self.share_reading_list)
     self.reading_lists_context_menu.add_command(label="Delete List", command=self.delete_reading_list)
+    self.reading_lists_context_menu.add_separator()
+    self.reading_lists_context_menu.add_command(
+        label="📁 Open document attachments",
+        command=lambda: _reading_list_jump_to_documents(self),
+    )
 
     self.reading_lists_tree.bind('<Button-3>', self.show_reading_lists_context_menu)
+
+
+def _reading_list_jump_to_documents(self):
+    """Read the selected reading_lists_tree row (columns:
+    ID, Name, Description, Items, Type, Created) and ask the parent
+    UnifiedManagementGUI to open Document Manager scoped to that
+    list. Best-effort — silent on failure so a missing selection or
+    unavailable IPC bridge doesn't break the menu."""
+    try:
+        sel = self.reading_lists_tree.selection()
+        if not sel:
+            return
+        values = self.reading_lists_tree.item(sel[0]).get("values") or []
+        if not values:
+            return
+        ctx = {}
+        if len(values) > 0 and values[0]:
+            ctx["reading_list_id"] = str(values[0])
+        if len(values) > 1 and values[1]:
+            ctx["list_name"] = str(values[1])
+        from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
+            request_open as _request_open,
+        )
+        _request_open("document_manager", ctx)
+    except Exception:
+        pass
 
 def show_reading_lists_context_menu(self, event):
     """Show context menu for reading lists"""

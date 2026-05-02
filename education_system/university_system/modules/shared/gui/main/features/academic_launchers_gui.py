@@ -866,7 +866,15 @@ def show_lms_gui(self):
         print(f"LMS GUI error: {e}")
 
 def show_document_manager(self):
-    """Open the Document Management GUI (with fallbacks)."""
+    """Open the Document Management GUI (with fallbacks).
+
+    If a contextual right-click brought the user here (e.g. Library
+    Reading Lists → "Open document attachments"), the academic context
+    dict is consumed and surfaced as a title-bar suffix. The Document
+    Manager itself doesn't currently take a structured filter for
+    reading_list_id — that would need a schema-level link between
+    reading_list_items and the document_attachments table — so for now
+    the user sees what scoped them here and can search manually."""
     if not self.auth.current_user:
         messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.login_required_document_manager"))
         return
@@ -884,10 +892,27 @@ def show_document_manager(self):
         messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.no_permission_document_manager"))
         return
 
+    ctx = None
+    try:
+        from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
+            consume_context as _consume,
+        )
+        ctx = _consume(self)
+    except Exception:
+        logger.debug("document manager: could not consume academic context", exc_info=True)
+
     try:
         if DOCUMENT_MANAGER_GUI_AVAILABLE and DocumentManagerGUI:
             win = tk.Toplevel(self.root)
             win.title(_t("extras_gui.titles.document_manager"))
+            if ctx:
+                tag = ctx.get("list_name") or ctx.get("reading_list_id") \
+                    or ctx.get("course_code") or ctx.get("course_id")
+                if tag:
+                    try:
+                        win.title(win.title() + f"  ◆ {tag}")
+                    except Exception:
+                        pass
             win.geometry("1400x900")
             try:
                 win.transient(self.root)
