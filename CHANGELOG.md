@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.31 — 2026-05-02](#811731---2026-05-02)
 - [8.117.30 — 2026-05-02](#811730---2026-05-02)
 - [8.117.29 — 2026-05-02](#811729---2026-05-02)
 - [8.117.28 — 2026-05-02](#811728---2026-05-02)
@@ -257,6 +258,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.31] — 2026-05-02
+
+### Changed — Assignment dashboard topbar replaces the button-bar wall
+
+User report: the Assignment dashboard was overcrowded with buttons.
+Two label-and-buttons rows packed directly under the title — "Open
+sibling academic GUIs" (4 buttons: Grade / Course / Module
+Scheduling / Exam) and "Cross-domain reports" (3 buttons: Module
+Timeline / At-Risk / Instructor Workload). The top third of the
+panel was just a wall of buttons before the user reached the stats
+cards.
+
+#### Reshape
+
+The two button rows are gone. Replaced with a slim topbar at the
+top of the content area containing two compact buttons:
+
+- **Cross-domain ▾** — ``ttk.Menubutton`` with a dropdown grouped by
+  separator:
+  - 🎓 Grade Management
+  - 📚 Course Management
+  - 🗓 Module Scheduling
+  - 📝 Exam Scheduler
+  - ──────
+  - 📈 Module Timeline
+  - ⚠ At-Risk (unified)
+  - 👥 Instructor Workload
+
+  Same commands the old buttons fired; same staff/admin/instructor/
+  faculty role gate.
+- **About** — opens a small ``messagebox.showinfo`` describing what
+  the Assignment System does and which sibling modules it integrates
+  with. Quick orientation for users who land on the dashboard from a
+  cross-domain jump.
+
+A horizontal ``Separator`` sits between the topbar and the title so
+the bar feels visually attached to the window chrome rather than to
+the content.
+
+#### What's unchanged
+
+- The Parent and Integrations role-specific rows below the title —
+  those are pointers into the same module (parent's children's
+  assignments view, integrations activity panel), not cross-domain
+  jumps. Different visual category, kept separate.
+- Stats cards and recent-activity treeview render the same as
+  before, just with more breathing room above them.
+
+#### Verified
+
+- All seven dropdown items resolve and fire the correct
+  ``gui.open_*`` / ``gui.show_*`` methods in order.
+- Separator slot is present between the sibling-GUI group and the
+  reports group.
+- The dashboard module still imports cleanly.
+
+#### Files
+
+- Modified:
+  ``modules/domain/academics/gui/assignment_system/dashboard.py``
+  (``show_dashboard`` reshape; new ``_build_cross_domain_menubutton``
+  and ``_show_about_dialog`` helpers).
 
 ---
 

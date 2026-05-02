@@ -34,18 +34,56 @@ class DashboardManager:
         self.style = gui.style
 
     def show_dashboard(self):
-        """Show the main dashboard"""
+        """Show the main dashboard.
+
+        Pre-8.117.31 the dashboard packed two label-and-buttons rows
+        directly under the title — "Open sibling academic GUIs" (4
+        buttons) and "Cross-domain reports" (3 buttons) — so the top
+        third of the panel was just a wall of buttons before the
+        stats cards. Reshaped to a slim topbar with two menu buttons:
+
+        - **Cross-domain ▾** — drops down to the 4 sibling academic
+          GUIs (Grade / Course / Module Scheduling / Exam) and the
+          3 cross-domain reports (Module Timeline / At-Risk /
+          Instructor Workload), grouped with a separator.
+        - **About** — small info dialog about the Assignment System.
+
+        The Parent and Integrations rows below are unchanged — those
+        are role-specific affordances pointing into the same module,
+        not cross-domain jumps.
+        """
         self.gui.layout.clear_content_area()
 
-        # Dashboard title
-        title = ttk.Label(self.gui.layout.content_area, text=_t("assignments.dashboard"), style='Title.TLabel')
-        title.pack(anchor='w', pady=(0, 20))
-
-        # Parent role gets a shortcut into the children-assignments view
         try:
             role = (self.auth.current_user or {}).get('role', '').lower()
         except Exception:
             role = ''
+
+        # ── Topbar ────────────────────────────────────────────────
+        topbar = ttk.Frame(self.gui.layout.content_area)
+        topbar.pack(fill='x', pady=(0, 6))
+
+        # Cross-domain dropdown is staff/admin/faculty only — same
+        # gate the old grade_bar + cross_bar used.
+        if role in ('admin', 'staff', 'instructor', 'faculty'):
+            self._build_cross_domain_menubutton(topbar).pack(
+                side='left', padx=(0, 6))
+
+        ttk.Button(
+            topbar, text="About",
+            command=self._show_about_dialog,
+        ).pack(side='right')
+
+        ttk.Separator(self.gui.layout.content_area,
+                      orient='horizontal').pack(fill='x', pady=(0, 12))
+
+        # ── Title ─────────────────────────────────────────────────
+        title = ttk.Label(self.gui.layout.content_area,
+                          text=_t("assignments.dashboard"),
+                          style='Title.TLabel')
+        title.pack(anchor='w', pady=(0, 20))
+
+        # ── Role-specific affordances (unchanged) ─────────────────
         if role == 'parent':
             parent_bar = ttk.Frame(self.gui.layout.content_area)
             parent_bar.pack(fill='x', pady=(0, 15))
@@ -59,7 +97,6 @@ class DashboardManager:
                 command=self.gui.show_parent_assignments_view,
             ).pack(side='right')
 
-        # Staff/admin shortcut into the cross-domain activity panel
         if role in ('admin', 'staff', 'instructor', 'faculty'):
             integ_bar = ttk.Frame(self.gui.layout.content_area)
             integ_bar.pack(fill='x', pady=(0, 15))
@@ -76,51 +113,82 @@ class DashboardManager:
                 command=self.gui.show_integrations_activity,
             ).pack(side='right')
 
-            grade_bar = ttk.Frame(self.gui.layout.content_area)
-            grade_bar.pack(fill='x', pady=(0, 15))
-            ttk.Label(
-                grade_bar,
-                text="Open sibling academic GUIs (each in its own window):",
-            ).pack(side='left')
-            ttk.Button(
-                grade_bar, text="Grade Management",
-                command=self.gui.open_grade_management,
-            ).pack(side='right', padx=(4, 0))
-            ttk.Button(
-                grade_bar, text="Course Mgmt",
-                command=self.gui.open_course_management,
-            ).pack(side='right', padx=(4, 0))
-            ttk.Button(
-                grade_bar, text="Module Scheduling",
-                command=self.gui.open_module_scheduling,
-            ).pack(side='right', padx=(4, 0))
-            ttk.Button(
-                grade_bar, text="Exam Scheduler",
-                command=self.gui.open_exam_scheduler,
-            ).pack(side='right', padx=(4, 0))
-
-            # Cross-domain reports (shared with the four sibling GUIs).
-            cross_bar = ttk.Frame(self.gui.layout.content_area)
-            cross_bar.pack(fill='x', pady=(0, 15))
-            ttk.Label(
-                cross_bar,
-                text="Cross-domain reports:",
-            ).pack(side='left')
-            ttk.Button(
-                cross_bar, text="Module Timeline",
-                command=self.gui.show_module_timeline,
-            ).pack(side='right', padx=(4, 0))
-            ttk.Button(
-                cross_bar, text="At-Risk (unified)",
-                command=self.gui.show_at_risk_unified,
-            ).pack(side='right', padx=(4, 0))
-            ttk.Button(
-                cross_bar, text="Instructor Workload",
-                command=self.gui.show_instructor_workload,
-            ).pack(side='right', padx=(4, 0))
-
         # Create dashboard content with statistics
         self.create_dashboard_widgets()
+
+    def _build_cross_domain_menubutton(self, parent):
+        """Build the "Cross-domain ▾" Menubutton + its dropdown menu.
+
+        Items split into two groups by a separator:
+          1. Sibling academic GUIs (Grade / Course / Module
+             Scheduling / Exam) — each opens its own Toplevel.
+          2. Cross-domain reports (Module Timeline / At-Risk /
+             Instructor Workload).
+
+        Wires the same commands the old button rows did, so behaviour
+        is unchanged — just compacted into a single dropdown.
+        """
+        mb = ttk.Menubutton(parent, text="Cross-domain  ▾", direction='below')
+        menu = tk.Menu(mb, tearoff=0)
+
+        # Group 1: sibling academic GUIs
+        menu.add_command(label="🎓 Grade Management",
+                         command=self.gui.open_grade_management)
+        menu.add_command(label="📚 Course Management",
+                         command=self.gui.open_course_management)
+        menu.add_command(label="🗓 Module Scheduling",
+                         command=self.gui.open_module_scheduling)
+        menu.add_command(label="📝 Exam Scheduler",
+                         command=self.gui.open_exam_scheduler)
+
+        menu.add_separator()
+
+        # Group 2: cross-domain reports
+        menu.add_command(label="📈 Module Timeline",
+                         command=self.gui.show_module_timeline)
+        menu.add_command(label="⚠ At-Risk (unified)",
+                         command=self.gui.show_at_risk_unified)
+        menu.add_command(label="👥 Instructor Workload",
+                         command=self.gui.show_instructor_workload)
+
+        mb['menu'] = menu
+        # Stash the menu on self so future extensions can add items
+        # without rebuilding the menubutton.
+        self._cross_domain_menu = menu
+        return mb
+
+    def _show_about_dialog(self):
+        """Small modal showing what the Assignment System does and
+        which sibling modules it integrates with. Not a 'help' page —
+        just a one-line orientation for users who land here from a
+        cross-domain jump and aren't sure what they're looking at."""
+        try:
+            from tkinter import messagebox
+        except Exception:
+            return
+        try:
+            messagebox.showinfo(
+                "About — Assignment System",
+                (
+                    "Assignment System\n\n"
+                    "Manages assignment creation, submission, grading,\n"
+                    "extensions, peer review, and analytics.\n\n"
+                    "Cross-domain integrations:\n"
+                    "  • Grade Management — gradebook sync\n"
+                    "  • Course / Module Scheduling — timetabling\n"
+                    "  • Exam Scheduler — summative assessments\n"
+                    "  • Library — reading-list deadlines\n"
+                    "  • Finance — late fines\n"
+                    "  • Cases — academic-integrity cases\n"
+                    "  • Calendar — due-date publishing\n\n"
+                    "Use the Cross-domain ▾ button (top-left) to open\n"
+                    "any of the four sibling academic GUIs or one of the\n"
+                    "three cross-domain reports."
+                ),
+                parent=self.root,
+            )
+        except Exception:
+            pass
 
 
     def create_dashboard_widgets(self):
