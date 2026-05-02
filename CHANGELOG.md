@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.42 — 2026-05-02](#811742---2026-05-02)
 - [8.117.41 — 2026-05-02](#811741---2026-05-02)
 - [8.117.40 — 2026-05-02](#811740---2026-05-02)
 - [8.117.39 — 2026-05-02](#811739---2026-05-02)
@@ -268,6 +269,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.42] — 2026-05-02
+
+### Fixed — Student Analytics tabs scrollable in both directions
+
+Same fix 8.117.40 applied to Student Records and 8.117.41 applied
+to System Administration, applied here to the Student Analytics
+Dashboard. Three of its six tabs (Basic Analytics / Performance /
+Advanced) used the same scrollable-canvas-pattern with the same
+two bugs:
+
+1. **Pack ordering hid the v-scrollbar.** Each tab did::
+
+       canvas.pack(side="left", fill="both", expand=True)
+       scrollbar.pack(side="right", fill="y")
+
+   The canvas with ``expand=True`` claimed the entire tab before
+   the scrollbar packed, so the scrollbar rendered at zero width.
+2. **No horizontal scrollbar at all.** Anything wider than the
+   tab got cut off on the right with no way to reach it.
+
+#### Fix
+
+- Extracted the scrollable-canvas pattern into a new
+  ``TabsMixin._make_scrollable_canvas(tab)`` helper. Returns the
+  inner Frame the caller packs widgets into. Same shape as the
+  System Admin helper (8.117.41): canvas + v + h scrollbars on
+  grid layout, inner-frame width bound to canvas width.
+- Refactored the three button-grid tabs (``create_basic_analytics_tab``,
+  ``create_performance_tab``, ``create_advanced_tab``) to call the
+  helper instead of duplicating the pattern. Each is now ~5 lines
+  shorter and the bug is fixed in one place.
+- The remaining three tabs (``create_reports_tab``,
+  ``create_utilities_tab``, ``create_output_tab``) didn't use the
+  scrollable pattern and don't need changes — Reports has a
+  two-column layout that fits naturally; Utilities is fixed-row
+  sections; Output is a single ``ScrolledText`` that handles its
+  own scrolling.
+
+#### Verified
+
+- ``tabs`` module imports cleanly.
+- Helper is bound on ``TabsMixin`` and reachable.
+- Remaining ``canvas.pack`` / ``scrollbar.pack`` references in the
+  file are inside the new helper's docstring (audit trail showing
+  the pre-fix shape) — no active code path uses the old pattern.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/student_analytics_gui/tabs.py``
+  (new ``_make_scrollable_canvas`` helper; three button-grid tabs
+  refactored to use it).
 
 ---
 

@@ -19,23 +19,63 @@ class TabsMixin:
         self.create_utilities_tab()
         self.create_output_tab()
 
+    def _make_scrollable_canvas(self, tab):
+        """Build a scrollable canvas inside *tab* and return the inner
+        Frame the caller should pack widgets into.
+
+        Same shape as 8.117.40 (Student Records) and 8.117.41 (System
+        Administration): canvas + vertical + horizontal scrollbars on
+        ``grid`` layout. Pre-8.117.42 each tab here used::
+
+            canvas.pack(side="left", fill="both", expand=True)
+            scrollbar.pack(side="right", fill="y")
+
+        Two issues that fixes:
+        1. Pack ordering — ``canvas`` with ``expand=True`` claimed
+           the entire tab before the scrollbar got a chance, so the
+           v-scrollbar rendered at zero width.
+        2. No horizontal scrollbar at all — wider content got cut
+           off on the right with no way to reach it.
+
+        The inner frame's width is bound to the canvas width so
+        left-aligned content stretches edge-to-edge instead of
+        clinging to the left when there's spare horizontal space."""
+        canvas = tk.Canvas(tab, highlightthickness=0)
+        vsb = ttk.Scrollbar(tab, orient="vertical", command=canvas.yview)
+        hsb = ttk.Scrollbar(tab, orient="horizontal", command=canvas.xview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda _e, c=canvas: c.configure(scrollregion=c.bbox("all")),
+        )
+
+        window_id = canvas.create_window(
+            (0, 0), window=scrollable_frame, anchor="nw")
+
+        # Track canvas width — when the canvas is wider than the
+        # natural inner content, stretch the inner frame to match
+        # so widgets can fill_x to the right edge.
+        canvas.bind(
+            "<Configure>",
+            lambda e, c=canvas, w=window_id, f=scrollable_frame:
+                c.itemconfig(w, width=max(e.width, f.winfo_reqwidth())),
+        )
+
+        canvas.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        canvas.grid(row=0, column=0, sticky="nsew")
+        vsb.grid(row=0, column=1, sticky="ns")
+        hsb.grid(row=1, column=0, sticky="ew")
+        tab.rowconfigure(0, weight=1)
+        tab.columnconfigure(0, weight=1)
+        return scrollable_frame
+
     def create_basic_analytics_tab(self):
         """Create basic analytics tab"""
         tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text=_t("analytics.tab_basic", default="📊 Basic Analytics"))
 
-        # Create scrollable frame
-        canvas = tk.Canvas(tab)
-        scrollbar = ttk.Scrollbar(tab, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollable_frame = self._make_scrollable_canvas(tab)
 
         # Basic analytics buttons
         basic_analyses = [
@@ -54,26 +94,12 @@ class TabsMixin:
         for i, (title, command, description) in enumerate(basic_analyses):
             self.create_analysis_button(scrollable_frame, title, command, description, i)
 
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
     def create_performance_tab(self):
         """Create performance analytics tab"""
         tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text=_t("analytics.tab_performance", default="📈 Performance"))
 
-        # Create scrollable frame
-        canvas = tk.Canvas(tab)
-        scrollbar = ttk.Scrollbar(tab, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollable_frame = self._make_scrollable_canvas(tab)
 
         performance_analyses = [
             (_t("analytics.grade_distribution", default="Grade Distribution Analysis"), self.run_grade_distribution,
@@ -89,26 +115,12 @@ class TabsMixin:
         for i, (title, command, description) in enumerate(performance_analyses):
             self.create_analysis_button(scrollable_frame, title, command, description, i)
 
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
-
     def create_advanced_tab(self):
         """Create advanced analytics tab"""
         tab = ttk.Frame(self.notebook)
         self.notebook.add(tab, text=_t("analytics.tab_advanced", default="🔬 Advanced"))
 
-        # Create scrollable frame
-        canvas = tk.Canvas(tab)
-        scrollbar = ttk.Scrollbar(tab, orient="vertical", command=canvas.yview)
-        scrollable_frame = ttk.Frame(canvas)
-
-        scrollable_frame.bind(
-            "<Configure>",
-            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-
-        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollable_frame = self._make_scrollable_canvas(tab)
 
         advanced_analyses = [
             (_t("analytics.correlation_analysis", default="Correlation Analysis"), self.run_correlations,
@@ -123,9 +135,6 @@ class TabsMixin:
 
         for i, (title, command, description) in enumerate(advanced_analyses):
             self.create_analysis_button(scrollable_frame, title, command, description, i)
-
-        canvas.pack(side="left", fill="both", expand=True)
-        scrollbar.pack(side="right", fill="y")
 
     def create_reports_tab(self):
         """Create reporting and export tab"""
