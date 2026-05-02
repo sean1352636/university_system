@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.20 — 2026-05-02](#811720---2026-05-02)
 - [8.117.19 — 2026-05-02](#811719---2026-05-02)
 - [8.117.18 — 2026-05-02](#811718---2026-05-02)
 - [8.117.17 — 2026-05-02](#811717---2026-05-02)
@@ -246,6 +247,138 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.20] — 2026-05-02
+
+### Reshaped — Main GUI layout: header / status bar / Ctrl+K / pre-login
+
+Closes items 4–10 from the 8.117.16 layout review's "real problems"
+list in one coherent reshape.
+
+#### 4. Header inconsistency
+
+- ``create_header`` was a ``LabelFrame`` titled "System Control"
+  holding [Shutdown][Logout][Switch CLI][Switch System] in a row +
+  two label rows for status. The LabelFrame chrome was visual noise.
+  Reshaped to a plain ``Frame`` (no labelled wrapper) with routine
+  actions on the left and destructive actions behind a "⏻ ▾" power
+  menubutton on the right.
+- The remaining ``bg='#2c3e50'`` instances called out in the review
+  live in **separate** portal wrappers (``parent_portal_wrapper.py``,
+  ``instructor_portal.py``, ``staff_portal.py``,
+  ``student_portal.py``) — independent windows out of scope for the
+  main-GUI reshape; not retrofitted in this commit.
+
+#### 5. Status row at top → bottom status bar
+
+- ``status_var`` and ``current_user_var`` labels removed from the
+  header. Both now live in a thin status bar at the bottom of
+  ``main_frame``, in a new ``create_status_bar`` method.
+- The bar has three regions: status (left), current user (centre),
+  system name + version (right). Plain Frame + ``Separator`` line at
+  the top — no LabelFrame chrome.
+- Status updates already use ``StringVar`` so the existing
+  ``update_status``, ``show_main_interface``, etc. flows continue to
+  work without changes.
+
+#### 6. Shutdown adjacent to Logout (muscle-memory hazard)
+
+- Shutdown removed from the primary-button row. Now sits inside a
+  ``ttk.Menubutton`` ("⏻  ▾") on the right of the header. One extra
+  click of intent — protects against accidental shutdown from
+  reaching for "Logout".
+- The ``power_menu`` is exposed on ``self`` so future destructive
+  actions (force-quit-running-tasks, restart, etc.) can hang off it
+  without re-cluttering the primary header row.
+
+#### 7. No cross-window state
+
+- Already partly addressed by 8.117.18's workspace tabs: any
+  launcher migrated to ``open_in_workspace`` now appears as a tab in
+  the main window's notebook, so "what's open" is visible at a
+  glance and switching is a single click.
+- Documented as the answer; future migrations (the other ~50
+  ``show_*`` methods) inherit the same affordance for free.
+
+#### 8. Content panel forced H+V scrollbars
+
+- ``create_content_area`` no longer instantiates a horizontal
+  scrollbar. The dashboard and workspace tabs always fit within the
+  canvas width, so the H bar consumed ~10px of vertical space + visual
+  chrome for nothing.
+- LabelFrame "Content" wrapper removed at the same time — same
+  visual-noise rationale as the header.
+- ``xscrollcommand`` is no longer configured on the canvas, so an
+  oversized inner widget can't accidentally turn the bar back on.
+
+#### 9. Search hidden in sidebar / no Ctrl+K
+
+- The navigation panel's existing ``search_entry`` is now stashed
+  on ``self.nav_search_entry`` so a global keyboard shortcut can
+  reach it.
+- New ``Ctrl+K`` (and ``Ctrl+Shift+K``) binding on the root window
+  calls ``_focus_nav_search`` — focuses the entry and selects all
+  text so a follow-up keystroke replaces any previous query. Same
+  shape as the quick-open palette every modern desktop app surfaces.
+- Also surfaced as a tip on the pre-login welcome screen so new
+  users discover it.
+
+#### 10. Welcome screen empty
+
+- Pre-login: replaced the single-label welcome with a centred hero
+  card — emoji + system name + welcome text + a clear "Sign in" CTA
+  alongside "Switch to CLI" + a Ctrl+K discovery tip.
+- Post-login: unchanged — the integrated dashboard
+  (``show_integrated_dashboard``) was already populating the panel
+  on login. ``show_welcome`` is now only hit before login or after
+  explicit logout, which is the case the new layout was designed
+  for. The signed-in fallback path is preserved for any caller that
+  routes here mid-session.
+
+#### Verified
+
+- All four touched modules import cleanly.
+- ``create_status_bar`` is bound on ``UnifiedManagementGUI`` and
+  called from ``setup_gui`` at row 2.
+- AST: zero ``h_scrollbar`` / ``xscrollcommand`` references remain
+  in the file.
+- ``Ctrl+K`` binding is present.
+- Live layout test against a stub: header renders with login button
+  text "Logout"; ``power_menu`` exists with ["Shutdown"] entries;
+  content area + status bar instantiate without errors.
+
+#### Layout-review status after this commit
+
+| # | Issue | Status |
+|---|---|---|
+| 1 | Two-click latency | ✅ 8.117.17 |
+| 2 | Right panel decorative | ✅ 8.117.18 |
+| 3 | Mousewheel ``bind_all`` leak | ✅ 8.117.19 |
+| 4 | Header inconsistency | ✅ 8.117.20 (main GUI; portal wrappers deferred) |
+| 5 | Status at top | ✅ 8.117.20 |
+| 6 | Shutdown adjacent to Logout | ✅ 8.117.20 |
+| 7 | No cross-window state | ✅ 8.117.18 + this |
+| 8 | Forced H scrollbar | ✅ 8.117.20 |
+| 9 | Search hidden / no Ctrl+K | ✅ 8.117.20 |
+| 10 | Empty welcome screen | ✅ 8.117.20 |
+
+All ten issues from the original layout review now resolved or
+deliberately deferred.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/core/gui_setup.py``
+  (``setup_gui`` adds row 2; ``create_header`` reshape;
+  new ``create_status_bar``, ``_detect_system_name``,
+  ``_detect_version``, ``_focus_nav_search`` helpers;
+  ``create_navigation_panel`` Ctrl+K binding;
+  ``create_content_area`` H scrollbar + LabelFrame removed;
+  ``show_welcome`` rewritten),
+  ``modules/shared/gui/main/main_gui.py``
+  (import + bind ``create_status_bar`` on ``UnifiedManagementGUI``).
 
 ---
 

@@ -202,6 +202,7 @@ from education_system.university_system.modules.shared.gui.main.core.gui_setup i
     create_navigation_panel,
     rebuild_navigation_panel,
     create_content_area,
+    create_status_bar,
     get_visible_buttons_for_role,
     clear_content,
     open_in_workspace,
@@ -500,6 +501,7 @@ UnifiedManagementGUI.create_header = create_header
 UnifiedManagementGUI.create_navigation_panel = create_navigation_panel
 UnifiedManagementGUI.rebuild_navigation_panel = rebuild_navigation_panel
 UnifiedManagementGUI.create_content_area = create_content_area
+UnifiedManagementGUI.create_status_bar = create_status_bar
 UnifiedManagementGUI.get_visible_buttons_for_role = get_visible_buttons_for_role
 UnifiedManagementGUI.clear_content = clear_content
 UnifiedManagementGUI.open_in_workspace = open_in_workspace

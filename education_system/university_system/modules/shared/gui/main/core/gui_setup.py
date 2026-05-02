@@ -81,7 +81,17 @@ def create_themed_toplevel(self, title="", geometry=""):
     window.transient(self.root)
     return window
 def setup_gui(self):
-    """Setup the unified GUI interface using AuthenticationGUI layout"""
+    """Setup the unified GUI interface.
+
+    Three-row layout:
+      row 0 — header (control buttons, no LabelFrame wrapper)
+      row 1 — navigation panel + content area (expanding)
+      row 2 — status bar (fixed thin)
+
+    Pre-8.117.20 the status + current-user labels lived inside the
+    header LabelFrame at the top. Status-at-the-top breaks every
+    desktop convention; moved to a thin row at the bottom in this
+    version. See the 8.117.16 layout review for the rationale."""
     # Main frame
     main_frame = ttk.Frame(self.root, padding="10")
     main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
@@ -93,7 +103,7 @@ def setup_gui(self):
     main_frame.columnconfigure(1, weight=1)  # Content column - expands
     main_frame.rowconfigure(1, weight=1)     # Row 1 (nav + content) - expands vertically
 
-    # Header with system status
+    # Header with control buttons
     self.create_header(main_frame)
 
     # Left panel - Navigation buttons (like AuthenticationGUI)
@@ -102,43 +112,161 @@ def setup_gui(self):
     # Right panel - Content area
     self.create_content_area(main_frame)
 
+    # Status bar at the bottom (status / user / system / version)
+    self.create_status_bar(main_frame)
+
     # Show welcome message initially
     self.show_welcome()
 def create_header(self, parent):
-    """Create header with system status and control buttons"""
-    header_frame = ttk.LabelFrame(parent, text=_t("gui.system_control"), padding="10")
-    header_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+    """Create the top control bar.
 
-    # Top row - Control buttons
-    button_frame = ttk.Frame(header_frame)
-    button_frame.grid(row=0, column=0, columnspan=4, sticky=(tk.W, tk.E), pady=(0, 10))
+    Pre-8.117.20 this was a ``LabelFrame "System Control"`` wrapper
+    holding [Shutdown][Logout][Switch CLI][Switch System] in a row
+    plus two lines of status labels — visual noise, status-at-top
+    breaks desktop convention, and Shutdown sat one click of muscle
+    memory away from Logout. Reshaped to:
 
-    # Shutdown button - using lambda to ensure proper method binding
-    ttk.Button(button_frame, text=_t("gui.shutdown"), command=lambda: self.shutdown_system(),
-              style="Accent.TButton").pack(side=tk.LEFT, padx=(0, 10))
+    - Plain Frame (no LabelFrame) — less ttk-style noise.
+    - Routine actions (Switch CLI / Switch System / Logout) on the
+      left as primary buttons.
+    - Destructive actions (Shutdown) folded into a "⏻ Power ▾"
+      menubutton on the right. One extra click of intent before
+      Shutdown — protects against muscle-memory accidents.
+    - Status + current-user labels removed. They now live in the
+      bottom status bar (``create_status_bar``).
+    """
+    header_frame = ttk.Frame(parent, padding=(0, 0, 0, 6))
+    header_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E))
+    header_frame.columnconfigure(1, weight=1)
+
+    # ── Routine actions (left) ──
+    left = ttk.Frame(header_frame)
+    left.grid(row=0, column=0, sticky=tk.W)
 
     # Login/Logout button (dynamic text based on auth status)
-    self.login_logout_btn = ttk.Button(button_frame, text=_t("common.logout"), command=lambda: self.toggle_login_logout())
-    self.login_logout_btn.pack(side=tk.LEFT, padx=(0, 10))
+    self.login_logout_btn = ttk.Button(
+        left, text=_t("common.logout"),
+        command=lambda: self.toggle_login_logout())
+    self.login_logout_btn.pack(side=tk.LEFT, padx=(0, 6))
 
-    # Switch to CLI button
-    ttk.Button(button_frame, text=_t("gui.switch_to_cli"), command=lambda: self.switch_to_cli()).pack(side=tk.LEFT, padx=(0, 10))
+    ttk.Button(left, text=_t("gui.switch_to_cli"),
+               command=lambda: self.switch_to_cli()).pack(
+        side=tk.LEFT, padx=(0, 6))
 
-    # Switch System button (superadmin only)
     from education_system.university_system.modules.shared.gui.main.auth_gui import _is_superadmin_user
     if _is_superadmin_user(self):
-        ttk.Button(button_frame, text=_t("gui.switch_system.title"), command=lambda: self.switch_system()).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(left, text=_t("gui.switch_system.title"),
+                   command=lambda: self.switch_system()).pack(
+            side=tk.LEFT, padx=(0, 6))
 
-    # Language button removed — language is now selected at startup via shared i18n
+    # ── Destructive actions (right, behind a dropdown) ──
+    right = ttk.Frame(header_frame)
+    right.grid(row=0, column=2, sticky=tk.E)
 
-    # Status information
-    ttk.Label(header_frame, text=_t("gui.status") + ":").grid(row=1, column=0, sticky=tk.W)
-    ttk.Label(header_frame, textvariable=self.status_var).grid(row=1, column=1, sticky=tk.W, padx=(10, 0))
+    power_menu = tk.Menu(right, tearoff=0)
+    power_menu.add_command(label=_t("gui.shutdown"),
+                           command=lambda: self.shutdown_system())
+    self.power_menu = power_menu  # kept on self for tests / extension
+    power_btn = ttk.Menubutton(right, text="⏻  ▾", direction='below')
+    power_btn['menu'] = power_menu
+    power_btn.pack(side=tk.RIGHT)
 
-    ttk.Label(header_frame, text=_t("gui.current_user") + ":").grid(row=2, column=0, sticky=tk.W)
-    ttk.Label(header_frame, textvariable=self.current_user_var).grid(row=2, column=1, sticky=tk.W, padx=(10, 0))
 
-    header_frame.columnconfigure(1, weight=1)
+def create_status_bar(self, parent):
+    """Bottom status bar — replaces the status + current-user rows
+    that used to live inside the header.
+
+    Thin Frame at row 2 spanning both columns of ``main_frame``.
+    Three regions: status (left) · current user (centre) · system
+    name + version (right). Separator line at the top so it visually
+    detaches from the workspace canvas above. No LabelFrame wrapper —
+    convention for a status bar is a sunken-ish thin row, which a
+    plain Frame + Separator delivers without the "Content" label
+    chrome the old layout used."""
+    bar = ttk.Frame(parent)
+    bar.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+    bar.columnconfigure(0, weight=1)
+    bar.columnconfigure(1, weight=1)
+    bar.columnconfigure(2, weight=1)
+
+    ttk.Separator(parent, orient='horizontal').grid(
+        row=2, column=0, columnspan=2, sticky="new")
+
+    # Status (left)
+    left = ttk.Frame(bar, padding=(2, 4))
+    left.grid(row=0, column=0, sticky=tk.W)
+    ttk.Label(left, text=_t("gui.status") + ": ",
+              foreground='#555555').pack(side=tk.LEFT)
+    ttk.Label(left, textvariable=self.status_var).pack(side=tk.LEFT)
+
+    # Current user (centre)
+    centre = ttk.Frame(bar, padding=(2, 4))
+    centre.grid(row=0, column=1, sticky=tk.N)
+    ttk.Label(centre, text=_t("gui.current_user") + ": ",
+              foreground='#555555').pack(side=tk.LEFT)
+    ttk.Label(centre, textvariable=self.current_user_var).pack(side=tk.LEFT)
+
+    # System / version (right)
+    right_box = ttk.Frame(bar, padding=(2, 4))
+    right_box.grid(row=0, column=2, sticky=tk.E)
+    sys_name = _detect_system_name(self)
+    ver = _detect_version()
+    if sys_name:
+        ttk.Label(right_box, text=sys_name,
+                  foreground='#555555').pack(side=tk.LEFT)
+    if sys_name and ver:
+        ttk.Label(right_box, text=" · ",
+                  foreground='#aaaaaa').pack(side=tk.LEFT)
+    if ver:
+        ttk.Label(right_box, text=f"v{ver}",
+                  foreground='#555555').pack(side=tk.LEFT)
+
+
+def _detect_system_name(self):
+    """Best-effort: pull the human-readable system name from auth or
+    from ``modules.services``'s package metadata. Returns ``""`` if
+    we can't figure it out — status bar tolerates an empty
+    right-region gracefully."""
+    try:
+        if getattr(self, 'auth', None) and getattr(self.auth, 'current_user', None):
+            sys_key = self.auth.current_user.get('system') or self.auth.current_user.get('subsystem')
+            if sys_key:
+                return str(sys_key).title()
+    except Exception:
+        pass
+    return "University"  # the dominant subsystem this GUI is built for
+
+
+def _detect_version():
+    try:
+        from education_system.university_system.modules.services import (
+            __version__,
+        )
+        return str(__version__)
+    except Exception:
+        return ""
+
+
+def _focus_nav_search(self):
+    """Focus the navigation search entry. Called by the Ctrl+K
+    binding on the root window. Best-effort — if the entry isn't
+    alive (e.g. nav panel is mid-rebuild) the call is silent."""
+    try:
+        entry = getattr(self, 'nav_search_entry', None)
+        if entry is None:
+            return "break"
+        if not entry.winfo_exists():
+            return "break"
+        entry.focus_set()
+        # Select all so a follow-up keystroke replaces the
+        # placeholder / previous query.
+        try:
+            entry.select_range(0, "end")
+        except Exception:
+            pass
+    except tk.TclError:
+        pass
+    return "break"
 def create_navigation_panel(self, parent):
     """Create navigation panel with categorized buttons and scrollbar"""
     # Destroy old navigation frame if it exists
@@ -632,9 +760,24 @@ def create_navigation_panel(self, parent):
     ]
 
     # ---------- Search bar (filters across all visible actions) ----------
+    # Stash on self so a global Ctrl+K binding can focus this entry
+    # from anywhere in the app (closes "search hidden in sidebar" gap
+    # from the 8.117.16 layout review).
     search_var = tk.StringVar()
     search_entry = ttk.Entry(scrollable_frame, textvariable=search_var)
     search_entry.pack(fill=tk.X, padx=5, pady=(2, 4))
+    self.nav_search_entry = search_entry
+    try:
+        # Ctrl+K (and Ctrl+Shift+K) → focus the search box. Bind on
+        # the root so the shortcut works no matter which child has
+        # keyboard focus. ``add="+"`` so we don't clobber any other
+        # binding the app already attached.
+        self.root.bind('<Control-k>',
+                       lambda _e: _focus_nav_search(self), add="+")
+        self.root.bind('<Control-K>',
+                       lambda _e: _focus_nav_search(self), add="+")
+    except Exception:
+        logger.debug("Ctrl+K binding failed", exc_info=True)
 
     _SEARCH_PLACEHOLDER = "🔍 Search features..."
 
@@ -806,26 +949,32 @@ def rebuild_navigation_panel(self):
         except Exception as e:
             logger.error(f"Failed to rebuild navigation panel: {e}")
 def create_content_area(self, parent):
-    """Create the main content area with scrollbar"""
-    # Outer frame to hold canvas and scrollbar
-    outer_frame = ttk.LabelFrame(parent, text=_t("gui.content"), padding="5")
+    """Create the main content area.
+
+    Pre-8.117.20 wrapped in a ``LabelFrame "Content"`` with both
+    horizontal and vertical scrollbars. The H scrollbar was a
+    defensive layout choice that never paid off — the dashboard and
+    workspace tabs always fit within the canvas width, so the bar
+    consumed ~10px of vertical space + visual chrome for nothing.
+    Reshaped to:
+
+    - Plain Frame, no LabelFrame label.
+    - Vertical scrollbar only. ``content_canvas.bbox`` width is
+      ignored when configuring the scroll region so excess width
+      can't accidentally turn it back on.
+    """
+    outer_frame = ttk.Frame(parent, padding=0)
     outer_frame.grid(row=1, column=1, sticky="nsew")
     outer_frame.columnconfigure(0, weight=1)
     outer_frame.rowconfigure(0, weight=1)
 
-    # Canvas for scrolling
     self.content_canvas = tk.Canvas(outer_frame, highlightthickness=0)
     self.content_canvas.grid(row=0, column=0, sticky="nsew")
 
-    # Vertical scrollbar
-    v_scrollbar = ttk.Scrollbar(outer_frame, orient="vertical", command=self.content_canvas.yview)
+    v_scrollbar = ttk.Scrollbar(outer_frame, orient="vertical",
+                                command=self.content_canvas.yview)
     v_scrollbar.grid(row=0, column=1, sticky="ns")
-
-    # Horizontal scrollbar
-    h_scrollbar = ttk.Scrollbar(outer_frame, orient="horizontal", command=self.content_canvas.xview)
-    h_scrollbar.grid(row=1, column=0, sticky="ew")
-
-    self.content_canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+    self.content_canvas.configure(yscrollcommand=v_scrollbar.set)
 
     # Inner frame for actual content
     self.content_frame = ttk.Frame(self.content_canvas, padding="10")
@@ -1167,51 +1316,90 @@ def open_in_workspace(self, title, builder, *, focus=True):
         logger.exception("open_in_workspace fallback Toplevel failed")
         return None
 def show_welcome(self):
-    """Show welcome message"""
+    """Show the pre-login / signed-out landing screen.
+
+    Pre-8.117.20 this rendered as a single welcome label in the
+    upper-left of a 1400×900 panel — visually empty. The post-login
+    state already gets the proper integrated dashboard via
+    ``show_main_interface`` → ``show_integrated_dashboard``, so this
+    function only fires before login or after explicit logout.
+
+    Reshape: a centred hero card with the welcome text, a clear
+    "Sign in" call-to-action, and a small set of context buttons
+    (CLI mode / language / quit). Quick actions still appear *if*
+    a user is somehow viewing this with auth set — preserves the
+    pre-existing fallback for callers that route here mid-session.
+    """
     self.clear_content()
 
-    welcome_text = _t("gui.welcome_text")
+    container = ttk.Frame(self.content_frame, padding=20)
+    container.grid(row=0, column=0, sticky="nsew")
+    self.content_frame.columnconfigure(0, weight=1)
+    self.content_frame.rowconfigure(0, weight=1)
 
-    welcome_label = ttk.Label(self.content_frame, text=welcome_text, justify=tk.LEFT, font=('Arial', 11))
-    welcome_label.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N), padx=20, pady=20)
+    # Centred hero card
+    hero = ttk.Frame(container, padding=30)
+    hero.place(relx=0.5, rely=0.4, anchor='center')
 
-    # System status
-    if self.auth.current_user:
-        status_frame = ttk.LabelFrame(self.content_frame, text=_t("gui.quick_actions"), padding="15")
-        status_frame.grid(row=1, column=0, sticky=(tk.W, tk.E), padx=20, pady=10)
+    ttk.Label(hero, text="🎓",
+              font=('Arial', 48)).pack(pady=(0, 8))
+    ttk.Label(hero, text="Education System",
+              font=('Arial', 22, 'bold')).pack()
+    ttk.Label(hero, text=_t("gui.welcome_text"),
+              foreground='#555555',
+              wraplength=420, justify='center',
+              font=('Arial', 11)).pack(pady=(8, 18))
 
-        user = self.auth.current_user
-        permissions = user.get('permissions', [])
+    # Pre-login: clear sign-in CTA + secondary actions
+    if not (self.auth and self.auth.current_user):
+        cta = ttk.Frame(hero)
+        cta.pack(pady=(4, 0))
+        ttk.Button(cta, text=_t("common.login"),
+                   command=lambda: self.toggle_login_logout(),
+                   width=18).pack(side=tk.LEFT, padx=4)
+        ttk.Button(cta, text=_t("gui.switch_to_cli"),
+                   command=lambda: self.switch_to_cli(),
+                   width=18).pack(side=tk.LEFT, padx=4)
 
-        quick_actions = []
+        # Tip about Ctrl+K — surfaces the otherwise-hidden launcher.
+        ttk.Label(hero,
+                  text="Tip: press Ctrl+K to jump to any feature.",
+                  foreground='#888888',
+                  font=('Arial', 9, 'italic')).pack(pady=(18, 0))
+        return
 
-        if 'view_any_student' in permissions or 'view_own_record' in permissions:
-            quick_actions.append((_t("gui.view_student_records"), self.show_student_records))
+    # Signed-in fallback path — same quick-actions block as pre-8.117.20
+    # in case a caller routes here mid-session. The post-login flow
+    # normally uses show_integrated_dashboard, so this is rarely hit.
+    user = self.auth.current_user
+    permissions = user.get('permissions', [])
 
-        if 'create_student' in permissions:
-            quick_actions.append((_t("gui.create_new_student"), self.create_student_dialog))
+    quick_actions = []
+    if 'view_any_student' in permissions or 'view_own_record' in permissions:
+        quick_actions.append((_t("gui.view_student_records"), self.show_student_records))
+    if 'create_student' in permissions:
+        quick_actions.append((_t("gui.create_new_student"), self.create_student_dialog))
+    if 'access_chatbot' in permissions:
+        quick_actions.append((_t("gui.launch_chatbot"), self.show_chatbot))
+    if 'view_analytics' in permissions:
+        quick_actions.append((_t("gui.view_analytics"), self.show_analytics))
+    if any(p in permissions for p in ['view_trips', 'register_for_trips', 'manage_trips']):
+        quick_actions.append((_t("gui.trip_management"), self.show_trip_management_gui))
+    if ADVANCED_SEARCH_GUI_AVAILABLE and 'view_any_student' in permissions:
+        quick_actions.append((_t("gui.advanced_search"), self.show_advanced_search_gui))
+    if ('manage_schedules' in permissions) or ('view_own_timetable' in permissions):
+        quick_actions.append((_t("gui.module_scheduling"), self.show_module_scheduling))
 
-        if 'access_chatbot' in permissions:
-            quick_actions.append((_t("gui.launch_chatbot"), self.show_chatbot))
-
-        if 'view_analytics' in permissions:
-            quick_actions.append((_t("gui.view_analytics"), self.show_analytics))
-
-        if any(p in permissions for p in ['view_trips', 'register_for_trips', 'manage_trips']):
-            quick_actions.append((_t("gui.trip_management"), self.show_trip_management_gui))
-
-        if ADVANCED_SEARCH_GUI_AVAILABLE and 'view_any_student' in permissions:
-            quick_actions.append((_t("gui.advanced_search"), self.show_advanced_search_gui))
-
-        if ('manage_schedules' in permissions) or ('view_own_timetable' in permissions):
-            quick_actions.append((_t("gui.module_scheduling"), self.show_module_scheduling))
-
-        # Create buttons for quick actions
-        for i, (text, command) in enumerate(quick_actions[:4]):  # Show up to 4 quick actions
-            row = i // 2
-            col = i % 2
-            ttk.Button(status_frame, text=text, command=command, width=20).grid(
-                row=row, column=col, padx=10, pady=5, sticky=tk.W)
+    if quick_actions:
+        qa_frame = ttk.Frame(hero)
+        qa_frame.pack(pady=(20, 0))
+        ttk.Label(qa_frame, text=_t("gui.quick_actions"),
+                  font=('Arial', 10, 'bold')).grid(
+            row=0, column=0, columnspan=2, pady=(0, 6))
+        for i, (text, command) in enumerate(quick_actions[:4]):
+            r, c = 1 + i // 2, i % 2
+            ttk.Button(qa_frame, text=text, command=command,
+                       width=22).grid(row=r, column=c, padx=4, pady=3)
 def show_main_interface(self):
     """Show main interface when authenticated"""
     # Update status variables immediately
