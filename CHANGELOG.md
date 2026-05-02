@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.39 — 2026-05-02](#811739---2026-05-02)
 - [8.117.38 — 2026-05-02](#811738---2026-05-02)
 - [8.117.37 — 2026-05-02](#811737---2026-05-02)
 - [8.117.36 — 2026-05-02](#811736---2026-05-02)
@@ -265,6 +266,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.39] — 2026-05-02
+
+### Fixed — Create Student dialog deadlocked after assigning modules
+
+User report: the dialog freezes after "Assigned 6 modules to student
+… for course CS: ['CIS0001', …]" with no further progress.
+
+Root cause: classic SQLite writer deadlock. The save flow opened
+``conn``, ran a bunch of INSERTs (the new ``students`` row plus
+six rows in ``student_modules``), then — *before committing* —
+called three cross-domain bus services for each enrolled module:
+
+- ``assess_module_enrolment_fee`` (writes to ``student_fees``)
+- ``place_holds_for_enrolment`` (writes to ``finance_holds``)
+- ``sync_for_student_enrolment`` (writes to ``timetable``)
+
+Each service opens its own connection. SQLite serialises writers,
+so the inner connection blocks waiting for the outer transaction
+to commit. The outer transaction can't commit because we're still
+iterating bus calls. With 6 modules × 3 services that's up to 18
+deadlocked writes per save. The print fires (it's right before
+the first bus call) and then control never returns.
+
+#### Fix
+
+Reordered: ``conn.commit()`` + ``conn.close()`` now run *before*
+the bus calls. The bus services open fresh connections, see no
+outstanding write lock, and complete normally.
+
+Same pattern existed in ``update_student_dialog``'s course-change
+branch (which also runs the bus calls before
+``update_conn.commit()``) — fixed there too. The bus block is
+now gated on ``course_changed`` since ``selected_modules`` /
+``dropped_modules`` are only defined inside that branch.
+
+#### Trade-off acknowledged
+
+Pre-8.117.39 the bus calls were inside the outer transaction so a
+bus failure could roll back the enrolment. Post-fix the row is
+already committed when the bus runs — a fee-assessment failure
+won't undo the enrolment. This matches the existing comment in
+the code ("best-effort — never block enrolment") so the new
+order matches what the code already claimed to do.
+
+#### Files
+
+- Modified:
+  ``modules/shared/gui/main/students/student_crud_gui.py``
+  (``create_student_dialog`` save flow + ``update_student_dialog``
+  course-change branch — commit moved ahead of bus side effects;
+  bus block in update flow gated on ``course_changed``).
 
 ---
 

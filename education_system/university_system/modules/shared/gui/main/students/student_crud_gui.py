@@ -347,8 +347,34 @@ def create_student_dialog(self):
 
             print(f"Assigned {len(selected_modules)} modules to student {student_id} for course {course}: {selected_modules}")
 
-            # Assess any matching program_fees against this enrolment so
-            # tuition / lab / etc. land on the student's fee statement.
+            # Update course enrollment count + re-enable FK checks +
+            # commit/close BEFORE the cross-domain bus side effects.
+            #
+            # Pre-8.117.39 the bus calls below ran while the outer
+            # ``conn`` still held an uncommitted write transaction.
+            # Each bus service (assess_module_enrolment_fee /
+            # place_holds_for_enrolment / sync_for_student_enrolment)
+            # opens its own connection and tries to write. SQLite
+            # serialises writers — so the inner connection blocks
+            # waiting for the outer to commit, and the outer never
+            # commits because we're still iterating bus calls. With
+            # 6 modules × 3 bus services that's up to 18 deadlocked
+            # writes per save. The user-visible symptom was the GUI
+            # freezing right after "Assigned N modules to student"
+            # — the print fires before the first bus call, then
+            # control never returns.
+            cursor.execute('''
+                UPDATE courses
+                SET current_enrollment = current_enrollment + 1
+                WHERE course_code = ? AND status = 'active'
+            ''', (course,))
+            cursor.execute("PRAGMA foreign_keys = ON")
+            conn.commit()
+            conn.close()
+
+            # ── Bus side effects, on fresh connections ─────────────
+            # Each service is best-effort: a failure here never
+            # blocks enrolment (the row is already committed above).
             try:
                 from education_system.university_system.modules.domain.finance.services.enrolment_fees import (
                     assess_module_enrolment_fee,
@@ -356,10 +382,8 @@ def create_student_dialog(self):
                 for code in selected_modules:
                     assess_module_enrolment_fee(student_id, code)
             except Exception as exc:
-                # Finance assessment is best-effort — never block enrolment.
                 print(f"Note: could not assess enrolment fees: {exc}")
 
-            # Auto-place library holds on each module's required textbooks.
             try:
                 from education_system.university_system.modules.domain.commerce.textbooks.services.library_holds import (
                     place_holds_for_enrolment,
@@ -369,8 +393,6 @@ def create_student_dialog(self):
             except Exception as exc:
                 print(f"Note: could not place library holds: {exc}")
 
-            # Materialise the student's timetable from the module's
-            # current module_schedule rows.
             try:
                 from education_system.university_system.modules.domain.academics.services.course_management.timetable_sync import (
                     sync_for_student_enrolment,
@@ -379,19 +401,6 @@ def create_student_dialog(self):
                     sync_for_student_enrolment(student_id, code)
             except Exception as exc:
                 print(f"Note: could not sync student timetable: {exc}")
-
-            # Update course enrollment count
-            cursor.execute('''
-                UPDATE courses
-                SET current_enrollment = current_enrollment + 1
-                WHERE course_code = ? AND status = 'active'
-            ''', (course,))
-
-            # Re-enable foreign key checks
-            cursor.execute("PRAGMA foreign_keys = ON")
-
-            conn.commit()
-            conn.close()
 
             # Send registration confirmation email
             try:
@@ -978,8 +987,20 @@ def update_student_dialog(self, student_id):
                             VALUES (?, ?, ?, ?)
                         ''', (student_id, module_code, current_date, 'enrolled'))
 
-                    # Sync finance: cancel unpaid fees for dropped modules,
-                    # assess new ones.
+                # Commit the module insert/delete BEFORE running the
+                # cross-domain bus calls below — same fix as 8.117.39
+                # in the create flow. SQLite serialises writers, so
+                # bus calls (which open their own connections) deadlock
+                # waiting for this transaction to commit while we wait
+                # for them to return.
+                update_conn.commit()
+
+                # ── Bus side effects, on fresh connections ──────────
+                # Only relevant when the course actually changed (which
+                # is when ``selected_modules`` and ``dropped_modules``
+                # are defined). Best-effort: a failure here can't roll
+                # back the module update — that's already committed.
+                if course_changed:
                     try:
                         from education_system.university_system.modules.domain.finance.services.enrolment_fees import (
                             cancel_module_enrolment_fee,
@@ -993,8 +1014,6 @@ def update_student_dialog(self, student_id):
                     except Exception as exc:
                         print(f"Note: could not sync enrolment fees: {exc}")
 
-                    # Sync library holds: release for dropped modules,
-                    # place for newly-enrolled ones.
                     try:
                         from education_system.university_system.modules.domain.commerce.textbooks.services.library_holds import (
                             place_holds_for_enrolment,
@@ -1008,7 +1027,6 @@ def update_student_dialog(self, student_id):
                     except Exception as exc:
                         print(f"Note: could not sync library holds: {exc}")
 
-                    # Sync derived timetable rows.
                     try:
                         from education_system.university_system.modules.domain.academics.services.course_management.timetable_sync import (
                             sync_for_student_enrolment,
@@ -1021,8 +1039,6 @@ def update_student_dialog(self, student_id):
                             sync_for_student_enrolment(student_id, code)
                     except Exception as exc:
                         print(f"Note: could not sync timetables: {exc}")
-
-                update_conn.commit()
 
                 # Send update confirmation email via email_service
                 try:
