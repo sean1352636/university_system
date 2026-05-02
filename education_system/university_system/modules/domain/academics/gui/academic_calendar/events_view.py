@@ -111,7 +111,16 @@ class EventsViewMixin:
         self.events_tree.bind('<Double-1>', lambda e: self._edit_selected_event())
 
     def _create_events_context_menu(self):
-        """Create context menu for events management"""
+        """Create context menu for events management.
+
+        The static items (edit / delete / copy id / details / email
+        reminder) stay as-is. On every right-click we *also* build the
+        cross-module jumps fresh from the selected row's ``full_data``
+        — see :mod:`._cross_links`. Rebuilding per-click is the same
+        pattern the library uses in
+        ``library/_cross_links.attach_cross_link_menu`` and lets us
+        omit items that don't apply to the row (e.g. no course jump
+        when no module code can be extracted)."""
         self.events_context_menu = tk.Menu(self.root, tearoff=0)
         self.events_context_menu.add_command(label=_("academic_calendar.context_menu.edit_event"), command=self._edit_selected_event)
         self.events_context_menu.add_command(label=_("academic_calendar.context_menu.delete_event"), command=self._delete_selected_event)
@@ -123,11 +132,67 @@ class EventsViewMixin:
 
         def show_context_menu(event):
             try:
-                self.events_context_menu.tk_popup(event.x_root, event.y_root)
-            finally:
-                self.events_context_menu.grab_release()
+                # Highlight whichever row is under the cursor so the
+                # cross-link items pull the right event dict.
+                row = self.events_tree.identify_row(event.y)
+                if row:
+                    self.events_tree.selection_set(row)
+
+                # Build a fresh menu per click. The static items get
+                # cloned across; cross-link items are appended on top.
+                menu = tk.Menu(self.root, tearoff=0)
+                menu.add_command(label=_("academic_calendar.context_menu.edit_event"), command=self._edit_selected_event)
+                menu.add_command(label=_("academic_calendar.context_menu.delete_event"), command=self._delete_selected_event)
+                menu.add_separator()
+                menu.add_command(label=_("academic_calendar.context_menu.copy_id"), command=self._copy_event_id)
+                menu.add_command(label=_("academic_calendar.context_menu.view_details"), command=self._view_event_details)
+                menu.add_separator()
+                menu.add_command(label=_("academic_calendar.context_menu.send_email_reminder"), command=self._send_email_reminder)
+
+                # Cross-links — pull the selected row's full event dict
+                # and let _cross_links.event_menu_items build the
+                # row-aware portion.
+                try:
+                    from education_system.university_system.modules.domain.academics.gui.academic_calendar._cross_links import (
+                        event_menu_items as _x_items,
+                        append_to_menu as _x_append,
+                    )
+                    event_data = self._get_selected_event_data()
+                    if event_data:
+                        _x_append(menu, _x_items(event_data, parent=self.root))
+                except Exception:
+                    gui_logger.debug(
+                        "calendar cross-links unavailable; static menu only",
+                        exc_info=True)
+
+                try:
+                    menu.tk_popup(event.x_root, event.y_root)
+                finally:
+                    menu.grab_release()
+            except Exception:
+                gui_logger.exception("show_context_menu failed")
 
         self.events_tree.bind("<Button-3>", show_context_menu)
+
+    def _get_selected_event_data(self):
+        """Return the full event dict for the currently-selected events
+        tree row, parsed from the hidden ``full_data`` column. Returns
+        ``None`` if no row is selected or the JSON can't be parsed."""
+        try:
+            sel = self.events_tree.selection()
+            if not sel:
+                return None
+            raw = self.events_tree.set(sel[0], "full_data")
+            if not raw:
+                return None
+            import json
+            return json.loads(raw)
+        except (json.JSONDecodeError, TypeError, AttributeError):
+            return None
+        except Exception:
+            gui_logger.debug("_get_selected_event_data failed",
+                             exc_info=True)
+            return None
 
     def _load_events_data(self):
         """Load events data into treeview"""

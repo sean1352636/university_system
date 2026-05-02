@@ -1025,8 +1025,8 @@ class AuditLogViewerGUI(tk.Toplevel):
         if not prefilter:
             return
         for key in ("loan_id", "fine_id", "book_id", "reservation_id",
-                    "reading_list_id", "student_id", "course_id",
-                    "course_code", "user_id"):
+                    "reading_list_id", "event_id", "student_id",
+                    "course_id", "course_code", "user_id"):
             value = prefilter.get(key)
             if value is None or value == "":
                 continue

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.14 — 2026-05-02](#811714---2026-05-02)
 - [8.117.13 — 2026-05-02](#811713---2026-05-02)
 - [8.117.12 — 2026-05-02](#811712---2026-05-02)
 - [8.117.11 — 2026-05-02](#811711---2026-05-02)
@@ -240,6 +241,96 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.14] — 2026-05-02
+
+### Added — Academic Calendar cross-links (8 outbound right-click jumps)
+
+Mirrors the library cross-link work from 8.117.6–8.117.13 for the
+events tab of the academic calendar. The existing context menu
+(edit / delete / copy id / details / send email reminder) gains 8
+new items, each row-aware so they only appear when applicable.
+
+- New module ``academics/gui/academic_calendar/_cross_links.py``
+  with ``event_menu_items`` builder + ``show_event_attendees`` popup.
+- ``events_view._create_events_context_menu`` now rebuilds the menu
+  per right-click (same pattern as
+  ``library/_cross_links.attach_cross_link_menu``) so the cross-link
+  items can omit themselves when they don't apply.
+
+#### Items added
+
+| Item | Destination | Context |
+|---|---|---|
+| 📨 Open in Email Manager | ``email_manager`` | event_id, event_title |
+| 🕓 View audit log for this event | ``audit_viewer`` | event_id (numeric, prefix stripped) |
+| 👥 View attendees | in-process popup | reads ``unified_event_registrations``; right-click an attendee → Student Records / Email Manager |
+| ✅ Mark attendance | ``attendance`` (quickbar) | event_id |
+| 🏢 Show event location (Buildings) | ``building_mgmt`` | event_location (free-text — subprocess, see caveats below) |
+| 🪑 Book a room for this event | ``room_booking`` | event_date, capacity |
+| 🎓 Open course ``<code>`` | ``course_mgmt`` | course_code — only shown when extractable |
+| 🖨 Print event flyer | ``printing`` | book_title (event title; reuses 8.117.11 prefill) |
+
+#### Course code extraction
+
+``_extract_course_code`` first checks the event dict for structured
+``module_code`` / ``course_code`` / ``course_id`` keys. If none are
+present it scans the description for a ``(SOMECODE)`` pattern — this
+is the format ``_get_assignment_events`` already uses when it
+aggregates assignment due dates ("Assignment due (CS101): ..."), so
+the jump works out of the box for assignment-sourced events.
+
+#### Event id normalisation
+
+The events tree aggregates from multiple sources, prefixing ids so
+they don't collide (``assignment_42``, ``trip_7``, ``fee_19``,
+``library_loan_3``). ``_normalise_event_id`` strips the prefix for
+cross-system lookups so the audit log query — which uses LIKE against
+``resource_id`` — finds the bare numeric id rather than missing on
+the prefix.
+
+#### Audit prefilter extended
+
+``audit_log_viewer_gui._apply_prefilter``'s priority list gains
+``event_id`` between ``reading_list_id`` and ``student_id``, so
+the new "View audit log for this event" jump lands on a pre-filtered
+result set instead of an empty one (same shape as 8.117.7).
+
+#### Caveats / non-additions
+
+- The Buildings jump fires through ``request_open("building_mgmt", …)``
+  which dispatches as a subprocess — so the ``event_location`` payload
+  doesn't actually cross the boundary. The user lands on the buildings
+  GUI in one click but has to find the room manually. This was the
+  same trade-off documented in 8.117.11; logging it again here.
+- Room Booking still doesn't accept date / capacity prefill (its
+  filters aren't externally driven yet); the jump opens the GUI with
+  default filters. Forwarded context is consumed-and-discarded by
+  ``show_study_room_booking_gui`` (since 8.117.11) so it doesn't
+  bleed into a later jump.
+
+#### Observation worth recording
+
+While reading ``events_view._load_events_data`` I noticed the calendar
+*already* aggregates assignment due dates, trip dates, finance payment
+due dates and library return dates from their respective tables — the
+"Tier 1: Assignment Submissions → Calendar" gap I flagged earlier was
+mistaken. Those inbound writes already exist; the gap is on the
+outbound side, which is what this version closes.
+
+#### Files
+
+- Added: ``modules/domain/academics/gui/academic_calendar/_cross_links.py``
+  (``event_menu_items``, ``show_event_attendees``,
+  ``_normalise_event_id``, ``_extract_course_code``,
+  ``append_to_menu``).
+- Modified:
+  ``modules/domain/academics/gui/academic_calendar/events_view.py``
+  (per-click menu rebuild, ``_get_selected_event_data`` helper),
+  ``modules/shared/gui/security/audit_log_viewer_gui.py``
+  (``event_id`` added to the prefilter priority list).
 
 ---
 
