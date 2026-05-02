@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.22 — 2026-05-02](#811722---2026-05-02)
 - [8.117.21 — 2026-05-02](#811721---2026-05-02)
 - [8.117.20 — 2026-05-02](#811720---2026-05-02)
 - [8.117.19 — 2026-05-02](#811719---2026-05-02)
@@ -248,6 +249,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.22] — 2026-05-02
+
+### Fixed — ``LibraryGUI.__init__`` crashed when handed a workspace tab
+
+After 8.117.18 introduced ``open_in_workspace`` and ``show_library_management``
+started passing a workspace ``Frame`` instead of a ``Toplevel``,
+``LibraryGUI.__init__`` immediately crashed::
+
+    AttributeError: 'Frame' object has no attribute 'title'
+    File ".../library/base.py", line 120, in __init__
+        self.master.title(_("library.title"))
+
+The init had two issues that hid because every historical caller
+passed a ``Toplevel``:
+
+1. ``self.master.title(...)`` and ``self.master.geometry(...)`` ran
+   *before* the ``master is None`` branch. Calling with ``master=None``
+   would have crashed too — the bug was just dormant because no one
+   exercised that code path.
+2. Neither ``Frame`` nor ``LabelFrame`` (workspace tab hosts) have
+   ``.title()`` / ``.geometry()`` since they're not toplevel windows.
+
+#### Fix
+
+- Reorder: allocate ``self.master`` (creating a ``tk.Tk()`` when
+  ``master is None``) **before** any window-chrome calls.
+- Wrap the ``title`` and ``geometry`` calls in
+  ``try/except (AttributeError, tk.TclError)`` so a non-toplevel
+  master (workspace ``Frame``) cleanly skips the chrome it can't
+  apply.
+
+#### Verified
+
+- ``LibraryGUI`` constructor accepts a ``Toplevel`` (legacy path —
+  title still set), a ``Frame`` (workspace path — chrome silently
+  skipped), and ``None`` (legacy fallback — Tk root created, then
+  chrome applied).
+- The downstream ``AuthenticationNotInitializedError`` surfaced in
+  the smoke test is unrelated to this fix; it fires later in
+  ``LibraryGUI`` when ``get_auth()`` is called without a populated
+  auth context, and only in test environments that don't go through
+  the unified launcher.
+
+#### Files
+
+- Modified: ``modules/domain/academics/gui/library/base.py``
+  (``LibraryGUI.__init__`` reordered + chrome calls guarded).
 
 ---
 

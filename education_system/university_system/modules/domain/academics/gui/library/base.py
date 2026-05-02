@@ -116,15 +116,35 @@ _STUDENT_COLUMNS_CACHE: Optional[List[str]] = None
 
 class LibraryGUI:
     def __init__(self, master, auth=None):
-        self.master = master
-        self.master.title(_("library.title"))
-        self.master.geometry("1400x900")
+        # Pre-8.117.22 this set ``self.master = master`` and then
+        # *unconditionally* called ``self.master.title(...)`` and
+        # ``self.master.geometry(...)`` before the ``master is None``
+        # branch below. Two bugs that hid in the historical
+        # always-pass-a-Toplevel callers:
+        #   - if ``master`` was ``None``, the .title() call crashed
+        #     before we ever reached the ``self.master = tk.Tk()``
+        #     fallback;
+        #   - when 8.117.18 began handing a workspace ``Frame`` as
+        #     master (instead of a Toplevel), ``Frame`` has no
+        #     ``.title`` / ``.geometry`` and the workspace tab
+        #     builder crashed on construction.
+        # Allocate the Tk root first if needed, then only set window
+        # chrome (title/geometry) on master types that accept it.
         if master is None:
             self.master = tk.Tk()
             self.owns_root = True
         else:
             self.master = master
             self.owns_root = False
+        try:
+            self.master.title(_("library.title"))
+        except (AttributeError, tk.TclError):
+            # ``Frame`` (workspace tab host) has no .title — fine.
+            pass
+        try:
+            self.master.geometry("1400x900")
+        except (AttributeError, tk.TclError):
+            pass
 
         # Use provided auth or create new one if not provided
         self.auth = auth if auth else None
