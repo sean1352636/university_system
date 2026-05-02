@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.21 — 2026-05-02](#811721---2026-05-02)
 - [8.117.20 — 2026-05-02](#811720---2026-05-02)
 - [8.117.19 — 2026-05-02](#811719---2026-05-02)
 - [8.117.18 — 2026-05-02](#811718---2026-05-02)
@@ -247,6 +248,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.21] — 2026-05-02
+
+### Fixed — Tk destroy-race ``TclError`` noise on window close
+
+Closes the issue that opened this conversation thread (and reopened
+when the user closed Course Management):
+
+```
+_tkinter.TclError: invalid command name ".!toplevel.!notebook.!frame2.!labelframe2.!frame.!scrollbar"
+_tkinter.TclError: invalid command name "547397187392_tick"
+```
+
+When a Toplevel (or its inner Notebook tabs) is destroyed, Tk
+destroys child widgets in dependency order — but any deferred
+callback already in the event queue still fires. Two common shapes:
+
+- A ``Treeview`` with ``yscrollcommand=scrollbar.set`` flushes one
+  more update during destroy. The scrollbar has been destroyed →
+  ``invalid command name ".!toplevel.!…!scrollbar"``.
+- A periodic ``after(N, _tick)`` callback fires once after the
+  widget owning the timer is gone → ``invalid command name "1234567_tick"``.
+
+Both are upstream Tk quirks. The earlier patches (8.117.15 student
+records, 8.117.19 navigation panel) fixed specific ``bind_all`` leaks
+that produced this shape, but the underlying race exists for any
+``Treeview``/scrollbar pair anywhere in the app — Course Management
+has many, hence the user's traceback after each Toplevel close.
+
+#### Fix
+
+- New module ``modules/shared/gui/main/_tk_callback_filter.py``
+  exposing ``install_destroy_race_filter(root)`` — attaches a
+  ``report_callback_exception`` handler that quietly swallows
+  exactly the two destroy-race shapes documented above (matched
+  via ``"invalid command name"`` + dotted-widget-path or
+  ``_tick`` suffix). Real exceptions still log to stderr in the
+  same format Tk's default handler uses, so genuine bugs aren't
+  silenced.
+- Wired into every creator of a ``tk.Tk()`` root in the main GUI
+  tree:
+  - ``main_gui.py`` (the primary ``UnifiedManagementGUI``)
+  - ``core/gui_setup.py:create_fallback_interface``
+  - ``main/student_portal.py``
+  - ``main/staff_portal.py``
+  - ``main/instructor_portal.py``
+  - ``main/parent_portal_wrapper.py``
+
+#### Verified
+
+- Filter swallows all four trace shapes from the user's report
+  (Course Management Treeview/scrollbar paths) plus the
+  ``547397187392_tick`` shape from the very first message in this
+  thread.
+- Filter does **not** swallow:
+  - non-``TclError`` exceptions (``ValueError`` is passed through),
+  - ``TclError`` with non-destroy-race messages
+    (e.g. ``bad option "-foo"`` is passed through),
+- Pass-through path still writes the standard
+  ``Exception in Tkinter callback\n<traceback>`` to stderr.
+
+#### Why a global filter rather than per-widget destroy protocols
+
+Course Management has dozens of Treeviews under a notebook of
+notebooks. Retrofitting a destroy protocol on each one to clear
+``yscrollcommand`` before its scrollbar is destroyed would touch
+every CRUD GUI in the system, and would have to be re-applied to
+every new Treeview. The filter is a one-time install on the root
+that handles this class of error globally — same approach used in
+production Tk apps like IDLE.
+
+#### Files
+
+- Added: ``modules/shared/gui/main/_tk_callback_filter.py``.
+- Modified:
+  ``modules/shared/gui/main/main_gui.py`` (call install after
+  ``self.root = tk.Tk()``),
+  ``modules/shared/gui/main/core/gui_setup.py`` (same in
+  ``create_fallback_interface``),
+  ``modules/shared/gui/main/student_portal.py``,
+  ``modules/shared/gui/main/staff_portal.py``,
+  ``modules/shared/gui/main/instructor_portal.py``,
+  ``modules/shared/gui/main/parent_portal_wrapper.py``.
 
 ---
 

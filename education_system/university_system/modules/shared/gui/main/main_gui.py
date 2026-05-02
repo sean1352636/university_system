@@ -131,6 +131,15 @@ class UnifiedManagementGUI:
             self.root.title(_t("gui.window_title"))
             self.root.geometry("1200x800")
             self.root.minsize(1000, 700)
+            # Quiet upstream Tk destroy-race TclErrors (scrollbar /
+            # tick callbacks firing after their target is gone).
+            try:
+                from education_system.university_system.modules.shared.gui.main._tk_callback_filter import (
+                    install_destroy_race_filter,
+                )
+                install_destroy_race_filter(self.root)
+            except Exception:
+                pass
 
             # Configure style and theme
             self.style = ttk.Style()

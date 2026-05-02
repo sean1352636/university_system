@@ -45,6 +45,13 @@ def create_fallback_interface(self):
     self.root = tk.Tk()
     self.root.title(_t("gui.error_mode_title"))
     self.root.geometry("400x300")
+    try:
+        from education_system.university_system.modules.shared.gui.main._tk_callback_filter import (
+            install_destroy_race_filter,
+        )
+        install_destroy_race_filter(self.root)
+    except Exception:
+        pass
 
     error_frame = ttk.Frame(self.root, padding="20")
     error_frame.pack(fill=tk.BOTH, expand=True)

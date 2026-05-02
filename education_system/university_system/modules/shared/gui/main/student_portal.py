@@ -22,6 +22,13 @@ class StudentPortalGUI:
     def __init__(self, auth_manager):
         self.auth = auth_manager
         self.root = tk.Tk()
+        try:
+            from education_system.university_system.modules.shared.gui.main._tk_callback_filter import (
+                install_destroy_race_filter,
+            )
+            install_destroy_race_filter(self.root)
+        except Exception:
+            pass
         self.root.title("Student Portal")
         self.root.geometry("1300x800")
         self.root.minsize(1100, 700)
