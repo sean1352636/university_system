@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.19 — 2026-05-02](#811719---2026-05-02)
 - [8.117.18 — 2026-05-02](#811718---2026-05-02)
 - [8.117.17 — 2026-05-02](#811717---2026-05-02)
 - [8.117.16 — 2026-05-02](#811716---2026-05-02)
@@ -245,6 +246,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.19] — 2026-05-02
+
+### Fixed — Navigation panel mousewheel ``bind_all`` leak
+
+Closes the third item from the 8.117.16 layout review's "real
+problems" list. ``create_navigation_panel`` (line 173-177
+pre-8.117.19) used::
+
+    canvas.bind('<Enter>', lambda e: canvas.bind_all("<MouseWheel>", _on_mousewheel))
+    canvas.bind('<Leave>',  lambda e: canvas.unbind_all("<MouseWheel>"))
+
+Two failure modes:
+
+- (a) **Stale binding survives canvas destruction.** If the mouse left
+  the navigation canvas via a popup steal, focus grab, or destroyed
+  Toplevel covering the cursor — anything that doesn't fire a clean
+  ``<Leave>`` event — the global ``bind_all`` stayed pointed at this
+  canvas. After the canvas was destroyed (logout rebuild, role
+  switch, navigation panel rebuild from a pin/unpin) the next wheel
+  event fired its callback against a destroyed widget and raised
+  ``TclError: invalid command name ".!frame.!labelframe.!canvas"``.
+  Same bug class as the student-records academic-tab leak fixed in
+  8.117.15.
+- (b) **Wheel-event hijacking.** Even when the bind/unbind pair
+  worked correctly, ``unbind_all`` removed wheel handling from
+  *every* widget in the app that legitimately bound it — detail
+  windows, tree scrollers, etc. Wheel scroll worked everywhere except
+  on whatever widget the user had under their cursor when they last
+  hovered the navigation canvas, until they hovered it again.
+
+#### Fix
+
+- Replaced ``bind_all`` / ``unbind_all`` with widget-local ``bind``
+  on the canvas itself + a recursive walk over the scrollable inner
+  frame's children. Bindings die naturally with the widget; no
+  global state.
+- ``_on_mousewheel`` swallows ``tk.TclError`` to handle the
+  destroy-race cleanly (mouse moves over a widget being destroyed,
+  callback fires after destroy completes).
+- Idempotent re-binding via a ``_nav_wheel_bound`` marker attribute.
+  The walk is hooked onto the scrollable frame's existing
+  ``<Configure>`` event with ``add="+"`` so newly-packed widgets
+  (8.117.17 accordion expanding, 8.117.6 search results rebuilding,
+  pin/unpin rebuild) inherit the wheel handler — but the marker
+  prevents ``add="+"`` from stacking duplicate handlers on widgets
+  we've already touched.
+- Cross-platform: binds ``<MouseWheel>`` (Windows/macOS) plus
+  ``<Button-4>`` / ``<Button-5>`` (X11/Linux) so the fix applies
+  regardless of the platform's wheel event delivery.
+
+#### Verified
+
+- AST check: zero remaining ``bind_all`` / ``unbind_all`` calls in
+  ``create_navigation_panel``.
+- Live test against a synthetic Frame tree: first walk binds 5
+  widgets; idempotent re-walk stays at 5 (marker prevents
+  duplicates); adding a child and re-walking grows to 6; every
+  widget that should have the marker has it.
+
+#### Files
+
+- Modified: ``modules/shared/gui/main/core/gui_setup.py``
+  (``create_navigation_panel`` mousewheel block).
 
 ---
 

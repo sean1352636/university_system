@@ -170,11 +170,74 @@ def create_navigation_panel(self, parent):
     canvas_window = canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
     canvas.configure(yscrollcommand=scrollbar.set)
 
-    # Mousewheel
+    # ── Mousewheel scrolling, scoped to the navigation canvas ──
+    # Pre-8.117.19 used ``bind_all('<MouseWheel>')`` on Enter +
+    # ``unbind_all`` on Leave. Two failure modes that fix:
+    #   (a) If the mouse left the canvas via a popup steal / focus
+    #       grab without firing Leave (e.g. a Toplevel appears under
+    #       the cursor), the global binding stayed pointed at this
+    #       canvas. After the canvas was destroyed (logout rebuild,
+    #       window close, etc.) the next wheel event raised
+    #       ``TclError: invalid command name ".!frame.!labelframe.!canvas"``.
+    #       Same bug class as the student-records academic-tab leak
+    #       fixed in 8.117.15.
+    #   (b) Even when working correctly, the global unbind *removed*
+    #       wheel handling from any other widget in the app that had
+    #       legitimately bound it. Detail-window canvases, tree
+    #       scrollers, etc. would silently lose mousewheel until the
+    #       user moved the cursor through the navigation canvas
+    #       again.
+    # Replaced with widget-local bind on the canvas + a <Map>-driven
+    # recursive walk over the scrollable inner frame so newly-packed
+    # children (e.g. category sub-frames opened by the 8.117.17
+    # accordion) inherit the binding. Bindings die naturally with
+    # the canvas; no global state. ``_on_mousewheel`` swallows
+    # ``tk.TclError`` to handle the destroy race cleanly.
     def _on_mousewheel(event):
-        canvas.yview_scroll(int(-1*(event.delta/120)), "units")
-    canvas.bind('<Enter>', lambda e: canvas.bind_all("<MouseWheel>", _on_mousewheel))
-    canvas.bind('<Leave>', lambda e: canvas.unbind_all("<MouseWheel>"))
+        try:
+            delta = -1 if (getattr(event, 'num', None) == 5
+                           or getattr(event, 'delta', 0) < 0) else 1
+            canvas.yview_scroll(-delta, "units")
+        except tk.TclError:
+            pass
+        return "break"
+
+    def _bind_wheel_recursive(widget):
+        # Idempotent: the marker attribute prevents add="+" from
+        # stacking duplicate handlers on widgets we've already
+        # touched — important because <Configure> fires repeatedly
+        # as the accordion expands.
+        try:
+            if getattr(widget, '_nav_wheel_bound', False):
+                pass  # already bound; still recurse for new children
+            else:
+                for seq in ('<MouseWheel>', '<Button-4>', '<Button-5>'):
+                    widget.bind(seq, _on_mousewheel, add="+")
+                widget._nav_wheel_bound = True
+            for child in widget.winfo_children():
+                _bind_wheel_recursive(child)
+        except tk.TclError:
+            pass
+
+    for seq in ('<MouseWheel>', '<Button-4>', '<Button-5>'):
+        canvas.bind(seq, _on_mousewheel, add="+")
+    canvas._nav_wheel_bound = True
+    # Add a second <Configure> handler on the scrollable inner frame
+    # (the first one already updates the scroll region). This fires
+    # whenever children are packed/repacked — including accordion
+    # expand, pin/unpin rebuild, and the inline-search results frame
+    # rebuilding on every keystroke. The recursive walk is idempotent
+    # via the ``_nav_wheel_bound`` marker so repeat calls are cheap.
+    scrollable_frame.bind(
+        '<Configure>',
+        lambda _e: _bind_wheel_recursive(scrollable_frame),
+        add="+",
+    )
+    # Initial pass — at panel-build time the children list is empty
+    # but the binding will be picked up on the first <Configure>
+    # after content is packed. Bind now anyway so the canvas itself
+    # responds even before any children exist.
+    _bind_wheel_recursive(scrollable_frame)
 
     # Keep inner frame width = canvas width
     def configure_canvas_width(_):
