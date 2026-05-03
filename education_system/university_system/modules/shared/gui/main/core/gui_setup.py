@@ -168,16 +168,12 @@ def create_header(self, parent):
                    command=lambda: self.switch_system()).pack(
             side=tk.LEFT, padx=(0, 6))
 
-    # ── Destructive actions (right, behind a dropdown) ──
+    # ── Destructive actions (right) ──
     right = ttk.Frame(header_frame)
     right.grid(row=0, column=2, sticky=tk.E)
 
-    power_menu = tk.Menu(right, tearoff=0)
-    power_menu.add_command(label=_t("gui.shutdown"),
+    power_btn = ttk.Button(right, text="⏻ " + _t("gui.shutdown"),
                            command=lambda: self.shutdown_system())
-    self.power_menu = power_menu  # kept on self for tests / extension
-    power_btn = ttk.Menubutton(right, text="⏻  ▾", direction='below')
-    power_btn['menu'] = power_menu
     power_btn.pack(side=tk.RIGHT)
 
 

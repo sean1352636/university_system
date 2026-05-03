@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.58 — 2026-05-03](#811758---2026-05-03)
 - [8.117.57 — 2026-05-03](#811757---2026-05-03)
 - [8.117.56 — 2026-05-03](#811756---2026-05-03)
 - [8.117.55 — 2026-05-03](#811755---2026-05-03)
@@ -284,6 +285,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.58] — 2026-05-03
+
+### Changed — Main GUI shutdown is now a direct button, not a dropdown
+
+The header's "⏻ ▾" Menubutton (introduced in 8.117.20 to add a click
+of intent before Shutdown) is now a plain ``ttk.Button`` labelled
+"⏻ Shutdown" that calls ``shutdown_system`` directly. The
+``shutdown_system`` handler already shows a yes/no confirmation
+messagebox, so the muscle-memory guard remains.
+
+#### Files
+
+- ``modules/shared/gui/main/core/gui_setup.py`` ``create_header``:
+  replaced the ``tk.Menu`` + ``ttk.Menubutton`` pair with a single
+  ``ttk.Button``. Dropped the ``self.power_menu`` attribute (no
+  external references).
 
 ---
 
