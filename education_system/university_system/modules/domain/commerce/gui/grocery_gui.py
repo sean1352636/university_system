@@ -168,7 +168,7 @@ class GroceryGUI:
         """Open the grocery shop window"""
         self.grocery_window = tk.Toplevel(self.root)
         self.grocery_window.title(_t("grocery.title"))
-        self.grocery_window.geometry("1400x900")
+        self.grocery_window.geometry("1400x900+%d+%d" % ((self.grocery_window.winfo_screenwidth() - 1400) // 2, (self.grocery_window.winfo_screenheight() - 900) // 2))
         self.grocery_window.minsize(1200, 800)
         self.grocery_window.transient(self.root)
 

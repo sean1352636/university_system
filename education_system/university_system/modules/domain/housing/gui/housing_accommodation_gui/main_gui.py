@@ -81,7 +81,7 @@ class HousingGUI:
         init_i18n()
 
         self.root.title(_t("housing.window_title"))
-        self.root.geometry("1400x900")
+        self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
         self.root.configure(bg='#f0f0f0')
 
         # Set the auth instance for backward compatibility

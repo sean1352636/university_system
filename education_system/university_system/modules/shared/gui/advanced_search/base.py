@@ -1021,7 +1021,7 @@ class AdvancedSearchGUI:
         self.master = master
         self.auth = auth  # Add this line
         self.master.title(_t("advanced_search.window_title"))
-        self.master.geometry("1400x900")
+        self.master.geometry("1400x900+%d+%d" % ((self.master.winfo_screenwidth() - 1400) // 2, (self.master.winfo_screenheight() - 900) // 2))
         self.master.minsize(1200, 800)
         self.master.configure(bg='#f0f0f0')
 

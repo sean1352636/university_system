@@ -64,7 +64,7 @@ class GradeTrackingManagementGUI(
             if GRADE_TRACKING_GUI_AVAILABLE and GradeTrackingApp:
                 grade_window = tk.Toplevel(self.root)
                 grade_window.title(_("grades.title"))
-                grade_window.geometry("1400x900")
+                grade_window.geometry("1400x900+%d+%d" % ((grade_window.winfo_screenwidth() - 1400) // 2, (grade_window.winfo_screenheight() - 900) // 2))
                 grade_window.minsize(1200, 800)
 
                 # Configure window background

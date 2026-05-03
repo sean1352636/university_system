@@ -30,7 +30,7 @@ class InternshipGUI(
 
         self.root = root
         self.root.title(_t("internship.title"))
-        self.root.geometry("1400x900")
+        self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
         self.root.minsize(1200, 800)
         self.root.configure(bg='#f0f0f0')
 

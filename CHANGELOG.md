@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.57 — 2026-05-03](#811757---2026-05-03)
 - [8.117.56 — 2026-05-03](#811756---2026-05-03)
 - [8.117.55 — 2026-05-03](#811755---2026-05-03)
 - [8.117.54 — 2026-05-03](#811754---2026-05-03)
@@ -283,6 +284,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.57] — 2026-05-03
+
+### Fixed — Center the 1400x900 standalone GUIs on screen
+
+8.117.56 sized 26 GUIs to 1400x900 but left the position to whatever
+default Tk picked (often top-left or wherever the parent landed),
+so on smaller displays the right/bottom edges fell off-screen.
+Switched each ``geometry("1400x900")`` call to a centered form:
+
+```python
+window.geometry("1400x900+%d+%d" % (
+    (window.winfo_screenwidth() - 1400) // 2,
+    (window.winfo_screenheight() - 900) // 2,
+))
+```
+
+``winfo_screenwidth()`` / ``winfo_screenheight()`` are available
+before the window is mapped, so no ``update_idletasks`` is needed.
+
+#### Files
+
+Same set as 8.117.56, plus Module Scheduling and Housing
+Accommodation (which were already 1400x900 but uncentered).
+Helpdesk, Security Dashboard, and the commerce launcher Toplevels
+already had their own centering and were left alone.
 
 ---
 

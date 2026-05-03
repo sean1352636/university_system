@@ -56,7 +56,7 @@ class StaffHRGUI:
         """Create the main Staff HR window."""
         self.window = tk.Toplevel(self.root)
         self.window.title(_t("staff_hr.window_title"))
-        self.window.geometry("1400x900")
+        self.window.geometry("1400x900+%d+%d" % ((self.window.winfo_screenwidth() - 1400) // 2, (self.window.winfo_screenheight() - 900) // 2))
         self.window.minsize(1200, 800)
 
         # Configure styles

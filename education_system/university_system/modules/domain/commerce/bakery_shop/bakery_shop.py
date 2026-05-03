@@ -122,7 +122,7 @@ class BakeryShop:
     def __init__(self, root):
         self.root = root
         self.root.title("University Bakery Shop")
-        self.root.geometry("1400x900")
+        self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
         self.root.minsize(1200, 800)
         self.root.configure(bg="#FFF8E7")
 

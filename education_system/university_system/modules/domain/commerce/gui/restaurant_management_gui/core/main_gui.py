@@ -313,7 +313,7 @@ class RestaurantManagementGUI:
             self.restaurant_window = self.root
 
         self.restaurant_window.title(_t("restaurant.window_title"))
-        self.restaurant_window.geometry("1400x900")
+        self.restaurant_window.geometry("1400x900+%d+%d" % ((self.restaurant_window.winfo_screenwidth() - 1400) // 2, (self.restaurant_window.winfo_screenheight() - 900) // 2))
         self.restaurant_window.minsize(1200, 800)
         self.restaurant_window.configure(bg='#f0f0f0')
 
