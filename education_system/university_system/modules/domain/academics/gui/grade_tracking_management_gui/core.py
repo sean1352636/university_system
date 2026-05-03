@@ -62,13 +62,20 @@ class GradeTrackingManagementGUI(
 
         try:
             if GRADE_TRACKING_GUI_AVAILABLE and GradeTrackingApp:
+                # Withdraw → set centered geometry → build → deiconify so
+                # the WM maps the window once, at the right place. Setting
+                # geometry on an already-mapped window after ``transient``
+                # let some WMs ignore the new position.
                 grade_window = tk.Toplevel(self.root)
-                grade_window.title(_("grades.title"))
-                grade_window.geometry("1400x900+%d+%d" % ((grade_window.winfo_screenwidth() - 1400) // 2, (grade_window.winfo_screenheight() - 900) // 2))
+                grade_window.withdraw()
+                _w, _h = 1400, 900
+                grade_window.geometry("%dx%d+%d+%d" % (
+                    _w, _h,
+                    (grade_window.winfo_screenwidth() - _w) // 2,
+                    (grade_window.winfo_screenheight() - _h) // 2))
                 grade_window.minsize(1200, 800)
-
-                # Configure window background
                 grade_window.configure(bg='#f0f0f0')
+                grade_window.title(_("grades.title"))
 
                 try:
                     grade_window.transient(self.root)
@@ -84,6 +91,7 @@ class GradeTrackingManagementGUI(
                 elif hasattr(grade_gui, 'auth'):
                     grade_gui.auth = self.auth
 
+                grade_window.deiconify()
                 print("Grade Tracking GUI opened successfully")
 
             else:

@@ -355,18 +355,21 @@ def show_course_management(self):
 
     try:
         if COURSE_MANAGEMENT_GUI_AVAILABLE:
-            # Create a new window for the Course Management GUI
+            # Create the Toplevel withdrawn so we can position it before
+            # the WM maps it. Pre-8.117.64 the launcher set geometry to
+            # 1200x800, then re-positioned via ``winfo_width()`` (which
+            # returns 1 before the WM realises the size) — leaving the
+            # window pushed against the right edge.
             course_window = tk.Toplevel(self.root)
+            course_window.withdraw()
+            _w, _h = 1400, 900
+            course_window.geometry("%dx%d+%d+%d" % (
+                _w, _h,
+                (course_window.winfo_screenwidth() - _w) // 2,
+                (course_window.winfo_screenheight() - _h) // 2))
+            course_window.minsize(1200, 800)
             _install_clean_close(course_window)
             course_window.title(_t("academic_launchers.titles.course"))
-            course_window.geometry("1200x800")
-
-            # Center the window
-            course_window.update_idletasks()
-            x = (course_window.winfo_screenwidth() - course_window.winfo_width()) // 2
-            y = (course_window.winfo_screenheight() - course_window.winfo_height()) // 2
-            course_window.geometry(f"+{x}+{y}")
-
             try:
                 course_window.transient(self.root)
             except Exception:
@@ -378,6 +381,7 @@ def show_course_management(self):
             with _academic_style_guarded(self.root, child_window=course_window):
                 course_gui = CourseManagementGUI(course_window, auth_system=self.auth)
 
+            course_window.deiconify()
             print(_t("academic_launchers.success.course_opened"))
 
         else:
@@ -514,12 +518,17 @@ def show_assignments(self):
             messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.assignment_gui_unavailable"))
             return
 
-        # Create a new window for the Assignment GUI. AssignmentGUI's
-        # constructor sets size+position (centered 1400x900) on the
-        # window we hand it, so we don't pre-set geometry here — pre-
-        # mapping the Toplevel at a different size and re-positioning
-        # produced an off-centre flash on some window managers.
+        # Create the Toplevel withdrawn so we can position it before the
+        # WM maps it; setting geometry on an already-mapped window after
+        # ``transient`` lets some WMs ignore the new position.
         assignment_window = tk.Toplevel(self.root)
+        assignment_window.withdraw()
+        _w, _h = 1400, 900
+        assignment_window.geometry("%dx%d+%d+%d" % (
+            _w, _h,
+            (assignment_window.winfo_screenwidth() - _w) // 2,
+            (assignment_window.winfo_screenheight() - _h) // 2))
+        assignment_window.minsize(1200, 800)
         _install_clean_close(assignment_window)
         assignment_window.title(_t("academic_launchers.titles.assignment"))
 
@@ -584,6 +593,7 @@ def show_assignments(self):
         # Initialize the Assignment GUI with minimal system
         assignment_gui = AssignmentGUI(assignment_system, self.auth, parent=assignment_window)
 
+        assignment_window.deiconify()
         print(_t("academic_launchers.success.assignment_opened"))
 
     except Exception as e:
@@ -1149,21 +1159,25 @@ def show_advanced_search_gui(self):
         return
 
     try:
-        # Create a new window for the Advanced Search GUI
+        # Withdraw → set centered geometry → build → deiconify so the
+        # WM maps the window once, at the right place. The pre-8.117.64
+        # path used ``winfo_width()`` (which returns 1 before the WM
+        # realises the size) for centering and ended up off-screen.
         search_window = tk.Toplevel(self.root)
+        search_window.withdraw()
+        _w, _h = 1400, 900
+        search_window.geometry("%dx%d+%d+%d" % (
+            _w, _h,
+            (search_window.winfo_screenwidth() - _w) // 2,
+            (search_window.winfo_screenheight() - _h) // 2))
+        search_window.minsize(1200, 800)
         _install_clean_close(search_window)
         search_window.title(_t("extras_gui.titles.advanced_search"))
-        search_window.geometry("1200x800")
         search_window.transient(self.root)
-
-        # Center the window
-        search_window.update_idletasks()
-        x = (search_window.winfo_screenwidth() - search_window.winfo_width()) // 2
-        y = (search_window.winfo_screenheight() - search_window.winfo_height()) // 2
-        search_window.geometry(f"+{x}+{y}")
 
         # Initialize the Advanced Search GUI in the new window
         self.advanced_search_gui = AdvancedSearchGUI(search_window, auth=self.auth)
+        search_window.deiconify()
 
         # Store reference for data refresh
         self.advanced_search_refresh_callback = self.advanced_search_gui.refresh_data

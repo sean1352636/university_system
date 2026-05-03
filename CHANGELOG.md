@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.64 — 2026-05-03](#811764---2026-05-03)
 - [8.117.63 — 2026-05-03](#811763---2026-05-03)
 - [8.117.62 — 2026-05-03](#811762---2026-05-03)
 - [8.117.61 — 2026-05-03](#811761---2026-05-03)
@@ -290,6 +291,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.64] — 2026-05-03
+
+### Fixed — Course Management / Assignment / Grade Tracking / Advanced Search not centred
+
+The four GUIs were created as ``tk.Toplevel`` and then re-positioned
+via ``winfo_width()`` / ``winfo_height()`` after a non-centred
+``geometry()`` call. ``winfo_width()`` returns ``1`` before the WM
+realises the requested size, so the centering math collapsed to
+``(screen_width - 1) // 2`` and the window ended up against the
+right edge. Even when the inner GUI ctor later set the correct
+centred geometry, some WMs ignored the second positioning request
+on an already-mapped Toplevel — especially after ``transient()``.
+
+Switched each launcher (and the inner Grade Tracking opener) to:
+
+```python
+window = tk.Toplevel(parent)
+window.withdraw()
+window.geometry(f"{w}x{h}+{cx}+{cy}")  # screen-based centring
+window.minsize(1200, 800)
+... build UI ...
+window.deiconify()
+```
+
+Withdrawing before the WM maps the window means the geometry is
+the only one that ever applies — no second-map repositioning, no
+``winfo_width`` race.
+
+#### Files
+
+- ``modules/shared/gui/main/features/academic_launchers_gui.py``:
+  ``show_course_management``, ``show_assignments``,
+  ``show_advanced_search_gui``.
+- ``modules/domain/academics/gui/grade_tracking_management_gui/core.py``
+  ``show_grade_tracking_gui``.
 
 ---
 
