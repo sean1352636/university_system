@@ -94,8 +94,12 @@ def _remove_legacy_db():
 
 
 class _Frame(tk.Frame):
+    # 8.117.66 — flattened to the main GUI's clam-default neutrals.
+    # Pre-8.117.66 the frame had a navy header bar (#2c3e50) with white
+    # text on a pale-grey body (#ecf0f1) — visually disconnected from
+    # every other workspace tab.
     def __init__(self, parent, user=None):
-        super().__init__(parent, bg="#ecf0f1")
+        super().__init__(parent, bg="#f0f0f0")
         self._svc = TutorGroupService()
         self._user = user
         self._user_display = _user_display_name(user)
@@ -103,16 +107,16 @@ class _Frame(tk.Frame):
         self._refresh()
 
     def _build(self):
-        hdr = tk.Frame(self, bg="#2c3e50", height=44)
+        hdr = tk.Frame(self, bg="#f0f0f0", height=44)
         hdr.pack(fill="x"); hdr.pack_propagate(False)
         tk.Label(hdr, text="Tutor Groups", font=("Helvetica", 14, "bold"),
-                 bg="#2c3e50", fg="white").pack(side="left", padx=20, pady=8)
+                 bg="#f0f0f0", fg="#000000").pack(side="left", padx=20, pady=8)
         role = (self._user or {}).get('role') or ('—' if self._user else 'not signed in')
         tk.Label(hdr, text=f"Signed in: {self._user_display}  ({role})",
-                 font=("Helvetica", 9), bg="#2c3e50",
-                 fg="#bdc3c7").pack(side="right", padx=20, pady=14)
+                 font=("Helvetica", 9), bg="#f0f0f0",
+                 fg="#555555").pack(side="right", padx=20, pady=14)
 
-        ctrl = tk.Frame(self, bg="#ecf0f1"); ctrl.pack(fill="x", padx=10, pady=6)
+        ctrl = tk.Frame(self, bg="#f0f0f0"); ctrl.pack(fill="x", padx=10, pady=6)
         tk.Button(ctrl, text="Create Group", command=self._create).pack(side="left", padx=4)
         tk.Button(ctrl, text="Add Member", command=self._add_member).pack(side="left", padx=4)
         tk.Button(ctrl, text="Assign Tutor", command=self._assign).pack(side="left", padx=4)

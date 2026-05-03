@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.66 — 2026-05-03](#811766---2026-05-03)
 - [8.117.65 — 2026-05-03](#811765---2026-05-03)
 - [8.117.64 — 2026-05-03](#811764---2026-05-03)
 - [8.117.63 — 2026-05-03](#811763---2026-05-03)
@@ -292,6 +293,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.66] — 2026-05-03
+
+### Changed — Tutor Groups & Lesson Planner palettes flattened to match the main GUI
+
+Same flattening as 8.117.65 (Research Portal). Both apps had their
+own saturated colour scheme — navy header bars with white text on a
+slightly off-white body — that stood out against the rest of the
+workspace.
+
+Both now use ``#f0f0f0`` for body/header, black for header text,
+``#555555`` for muted secondary text. Schedule-grid chart fills in
+Lesson Planner are kept (they're meaningful chart elements, not UI
+chrome).
+
+#### Files
+
+- ``modules/domain/academics/tutor_groups/tutor_groups_app.py``
+  ``_Frame.__init__`` and ``_Frame._build``: bg ``#ecf0f1`` →
+  ``#f0f0f0``, header bar ``#2c3e50`` → ``#f0f0f0``, header label
+  ``fg="white"`` → ``"#000000"``, signed-in label ``fg="#bdc3c7"``
+  → ``"#555555"``.
+- ``modules/domain/academics/course_planning/lesson_planner.py``:
+  ``#f0f2f5`` → ``#f0f0f0`` everywhere; ``Header.TLabel`` /
+  ``TLabelframe.Label`` foreground ``#1e3a8a`` → ``#000000``;
+  header bar ``#1e3a8a`` → ``#f0f0f0``, header labels switched from
+  white/``#cbd5e1`` to dark/muted.
 
 ---
 

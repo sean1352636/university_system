@@ -131,7 +131,7 @@ class LessonPlannerApp:
             self.root.title("University Lesson Planner")
             self.root.geometry("1200x720")
         try:
-            self.root.configure(bg="#f0f2f5")
+            self.root.configure(bg="#f0f0f0")
         except tk.TclError:
             pass
 
@@ -158,37 +158,39 @@ class LessonPlannerApp:
         style = ttk.Style()
         style.theme_use("clam")
 
-        style.configure("TNotebook", background="#f0f2f5", borderwidth=0)
+        style.configure("TNotebook", background="#f0f0f0", borderwidth=0)
         style.configure("TNotebook.Tab", padding=[18, 8], font=("Segoe UI", 10))
         style.configure("Treeview", font=("Segoe UI", 9), rowheight=26)
         style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
         style.configure("TButton", font=("Segoe UI", 9), padding=6)
         style.configure("Accent.TButton", font=("Segoe UI", 9, "bold"))
-        style.configure("TLabel", background="#f0f2f5", font=("Segoe UI", 10))
+        style.configure("TLabel", background="#f0f0f0", font=("Segoe UI", 10))
         style.configure("Header.TLabel", font=("Segoe UI", 14, "bold"),
-                        background="#f0f2f5", foreground="#1e3a8a")
-        style.configure("TLabelframe", background="#f0f2f5")
-        style.configure("TLabelframe.Label", background="#f0f2f5",
-                        font=("Segoe UI", 10, "bold"), foreground="#1e3a8a")
+                        background="#f0f0f0", foreground="#000000")
+        style.configure("TLabelframe", background="#f0f0f0")
+        style.configure("TLabelframe.Label", background="#f0f0f0",
+                        font=("Segoe UI", 10, "bold"), foreground="#000000")
 
     def _build_ui(self):
-        # Top header bar
-        header = tk.Frame(self.root, bg="#1e3a8a", height=60)
+        # Top header bar — flat #f0f0f0 bg with dark text to match the
+        # main GUI; pre-8.117.66 this was a navy bar (#1e3a8a) with
+        # white text, visually disconnected from the rest of the app.
+        header = tk.Frame(self.root, bg="#f0f0f0", height=60)
         header.pack(fill="x")
         header.pack_propagate(False)
 
         tk.Label(header, text="🎓 University Lesson Planner",
-                 bg="#1e3a8a", fg="white",
+                 bg="#f0f0f0", fg="#000000",
                  font=("Segoe UI", 16, "bold")).pack(side="left", padx=20)
 
         role = (self.user or {}).get('role') or ('—' if self.user else 'not signed in')
         tk.Label(header,
                  text=f"Signed in: {self.user_display}  ({role})",
-                 bg="#1e3a8a", fg="#cbd5e1",
+                 bg="#f0f0f0", fg="#555555",
                  font=("Segoe UI", 9)).pack(side="right", padx=20)
 
-        self.status_label = tk.Label(header, text="", bg="#1e3a8a",
-                                     fg="#cbd5e1", font=("Segoe UI", 9))
+        self.status_label = tk.Label(header, text="", bg="#f0f0f0",
+                                     fg="#555555", font=("Segoe UI", 9))
         self.status_label.pack(side="right", padx=20)
 
         # Main notebook (tabs)
@@ -200,7 +202,7 @@ class LessonPlannerApp:
         self._build_courses_tab()
 
     def _build_lessons_tab(self):
-        tab = tk.Frame(self.notebook, bg="#f0f2f5")
+        tab = tk.Frame(self.notebook, bg="#f0f0f0")
         self.notebook.add(tab, text="  📚 Lessons  ")
 
         # Left panel: form
@@ -254,7 +256,7 @@ class LessonPlannerApp:
         self.notes_text.grid(row=len(fields), column=1, pady=6, padx=(10, 0))
 
         # Buttons
-        btn_frame = tk.Frame(form_frame, bg="#f0f2f5")
+        btn_frame = tk.Frame(form_frame, bg="#f0f0f0")
         btn_frame.grid(row=len(fields) + 1, column=0, columnspan=2, pady=15)
 
         ttk.Button(btn_frame, text="Add Lesson",
@@ -272,7 +274,7 @@ class LessonPlannerApp:
         list_frame.pack(side="right", fill="both", expand=True)
 
         # Search bar
-        search_frame = tk.Frame(list_frame, bg="#f0f2f5")
+        search_frame = tk.Frame(list_frame, bg="#f0f0f0")
         search_frame.pack(fill="x", pady=(0, 10))
         ttk.Label(search_frame, text="🔍 Search:").pack(side="left", padx=(0, 6))
         self.search_var = tk.StringVar()
@@ -301,10 +303,10 @@ class LessonPlannerApp:
         self.lessons_tree.bind("<<TreeviewSelect>>", self._on_lesson_select)
 
     def _build_schedule_tab(self):
-        tab = tk.Frame(self.notebook, bg="#f0f2f5")
+        tab = tk.Frame(self.notebook, bg="#f0f0f0")
         self.notebook.add(tab, text="  📅 Weekly Schedule  ")
 
-        header_frame = tk.Frame(tab, bg="#f0f2f5")
+        header_frame = tk.Frame(tab, bg="#f0f0f0")
         header_frame.pack(fill="x", pady=(0, 10))
 
         ttk.Label(header_frame, text="Weekly Timetable",
@@ -316,7 +318,7 @@ class LessonPlannerApp:
                    command=self._export_schedule).pack(side="right", padx=6)
 
         # Scrollable canvas for schedule grid
-        canvas_frame = tk.Frame(tab, bg="#f0f2f5")
+        canvas_frame = tk.Frame(tab, bg="#f0f0f0")
         canvas_frame.pack(fill="both", expand=True)
 
         self.schedule_canvas = tk.Canvas(canvas_frame, bg="white",
@@ -335,7 +337,7 @@ class LessonPlannerApp:
         self.schedule_canvas.pack(side="left", fill="both", expand=True)
 
     def _build_courses_tab(self):
-        tab = tk.Frame(self.notebook, bg="#f0f2f5")
+        tab = tk.Frame(self.notebook, bg="#f0f0f0")
         self.notebook.add(tab, text="  🎯 Courses  ")
 
         # Left: Add course form
@@ -367,7 +369,7 @@ class LessonPlannerApp:
         self.course_desc.grid(row=len(course_fields), column=1,
                               pady=6, padx=(10, 0))
 
-        btn_frame = tk.Frame(form_frame, bg="#f0f2f5")
+        btn_frame = tk.Frame(form_frame, bg="#f0f0f0")
         btn_frame.grid(row=len(course_fields) + 1, column=0,
                        columnspan=2, pady=15)
         ttk.Button(btn_frame, text="Add Course",
