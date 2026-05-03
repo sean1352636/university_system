@@ -8,9 +8,18 @@ logger = logging.getLogger(__name__)
 
 class StudyRecommendationGUI:
     def __init__(self, parent=None, auth=None):
-        self.root = tk.Toplevel(parent) if parent else tk.Tk()
-        self.root.title("Study Recommendations")
-        self.root.geometry("1200x800")
+        # When the launcher passes a workspace tab Frame (via
+        # ``open_in_workspace``), embed inside it rather than spawning a
+        # Toplevel — same shape Student Records uses (8.117.38). Frames
+        # lack ``wm_title``; Tk/Toplevel have it. That's the discriminator.
+        if parent is not None and not hasattr(parent, "wm_title"):
+            self.root = parent
+            self._owns_window = False
+        else:
+            self.root = tk.Toplevel(parent) if parent else tk.Tk()
+            self.root.title("Study Recommendations")
+            self.root.geometry("1200x800")
+            self._owns_window = True
         try:
             from education_system.university_system.modules.domain.academics.study_recommendations.services.study_recommendation_service import StudyRecommendationService
             self.service = StudyRecommendationService()

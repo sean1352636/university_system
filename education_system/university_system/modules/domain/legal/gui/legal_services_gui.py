@@ -48,11 +48,14 @@ class LegalServicesGUI(
         self.current_user = auth.current_user
         self.user_role = self.current_user.get('role', 'student')
 
-        # Use passed window (root is already a Toplevel from the launcher)
+        # Use passed window. ``root`` may be a Toplevel (legacy launcher
+        # path) or a workspace tab Frame (``open_in_workspace``); Frames
+        # have no ``wm_title`` so skip the window-chrome calls.
         self.window = root
-        self.window.title(_t("legal.window_title", default="Legal Services Center"))
-        self.window.geometry("1200x800")
-        self.window.minsize(1000, 650)
+        if hasattr(self.window, "wm_title"):
+            self.window.title(_t("legal.window_title", default="Legal Services Center"))
+            self.window.geometry("1200x800")
+            self.window.minsize(1000, 650)
 
         # Initialize data storage
         self.cases_data = []

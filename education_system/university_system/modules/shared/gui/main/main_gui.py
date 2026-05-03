@@ -1120,3 +1120,287 @@ for _btn_name, _label, _module in _NEW_FEATURE_MODULES:
     setattr(UnifiedManagementGUI, _attr, _make_handler(_module, _label))
 
 del _btn_name, _label, _module, _attr
+
+
+# Research Portal: prefer the in-process embed via ``open_in_workspace``
+# instead of the subprocess launch so it lands in the main GUI's content
+# notebook (same shape as Student Records, 8.117.38). Falls back to the
+# auto-generated subprocess handler if the workspace isn't available or
+# the in-process import fails.
+def show_new_feature_university_research(self):
+    title = "Research Portal"
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        try:
+            from education_system.university_system.modules.domain.research.services.university_research import UniversityApp
+
+            def _build(host):
+                app = UniversityApp(host=host)
+                app.run()
+                return app
+            opener(title, _build)
+            return
+        except Exception:
+            logger.exception("In-process Research Portal failed; falling back to subprocess launch")
+    # Fallback path
+    self._launch_new_feature_module(
+        "education_system.university_system.modules.domain.research.services.university_research",
+        title)
+
+
+UnifiedManagementGUI.show_new_feature_university_research = show_new_feature_university_research
+
+
+def _embed_or_subprocess(self, title, module_dotted, build_inproc):
+    """Common embed-then-fallback dispatch shared by the new-feature
+    overrides below. ``build_inproc(host)`` constructs the in-process
+    app inside the workspace tab; on any failure (no workspace, import
+    error, runtime error) we fall back to the subprocess launcher."""
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        try:
+            opener(title, build_inproc)
+            return
+        except Exception:
+            logger.exception("In-process %s failed; falling back to subprocess", title)
+    self._launch_new_feature_module(module_dotted, title)
+
+
+UnifiedManagementGUI._embed_or_subprocess = _embed_or_subprocess
+
+
+def show_new_feature_module_evaluation_portal(self):
+    title = "Module Evaluation"
+    module_dotted = (
+        "education_system.university_system.modules.domain.academics."
+        "course_evaluation.module_evaluation_portal"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.academics.course_evaluation.module_evaluation_portal import ModuleEvaluationPortal
+        return ModuleEvaluationPortal(host)
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+def show_new_feature_lecturer_evaluation(self):
+    title = "Lecturer Evaluation"
+    module_dotted = (
+        "education_system.university_system.modules.domain.academics."
+        "course_evaluation.lecturer_evaluation"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.academics.course_evaluation.lecturer_evaluation import App
+        app = App(host=host)
+        app.run()
+        return app
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+def show_new_feature_lesson_planner(self):
+    title = "Lesson Planner"
+    module_dotted = (
+        "education_system.university_system.modules.domain.academics."
+        "course_planning.lesson_planner"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.academics.course_planning.lesson_planner import LessonPlannerApp
+        return LessonPlannerApp(host)
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+UnifiedManagementGUI.show_new_feature_module_evaluation_portal = show_new_feature_module_evaluation_portal
+UnifiedManagementGUI.show_new_feature_lecturer_evaluation = show_new_feature_lecturer_evaluation
+UnifiedManagementGUI.show_new_feature_lesson_planner = show_new_feature_lesson_planner
+
+
+def show_new_feature_course_evaluation_system(self):
+    title = "Course Evaluation"
+    module_dotted = (
+        "education_system.university_system.modules.domain.academics."
+        "course_evaluation.course_evaluation_system"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.academics.course_evaluation.course_evaluation_system import CourseEvaluationApp
+        return CourseEvaluationApp(host)
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+UnifiedManagementGUI.show_new_feature_course_evaluation_system = show_new_feature_course_evaluation_system
+
+
+def show_new_feature_complaints_portal(self):
+    title = "Complaints Portal"
+    module_dotted = (
+        "education_system.university_system.modules.domain.communications."
+        "feedback.complaints_portal"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.communications.feedback.complaints_portal import ComplaintsPortal
+        return ComplaintsPortal(host=host)
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+UnifiedManagementGUI.show_new_feature_complaints_portal = show_new_feature_complaints_portal
+
+
+def show_new_feature_intervention_outcomes(self):
+    title = "Intervention Outcomes"
+    module_dotted = (
+        "education_system.university_system.modules.domain.student_affairs."
+        "services.early_warning.outcomes.intervention_outcomes_app"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.student_affairs.services.early_warning.outcomes.intervention_outcomes_app import (
+            _Frame as _InterventionFrame,
+            _get_current_user,
+        )
+        frame = _InterventionFrame(host, user=_get_current_user())
+        frame.pack(fill="both", expand=True)
+        return frame
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+def show_new_feature_safeguarding_system(self):
+    title = "Safeguarding"
+    module_dotted = (
+        "education_system.university_system.modules.domain.student_affairs."
+        "safeguarding.safeguarding_system"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.student_affairs.safeguarding.safeguarding_system import SafeguardingApp
+        return SafeguardingApp(host=host)
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+def show_new_feature_mentoring_matching(self):
+    title = "Peer Mentoring Matching"
+    module_dotted = (
+        "education_system.university_system.modules.domain.student_affairs."
+        "student_union.services.mentoring_matching.mentoring_matching_app"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.student_affairs.student_union.services.mentoring_matching.mentoring_matching_app import (
+            _Frame as _MentoringFrame,
+            _get_current_user,
+        )
+        frame = _MentoringFrame(host, user=_get_current_user())
+        frame.pack(fill="both", expand=True)
+        return frame
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+UnifiedManagementGUI.show_new_feature_intervention_outcomes = show_new_feature_intervention_outcomes
+UnifiedManagementGUI.show_new_feature_safeguarding_system = show_new_feature_safeguarding_system
+UnifiedManagementGUI.show_new_feature_mentoring_matching = show_new_feature_mentoring_matching
+
+
+def show_new_feature_employer_portal(self):
+    title = "Employer Portal"
+    module_dotted = (
+        "education_system.university_system.modules.domain.student_affairs."
+        "employer_portal.employer_portal_app"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.student_affairs.employer_portal.gui.employer_portal_gui import (
+            EmployerPortalFrame,
+        )
+        from education_system.university_system.modules.domain.student_affairs.employer_portal.employer_portal_app import _get_current_user
+        frame = EmployerPortalFrame(host, auth=_get_current_user())
+        frame.pack(fill="both", expand=True)
+        return frame
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+def show_new_feature_kpi_dashboard(self):
+    title = "KPI Dashboard"
+    module_dotted = (
+        "education_system.university_system.modules.domain.analytics."
+        "kpi_dashboard.kpi_dashboard_app"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.analytics.kpi_dashboard.kpi_dashboard_app import (
+            _Frame as _KpiFrame,
+            _get_current_user,
+        )
+        frame = _KpiFrame(host, user=_get_current_user())
+        frame.pack(fill="both", expand=True)
+        return frame
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+def show_new_feature_apprenticeship_system(self):
+    title = "Apprenticeships"
+    module_dotted = (
+        "education_system.university_system.modules.domain.academics."
+        "apprenticeships.apprenticeship_system"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.academics.apprenticeships.apprenticeship_system import ApprenticeshipApp
+        return ApprenticeshipApp(host=host)
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+UnifiedManagementGUI.show_new_feature_employer_portal = show_new_feature_employer_portal
+UnifiedManagementGUI.show_new_feature_kpi_dashboard = show_new_feature_kpi_dashboard
+UnifiedManagementGUI.show_new_feature_apprenticeship_system = show_new_feature_apprenticeship_system
+
+
+def show_new_feature_first_aid_portal(self):
+    title = "First Aid Portal"
+    module_dotted = (
+        "education_system.university_system.modules.domain.health."
+        "first_aid.first_aid_portal"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.health.first_aid.first_aid_portal import FirstAidPortal
+        return FirstAidPortal(host)
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+def show_new_feature_room_booking(self):
+    title = "Room Booking"
+    module_dotted = (
+        "education_system.university_system.modules.domain.campus."
+        "room_booking.room_booking_app"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.campus.room_booking.room_booking_app import (
+            _Frame as _RoomBookingFrame,
+            _get_current_user,
+        )
+        frame = _RoomBookingFrame(host, user=_get_current_user())
+        frame.pack(fill="both", expand=True)
+        return frame
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+UnifiedManagementGUI.show_new_feature_first_aid_portal = show_new_feature_first_aid_portal
+UnifiedManagementGUI.show_new_feature_room_booking = show_new_feature_room_booking
+
+
+def show_new_feature_background_checker(self):
+    title = "Background Checker"
+    module_dotted = (
+        "education_system.university_system.modules.domain.staff_hr."
+        "background_checks.university_bg_checker"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.staff_hr.background_checks.university_bg_checker import BGCheckerApp
+        return BGCheckerApp(host=host)
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+UnifiedManagementGUI.show_new_feature_background_checker = show_new_feature_background_checker

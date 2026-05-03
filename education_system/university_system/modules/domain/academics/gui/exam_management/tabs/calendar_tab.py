@@ -35,7 +35,7 @@ class CalendarTabMixin:
         self.calendar_frame = ttk.Frame(tab)
         self.calendar_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.update_calendar()
+        self.root.after_idle(self.update_calendar)
 
     def update_calendar(self):
         """Update the calendar view."""

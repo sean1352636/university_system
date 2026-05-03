@@ -24,12 +24,17 @@ class FeedbackGUI:
         self.service = FeedbackService()
         self.auth = get_auth()
 
-        # Create main window or use parent
+        # When ``parent`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), embed inside it directly. Frames
+        # have no ``wm_title``; Tk/Toplevel do.
         if parent is None:
             self.root = tk.Tk()
             self.root.title("Feedback & Suggestion Box")
             self.root.geometry("1200x800")
             self.is_standalone = True
+        elif not hasattr(parent, "wm_title"):
+            self.root = parent
+            self.is_standalone = False
         else:
             self.root = tk.Toplevel(parent)
             self.root.title("Feedback & Suggestion Box")

@@ -31,11 +31,17 @@ class AccessibilityGUI:
         self.service = AccessibilityService()
         self.auth = get_auth()
 
+        # When ``parent`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), embed inside it. Frames have no
+        # ``wm_title``; Tk/Toplevel do.
         if parent is None:
             self.root = tk.Tk()
             self.root.title(_t("accessibility.window_title", default="Accessibility Services Portal"))
             self.root.geometry("1000x700")
             self.is_standalone = True
+        elif not hasattr(parent, "wm_title"):
+            self.root = parent
+            self.is_standalone = False
         else:
             self.root = tk.Toplevel(parent)
             self.root.title(_t("accessibility.window_title", default="Accessibility Services Portal"))

@@ -1798,18 +1798,39 @@ class PeopleTab(TableModule):
 # ---------------------------------------------------------------------------
 
 class UniversityApp:
-    def __init__(self):
+    def __init__(self, host=None):
+        """Build the Research Portal.
+
+        ``host`` may be:
+          * ``None`` (legacy / subprocess entry point) — create a new
+            ``tk.Tk()`` root and own it; ``run()`` enters mainloop.
+          * a workspace tab ``Frame`` (passed by the main GUI's
+            ``open_in_workspace``) — embed inside it; the caller owns
+            the window and its mainloop.
+          * a ``Toplevel`` — embed inside it without owning the
+            mainloop (uncommon, but supported for symmetry).
+        """
         self.db = Database()
         self.user = _get_current_user()
         self.user_display = _user_display_name(self.user)
         logger.info("Research Portal starting user=%s role=%s",
                     self.user_display,
                     (self.user or {}).get('role') or 'none')
-        self.root = tk.Tk()
-        self.root.title("University Research Management System")
-        self.root.geometry("1320x820")
-        self.root.minsize(1100, 700)
-        self.root.configure(bg=PALETTE["bg"])
+
+        if host is None:
+            self.root = tk.Tk()
+            self.root.title("University Research Management System")
+            self.root.geometry("1320x820")
+            self.root.minsize(1100, 700)
+            self.root.configure(bg=PALETTE["bg"])
+            self._owns_root = True
+        else:
+            self.root = host
+            self._owns_root = False
+            try:
+                self.root.configure(bg=PALETTE["bg"])
+            except tk.TclError:
+                pass
 
         configure_styles()
         self._build_header()
@@ -1882,12 +1903,24 @@ class UniversityApp:
                  font=("Segoe UI", 9)).pack(side="right", padx=12)
 
     def run(self):
+        if not self._owns_root:
+            # Embedded mode: caller owns mainloop. Just hook DB close
+            # to the host's destroy.
+            try:
+                self.root.bind("<Destroy>",
+                               lambda e, r=self.root: self.db.close()
+                               if e.widget is r else None,
+                               add="+")
+            except tk.TclError:
+                pass
+            return
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
         self.root.mainloop()
 
     def _on_close(self):
         self.db.close()
-        self.root.destroy()
+        if self._owns_root:
+            self.root.destroy()
 
 
 # ---------------------------------------------------------------------------

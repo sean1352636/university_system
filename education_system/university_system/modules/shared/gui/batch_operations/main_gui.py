@@ -36,8 +36,12 @@ class BatchOperationsGUI:
     def __init__(self, root=None, auth=None):
         self.root = root if root else tk.Tk()
         self.auth = auth  # Store authentication instance
-        self.root.title(_t("batch_ops.title"))
-        self.root.geometry("1200x800")
+        # When ``root`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), it has no ``wm_title`` — skip the
+        # window-chrome calls. Same shape as Library (8.117.34).
+        if hasattr(self.root, "wm_title"):
+            self.root.title(_t("batch_ops.title"))
+            self.root.geometry("1200x800")
 
         # Initialize enhanced backend with GUI-specific methods
         self.backend = EnhancedBatchOperationManager()
@@ -126,7 +130,13 @@ class BatchOperationsGUI:
         self.create_status_bar()
 
     def create_menu_bar(self):
-        """Create application menu bar"""
+        """Create application menu bar.
+
+        Frames don't accept ``config(menu=…)``; only Tk/Toplevel do.
+        Skip the menu when embedded in a workspace tab.
+        """
+        if not hasattr(self.root, "wm_title"):
+            return
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
 

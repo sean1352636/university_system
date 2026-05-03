@@ -41,7 +41,8 @@ class DataManager:
         self._modules_cache: Dict[str, Dict] = {}
         self._ensure_database_tables()
         self.load_data()
-        self._load_instructors()
+        # _load_instructors() is invoked lazily by get_instructors() — skipping
+        # the extra round trip here keeps GUI startup snappy.
 
     def _ensure_database_tables(self):
         """Ensure the exams table exists in the database."""

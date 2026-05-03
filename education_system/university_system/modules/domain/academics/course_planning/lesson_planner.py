@@ -124,9 +124,16 @@ class LessonPlannerApp:
 
     def __init__(self, root):
         self.root = root
-        self.root.title("University Lesson Planner")
-        self.root.geometry("1200x720")
-        self.root.configure(bg="#f0f2f5")
+        # When ``root`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), it has no ``wm_title`` — skip the
+        # window-chrome calls. Same shape Library uses (8.117.34).
+        if hasattr(self.root, "wm_title"):
+            self.root.title("University Lesson Planner")
+            self.root.geometry("1200x720")
+        try:
+            self.root.configure(bg="#f0f2f5")
+        except tk.TclError:
+            pass
 
         self.user = _get_current_user()
         self.user_display = _user_display_name(self.user)

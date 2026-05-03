@@ -42,10 +42,16 @@ class AdmissionsCRMGUI:
             messagebox.showerror(_t("common.error"), _t("admissions_crm.auth.login_required"))
             return
 
-        self.window = tk.Toplevel(root)
-        self.window.title(_t("admissions_crm.window_title"))
-        self.window.geometry("1200x800")
-        self.window.minsize(1000, 600)
+        # When ``root`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), embed inside it. Frames have no
+        # ``wm_title``; Tk/Toplevel do.
+        if root is not None and not hasattr(root, "wm_title"):
+            self.window = root
+        else:
+            self.window = tk.Toplevel(root)
+            self.window.title(_t("admissions_crm.window_title"))
+            self.window.geometry("1200x800")
+            self.window.minsize(1000, 600)
 
         # Initialize database tables
         self._init_database()

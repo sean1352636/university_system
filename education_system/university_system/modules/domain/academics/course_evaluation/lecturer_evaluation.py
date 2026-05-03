@@ -357,10 +357,14 @@ class StudentDashboard:
         for w in root.winfo_children():
             w.destroy()
 
-        root.title(f"Student Portal - {self.full_name}")
-        root.geometry("1000x680")
-        root.configure(bg=Theme.BG)
-        root.resizable(True, True)
+        if hasattr(root, "wm_title"):
+            root.title(f"Student Portal - {self.full_name}")
+            root.geometry("1000x680")
+            root.resizable(True, True)
+        try:
+            root.configure(bg=Theme.BG)
+        except tk.TclError:
+            pass
 
         self.build_ui()
         self.load_modules()
@@ -635,10 +639,14 @@ class AdminDashboard:
         for w in root.winfo_children():
             w.destroy()
 
-        root.title(f"Administrator Portal - {self.full_name}")
-        root.geometry("1100x720")
-        root.configure(bg=Theme.BG)
-        root.resizable(True, True)
+        if hasattr(root, "wm_title"):
+            root.title(f"Administrator Portal - {self.full_name}")
+            root.geometry("1100x720")
+            root.resizable(True, True)
+        try:
+            root.configure(bg=Theme.BG)
+        except tk.TclError:
+            pass
 
         self.build_ui()
 
@@ -940,10 +948,23 @@ class LecturerReportWindow:
 # APPLICATION CONTROLLER
 # ---------------------------------------------------------------------------
 class App:
-    def __init__(self):
+    def __init__(self, host=None):
+        """Lecturer Evaluation app.
+
+        ``host`` may be:
+          * ``None`` (legacy / subprocess) — creates ``tk.Tk()`` and
+            owns it; ``run()`` enters mainloop.
+          * a workspace tab ``Frame`` — embed inside it; caller owns
+            the mainloop and ``run()`` is a no-op.
+        """
         self.user = _get_current_user()
         self.db = Database()
-        self.root = tk.Tk()
+        if host is None:
+            self.root = tk.Tk()
+            self._owns_root = True
+        else:
+            self.root = host
+            self._owns_root = False
 
         if not self.user:
             self._show_no_auth_screen()
@@ -965,9 +986,13 @@ class App:
             StudentDashboard(self.root, self.db, full_name, student_id)
 
     def _show_no_auth_screen(self):
-        self.root.title("Lecturer Evaluation")
-        self.root.geometry("520x260")
-        self.root.configure(bg=Theme.BG)
+        if hasattr(self.root, "wm_title"):
+            self.root.title("Lecturer Evaluation")
+            self.root.geometry("520x260")
+        try:
+            self.root.configure(bg=Theme.BG)
+        except tk.TclError:
+            pass
         tk.Label(self.root, text="🔒  Authentication Required",
                  bg=Theme.BG, fg=Theme.PRIMARY,
                  font=Theme.FONT_HEADING).pack(pady=(40, 10))
@@ -981,6 +1006,9 @@ class App:
                   padx=20, pady=8, command=self.root.destroy).pack(pady=20)
 
     def run(self):
+        if not self._owns_root:
+            # Embedded mode: caller owns mainloop. No-op.
+            return
         self.root.mainloop()
 
 

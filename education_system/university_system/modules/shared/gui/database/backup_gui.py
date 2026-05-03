@@ -81,9 +81,13 @@ class BackupGUI:
     def __init__(self, root, auth=None):
         self.root = root
         self.auth = auth  # Store authentication instance
-        self.root.title(_t("backup.window_title", default="Enhanced Data Backup System"))
-        self.root.geometry("1200x800")
-        self.root.minsize(1000, 600)
+        # When ``root`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), it has no ``wm_title`` — skip the
+        # window-chrome calls. Same shape as Library (8.117.34).
+        if hasattr(self.root, "wm_title"):
+            self.root.title(_t("backup.window_title", default="Enhanced Data Backup System"))
+            self.root.geometry("1200x800")
+            self.root.minsize(1000, 600)
 
         # Initialize GUI state
         self.backup_thread = None

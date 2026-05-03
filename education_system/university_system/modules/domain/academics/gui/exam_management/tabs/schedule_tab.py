@@ -83,33 +83,35 @@ class ScheduleTabMixin:
 
     def refresh_exam_list(self):
         """Refresh the exam list in all views."""
-        # Clear trees
-        for tree in [self.schedule_tree, self.exam_tree]:
+        # Tabs build lazily; only clear/populate trees that already exist.
+        trees = [t for t in (getattr(self, "schedule_tree", None),
+                             getattr(self, "exam_tree", None)) if t is not None]
+        for tree in trees:
             for item in tree.get_children():
                 tree.delete(item)
 
         # Sort exams by date and time
         sorted_exams = sorted(self.data_manager.exams, key=lambda x: (x.date, x.start_time))
 
-        # Populate schedule tree
-        for exam in sorted_exams:
-            time_str = f"{exam.start_time} - {exam.end_time}"
-            self.schedule_tree.insert('', tk.END, values=(
-                exam.id, exam.module_code, exam.module_name, exam.date,
-                time_str, exam.room, exam.instructor_name, exam.students_enrolled
-            ))
+        if getattr(self, "schedule_tree", None) is not None:
+            for exam in sorted_exams:
+                time_str = f"{exam.start_time} - {exam.end_time}"
+                self.schedule_tree.insert('', tk.END, values=(
+                    exam.id, exam.module_code, exam.module_name, exam.date,
+                    time_str, exam.room, exam.instructor_name, exam.students_enrolled
+                ))
 
-        # Populate exam tree
-        for exam in sorted_exams:
-            self.exam_tree.insert('', tk.END, values=(
-                exam.id, exam.module_code, exam.module_name, exam.date, exam.room
-            ))
+        if getattr(self, "exam_tree", None) is not None:
+            for exam in sorted_exams:
+                self.exam_tree.insert('', tk.END, values=(
+                    exam.id, exam.module_code, exam.module_name, exam.date, exam.room
+                ))
 
-        # Update statistics
-        self.update_statistics()
+        if hasattr(self, "stats_label"):
+            self.update_statistics()
 
-        # Update calendar
-        self.update_calendar()
+        if hasattr(self, "calendar_frame"):
+            self.update_calendar()
 
     def update_statistics(self):
         """Update the statistics display with enhanced information."""

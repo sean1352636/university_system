@@ -989,19 +989,38 @@ def show_capacity_planning(self):
 # ---------------------------------------------------------------------------
 
 def show_usage_adoption_reports(self):
-    """System usage and adoption reports with heatmap and module usage stats."""
+    """System usage and adoption reports.
+
+    Renders inside the main GUI's content notebook when a workspace is
+    available (via ``open_in_workspace``); falls back to a Toplevel
+    otherwise. Same pattern as Student Records (8.117.38).
+    """
     if not self.auth.current_user or self.auth.current_user.get('role') != 'admin':
         messagebox.showerror(_t("admin_tools.access_denied"), _t("admin_tools.admin_required"))
         return
 
-    try:
-        from education_system.university_system.infrastructure.database.db import get_connection
+    title = _t("admin_tools.usage.title")
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(title, lambda host: _build_usage_adoption_reports(self, host))
+        return
 
+    try:
         win = tk.Toplevel(self.root)
         _install_clean_close(win)
-        win.title(_t("admin_tools.usage.title"))
+        win.title(title)
         win.geometry("1100x750")
         win.transient(self.root)
+        _build_usage_adoption_reports(self, win)
+    except Exception as e:
+        messagebox.showerror(_t("admin_tools.error"), str(e))
+
+
+def _build_usage_adoption_reports(self, win):
+    """Build the Usage / Adoption Reports UI inside *win* (Toplevel or
+    workspace tab Frame)."""
+    try:
+        from education_system.university_system.infrastructure.database.db import get_connection
 
         ttk.Label(win, text=_t("admin_tools.usage.header"),
                   font=('Arial', 16, 'bold')).pack(pady=(10, 5))
@@ -1246,19 +1265,38 @@ def show_usage_adoption_reports(self):
 # ---------------------------------------------------------------------------
 
 def show_custom_report_builder(self):
-    """Custom report builder with SQL query generation, preview, and export."""
+    """Custom report builder with SQL query generation, preview, and export.
+
+    Renders inside the main GUI's content notebook when a workspace is
+    available; falls back to a Toplevel otherwise.
+    """
     if not self.auth.current_user or self.auth.current_user.get('role') != 'admin':
         messagebox.showerror(_t("admin_tools_v2.access_denied"), _t("admin_tools_v2.admin_required"))
         return
 
-    try:
-        from education_system.university_system.infrastructure.database.db import get_connection
+    title = _t("admin_tools_v2.report_builder.title")
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(title, lambda host: _build_custom_report_builder(self, host))
+        return
 
+    try:
         win = tk.Toplevel(self.root)
         _install_clean_close(win)
-        win.title(_t("admin_tools_v2.report_builder.title"))
+        win.title(title)
         win.geometry("1100x750")
         win.transient(self.root)
+        _build_custom_report_builder(self, win)
+    except Exception as e:
+        logger.exception("Error in Custom Report Builder")
+        messagebox.showerror(_t("admin_tools_v2.error"), str(e))
+
+
+def _build_custom_report_builder(self, win):
+    """Build the Custom Report Builder UI inside *win* (Toplevel or
+    workspace tab Frame)."""
+    try:
+        from education_system.university_system.infrastructure.database.db import get_connection
 
         ttk.Label(win, text=_t("admin_tools_v2.report_builder.header"),
                   font=('Arial', 16, 'bold')).pack(pady=(10, 5))

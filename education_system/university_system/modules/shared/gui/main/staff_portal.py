@@ -324,11 +324,10 @@ class StaffPortalGUI:
             messagebox.showerror("Error", f"Failed to open Student Union: {e}")
 
     def _open_campus_events_portal(self):
+        # Delegate to the main launcher so the workspace embed path
+        # (8.117.54) is used; falls back to Toplevel internally.
         try:
-            from education_system.university_system.modules.domain.campus.services.campus_events_gui import (
-                CampusEventsGUI,
-            )
-            CampusEventsGUI(self.root, self.auth)
+            self.show_campus_events_gui()
         except Exception as e:
             logger.error(f"Error opening campus events: {e}")
             messagebox.showerror("Error", f"Failed to open Campus Events: {e}")

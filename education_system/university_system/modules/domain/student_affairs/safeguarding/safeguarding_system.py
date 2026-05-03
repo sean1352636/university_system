@@ -373,16 +373,37 @@ You are not alone. Speaking to someone can help."""
 
 
 class SafeguardingApp(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("University Portal — Safeguarding System")
-        self.geometry("1000x680")
-        self.configure(bg="#f4f6fa")
+    def __init__(self, host=None):
+        """Build the Safeguarding portal.
+
+        ``host`` may be:
+          * ``None`` (legacy / subprocess) — initialise as a ``tk.Tk``
+            root and own the window/mainloop.
+          * a workspace tab ``Frame`` (passed by ``open_in_workspace``)
+            — skip Tk init and build widgets onto the host frame.
+            ``mainloop()`` becomes a no-op (caller owns it).
+
+        Same shape as ComplaintsPortal (8.117.49).
+        """
+        if host is None:
+            super().__init__()
+            self.title("University Portal — Safeguarding System")
+            self.geometry("1000x680")
+            self.configure(bg="#f4f6fa")
+            self._host = self
+            self._owns_root = True
+        else:
+            self._host = host
+            self._owns_root = False
+            try:
+                host.configure(bg="#f4f6fa")
+            except tk.TclError:
+                pass
 
         self.user = _get_current_user()
 
         # ttk theming
-        style = ttk.Style(self)
+        style = ttk.Style(self._host)
         try:
             style.theme_use("clam")
         except tk.TclError:
@@ -395,7 +416,7 @@ class SafeguardingApp(tk.Tk):
                         font=("Segoe UI", 10),
                         background="#f4f6fa", foreground="#555")
 
-        self.container = tk.Frame(self, bg="#f4f6fa")
+        self.container = tk.Frame(self._host, bg="#f4f6fa")
         self.container.pack(fill="both", expand=True)
 
         if not self.user:
@@ -408,6 +429,34 @@ class SafeguardingApp(tk.Tk):
             logger.info("Safeguarding starting console=student user=%s role=%s",
                         self.user.get('username'), self.user.get('role'))
             self.show_student_dashboard()
+
+    # ---------- embedded-mode shims ----------
+    # When ``host`` was supplied, ``super().__init__()`` was skipped,
+    # so any inherited ``tk.Misc`` method that touches ``self.tk``
+    # (mainloop / destroy / bind / unbind) crashes. Redirect those
+    # calls to the host frame.
+    def mainloop(self, n: int = 0):
+        if not self._owns_root:
+            return
+        super().mainloop(n)
+
+    def destroy(self):
+        if self._owns_root:
+            super().destroy()
+        else:
+            try:
+                self._host.destroy()
+            except tk.TclError:
+                pass
+
+    def unbind(self, sequence, funcid=None):
+        try:
+            return self._host.unbind(sequence, funcid)
+        except tk.TclError:
+            pass
+
+    def bind(self, sequence=None, func=None, add=None):
+        return self._host.bind(sequence, func, add)
 
     # ---------- helpers ----------
     def _clear(self):

@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.55 — 2026-05-03](#811755---2026-05-03)
+- [8.117.54 — 2026-05-03](#811754---2026-05-03)
+- [8.117.53 — 2026-05-03](#811753---2026-05-03)
+- [8.117.52 — 2026-05-03](#811752---2026-05-03)
+- [8.117.51 — 2026-05-03](#811751---2026-05-03)
+- [8.117.50 — 2026-05-03](#811750---2026-05-03)
+- [8.117.49 — 2026-05-03](#811749---2026-05-03)
+- [8.117.48 — 2026-05-03](#811748---2026-05-03)
+- [8.117.47 — 2026-05-03](#811747---2026-05-03)
+- [8.117.46 — 2026-05-03](#811746---2026-05-03)
+- [8.117.45 — 2026-05-03](#811745---2026-05-03)
+- [8.117.44 — 2026-05-03](#811744---2026-05-03)
+- [8.117.43 — 2026-05-03](#811743---2026-05-03)
 - [8.117.42 — 2026-05-02](#811742---2026-05-02)
 - [8.117.41 — 2026-05-02](#811741---2026-05-02)
 - [8.117.40 — 2026-05-02](#811740---2026-05-02)
@@ -269,6 +282,783 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.55] — 2026-05-03
+
+### Changed — Background Checker / Admissions CRM / Usage Reports / Custom Report Builder embed in main content area
+
+Continuing the workspace embed migration. Two of these (Usage and
+Custom Report) lived as inline-built Toplevels inside admin tools;
+extracting their bodies into reusable builders means the same code
+can render into either a Toplevel or a workspace tab.
+
+#### Admissions CRM
+
+- ``modules/domain/admissions/gui/admissions_crm_gui.py``
+  ``AdmissionsCRMGUI.__init__``: third branch — Frame ``root`` used
+  as ``self.window`` directly instead of spawning a Toplevel.
+- ``modules/shared/gui/main/features/student_affairs_gui.py``
+  ``show_admissions_crm_gui``: routes through ``open_in_workspace``
+  when available; falls back to ``launch_admissions_crm_gui``.
+
+#### Background Checker — same surgery as ComplaintsPortal / Apprenticeships
+
+``BGCheckerApp`` inherits from ``tk.Tk``. Refactored to support
+``host=None``:
+
+- ``modules/domain/staff_hr/background_checks/university_bg_checker.py``
+  ``BGCheckerApp.__init__(host=None)``: skip ``super().__init__()``
+  on host path; widget parents (``ttk.Frame``, ``ttk.Treeview``,
+  ``ttk.Label``) and dialog parents (``tk.Toplevel(self._host)`` ×5)
+  routed through ``self._host``.
+  - **Menu bar** (`_build_menu`): early-return on Frame host.
+  - **WM hook** (`protocol("WM_DELETE_WINDOW", …)`): gated on
+    ``self._owns_root``.
+  - **Dynamic title** (`_refresh_stats`): writes to ``status_var``
+    instead in embedded mode.
+  - **Theme apply** (`_apply_theme`): split into two try-blocks so
+    a ttk.Frame's ``bg=`` rejection doesn't abort the rest of the
+    ttk.Style configure.
+  - Embedded-mode shims for ``mainloop()`` (no-op), ``destroy()``
+    (forwards to host), ``bind`` / ``bind_all`` / ``after`` (all
+    forward to ``self._host``).
+
+#### Usage / Adoption Reports & Custom Report Builder — body extraction
+
+Both were ~250-line inline Toplevel builders in
+``modules/shared/gui/main/admin/admin_tools_gui.py``. Refactored:
+
+- ``show_usage_adoption_reports`` / ``show_custom_report_builder``:
+  now thin entry points that auth-gate, then either call
+  ``open_in_workspace`` (passing the body builder) or fall back to
+  building inside a Toplevel.
+- New module-level helpers ``_build_usage_adoption_reports(self, win)``
+  and ``_build_custom_report_builder(self, win)`` contain the original
+  body. ``win`` may be a Toplevel or a workspace tab Frame — every
+  reference inside was already through ``win`` so no body-line
+  changes were needed beyond the entry block.
+
+#### Launcher override
+
+``modules/shared/gui/main/main_gui.py`` adds
+``show_new_feature_background_checker`` after the
+``_NEW_FEATURE_MODULES`` setattr loop, dispatching via the shared
+``_embed_or_subprocess`` helper (8.117.45).
+
+#### Files
+
+- Modified:
+  - ``modules/domain/admissions/gui/admissions_crm_gui.py``
+  - ``modules/domain/staff_hr/background_checks/university_bg_checker.py``
+  - ``modules/shared/gui/main/admin/admin_tools_gui.py``
+  - ``modules/shared/gui/main/features/student_affairs_gui.py``
+  - ``modules/shared/gui/main/main_gui.py``
+
+---
+
+## [8.117.54] — 2026-05-03
+
+### Changed — Five more campus/services GUIs embed in main content area
+
+Continuing the workspace embed migration (8.117.38 / 8.117.44 →
+8.117.53). Five more buttons converted.
+
+#### App-class changes
+
+All five accept a Frame host directly via the
+``hasattr(parent, "wm_title")`` discriminator:
+
+- ``modules/domain/career/gui/career_services_gui.py``
+  ``CareerServicesGUI.__init__``: third branch — Frame ``root`` used
+  as ``self.window`` directly instead of spawning a Toplevel.
+- ``modules/domain/campus/services/campus_events_gui.py``
+  ``CampusEventsGUI.__init__``: same third-branch pattern.
+- ``modules/domain/campus/gui/security/security_desk_gui.py``
+  ``SecurityDesk.__init__``: guard ``title`` / ``geometry`` /
+  ``minsize`` when ``root`` is a Frame; ``configure(bg=…)`` wrapped
+  in try/except.
+  ``center_window()``: early-return on a Frame (``geometry("+x+y")``
+  only applies to a Tk/Toplevel).
+- ``modules/domain/health/first_aid/first_aid_portal.py``
+  ``FirstAidPortal.__init__``: same guard pattern as Security Desk.
+- ``modules/domain/campus/room_booking/room_booking_app.py``: no
+  changes needed — ``_Frame(tk.Frame)`` is already embeddable.
+
+#### Launcher changes
+
+- ``modules/shared/gui/main/features/student_affairs_gui.py``
+  - ``show_career_services_gui``: routes through
+    ``open_in_workspace`` first; falls back to
+    ``launch_career_services_gui`` (Toplevel).
+  - ``show_security_desk_gui``: routes through
+    ``open_in_workspace`` first; Toplevel fallback retained.
+- ``modules/shared/gui/main/features/commerce_facilities_gui.py``
+  ``show_campus_events_gui``: routes through ``open_in_workspace``
+  first; falls back to ``launch_campus_events_gui``.
+
+#### Portal helper redirects
+
+The "Campus Events" button on staff/student/instructor portals
+called ``CampusEventsGUI(self.root, self.auth)`` directly,
+bypassing the launcher. Updated each ``_open_campus_events_portal``
+to delegate to ``self.show_campus_events_gui()`` so the embed path
+applies regardless of entry point.
+
+- ``modules/shared/gui/main/staff_portal.py``
+- ``modules/shared/gui/main/student_portal.py``
+- ``modules/shared/gui/main/instructor_portal.py``
+
+#### Launcher overrides
+
+``modules/shared/gui/main/main_gui.py`` adds two more handlers
+after the ``_NEW_FEATURE_MODULES`` setattr loop:
+
+- ``show_new_feature_first_aid_portal``
+- ``show_new_feature_room_booking``
+
+Both dispatch via the shared ``_embed_or_subprocess`` helper
+(8.117.45).
+
+#### Files
+
+- Modified:
+  - ``modules/domain/career/gui/career_services_gui.py``
+  - ``modules/domain/campus/services/campus_events_gui.py``
+  - ``modules/domain/campus/gui/security/security_desk_gui.py``
+  - ``modules/domain/health/first_aid/first_aid_portal.py``
+  - ``modules/shared/gui/main/features/student_affairs_gui.py``
+  - ``modules/shared/gui/main/features/commerce_facilities_gui.py``
+  - ``modules/shared/gui/main/staff_portal.py``
+  - ``modules/shared/gui/main/student_portal.py``
+  - ``modules/shared/gui/main/instructor_portal.py``
+  - ``modules/shared/gui/main/main_gui.py``
+
+---
+
+## [8.117.53] — 2026-05-03
+
+### Changed — Apprenticeships / Employer Portal / KPI Dashboard embed in main content area
+
+Three more ``_NEW_FEATURE_MODULES`` entries migrated to the
+in-process workspace embed (8.117.45 / 8.117.49 / 8.117.50).
+
+#### Employer Portal & KPI Dashboard
+
+Both follow the ``_Frame(tk.Frame)`` design — already
+embeddable. **No class changes needed.**
+
+- Employer Portal exposes ``EmployerPortalFrame`` from
+  ``modules/domain/student_affairs/employer_portal/gui/employer_portal_gui.py``;
+  the override hands it the workspace tab as parent.
+- KPI Dashboard exposes ``_Frame`` from
+  ``modules/domain/analytics/kpi_dashboard/kpi_dashboard_app.py``;
+  same pattern.
+
+#### Apprenticeships — same surgery as ComplaintsPortal / SafeguardingApp
+
+``ApprenticeshipApp`` inherits from ``tk.Tk``. Refactored to
+support an optional ``host`` kwarg:
+
+- ``modules/domain/academics/apprenticeships/apprenticeship_system.py``
+  ``ApprenticeshipApp.__init__(host=None)``: when ``host`` is given,
+  skip ``super().__init__()`` and route widget parents through
+  ``self._host``. Header, notebook, and status bar all attach to
+  ``self._host`` instead of ``self``.
+  - **Menu bar** (`File` / `Help`) is gated on ``self._owns_root``
+    — Frames don't accept ``config(menu=…)``. The "Load Sample
+    Data" / "About" actions remain reachable inside the tabs.
+  - **WM hook** (``self.protocol("WM_DELETE_WINDOW", …)``) gated on
+    ``self._owns_root``.
+  - Embedded-mode shims for ``mainloop()`` (no-op) and
+    ``destroy()`` (closes the DB and forwards to
+    ``self._host.destroy()`` so closing the workspace tab still
+    cleans up the DB connection).
+
+#### Launcher overrides
+
+``modules/shared/gui/main/main_gui.py`` adds three more handlers
+after the ``_NEW_FEATURE_MODULES`` setattr loop, dispatching via
+the shared ``_embed_or_subprocess`` helper (8.117.45):
+
+- ``show_new_feature_employer_portal``
+- ``show_new_feature_kpi_dashboard``
+- ``show_new_feature_apprenticeship_system``
+
+#### Files
+
+- Modified:
+  - ``modules/domain/academics/apprenticeships/apprenticeship_system.py``
+  - ``modules/shared/gui/main/main_gui.py``
+
+---
+
+## [8.117.52] — 2026-05-03
+
+### Changed — Data Backup / Clearing & Adjustment / HESA Data Export embed in main content area
+
+Continuing the workspace embed migration (8.117.38 / 8.117.44 →
+8.117.51).
+
+#### App-class changes
+
+All three accept a Frame host directly via the
+``hasattr(parent, "wm_title")`` discriminator:
+
+- ``modules/shared/gui/database/backup_gui.py`` ``BackupGUI.__init__``:
+  guard ``title`` / ``geometry`` / ``minsize`` when ``root`` is a
+  Frame. The 30-second auto-refresh and 1-second log monitor (both
+  via ``self.root.after``) work fine on Frames.
+- ``modules/domain/admissions/hesa_export/gui/hesa_export_gui.py``
+  ``HESAExportGUI.__init__``: third branch — Frame parent used
+  directly instead of spawning a Toplevel.
+- ``modules/domain/academics/clearing_adjustment/gui/clearing_adjustment_gui.py``
+  ``ClearingAdjustmentGUI.__init__``: same third-branch pattern.
+
+#### Launcher changes
+
+- ``modules/shared/gui/main/admin/database_admin_gui.py``
+  ``show_data_backup_gui``: routes through ``open_in_workspace``
+  when available; Toplevel fallback retains
+  ``transient`` plumbing and the CLI-menu fallback for
+  ``ImportError``.
+- ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  - ``show_hesa_export_gui``
+  - ``show_clearing_adjustment_gui``
+
+  Both route through ``open_in_workspace`` first.
+
+#### Files
+
+- Modified:
+  - ``modules/shared/gui/database/backup_gui.py``
+  - ``modules/domain/admissions/hesa_export/gui/hesa_export_gui.py``
+  - ``modules/domain/academics/clearing_adjustment/gui/clearing_adjustment_gui.py``
+  - ``modules/shared/gui/main/admin/database_admin_gui.py``
+  - ``modules/shared/gui/main/features/academic_launchers_gui.py``
+
+---
+
+## [8.117.51] — 2026-05-03
+
+### Changed — Five more student-services GUIs embed in main content area
+
+Continuing the workspace embed migration (8.117.38 / 8.117.44 →
+8.117.50). Five Toplevel-style launchers converted to use
+``open_in_workspace`` first; Toplevel paths preserved as fallbacks.
+
+#### App-class changes
+
+All five accept a ``parent`` (or ``root``) and now detect a Frame
+host via ``hasattr(parent, "wm_title")``:
+
+- ``modules/domain/campus/accessibility/gui/accessibility_gui.py``
+  ``AccessibilityGUI.__init__``: third branch — Frame parent used
+  directly instead of spawning a Toplevel.
+- ``modules/domain/events/portfolio/gui/portfolio_gui.py``
+  ``PortfolioGUI.__init__``: same; ``title``/``geometry`` only
+  when host has ``wm_title``.
+- ``modules/domain/academics/advising/gui/advising_gui.py``
+  ``AdvisingPortalGUI.__init__``: same.
+- ``modules/domain/legal/gui/legal_services_gui.py``
+  ``LegalServicesGUI.__init__``: ``window.title``/``geometry``/
+  ``minsize`` skipped when ``root`` is a Frame.
+- ``modules/domain/student_affairs/equality_diversity/gui.py``
+  ``EqualityDiversityGUI.__init__``: already detected Frame
+  parents, but still called ``title``/``geometry`` unconditionally
+  — guarded those plus the ``configure(bg=…)`` call.
+
+#### Launcher changes
+
+- ``modules/shared/gui/main/features/student_success_gui.py``
+  - ``show_accessibility_portal_gui``
+  - ``show_portfolio_system_gui``
+  - ``show_advising_portal_gui``
+- ``modules/shared/gui/main/features/student_affairs_gui.py``
+  - ``show_legal_services_gui``
+  - ``show_equality_diversity_gui``
+
+All five route through ``open_in_workspace`` when available;
+Toplevel-on-self.root paths remain as fallbacks (Legal Services
+keeps its ``transient``/``grab_set`` plumbing on the fallback).
+
+#### Files
+
+- Modified:
+  - ``modules/domain/campus/accessibility/gui/accessibility_gui.py``
+  - ``modules/domain/events/portfolio/gui/portfolio_gui.py``
+  - ``modules/domain/academics/advising/gui/advising_gui.py``
+  - ``modules/domain/legal/gui/legal_services_gui.py``
+  - ``modules/domain/student_affairs/equality_diversity/gui.py``
+  - ``modules/shared/gui/main/features/student_success_gui.py``
+  - ``modules/shared/gui/main/features/student_affairs_gui.py``
+
+---
+
+## [8.117.50] — 2026-05-03
+
+### Changed — Intervention Outcomes / Safeguarding / Peer Mentoring Matching embed in main content area
+
+Three more buttons migrated to the workspace embed shape (8.117.38
+/ 8.117.44 / 8.117.46 / 8.117.47 / 8.117.48 / 8.117.49). All three
+were entries in ``main_gui.py`` ``_NEW_FEATURE_MODULES`` and
+launched as subprocesses; now they render as tabs inside the main
+GUI's content notebook.
+
+#### Intervention Outcomes & Peer Mentoring Matching
+
+Both modules already had a ``_Frame(tk.Frame)`` design — the body
+of each app is a Frame, with a thin ``main()`` that creates a Tk
+root and packs the frame into it. **No class changes needed.** The
+launcher overrides instantiate ``_Frame(host, user=…)`` and pack it
+into the workspace tab.
+
+#### Safeguarding — same surgery as ComplaintsPortal (8.117.49)
+
+``SafeguardingApp`` inherits from ``tk.Tk``. Refactored to support
+an optional ``host`` kwarg without splitting the class:
+
+- ``modules/domain/student_affairs/safeguarding/safeguarding_system.py``
+  ``SafeguardingApp.__init__(host=None)``: when ``host`` is given,
+  skip ``super().__init__()`` and route widget parents through
+  ``self._host``. Added embedded-mode shims for inherited
+  ``tk.Misc`` methods that touch ``self.tk``:
+  - ``mainloop()`` — no-op in embedded mode.
+  - ``destroy()`` — destroys the host frame instead (which removes
+    the workspace tab cleanly when the user clicks "Close" on the
+    no-auth screen).
+  - ``bind()`` / ``unbind()`` — forwarded to the host frame
+    (Safeguarding's student dashboard binds ``<Return>``).
+
+#### Launcher overrides
+
+``modules/shared/gui/main/main_gui.py`` adds three new overrides
+after the ``_NEW_FEATURE_MODULES`` setattr loop, all dispatching
+through the shared ``_embed_or_subprocess`` helper (8.117.45):
+
+- ``show_new_feature_intervention_outcomes``
+- ``show_new_feature_safeguarding_system``
+- ``show_new_feature_mentoring_matching``
+
+#### Files
+
+- Modified:
+  - ``modules/domain/student_affairs/safeguarding/safeguarding_system.py``
+  - ``modules/shared/gui/main/main_gui.py``
+
+---
+
+## [8.117.49] — 2026-05-03
+
+### Changed — Complaints Portal / Feedback System / My Timetable embed in main content area
+
+Three more buttons migrated to the workspace embed shape (8.117.38 /
+8.117.44 / 8.117.46 / 8.117.47 / 8.117.48).
+
+#### Complaints Portal — special case
+
+``ComplaintsPortal`` was the trickiest yet: the class **inherits**
+from ``tk.Tk`` (it *is* the root window, not a widget on it).
+Refactored to support an optional ``host`` kwarg without splitting
+the class:
+
+- ``modules/domain/communications/feedback/complaints_portal.py``
+  ``ComplaintsPortal.__init__(host=None)``: when ``host`` is given,
+  **skip** ``super().__init__()`` (don't allocate a Tk root) and
+  route every widget parent through a new ``self._host`` attribute
+  instead of ``self``. Embed mode tracks ``_owns_root=False``.
+- ``_configure_styles`` / ``_build_header`` / ``_build_notebook``
+  updated to use ``self._host`` as the widget parent.
+- Override ``mainloop()`` to be a no-op in embedded mode (caller
+  owns the mainloop). Subprocess entry point unchanged.
+
+#### Feedback System
+
+- ``modules/domain/communications/feedback/gui/feedback_gui.py``
+  ``FeedbackGUI.__init__``: third branch — when ``parent`` lacks
+  ``wm_title``, use it directly as ``self.root`` instead of
+  spawning a Toplevel.
+- ``modules/shared/gui/main/features/student_success_gui.py``
+  ``show_feedback_system_gui``: routes through
+  ``open_in_workspace`` first; Toplevel fallback retained.
+
+#### My Timetable
+
+- ``StudentTimetableGUI`` already builds inside ``parent_frame`` so
+  no class changes needed.
+- ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  ``show_student_timetable_gui``: routes through
+  ``open_in_workspace`` when available; Toplevel path with the
+  existing ``_apply_academic_context`` / ``_academic_style_guarded``
+  plumbing remains as fallback.
+
+#### Launcher override
+
+- ``modules/shared/gui/main/main_gui.py`` adds
+  ``show_new_feature_complaints_portal`` after the
+  ``_NEW_FEATURE_MODULES`` setattr loop, dispatching via the
+  shared ``_embed_or_subprocess`` helper (8.117.45).
+
+#### Files
+
+- Modified:
+  - ``modules/domain/communications/feedback/complaints_portal.py``
+  - ``modules/domain/communications/feedback/gui/feedback_gui.py``
+  - ``modules/shared/gui/main/features/student_success_gui.py``
+  - ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  - ``modules/shared/gui/main/main_gui.py``
+
+---
+
+## [8.117.48] — 2026-05-03
+
+### Changed — Batch Operations and AI Study Companion embed in main content area
+
+Two more buttons migrated to the workspace embed shape (8.117.38 /
+8.117.44 / 8.117.46 / 8.117.47).
+
+#### Batch Operations
+
+- ``modules/shared/gui/batch_operations/main_gui.py``
+  ``BatchOperationsGUI.__init__``: skip ``title`` / ``geometry``
+  when ``root`` lacks ``wm_title``.
+  ``create_menu_bar``: early-return on a Frame host —
+  ``Frame.config(menu=…)`` isn't supported, only Tk/Toplevel
+  accept a menubar. The action buttons inside each tab cover the
+  same operations the menu exposed.
+- ``modules/shared/gui/main/admin/database_admin_gui.py``
+  ``show_batch_operations_gui``: routes through
+  ``open_in_workspace`` when available; Toplevel path remains as
+  fallback.
+
+#### AI Study Companion
+
+- ``modules/domain/academics/ai_study/gui/ai_study_gui.py``
+  ``AIStudyGUI.__init__``: when ``parent`` lacks ``wm_title``,
+  use it directly as ``self.window`` instead of spawning a
+  Toplevel; tracks ``_owns_window`` so the not-logged-in branch
+  doesn't accidentally destroy the workspace tab.
+- ``modules/shared/gui/main/features/student_success_gui.py``
+  ``show_ai_study_gui``: routes through ``open_in_workspace``
+  when available; Toplevel-on-self.root remains as fallback.
+
+#### Files
+
+- Modified:
+  - ``modules/shared/gui/batch_operations/main_gui.py``
+  - ``modules/shared/gui/main/admin/database_admin_gui.py``
+  - ``modules/domain/academics/ai_study/gui/ai_study_gui.py``
+  - ``modules/shared/gui/main/features/student_success_gui.py``
+
+---
+
+## [8.117.47] — 2026-05-03
+
+### Changed — Study Matching embeds in main content area
+
+User confirmed "Study Profile" referred to the **Study Matching**
+button — its underlying ``StudyMatchingGUI`` is where Study
+Profile management lives. Migrated to the workspace embed shape
+(8.117.38 / 8.117.44 / 8.117.46).
+
+- ``modules/domain/academics/study_matching/gui/study_matching_gui.py``
+  ``StudyMatchingGUI.__init__``: when ``parent`` lacks
+  ``wm_title`` (i.e. is a workspace tab Frame), use it as
+  ``self.window`` directly instead of spawning a Toplevel; tracks
+  ownership in ``self._owns_window`` so the not-logged-in path
+  doesn't try to ``destroy()`` a workspace tab.
+- ``modules/shared/gui/main/features/student_success_gui.py``
+  ``show_study_matching_gui``: route through ``open_in_workspace``
+  when available — inbound academic context (consumed via
+  ``consume_context`` / ``format_context``) is now baked into the
+  *tab title* instead of a Toplevel title. Toplevel fallback path
+  with the original ``style_guarded`` / Destroy-hook plumbing
+  remains intact for sessions without a workspace notebook.
+
+#### Files
+
+- Modified:
+  - ``modules/domain/academics/study_matching/gui/study_matching_gui.py``
+  - ``modules/shared/gui/main/features/student_success_gui.py``
+
+---
+
+## [8.117.46] — 2026-05-03
+
+### Changed — Office Hours and Course Evaluation embed in main content area
+
+Two more buttons migrated to the in-process workspace embed shape
+(8.117.38 / 8.117.44 / 8.117.45). Office Hours had a Toplevel
+launcher; Course Evaluation was a subprocess via
+``_NEW_FEATURE_MODULES``.
+
+The third item in the user's list — "Study Profile" — was held
+back: there's no top-level button by that name in the main GUI.
+"Study Profile" exists only as a tab inside Study Recommendations
+(already embedded in 8.117.44). The closest button is "Study
+Matching"; awaiting clarification before converting it.
+
+#### App-class changes
+
+- ``modules/domain/academics/gui/office_hours/office_hours_gui.py``
+  ``OfficeHoursGUI.__init__``: skip ``title`` / ``geometry`` when
+  ``parent`` lacks ``wm_title``.
+- ``modules/domain/academics/course_evaluation/course_evaluation_system.py``
+  ``CourseEvaluationApp.__init__``: same guard, and
+  ``configure(bg=…)`` wrapped in try/except.
+
+#### Launcher changes
+
+- ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  ``show_office_hours_gui``: route through ``open_in_workspace``
+  when available; Toplevel path remains as fallback.
+- ``modules/shared/gui/main/main_gui.py`` adds
+  ``show_new_feature_course_evaluation_system`` override after the
+  ``_NEW_FEATURE_MODULES`` setattr loop, dispatching via the
+  shared ``_embed_or_subprocess`` helper introduced in 8.117.45.
+
+#### Files
+
+- Modified:
+  - ``modules/domain/academics/gui/office_hours/office_hours_gui.py``
+  - ``modules/domain/academics/course_evaluation/course_evaluation_system.py``
+  - ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  - ``modules/shared/gui/main/main_gui.py``
+
+---
+
+## [8.117.45] — 2026-05-03
+
+### Changed — Module Evaluation / Lecturer Evaluation / Lesson Planner embed in main content area
+
+Continuing 8.117.44, three more buttons migrated off the subprocess
+launcher to the in-process ``open_in_workspace`` embed. All three
+were entries in ``main_gui.py`` ``_NEW_FEATURE_MODULES`` and
+launched as standalone Tk processes; now they render inside the
+main GUI's content notebook as tabs.
+
+#### App-class changes
+
+- ``modules/domain/academics/course_evaluation/module_evaluation_portal.py``
+  ``ModuleEvaluationPortal.__init__``: skip ``title`` /
+  ``geometry`` when ``root`` lacks ``wm_title`` (i.e. is a workspace
+  Frame); ``configure(bg=…)`` wrapped in a try/except so a styled
+  Frame still applies the background colour.
+- ``modules/domain/academics/course_planning/lesson_planner.py``
+  ``LessonPlannerApp.__init__``: same guard.
+- ``modules/domain/academics/course_evaluation/lecturer_evaluation.py``
+  ``App.__init__``: now accepts ``host=None``; ``host=None`` keeps
+  the legacy subprocess shape (creates its own ``tk.Tk()`` and
+  enters mainloop on ``run()``), a Frame ``host`` embeds inside it
+  and ``run()`` becomes a no-op (caller owns mainloop). The
+  ``_show_no_auth_screen`` / ``StudentDashboard`` / ``AdminDashboard``
+  branches were updated to skip ``title`` / ``geometry`` /
+  ``resizable`` calls when the host is a Frame.
+
+#### Launcher overrides
+
+``modules/shared/gui/main/main_gui.py`` adds an
+``_embed_or_subprocess(title, module_dotted, build_inproc)``
+helper and overrides three handlers after the
+``_NEW_FEATURE_MODULES`` setattr loop:
+
+- ``show_new_feature_module_evaluation_portal``
+- ``show_new_feature_lecturer_evaluation``
+- ``show_new_feature_lesson_planner``
+
+Each tries the in-process embed via ``open_in_workspace`` first;
+on any failure (no workspace, import error, or runtime error
+during build) it falls back to ``_launch_new_feature_module``
+(subprocess) so the legacy path remains intact.
+
+#### Files
+
+- Modified:
+  - ``modules/domain/academics/course_evaluation/module_evaluation_portal.py``
+  - ``modules/domain/academics/course_evaluation/lecturer_evaluation.py``
+  - ``modules/domain/academics/course_planning/lesson_planner.py``
+  - ``modules/shared/gui/main/main_gui.py``
+
+---
+
+## [8.117.44] — 2026-05-03
+
+### Changed — Study Recommendations / Virtual Classroom / Research Portal embed in main content area
+
+User asked for the same shape Student Records uses (8.117.38): the
+button renders inside the main GUI's workspace notebook as a tab,
+not as a separate Toplevel. Three GUIs migrated:
+
+#### Study Recommendations
+
+- ``modules/domain/academics/study_recommendations/gui/study_recommendation_gui.py``
+  ``StudyRecommendationGUI.__init__`` now detects whether ``parent``
+  is a Frame (no ``wm_title``) and embeds inside it; falls back to
+  Toplevel when called the legacy way.
+- ``modules/shared/gui/main/features/student_success_gui.py``
+  ``show_study_recommendations_gui`` calls ``open_in_workspace``
+  when available; falls back to a Toplevel otherwise.
+
+#### Virtual Classroom
+
+- ``modules/domain/academics/gui/virtual_classroom_gui.py``
+  ``VirtualClassroomGUI._setup_window`` skips the
+  title/geometry/minsize calls when ``parent`` is a Frame (Frames
+  don't have ``wm_title`` and the workspace notebook owns sizing).
+- ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  ``show_virtual_classroom_gui`` now goes through
+  ``open_in_workspace`` when the workspace is alive; the Toplevel
+  path remains as a fallback.
+
+#### Research Portal
+
+- ``modules/domain/research/services/university_research.py``
+  ``UniversityApp.__init__`` accepts a ``host`` kwarg; when
+  provided, embeds inside it without creating a ``tk.Tk()`` root
+  and without claiming the mainloop. ``run()`` is a no-op in
+  embedded mode (caller owns the mainloop) and binds DB cleanup to
+  the host's ``<Destroy>``. Standalone subprocess entry point
+  unchanged — ``main()`` still constructs with no ``host`` and runs
+  the mainloop.
+- ``modules/shared/gui/main/main_gui.py`` overrides the
+  auto-generated ``show_new_feature_university_research`` after the
+  ``_NEW_FEATURE_MODULES`` setattr loop so the Research Portal
+  button uses an in-process embed via ``open_in_workspace`` instead
+  of the subprocess launch. Falls back to the original
+  ``_launch_new_feature_module`` (subprocess) when the workspace
+  isn't available or the in-process import fails.
+
+#### Files
+
+- Modified:
+  - ``modules/domain/academics/study_recommendations/gui/study_recommendation_gui.py``
+  - ``modules/domain/academics/gui/virtual_classroom_gui.py``
+  - ``modules/domain/research/services/university_research.py``
+  - ``modules/shared/gui/main/features/student_success_gui.py``
+  - ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  - ``modules/shared/gui/main/main_gui.py``
+
+---
+
+## [8.117.43] — 2026-05-03
+
+### Fixed — Exam Management GUI opens instantly and matches Finance sizing
+
+**Both the "Exam Management" portal (the Main GUI button) and the
+underlying ExamSchedulerApp.** The portal is what the staff/admin
+button actually launches; pre-fix it built six tabs eagerly,
+including a "Scheduling" tab that embeds the entire
+``ExamSchedulerApp`` (with its own ``AcademicPeriodPanel`` + DB
+loads) synchronously during construction.
+
+#### Launcher
+
+- ``shared/gui/main/features/academic_launchers_gui.py``
+  ``show_exam_portal``: bumped the Toplevel from
+  ``geometry("1200x800")`` (no minsize) to ``geometry("1400x900")``
+  + ``minsize(1200, 800)`` to match Finance Management. The WM
+  clips to the work area which reads as "fills the screen".
+
+#### ExamPortalGUI — lazy tabs
+
+- ``exam_portal_gui.py`` ``_build_ui``: only the initially-visible
+  "Available Exams" tab builds at construction. The other 5 tabs
+  ("My Results", and the staff/admin "Manage Exams", "Scheduling",
+  "Grading", "Analytics") are placeholder frames; a
+  ``<<NotebookTabChanged>>`` handler builds each on first
+  selection, then forgets the placeholder and inserts the real tab
+  at the original index.
+- ``_build_browse_tab``: initial ``_refresh_browse()`` deferred to
+  ``after_idle`` so the chrome paints before the
+  ``list_available_exams`` query runs.
+
+The standalone ``ExamSchedulerApp`` (also embedded inside the portal's
+"Scheduling" tab) had its own ~6.5s cold-open cost.
+
+#### ExamSchedulerApp — slow open root cause
+
+`ExamSchedulerApp.__init__` did everything synchronously before the
+first paint:
+
+1. **`AcademicPeriodPanel.refresh()`** ran up to ~62 calendar lookups
+   (current term, week offset, holiday-today, today's exam window,
+   then a 60-day forward scan for the next exam window). Profiled
+   at ~4.3s on its own — the dominant cost.
+2. **All 8 tabs built eagerly.** The At-Risk Audit tab fired an N+1
+   attendance query (one GROUP BY per upcoming exam, up to 200);
+   the Exam Eligibility tab was worse — for every (upcoming exam ×
+   enrolled student) pair it called ``compute_exam_eligibility(...,
+   persist=True)``, doing N×M reads *plus* a write back to
+   ``exam_eligibility`` before the window appeared.
+3. **DataManager** eagerly called ``_load_instructors()`` even though
+   ``get_instructors()`` already loads lazily on first use.
+
+#### Fix
+
+- **Lazy tabs.** ``create_main_layout`` now only builds the
+  initially-visible Schedule tab. The other 7 (Exams / Rooms /
+  Calendar / Deferred / At-Risk / Eligibility / Results) are added
+  as empty placeholder frames; a ``<<NotebookTabChanged>>`` handler
+  builds each one on first selection, then forgets the placeholder
+  and inserts the real tab at the original slot.
+- **Deferred refreshes.** The Schedule tab's initial
+  ``refresh_exam_list`` / ``refresh_room_list``, the Calendar tab's
+  ``update_calendar``, and the At-Risk / Eligibility tabs' first
+  refreshes all run via ``after_idle`` so the frame paints before
+  the DB work starts. ``AcademicPeriodPanel.refresh()`` is
+  similarly deferred — the panel shows ``"—"`` for the first paint
+  and fills in afterwards.
+- **Tolerant refreshers.** ``refresh_exam_list``,
+  ``refresh_room_list``, and ``update_room_combo``-callers now guard
+  with ``getattr(self, …, None)`` so they no-op for trees / combos
+  whose tabs haven't been built yet (a refresh fired by the event
+  bus before the user has opened the relevant tab no longer
+  AttributeErrors).
+- **Drop redundant eager load.** ``DataManager.__init__`` no
+  longer calls ``_load_instructors()`` directly; ``get_instructors()``
+  already loads on demand.
+
+Profiled cold open went from **6553ms → 463ms** (~14×). The 60-day
+calendar look-ahead and lazy-tab refreshes still run, but after the
+first paint, so the user perceives the window as appearing instantly.
+
+#### Window sizing
+
+Standalone (non-embedded) launches now match Finance Management:
+``geometry("1400x900")`` with ``minsize(1200, 800)``, replacing the
+previous ``1200x700`` / ``1000x600``. The WM clips to the available
+work area which reads as "fills the screen" on a typical desktop.
+The resize block is gated on ``self._is_embedded``, so workspace-tab
+hosting (which passes a ``Frame`` as ``root``) is unchanged.
+
+Combined with the portal lazy-tab work above, the staff "Exam
+Management" button now constructs in ~190ms with the first paint
+landing under ~500ms.
+
+#### Files
+
+- Modified:
+  - ``modules/shared/gui/main/features/academic_launchers_gui.py``
+    (``show_exam_portal`` bumped to 1400×900 + 1200×800 minsize).
+  - ``modules/domain/academics/gui/exam_management/exam_portal_gui.py``
+    (lazy notebook tabs, ``_refresh_browse`` deferred to
+    ``after_idle``).
+  - ``modules/domain/academics/gui/exam_management/app.py``
+    (lazy tab system, ``after_idle`` initial refreshes, 1400×900
+    geometry).
+  - ``modules/domain/academics/gui/exam_management/data_manager.py``
+    (drop eager ``_load_instructors``).
+  - ``modules/domain/academics/gui/exam_management/tabs/schedule_tab.py``
+    (``refresh_exam_list`` tolerant of unbuilt widgets).
+  - ``modules/domain/academics/gui/exam_management/tabs/rooms_tab.py``
+    (``refresh_room_list`` tolerant of unbuilt widgets).
+  - ``modules/domain/academics/gui/exam_management/tabs/calendar_tab.py``
+    (``update_calendar`` deferred to ``after_idle``).
+  - ``modules/domain/academics/gui/exam_management/tabs/attendance_intel_tab.py``
+    (At-Risk and Eligibility refreshes deferred to ``after_idle``).
+  - ``modules/domain/academics/gui/_cross_dialogs.py``
+    (``AcademicPeriodPanel.refresh()`` deferred to ``after_idle``).
 
 ---
 

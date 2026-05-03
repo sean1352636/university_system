@@ -439,11 +439,33 @@ def _send_complaint_status_update(email, full_vars):
 
 # ---------- Main Application ----------
 class ComplaintsPortal(tk.Tk):
-    def __init__(self):
-        super().__init__()
-        self.title("University Complaints Portal")
-        self.geometry("900x650")
-        self.configure(bg="#f0f4f8")
+    def __init__(self, host=None):
+        """Build the Complaints Portal.
+
+        ``host`` may be:
+          * ``None`` (legacy / subprocess) — initialise as a ``tk.Tk``
+            root and own the window/mainloop.
+          * a workspace tab ``Frame`` (passed by ``open_in_workspace``)
+            — skip Tk init and build all widgets onto the host frame.
+            Caller owns the mainloop; ``mainloop()`` becomes a no-op.
+        """
+        if host is None:
+            super().__init__()
+            self.title("University Complaints Portal")
+            self.geometry("900x650")
+            self.configure(bg="#f0f4f8")
+            self._host = self
+            self._owns_root = True
+        else:
+            # Skip ``tk.Tk.__init__`` so we don't allocate a second
+            # root window. Widgets parent to ``host`` instead of
+            # ``self``.
+            self._host = host
+            self._owns_root = False
+            try:
+                host.configure(bg="#f0f4f8")
+            except tk.TclError:
+                pass
 
         self.current_user = _get_current_user()
         self.is_admin = _is_admin_user(self.current_user)
@@ -461,7 +483,13 @@ class ComplaintsPortal(tk.Tk):
         self._build_header()
         self._build_notebook()
 
-        self.after_idle(self._lazy_load_complaints)
+        self._host.after_idle(self._lazy_load_complaints)
+
+    def mainloop(self, n: int = 0):
+        """Embedded hosts own their own mainloop — no-op in that case."""
+        if not self._owns_root:
+            return
+        super().mainloop(n)
 
     def _lazy_load_complaints(self):
         t0 = datetime.now()
@@ -471,7 +499,7 @@ class ComplaintsPortal(tk.Tk):
                      (datetime.now() - t0).total_seconds() * 1000)
 
     def _configure_styles(self):
-        style = ttk.Style(self)
+        style = ttk.Style(self._host)
         style.theme_use("clam")
         style.configure("TNotebook", background="#f0f4f8", borderwidth=0)
         style.configure("TNotebook.Tab", padding=[20, 10], font=("Segoe UI", 10, "bold"))
@@ -490,12 +518,12 @@ class ComplaintsPortal(tk.Tk):
                         background="#1e3a8a", foreground="white")
 
     def _build_header(self):
-        header = ttk.Label(self, text="🎓  University Complaints Portal",
+        header = ttk.Label(self._host, text="🎓  University Complaints Portal",
                            style="Header.TLabel", anchor="center")
         header.pack(fill="x")
 
     def _build_notebook(self):
-        self.notebook = ttk.Notebook(self)
+        self.notebook = ttk.Notebook(self._host)
         self.notebook.pack(fill="both", expand=True, padx=15, pady=15)
 
         self.submit_tab = SubmitTab(self.notebook, self)

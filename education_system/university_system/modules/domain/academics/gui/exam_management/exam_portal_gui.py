@@ -89,16 +89,53 @@ class ExamPortalGUI:
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True, padx=10, pady=(0, 10))
 
-        # Student tabs
+        # Lazy tabs: only the initially-visible "Available Exams" tab
+        # builds now. The rest (especially Scheduling, which embeds the
+        # entire ExamSchedulerApp + its DB-driven AcademicPeriodPanel)
+        # are placeholder frames that materialize on first selection.
+        self._lazy_tab_builders: dict[str, tuple] = {}
         self._build_browse_tab()
-        self._build_results_tab()
 
-        # Instructor/Admin tabs
+        def _register(label, builder):
+            placeholder = ttk.Frame(self.notebook)
+            self.notebook.add(placeholder, text=label)
+            self._lazy_tab_builders[str(placeholder)] = (placeholder, builder, label)
+
+        _register("My Results", self._build_results_tab)
         if self._role in ("admin", "staff", "instructor"):
-            self._build_manage_tab()
-            self._build_scheduling_tab()
-            self._build_grading_tab()
-            self._build_analytics_tab()
+            _register("Manage Exams", self._build_manage_tab)
+            _register("Scheduling", self._build_scheduling_tab)
+            _register("Grading", self._build_grading_tab)
+            _register("Analytics", self._build_analytics_tab)
+
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+
+    def _on_tab_changed(self, _event=None):
+        try:
+            current = self.notebook.select()
+        except tk.TclError:
+            return
+        entry = self._lazy_tab_builders.pop(current, None)
+        if not entry:
+            return
+        placeholder, builder, label = entry
+        try:
+            tab_index = self.notebook.index(placeholder)
+        except tk.TclError:
+            return
+        self.notebook.forget(placeholder)
+        # The builders all call ``self.notebook.add(...)`` themselves,
+        # so the new tab lands at the end. Move it back to the
+        # original slot and re-select it so the user's click takes
+        # effect visually.
+        builder()
+        try:
+            new_tab = self.notebook.tabs()[-1]
+            self.notebook.insert(tab_index, new_tab)
+            self.notebook.tab(new_tab, text=label)
+            self.notebook.select(new_tab)
+        except tk.TclError:
+            pass
 
     def _close(self):
         if self._timer_id:
@@ -166,7 +203,9 @@ class ExamPortalGUI:
         btn_frame.pack(fill="x", padx=10, pady=(0, 10))
         ttk.Button(btn_frame, text="Start Exam", command=self._start_exam).pack(side="left")
 
-        self._refresh_browse()
+        # Populate after the window paints so the user sees the chrome
+        # immediately rather than waiting on the available-exams query.
+        self.root.after_idle(self._refresh_browse)
 
     def _refresh_browse(self):
         for item in self.browse_tree.get_children():

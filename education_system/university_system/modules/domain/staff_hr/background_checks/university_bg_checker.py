@@ -470,10 +470,27 @@ class PersonDialog(tk.Toplevel):
 class BGCheckerApp(tk.Tk):
     SESSION_TIMEOUT_MIN = 30
 
-    def __init__(self):
-        super().__init__()
-        self.title("University Background Checker")
-        self.geometry("1180x720")
+    def __init__(self, host=None):
+        """Build the BG Checker app.
+
+        ``host`` may be:
+          * ``None`` (legacy / subprocess) — initialise as a ``tk.Tk``
+            root and own the window/mainloop.
+          * a workspace tab ``Frame`` — skip Tk init and build widgets
+            onto the host frame; ``mainloop()`` becomes a no-op.
+
+        Same shape as ComplaintsPortal (8.117.49), SafeguardingApp
+        (8.117.50), ApprenticeshipApp (8.117.53).
+        """
+        if host is None:
+            super().__init__()
+            self.title("University Background Checker")
+            self.geometry("1180x720")
+            self._host = self
+            self._owns_root = True
+        else:
+            self._host = host
+            self._owns_root = False
         self.db = Database()
         self.audit = AuditLogger(self.db)
         self.current_user: Optional[str] = None
@@ -493,7 +510,8 @@ class BGCheckerApp(tk.Tk):
         self._refresh_stats()
         self._bind_shortcuts()
         self._start_session_timer()
-        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        if self._owns_root:
+            self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     # ---------- AUTH ----------
     def _resolve_user(self) -> bool:
@@ -516,6 +534,11 @@ class BGCheckerApp(tk.Tk):
 
     # ---------- MENU ----------
     def _build_menu(self):
+        # Frames don't accept ``config(menu=…)``; only Tk/Toplevel do.
+        # Skip the menu when embedded; toolbar buttons in the body
+        # cover the same operations.
+        if not self._owns_root:
+            return
         menubar = tk.Menu(self)
         self.config(menu=menubar)
 
@@ -565,7 +588,7 @@ class BGCheckerApp(tk.Tk):
 
     # ---------- UI ----------
     def _build_ui(self):
-        top = ttk.Frame(self, padding=8)
+        top = ttk.Frame(self._host, padding=8)
         top.pack(fill=tk.X)
 
         ttk.Label(top, text=f"User: {self.current_user} ({self.current_role})").pack(side=tk.LEFT)
@@ -614,7 +637,7 @@ class BGCheckerApp(tk.Tk):
 
         # Table
         cols = ("case_id", "person_id", "full_name", "role", "email", "department", "status", "risk_score")
-        self.tree = ttk.Treeview(self, columns=cols, show="headings", selectmode="browse")
+        self.tree = ttk.Treeview(self._host, columns=cols, show="headings", selectmode="browse")
         widths = {"case_id": 110, "person_id": 100, "full_name": 200, "role": 80,
                   "email": 200, "department": 140, "status": 100, "risk_score": 80}
         for c in cols:
@@ -632,14 +655,21 @@ class BGCheckerApp(tk.Tk):
 
         # Status bar
         self.status_var = tk.StringVar(value="Ready")
-        ttk.Label(self, textvariable=self.status_var, relief=tk.SUNKEN, anchor="w").pack(fill=tk.X, side=tk.BOTTOM)
+        ttk.Label(self._host, textvariable=self.status_var, relief=tk.SUNKEN, anchor="w").pack(fill=tk.X, side=tk.BOTTOM)
 
     def _apply_theme(self):
         bg = "#222" if self.dark_mode else "#f0f0f0"
         fg = "#eee" if self.dark_mode else "black"
+        # ttk.Frame doesn't accept ``bg=…`` (only ``tk.Frame`` /
+        # ``tk.Tk`` / ``tk.Toplevel`` do), so a workspace tab Frame
+        # rejects this. Try it but don't let failure abort the rest
+        # of the theme.
         try:
-            self.configure(bg=bg)
-            style = ttk.Style(self)
+            self._host.configure(bg=bg)
+        except tk.TclError:
+            pass
+        try:
+            style = ttk.Style(self._host)
             style.configure(".", font=("TkDefaultFont", self.font_size))
             if self.dark_mode:
                 style.theme_use("clam")
@@ -702,7 +732,11 @@ class BGCheckerApp(tk.Tk):
             total = self.db.fetchone("SELECT COUNT(*) c FROM bgcheck_persons")["c"]
             flagged = self.db.fetchone("SELECT COUNT(*) c FROM bgcheck_persons WHERE status='flagged'")["c"]
             cleared = self.db.fetchone("SELECT COUNT(*) c FROM bgcheck_persons WHERE status='cleared'")["c"]
-            self.title(f"University Background Checker — Total: {total} | Flagged: {flagged} | Cleared: {cleared}")
+            # Dynamic title only meaningful on a Tk/Toplevel.
+            if self._owns_root:
+                self.title(f"University Background Checker — Total: {total} | Flagged: {flagged} | Cleared: {cleared}")
+            else:
+                self.status_var.set(f"Total: {total} | Flagged: {flagged} | Cleared: {cleared}")
         except RuntimeError:
             logger.exception("Stats refresh failed")
 
@@ -1020,7 +1054,7 @@ class BGCheckerApp(tk.Tk):
             return
         try:
             row = self.db.fetchone("SELECT * FROM bgcheck_persons WHERE case_id=?", (cid,))
-            win = tk.Toplevel(self)
+            win = tk.Toplevel(self._host)
             win.title("Print Preview")
             txt = tk.Text(win, width=80, height=30)
             txt.pack(fill=tk.BOTH, expand=True)
@@ -1066,7 +1100,7 @@ class BGCheckerApp(tk.Tk):
             messagebox.showerror("Duplicates", str(e))
 
     def manage_watchlist(self):
-        win = tk.Toplevel(self)
+        win = tk.Toplevel(self._host)
         win.title("Watchlist")
         win.geometry("420x420")
         lb = tk.Listbox(win)
@@ -1141,7 +1175,7 @@ class BGCheckerApp(tk.Tk):
             messagebox.showerror("Statistics", str(e))
 
     def show_audit_log(self):
-        win = tk.Toplevel(self)
+        win = tk.Toplevel(self._host)
         win.title("Audit Log")
         win.geometry("800x500")
         txt = tk.Text(win)
@@ -1155,7 +1189,7 @@ class BGCheckerApp(tk.Tk):
         txt.configure(state="disabled")
 
     def show_search_history(self):
-        win = tk.Toplevel(self)
+        win = tk.Toplevel(self._host)
         win.title("Search History")
         win.geometry("700x400")
         txt = tk.Text(win)
@@ -1168,7 +1202,7 @@ class BGCheckerApp(tk.Tk):
         txt.configure(state="disabled")
 
     def show_recent_activity(self):
-        win = tk.Toplevel(self)
+        win = tk.Toplevel(self._host)
         win.title("Recent Activity")
         win.geometry("700x400")
         txt = tk.Text(win)
@@ -1213,6 +1247,38 @@ class BGCheckerApp(tk.Tk):
         except (RuntimeError, sqlite3.Error):
             logger.exception("Close error")
         self.destroy()
+
+    # ---------- embedded-mode shims ----------
+    # When ``host`` was supplied, ``super().__init__()`` was skipped,
+    # so any inherited ``tk.Misc`` method that touches ``self.tk``
+    # would crash. Forward to the host frame.
+    def mainloop(self, n: int = 0):
+        if self._owns_root:
+            super().mainloop(n)
+
+    def destroy(self):
+        if self._owns_root:
+            super().destroy()
+        else:
+            try:
+                self._host.destroy()
+            except tk.TclError:
+                pass
+
+    def bind(self, sequence=None, func=None, add=None):
+        if self._owns_root:
+            return super().bind(sequence, func, add)
+        return self._host.bind(sequence, func, add)
+
+    def bind_all(self, sequence=None, func=None, add=None):
+        if self._owns_root:
+            return super().bind_all(sequence, func, add)
+        return self._host.bind_all(sequence, func, add)
+
+    def after(self, ms, *args):
+        if self._owns_root:
+            return super().after(ms, *args)
+        return self._host.after(ms, *args)
 
 
 # ============================================================

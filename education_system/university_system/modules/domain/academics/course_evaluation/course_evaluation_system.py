@@ -239,9 +239,16 @@ class Database:
 class CourseEvaluationApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("University Course Evaluation System")
-        self.root.geometry("900x650")
-        self.root.configure(bg="#f0f4f8")
+        # When ``root`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), it has no ``wm_title`` — skip
+        # window-chrome. Same shape as Library (8.117.34).
+        if hasattr(self.root, "wm_title"):
+            self.root.title("University Course Evaluation System")
+            self.root.geometry("900x650")
+        try:
+            self.root.configure(bg="#f0f4f8")
+        except tk.TclError:
+            pass
 
         self.user = _get_current_user()
         self.is_admin = _is_admin_user(self.user)

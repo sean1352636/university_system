@@ -589,10 +589,17 @@ Status: {old_status} -> {new_status}
 class SecurityDesk:
     def __init__(self, root):
         self.root = root
-        self.root.title(_t("security_desk.title"))
-        self.root.geometry("1000x750")
-        self.root.minsize(900, 650)
-        self.root.configure(bg=COLORS['bg_dark'])
+        # When ``root`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), it has no ``wm_title`` — skip
+        # window-chrome calls. Same shape as Library (8.117.34).
+        if hasattr(self.root, "wm_title"):
+            self.root.title(_t("security_desk.title"))
+            self.root.geometry("1000x750")
+            self.root.minsize(900, 650)
+        try:
+            self.root.configure(bg=COLORS['bg_dark'])
+        except tk.TclError:
+            pass
 
         # Get current user
         self.current_user = get_current_user()
@@ -612,6 +619,10 @@ class SecurityDesk:
         self.center_window()
 
     def center_window(self):
+        # ``geometry("+x+y")`` only applies to a Tk/Toplevel — skip
+        # when embedded in a workspace Frame.
+        if not hasattr(self.root, "wm_title"):
+            return
         self.root.update_idletasks()
         x = (self.root.winfo_screenwidth() - self.root.winfo_width()) // 2
         y = (self.root.winfo_screenheight() - self.root.winfo_height()) // 2

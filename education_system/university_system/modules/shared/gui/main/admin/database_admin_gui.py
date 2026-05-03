@@ -35,7 +35,9 @@ def show_backup(self):
         messagebox.showerror(_t("database_admin_gui.titles.error"), _t("database_admin_gui.errors.backup_launch_failed", error=str(e)))
         print(f"Backup GUI error: {e}")
 def show_data_backup_gui(self):
-    """Launch the Data Backup and Restore GUI"""
+    """Launch Data Backup inside the main GUI's content notebook
+    when a workspace is available, falling back to a Toplevel
+    otherwise — same pattern as Student Records (8.117.38)."""
     if not self.auth.current_user:
         messagebox.showerror(_t("database_admin_gui.titles.error"), _t("database_admin_gui.errors.login_required_backup"))
         return
@@ -44,31 +46,37 @@ def show_data_backup_gui(self):
         messagebox.showerror(_t("database_admin_gui.titles.error"), _t("database_admin_gui.errors.no_permission_backup"))
         return
 
+    if not DATA_BACKUP_GUI_AVAILABLE:
+        messagebox.showerror(_t("database_admin_gui.titles.error"), _t("database_admin_gui.errors.backup_gui_not_available"))
+        return
+
+    title = _t("database_admin_gui.titles.backup_restore_system")
+    auth = self.auth
+
+    def _build(host):
+        gui = BackupGUI(host, auth)
+        if hasattr(gui, 'set_auth'):
+            gui.set_auth(auth)
+        return gui
+
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(title, _build)
+        print(_t("database_admin_gui.messages.backup_gui_opened"))
+        return
+
     try:
-        # Create backup window
         backup_window = tk.Toplevel(self.root)
         _install_clean_close(backup_window)
-        backup_window.title(_t("database_admin_gui.titles.backup_restore_system"))
+        backup_window.title(title)
         backup_window.geometry("800x600")
         backup_window.minsize(600, 500)
-
         try:
             backup_window.transient(self.root)
         except Exception as e:
             logger.debug(f"Could not set backup_window as transient: {e}")
-
-        # Use the imported BackupGUI class
-        if not DATA_BACKUP_GUI_AVAILABLE:
-            messagebox.showerror(_t("database_admin_gui.titles.error"), _t("database_admin_gui.errors.backup_gui_not_available"))
-            return
-
-        backup_gui = BackupGUI(backup_window, self.auth)
-
-        if hasattr(backup_gui, 'set_auth'):
-            backup_gui.set_auth(self.auth)
-
+        _build(backup_window)
         print(_t("database_admin_gui.messages.backup_gui_opened"))
-
     except ImportError:
         # Fallback to CLI menu
         try:
@@ -79,7 +87,9 @@ def show_data_backup_gui(self):
     except Exception as e:
         messagebox.showerror(_t("database_admin_gui.titles.error"), _t("database_admin_gui.errors.backup_gui_open_failed", error=str(e)))
 def show_batch_operations_gui(self):
-    """Launch Batch Operations GUI in a separate window."""
+    """Launch Batch Operations inside the main GUI's content notebook
+    when a workspace is available, falling back to a Toplevel
+    otherwise — same pattern as Student Records (8.117.38)."""
     # Auth gate (best-effort; don't block on unexpected auth errors)
     try:
         if hasattr(self, "auth") and not getattr(self.auth, "current_user", None):
@@ -92,14 +102,21 @@ def show_batch_operations_gui(self):
         messagebox.showerror(_t("database_admin_gui.titles.batch_operations"), _t("database_admin_gui.errors.batch_ops_not_available"))
         return
 
-    # Create window + init GUI
+    title = _t("database_admin_gui.titles.batch_operations")
+    auth = getattr(self, "auth", None)
+
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(title, lambda host: BatchOperationsGUI(host, auth))
+        print(_t("database_admin_gui.messages.batch_ops_opened"))
+        return
+
     try:
         batch_window = tk.Toplevel(self.root)
         _install_clean_close(batch_window)
-        batch_window.title(_t("database_admin_gui.titles.batch_operations"))
+        batch_window.title(title)
         batch_window.geometry("1000x700")
-
-        BatchOperationsGUI(batch_window, getattr(self, "auth", None))
+        BatchOperationsGUI(batch_window, auth)
         print(_t("database_admin_gui.messages.batch_ops_opened"))
     except Exception as e:
         messagebox.showerror(_t("database_admin_gui.titles.error"), _t("database_admin_gui.errors.batch_ops_open_failed", error=str(e)))

@@ -9,9 +9,15 @@ class AdvisingPortalGUI:
     """Academic Advising Portal - schedule meetings, view advisor info, degree planning."""
 
     def __init__(self, parent=None):
-        self.window = tk.Toplevel(parent) if parent else tk.Tk()
-        self.window.title("Academic Advising Portal")
-        self.window.geometry("1100x700")
+        # When ``parent`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), embed inside it. Frames have no
+        # ``wm_title``; Tk/Toplevel do.
+        if parent is not None and not hasattr(parent, "wm_title"):
+            self.window = parent
+        else:
+            self.window = tk.Toplevel(parent) if parent else tk.Tk()
+            self.window.title("Academic Advising Portal")
+            self.window.geometry("1100x700")
 
         # Try to get auth context
         try:

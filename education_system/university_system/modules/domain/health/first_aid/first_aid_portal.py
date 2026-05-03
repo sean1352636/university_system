@@ -279,9 +279,16 @@ def _remove_legacy_db():
 class FirstAidPortal:
     def __init__(self, root):
         self.root = root
-        self.root.title("University First Aid Portal")
-        self.root.geometry("1000x700")
-        self.root.configure(bg="#f0f4f8")
+        # When ``root`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), skip window-chrome calls. Same
+        # shape as Library (8.117.34).
+        if hasattr(self.root, "wm_title"):
+            self.root.title("University First Aid Portal")
+            self.root.geometry("1000x700")
+        try:
+            self.root.configure(bg="#f0f4f8")
+        except tk.TclError:
+            pass
 
         # Color scheme
         self.colors = {

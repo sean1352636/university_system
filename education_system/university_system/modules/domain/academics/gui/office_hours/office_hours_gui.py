@@ -25,8 +25,12 @@ class OfficeHoursGUI:
         self.service = OfficeHoursService()
 
         self.window = parent
-        self.window.title("Office Hours Management")
-        self.window.geometry("900x600")
+        # When ``parent`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), it has no ``wm_title`` — skip
+        # window-chrome. Same shape as Library/Student Records.
+        if hasattr(self.window, "wm_title"):
+            self.window.title("Office Hours Management")
+            self.window.geometry("900x600")
 
         self._setup_ui()
 

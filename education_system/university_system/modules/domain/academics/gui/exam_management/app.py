@@ -27,8 +27,11 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
 
         if not self._is_embedded:
             self.root.title(_("exam_scheduler.title"))
-            self.root.geometry("1200x700")
-            self.root.minsize(1000, 600)
+            # Match Finance Management's sizing — 1400x900 with a 1200x800
+            # minsize. On a typical desktop the WM clips to the work area,
+            # which reads as "fills the screen".
+            self.root.geometry("1400x900")
+            self.root.minsize(1200, 800)
 
         # Initialize data manager
         self.data_manager = DataManager()
@@ -41,9 +44,10 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
             self.create_menu()
         self.create_main_layout()
 
-        # Load initial data
-        self.refresh_exam_list()
-        self.refresh_room_list()
+        # Populate the initially-visible tab after the window paints, so the
+        # first frame appears instantly. Other tabs build lazily on selection.
+        self.root.after_idle(self.refresh_exam_list)
+        self.root.after_idle(self.refresh_room_list)
 
         # Live refresh: when sibling GUIs change module schedules or
         # student enrolment, re-pull exam data so this view doesn't
@@ -220,15 +224,55 @@ class ExamSchedulerApp(ScheduleTabMixin, ExamsTabMixin, RoomsTabMixin,
         self.notebook = ttk.Notebook(main_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
-        # Create tabs
+        # Lazy tabs: only the initially-visible Schedule tab builds now;
+        # the rest stay as empty placeholder frames until the user selects
+        # them. The At-Risk and Eligibility tabs in particular run N+1 (and
+        # N×M with persisted writes) DB queries on construction, so eager
+        # build on every open visibly delays the first paint.
+        self._lazy_tab_builders = {}
         self.create_schedule_tab()
-        self.create_exams_tab()
-        self.create_rooms_tab()
-        self.create_calendar_tab()
-        self.create_deferred_tab()
-        self.create_at_risk_tab()
-        self.create_eligibility_tab()
-        self.create_results_tab()
+
+        def _register(label, builder):
+            placeholder = ttk.Frame(self.notebook)
+            self.notebook.add(placeholder, text=label)
+            self._lazy_tab_builders[str(placeholder)] = (placeholder, builder)
+
+        _register("Exams", self.create_exams_tab)
+        _register("Rooms", self.create_rooms_tab)
+        _register("Calendar", self.create_calendar_tab)
+        _register("Deferred", self.create_deferred_tab)
+        _register("At-Risk Audit", self.create_at_risk_tab)
+        _register("Exam Eligibility", self.create_eligibility_tab)
+        _register("Results", self.create_results_tab)
+
+        self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
+
+    def _on_tab_changed(self, _event=None):
+        try:
+            current = self.notebook.select()
+        except tk.TclError:
+            return
+        entry = self._lazy_tab_builders.pop(current, None)
+        if not entry:
+            return
+        placeholder, builder = entry
+        try:
+            tab_index = self.notebook.index(placeholder)
+            tab_label = self.notebook.tab(placeholder, "text")
+        except tk.TclError:
+            return
+        self.notebook.forget(placeholder)
+        # The mixin builders all call self.notebook.add(...) themselves, so
+        # the new tab lands at the end. Move it back to the original slot
+        # and re-select it so the user sees their click take effect.
+        builder()
+        try:
+            new_tab = self.notebook.tabs()[-1]
+            self.notebook.insert(tab_index, new_tab)
+            self.notebook.tab(new_tab, text=tab_label)
+            self.notebook.select(new_tab)
+        except tk.TclError:
+            pass
 
     def export_schedule(self):
         """Export the schedule to a CSV file."""

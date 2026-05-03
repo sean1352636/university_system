@@ -1077,7 +1077,14 @@ class AcademicPeriodPanel(ttk.Frame):
             except Exception:
                 pass
 
-        self.refresh()
+        # refresh() performs up to ~62 calendar lookups (current term, week
+        # offset, holiday, today's exam window, then a 60-day look-ahead for
+        # the next exam window). Defer to after_idle so embedding GUIs can
+        # paint before this runs.
+        try:
+            self.after_idle(self.refresh)
+        except tk.TclError:
+            self.refresh()
 
     def refresh(self) -> None:
         bits: list[str] = []

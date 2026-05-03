@@ -239,7 +239,14 @@ def show_early_warning_gui(self):
     """Launch the Student Success Early Warning System GUI"""
     launch_early_warning_gui(self.root, self.auth)
 def show_career_services_gui(self):
-    """Launch the Career Services GUI"""
+    """Launch Career Services inside the main GUI's content notebook
+    when a workspace is available, falling back to a Toplevel
+    otherwise — same pattern as Student Records (8.117.38)."""
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        from education_system.university_system.modules.domain.career.gui.career_services_gui import CareerServicesGUI
+        opener("Career Services", lambda host: CareerServicesGUI(host, self.auth))
+        return
     launch_career_services_gui(self.root, self.auth)
 def open_internship_portal_gui(self):
     """Open the Internship Portal GUI in a child window from the main app."""
@@ -305,7 +312,9 @@ def open_trip_management_gui(self):
     except Exception as e:
         messagebox.showerror(_t("student_affairs.trip_management.title"), _t("student_affairs.trip_management.open_failed").format(error=e))
 def show_legal_services_gui(self):
-    """Open the Legal Services GUI in a child window."""
+    """Open Legal Services inside the main GUI's content notebook
+    when a workspace is available, falling back to a Toplevel
+    otherwise — same pattern as Student Records (8.117.38)."""
     try:
         if not self.auth or not self.auth.current_user:
             messagebox.showerror(_t("student_affairs.legal_services.title"), _t("student_affairs.errors.login_required"))
@@ -315,9 +324,16 @@ def show_legal_services_gui(self):
             messagebox.showerror(_t("student_affairs.legal_services.title"), _t("student_affairs.legal_services.not_available"))
             return
 
+        title = _t("student_affairs.legal_services.window_title")
+        opener = getattr(self, "open_in_workspace", None)
+        if callable(opener):
+            opener(title, lambda host: LegalServicesGUI(host, self.auth))
+            print(_t("student_affairs.legal_services.opened_success"))
+            return
+
         top = tk.Toplevel(self.root)
         _install_clean_close(top)
-        top.title(_t("student_affairs.legal_services.window_title"))
+        top.title(title)
         top.geometry("1400x900")
         top.minsize(1200, 800)
         try:
@@ -326,7 +342,6 @@ def show_legal_services_gui(self):
         except Exception as e:
             logger.debug(f"Could not set window as transient or grab focus: {e}")
 
-        # Initialize the Legal Services GUI
         LegalServicesGUI(top, self.auth)
         print(_t("student_affairs.legal_services.opened_success"))
 
@@ -465,7 +480,14 @@ def show_email_sms_gui(self):
         messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.communication_hub_failed").format(error=str(e)))
         print(_t("extras_gui.messages.communication_hub_error").format(error=e))
 def show_admissions_crm_gui(self):
-    """Launch the Admissions Crm GUI"""
+    """Launch Admissions CRM inside the main GUI's content notebook
+    when a workspace is available, falling back to a Toplevel
+    otherwise — same pattern as Student Records (8.117.38)."""
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        from education_system.university_system.modules.domain.admissions.gui.admissions_crm_gui import AdmissionsCRMGUI
+        opener("Admissions CRM", lambda host: AdmissionsCRMGUI(host, self.auth))
+        return
     launch_admissions_crm_gui(self.root, self.auth)
 def show_police_station_gui(self):
     """Launch the Police Station Management GUI"""
@@ -486,12 +508,27 @@ def show_police_station_gui(self):
         print(_t("extras_gui.messages.police_station_error").format(error=e))
 
 def show_security_desk_gui(self):
-    """Launch the Security Desk GUI"""
+    """Launch Security Desk inside the main GUI's content notebook
+    when a workspace is available, falling back to a Toplevel
+    otherwise — same pattern as Student Records (8.117.38)."""
     try:
         from education_system.university_system.modules.domain.campus.gui.security.security_desk_gui import SecurityDesk
+    except Exception as e:
+        messagebox.showerror(_t("extras_gui.errors.error"), _t("extras_gui.errors.security_desk_failed").format(error=str(e)))
+        print(_t("extras_gui.messages.security_desk_error").format(error=e))
+        return
+
+    title = _t("extras_gui.titles.security_desk")
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(title, lambda host: SecurityDesk(host))
+        print(_t("extras_gui.messages.security_desk_opened"))
+        return
+
+    try:
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
-        window.title(_t("extras_gui.titles.security_desk"))
+        window.title(title)
         window.geometry("1000x700")
         try:
             window.transient(self.root)
@@ -504,7 +541,9 @@ def show_security_desk_gui(self):
         print(_t("extras_gui.messages.security_desk_error").format(error=e))
 
 def show_equality_diversity_gui(self):
-    """Launch the Equality & Diversity Management GUI."""
+    """Launch the Equality & Diversity Management GUI inside the main
+    GUI's content notebook when a workspace is available, falling back
+    to a Toplevel otherwise — same pattern as Student Records (8.117.38)."""
     try:
         if not self.auth or not getattr(self.auth, "current_user", None):
             messagebox.showerror(
@@ -515,6 +554,13 @@ def show_equality_diversity_gui(self):
         from education_system.university_system.modules.domain.student_affairs.equality_diversity import (
             open_equality_diversity_gui,
         )
+
+        opener = getattr(self, "open_in_workspace", None)
+        if callable(opener):
+            opener("Equality & Diversity",
+                   lambda host: open_equality_diversity_gui(host, self.auth))
+            return
+
         open_equality_diversity_gui(self.root, self.auth)
     except Exception as e:
         logger.error(f"Error opening Equality & Diversity GUI: {e}")

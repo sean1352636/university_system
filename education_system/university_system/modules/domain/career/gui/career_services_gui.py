@@ -64,10 +64,16 @@ class CareerServicesGUI:
         self.current_user = auth.current_user
         self.user_role = self.current_user.get('role', 'student')
 
-        self.window = tk.Toplevel(root)
-        self.window.title(_t("careers.window_title", default="Career Services Platform"))
-        self.window.geometry("1000x650")
-        self.window.minsize(900, 550)
+        # When ``root`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), embed inside it. Frames have no
+        # ``wm_title``; Tk/Toplevel do.
+        if root is not None and not hasattr(root, "wm_title"):
+            self.window = root
+        else:
+            self.window = tk.Toplevel(root)
+            self.window.title(_t("careers.window_title", default="Career Services Platform"))
+            self.window.geometry("1000x650")
+            self.window.minsize(900, 550)
 
         # Initialize database tables
         self._init_database()

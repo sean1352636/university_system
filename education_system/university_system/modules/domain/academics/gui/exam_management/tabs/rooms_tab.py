@@ -94,22 +94,25 @@ class RoomsTabMixin:
 
     def refresh_room_list(self):
         """Refresh the room list."""
-        for item in self.room_tree.get_children():
-            self.room_tree.delete(item)
+        # Tabs build lazily; skip widgets that haven't been created yet.
+        if getattr(self, "room_tree", None) is not None:
+            for item in self.room_tree.get_children():
+                self.room_tree.delete(item)
 
-        for room in self.data_manager.rooms:
-            facilities = []
-            if room.has_computers:
-                facilities.append(_("exam_scheduler.facilities.computers"))
-            if room.has_projector:
-                facilities.append(_("exam_scheduler.facilities.projector"))
-            facilities_str = ", ".join(facilities) if facilities else _("exam_scheduler.facilities.none")
+            for room in self.data_manager.rooms:
+                facilities = []
+                if room.has_computers:
+                    facilities.append(_("exam_scheduler.facilities.computers"))
+                if room.has_projector:
+                    facilities.append(_("exam_scheduler.facilities.projector"))
+                facilities_str = ", ".join(facilities) if facilities else _("exam_scheduler.facilities.none")
 
-            self.room_tree.insert('', tk.END, values=(
-                room.id, room.name, room.building, room.capacity, facilities_str
-            ))
+                self.room_tree.insert('', tk.END, values=(
+                    room.id, room.name, room.building, room.capacity, facilities_str
+                ))
 
-        self.update_room_combo()
+        if getattr(self, "room_combo", None) is not None:
+            self.update_room_combo()
 
     def add_room(self):
         """Add a new room."""

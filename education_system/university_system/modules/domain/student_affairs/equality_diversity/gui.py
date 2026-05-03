@@ -143,12 +143,19 @@ class EqualityDiversityGUI:
             self.root = parent
         self.theme_name = "light"
         self.theme = THEMES[self.theme_name]
-        self.root.title(
-            _t("ed.window_title",
-               "E&D System — {user} ({role})",
-               user=self.principal.username, role=self.principal.role or "user"))
-        self.root.geometry("1200x720")
-        self.root.configure(bg=self.theme["bg"])
+        # Frames have no ``wm_title`` / accept no ``geometry`` — only set
+        # window chrome on Tk/Toplevel hosts. Same shape as
+        # Library/Student Records (8.117.34/8.117.38).
+        if hasattr(self.root, "wm_title"):
+            self.root.title(
+                _t("ed.window_title",
+                   "E&D System — {user} ({role})",
+                   user=self.principal.username, role=self.principal.role or "user"))
+            self.root.geometry("1200x720")
+        try:
+            self.root.configure(bg=self.theme["bg"])
+        except Exception:
+            pass
 
         # feature 9 — pagination state
         self.page = 0

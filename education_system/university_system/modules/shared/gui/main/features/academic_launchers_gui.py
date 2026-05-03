@@ -689,26 +689,34 @@ def open_absence_tracker_gui(self):
         except Exception as ex:
             logger.error(f"Failed to show absence tracker error dialog: {ex}")
 def show_office_hours_gui(self):
-    """Launch the Office Hours Management GUI in a child window"""
+    """Launch Office Hours Management inside the main GUI's content
+    notebook when a workspace is available, falling back to a
+    Toplevel otherwise — same pattern as Student Records (8.117.38)."""
     if not self.auth.current_user:
         messagebox.showerror("Error", "Please log in to access Office Hours.")
         return
 
-    try:
-        if not OFFICE_HOURS_GUI_AVAILABLE:
-            messagebox.showerror("Office Hours", "Office Hours GUI is not available.")
-            return
+    if not OFFICE_HOURS_GUI_AVAILABLE:
+        messagebox.showerror("Office Hours", "Office Hours GUI is not available.")
+        return
 
+    title = "Office Hours"
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(title, lambda host: OfficeHoursGUI(host, auth=self.auth))
+        return
+
+    try:
         win = tk.Toplevel(self.root)
         _install_clean_close(win)
         win.transient(self.root)
-        try:
-            OfficeHoursGUI(win, auth=self.auth)
-        except Exception as e:
-            win.destroy()
-            messagebox.showerror("Office Hours", f"Failed to open Office Hours: {e}")
+        OfficeHoursGUI(win, auth=self.auth)
     except Exception as e:
-        messagebox.showerror("Error", f"Unexpected error opening Office Hours: {e}")
+        try:
+            win.destroy()
+        except Exception:
+            pass
+        messagebox.showerror("Office Hours", f"Failed to open Office Hours: {e}")
 
 def show_student_grades_gui(self):
     """Launch the Student Grades & GPA GUI"""
@@ -767,7 +775,9 @@ def show_student_outcomes_gui(self):
         logger.error(f"Learning Outcomes GUI error: {e}")
 
 def show_student_timetable_gui(self):
-    """Launch the Student Timetable GUI"""
+    """Launch the Student Timetable inside the main GUI's content
+    notebook when a workspace is available, falling back to a
+    Toplevel otherwise — same pattern as Student Records (8.117.38)."""
     if not self.auth.current_user:
         messagebox.showerror("Error", "Please log in to access your timetable.")
         return
@@ -776,13 +786,26 @@ def show_student_timetable_gui(self):
         from education_system.university_system.modules.shared.gui.main.imports.gui_imports import (
             STUDENT_TIMETABLE_GUI_AVAILABLE, StudentTimetableGUI
         )
-        if not STUDENT_TIMETABLE_GUI_AVAILABLE or StudentTimetableGUI is None:
-            messagebox.showerror("Timetable", "Student Timetable GUI is not available.")
-            return
+    except Exception as e:
+        messagebox.showerror("Error", f"Failed to open Timetable: {e}")
+        logger.error(f"Student Timetable GUI error: {e}")
+        return
 
+    if not STUDENT_TIMETABLE_GUI_AVAILABLE or StudentTimetableGUI is None:
+        messagebox.showerror("Timetable", "Student Timetable GUI is not available.")
+        return
+
+    title = "My Timetable"
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(title, lambda host: StudentTimetableGUI(host, auth_instance=self.auth))
+        print("Student Timetable GUI opened")
+        return
+
+    try:
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
-        window.title("My Timetable")
+        window.title(title)
         window.geometry("1200x800")
         try:
             window.transient(self.root)
@@ -853,31 +876,38 @@ def show_student_dashboard_gui(self):
         logger.error(f"Student Dashboard GUI error: {e}")
 
 def show_virtual_classroom_gui(self):
-    """Launch the Virtual Classroom Management GUI in a child window"""
+    """Launch the Virtual Classroom Management GUI inside the main
+    GUI's content notebook when a workspace is available, falling
+    back to a Toplevel otherwise — same pattern as Student Records
+    (8.117.38)."""
     if not self.auth.current_user:
         messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.login_required_virtual_classroom"))
         return
 
+    if not VIRTUAL_CLASSROOM_AVAILABLE:
+        messagebox.showerror(_t("academic_launchers.titles.virtual_classroom"), _t("academic_launchers.errors.virtual_classroom_unavailable"))
+        return
+
     try:
-        if not VIRTUAL_CLASSROOM_AVAILABLE:
-            messagebox.showerror(_t("academic_launchers.titles.virtual_classroom"), _t("academic_launchers.errors.virtual_classroom_unavailable"))
-            return
-
-        # Import the comprehensive Virtual Classroom GUI
         from education_system.university_system.modules.domain.academics.gui.virtual_classroom_gui import VirtualClassroomGUI
-
-        # Create a new window for the Virtual Classroom GUI
-        classroom_window = tk.Toplevel(self.root)
-        _install_clean_close(classroom_window)
-
-        # Initialize the comprehensive GUI with auth instance
-        app = VirtualClassroomGUI(classroom_window, auth=self.auth)
-
-        print(_t("academic_launchers.success.virtual_classroom_opened"))
-
     except ImportError as e:
         messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.virtual_classroom_import_error", error=str(e)))
         print(_t("academic_launchers.errors.virtual_classroom_import_log", error=e))
+        return
+
+    title = _t("academic_launchers.titles.virtual_classroom")
+
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(title, lambda host: VirtualClassroomGUI(host, auth=self.auth))
+        print(_t("academic_launchers.success.virtual_classroom_opened"))
+        return
+
+    try:
+        classroom_window = tk.Toplevel(self.root)
+        _install_clean_close(classroom_window)
+        VirtualClassroomGUI(classroom_window, auth=self.auth)
+        print(_t("academic_launchers.success.virtual_classroom_opened"))
     except Exception as e:
         messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.failed_open_virtual_classroom", error=str(e)))
         print(_t("academic_launchers.errors.virtual_classroom_error_log", error=e))
@@ -1175,7 +1205,10 @@ def show_exam_portal(self):
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
         window.title("Exam Management")
-        window.geometry("1200x800")
+        # Match Finance Management's sizing — WM clips to the work area
+        # which reads as "fills the screen" on a typical desktop.
+        window.geometry("1400x900")
+        window.minsize(1200, 800)
         try:
             window.transient(self.root)
         except Exception:
@@ -1185,26 +1218,48 @@ def show_exam_portal(self):
         messagebox.showerror("Error", f"Failed to open Exam Management: {e}")
 
 def show_hesa_export_gui(self):
-    """Launch HESA Data Export GUI"""
+    """Launch HESA Data Export inside the main GUI's content notebook
+    when a workspace is available, falling back to a Toplevel
+    otherwise — same pattern as Student Records (8.117.38)."""
     try:
         from education_system.university_system.modules.domain.admissions.hesa_export.gui.hesa_export_gui import HESAExportGUI
-        gui = HESAExportGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import HESA Export GUI: {e}")
         messagebox.showerror(_t("common.error"), f"HESA Export GUI not available: {e}")
+        return
+
+    title = "HESA Export"
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(title, lambda host: HESAExportGUI(parent=host))
+        return
+
+    try:
+        HESAExportGUI(parent=self.root)
     except Exception as e:
         logger.error(f"Error launching HESA Export GUI: {e}")
         messagebox.showerror(_t("common.error"), f"Failed to launch HESA Export: {e}")
 
 
 def show_clearing_adjustment_gui(self):
-    """Launch Clearing & Adjustment GUI"""
+    """Launch Clearing & Adjustment inside the main GUI's content
+    notebook when a workspace is available, falling back to a
+    Toplevel otherwise — same pattern as Student Records (8.117.38)."""
     try:
         from education_system.university_system.modules.domain.academics.clearing_adjustment.gui.clearing_adjustment_gui import ClearingAdjustmentGUI
-        gui = ClearingAdjustmentGUI(parent=self.root)
     except ImportError as e:
         logger.error(f"Failed to import Clearing & Adjustment GUI: {e}")
         messagebox.showerror(_t("common.error"), f"Clearing & Adjustment GUI not available: {e}")
+        return
+
+    title = "Clearing & Adjustment"
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(title, lambda host: ClearingAdjustmentGUI(parent=host))
+        return
+
+    try:
+        ClearingAdjustmentGUI(parent=self.root)
     except Exception as e:
         logger.error(f"Error launching Clearing & Adjustment GUI: {e}")
         messagebox.showerror(_t("common.error"), f"Failed to launch Clearing & Adjustment: {e}")

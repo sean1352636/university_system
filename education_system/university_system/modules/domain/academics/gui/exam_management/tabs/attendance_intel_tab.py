@@ -96,7 +96,8 @@ class AtRiskTabMixin:
             self.at_risk_tree.column(c, width=widths[c], minwidth=50)
         self.at_risk_tree.pack(fill=tk.BOTH, expand=True)
 
-        self.refresh_at_risk_list()
+        # The N+1 attendance query lands after the tab paints.
+        self.root.after_idle(self.refresh_at_risk_list)
 
     def refresh_at_risk_list(self):
         if not hasattr(self, "at_risk_tree"):
@@ -207,7 +208,9 @@ class ExamEligibilityTabMixin:
         self.eligibility_tree.tag_configure("bad", background="#fde4e4")
         self.eligibility_tree.pack(fill=tk.BOTH, expand=True)
 
-        self.refresh_eligibility_list()
+        # Per-student compute_exam_eligibility() persists writes — push it
+        # past the first paint so the tab opens before the work runs.
+        self.root.after_idle(self.refresh_eligibility_list)
 
     def refresh_eligibility_list(self):
         if not hasattr(self, "eligibility_tree"):

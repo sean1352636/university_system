@@ -8,9 +8,14 @@ logger = logging.getLogger(__name__)
 
 class ClearingAdjustmentGUI:
     def __init__(self, parent=None):
-        self.root = tk.Toplevel(parent) if parent else tk.Tk()
-        self.root.title("Clearing & Adjustment")
-        self.root.geometry("1200x800")
+        # When ``parent`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), embed inside it directly.
+        if parent is not None and not hasattr(parent, "wm_title"):
+            self.root = parent
+        else:
+            self.root = tk.Toplevel(parent) if parent else tk.Tk()
+            self.root.title("Clearing & Adjustment")
+            self.root.geometry("1200x800")
         try:
             from education_system.university_system.modules.domain.academics.clearing_adjustment.services.clearing_adjustment_service import ClearingAdjustmentService
             self.service = ClearingAdjustmentService()

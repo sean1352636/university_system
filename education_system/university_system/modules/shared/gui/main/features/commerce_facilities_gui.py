@@ -396,7 +396,14 @@ def show_medical_accommodations(self):
         messagebox.showerror(_t("commerce_facilities.errors.error"), _t("commerce_facilities.errors.medical_open_failed").format(error=str(e)))
         print(_t("commerce_facilities.messages.medical_error").format(error=e))
 def show_campus_events_gui(self):
-    """Launch the Campus Events GUI"""
+    """Launch Campus Events inside the main GUI's content notebook
+    when a workspace is available, falling back to a Toplevel
+    otherwise — same pattern as Student Records (8.117.38)."""
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        from education_system.university_system.modules.domain.campus.services.campus_events_gui import CampusEventsGUI
+        opener("Campus Events", lambda host: CampusEventsGUI(host, self.auth))
+        return
     launch_campus_events_gui(self.root, self.auth)
 def show_facilities_management_gui(self):
     """Launch the Facilities Management GUI"""

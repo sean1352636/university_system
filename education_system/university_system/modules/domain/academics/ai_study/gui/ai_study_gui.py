@@ -25,13 +25,17 @@ class AIStudyGUI:
         self.service = AIStudyService()
         self.auth = auth or get_auth()
 
-        if parent:
-            self.window = tk.Toplevel(parent)
+        # When ``parent`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), embed inside it directly. Frames
+        # have no ``wm_title``; Tk/Toplevel do.
+        if parent is not None and not hasattr(parent, "wm_title"):
+            self.window = parent
+            self._owns_window = False
         else:
-            self.window = tk.Tk()
-
-        self.window.title(_t("ai_study.window.title", default="AI Study Companion"))
-        self.window.geometry("1000x700")
+            self.window = tk.Toplevel(parent) if parent else tk.Tk()
+            self.window.title(_t("ai_study.window.title", default="AI Study Companion"))
+            self.window.geometry("1000x700")
+            self._owns_window = True
 
         self.setup_ui()
 

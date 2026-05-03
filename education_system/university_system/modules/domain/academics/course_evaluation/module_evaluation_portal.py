@@ -349,9 +349,16 @@ class Database:
 class ModuleEvaluationPortal:
     def __init__(self, root):
         self.root = root
-        self.root.title("University Module Evaluation Portal")
-        self.root.geometry("800x700")
-        self.root.configure(bg="#f0f4f8")
+        # When ``root`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), it has no ``wm_title`` — skip
+        # window-chrome. Same shape Library uses (8.117.34).
+        if hasattr(self.root, "wm_title"):
+            self.root.title("University Module Evaluation Portal")
+            self.root.geometry("800x700")
+        try:
+            self.root.configure(bg="#f0f4f8")
+        except tk.TclError:
+            pass
 
         self.user = _get_current_user()
         self.is_admin = _is_admin_user(self.user)

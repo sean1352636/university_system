@@ -33,13 +33,19 @@ class PortfolioGUI:
         self.service = PortfolioService()
         self.auth = get_auth()
 
-        if parent:
-            self.root = tk.Toplevel(parent)
-        else:
+        # When ``parent`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), embed inside it. Frames have no
+        # ``wm_title``; Tk/Toplevel do.
+        if parent is None:
             self.root = tk.Tk()
+        elif not hasattr(parent, "wm_title"):
+            self.root = parent
+        else:
+            self.root = tk.Toplevel(parent)
 
-        self.root.title("Achievement & Portfolio System")
-        self.root.geometry("1200x800")
+        if hasattr(self.root, "wm_title"):
+            self.root.title("Achievement & Portfolio System")
+            self.root.geometry("1200x800")
 
         self.student_id = None
         self.portfolio = None

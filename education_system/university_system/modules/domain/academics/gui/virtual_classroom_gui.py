@@ -195,13 +195,20 @@ class VirtualClassroomGUI:
             print(f"Database initialization error: {e}")
 
     def _setup_window(self):
-        """Configure window properties"""
+        """Configure window properties.
+
+        When ``parent`` is a workspace tab Frame (no ``wm_title``), skip
+        the window-chrome calls — title/geometry/minsize don't apply to
+        a Frame, and the workspace notebook owns sizing. Same pattern
+        Library uses (8.117.34) for embedded vs Toplevel hosts.
+        """
         title_text = _("virtual_classroom.title")
         if not isinstance(title_text, str) or "Virtual Classroom" not in title_text:
             title_text = "Virtual Classroom Management"
-        self._set_window_title(title_text)
-        self.parent.geometry("1400x900")
-        self.parent.minsize(1200, 800)
+        if hasattr(self.parent, "wm_title"):
+            self._set_window_title(title_text)
+            self.parent.geometry("1400x900")
+            self.parent.minsize(1200, 800)
 
         # Configure grid weights
         self.parent.grid_rowconfigure(0, weight=1)

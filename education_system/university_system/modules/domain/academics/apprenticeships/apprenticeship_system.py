@@ -1019,10 +1019,28 @@ class DashboardTab(ttk.Frame):
 class ApprenticeshipApp(tk.Tk):
     """Main application window."""
 
-    def __init__(self):
-        super().__init__()
-        self.title("University Apprenticeship Management System")
-        self.geometry("1100x720")
+    def __init__(self, host=None):
+        """Build the Apprenticeship app.
+
+        ``host`` may be:
+          * ``None`` (legacy / subprocess) — initialise as a ``tk.Tk``
+            root and own the window/mainloop.
+          * a workspace tab ``Frame`` (passed by ``open_in_workspace``)
+            — skip Tk init and build widgets onto the host frame.
+            ``mainloop()`` becomes a no-op (caller owns it).
+
+        Same shape as ComplaintsPortal (8.117.49) and SafeguardingApp
+        (8.117.50).
+        """
+        if host is None:
+            super().__init__()
+            self.title("University Apprenticeship Management System")
+            self.geometry("1100x720")
+            self._host = self
+            self._owns_root = True
+        else:
+            self._host = host
+            self._owns_root = False
         self.db = Database()
 
         self.user = _get_current_user()
@@ -1032,7 +1050,7 @@ class ApprenticeshipApp(tk.Tk):
                     (self.user or {}).get('role') or 'none')
 
         # Header strip showing the signed-in user
-        header = ttk.Frame(self, padding=(10, 6))
+        header = ttk.Frame(self._host, padding=(10, 6))
         header.pack(fill="x")
         ttk.Label(header,
                   text="University Apprenticeship Management System",
@@ -1049,20 +1067,24 @@ class ApprenticeshipApp(tk.Tk):
         except Exception:
             pass
 
-        # Menu bar
-        menubar = tk.Menu(self)
-        self.config(menu=menubar)
-        file_menu = tk.Menu(menubar, tearoff=0)
-        file_menu.add_command(label="Load Sample Data", command=self.load_sample_data)
-        file_menu.add_separator()
-        file_menu.add_command(label="Exit", command=self.quit_app)
-        menubar.add_cascade(label="File", menu=file_menu)
-        help_menu = tk.Menu(menubar, tearoff=0)
-        help_menu.add_command(label="About", command=self.show_about)
-        menubar.add_cascade(label="Help", menu=help_menu)
+        # Menu bar — only on Tk/Toplevel hosts (Frames don't accept
+        # ``config(menu=…)``). The "Load Sample Data" / "About"
+        # actions remain available via toolbar buttons inside the
+        # tabs themselves.
+        if self._owns_root:
+            menubar = tk.Menu(self)
+            self.config(menu=menubar)
+            file_menu = tk.Menu(menubar, tearoff=0)
+            file_menu.add_command(label="Load Sample Data", command=self.load_sample_data)
+            file_menu.add_separator()
+            file_menu.add_command(label="Exit", command=self.quit_app)
+            menubar.add_cascade(label="File", menu=file_menu)
+            help_menu = tk.Menu(menubar, tearoff=0)
+            help_menu.add_command(label="About", command=self.show_about)
+            menubar.add_cascade(label="Help", menu=help_menu)
 
         # Notebook
-        self.notebook = ttk.Notebook(self)
+        self.notebook = ttk.Notebook(self._host)
         self.notebook.pack(fill="both", expand=True, padx=5, pady=5)
 
         self.dashboard_tab = DashboardTab(self.notebook, self.db)
@@ -1081,10 +1103,12 @@ class ApprenticeshipApp(tk.Tk):
 
         # Status bar
         self.status_var = tk.StringVar(value="Ready")
-        status_bar = ttk.Label(self, textvariable=self.status_var, relief="sunken", anchor="w")
+        status_bar = ttk.Label(self._host, textvariable=self.status_var, relief="sunken", anchor="w")
         status_bar.pack(side="bottom", fill="x")
 
-        self.protocol("WM_DELETE_WINDOW", self.quit_app)
+        # Window-level WM hook only when we own the window.
+        if self._owns_root:
+            self.protocol("WM_DELETE_WINDOW", self.quit_app)
 
     def on_tab_change(self, _):
         idx = self.notebook.index("current")
@@ -1166,6 +1190,28 @@ class ApprenticeshipApp(tk.Tk):
         if messagebox.askokcancel("Quit", "Exit the application?"):
             self.db.close()
             self.destroy()
+
+    # ---------- embedded-mode shims ----------
+    # When ``host`` was supplied, ``super().__init__()`` was skipped,
+    # so any inherited ``tk.Misc`` method that touches ``self.tk``
+    # would crash. Redirect to the host frame.
+    def mainloop(self, n: int = 0):
+        if not self._owns_root:
+            return
+        super().mainloop(n)
+
+    def destroy(self):
+        if self._owns_root:
+            super().destroy()
+        else:
+            try:
+                self.db.close()
+            except Exception:
+                pass
+            try:
+                self._host.destroy()
+            except tk.TclError:
+                pass
 
 
 def main():

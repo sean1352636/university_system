@@ -39,13 +39,23 @@ class StudyMatchingGUI:
         self.service = StudyMatchingService()
         self.auth = auth or get_auth()
 
-        self.window = tk.Toplevel(parent)
-        self.window.title("Peer Study Matching & Collaboration")
-        self.window.geometry("1300x850")
+        # When ``parent`` is a workspace tab Frame (passed by
+        # ``open_in_workspace``), embed inside it instead of spawning
+        # a Toplevel — same shape as Student Records (8.117.38).
+        # Frames have no ``wm_title``; Tk/Toplevel do.
+        if hasattr(parent, "wm_title"):
+            self.window = tk.Toplevel(parent)
+            self.window.title("Peer Study Matching & Collaboration")
+            self.window.geometry("1300x850")
+            self._owns_window = True
+        else:
+            self.window = parent
+            self._owns_window = False
 
         if not self.auth.current_user:
             messagebox.showerror("Error", "You must be logged in to use Peer Study Matching.")
-            self.window.destroy()
+            if self._owns_window:
+                self.window.destroy()
             return
 
         # Cache for available modules
