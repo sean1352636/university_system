@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.65 — 2026-05-03](#811765---2026-05-03)
 - [8.117.64 — 2026-05-03](#811764---2026-05-03)
 - [8.117.63 — 2026-05-03](#811763---2026-05-03)
 - [8.117.62 — 2026-05-03](#811762---2026-05-03)
@@ -291,6 +292,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.65] — 2026-05-03
+
+### Changed — Research Portal palette flattened to match the main GUI
+
+The portal had a saturated colour scheme that was visually
+disconnected from the rest of the workspace: a navy header bar
+(``#1f3a68``), white panel cards on a pale-blue page (``#f4f6fa``),
+and a saturated blue accent button (``#2e6fd6``) — all unique to
+this one tab.
+
+Flattened ``PALETTE`` to the main GUI's clam-default neutrals:
+``bg``/``panel``/``header`` all at ``#f0f0f0``, ``text`` black,
+``muted`` ``#555555``, ``Treeview`` heading on a soft grey. The
+``Accent.TButton`` background override was dropped so it inherits
+clam's default button look. The two raw ``tk.Label`` calls in the
+header (which had hardcoded ``fg="white"``/``"#cfd8ea"`` against the
+old navy bar) now read ``PALETTE["text"]``/``PALETTE["muted"]``
+since the bar is gone.
+
+#### Files
+
+- ``modules/domain/research/services/university_research.py``:
+  ``PALETTE`` rewritten; ``configure_styles`` updated for the new
+  light-on-light header; ``_build_header`` raw labels switched from
+  hardcoded white/light-blue text to palette-driven dark/muted.
 
 ---
 

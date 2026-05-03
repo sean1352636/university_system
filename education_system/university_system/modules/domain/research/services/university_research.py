@@ -405,17 +405,21 @@ class Database:
 # ---------------------------------------------------------------------------
 
 PALETTE = {
-    "bg": "#f4f6fa",
-    "panel": "#ffffff",
-    "header": "#1f3a68",
-    "accent": "#2e6fd6",
-    "accent_soft": "#e6efff",
-    "text": "#1d2230",
-    "muted": "#6b7280",
+    # 8.117.65 — flattened to the main GUI's neutral clam-default look.
+    # Pre-8.117.65 the portal had a navy header bar (#1f3a68), white
+    # panel cards, and a saturated blue accent button — visually
+    # disconnected from every other workspace tab.
+    "bg": "#f0f0f0",
+    "panel": "#f0f0f0",
+    "header": "#f0f0f0",
+    "accent": "#3c5a99",
+    "accent_soft": "#e1e1e1",
+    "text": "#000000",
+    "muted": "#555555",
     "success": "#1f7a3c",
     "warn": "#b0620a",
     "danger": "#b3261e",
-    "border": "#dfe4ec",
+    "border": "#cccccc",
 }
 
 
@@ -426,6 +430,9 @@ def configure_styles():
     except tk.TclError:
         pass
 
+    # Header text now sits on the same #f0f0f0 background as everything
+    # else, so the header and section-title foregrounds switched from
+    # white/navy to dark text to stay readable.
     style.configure(".", background=PALETTE["bg"], foreground=PALETTE["text"],
                     font=("Segoe UI", 10))
     style.configure("TFrame", background=PALETTE["bg"])
@@ -435,23 +442,20 @@ def configure_styles():
     style.configure("TLabel", background=PALETTE["bg"], foreground=PALETTE["text"])
     style.configure("Panel.TLabel", background=PALETTE["panel"])
     style.configure("Header.TLabel", background=PALETTE["header"],
-                    foreground="white", font=("Segoe UI", 14, "bold"))
+                    foreground=PALETTE["text"], font=("Segoe UI", 14, "bold"))
     style.configure("Subheader.TLabel", background=PALETTE["header"],
-                    foreground="#cfd8ea", font=("Segoe UI", 10))
+                    foreground=PALETTE["muted"], font=("Segoe UI", 10))
     style.configure("SectionTitle.TLabel", background=PALETTE["panel"],
-                    foreground=PALETTE["header"], font=("Segoe UI", 13, "bold"))
+                    foreground=PALETTE["text"], font=("Segoe UI", 13, "bold"))
     style.configure("Muted.TLabel", background=PALETTE["panel"],
                     foreground=PALETTE["muted"], font=("Segoe UI", 9))
     style.configure("StatValue.TLabel", background=PALETTE["panel"],
-                    foreground=PALETTE["header"], font=("Segoe UI", 20, "bold"))
+                    foreground=PALETTE["text"], font=("Segoe UI", 20, "bold"))
     style.configure("StatLabel.TLabel", background=PALETTE["panel"],
                     foreground=PALETTE["muted"], font=("Segoe UI", 9))
 
     style.configure("TButton", font=("Segoe UI", 10), padding=(12, 6))
-    style.configure("Accent.TButton", background=PALETTE["accent"],
-                    foreground="white", padding=(14, 7))
-    style.map("Accent.TButton",
-              background=[("active", "#245dbb"), ("pressed", "#1b4fa0")])
+    style.configure("Accent.TButton", padding=(14, 7))
     style.configure("Danger.TButton", foreground=PALETTE["danger"])
 
     style.configure("TNotebook", background=PALETTE["bg"], borderwidth=0)
@@ -459,14 +463,14 @@ def configure_styles():
     style.map("TNotebook.Tab",
               background=[("selected", PALETTE["panel"]),
                           ("!selected", PALETTE["bg"])],
-              foreground=[("selected", PALETTE["header"]),
+              foreground=[("selected", PALETTE["text"]),
                           ("!selected", PALETTE["muted"])])
 
     style.configure("Treeview", background="white", fieldbackground="white",
                     foreground=PALETTE["text"], rowheight=26,
                     font=("Segoe UI", 10), borderwidth=0)
     style.configure("Treeview.Heading", background=PALETTE["accent_soft"],
-                    foreground=PALETTE["header"], font=("Segoe UI", 10, "bold"),
+                    foreground=PALETTE["text"], font=("Segoe UI", 10, "bold"),
                     padding=6, borderwidth=0)
     style.map("Treeview", background=[("selected", PALETTE["accent"])],
               foreground=[("selected", "white")])
@@ -1845,21 +1849,21 @@ class UniversityApp:
         left = tk.Frame(header, bg=PALETTE["header"])
         left.pack(side="left", padx=24, pady=10)
         tk.Label(left, text="🎓  University Research Office",
-                 bg=PALETTE["header"], fg="white",
+                 bg=PALETTE["header"], fg=PALETTE["text"],
                  font=("Segoe UI", 16, "bold")).pack(anchor="w")
         tk.Label(left, text="Ethics · Outputs · IP · Research Degrees",
-                 bg=PALETTE["header"], fg="#cfd8ea",
+                 bg=PALETTE["header"], fg=PALETTE["muted"],
                  font=("Segoe UI", 10)).pack(anchor="w")
 
         right = tk.Frame(header, bg=PALETTE["header"])
         right.pack(side="right", padx=24)
         tk.Label(right, text=datetime.now().strftime("%A, %d %B %Y"),
-                 bg=PALETTE["header"], fg="#cfd8ea",
+                 bg=PALETTE["header"], fg=PALETTE["muted"],
                  font=("Segoe UI", 10)).pack(anchor="e", pady=(14, 0))
         role = (self.user or {}).get('role') or ('Research Administrator' if self.user else 'not signed in')
         tk.Label(right,
                  text=f"{self.user_display}  ({role})",
-                 bg=PALETTE["header"], fg="white",
+                 bg=PALETTE["header"], fg=PALETTE["text"],
                  font=("Segoe UI", 10, "bold")).pack(anchor="e")
 
     def _build_body(self):
