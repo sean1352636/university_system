@@ -514,17 +514,14 @@ def show_assignments(self):
             messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.assignment_gui_unavailable"))
             return
 
-        # Create a new window for the Assignment GUI
+        # Create a new window for the Assignment GUI. AssignmentGUI's
+        # constructor sets size+position (centered 1400x900) on the
+        # window we hand it, so we don't pre-set geometry here — pre-
+        # mapping the Toplevel at a different size and re-positioning
+        # produced an off-centre flash on some window managers.
         assignment_window = tk.Toplevel(self.root)
         _install_clean_close(assignment_window)
         assignment_window.title(_t("academic_launchers.titles.assignment"))
-        assignment_window.geometry("1200x800")
-
-        # Center the window
-        assignment_window.update_idletasks()
-        x = (assignment_window.winfo_screenwidth() - assignment_window.winfo_width()) // 2
-        y = (assignment_window.winfo_screenheight() - assignment_window.winfo_height()) // 2
-        assignment_window.geometry(f"+{x}+{y}")
 
         try:
             assignment_window.transient(self.root)
@@ -820,7 +817,14 @@ def show_student_timetable_gui(self):
         logger.error(f"Student Timetable GUI error: {e}")
 
 def show_student_registration_gui(self):
-    """Launch the Student Registration (Module Enrollment) GUI"""
+    """Launch the Student Registration (Module Enrollment) GUI.
+
+    Embeds in the main GUI's workspace notebook when available
+    (8.117.18 mechanism); falls back to a Toplevel otherwise.
+    StudentRegistrationPortal already takes a parent ``Frame`` and
+    packs its notebook into it, so embedding is just a matter of
+    routing the host frame through ``open_in_workspace``.
+    """
     if not self.auth.current_user:
         messagebox.showerror("Error", "Please log in to access Module Registration.")
         return
@@ -833,9 +837,18 @@ def show_student_registration_gui(self):
             messagebox.showerror("Registration", "Module Registration GUI is not available.")
             return
 
+        title = "Module Registration"
+
+        opener = getattr(self, "open_in_workspace", None)
+        if callable(opener):
+            opener(title, lambda host: StudentRegistrationPortal(host, auth_instance=self.auth))
+            print("Module Registration GUI opened (workspace tab)")
+            return
+
+        # Fallback: classic Toplevel.
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
-        window.title("Module Registration")
+        window.title(title)
         window.geometry("1200x800")
         try:
             window.transient(self.root)

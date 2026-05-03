@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.60 — 2026-05-03](#811760---2026-05-03)
 - [8.117.59 — 2026-05-03](#811759---2026-05-03)
 - [8.117.58 — 2026-05-03](#811758---2026-05-03)
 - [8.117.57 — 2026-05-03](#811757---2026-05-03)
@@ -286,6 +287,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.60] — 2026-05-03
+
+### Fixed — Assignment GUI not centred when launched from main GUI
+
+The launcher in ``academic_launchers_gui.show_assignments`` was
+pre-mapping the host ``Toplevel`` at 1200x800 and re-positioning it
+using ``winfo_width`` (which can return 1 before the WM realises
+the window) before handing it to ``AssignmentGUI``. The constructor
+then resized to a centred 1400x900, but on some WMs the prior
+geometry leaked through as an off-centre flash. Removed the
+launcher's pre-sizing — ``AssignmentGUI`` now owns geometry on the
+window it receives.
+
+- ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  ``show_assignments``: drop ``geometry("1200x800")`` + manual
+  centering block.
+
+### Changed — Module Registration embeds in main GUI workspace tab
+
+Followed the 8.117.18 / 8.117.43-55 embed pattern: route through
+``UnifiedManagementGUI.open_in_workspace`` when a workspace
+notebook is alive; fall back to the prior Toplevel otherwise.
+``StudentRegistrationPortal`` already accepts a parent ``Frame``
+and packs its notebook into it, so no portal-side change was needed.
+
+- ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  ``show_student_registration_gui``: workspace path uses
+  ``opener(title, lambda host: StudentRegistrationPortal(host, …))``.
+
+### Changed — Course Evaluation matches main GUI palette
+
+The ``CourseEvaluationGUI`` Toplevel was created without an explicit
+background and without forcing the ``clam`` theme, so on some
+desktops the window edge rendered with the system default colour
+while inner ttk widgets used a different palette. Aligned with the
+Finance/Assignment pattern: ``bg='#f0f0f0'``, ``ttk.Style().theme_use('clam')``,
+plus the standardised 1400x900 centred geometry.
+
+- ``modules/domain/academics/gui/course_management_gui/course_evaluation_gui.py``
+  ``CourseEvaluationGUI.__init__``: add ``configure(bg='#f0f0f0')``,
+  ``theme_use('clam')``, and centred 1400x900 geometry +
+  ``minsize(1200, 800)``.
 
 ---
 
