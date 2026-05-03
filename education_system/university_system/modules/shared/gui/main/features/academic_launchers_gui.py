@@ -861,7 +861,11 @@ def show_student_registration_gui(self):
         logger.error(f"Student Registration GUI error: {e}")
 
 def show_student_dashboard_gui(self):
-    """Launch the Student Self-Service Dashboard GUI"""
+    """Launch the Student Self-Service Dashboard inside the main GUI's
+    workspace notebook when available, falling back to a Toplevel —
+    same pattern as Virtual Classroom (8.117.x). StudentDashboardPortal
+    already accepts a parent frame and builds a canvas+scrollbar
+    layout into it."""
     if not self.auth.current_user:
         messagebox.showerror("Error", "Please log in to access the Student Dashboard.")
         return
@@ -874,9 +878,19 @@ def show_student_dashboard_gui(self):
             messagebox.showerror("Dashboard", "Student Dashboard GUI is not available.")
             return
 
+        title = "Student Dashboard"
+
+        opener = getattr(self, "open_in_workspace", None)
+        if callable(opener):
+            opener(title, lambda host: StudentDashboardPortal(
+                host, auth_instance=self.auth, main_gui=self))
+            print("Student Dashboard GUI opened (workspace tab)")
+            return
+
+        # Fallback: classic Toplevel.
         window = tk.Toplevel(self.root)
         _install_clean_close(window)
-        window.title("Student Dashboard")
+        window.title(title)
         window.geometry("1300x900")
         try:
             window.transient(self.root)

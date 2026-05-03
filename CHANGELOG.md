@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.63 — 2026-05-03](#811763---2026-05-03)
 - [8.117.62 — 2026-05-03](#811762---2026-05-03)
 - [8.117.61 — 2026-05-03](#811761---2026-05-03)
 - [8.117.60 — 2026-05-03](#811760---2026-05-03)
@@ -289,6 +290,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.63] — 2026-05-03
+
+### Changed — Student Dashboard embeds in main GUI workspace tab
+
+Followed the Virtual Classroom / Module Registration embed pattern.
+``StudentDashboardPortal`` already accepts a parent frame and builds
+its canvas+scrollbar layout into it, so routing through
+``open_in_workspace`` is a one-line change to the launcher; the
+1300x900 Toplevel remains as a fallback when no workspace notebook
+is alive.
+
+- ``modules/shared/gui/main/features/academic_launchers_gui.py``
+  ``show_student_dashboard_gui``: prefer
+  ``opener(title, lambda host: StudentDashboardPortal(host, …))``;
+  fall back to Toplevel.
 
 ---
 
