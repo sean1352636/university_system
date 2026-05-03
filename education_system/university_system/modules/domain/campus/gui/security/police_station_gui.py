@@ -42,7 +42,8 @@ class PoliceStationApp(
     def __init__(self, root, current_user=None):
         self.root = root
         self.root.title(_t("police_station.title"))
-        self.root.geometry("1200x800")
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 800)
         self.root.configure(bg="#1a1a2e")
 
         # Get current user - require login

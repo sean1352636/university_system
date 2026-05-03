@@ -789,7 +789,8 @@ def launch_early_warning_gui(root, auth):
         def __init__(self, parent, auth_instance):
             self.root = tk.Toplevel(parent)
             self.root.title(_t("early_warning.window_title", default="Student Success Early Warning System"))
-            self.root.geometry("1200x800")
+            self.root.geometry("1400x900")
+            self.root.minsize(1200, 800)
             self.auth = auth_instance
             self.current_user = auth_instance.current_user
 

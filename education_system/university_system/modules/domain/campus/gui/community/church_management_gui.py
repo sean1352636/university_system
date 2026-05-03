@@ -410,7 +410,8 @@ class ChurchManagementSystem:
     def __init__(self, root, current_user=None):
         self.root = root
         self.root.title(_t("church.window_title"))
-        self.root.geometry("1200x800")
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 800)
         self.root.configure(bg="#f5f5dc")
 
         # Get current user - require login

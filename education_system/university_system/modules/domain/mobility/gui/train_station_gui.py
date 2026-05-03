@@ -250,7 +250,8 @@ class TrainStationApp:
 
         self.root = root
         self.root.title(_t("train.title"))
-        self.root.geometry("1000x700")
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 800)
         self.root.configure(bg="#f0f4f8")
 
         # Initialize authentication - use provided auth system or centralized auth

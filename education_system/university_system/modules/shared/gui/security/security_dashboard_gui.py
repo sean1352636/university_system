@@ -74,7 +74,8 @@ class SecurityDashboard(tk.Toplevel):
         self.vuln_scanner = VulnerabilityScanner()
 
         self.title(_t("security_dashboard.title"))
-        self.geometry("1200x800")
+        self.geometry("1400x900")
+        self.minsize(1200, 800)
 
         self._create_widgets()
         self._load_data()

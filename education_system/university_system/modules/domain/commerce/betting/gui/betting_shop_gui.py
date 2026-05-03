@@ -93,8 +93,8 @@ class BettingShopGUI:
         # Use passed window (root is already a Toplevel from the launcher)
         self.window = root
         self.window.title(_t("betting.window_title", default="University Betting Shop"))
-        self.window.geometry("1200x800")
-        self.window.minsize(1000, 650)
+        self.window.geometry("1400x900")
+        self.window.minsize(1200, 800)
 
         # Initialize data
         self.account = None

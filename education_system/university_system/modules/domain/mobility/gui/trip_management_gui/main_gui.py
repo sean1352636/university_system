@@ -60,7 +60,8 @@ class TripManagementGUI:
             self.root = tk.Tk()
         # It's fine to set title/geometry on a Toplevel as well
         self.root.title(_t("trip.title"))
-        self.root.geometry("1200x800")
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 800)
 
         # Configure styles
         style = ttk.Style()

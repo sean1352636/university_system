@@ -329,8 +329,8 @@ class PlacementTrackerApp:
     def __init__(self, root):
         self.root = root
         self.root.title("T-Level / Industry Placement Hours Tracker")
-        self.root.geometry("1100x680")
-        self.root.minsize(950, 600)
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 800)
 
         self.db = Database()
         self.current_student_pk = None

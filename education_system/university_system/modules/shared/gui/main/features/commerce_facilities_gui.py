@@ -80,8 +80,8 @@ def show_university_shop(self):
         shop_window = tk.Toplevel(self.root)
         _install_clean_close(shop_window)
         shop_window.title(_t("commerce_facilities.titles.university_shop_management"))
-        shop_window.geometry("1200x800")
-        shop_window.minsize(1000, 600)
+        shop_window.geometry("1400x900")
+        shop_window.minsize(1200, 800)
 
         # Center the window
         shop_window.update_idletasks()
@@ -163,8 +163,8 @@ def show_charity_shop(self):
         charity_window = tk.Toplevel(self.root)
         _install_clean_close(charity_window)
         charity_window.title(_t("commerce_facilities.titles.charity_shop_management"))
-        charity_window.geometry("1100x650")
-        charity_window.minsize(900, 550)
+        charity_window.geometry("1400x900")
+        charity_window.minsize(1200, 800)
 
         # Center the window
         charity_window.update_idletasks()

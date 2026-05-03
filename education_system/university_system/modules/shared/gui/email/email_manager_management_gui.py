@@ -58,7 +58,8 @@ class EmailManagerManagementGUI:
 
             top = tk.Toplevel(self.root)
             top.title(get_text("gui.email_manager.window_title"))
-            top.geometry("1200x800")
+            top.geometry("1400x900")
+            top.minsize(1200, 800)
 
             # Configure window background
             top.configure(bg='#f0f0f0')

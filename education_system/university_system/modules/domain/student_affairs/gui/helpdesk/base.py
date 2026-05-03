@@ -581,8 +581,8 @@ class HelpdeskGUI:
     def setup_main_window(self):
         """Setup the main window"""
         self.root.title(_t("helpdesk.window_title", default="Enhanced Helpdesk System"))
-        self.root.geometry("1200x800")
-        self.root.minsize(800, 600)
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 800)
 
         # Center the window
         self.center_window()

@@ -617,7 +617,8 @@ class DisciplinaryPortal:
     def __init__(self, root):
         self.root = root
         self.root.title("University Disciplinary Actions Portal")
-        self.root.geometry("1200x750")
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 800)
         self.root.configure(bg=self.COLORS['bg'])
 
         self.db = DatabaseManager()

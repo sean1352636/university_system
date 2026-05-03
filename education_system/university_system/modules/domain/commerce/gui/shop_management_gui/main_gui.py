@@ -113,8 +113,8 @@ class UniversityShopGUI:
         # Don't set title and geometry if this is a Toplevel window (integrated mode)
         if not isinstance(root, tk.Toplevel):
             self.root.title(_t("university_shop.title"))
-            self.root.geometry("1200x800")
-            self.root.minsize(1000, 600)
+            self.root.geometry("1400x900")
+            self.root.minsize(1200, 800)
 
         # Configure style
         self.setup_styles()

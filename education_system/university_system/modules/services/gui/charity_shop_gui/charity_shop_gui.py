@@ -33,8 +33,8 @@ class CharityShopApp(SalesMixin, BasketOpsMixin, ReportsMixin, RefundsMixin):
 
         self.root = root
         self.root.title(_t("charity_shop.title"))
-        self.root.geometry("1100x650")
-        self.root.minsize(900, 550)
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 800)
 
         # Store auth instance (use shared context if not provided)
         self.auth = auth if auth else get_auth()

@@ -615,8 +615,8 @@ class RiskApp(tk.Tk):
                     self.can_write)
 
         self.title("University Risk Management System")
-        self.geometry("1180x720")
-        self.minsize(960, 600)
+        self.geometry("1400x900")
+        self.minsize(1200, 800)
 
         self._configure_style()
         self._build_layout()

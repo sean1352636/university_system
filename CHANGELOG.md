@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.56 — 2026-05-03](#811756---2026-05-03)
 - [8.117.55 — 2026-05-03](#811755---2026-05-03)
 - [8.117.54 — 2026-05-03](#811754---2026-05-03)
 - [8.117.53 — 2026-05-03](#811753---2026-05-03)
@@ -282,6 +283,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.56] — 2026-05-03
+
+### Changed — Standardize main GUI window size to 1400x900 (match Finance)
+
+Aligned the initial window geometry of 26 university-system GUIs to
+the Finance GUI baseline: ``1400x900`` with ``minsize(1200, 800)``.
+Avoids the visible mismatch where most modules opened at 1000–1200
+wide while Finance dominated at 1400, and gives every standalone
+top-level the same minimum usable area for tabs/treeviews.
+
+#### Files modified
+
+- Academics:
+  - ``modules/domain/academics/gui/course_management_gui/core/main_gui.py``
+  - ``modules/domain/academics/gui/assignment_system/assignment_gui.py``
+  - ``modules/domain/academics/gui/grade_tracking_management_gui/core.py``
+  - ``modules/domain/academics/placements/placement_tracker.py``
+- Student affairs / wellbeing:
+  - ``modules/domain/student_affairs/services/early_warning/early_warning_core.py``
+  - ``modules/domain/student_affairs/student_wellbeing/intervention_support.py``
+  - ``modules/domain/student_affairs/gui/internship_management/internship_gui.py``
+  - ``modules/domain/student_affairs/gui/helpdesk/base.py``
+- Legal / compliance:
+  - ``modules/domain/legal/disciplinary/disciplinary_portal.py``
+  - ``modules/domain/legal/risk_management/university_risk_management.py``
+- Campus / facilities:
+  - ``modules/domain/campus/gui/security/police_station_gui.py``
+  - ``modules/domain/campus/gui/community/church_management_gui.py``
+  - ``modules/domain/campus/building_management/building_management_app.py``
+- Health:
+  - ``modules/domain/health/health_safety/health_safety_portal.py``
+- Mobility:
+  - ``modules/domain/mobility/gui/parking_management/main_gui.py``
+  - ``modules/domain/mobility/gui/trip_management_gui/main_gui.py``
+  - ``modules/domain/mobility/gui/train_station_gui.py``
+- Commerce:
+  - ``modules/domain/commerce/gui/restaurant_management_gui/core/main_gui.py``
+  - ``modules/domain/commerce/gui/takeaway_gui.py``
+  - ``modules/domain/commerce/gui/grocery_gui.py``
+  - ``modules/domain/commerce/gui/shop_management_gui/main_gui.py``
+  - ``modules/domain/commerce/bakery_shop/bakery_shop.py``
+  - ``modules/domain/commerce/betting/gui/betting_shop_gui.py``
+  - ``modules/services/gui/charity_shop_gui/charity_shop_gui.py``
+- Staff HR / shared:
+  - ``modules/domain/staff_hr/gui/staff_hr_gui.py``
+  - ``modules/shared/gui/advanced_search/base.py``
+  - ``modules/shared/gui/security/security_dashboard_gui.py``
+  - ``modules/shared/gui/email/email_manager_management_gui.py``
+  - ``modules/shared/gui/main/features/commerce_facilities_gui.py``
+    (university shop + charity shop launcher Toplevels)
+- AI:
+  - ``infrastructure/ai/gui/chatbot_gui.py``
+
+#### Notes
+
+- Module Scheduling and Housing Accommodation already used 1400x900
+  and were left unchanged.
+- Student Dashboard renders as a tab inside the unified workspace
+  notebook (no standalone window) and is unaffected.
 
 ---
 

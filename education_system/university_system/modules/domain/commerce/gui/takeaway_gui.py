@@ -229,7 +229,8 @@ class TakeawayGUI:
         """Open the takeaway ordering window"""
         self.takeaway_window = tk.Toplevel(self.root)
         self.takeaway_window.title(_t("takeaway.window_title"))
-        self.takeaway_window.geometry("900x700")
+        self.takeaway_window.geometry("1400x900")
+        self.takeaway_window.minsize(1200, 800)
         self.takeaway_window.transient(self.root)
 
         # Main container

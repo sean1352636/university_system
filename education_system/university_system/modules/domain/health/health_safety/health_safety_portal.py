@@ -369,7 +369,8 @@ class HealthSafetyPortal:
     def __init__(self, root):
         self.root = root
         self.root.title("University Health & Safety Portal")
-        self.root.geometry("1100x700")
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 800)
         self.root.configure(bg="#f0f4f8")
 
         # Auth — no in-app login; identity comes from EDU_AUTH_*

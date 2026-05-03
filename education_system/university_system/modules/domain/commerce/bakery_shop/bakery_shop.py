@@ -122,7 +122,8 @@ class BakeryShop:
     def __init__(self, root):
         self.root = root
         self.root.title("University Bakery Shop")
-        self.root.geometry("1100x700")
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 800)
         self.root.configure(bg="#FFF8E7")
 
         # Color scheme (warm bakery colors)

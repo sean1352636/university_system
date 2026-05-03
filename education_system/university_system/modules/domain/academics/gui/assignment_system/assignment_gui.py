@@ -50,7 +50,8 @@ class AssignmentGUI:
             self.is_standalone = True
 
         self.root.title(_("assignment.title"))
-        self.root.geometry("1200x800")
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 800)
         self.root.configure(bg='#f0f0f0')
 
         # Style configuration. ttk.Style is process-global, so calling

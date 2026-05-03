@@ -45,7 +45,8 @@ class CourseManagementGUI(
 
         if not self._is_embedded:
             self.root.title(_("course_management.title"))
-            self.root.geometry("1200x800")
+            self.root.geometry("1400x900")
+            self.root.minsize(1200, 800)
             self.root.configure(bg='#f0f0f0')
 
         # Initialize authentication - accept passed auth or use centralized auth

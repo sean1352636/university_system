@@ -30,7 +30,8 @@ class InternshipGUI(
 
         self.root = root
         self.root.title(_t("internship.title"))
-        self.root.geometry("1200x800")
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 800)
         self.root.configure(bg='#f0f0f0')
 
         # Set authentication

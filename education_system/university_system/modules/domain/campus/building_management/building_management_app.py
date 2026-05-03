@@ -1192,8 +1192,8 @@ class BuildingManagementApp:
         init_db()
         self.root = tk.Tk()
         self.root.title("Building Management")
-        self.root.geometry("1200x780")
-        self.root.minsize(960, 640)
+        self.root.geometry("1400x900")
+        self.root.minsize(1200, 800)
         try:
             ttk.Style().theme_use("clam")
         except Exception:

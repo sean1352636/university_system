@@ -98,8 +98,8 @@ class ChatbotGUI(
         else:
             self.root = tk.Tk()
             self.root.title(_t("chatbot.window_title", default="University Chatbot - Student Support System"))
-            self.root.geometry("1000x700")
-            self.root.minsize(800, 600)
+            self.root.geometry("1400x900")
+            self.root.minsize(1200, 800)
 
         # Configure styles and themes
         self.setup_styles()
