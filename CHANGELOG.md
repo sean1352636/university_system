@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.62 — 2026-05-03](#811762---2026-05-03)
 - [8.117.61 — 2026-05-03](#811761---2026-05-03)
 - [8.117.60 — 2026-05-03](#811760---2026-05-03)
 - [8.117.59 — 2026-05-03](#811759---2026-05-03)
@@ -288,6 +289,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.62] — 2026-05-03
+
+### Fixed — Equality & Diversity idle-check TclError on destroyed window
+
+The session idle-check ``tick`` was scheduled on ``self.root.after`` and
+on fire showed a ``messagebox.showinfo`` without first checking the
+window still existed. When the user closed the GUI (or it was destroyed
+on logout) between scheduling and firing, ``messagebox`` hit Tk's
+"grab" path against a dead application and raised
+``TclError: can't invoke "grab" command: application has been destroyed``.
+
+Wrapped ``tick`` to early-return when ``winfo_exists()`` is False or
+raises, parent the messagebox to ``self.root``, and swallow ``TclError``
+from the messagebox itself.
+
+- ``modules/domain/student_affairs/equality_diversity/gui.py``
+  ``EqualityDiversityGUI._start_idle_check.tick``: existence guard +
+  TclError-safe messagebox.
 
 ---
 

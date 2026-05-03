@@ -2009,8 +2009,20 @@ class EqualityDiversityGUI:
     # --------------------------------------------------------------- idle
     def _start_idle_check(self):
         def tick():
+            # The window may have been destroyed (logout, close button,
+            # parent shutdown) between scheduling and firing this tick.
+            # Showing a messagebox in that state hits Tk's "grab" path
+            # against a dead application and raises TclError.
+            try:
+                if not self.root.winfo_exists():
+                    return
+            except tk.TclError:
+                return
             if self.principal.is_idle():
-                messagebox.showinfo("Session", "Session timed out (inactivity).")
+                try:
+                    messagebox.showinfo("Session", "Session timed out (inactivity).", parent=self.root)
+                except tk.TclError:
+                    return
                 try:
                     self.root.destroy()
                 except Exception:
