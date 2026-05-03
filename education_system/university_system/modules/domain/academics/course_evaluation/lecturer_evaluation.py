@@ -326,16 +326,26 @@ class Database:
 # UI THEME
 # ---------------------------------------------------------------------------
 class Theme:
-    PRIMARY     = "#1e3a5f"
-    SECONDARY   = "#2d6a9f"
+    # 8.117.69 — chrome palette flattened to clam-default neutrals so
+    # the portal sits flush with the rest of the main GUI. PRIMARY /
+    # SECONDARY / ACCENT used to be the navy/blue/gold chrome of an
+    # older "coffee-shop" theme; they're now neutrals. SUCCESS /
+    # DANGER kept (semantic state colours used on rating bars + the
+    # Submit / Add buttons). HEADER_BG / HEADER_FG split out so the
+    # banner colour can stay flat while semantic accents remain.
+    PRIMARY     = "#000000"
+    SECONDARY   = "#555555"
     ACCENT      = "#c9a961"
     SUCCESS     = "#2d8659"
     DANGER      = "#b84242"
-    BG          = "#f4f1ea"
+    BG          = "#f0f0f0"
     CARD        = "#ffffff"
-    TEXT        = "#1a1a1a"
-    TEXT_MUTED  = "#666666"
-    BORDER      = "#d0cabf"
+    TEXT        = "#000000"
+    TEXT_MUTED  = "#555555"
+    BORDER      = "#cccccc"
+    HEADER_BG   = "#f0f0f0"
+    HEADER_FG   = "#000000"
+    HEADER_FG_MUTED = "#555555"
 
     FONT_TITLE   = ("Georgia", 22, "bold")
     FONT_HEADING = ("Georgia", 14, "bold")
@@ -370,15 +380,15 @@ class StudentDashboard:
         self.load_modules()
 
     def build_ui(self):
-        header = tk.Frame(self.root, bg=Theme.PRIMARY, height=70)
+        header = tk.Frame(self.root, bg=Theme.HEADER_BG, height=70)
         header.pack(fill="x")
         header.pack_propagate(False)
 
         tk.Label(header, text="🎓  Lecturer Evaluation",
-                 bg=Theme.PRIMARY, fg="white",
+                 bg=Theme.HEADER_BG, fg=Theme.HEADER_FG,
                  font=Theme.FONT_HEADING).pack(side="left", padx=25, pady=18)
         tk.Label(header, text=f"👤  {self.full_name}  ({self.student_id})",
-                 bg=Theme.PRIMARY, fg="white",
+                 bg=Theme.HEADER_BG, fg=Theme.HEADER_FG,
                  font=Theme.FONT_BODY).pack(side="right", padx=25, pady=22)
 
         body = tk.Frame(self.root, bg=Theme.BG)
@@ -403,7 +413,7 @@ class StudentDashboard:
                         foreground=Theme.TEXT, rowheight=32,
                         font=Theme.FONT_BODY, borderwidth=0)
         style.configure("Treeview.Heading",
-                        background=Theme.PRIMARY, foreground="white",
+                        background=Theme.HEADER_BG, foreground="white",
                         font=Theme.FONT_BOLD, relief="flat", padding=8)
         style.map("Treeview", background=[("selected", Theme.SECONDARY)])
 
@@ -429,13 +439,10 @@ class StudentDashboard:
 
         actions = tk.Frame(body, bg=Theme.BG)
         actions.pack(fill="x", pady=(15, 0))
-        tk.Button(actions, text="📝  Evaluate Selected Module",
-                  bg=Theme.PRIMARY, fg="white", font=Theme.FONT_BOLD,
-                  relief="flat", cursor="hand2", padx=20, pady=10,
-                  command=self.open_evaluation).pack(side="left")
-        tk.Button(actions, text="🔄  Refresh", bg=Theme.SECONDARY, fg="white",
-                  font=Theme.FONT_BOLD, relief="flat", cursor="hand2",
-                  padx=20, pady=10, command=self.load_modules).pack(side="left", padx=10)
+        ttk.Button(actions, text="📝  Evaluate Selected Module",
+                   command=self.open_evaluation).pack(side="left")
+        ttk.Button(actions, text="🔄  Refresh",
+                   command=self.load_modules).pack(side="left", padx=10)
 
     def load_modules(self):
         self.tree.delete(*self.tree.get_children())
@@ -499,13 +506,13 @@ class EvaluationForm:
         self.win.grab_set()
 
     def build_ui(self):
-        header = tk.Frame(self.win, bg=Theme.PRIMARY, height=100)
+        header = tk.Frame(self.win, bg=Theme.HEADER_BG, height=100)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text="Lecturer Evaluation Form", bg=Theme.PRIMARY, fg="white",
+        tk.Label(header, text="Lecturer Evaluation Form", bg=Theme.HEADER_BG, fg=Theme.HEADER_FG,
                  font=Theme.FONT_HEADING).pack(anchor="w", padx=25, pady=(18, 0))
         tk.Label(header, text=f"{self.module_code} — {self.module_name}",
-                 bg=Theme.PRIMARY, fg=Theme.ACCENT,
+                 bg=Theme.HEADER_BG, fg=Theme.HEADER_FG_MUTED,
                  font=Theme.FONT_BOLD).pack(anchor="w", padx=25)
 
         container = tk.Frame(self.win, bg=Theme.BG)
@@ -560,9 +567,8 @@ class EvaluationForm:
         tk.Button(btns, text="Submit Evaluation", bg=Theme.SUCCESS, fg="white",
                   font=Theme.FONT_BOLD, relief="flat", cursor="hand2",
                   padx=25, pady=10, command=self.submit).pack(side="left")
-        tk.Button(btns, text="Cancel", bg=Theme.BG, fg=Theme.TEXT_MUTED,
-                  font=Theme.FONT_BODY, relief="flat", cursor="hand2",
-                  padx=25, pady=10, command=self.win.destroy).pack(side="left", padx=10)
+        ttk.Button(btns, text="Cancel",
+                   command=self.win.destroy).pack(side="left", padx=10)
 
     def build_criterion(self, parent, key, label, desc):
         frame = tk.Frame(parent, bg=Theme.CARD,
@@ -651,14 +657,14 @@ class AdminDashboard:
         self.build_ui()
 
     def build_ui(self):
-        header = tk.Frame(self.root, bg=Theme.PRIMARY, height=70)
+        header = tk.Frame(self.root, bg=Theme.HEADER_BG, height=70)
         header.pack(fill="x")
         header.pack_propagate(False)
         tk.Label(header, text="🏛  Lecturer Evaluation — Administrator",
-                 bg=Theme.PRIMARY, fg="white",
+                 bg=Theme.HEADER_BG, fg=Theme.HEADER_FG,
                  font=Theme.FONT_HEADING).pack(side="left", padx=25, pady=18)
         tk.Label(header, text=f"👤  {self.full_name}",
-                 bg=Theme.PRIMARY, fg="white",
+                 bg=Theme.HEADER_BG, fg=Theme.HEADER_FG,
                  font=Theme.FONT_BODY).pack(side="right", padx=25, pady=22)
 
         style = ttk.Style()
@@ -712,13 +718,10 @@ class AdminDashboard:
 
         actions = tk.Frame(tab, bg=Theme.BG)
         actions.pack(fill="x", padx=10, pady=5)
-        tk.Button(actions, text="📄  View Detailed Report",
-                  bg=Theme.PRIMARY, fg="white", font=Theme.FONT_BOLD,
-                  relief="flat", cursor="hand2", padx=18, pady=8,
-                  command=self.view_report).pack(side="left")
-        tk.Button(actions, text="🔄  Refresh", bg=Theme.SECONDARY, fg="white",
-                  font=Theme.FONT_BOLD, relief="flat", cursor="hand2",
-                  padx=18, pady=8, command=self.load_summaries).pack(side="left", padx=10)
+        ttk.Button(actions, text="📄  View Detailed Report",
+                   command=self.view_report).pack(side="left")
+        ttk.Button(actions, text="🔄  Refresh",
+                   command=self.load_summaries).pack(side="left", padx=10)
 
         self.load_summaries()
 
@@ -839,15 +842,15 @@ class LecturerReportWindow:
         self.build_ui()
 
     def build_ui(self):
-        header = tk.Frame(self.win, bg=Theme.PRIMARY, height=110)
+        header = tk.Frame(self.win, bg=Theme.HEADER_BG, height=110)
         header.pack(fill="x")
         header.pack_propagate(False)
-        tk.Label(header, text=self.name, bg=Theme.PRIMARY, fg="white",
+        tk.Label(header, text=self.name, bg=Theme.HEADER_BG, fg=Theme.HEADER_FG,
                  font=Theme.FONT_TITLE).pack(anchor="w", padx=25, pady=(15, 0))
         tk.Label(header, text=f"{self.title or 'Lecturer'} • {self.dept}",
-                 bg=Theme.PRIMARY, fg=Theme.ACCENT, font=Theme.FONT_BOLD).pack(anchor="w", padx=25)
+                 bg=Theme.HEADER_BG, fg=Theme.HEADER_FG_MUTED, font=Theme.FONT_BOLD).pack(anchor="w", padx=25)
         if self.email:
-            tk.Label(header, text=self.email, bg=Theme.PRIMARY, fg="white",
+            tk.Label(header, text=self.email, bg=Theme.HEADER_BG, fg=Theme.HEADER_FG,
                      font=Theme.FONT_SMALL).pack(anchor="w", padx=25)
 
         body = tk.Frame(self.win, bg=Theme.BG)
@@ -859,24 +862,28 @@ class LecturerReportWindow:
         if count == 0:
             tk.Label(body, text="No evaluations have been submitted yet.",
                      bg=Theme.BG, fg=Theme.TEXT_MUTED, font=Theme.FONT_HEADING).pack(pady=60)
-            tk.Button(body, text="Close", bg=Theme.PRIMARY, fg="white",
-                      font=Theme.FONT_BOLD, relief="flat", cursor="hand2",
-                      padx=20, pady=8, command=self.win.destroy).pack()
+            ttk.Button(body, text="Close",
+                       command=self.win.destroy).pack()
             return
 
         summary = tk.Frame(body, bg=Theme.BG)
         summary.pack(fill="x")
 
+        # 8.117.69 — full-colour summary cards were UI chrome; flatten
+        # the cards to neutrals and push the per-metric colour onto the
+        # value text only (same pattern HS portal / Security Dashboard
+        # use).
         def card(parent, label, value, color):
-            f = tk.Frame(parent, bg=color,
+            f = tk.Frame(parent, bg=Theme.CARD,
                          highlightbackground=Theme.BORDER, highlightthickness=1)
             f.pack(side="left", expand=True, fill="both", padx=5)
-            tk.Label(f, text=label, bg=color, fg="white", font=Theme.FONT_SMALL).pack(pady=(10, 0))
-            tk.Label(f, text=value, bg=color, fg="white",
+            tk.Label(f, text=label, bg=Theme.CARD, fg=Theme.TEXT_MUTED,
+                     font=Theme.FONT_SMALL).pack(pady=(10, 0))
+            tk.Label(f, text=value, bg=Theme.CARD, fg=color,
                      font=("Georgia", 20, "bold")).pack(pady=(2, 10))
 
-        card(summary, "Total Evaluations", str(count), Theme.PRIMARY)
-        card(summary, "Overall Rating", f"{stats[7]:.2f} / 5", Theme.SECONDARY)
+        card(summary, "Total Evaluations", str(count), Theme.TEXT)
+        card(summary, "Overall Rating", f"{stats[7]:.2f} / 5", Theme.SUCCESS)
 
         stars_filled = round(stats[7])
         star_str = "★" * stars_filled + "☆" * (5 - stars_filled)
@@ -932,9 +939,8 @@ class LecturerReportWindow:
         text.tag_config("body",   foreground=Theme.TEXT, font=Theme.FONT_BODY)
         text.config(state="disabled")
 
-        tk.Button(body, text="Close", bg=Theme.PRIMARY, fg="white",
-                  font=Theme.FONT_BOLD, relief="flat", cursor="hand2",
-                  padx=25, pady=8, command=self.win.destroy).pack(pady=(15, 0))
+        ttk.Button(body, text="Close",
+                   command=self.win.destroy).pack(pady=(15, 0))
 
     @staticmethod
     def rating_color(avg):
@@ -1001,9 +1007,8 @@ class App:
                        "University System after signing in."),
                  bg=Theme.BG, fg=Theme.TEXT, font=Theme.FONT_BODY,
                  justify="center").pack(pady=10)
-        tk.Button(self.root, text="Close", bg=Theme.PRIMARY, fg="white",
-                  font=Theme.FONT_BOLD, relief="flat", cursor="hand2",
-                  padx=20, pady=8, command=self.root.destroy).pack(pady=20)
+        ttk.Button(self.root, text="Close",
+                   command=self.root.destroy).pack(pady=20)
 
     def run(self):
         if not self._owns_root:

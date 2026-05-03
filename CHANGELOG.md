@@ -10,6 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.71 — 2026-05-03](#811771---2026-05-03)
+- [8.117.70 — 2026-05-03](#811770---2026-05-03)
+- [8.117.69 — 2026-05-03](#811769---2026-05-03)
+- [8.117.68 — 2026-05-03](#811768---2026-05-03)
+- [8.117.67 — 2026-05-03](#811767---2026-05-03)
 - [8.117.66 — 2026-05-03](#811766---2026-05-03)
 - [8.117.65 — 2026-05-03](#811765---2026-05-03)
 - [8.117.64 — 2026-05-03](#811764---2026-05-03)
@@ -293,6 +298,205 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.71] — 2026-05-03
+
+### Fixed — Research Portal no longer recolours the whole main GUI window
+
+``configure_styles()`` was reconfiguring base ttk style names
+(``.``, ``TFrame``, ``TLabel``, ``TButton``, ``TNotebook``,
+``TNotebook.Tab``, ``Treeview``, ``Treeview.Heading``, ``TEntry``,
+``TCombobox``) on the global ``ttk.Style`` singleton. Because the
+Research Portal opens in-process via ``open_in_workspace`` (it lives
+in a tab inside the main GUI's notebook, sharing the same Tk root),
+those base-style mutations bled out of the portal and recoloured
+every widget in the rest of the main GUI.
+
+Now only the named ``Panel.*`` / ``Header.*`` / ``Subheader.*`` /
+``SectionTitle.*`` / ``Muted.*`` / ``StatValue.*`` / ``StatLabel.*``
+/ ``Accent.TButton`` / ``Danger.TButton`` styles are touched. Base
+widgets stay on clam defaults — which already match the portal's
+flattened palette from 8.117.65, so visually nothing changes inside
+the portal itself.
+
+#### Files
+
+- ``modules/domain/research/services/university_research.py``
+  ``configure_styles``: drop all base-style ``style.configure``
+  calls + the ``TNotebook.Tab`` / ``Treeview`` ``style.map`` calls
+  that were leaking out of the portal's tab into the host main GUI.
+
+---
+
+## [8.117.70] — 2026-05-03
+
+### Changed — Attendance + Absence Tracker palettes flattened to match the main GUI
+
+Same flattening as 8.117.65–69. Attendance Tracker had a navy
+(``#2C3E50``) / electric-blue (``#3498DB``) Custom.TNotebook tab
+and a matching Primary.TButton. Absence Tracker had a saturated
+``#1e3a5f`` navy sidebar with an electric-blue (``#2563eb``)
+selected state, a darker (``#0f1f3a``) header bar, navy Treeview
+headings, a pale-blue (``#f0f4f8``) Card frame, and ~24 hand-painted
+``tk.Button`` chrome buttons (Refresh / Show Roster / Generate
+Report / Submit Request / Load / Email admin / Open in new window /
+Close / Today / Back) — visually disconnected from every other
+workspace tab.
+
+Both now sit on ``#f0f0f0`` with black headings, ``#555555`` muted
+text, and rely on clam defaults for notebook tabs / primary buttons.
+``Success`` / ``Warning`` / ``Danger`` ttk button styles in
+Attendance Tracker kept (semantic state). In Absence Tracker the
+green Save / Approve and red Delete / Reject ``tk.Button`` rows
+were kept (semantic state); the danger-red title text on the
+"Reset Database" confirmation pane kept too.
+
+Research Portal was checked at the same time and needed no further
+changes — it was already flattened in 8.117.65, and its remaining
+``#3c5a99`` accent / ``#1f7a3c`` success / ``#b0620a`` warn /
+``#b3261e`` danger / ``#fafbfd`` alt-row tints are all semantic
+state colours, not chrome.
+
+#### Files
+
+- ``modules/domain/academics/gui/attendance_tracker/main.py``
+  ``setup_styles``: drop ``Custom.TNotebook.Tab`` selected-state
+  navy fill + ``Primary.TButton`` electric-blue fill so they fall
+  back to clam defaults.
+- ``modules/domain/academics/gui/attendance_tracker/attendance_tab.py``
+  + ``misc_windows.py``: muted ``#64748b`` / ``#666`` →
+  ``#555555``.
+- ``modules/domain/academics/services/attendance/absence_tracking/absence_tracker.py``
+  ``SidebarNotebook`` palette constants flipped to clam neutrals
+  (``#f0f0f0`` / ``#000000`` / ``#e0e0e0`` / ``#d0d0d0``);
+  ``BaseDashboard`` header bar ``#0f1f3a`` → ``#f0f0f0`` with
+  black/muted text; chrome ``tk.Button`` (Close / Back / Today /
+  Refresh ×7 / Show Roster / Generate Report / Open in new window
+  / Email admin / Load / Submit Request) → ``ttk.Button`` (23
+  buttons total auto-converted, plus 1 manual); ttk style
+  overrides for navy Treeview heading, pale-blue Card frame, and
+  electric-blue Accent.TButton dropped (no remaining callers).
+  Navy ``#1e3a5f`` / muted ``#6b7280`` text labels →
+  ``#000000`` / ``#555555``.
+
+---
+
+## [8.117.69] — 2026-05-03
+
+### Changed — Course / Module / Lecturer Evaluation palettes flattened to match the main GUI
+
+Same flattening as 8.117.65–68. All three evaluation portals carried
+saturated custom palettes — Course Evaluation a navy ``#1a365d`` /
+pale-blue ``#f0f4f8`` scheme; Module Evaluation the same plus a
+slate ``#2d3748`` and a blue ``#2563eb`` admin button; Lecturer
+Evaluation a full "coffee-shop" Theme class with navy / blue / gold
+chrome over a beige body — that visually disconnected them from
+every other workspace tab.
+
+All three now use ``#f0f0f0`` for body/header, black for heading
+text, ``#555555`` for muted secondary text. Lecturer Evaluation's
+``Theme.PRIMARY`` / ``SECONDARY`` were repurposed as neutral text
+colours and a ``HEADER_BG`` / ``HEADER_FG`` pair was split out for
+banner chrome; ``SUCCESS`` / ``DANGER`` / ``ACCENT`` kept (rating
+bars, Submit / Add buttons, info-callout border — meaningful state
+colours, not chrome). Full-colour summary stat cards in Lecturer
+Evaluation flattened to neutral-card-with-coloured-value (same
+pattern as 8.117.68 HS portal). Custom-painted ``tk.Button``
+chrome converted to ``ttk.Button`` so they pick up clam defaults.
+
+#### Files
+
+- ``modules/domain/academics/course_evaluation/course_evaluation_system.py``
+  ``setup_styles`` / ``create_header``: navy ``#1a365d`` →
+  ``#f0f0f0`` (and as ``fg`` → ``#000000``); body ``#f0f4f8`` →
+  ``#f0f0f0``; signed-in label muted; Submit / Clear ``tk.Button``
+  → ``ttk.Button``.
+- ``modules/domain/academics/course_evaluation/module_evaluation_portal.py``
+  ``show_module_selection`` / ``show_evaluation_form``: same
+  navy / pale-blue / slate flattening; admin ``View Submissions``
+  blue ``tk.Button`` → ``ttk.Button``.
+- ``modules/domain/academics/course_evaluation/lecturer_evaluation.py``
+  ``Theme`` class rewritten: ``BG`` ``#f4f1ea`` → ``#f0f0f0``,
+  ``TEXT_MUTED`` ``#666666`` → ``#555555``, ``BORDER`` ``#d0cabf``
+  → ``#cccccc``; ``PRIMARY`` / ``SECONDARY`` repurposed to neutral
+  text and a new ``HEADER_BG`` / ``HEADER_FG`` / ``HEADER_FG_MUTED``
+  added for banner chrome. Header / Treeview-heading / notebook-tab
+  navy fills swapped to ``HEADER_BG``; ``fg="white"`` on those
+  banners → ``HEADER_FG``; full-colour summary cards flattened to
+  neutral with colour pushed onto value text; chrome ``tk.Button``
+  (Refresh / Close / Cancel / Evaluate / View Report) → ``ttk.Button``.
+  Submit / Add Lecturer (``Theme.SUCCESS`` green), info-callout
+  border (``Theme.ACCENT`` gold), and rating-bar fills (rating_color
+  → SUCCESS / SECONDARY / ACCENT / DANGER) kept (chart / state).
+
+---
+
+## [8.117.68] — 2026-05-03
+
+### Changed — Health & Safety + Security Dashboard palettes flattened to match the main GUI
+
+Same flattening as 8.117.65–67. Both portals carried saturated
+custom palettes — Security Dashboard had a navy ``#2C3E50`` header
+bar and pale ``#ECF0F1`` toolbar; Health & Safety had a navy
+``#1a365d`` header, dark slate ``#2d3748`` sidebar, and pale-blue
+``#f0f4f8`` body — that visually disconnected them from every
+other workspace tab.
+
+Both now use ``#f0f0f0`` for body/header/sidebar, black for
+heading text, ``#555555`` for muted secondary text. Stat-card
+backgrounds were flattened to neutral with the per-metric colour
+moved onto the value text only (the same pattern Security
+Dashboard already used). Severity badges, the red emergency
+banner, the yellow evacuation callout, and the Danger / Success
+TButton styles were kept — those are meaningful state indicators,
+not chrome.
+
+#### Files
+
+- ``modules/shared/gui/security/security_dashboard_gui.py``
+  ``_create_widgets`` and ``_create_overview_tab``: header bar
+  ``#2C3E50`` → ``#f0f0f0``, ``fg="white"`` → ``#000000``;
+  toolbar ``#ECF0F1`` → ``#f0f0f0``; stat-card and alerts-box
+  ``#F8F9FA`` → ``#f0f0f0``. Per-metric value colours kept.
+- ``modules/domain/health/health_safety/health_safety_portal.py``:
+  body ``#f0f4f8`` → ``#f0f0f0``; navy header ``#1a365d`` →
+  ``#f0f0f0`` (and as ``fg`` → ``#000000``); slate sidebar
+  ``#2d3748`` → ``#f0f0f0``; muted ``#4a5568`` → ``#555555``;
+  ``setup_styles`` dropped navy fills on ``TButton`` /
+  ``Nav.TButton`` / ``Treeview.Heading`` so they fall back to
+  clam defaults; full-colour dashboard stat cards flattened to
+  neutral with colour pushed onto value/icon text. Danger /
+  Success TButton, Required/Recommended badges, emergency banner,
+  and evacuation callout kept (semantic state colours).
+
+---
+
+## [8.117.67] — 2026-05-03
+
+### Changed — Background Checker palette aligned with the main GUI
+
+In light mode the BG Checker's ``_apply_theme`` was calling
+``style.theme_use("default")``, which swapped the global ttk theme
+back to Tk's native theme (raised buttons, sharper borders, slightly
+different greys) — visually disconnected from every other workspace
+tab, all of which run on ``clam``. It now stays on ``clam`` and
+sets explicit Treeview colours (white body / black text) so the
+dark-mode style overrides don't bleed into light mode.
+
+Integration Marketplace was checked at the same time and needed no
+changes — it's already pure ttk on ``clam`` with no colour literals
+of its own.
+
+#### Files
+
+- ``modules/domain/staff_hr/background_checks/university_bg_checker.py``
+  ``_apply_theme``: drop ``style.theme_use("default")`` light-mode
+  branch; always ``theme_use("clam")``; add explicit Treeview
+  light-mode colours so dark-mode overrides don't persist after a
+  toggle back. Flagged/cleared row tags (``#ffd6d6`` / ``#d6ffd6``)
+  kept — those are meaningful state colours, not UI chrome.
 
 ---
 

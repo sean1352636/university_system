@@ -246,7 +246,7 @@ class CourseEvaluationApp:
             self.root.title("University Course Evaluation System")
             self.root.geometry("900x650")
         try:
-            self.root.configure(bg="#f0f4f8")
+            self.root.configure(bg="#f0f0f0")
         except tk.TclError:
             pass
 
@@ -282,28 +282,31 @@ class CourseEvaluationApp:
     def setup_styles(self):
         style = ttk.Style()
         style.theme_use("clam")
-        style.configure("TNotebook", background="#f0f4f8", borderwidth=0)
+        style.configure("TNotebook", background="#f0f0f0", borderwidth=0)
         style.configure("TNotebook.Tab", padding=[20, 10],
                         font=("Arial", 10, "bold"))
-        style.configure("TFrame", background="#f0f4f8")
-        style.configure("TLabel", background="#f0f4f8", font=("Arial", 10))
+        style.configure("TFrame", background="#f0f0f0")
+        style.configure("TLabel", background="#f0f0f0", font=("Arial", 10))
         style.configure("Header.TLabel", font=("Arial", 11, "bold"),
-                        foreground="#1a365d")
+                        foreground="#000000")
         style.configure("TButton", font=("Arial", 10, "bold"), padding=8)
         style.configure("Treeview", font=("Arial", 9), rowheight=25)
         style.configure("Treeview.Heading", font=("Arial", 10, "bold"))
 
     def create_header(self):
-        header = tk.Frame(self.root, bg="#1a365d", height=70)
+        # 8.117.69 — flattened to clam-default neutrals to match
+        # the main GUI. Pre-8.117.69 the header was navy (#1a365d)
+        # with white text on a pale-blue (#f0f4f8) body.
+        header = tk.Frame(self.root, bg="#f0f0f0", height=70)
         header.pack(fill="x")
         header.pack_propagate(False)
         tk.Label(header, text="🎓 University Course Evaluation System",
-                 font=("Arial", 18, "bold"), bg="#1a365d", fg="white"
+                 font=("Arial", 18, "bold"), bg="#f0f0f0", fg="#000000"
                  ).pack(side="left", padx=20, pady=18)
         if self.user:
             tk.Label(header,
                      text=f"👤 {self.full_name}  ({self.student_id})",
-                     font=("Arial", 10), bg="#1a365d", fg="white"
+                     font=("Arial", 10), bg="#f0f0f0", fg="#555555"
                      ).pack(side="right", padx=20, pady=22)
 
     def create_notebook(self):
@@ -376,15 +379,11 @@ class CourseEvaluationApp:
 
         btn_frame = ttk.Frame(container)
         btn_frame.grid(row=4, column=0, columnspan=2, pady=20)
-        tk.Button(btn_frame, text="Submit Evaluation",
-                  command=self.submit_evaluation,
-                  bg="#2c7a3e", fg="white", font=("Arial", 11, "bold"),
-                  padx=25, pady=8, cursor="hand2", relief="flat"
-                  ).pack(side="left", padx=10)
-        tk.Button(btn_frame, text="Clear Form", command=self.clear_form,
-                  bg="#718096", fg="white", font=("Arial", 11, "bold"),
-                  padx=25, pady=8, cursor="hand2", relief="flat"
-                  ).pack(side="left", padx=10)
+        ttk.Button(btn_frame, text="Submit Evaluation",
+                   command=self.submit_evaluation
+                   ).pack(side="left", padx=10)
+        ttk.Button(btn_frame, text="Clear Form", command=self.clear_form
+                   ).pack(side="left", padx=10)
 
     def refresh_course_combo(self):
         courses = self.db.get_courses()

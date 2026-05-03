@@ -190,19 +190,13 @@ class AttendanceGUI:
             self.update_status(_("attendance.messages.data_refreshed"), "success")
     def setup_styles(self):
             """Configure custom styles"""
-            # Configure notebook tabs
+            # 8.117.70 — drop the navy/electric-blue notebook tab
+            # and Primary.TButton chrome so the tabs/buttons fall back
+            # to clam defaults and match the rest of the main GUI.
+            # Success / Warning / Danger TButton kept (semantic state).
             self.style.configure('Custom.TNotebook.Tab', padding=[20, 10])
-            self.style.map('Custom.TNotebook.Tab',
-                          background=[('selected', self.colors['secondary']),
-                                    ('!selected', self.colors['light'])],
-                          foreground=[('selected', 'white'),
-                                    ('!selected', self.colors['dark'])])
 
-            # Configure buttons
-            self.style.configure('Primary.TButton',
-                               background=self.colors['secondary'],
-                               foreground='white',
-                               padding=(10, 5))
+            self.style.configure('Primary.TButton', padding=(10, 5))
 
             self.style.configure('Success.TButton',
                                background=self.colors['success'],

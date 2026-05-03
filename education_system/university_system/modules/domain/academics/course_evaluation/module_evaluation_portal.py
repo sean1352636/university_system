@@ -356,7 +356,7 @@ class ModuleEvaluationPortal:
             self.root.title("University Module Evaluation Portal")
             self.root.geometry("800x700")
         try:
-            self.root.configure(bg="#f0f4f8")
+            self.root.configure(bg="#f0f0f0")
         except tk.TclError:
             pass
 
@@ -384,11 +384,11 @@ class ModuleEvaluationPortal:
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("Title.TLabel", font=("Helvetica", 20, "bold"),
-                        background="#f0f4f8", foreground="#1a365d")
+                        background="#f0f0f0", foreground="#000000")
         style.configure("Heading.TLabel", font=("Helvetica", 14, "bold"),
-                        background="#f0f4f8", foreground="#2d3748")
+                        background="#f0f0f0", foreground="#000000")
         style.configure("Body.TLabel", font=("Helvetica", 11),
-                        background="#f0f4f8", foreground="#2d3748")
+                        background="#f0f0f0", foreground="#000000")
         style.configure("Primary.TButton", font=("Helvetica", 11, "bold"),
                         padding=10)
         style.configure("TEntry", padding=6)
@@ -401,7 +401,7 @@ class ModuleEvaluationPortal:
     # ---------- NO AUTH FALLBACK ----------
     def show_no_auth_screen(self):
         self.clear_window()
-        container = tk.Frame(self.root, bg="#f0f4f8")
+        container = tk.Frame(self.root, bg="#f0f0f0")
         container.place(relx=0.5, rely=0.5, anchor="center")
         ttk.Label(container, text="🔒 Authentication Required",
                   style="Title.TLabel").pack(pady=(0, 10))
@@ -416,23 +416,20 @@ class ModuleEvaluationPortal:
     def show_module_selection(self):
         self.clear_window()
 
-        header = tk.Frame(self.root, bg="#1a365d", height=70)
+        header = tk.Frame(self.root, bg="#f0f0f0", height=70)
         header.pack(fill="x")
         header.pack_propagate(False)
 
         tk.Label(header, text=f"Welcome, {self.full_name}",
                  font=("Helvetica", 14, "bold"),
-                 bg="#1a365d", fg="white").pack(side="left", padx=20, pady=20)
+                 bg="#f0f0f0", fg="#000000").pack(side="left", padx=20, pady=20)
 
         if self.is_admin:
-            tk.Button(header, text="View Submissions",
-                      font=("Helvetica", 10),
-                      bg="#2563eb", fg="white", bd=0, padx=15, pady=6,
-                      cursor="hand2",
-                      command=self.view_submissions).pack(
-                          side="right", padx=20, pady=20)
+            ttk.Button(header, text="View Submissions",
+                       command=self.view_submissions).pack(
+                           side="right", padx=20, pady=20)
 
-        body = tk.Frame(self.root, bg="#f0f4f8")
+        body = tk.Frame(self.root, bg="#f0f0f0")
         body.pack(fill="both", expand=True, padx=40, pady=30)
 
         ttk.Label(body, text="Select a Module to Evaluate",
@@ -494,20 +491,20 @@ class ModuleEvaluationPortal:
     def show_evaluation_form(self):
         self.clear_window()
 
-        header = tk.Frame(self.root, bg="#1a365d", height=70)
+        header = tk.Frame(self.root, bg="#f0f0f0", height=70)
         header.pack(fill="x")
         header.pack_propagate(False)
         tk.Label(header,
                  text=f"Evaluating: {self.current_module['code']} — "
                       f"{self.current_module['name']}",
                  font=("Helvetica", 13, "bold"),
-                 bg="#1a365d", fg="white", wraplength=700
+                 bg="#f0f0f0", fg="#000000", wraplength=700
                  ).pack(side="left", padx=20, pady=20)
 
-        canvas = tk.Canvas(self.root, bg="#f0f4f8", highlightthickness=0)
+        canvas = tk.Canvas(self.root, bg="#f0f0f0", highlightthickness=0)
         scrollbar = ttk.Scrollbar(self.root, orient="vertical",
                                   command=canvas.yview)
-        scroll_frame = tk.Frame(canvas, bg="#f0f4f8")
+        scroll_frame = tk.Frame(canvas, bg="#f0f0f0")
 
         scroll_frame.bind(
             "<Configure>",
@@ -542,7 +539,7 @@ class ModuleEvaluationPortal:
             else:
                 logger.warning("Unknown question_type %r — skipping", qtype)
 
-        btn_frame = tk.Frame(scroll_frame, bg="#f0f4f8")
+        btn_frame = tk.Frame(scroll_frame, bg="#f0f0f0")
         btn_frame.pack(pady=20)
         ttk.Button(btn_frame, text="← Back", style="Primary.TButton",
                    command=self.show_module_selection
@@ -556,7 +553,7 @@ class ModuleEvaluationPortal:
         q_frame = tk.Frame(parent, bg="white", relief="flat", bd=1)
         q_frame.pack(fill="x", pady=8, padx=5)
         tk.Label(q_frame, text=qtext, font=("Helvetica", 11, "bold"),
-                 bg="white", fg="#2d3748", wraplength=650, justify="left"
+                 bg="white", fg="#000000", wraplength=650, justify="left"
                  ).pack(anchor="w", padx=15, pady=(12, 8))
         var = tk.StringVar(value="")
         options_frame = tk.Frame(q_frame, bg="white")
@@ -573,7 +570,7 @@ class ModuleEvaluationPortal:
         rating_frame.pack(fill="x", pady=15, padx=5)
         tk.Label(rating_frame, text=qtext + ":",
                  font=("Helvetica", 11, "bold"),
-                 bg="white", fg="#2d3748"
+                 bg="white", fg="#000000"
                  ).pack(anchor="w", padx=15, pady=(12, 8))
         var = tk.IntVar(value=0)
         buttons = tk.Frame(rating_frame, bg="white")
@@ -590,7 +587,7 @@ class ModuleEvaluationPortal:
         comments_frame.pack(fill="x", pady=15, padx=5)
         tk.Label(comments_frame, text=f"{qtext} (optional):",
                  font=("Helvetica", 11, "bold"),
-                 bg="white", fg="#2d3748"
+                 bg="white", fg="#000000"
                  ).pack(anchor="w", padx=15, pady=(12, 8))
         widget = scrolledtext.ScrolledText(comments_frame, height=5,
                                            font=("Helvetica", 10), wrap="word")
@@ -635,12 +632,12 @@ class ModuleEvaluationPortal:
     # ---------- THANK YOU ----------
     def show_thank_you(self):
         self.clear_window()
-        container = tk.Frame(self.root, bg="#f0f4f8")
+        container = tk.Frame(self.root, bg="#f0f0f0")
         container.place(relx=0.5, rely=0.5, anchor="center")
 
         tk.Label(container, text="✓",
                  font=("Helvetica", 60, "bold"),
-                 bg="#f0f4f8", fg="#38a169").pack()
+                 bg="#f0f0f0", fg="#38a169").pack()
         ttk.Label(container, text="Thank You!",
                   style="Title.TLabel").pack(pady=10)
         ttk.Label(container,
@@ -650,7 +647,7 @@ class ModuleEvaluationPortal:
                   text="Your feedback helps us improve teaching and learning.",
                   style="Body.TLabel").pack(pady=5)
 
-        btn_frame = tk.Frame(container, bg="#f0f4f8")
+        btn_frame = tk.Frame(container, bg="#f0f0f0")
         btn_frame.pack(pady=30)
         ttk.Button(btn_frame, text="Evaluate Another Module",
                    style="Primary.TButton",
@@ -676,12 +673,12 @@ class ModuleEvaluationPortal:
         win = tk.Toplevel(self.root)
         win.title("Submitted Evaluations")
         win.geometry("820x600")
-        win.configure(bg="#f0f4f8")
+        win.configure(bg="#f0f0f0")
 
         tk.Label(win,
                  text=f"Module Evaluations — {len(forms)} module(s) with responses",
                  font=("Helvetica", 16, "bold"),
-                 bg="#f0f4f8", fg="#1a365d").pack(pady=15)
+                 bg="#f0f0f0", fg="#000000").pack(pady=15)
 
         text_area = scrolledtext.ScrolledText(win, font=("Courier", 10),
                                               wrap="word", bg="white")

@@ -499,14 +499,18 @@ class SidebarNotebook(tk.Frame):
     left sidebar; clicking the button shows that frame in the right pane.
     """
 
-    SIDEBAR_BG = "#1e3a5f"
-    SIDEBAR_HEADER_FG = "#94a3b8"
-    BTN_BG = "#1e3a5f"
-    BTN_FG = "#e2e8f0"
-    BTN_HOVER = "#2c4f7a"
-    BTN_ACTIVE = "#2563eb"
-    BTN_ACTIVE_FG = "#ffffff"
-    CONTENT_BG = "#f0f4f8"
+    # 8.117.70 — sidebar palette flattened to clam-default neutrals.
+    # Pre-8.117.70 the sidebar was a saturated navy (#1e3a5f) with
+    # an electric-blue (#2563eb) selected-tab state, visually
+    # disconnected from every other workspace tab.
+    SIDEBAR_BG = "#f0f0f0"
+    SIDEBAR_HEADER_FG = "#555555"
+    BTN_BG = "#f0f0f0"
+    BTN_FG = "#000000"
+    BTN_HOVER = "#e0e0e0"
+    BTN_ACTIVE = "#d0d0d0"
+    BTN_ACTIVE_FG = "#000000"
+    CONTENT_BG = "#f0f0f0"
 
     def __init__(self, master, sidebar_title="MENU", **kw):
         super().__init__(master, bg=self.CONTENT_BG, **kw)
@@ -597,62 +601,60 @@ class BaseDashboard:
             root.title(f"Absence Tracker - {role}: {user['name']}")
             center(root, 1240, 740)
         try:
-            root.configure(bg="#f0f4f8")
+            root.configure(bg="#f0f0f0")
         except tk.TclError:
             pass  # ttk frames reject bg= silently on some themes
 
         # ---- Header ----
-        header = tk.Frame(root, bg="#0f1f3a", height=64)
+        # 8.117.70 — flattened to clam-default neutrals to match the
+        # main GUI. Pre-8.117.70 the header was a dark navy (#0f1f3a)
+        # bar with electric-blue role chip and assorted coloured
+        # action buttons.
+        header = tk.Frame(root, bg="#f0f0f0", height=64)
         header.pack(fill="x")
         header.pack_propagate(False)
 
         tk.Label(
             header, text="🎓  Absence Tracker",
-            font=("Arial", 17, "bold"), bg="#0f1f3a", fg="white",
+            font=("Arial", 17, "bold"), bg="#f0f0f0", fg="#000000",
         ).pack(side="left", padx=22)
 
         tk.Label(
             header, text=role.upper(),
-            font=("Arial", 9, "bold"), bg="#2563eb", fg="white",
+            font=("Arial", 9, "bold"), bg="#f0f0f0", fg="#555555",
             padx=10, pady=4,
         ).pack(side="left", padx=4, pady=20)
 
         if not self.embedded:
-            tk.Button(
-                header, text="✕  Close", font=("Arial", 10, "bold"),
-                bg="#dc2626", fg="white", activebackground="#b91c1c",
-                activeforeground="white", relief="flat", cursor="hand2",
-                padx=14, pady=6, bd=0, command=self._close,
+            ttk.Button(
+                header, text="✕  Close", command=self._close,
             ).pack(side="right", padx=18, pady=14)
 
             if self.on_back is not None:
-                tk.Button(
-                    header, text="←  Attendance", font=("Arial", 10, "bold"),
-                    bg="#2563eb", fg="white", activebackground="#1d4ed8",
-                    activeforeground="white", relief="flat", cursor="hand2",
-                    padx=14, pady=6, bd=0, command=self._back,
+                ttk.Button(
+                    header, text="←  Attendance", command=self._back,
                 ).pack(side="left", padx=8, pady=14)
 
         if not self.embedded:
-            tk.Button(
-                header, text="📅  Today", font=("Arial", 10, "bold"),
-                bg="#0ea5e9", fg="white", activebackground="#0284c7",
-                activeforeground="white", relief="flat", cursor="hand2",
-                padx=14, pady=6, bd=0, command=self._open_today,
+            ttk.Button(
+                header, text="📅  Today", command=self._open_today,
             ).pack(side="left", padx=8, pady=14)
 
-        right_info = tk.Frame(header, bg="#0f1f3a")
+        right_info = tk.Frame(header, bg="#f0f0f0")
         right_info.pack(side="right", padx=8)
         tk.Label(
             right_info, text=user.get("name", ""),
-            font=("Arial", 11, "bold"), bg="#0f1f3a", fg="white",
+            font=("Arial", 11, "bold"), bg="#f0f0f0", fg="#000000",
         ).pack(anchor="e")
         tk.Label(
             right_info, text=user.get("email", "") or user.get("username", ""),
-            font=("Arial", 9), bg="#0f1f3a", fg="#94a3b8",
+            font=("Arial", 9), bg="#f0f0f0", fg="#555555",
         ).pack(anchor="e")
 
         # ---- Shared ttk styling ----
+        # 8.117.70 — drop the navy Treeview heading / pale-blue
+        # Card frame / electric-blue Accent button overrides; let
+        # clam defaults match the rest of the main GUI.
         style = ttk.Style()
         try:
             style.theme_use("clam")
@@ -660,27 +662,14 @@ class BaseDashboard:
             pass
         style.configure(
             "Treeview", rowheight=28, font=("Arial", 10),
-            fieldbackground="white", background="white",
-            bordercolor="#cbd5e1", borderwidth=0,
         )
         style.configure(
             "Treeview.Heading", font=("Arial", 10, "bold"),
-            background="#1e3a5f", foreground="white",
             relief="flat", padding=6,
         )
-        style.map("Treeview.Heading", background=[("active", "#2c4f7a")])
-        style.map("Treeview", background=[("selected", "#2563eb")],
-                  foreground=[("selected", "white")])
-        style.configure("TLabelframe",
-                        background="#f0f4f8", borderwidth=1, relief="solid")
         style.configure("TLabelframe.Label",
-                        background="#f0f4f8", foreground="#1e3a5f",
                         font=("Arial", 11, "bold"))
         style.configure("TButton", padding=6)
-        style.configure("Accent.TButton",
-                        background="#2563eb", foreground="white",
-                        font=("Arial", 10, "bold"), padding=8)
-        style.map("Accent.TButton", background=[("active", "#1d4ed8")])
 
         # ---- Sidebar nav (replaces top-level Notebook tabs) ----
         self.notebook = SidebarNotebook(root, sidebar_title=f"{role.upper()} MENU")
@@ -771,10 +760,8 @@ class AdminDashboard(BaseDashboard):
         bar = tk.Frame(f)
         bar.pack(fill="x", padx=10, pady=10)
         tk.Label(bar, text="User management lives in the main system; this view is read-only.",
-                 fg="#6b7280").pack(side="left", padx=4)
-        tk.Button(bar, text="🔄 Refresh", bg="#6b7280", fg="white",
-                  relief="flat", padx=12, pady=6, cursor="hand2",
-                  command=self._refresh_users).pack(side="right", padx=4)
+                 fg="#555555").pack(side="left", padx=4)
+        ttk.Button(bar, text="🔄 Refresh", command=self._refresh_users).pack(side="right", padx=4)
 
         cols = ("ID", "Username", "Role", "Name", "Email")
         self.users_tree = ttk.Treeview(f, columns=cols, show="headings")
@@ -795,9 +782,7 @@ class AdminDashboard(BaseDashboard):
 
         bar = tk.Frame(f)
         bar.pack(fill="x", padx=10, pady=10)
-        tk.Button(bar, text="🔄 Refresh", bg="#6b7280", fg="white",
-                  relief="flat", padx=12, pady=6, cursor="hand2",
-                  command=self._refresh_courses).pack(side="left", padx=4)
+        ttk.Button(bar, text="🔄 Refresh", command=self._refresh_courses).pack(side="left", padx=4)
 
         cols = ("ID", "Code", "Name", "Instructor")
         self.courses_tree = ttk.Treeview(f, columns=cols, show="headings")
@@ -827,9 +812,8 @@ class AdminDashboard(BaseDashboard):
                      values=list(self.crs_map.keys()),
                      state="readonly", width=50).grid(row=0, column=1, padx=5)
 
-        tk.Button(top, text="Show Roster", bg="#2563eb", fg="white", relief="flat",
-                  padx=12, pady=4,
-                  command=self._show_roster).grid(row=0, column=2, padx=5)
+        ttk.Button(top, text="Show Roster",
+                   command=self._show_roster).grid(row=0, column=2, padx=5)
 
         cols = ("Student ID", "Name", "Username", "Email")
         self.roster_tree = ttk.Treeview(f, columns=cols, show="headings")
@@ -855,9 +839,7 @@ class AdminDashboard(BaseDashboard):
         tk.Button(bar, text="🗑 Delete Selected", bg="#dc2626", fg="white",
                   relief="flat", padx=12, pady=6,
                   command=self._delete_abs).pack(side="left", padx=4)
-        tk.Button(bar, text="🔄 Refresh", bg="#6b7280", fg="white",
-                  relief="flat", padx=12, pady=6,
-                  command=self._refresh_abs).pack(side="left", padx=4)
+        ttk.Button(bar, text="🔄 Refresh", command=self._refresh_abs).pack(side="left", padx=4)
 
         cols = ("ID", "Student", "Code", "Module", "Date", "Status", "Reason")
         self.abs_tree = ttk.Treeview(f, columns=cols, show="headings")
@@ -920,9 +902,7 @@ class AdminDashboard(BaseDashboard):
                   relief="flat", padx=12, pady=6,
                   command=lambda: self._admin_decide("rejected")
                   ).pack(side="left", padx=4)
-        tk.Button(bar, text="🔄 Refresh", bg="#6b7280", fg="white",
-                  relief="flat", padx=12, pady=6,
-                  command=self._refresh_admin_req).pack(side="left", padx=4)
+        ttk.Button(bar, text="🔄 Refresh", command=self._refresh_admin_req).pack(side="left", padx=4)
 
         self.admin_req_show_all = tk.BooleanVar(value=False)
         # `bar` is a tk.Frame (not ttk) — safe to read its bg, and we want
@@ -1059,12 +1039,8 @@ class AdminDashboard(BaseDashboard):
         ttk.Combobox(top, textvariable=self.rep_var,
                      values=list(self.rep_map.keys()),
                      state="readonly", width=45).pack(side="left", padx=5)
-        tk.Button(top, text="Generate Report", bg="#2563eb", fg="white",
-                  relief="flat", padx=12, pady=4,
-                  command=self._gen_report).pack(side="left", padx=5)
-        tk.Button(top, text="🗔 Open in new window", bg="#0ea5e9", fg="white",
-                  relief="flat", padx=12, pady=4,
-                  command=self._open_report_window).pack(side="left", padx=5)
+        ttk.Button(top, text="Generate Report", command=self._gen_report).pack(side="left", padx=5)
+        ttk.Button(top, text="🗔 Open in new window", command=self._open_report_window).pack(side="left", padx=5)
 
         self.rep_tree = ttk.Treeview(f, columns=self._REPORT_COLS,
                                      show="headings")
@@ -1074,7 +1050,7 @@ class AdminDashboard(BaseDashboard):
         self.rep_tree.pack(expand=True, fill="both", padx=10, pady=10)
 
         self.rep_summary = tk.Label(f, text="", font=("Arial", 11, "bold"),
-                                    fg="#1e3a5f")
+                                    fg="#000000")
         self.rep_summary.pack(pady=5)
 
         # Inline export / email toolbar
@@ -1089,9 +1065,7 @@ class AdminDashboard(BaseDashboard):
         tk.Button(actions, text="📄 Save PDF", bg="#16a34a", fg="white",
                   relief="flat", padx=10, pady=4,
                   command=lambda: self._save_report("pdf")).pack(side="left", padx=4)
-        tk.Button(actions, text="✉ Email admin", bg="#2563eb", fg="white",
-                  relief="flat", padx=10, pady=4,
-                  command=self._email_report).pack(side="left", padx=4)
+        ttk.Button(actions, text="✉ Email admin", command=self._email_report).pack(side="left", padx=4)
 
     def _current_report_rows(self):
         """Re-collect the current report's rows from the tree in display order."""
@@ -1282,7 +1256,7 @@ class StaffDashboard(BaseDashboard):
 
         if not self.my_courses:
             tk.Label(f, text="You are not assigned to any modules in instructor_modules.",
-                     fg="#6b7280").pack(pady=10)
+                     fg="#555555").pack(pady=10)
 
     def _record_tab(self):
         f = ttk.Frame(self.notebook)
@@ -1346,7 +1320,7 @@ class StaffDashboard(BaseDashboard):
         students = self.db.get_course_students(cid)
         if not students:
             tk.Label(self.roster_frame, text="No students enrolled in this module.",
-                     bg="white", fg="#6b7280").grid(row=1, column=0, columnspan=3, pady=10)
+                     bg="white", fg="#555555").grid(row=1, column=0, columnspan=3, pady=10)
             return
 
         for i, (sid, name, username, _email) in enumerate(students, start=1):
@@ -1392,9 +1366,7 @@ class StaffDashboard(BaseDashboard):
         tk.Button(bar, text="❌ Reject", bg="#dc2626", fg="white", relief="flat",
                   padx=12, pady=6,
                   command=lambda: self._decide("rejected")).pack(side="left", padx=4)
-        tk.Button(bar, text="🔄 Refresh", bg="#6b7280", fg="white", relief="flat",
-                  padx=12, pady=6,
-                  command=self._refresh_req).pack(side="left", padx=4)
+        ttk.Button(bar, text="🔄 Refresh", command=self._refresh_req).pack(side="left", padx=4)
 
         cols = ("ID", "Student", "Code", "Module", "Date", "Reason", "Status", "Submitted")
         self.req_tree = ttk.Treeview(f, columns=cols, show="headings")
@@ -1468,9 +1440,7 @@ class StaffDashboard(BaseDashboard):
                      values=options, state="readonly",
                      width=40).pack(side="left", padx=5)
         self.view_course_var.set("All my modules")
-        tk.Button(top, text="Load", bg="#2563eb", fg="white", relief="flat",
-                  padx=12, pady=4,
-                  command=self._load_records).pack(side="left", padx=5)
+        ttk.Button(top, text="Load", command=self._load_records).pack(side="left", padx=5)
 
         cols = ("ID", "Student", "Code", "Module", "Date", "Status", "Reason")
         self.view_tree = ttk.Treeview(f, columns=cols, show="headings")
@@ -1562,9 +1532,7 @@ class StudentDashboard(BaseDashboard):
         f = ttk.Frame(self.notebook)
         self.notebook.add(f, text="📋 My Absences")
 
-        tk.Button(f, text="🔄 Refresh", bg="#6b7280", fg="white", relief="flat",
-                  padx=12, pady=6,
-                  command=self._refresh_abs).pack(pady=10)
+        ttk.Button(f, text="🔄 Refresh", command=self._refresh_abs).pack(pady=10)
 
         cols = ("ID", "Student", "Code", "Module", "Date", "Status", "Reason")
         self.abs_tree = ttk.Treeview(f, columns=cols, show="headings")
@@ -1592,7 +1560,7 @@ class StudentDashboard(BaseDashboard):
 
         tk.Label(form, text="Submit Absence Request",
                  font=("Arial", 14, "bold"), bg="white",
-                 fg="#1e3a5f").pack(pady=(0, 15))
+                 fg="#000000").pack(pady=(0, 15))
 
         tk.Label(form, text="Module:", bg="white",
                  anchor="w").pack(fill="x", pady=(5, 0))
@@ -1614,9 +1582,7 @@ class StudentDashboard(BaseDashboard):
         self.rq_reason = tk.Text(form, height=6)
         self.rq_reason.pack(fill="x")
 
-        tk.Button(form, text="Submit Request", bg="#2563eb", fg="white",
-                  relief="flat", padx=20, pady=8,
-                  command=self._submit).pack(pady=15)
+        ttk.Button(form, text="Submit Request", command=self._submit).pack(pady=15)
 
     def _submit(self):
         if not self.user.get("student_id"):
@@ -1642,9 +1608,7 @@ class StudentDashboard(BaseDashboard):
         f = ttk.Frame(self.notebook)
         self.notebook.add(f, text="📨 My Requests")
 
-        tk.Button(f, text="🔄 Refresh", bg="#6b7280", fg="white", relief="flat",
-                  padx=12, pady=6,
-                  command=self._refresh_req).pack(pady=10)
+        ttk.Button(f, text="🔄 Refresh", command=self._refresh_req).pack(pady=10)
 
         cols = ("ID", "Student", "Code", "Module", "Date", "Reason", "Status", "Submitted")
         self.req_tree = ttk.Treeview(f, columns=cols, show="headings")
@@ -1668,7 +1632,7 @@ class StudentDashboard(BaseDashboard):
         self.notebook.add(f, text="📊 My Stats")
 
         tk.Label(f, text=f"Attendance Summary for {self.user['name']}",
-                 font=("Arial", 13, "bold"), fg="#1e3a5f").pack(pady=15)
+                 font=("Arial", 13, "bold"), fg="#000000").pack(pady=15)
 
         cols = ("Module Code", "Module", "Absent", "Late", "Excused", "Present")
         tree = ttk.Treeview(f, columns=cols, show="headings")

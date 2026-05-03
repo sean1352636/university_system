@@ -89,7 +89,11 @@ class SecurityDashboard(tk.Toplevel):
     def _create_widgets(self):
         """Create dashboard UI"""
         # Header
-        header_frame = tk.Frame(self, bg="#2C3E50", height=70)
+        # 8.117.68 — flattened to the main GUI's clam-default neutrals.
+        # Pre-8.117.68 the header bar was navy (#2C3E50) with white
+        # text and the toolbar was pale-grey (#ECF0F1) — visually
+        # disconnected from every other workspace tab.
+        header_frame = tk.Frame(self, bg="#f0f0f0", height=70)
         header_frame.pack(fill=tk.X)
         header_frame.pack_propagate(False)
 
@@ -97,8 +101,8 @@ class SecurityDashboard(tk.Toplevel):
             header_frame,
             text=f"🛡️ {_t('security_dashboard.title')}",
             font=("Arial", 16, "bold"),
-            bg="#2C3E50",
-            fg="white"
+            bg="#f0f0f0",
+            fg="#000000"
         ).pack(side=tk.LEFT, padx=20, pady=15)
 
         # Refresh and Close buttons
@@ -129,7 +133,7 @@ class SecurityDashboard(tk.Toplevel):
         ).pack(side=tk.RIGHT, padx=20)
 
         # Quick Access Toolbar
-        toolbar_frame = tk.Frame(self, bg="#ECF0F1", height=60)
+        toolbar_frame = tk.Frame(self, bg="#f0f0f0", height=60)
         toolbar_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
         toolbar_frame.pack_propagate(False)
 
@@ -137,7 +141,7 @@ class SecurityDashboard(tk.Toplevel):
             toolbar_frame,
             text=_t("security_dashboard.quick_access.title"),
             font=("Arial", 10, "bold"),
-            bg="#ECF0F1"
+            bg="#f0f0f0"
         ).pack(side=tk.LEFT, padx=10)
 
         # Add quick access buttons
@@ -224,14 +228,14 @@ class SecurityDashboard(tk.Toplevel):
 
         row, col = 0, 0
         for key, label, color in stats:
-            card = tk.Frame(stats_frame, bg="#F8F9FA", relief=tk.RIDGE, borderwidth=2)
+            card = tk.Frame(stats_frame, bg="#f0f0f0", relief=tk.RIDGE, borderwidth=2)
             card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
 
             tk.Label(
                 card,
                 text=label,
                 font=("Arial", 10),
-                bg="#F8F9FA",
+                bg="#f0f0f0",
                 fg="gray"
             ).pack(pady=(15, 0))
 
@@ -239,7 +243,7 @@ class SecurityDashboard(tk.Toplevel):
                 card,
                 text="0",
                 font=("Arial", 28, "bold"),
-                bg="#F8F9FA",
+                bg="#f0f0f0",
                 fg=color
             )
             value_label.pack(pady=(0, 15))
@@ -270,7 +274,7 @@ class SecurityDashboard(tk.Toplevel):
             alerts_frame,
             height=10,
             font=("Courier", 9),
-            bg="#F8F9FA"
+            bg="#f0f0f0"
         )
         self.alerts_text.pack(fill=tk.BOTH, expand=True)
 

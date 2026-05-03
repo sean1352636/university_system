@@ -371,7 +371,7 @@ class HealthSafetyPortal:
         self.root.title("University Health & Safety Portal")
         self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
         self.root.minsize(1200, 800)
-        self.root.configure(bg="#f0f4f8")
+        self.root.configure(bg="#f0f0f0")
 
         # Auth — no in-app login; identity comes from EDU_AUTH_*
         self.current_user = _get_current_user()
@@ -404,25 +404,23 @@ class HealthSafetyPortal:
 
     def setup_styles(self):
         """Configure ttk styles for a modern look."""
+        # 8.117.68 — flattened to clam defaults to match the main GUI.
+        # Pre-8.117.68 the portal painted TButton / Nav.TButton /
+        # Treeview.Heading with navy fills (#2c5282 / #1a365d) and
+        # white text — visually disconnected from every other
+        # workspace tab. Danger.TButton / Success.TButton kept their
+        # red/green fills because they're meaningful state buttons,
+        # not chrome.
         style = ttk.Style()
         style.theme_use("clam")
 
-        # Configure colors
         style.configure("TButton",
                        padding=10,
-                       font=("Segoe UI", 10),
-                       background="#2c5282",
-                       foreground="white")
-        style.map("TButton",
-                 background=[("active", "#2b6cb0")])
+                       font=("Segoe UI", 10))
 
         style.configure("Nav.TButton",
                        padding=15,
-                       font=("Segoe UI", 11, "bold"),
-                       background="#1a365d",
-                       foreground="white")
-        style.map("Nav.TButton",
-                 background=[("active", "#2c5282")])
+                       font=("Segoe UI", 11, "bold"))
 
         style.configure("Danger.TButton",
                        background="#c53030",
@@ -437,26 +435,24 @@ class HealthSafetyPortal:
                  background=[("active", "#276749")])
 
         style.configure("TLabel",
-                       background="#f0f4f8",
+                       background="#f0f0f0",
                        font=("Segoe UI", 10))
 
         style.configure("Header.TLabel",
-                       background="#f0f4f8",
+                       background="#f0f0f0",
                        font=("Segoe UI", 18, "bold"),
-                       foreground="#1a365d")
+                       foreground="#000000")
 
         style.configure("SubHeader.TLabel",
-                       background="#f0f4f8",
+                       background="#f0f0f0",
                        font=("Segoe UI", 12, "bold"),
-                       foreground="#2c5282")
+                       foreground="#555555")
 
         style.configure("Treeview",
                        font=("Segoe UI", 10),
                        rowheight=28)
         style.configure("Treeview.Heading",
-                       font=("Segoe UI", 10, "bold"),
-                       background="#2c5282",
-                       foreground="white")
+                       font=("Segoe UI", 10, "bold"))
 
     def _refresh_caches(self):
         """Pull fresh copies of the three datasets from the DB and
@@ -494,24 +490,24 @@ class HealthSafetyPortal:
         and EDU_AUTH_* env vars aren't set."""
         self.clear_window()
 
-        header_frame = tk.Frame(self.root, bg="#1a365d", height=120)
+        header_frame = tk.Frame(self.root, bg="#f0f0f0", height=120)
         header_frame.pack(fill="x")
         header_frame.pack_propagate(False)
         tk.Label(header_frame,
                 text="🏥 University Health & Safety Portal",
                 font=("Segoe UI", 24, "bold"),
-                bg="#1a365d", fg="white").pack(pady=30)
+                bg="#f0f0f0", fg="#000000").pack(pady=30)
 
-        body = tk.Frame(self.root, bg="#f0f4f8")
+        body = tk.Frame(self.root, bg="#f0f0f0")
         body.place(relx=0.5, rely=0.5, anchor="center")
         tk.Label(body, text="🔒 Authentication Required",
                 font=("Segoe UI", 18, "bold"),
-                bg="#f0f4f8", fg="#1a365d").pack(pady=10)
+                bg="#f0f0f0", fg="#000000").pack(pady=10)
         tk.Label(body,
                 text="Please launch this portal from the main\n"
                      "University System after signing in.",
                 font=("Segoe UI", 11),
-                bg="#f0f4f8", fg="#2d3748",
+                bg="#f0f0f0", fg="#000000",
                 justify="center").pack(pady=10)
         ttk.Button(body, text="Close",
                   command=self.root.destroy).pack(pady=20)
@@ -522,27 +518,27 @@ class HealthSafetyPortal:
         self.clear_window()
 
         # Top header
-        header = tk.Frame(self.root, bg="#1a365d", height=70)
+        header = tk.Frame(self.root, bg="#f0f0f0", height=70)
         header.pack(fill="x")
         header.pack_propagate(False)
 
         tk.Label(header, text="🏥 University Health & Safety Portal",
                 font=("Segoe UI", 16, "bold"),
-                bg="#1a365d", fg="white").pack(side="left", padx=20, pady=20)
+                bg="#f0f0f0", fg="#000000").pack(side="left", padx=20, pady=20)
 
         u = self.current_user or {}
         uname = u.get('username') or u.get('email') or u.get('user_id') or 'Guest'
         user_info = f"👤 {uname} ({u.get('role') or '—'}) | {u.get('department') or '—'}"
         tk.Label(header, text=user_info,
                 font=("Segoe UI", 10),
-                bg="#1a365d", fg="white").pack(side="right", padx=20, pady=25)
+                bg="#f0f0f0", fg="#555555").pack(side="right", padx=20, pady=25)
 
         # Main container with sidebar and content
-        main_container = tk.Frame(self.root, bg="#f0f4f8")
+        main_container = tk.Frame(self.root, bg="#f0f0f0")
         main_container.pack(fill="both", expand=True)
 
         # Sidebar
-        sidebar = tk.Frame(main_container, bg="#2d3748", width=220)
+        sidebar = tk.Frame(main_container, bg="#f0f0f0", width=220)
         sidebar.pack(side="left", fill="y")
         sidebar.pack_propagate(False)
 
@@ -560,17 +556,17 @@ class HealthSafetyPortal:
         for text, command in nav_buttons:
             btn = tk.Button(sidebar, text=text,
                           font=("Segoe UI", 11),
-                          bg="#2d3748", fg="white",
+                          bg="#f0f0f0", fg="#000000",
                           bd=0, pady=15, padx=20,
                           anchor="w",
-                          activebackground="#4a5568",
-                          activeforeground="white",
+                          activebackground="#e0e0e0",
+                          activeforeground="#000000",
                           cursor="hand2",
                           command=command)
             btn.pack(fill="x")
 
         # Content area
-        self.content_frame = tk.Frame(main_container, bg="#f0f4f8")
+        self.content_frame = tk.Frame(main_container, bg="#f0f0f0")
         self.content_frame.pack(side="right", fill="both", expand=True, padx=20, pady=20)
 
         # Show default dashboard content
@@ -588,10 +584,10 @@ class HealthSafetyPortal:
 
         tk.Label(self.content_frame, text="Dashboard Overview",
                 font=("Segoe UI", 20, "bold"),
-                bg="#f0f4f8", fg="#1a365d").pack(anchor="w", pady=(0, 20))
+                bg="#f0f0f0", fg="#000000").pack(anchor="w", pady=(0, 20))
 
         # Stats cards
-        stats_frame = tk.Frame(self.content_frame, bg="#f0f4f8")
+        stats_frame = tk.Frame(self.content_frame, bg="#f0f0f0")
         stats_frame.pack(fill="x", pady=10)
 
         total_incidents = len(self.incidents)
@@ -606,23 +602,27 @@ class HealthSafetyPortal:
             ("High Risk Items", high_risk, "#c53030", "🚨"),
         ]
 
+        # 8.117.68 — full-colour card backgrounds were UI chrome; flatten
+        # the cards and push the per-metric colour onto the value text only
+        # (same pattern the Security Dashboard already uses).
         for i, (label, value, color, icon) in enumerate(stats):
-            card = tk.Frame(stats_frame, bg=color, width=200, height=120)
+            card = tk.Frame(stats_frame, bg="#f0f0f0", width=200, height=120,
+                           relief="ridge", bd=1)
             card.grid(row=0, column=i, padx=10, pady=5, sticky="ew")
             card.pack_propagate(False)
             stats_frame.grid_columnconfigure(i, weight=1)
 
             tk.Label(card, text=icon, font=("Segoe UI", 24),
-                    bg=color, fg="white").pack(pady=(15, 0))
+                    bg="#f0f0f0", fg=color).pack(pady=(15, 0))
             tk.Label(card, text=str(value), font=("Segoe UI", 22, "bold"),
-                    bg=color, fg="white").pack()
+                    bg="#f0f0f0", fg=color).pack()
             tk.Label(card, text=label, font=("Segoe UI", 10),
-                    bg=color, fg="white").pack()
+                    bg="#f0f0f0", fg="#555555").pack()
 
         # Recent activity
         tk.Label(self.content_frame, text="Recent Incidents",
                 font=("Segoe UI", 14, "bold"),
-                bg="#f0f4f8", fg="#1a365d").pack(anchor="w", pady=(30, 10))
+                bg="#f0f0f0", fg="#000000").pack(anchor="w", pady=(30, 10))
 
         recent_frame = tk.Frame(self.content_frame, bg="white", relief="ridge", bd=1)
         recent_frame.pack(fill="both", expand=True, pady=5)
@@ -650,9 +650,9 @@ class HealthSafetyPortal:
         # Quick actions
         tk.Label(self.content_frame, text="Quick Actions",
                 font=("Segoe UI", 14, "bold"),
-                bg="#f0f4f8", fg="#1a365d").pack(anchor="w", pady=(20, 10))
+                bg="#f0f0f0", fg="#000000").pack(anchor="w", pady=(20, 10))
 
-        actions_frame = tk.Frame(self.content_frame, bg="#f0f4f8")
+        actions_frame = tk.Frame(self.content_frame, bg="#f0f0f0")
         actions_frame.pack(fill="x")
 
         ttk.Button(actions_frame, text="⚠️ Report New Incident",
@@ -670,12 +670,12 @@ class HealthSafetyPortal:
 
         tk.Label(self.content_frame, text="⚠️ Report an Incident",
                 font=("Segoe UI", 20, "bold"),
-                bg="#f0f4f8", fg="#1a365d").pack(anchor="w", pady=(0, 10))
+                bg="#f0f0f0", fg="#000000").pack(anchor="w", pady=(0, 10))
 
         tk.Label(self.content_frame,
                 text="Report any accidents, injuries, or near-misses that occurred on campus.",
                 font=("Segoe UI", 10, "italic"),
-                bg="#f0f4f8", fg="#4a5568").pack(anchor="w", pady=(0, 20))
+                bg="#f0f0f0", fg="#555555").pack(anchor="w", pady=(0, 20))
 
         form = tk.Frame(self.content_frame, bg="white", relief="ridge", bd=1, padx=30, pady=20)
         form.pack(fill="both", expand=True)
@@ -793,14 +793,14 @@ class HealthSafetyPortal:
 
         tk.Label(self.content_frame, text="📋 All Incidents",
                 font=("Segoe UI", 20, "bold"),
-                bg="#f0f4f8", fg="#1a365d").pack(anchor="w", pady=(0, 20))
+                bg="#f0f0f0", fg="#000000").pack(anchor="w", pady=(0, 20))
 
         # Filter frame
-        filter_frame = tk.Frame(self.content_frame, bg="#f0f4f8")
+        filter_frame = tk.Frame(self.content_frame, bg="#f0f0f0")
         filter_frame.pack(fill="x", pady=5)
 
         tk.Label(filter_frame, text="Filter by status:",
-                bg="#f0f4f8", font=("Segoe UI", 10)).pack(side="left", padx=5)
+                bg="#f0f0f0", font=("Segoe UI", 10)).pack(side="left", padx=5)
         status_filter = ttk.Combobox(filter_frame, values=["All", "Open", "In Progress", "Resolved", "Closed"],
                                      state="readonly", width=15)
         status_filter.set("All")
@@ -856,7 +856,7 @@ class HealthSafetyPortal:
         tree.bind("<Double-1>", view_details)
 
         # Buttons
-        btn_frame = tk.Frame(self.content_frame, bg="#f0f4f8")
+        btn_frame = tk.Frame(self.content_frame, bg="#f0f0f0")
         btn_frame.pack(fill="x", pady=10)
 
         def update_status():
@@ -878,7 +878,7 @@ class HealthSafetyPortal:
         tk.Label(self.content_frame,
                 text="Double-click an incident to view full details.",
                 font=("Segoe UI", 9, "italic"),
-                bg="#f0f4f8", fg="#4a5568").pack(anchor="w")
+                bg="#f0f0f0", fg="#555555").pack(anchor="w")
 
     def show_incident_details(self, incident):
         """Show detailed view of an incident."""
@@ -889,7 +889,7 @@ class HealthSafetyPortal:
 
         tk.Label(detail_window, text=f"Incident {incident.get('id')}",
                 font=("Segoe UI", 16, "bold"),
-                bg="white", fg="#1a365d").pack(pady=10)
+                bg="white", fg="#000000").pack(pady=10)
 
         info_frame = tk.Frame(detail_window, bg="white", padx=20)
         info_frame.pack(fill="both", expand=True)
@@ -996,12 +996,12 @@ class HealthSafetyPortal:
 
         tk.Label(self.content_frame, text="🔍 Report a Hazard",
                 font=("Segoe UI", 20, "bold"),
-                bg="#f0f4f8", fg="#1a365d").pack(anchor="w", pady=(0, 10))
+                bg="#f0f0f0", fg="#000000").pack(anchor="w", pady=(0, 10))
 
         tk.Label(self.content_frame,
                 text="Report potential hazards before they cause incidents.",
                 font=("Segoe UI", 10, "italic"),
-                bg="#f0f4f8", fg="#4a5568").pack(anchor="w", pady=(0, 20))
+                bg="#f0f0f0", fg="#555555").pack(anchor="w", pady=(0, 20))
 
         form = tk.Frame(self.content_frame, bg="white", relief="ridge", bd=1, padx=30, pady=20)
         form.pack(fill="both", expand=True)
@@ -1092,7 +1092,7 @@ class HealthSafetyPortal:
 
         tk.Label(self.content_frame, text="📊 Reported Hazards",
                 font=("Segoe UI", 20, "bold"),
-                bg="#f0f4f8", fg="#1a365d").pack(anchor="w", pady=(0, 20))
+                bg="#f0f0f0", fg="#000000").pack(anchor="w", pady=(0, 20))
 
         list_frame = tk.Frame(self.content_frame, bg="white", relief="ridge", bd=1)
         list_frame.pack(fill="both", expand=True, pady=10)
@@ -1131,7 +1131,7 @@ class HealthSafetyPortal:
 
         tk.Label(self.content_frame, text="🎓 Health & Safety Training",
                 font=("Segoe UI", 20, "bold"),
-                bg="#f0f4f8", fg="#1a365d").pack(anchor="w", pady=(0, 20))
+                bg="#f0f0f0", fg="#000000").pack(anchor="w", pady=(0, 20))
 
         training_modules = [
             ("Fire Safety Awareness", "30 min", "Required", "Covers evacuation procedures, fire extinguisher use, and prevention."),
@@ -1145,9 +1145,9 @@ class HealthSafetyPortal:
         ]
 
         # Container for training cards
-        canvas = tk.Canvas(self.content_frame, bg="#f0f4f8", highlightthickness=0)
+        canvas = tk.Canvas(self.content_frame, bg="#f0f0f0", highlightthickness=0)
         scrollbar = ttk.Scrollbar(self.content_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, bg="#f0f4f8")
+        scrollable_frame = tk.Frame(canvas, bg="#f0f0f0")
 
         scrollable_frame.bind(
             "<Configure>",
@@ -1165,16 +1165,16 @@ class HealthSafetyPortal:
             header.pack(fill="x", padx=15, pady=10)
 
             tk.Label(header, text=title, font=("Segoe UI", 12, "bold"),
-                    bg="white", fg="#1a365d").pack(side="left")
+                    bg="white", fg="#000000").pack(side="left")
 
             badge_color = "#c53030" if required == "Required" else "#3182ce" if required == "Recommended" else "#718096"
             tk.Label(header, text=f" {required} ", font=("Segoe UI", 9),
                     bg=badge_color, fg="white").pack(side="right", padx=5)
             tk.Label(header, text=f"⏱ {duration}", font=("Segoe UI", 9),
-                    bg="white", fg="#4a5568").pack(side="right", padx=5)
+                    bg="white", fg="#555555").pack(side="right", padx=5)
 
             tk.Label(card, text=desc, font=("Segoe UI", 10),
-                    bg="white", fg="#4a5568", wraplength=700, justify="left").pack(anchor="w", padx=15, pady=(0, 5))
+                    bg="white", fg="#555555", wraplength=700, justify="left").pack(anchor="w", padx=15, pady=(0, 5))
 
             # Check if completed
             uname = (self.current_user or {}).get('username') or ''
@@ -1223,7 +1223,7 @@ class HealthSafetyPortal:
 
         tk.Label(self.content_frame, text="📚 Safety Resources & Guidelines",
                 font=("Segoe UI", 20, "bold"),
-                bg="#f0f4f8", fg="#1a365d").pack(anchor="w", pady=(0, 20))
+                bg="#f0f0f0", fg="#000000").pack(anchor="w", pady=(0, 20))
 
         resources = [
             ("🔥 Fire Safety Policy",
@@ -1246,9 +1246,9 @@ class HealthSafetyPortal:
              "electrical equipment should be PAT tested. Never use electrical equipment in wet conditions."),
         ]
 
-        canvas = tk.Canvas(self.content_frame, bg="#f0f4f8", highlightthickness=0)
+        canvas = tk.Canvas(self.content_frame, bg="#f0f0f0", highlightthickness=0)
         scrollbar = ttk.Scrollbar(self.content_frame, orient="vertical", command=canvas.yview)
-        scrollable_frame = tk.Frame(canvas, bg="#f0f4f8")
+        scrollable_frame = tk.Frame(canvas, bg="#f0f0f0")
 
         scrollable_frame.bind(
             "<Configure>",
@@ -1263,9 +1263,9 @@ class HealthSafetyPortal:
             card.pack(fill="x", pady=5, padx=5)
 
             tk.Label(card, text=title, font=("Segoe UI", 13, "bold"),
-                    bg="white", fg="#1a365d").pack(anchor="w", padx=15, pady=(10, 5))
+                    bg="white", fg="#000000").pack(anchor="w", padx=15, pady=(10, 5))
             tk.Label(card, text=content, font=("Segoe UI", 10),
-                    bg="white", fg="#2d3748", wraplength=700, justify="left").pack(anchor="w", padx=15, pady=(0, 15))
+                    bg="white", fg="#000000", wraplength=700, justify="left").pack(anchor="w", padx=15, pady=(0, 15))
 
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
@@ -1277,7 +1277,7 @@ class HealthSafetyPortal:
 
         tk.Label(self.content_frame, text="🚨 Emergency Information",
                 font=("Segoe UI", 20, "bold"),
-                bg="#f0f4f8", fg="#c53030").pack(anchor="w", pady=(0, 20))
+                bg="#f0f0f0", fg="#c53030").pack(anchor="w", pady=(0, 20))
 
         # Emergency banner
         banner = tk.Frame(self.content_frame, bg="#c53030", height=80)
@@ -1289,7 +1289,7 @@ class HealthSafetyPortal:
                 bg="#c53030", fg="white").pack(pady=25)
 
         # Contacts grid
-        contacts_frame = tk.Frame(self.content_frame, bg="#f0f4f8")
+        contacts_frame = tk.Frame(self.content_frame, bg="#f0f0f0")
         contacts_frame.pack(fill="both", expand=True, pady=10)
 
         contacts = [
@@ -1312,11 +1312,11 @@ class HealthSafetyPortal:
             contacts_frame.grid_columnconfigure(col, weight=1)
 
             tk.Label(card, text=title, font=("Segoe UI", 12, "bold"),
-                    bg="white", fg="#1a365d").pack(anchor="w")
+                    bg="white", fg="#000000").pack(anchor="w")
             tk.Label(card, text=number, font=("Segoe UI", 16, "bold"),
                     bg="white", fg="#c53030").pack(anchor="w", pady=5)
             tk.Label(card, text=note, font=("Segoe UI", 9, "italic"),
-                    bg="white", fg="#4a5568").pack(anchor="w")
+                    bg="white", fg="#555555").pack(anchor="w")
 
         # Evacuation info
         evac_frame = tk.Frame(self.content_frame, bg="#fef3c7", relief="ridge", bd=2, padx=20, pady=15)

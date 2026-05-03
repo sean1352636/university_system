@@ -179,7 +179,7 @@ def _build_absence_tab_contents(self, tab, role_override=None):
     if len(role_options) == 1:
         ttk.Label(bar,
                   text="(your role — admins can switch views)",
-                  foreground="#64748b").pack(side="left", padx=4)
+                  foreground="#555555").pack(side="left", padx=4)
 
     def _on_role_change(_event=None):
         new = role_var.get()

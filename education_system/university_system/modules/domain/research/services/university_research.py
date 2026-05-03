@@ -424,22 +424,23 @@ PALETTE = {
 
 
 def configure_styles():
+    # 8.117.71 — only configure NAMED styles. Pre-8.117.71 this
+    # reconfigured base styles (".", TFrame, TLabel, TButton,
+    # TNotebook, TNotebook.Tab, Treeview, Treeview.Heading, TEntry,
+    # TCombobox) on the global ttk.Style — and because the portal
+    # is launched in-process via ``open_in_workspace`` (so it shares
+    # the main GUI's Tk root), those overrides bled out and recoloured
+    # the whole main window. Base styles now stay on clam defaults;
+    # only the Research.* named styles are touched.
     style = ttk.Style()
     try:
         style.theme_use("clam")
     except tk.TclError:
         pass
 
-    # Header text now sits on the same #f0f0f0 background as everything
-    # else, so the header and section-title foregrounds switched from
-    # white/navy to dark text to stay readable.
-    style.configure(".", background=PALETTE["bg"], foreground=PALETTE["text"],
-                    font=("Segoe UI", 10))
-    style.configure("TFrame", background=PALETTE["bg"])
     style.configure("Panel.TFrame", background=PALETTE["panel"])
     style.configure("Header.TFrame", background=PALETTE["header"])
 
-    style.configure("TLabel", background=PALETTE["bg"], foreground=PALETTE["text"])
     style.configure("Panel.TLabel", background=PALETTE["panel"])
     style.configure("Header.TLabel", background=PALETTE["header"],
                     foreground=PALETTE["text"], font=("Segoe UI", 14, "bold"))
@@ -454,29 +455,8 @@ def configure_styles():
     style.configure("StatLabel.TLabel", background=PALETTE["panel"],
                     foreground=PALETTE["muted"], font=("Segoe UI", 9))
 
-    style.configure("TButton", font=("Segoe UI", 10), padding=(12, 6))
     style.configure("Accent.TButton", padding=(14, 7))
     style.configure("Danger.TButton", foreground=PALETTE["danger"])
-
-    style.configure("TNotebook", background=PALETTE["bg"], borderwidth=0)
-    style.configure("TNotebook.Tab", padding=(16, 8), font=("Segoe UI", 10))
-    style.map("TNotebook.Tab",
-              background=[("selected", PALETTE["panel"]),
-                          ("!selected", PALETTE["bg"])],
-              foreground=[("selected", PALETTE["text"]),
-                          ("!selected", PALETTE["muted"])])
-
-    style.configure("Treeview", background="white", fieldbackground="white",
-                    foreground=PALETTE["text"], rowheight=26,
-                    font=("Segoe UI", 10), borderwidth=0)
-    style.configure("Treeview.Heading", background=PALETTE["accent_soft"],
-                    foreground=PALETTE["text"], font=("Segoe UI", 10, "bold"),
-                    padding=6, borderwidth=0)
-    style.map("Treeview", background=[("selected", PALETTE["accent"])],
-              foreground=[("selected", "white")])
-
-    style.configure("TEntry", padding=5)
-    style.configure("TCombobox", padding=5)
 
     return style
 
