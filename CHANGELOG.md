@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.61 — 2026-05-03](#811761---2026-05-03)
 - [8.117.60 — 2026-05-03](#811760---2026-05-03)
 - [8.117.59 — 2026-05-03](#811759---2026-05-03)
 - [8.117.58 — 2026-05-03](#811758---2026-05-03)
@@ -287,6 +288,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.61] — 2026-05-03
+
+### Changed — Tutor Groups embeds in main GUI workspace tab
+
+Tutor Groups was in ``_NEW_FEATURE_MODULES`` so the auto-generated
+handler launched it via ``subprocess.Popen`` as a standalone Tk app.
+``tutor_groups_app._Frame`` is already a ``tk.Frame`` subclass that
+takes a parent, mirroring the shape of intervention_outcomes and
+mentoring_matching, so the in-process embed is straightforward.
+
+Added ``show_new_feature_tutor_groups`` after the setattr loop so it
+overrides the auto-generated subprocess handler. Routes through
+``_embed_or_subprocess`` (8.117.45): tries
+``open_in_workspace`` first, falls back to the subprocess launcher
+on failure.
+
+- ``modules/shared/gui/main/main_gui.py``: new
+  ``show_new_feature_tutor_groups`` override + setattr.
 
 ---
 

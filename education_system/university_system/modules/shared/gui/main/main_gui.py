@@ -1301,6 +1301,27 @@ UnifiedManagementGUI.show_new_feature_safeguarding_system = show_new_feature_saf
 UnifiedManagementGUI.show_new_feature_mentoring_matching = show_new_feature_mentoring_matching
 
 
+def show_new_feature_tutor_groups(self):
+    title = "Tutor Groups"
+    module_dotted = (
+        "education_system.university_system.modules.domain.academics."
+        "tutor_groups.tutor_groups_app"
+    )
+
+    def _build(host):
+        from education_system.university_system.modules.domain.academics.tutor_groups.tutor_groups_app import (
+            _Frame as _TutorGroupsFrame,
+            _get_current_user,
+        )
+        frame = _TutorGroupsFrame(host, user=_get_current_user())
+        frame.pack(fill="both", expand=True)
+        return frame
+    self._embed_or_subprocess(title, module_dotted, _build)
+
+
+UnifiedManagementGUI.show_new_feature_tutor_groups = show_new_feature_tutor_groups
+
+
 def show_new_feature_employer_portal(self):
     title = "Employer Portal"
     module_dotted = (
