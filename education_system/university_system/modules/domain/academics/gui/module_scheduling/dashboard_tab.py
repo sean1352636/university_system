@@ -136,7 +136,10 @@ def create_dashboard_tab(self):
     activity_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
 
     # Activity list
-    self.activity_text = scrolledtext.ScrolledText(activity_frame, height=10, state=tk.DISABLED)
+    self.activity_text = scrolledtext.ScrolledText(
+        activity_frame, height=10, state=tk.DISABLED,
+        bg='white', fg='black', borderwidth=1, relief='solid',
+        wrap='word')
     self.activity_text.pack(fill=tk.BOTH, expand=True)
 
 ModuleSchedulingGUI.create_dashboard_tab = create_dashboard_tab

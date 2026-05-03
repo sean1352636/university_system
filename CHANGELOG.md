@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.59 — 2026-05-03](#811759---2026-05-03)
 - [8.117.58 — 2026-05-03](#811758---2026-05-03)
 - [8.117.57 — 2026-05-03](#811757---2026-05-03)
 - [8.117.56 — 2026-05-03](#811756---2026-05-03)
@@ -285,6 +286,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.59] — 2026-05-03
+
+### Fixed — Module Scheduling dashboard "Recent Activity" rendered as black bars
+
+The ``scrolledtext.ScrolledText`` under "Recent Activity" was created
+with ``state=tk.DISABLED`` and no explicit colours, so on some
+themes the disabled Text widget rendered with a dark default
+background — appearing as black bars at the bottom of the
+dashboard tab.
+
+#### Files
+
+- ``modules/domain/academics/gui/module_scheduling/dashboard_tab.py``:
+  pass ``bg='white'``, ``fg='black'``, ``borderwidth=1``,
+  ``relief='solid'``, ``wrap='word'`` when constructing
+  ``self.activity_text``.
 
 ---
 
