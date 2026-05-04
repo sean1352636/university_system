@@ -256,17 +256,56 @@ class ModuleSchedulingGUI:
         # module, fed by cases_bus / attendance_bus / slot_writer
         # conflict detection.
         def _show_module_risks():
-            from tkinter import simpledialog
             from education_system.university_system.modules.services.risks_panel import (
                 show_risks_for,
             )
-            mc = simpledialog.askstring(
-                "Module risks",
-                "Module code (e.g. CS101) — leave blank to view all "
-                "module risks:",
-                parent=self.root,
-            )
-            ref = f"module:{mc.strip()}" if mc and mc.strip() else "module:"
+
+            try:
+                modules = self.scheduler.get_all_modules() or []
+            except Exception:
+                modules = []
+            options = [""] + [
+                f"{m['code']} — {m['name']}" if m.get('name') else m['code']
+                for m in modules if m.get('code')
+            ]
+
+            dlg = tk.Toplevel(self.root)
+            dlg.title("Module risks")
+            dlg.transient(self.root)
+            dlg.resizable(False, False)
+            ttk.Label(dlg,
+                      text="Select a module (leave blank to view all "
+                           "module risks):").pack(padx=15, pady=(15, 5))
+            selected = tk.StringVar()
+            cb = ttk.Combobox(dlg, textvariable=selected, values=options,
+                              state="readonly", width=50)
+            cb.pack(padx=15, pady=5)
+            if options:
+                cb.current(0)
+
+            result = {"code": None, "ok": False}
+
+            def _ok():
+                val = selected.get().strip()
+                result["code"] = val.split(" — ")[0] if val else ""
+                result["ok"] = True
+                dlg.destroy()
+
+            def _cancel():
+                dlg.destroy()
+
+            btns = ttk.Frame(dlg)
+            btns.pack(pady=(5, 15))
+            ttk.Button(btns, text="OK", command=_ok).pack(side=tk.LEFT, padx=5)
+            ttk.Button(btns, text="Cancel",
+                       command=_cancel).pack(side=tk.LEFT, padx=5)
+            dlg.grab_set()
+            self.root.wait_window(dlg)
+
+            if not result["ok"]:
+                return
+            mc = result["code"]
+            ref = f"module:{mc}" if mc else "module:"
             show_risks_for(self.root, ref,
                            title=f"Risks for {mc or 'all modules'}")
         risks_button = ttk.Button(toolbar_frame, text="Risks",

@@ -34,10 +34,29 @@ def show_integrated_dashboard(self):
     dashboard_frame = ttk.Frame(self.content_frame)
     dashboard_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-    # Title
-    title_label = ttk.Label(dashboard_frame, text=_("dashboard.title"),
-                           font=('Arial', 16, 'bold'))
-    title_label.pack(pady=(0, 20))
+    # Title row — title plus a "Close extra tabs" affordance that
+    # tears down anything launchers added via ``open_in_workspace``,
+    # leaving only the dashboard's own tabs (My Dashboard, Overview,
+    # Statistics, Activity, Health, and admin extensions).
+    title_row = ttk.Frame(dashboard_frame)
+    title_row.pack(fill=tk.X, pady=(0, 20))
+    ttk.Label(title_row, text=_("dashboard.title"),
+              font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
+
+    def _close_extra_tabs():
+        nb = getattr(self, 'workspace_notebook', None)
+        tabs = getattr(self, 'workspace_tabs', None) or {}
+        if nb is None or not tabs:
+            return
+        for title, frame in list(tabs.items()):
+            try:
+                nb.forget(frame)
+            except Exception:
+                pass
+            tabs.pop(title, None)
+
+    ttk.Button(title_row, text="Close extra tabs",
+               command=_close_extra_tabs).pack(side=tk.RIGHT)
 
     # Create notebook for different dashboard sections.
     # ``self.workspace_notebook`` is exposed so feature launchers can

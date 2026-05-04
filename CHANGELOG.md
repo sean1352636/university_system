@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.77 — 2026-05-04](#811777---2026-05-04)
 - [8.117.76 — 2026-05-04](#811776---2026-05-04)
 - [8.117.75 — 2026-05-04](#811775---2026-05-04)
 - [8.117.74 — 2026-05-04](#811774---2026-05-04)
@@ -303,6 +304,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.77] — 2026-05-04
+
+### Changed — Three small dashboard/scheduling GUI quality fixes
+
+Three independent UX papercuts in the University System GUIs:
+
+1. **Module Scheduling — Risks button dropdown.** The toolbar's
+   "Risks" button used ``simpledialog.askstring`` to ask for a
+   module code, which meant the user had to type ``CS101`` exactly
+   right or get an empty risk panel. Replaced with a readonly
+   ``ttk.Combobox`` populated from ``ModuleScheduler.get_all_modules()``,
+   showing each entry as ``CODE — Name``. Leaving the selection
+   blank still views all module risks, matching the previous
+   blank-string semantics.
+
+2. **Course Management — Course Details selector showed nothing.**
+   ``load_course_selector_options`` filtered with
+   ``LOWER(COALESCE(status, 'active')) = 'active'``. ``COALESCE``
+   only replaces NULL, so courses whose ``status`` was an empty
+   string or any non-active label (e.g. ``'Open'``, ``'Pending'``)
+   were silently hidden — even though the Course List tab applies
+   no such filter and showed them fine. Aligned the selector query
+   with the list tab: ``COALESCE(course_code, code)`` /
+   ``COALESCE(course_name, name)`` with no status filter.
+
+3. **Main dashboard — Close extra tabs button.** Launchers that
+   opt into ``open_in_workspace`` append tabs to the dashboard's
+   notebook, and over a session these can pile up. Added a
+   "Close extra tabs" button to the dashboard title row that walks
+   ``self.workspace_tabs`` (the dict ``open_in_workspace``
+   populates) and ``notebook.forget()``s each entry. The
+   dashboard's own tabs (My Dashboard, Overview, Statistics,
+   Activity, Health, plus admin Login Analytics / Operations /
+   System Health) aren't tracked in that dict, so they survive.
+
+#### Files
+
+- ``university_system/modules/domain/academics/gui/module_scheduling/main_gui.py``
+  ``_show_module_risks``: swap ``simpledialog.askstring`` for a
+  ``Toplevel`` + readonly ``Combobox`` populated from
+  ``self.scheduler.get_all_modules()``.
+- ``university_system/modules/domain/academics/gui/course_management_gui/courses/course_details.py``
+  ``load_course_selector_options``: drop the ``status`` filter and
+  use ``COALESCE(course_code, code)`` / ``COALESCE(course_name, name)``
+  to match the Course List tab's query.
+- ``university_system/modules/shared/gui/main/dashboard/dashboard_gui.py``
+  ``show_integrated_dashboard``: title row now contains the title
+  and a "Close extra tabs" button whose handler clears
+  ``self.workspace_tabs``.
 
 ---
 

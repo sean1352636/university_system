@@ -274,11 +274,12 @@ def load_course_selector_options(self):
             cursor = conn.cursor()
 
             cursor.execute(
-                "SELECT id, course_code, course_name "
+                "SELECT id, "
+                "       COALESCE(course_code, code) AS course_code, "
+                "       COALESCE(course_name, name) AS course_name "
                 "FROM courses "
-                "WHERE course_code IS NOT NULL "
-                "AND course_name IS NOT NULL "
-                "AND LOWER(COALESCE(status, 'active')) = 'active' "
+                "WHERE COALESCE(course_code, code) IS NOT NULL "
+                "AND COALESCE(course_name, name) IS NOT NULL "
                 "ORDER BY course_code"
             )
             courses = cursor.fetchall()
