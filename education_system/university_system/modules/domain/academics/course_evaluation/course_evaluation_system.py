@@ -280,17 +280,14 @@ class CourseEvaluationApp:
                    command=self.root.destroy).pack(pady=20)
 
     def setup_styles(self):
+        # ttk.Style is process-global. When this app embeds inside the
+        # main GUI workspace (admin path: Dashboard → Course Evaluation),
+        # configuring base style names (TNotebook, TFrame, TLabel, etc.)
+        # bleeds out and recolours every widget in the host. Only named
+        # styles are safe here.
         style = ttk.Style()
-        style.configure("TNotebook", background="#f0f0f0", borderwidth=0)
-        style.configure("TNotebook.Tab", padding=[20, 10],
-                        font=("Arial", 10, "bold"))
-        style.configure("TFrame", background="#f0f0f0")
-        style.configure("TLabel", background="#f0f0f0", font=("Arial", 10))
         style.configure("Header.TLabel", font=("Arial", 11, "bold"),
                         foreground="#000000")
-        style.configure("TButton", font=("Arial", 10, "bold"), padding=8)
-        style.configure("Treeview", font=("Arial", 9), rowheight=25)
-        style.configure("Treeview.Heading", font=("Arial", 10, "bold"))
 
     def create_header(self):
         # 8.117.69 — flattened to clam-default neutrals to match

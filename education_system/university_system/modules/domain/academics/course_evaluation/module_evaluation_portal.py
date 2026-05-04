@@ -390,8 +390,6 @@ class ModuleEvaluationPortal:
                         background="#f0f0f0", foreground="#000000")
         style.configure("Primary.TButton", font=("Helvetica", 11, "bold"),
                         padding=10)
-        style.configure("TEntry", padding=6)
-        style.configure("TCombobox", padding=6)
 
     def clear_window(self):
         for widget in self.root.winfo_children():

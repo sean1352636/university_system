@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.74 — 2026-05-04](#811774---2026-05-04)
 - [8.117.73 — 2026-05-04](#811773---2026-05-04)
 - [8.117.72 — 2026-05-04](#811772---2026-05-04)
 - [8.117.71 — 2026-05-03](#811771---2026-05-03)
@@ -300,6 +301,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.74] — 2026-05-04
+
+### Fixed — Course/Lecturer/Module Evaluation no longer recolour the main GUI
+
+Follow-up to 8.117.72. Removing ``theme_use(...)`` was necessary but
+not sufficient: the three evaluation apps in
+``modules/domain/academics/course_evaluation/`` were *also* mutating
+**base** ttk style names (``TFrame``, ``TLabel``, ``TButton``,
+``TNotebook``, ``TNotebook.Tab``, ``Treeview``, ``Treeview.Heading``,
+``TEntry``, ``TCombobox``) inside their ``setup_styles`` /
+``_build_*`` methods. ``ttk.Style`` is a process-global singleton, so
+when the main GUI's "Course Evaluation" / "Lecturer Evaluation" /
+"Module Evaluation" buttons embed these apps in-process via
+``_embed_or_subprocess`` → ``open_in_workspace`` (the admin path
+after login), the base-style edits bled out and recoloured every
+widget in the host main GUI.
+
+Symptom reported on the admin "Dashboard → Course Evaluation" path:
+the entire main GUI's colours and fonts changed when the feature
+opened.
+
+Fix: keep the visual styling but scope it to **named** styles that
+only apply when explicitly requested via the widget ``style=`` arg.
+
+- ``course_evaluation_system.py``: dropped seven base-style
+  ``style.configure`` calls (``TNotebook``, ``TNotebook.Tab``,
+  ``TFrame``, ``TLabel``, ``TButton``, ``Treeview``,
+  ``Treeview.Heading``). ``Header.TLabel`` (already a named style)
+  preserved.
+- ``lecturer_evaluation.py``: renamed the Treeview block
+  (``Treeview`` / ``Treeview.Heading``) to ``Lecturer.Treeview`` /
+  ``Lecturer.Treeview.Heading`` and applied
+  ``style="Lecturer.Treeview"`` on the module-list Treeview;
+  renamed the second block (``TNotebook`` / ``TNotebook.Tab``) to
+  ``Lecturer.TNotebook`` / ``Lecturer.TNotebook.Tab`` and applied
+  ``style="Lecturer.TNotebook"`` on the dashboard notebook. Both
+  ``style.map`` calls renamed to match.
+- ``module_evaluation_portal.py``: dropped the unscoped
+  ``TEntry`` / ``TCombobox`` padding overrides (the named
+  ``Title.TLabel`` / ``Heading.TLabel`` / ``Body.TLabel`` /
+  ``Primary.TButton`` configures are unaffected — they were already
+  named styles).
+
+#### Files
+
+- ``modules/domain/academics/course_evaluation/course_evaluation_system.py``
+- ``modules/domain/academics/course_evaluation/lecturer_evaluation.py``
+- ``modules/domain/academics/course_evaluation/module_evaluation_portal.py``
 
 ---
 

@@ -407,17 +407,17 @@ class StudentDashboard:
         table_frame.pack(fill="both", expand=True)
 
         style = ttk.Style()
-        style.configure("Treeview",
+        style.configure("Lecturer.Treeview",
                         background=Theme.CARD, fieldbackground=Theme.CARD,
                         foreground=Theme.TEXT, rowheight=32,
                         font=Theme.FONT_BODY, borderwidth=0)
-        style.configure("Treeview.Heading",
+        style.configure("Lecturer.Treeview.Heading",
                         background=Theme.HEADER_BG, foreground="white",
                         font=Theme.FONT_BOLD, relief="flat", padding=8)
-        style.map("Treeview", background=[("selected", Theme.SECONDARY)])
+        style.map("Lecturer.Treeview", background=[("selected", Theme.SECONDARY)])
 
         cols = ("code", "name", "department", "semester", "status")
-        self.tree = ttk.Treeview(table_frame, columns=cols, show="headings", height=14)
+        self.tree = ttk.Treeview(table_frame, columns=cols, show="headings", height=14, style="Lecturer.Treeview")
 
         widths = {"code": 110, "name": 320, "department": 200,
                   "semester": 160, "status": 130}
@@ -667,15 +667,15 @@ class AdminDashboard:
                  font=Theme.FONT_BODY).pack(side="right", padx=25, pady=22)
 
         style = ttk.Style()
-        style.configure("TNotebook", background=Theme.BG, borderwidth=0)
-        style.configure("TNotebook.Tab", padding=(18, 10),
+        style.configure("Lecturer.TNotebook", background=Theme.BG, borderwidth=0)
+        style.configure("Lecturer.TNotebook.Tab", padding=(18, 10),
                         font=Theme.FONT_BOLD, background=Theme.BORDER,
                         foreground=Theme.TEXT)
-        style.map("TNotebook.Tab",
+        style.map("Lecturer.TNotebook.Tab",
                   background=[("selected", Theme.CARD)],
                   foreground=[("selected", Theme.PRIMARY)])
 
-        self.nb = ttk.Notebook(self.root)
+        self.nb = ttk.Notebook(self.root, style="Lecturer.TNotebook")
         self.nb.pack(fill="both", expand=True, padx=20, pady=15)
 
         self.tab_reports   = tk.Frame(self.nb, bg=Theme.BG)
