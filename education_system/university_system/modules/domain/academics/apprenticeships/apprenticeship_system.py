@@ -1062,10 +1062,6 @@ class ApprenticeshipApp(tk.Tk):
 
         # Style
         style = ttk.Style()
-        try:
-            style.theme_use("clam")
-        except Exception:
-            pass
 
         # Menu bar — only on Tk/Toplevel hosts (Frames don't accept
         # ``config(menu=…)``). The "Load Sample Data" / "About"

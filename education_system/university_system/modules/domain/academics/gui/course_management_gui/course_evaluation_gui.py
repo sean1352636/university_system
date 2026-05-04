@@ -36,12 +36,6 @@ class CourseEvaluationGUI:
         self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
         self.root.minsize(1200, 800)
         self.root.configure(bg='#f0f0f0')
-        # Inherit the main GUI's ttk theme so frames, notebooks, labels
-        # and buttons render with the same palette as the rest of the app.
-        try:
-            ttk.Style().theme_use('clam')
-        except tk.TclError:
-            pass
         self.auth = auth
 
         # Initialize database

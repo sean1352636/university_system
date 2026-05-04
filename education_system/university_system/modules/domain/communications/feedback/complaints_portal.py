@@ -500,7 +500,6 @@ class ComplaintsPortal(tk.Tk):
 
     def _configure_styles(self):
         style = ttk.Style(self._host)
-        style.theme_use("clam")
         style.configure("TNotebook", background="#f0f4f8", borderwidth=0)
         style.configure("TNotebook.Tab", padding=[20, 10], font=("Segoe UI", 10, "bold"))
         style.map("TNotebook.Tab",

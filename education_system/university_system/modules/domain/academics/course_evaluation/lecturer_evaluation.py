@@ -407,7 +407,6 @@ class StudentDashboard:
         table_frame.pack(fill="both", expand=True)
 
         style = ttk.Style()
-        style.theme_use("clam")
         style.configure("Treeview",
                         background=Theme.CARD, fieldbackground=Theme.CARD,
                         foreground=Theme.TEXT, rowheight=32,
@@ -668,7 +667,6 @@ class AdminDashboard:
                  font=Theme.FONT_BODY).pack(side="right", padx=25, pady=22)
 
         style = ttk.Style()
-        style.theme_use("clam")
         style.configure("TNotebook", background=Theme.BG, borderwidth=0)
         style.configure("TNotebook.Tab", padding=(18, 10),
                         font=Theme.FONT_BOLD, background=Theme.BORDER,

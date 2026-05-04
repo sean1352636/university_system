@@ -326,7 +326,6 @@ class BakeryShop:
 
         # ----- Tab system -----
         style = ttk.Style()
-        style.theme_use("default")
         style.configure(
             "TNotebook",
             background=self.colors["background"],

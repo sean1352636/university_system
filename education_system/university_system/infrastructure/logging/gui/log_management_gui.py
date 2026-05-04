@@ -80,9 +80,6 @@ class LogManagementGUI(
                 command=self.return_to_main_menu
             ).place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
 
-        style = ttk.Style()
-        style.theme_use('clam')
-
         if not self.embedded:
             self.setup_menu()
 

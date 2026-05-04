@@ -396,7 +396,6 @@ class TrainStationApp:
     def setup_styles(self):
         """Configure ttk styles"""
         style = ttk.Style()
-        style.theme_use("clam")
 
         # Button styles
         style.configure("Primary.TButton",

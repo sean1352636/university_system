@@ -1194,10 +1194,6 @@ class BuildingManagementApp:
         self.root.title("Building Management")
         self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
         self.root.minsize(1200, 800)
-        try:
-            ttk.Style().theme_use("clam")
-        except Exception:
-            pass
         self._build_header()
         self._build_notebook()
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)

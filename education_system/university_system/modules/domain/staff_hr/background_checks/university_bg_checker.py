@@ -671,11 +671,6 @@ class BGCheckerApp(tk.Tk):
         try:
             style = ttk.Style(self._host)
             style.configure(".", font=("TkDefaultFont", self.font_size))
-            # Always use clam — main_gui.py uses clam, and swapping the
-            # global ttk theme to "default" in light mode (pre-8.117.67)
-            # made the BG Checker visually disconnect from every other
-            # workspace tab.
-            style.theme_use("clam")
             if self.dark_mode:
                 style.configure("Treeview", background="#333", foreground=fg, fieldbackground="#333")
                 style.configure("TLabel", background=bg, foreground=fg)

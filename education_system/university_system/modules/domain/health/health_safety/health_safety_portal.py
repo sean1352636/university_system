@@ -412,7 +412,6 @@ class HealthSafetyPortal:
         # red/green fills because they're meaningful state buttons,
         # not chrome.
         style = ttk.Style()
-        style.theme_use("clam")
 
         style.configure("TButton",
                        padding=10,

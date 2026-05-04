@@ -110,7 +110,6 @@ class CinemaApp:
     def setup_styles(self):
         """Configure ttk styles to match university system."""
         style = ttk.Style()
-        style.theme_use('clam')
 
         # Sidebar styles
         style.configure('Sidebar.TFrame', background='#2c3e50')

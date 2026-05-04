@@ -347,10 +347,6 @@ class PlacementTrackerApp:
 
     def _configure_styles(self):
         style = ttk.Style()
-        try:
-            style.theme_use("clam")
-        except tk.TclError:
-            pass
         style.configure("Header.TLabel", font=("Segoe UI", 14, "bold"))
         style.configure("SubHeader.TLabel", font=("Segoe UI", 10, "bold"))
         style.configure("Stat.TLabel", font=("Segoe UI", 11, "bold"))

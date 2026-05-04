@@ -238,10 +238,6 @@ class BankApp:
 
         # Configure style
         self.style = ttk.Style()
-        try:
-            self.style.theme_use('clam')
-        except Exception:
-            pass
 
         # Custom styles
         self.style.configure("Title.TLabel", font=("Helvetica", 24, "bold"))

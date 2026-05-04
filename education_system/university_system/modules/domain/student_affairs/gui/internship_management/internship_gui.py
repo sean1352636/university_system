@@ -41,7 +41,6 @@ class InternshipGUI(
 
         # Style configuration
         self.style = ttk.Style()
-        self.style.theme_use('clam')
 
         # Configure colors
         self.style.configure('Title.TLabel', font=('Arial', 16, 'bold'), foreground='#2c3e50')

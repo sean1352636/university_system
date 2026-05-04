@@ -330,7 +330,6 @@ class RestaurantManagementGUI:
     def setup_styles(self):
         """Set up custom styles for the GUI"""
         style = ttk.Style()
-        style.theme_use('clam')
 
         style.configure('Title.TLabel', font=('Arial', 16, 'bold'), background='#f0f0f0')
         style.configure('Heading.TLabel', font=('Arial', 12, 'bold'), background='#f0f0f0')

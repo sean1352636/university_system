@@ -769,7 +769,6 @@ class StudentUnionGUI:
         """Setup the main GUI structure with sidebar navigation"""
         # Configure style
         style = ttk.Style()
-        style.theme_use('clam')
 
         # Configure colors for sidebar
         style.configure('Sidebar.TFrame', background='#2c3e50')

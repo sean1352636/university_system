@@ -661,7 +661,6 @@ class DisciplinaryPortal:
     def setup_styles(self):
         """Configure ttk widget styles."""
         style = ttk.Style()
-        style.theme_use('clam')
 
         style.configure('Treeview',
                         background=self.COLORS['card'],

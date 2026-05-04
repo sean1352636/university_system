@@ -1114,7 +1114,6 @@ class AdvancedSearchGUI:
     def setup_styles(self):
         """Configure ttk styles for better appearance"""
         style = ttk.Style()
-        style.theme_use('clam')
 
         # Configure custom styles
         style.configure('Header.TLabel', font=('Arial', 14, 'bold'), background='#f0f0f0')

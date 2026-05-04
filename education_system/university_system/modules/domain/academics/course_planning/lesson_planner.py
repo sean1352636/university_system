@@ -156,7 +156,6 @@ class LessonPlannerApp:
 
     def _setup_styles(self):
         style = ttk.Style()
-        style.theme_use("clam")
 
         style.configure("TNotebook", background="#f0f0f0", borderwidth=0)
         style.configure("TNotebook.Tab", padding=[18, 8], font=("Segoe UI", 10))

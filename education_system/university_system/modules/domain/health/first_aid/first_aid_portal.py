@@ -325,7 +325,6 @@ class FirstAidPortal:
 
     def _setup_styles(self):
         style = ttk.Style()
-        style.theme_use("clam")
         style.configure("TNotebook", background=self.colors["bg"], borderwidth=0)
         style.configure(
             "TNotebook.Tab",

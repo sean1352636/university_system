@@ -244,10 +244,6 @@ class StudentCouncilSystem:
 
     def setup_styles(self):
         style = ttk.Style()
-        try:
-            style.theme_use("clam")
-        except tk.TclError:
-            pass
         style.configure("TNotebook", background="#f0f4f8", borderwidth=0)
         style.configure(
             "TNotebook.Tab", padding=[20, 10],

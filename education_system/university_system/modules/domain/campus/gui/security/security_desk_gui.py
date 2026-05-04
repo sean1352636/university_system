@@ -707,7 +707,6 @@ class SecurityDesk:
 
     def setup_styles(self):
         style = ttk.Style()
-        style.theme_use('clam')
 
         style.configure('Dark.TFrame', background=COLORS['bg_dark'])
         style.configure('Panel.TFrame', background=COLORS['bg_panel'])

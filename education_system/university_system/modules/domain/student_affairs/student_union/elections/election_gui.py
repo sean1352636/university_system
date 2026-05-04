@@ -196,7 +196,6 @@ MUTED = "#64748b"
 
 def setup_styles():
     style = ttk.Style()
-    style.theme_use("clam")
 
     style.configure("TFrame", background=BG)
     style.configure("Card.TFrame", background=CARD, relief="flat")

@@ -404,10 +404,6 @@ class SafeguardingApp(tk.Tk):
 
         # ttk theming
         style = ttk.Style(self._host)
-        try:
-            style.theme_use("clam")
-        except tk.TclError:
-            pass
         style.configure("TButton", padding=6)
         style.configure("Header.TLabel",
                         font=("Segoe UI", 16, "bold"),

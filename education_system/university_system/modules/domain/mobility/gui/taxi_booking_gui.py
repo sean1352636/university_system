@@ -391,7 +391,6 @@ TaxiGo - {_t("taxi.subtitle")}
     def configure_styles(self):
         """Configure ttk styles"""
         style = ttk.Style()
-        style.theme_use('clam')
 
         # Configure Treeview
         style.configure("Custom.Treeview",

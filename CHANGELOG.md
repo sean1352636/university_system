@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.72 — 2026-05-04](#811772---2026-05-04)
 - [8.117.71 — 2026-05-03](#811771---2026-05-03)
 - [8.117.70 — 2026-05-03](#811770---2026-05-03)
 - [8.117.69 — 2026-05-03](#811769---2026-05-03)
@@ -298,6 +299,86 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.72] — 2026-05-04
+
+### Fixed — Child GUIs no longer re-theme the entire main GUI window
+
+41 child GUI components (Course Evaluation, Lecturer Evaluation,
+Module Evaluation Portal, Lesson Planner, Apprenticeship System,
+Placement Tracker, Absence Tracker, Disciplinary Portal, Risk
+Management, Health Portal, Health & Safety Portal, First Aid Portal,
+Finance Reporting, Bank App, Bakery Shop, Restaurant, Cinema,
+Security Desk + tabs, Building Management, Charity Shop, Integration
+Marketplace, Student Council, Elections, Student Union, Internship
+Management, Wellbeing Intervention, Safeguarding, Background
+Checker, Taxi/Train/Mobile/Trip Mobility GUIs, Research Portal,
+Email Manager, Advanced Search, Student Analytics, Parent Portal
+Wrapper, Complaints Portal, Log Management, Course Management's
+Course Evaluation GUI) were each calling ``ttk.Style().theme_use(...)``
+during their setup. ``ttk.Style`` is a process-global singleton, and
+``theme_use(...)`` re-applies theme defaults across every ttk widget
+in the Tk root — wiping out the custom ``style.configure(...)`` setup
+that ``main_gui.py`` had registered (font sizes, label/button colours,
+notebook tab padding, treeview row heights). The result, reported
+on Course Evaluation, was that opening any of these features
+visibly changed the entire main GUI's colours and fonts.
+
+Each call has been removed; subsequent ``style.configure(...)`` /
+``style.map(...)`` calls in those files are preserved so the
+component's own named styles still apply. The four root windows
+(``main_gui``, ``staff_portal``, ``student_portal``,
+``instructor_portal``) keep their ``theme_use('clam')`` since they
+own the app theme, and components that already used the
+save-then-restore-on-``<Destroy>`` pattern (exam_management,
+attendance_tracker, blockchain_credentials, library, ai_detector,
+academic_calendar, assignment_system, parent_portal) are untouched.
+
+#### Files
+
+- ``modules/domain/academics/gui/course_management_gui/course_evaluation_gui.py``
+- ``modules/domain/academics/course_evaluation/course_evaluation_system.py``
+- ``modules/domain/academics/course_evaluation/lecturer_evaluation.py``
+- ``modules/domain/academics/course_evaluation/module_evaluation_portal.py``
+- ``modules/domain/academics/course_planning/lesson_planner.py``
+- ``modules/domain/academics/apprenticeships/apprenticeship_system.py``
+- ``modules/domain/academics/placements/placement_tracker.py``
+- ``modules/domain/academics/services/attendance/absence_tracking/absence_tracker.py``
+- ``modules/domain/legal/disciplinary/disciplinary_portal.py``
+- ``modules/domain/legal/risk_management/university_risk_management.py``
+- ``modules/domain/health/gui/health_portal/ui_framework.py``
+- ``modules/domain/health/health_safety/health_safety_portal.py``
+- ``modules/domain/health/first_aid/first_aid_portal.py``
+- ``modules/domain/finance/gui/finance_reporting/main.py``
+- ``modules/domain/finance/gui/bank_app.py``
+- ``modules/domain/commerce/bakery_shop/bakery_shop.py``
+- ``modules/domain/commerce/gui/restaurant_management_gui/core/main_gui.py``
+- ``modules/domain/commerce/cinema/gui/cinema_gui/core/main_gui.py``
+- ``modules/domain/campus/gui/security/tabs/_base.py``
+- ``modules/domain/campus/gui/security/security_desk_gui.py``
+- ``modules/domain/campus/building_management/building_management_app.py``
+- ``modules/services/gui/charity_shop_gui/charity_shop_gui.py``
+- ``modules/services/gui/integration_marketplace_gui/main.py``
+- ``modules/domain/student_affairs/student_union/student_council.py``
+- ``modules/domain/student_affairs/student_union/elections/election_gui.py``
+- ``modules/domain/student_affairs/gui/student_union_gui/core/main_gui.py``
+- ``modules/domain/student_affairs/gui/internship_management/internship_gui.py``
+- ``modules/domain/student_affairs/student_wellbeing/intervention_support.py``
+- ``modules/domain/student_affairs/safeguarding/safeguarding_system.py``
+- ``modules/domain/staff_hr/background_checks/university_bg_checker.py``
+- ``modules/domain/mobility/gui/taxi_booking_gui.py``
+- ``modules/domain/mobility/gui/train_station_gui.py``
+- ``modules/domain/mobility/gui/mobile_app_pwa_gui.py``
+- ``modules/domain/mobility/gui/trip_management_gui/main_gui.py``
+- ``modules/domain/research/services/university_research.py``
+- ``modules/domain/communications/feedback/complaints_portal.py``
+- ``modules/shared/gui/student_analytics_gui/student_analytics_gui.py``
+- ``modules/shared/gui/main/parent_portal_wrapper.py``
+- ``modules/shared/gui/email/email_gui/email_manager_main.py``
+- ``modules/shared/gui/advanced_search/base.py``
+- ``infrastructure/logging/gui/log_management_gui.py``
 
 ---
 

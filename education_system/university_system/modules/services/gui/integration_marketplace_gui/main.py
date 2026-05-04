@@ -122,9 +122,6 @@ class IntegrationMarketplaceGUI(
         """Configure ttk styles to match main_gui.py standards"""
         style = ttk.Style()
 
-        # Use clam theme like main_gui.py
-        style.theme_use('clam')
-
         # Header styling (matching main_gui.py)
         style.configure('Header.TLabel',
                        font=('Arial', 18, 'bold'))

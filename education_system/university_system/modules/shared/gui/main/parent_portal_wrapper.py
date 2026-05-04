@@ -28,9 +28,6 @@ class ParentPortalWrapper:
         self.root.geometry("1400x900")
         self.root.minsize(1200, 800)
 
-        style = ttk.Style()
-        style.theme_use('clam')
-
         self._build_header()
         self._launch_portal()
 

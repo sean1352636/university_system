@@ -281,7 +281,6 @@ class CourseEvaluationApp:
 
     def setup_styles(self):
         style = ttk.Style()
-        style.theme_use("clam")
         style.configure("TNotebook", background="#f0f0f0", borderwidth=0)
         style.configure("TNotebook.Tab", padding=[20, 10],
                         font=("Arial", 10, "bold"))

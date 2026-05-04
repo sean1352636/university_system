@@ -626,11 +626,6 @@ class RiskApp(tk.Tk):
 
     def _configure_style(self):
         style = ttk.Style(self)
-        # Use a theme that respects custom background colours on Treeview rows
-        try:
-            style.theme_use("clam")
-        except tk.TclError:
-            pass
         style.configure("Treeview", rowheight=26, font=("Segoe UI", 10))
         style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
         style.configure("Dashboard.TLabel", font=("Segoe UI", 11))

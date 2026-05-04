@@ -382,7 +382,6 @@ class ModuleEvaluationPortal:
 
     def setup_styles(self):
         style = ttk.Style()
-        style.theme_use("clam")
         style.configure("Title.TLabel", font=("Helvetica", 20, "bold"),
                         background="#f0f0f0", foreground="#000000")
         style.configure("Heading.TLabel", font=("Helvetica", 14, "bold"),

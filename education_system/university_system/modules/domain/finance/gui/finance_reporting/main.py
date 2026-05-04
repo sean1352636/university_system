@@ -120,9 +120,6 @@ class FinancialManagementGUI:
         """Configure ttk styles to match main_gui.py standards"""
         self.style = ttk.Style()
 
-        # Use clam theme like main_gui.py
-        self.style.theme_use('clam')
-
         # Header styling (matching main_gui.py)
         self.style.configure('Header.TLabel',
                             font=('Arial', 18, 'bold'))

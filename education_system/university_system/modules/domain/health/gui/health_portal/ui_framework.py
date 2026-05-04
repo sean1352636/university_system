@@ -10,7 +10,6 @@ class UIFrameworkMixin:
     def setup_styles(self):
         """Configure ttk styles for the application"""
         style = ttk.Style()
-        style.theme_use('clam')
 
         style.configure('Title.TLabel', font=('Arial', 16, 'bold'), background='#f0f0f0')
         style.configure('Heading.TLabel', font=('Arial', 12, 'bold'), background='#f0f0f0')

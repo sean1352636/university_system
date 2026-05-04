@@ -31,7 +31,6 @@ class BaseMixin:
     def setup_styles(self):
         """Configure ttk styles"""
         self.style = ttk.Style()
-        self.style.theme_use('clam')
 
         # Colors
         self.colors = {

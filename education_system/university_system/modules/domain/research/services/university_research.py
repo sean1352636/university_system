@@ -433,10 +433,6 @@ def configure_styles():
     # the whole main window. Base styles now stay on clam defaults;
     # only the Research.* named styles are touched.
     style = ttk.Style()
-    try:
-        style.theme_use("clam")
-    except tk.TclError:
-        pass
 
     style.configure("Panel.TFrame", background=PALETTE["panel"])
     style.configure("Header.TFrame", background=PALETTE["header"])

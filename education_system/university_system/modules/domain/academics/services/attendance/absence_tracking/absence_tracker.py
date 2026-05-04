@@ -656,10 +656,6 @@ class BaseDashboard:
         # Card frame / electric-blue Accent button overrides; let
         # clam defaults match the rest of the main GUI.
         style = ttk.Style()
-        try:
-            style.theme_use("clam")
-        except tk.TclError:
-            pass
         style.configure(
             "Treeview", rowheight=28, font=("Arial", 10),
         )

@@ -453,7 +453,6 @@ def main():
 
     # Configure style
     style = ttk.Style()
-    style.theme_use("clam")
 
     app = CharityShopApp(root)
     root.mainloop()

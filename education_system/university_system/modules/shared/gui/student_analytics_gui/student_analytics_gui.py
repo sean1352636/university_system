@@ -68,7 +68,6 @@ class GUIStudentAnalytics(
     def setup_styles(self):
         """Configure the GUI styling"""
         style = ttk.Style()
-        style.theme_use('clam')
 
         # Configure custom styles
         style.configure('Title.TLabel', font=('Arial', 16, 'bold'))

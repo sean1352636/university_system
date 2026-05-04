@@ -147,7 +147,6 @@ class InterventionSupportSystem:
 
     def setup_styles(self):
         style = ttk.Style()
-        style.theme_use("clam")
 
         style.configure("Header.TLabel",
                         font=("Segoe UI", 18, "bold"),

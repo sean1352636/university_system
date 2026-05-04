@@ -354,7 +354,6 @@ class EmailManagerGUI:
 
         # Configure style
         style = ttk.Style()
-        style.theme_use('clam')
 
         # Configure Treeview selection highlighting
         style.map('Treeview',
