@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.73 — 2026-05-04](#811773---2026-05-04)
 - [8.117.72 — 2026-05-04](#811772---2026-05-04)
 - [8.117.71 — 2026-05-03](#811771---2026-05-03)
 - [8.117.70 — 2026-05-03](#811770---2026-05-03)
@@ -299,6 +300,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.73] — 2026-05-04
+
+### Changed — README slimmed; stale package version markers refreshed
+
+`README.md` cut from 748 → 388 lines (48% smaller). Removed five
+sections that duplicated content already living elsewhere:
+
+- **Default Accounts** (40 lines, 5 credential tables) → moved to
+  `docs/reference/DEFAULT_ACCOUNTS.md`; warning callout in Quick
+  Start now links to it.
+- **Makefile Targets** trimmed from 18 to the 5 most-used commands;
+  points to `make help` for the rest.
+- **Architecture Decision Records** (14-row table) collapsed to a
+  one-line link to `docs/adr/README.md`.
+- **Per-system documentation** (~290 lines, four ``<details>``
+  blocks listing every guide for University / College / Secondary /
+  Primary) collapsed to a single 4-row table linking to each
+  system's own docs index.
+- **What's New** (55-line release-note dump for 8.77.0–8.104.0)
+  replaced with a 2-line pointer to ``CHANGELOG.md`` — was already
+  drifting from the canonical changelog.
+
+Five stale top-level package version markers refreshed to
+``8.117.72`` (the last released version):
+
+- ``pyproject.toml``: ``8.70.0`` → ``8.117.72``
+- ``education_system/university_system/__init__.py``: ``8.63.0``
+- ``education_system/university_system/infrastructure/__init__.py``: ``8.63.0``
+- ``education_system/university_system/modules/shared/cli/__init__.py``: ``8.63.0``
+- ``education_system/university_system/modules/services/__init__.py``: ``8.60.0``
+
+Sub-module ``__version__ = '1.0.0'`` markers in ``social_matching``,
+``financial_aid``, ``campus_navigation`` and ``study_matching`` left
+alone — they track per-module semver, not the monorepo release.
+``integration_marketplace_gui/search.py``'s hardcoded
+``system_version = "5.0.0"`` fallback also left alone — it gates
+integration compatibility matching, so bumping it without auditing
+the marketplace's compatibility-tag data would risk silent breakage.
+
+#### Files
+
+- ``README.md`` — see above.
+- ``docs/reference/DEFAULT_ACCOUNTS.md`` — new file holding the
+  pre-seeded dev credentials for all four systems.
+- ``pyproject.toml``, ``education_system/university_system/__init__.py``,
+  ``education_system/university_system/infrastructure/__init__.py``,
+  ``education_system/university_system/modules/shared/cli/__init__.py``,
+  ``education_system/university_system/modules/services/__init__.py``
+  — version markers updated.
 
 ---
 

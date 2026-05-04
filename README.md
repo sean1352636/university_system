@@ -51,7 +51,7 @@ make lint                  # Check code quality
 ```
 
 > **Warning**
-> Default login: `admin` / `admin123` — change immediately in production! See the [default accounts table](#default-accounts) for the full list of pre-configured users.
+> Default login: `admin` / `admin123` — change immediately in production. See [Default Accounts](docs/reference/DEFAULT_ACCOUNTS.md) for the full list of pre-configured users across all four systems.
 
 ---
 
@@ -223,67 +223,18 @@ The API is accessible from other devices on the network. Configure `API_HOST` an
 
 ### Default Accounts
 
-**Superadmin (cross-system)**
-
-| Username | Password | Role |
-|----------|----------|------|
-| `superadmin` | `SuperAdmin@123` | Admin across university, college, secondary, and primary |
-
-**University**
-
-| Username | Password | Role |
-|----------|----------|------|
-| `admin` | `admin123` | Admin |
-| `staff` | `staff123` | Staff |
-| `S12345` | `student123` | Student |
-
-**Sixth Form College**
-
-| Username | Password | Role |
-|----------|----------|------|
-| `admin1` | `admin1234` | Admin |
-| `staff1` | `staff1234` | Staff |
-| `student1` | `student1234` | Student |
-
-**Secondary School**
-
-| Username | Password | Role |
-|----------|----------|------|
-| `admin2` | `admin1234` | Admin |
-| `staff2` | `staff1234` | Staff |
-| `student2` | `student1234` | Student |
-
-**Primary School**
-
-| Username | Password | Role |
-|----------|----------|------|
-| `admin3` | `admin1234` | Admin |
-| `staff3` | `staff1234` | Staff |
-| `student3` | `student1234` | Student |
-
-After 5 failed login attempts an account is locked for 15 minutes — sign in as the system admin and use the admin panel to clear the lockout. Change these passwords immediately in any non-development environment.
+See [docs/reference/DEFAULT_ACCOUNTS.md](docs/reference/DEFAULT_ACCOUNTS.md) for pre-seeded dev credentials across all four systems. Change every password before any non-development deployment.
 
 ### Makefile Targets
 
+Run `make help` for the full list. Common ones:
+
 ```bash
-make help              # Show all available targets
-make install           # Install production dependencies
-make install-dev       # Install dev dependencies
 make run               # Interactive launcher
-make run-gui           # Launch GUI mode
-make run-api           # Start API server
 make test              # Run all tests
-make test-cov          # Tests with coverage report
-make test-university   # University tests only
-make test-college      # College tests only
-make lint              # Lint code (Ruff)
-make format            # Format code (Black + isort)
-make type-check        # Run mypy
+make format            # Format (Black + isort)
+make lint              # Lint (Ruff)
 make check             # Lint + tests
-make security-scan     # Bandit security scan
-make seed              # Seed databases with demo data
-make clean             # Remove cache and build artifacts
-make docker-build      # Build Docker image
 ```
 
 ---
@@ -361,22 +312,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 ### Architecture Decision Records
 
-| ADR | Description |
-|-----|-------------|
-| [ADR Index](docs/adr/README.md) | All 12 architecture decisions |
-| [ADR-0001](docs/adr/0001-unified-flask-server.md) | Unified Flask server |
-| [ADR-0002](docs/adr/0002-shared-authentication.md) | Shared authentication |
-| [ADR-0003](docs/adr/0003-sqlite-per-system.md) | SQLite per-system databases |
-| [ADR-0004](docs/adr/0004-spa-vanilla-js.md) | Vanilla JS SPA |
-| [ADR-0005](docs/adr/0005-service-layer-pattern.md) | Service layer pattern |
-| [ADR-0006](docs/adr/0006-domain-driven-module-structure.md) | Domain-driven module structure |
-| [ADR-0007](docs/adr/0007-multi-interface-architecture.md) | Multi-interface architecture |
-| [ADR-0008](docs/adr/0008-graphql-api.md) | GraphQL API |
-| [ADR-0009](docs/adr/0009-websocket-realtime.md) | WebSocket real-time features |
-| [ADR-0010](docs/adr/0010-multi-tenancy.md) | Multi-tenancy |
-| [ADR-0011](docs/adr/0011-data-retention-gdpr.md) | GDPR data retention |
-| [ADR-0012](docs/adr/0012-centralized-structured-logging.md) | Centralized structured logging |
-| [ADR Template](docs/adr/template.md) | Template for new ADRs |
+All 12 ADRs are listed in [docs/adr/README.md](docs/adr/README.md).
 
 ### Shared Infrastructure Docs
 
@@ -404,318 +340,22 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, commit format, PR proc
 
 ---
 
-### University System Docs
+### Per-System Documentation
 
-<details>
-<summary>Click to expand — 60+ guides</summary>
+Each subsystem has its own docs index covering setup, security, infrastructure, and per-domain user guides:
 
-**Overview**
-
-| Document | Description |
-|----------|-------------|
-| [University README](docs/university_system/README.md) | University system overview |
-| [Quick Start](docs/university_system/QUICK_START.md) | Getting started guide |
-| [Troubleshooting](docs/university_system/TROUBLESHOOTING.md) | Common issues |
-| [Technical Reference](docs/university_system/technical_reference.md) | Technical specifications |
-| [Modules Index](docs/university_system/modules/README.md) | All domain modules |
-| [Guides Index](docs/university_system/guides/README.md) | All user guides |
-
-**Security**
-
-| Document | Description |
-|----------|-------------|
-| [Security Overview](docs/university_system/security/SECURITY.md) | Security architecture |
-| [Authentication](docs/university_system/security/AUTHENTICATION.md) | Auth system details |
-| [Auth Quick Reference](docs/university_system/security/AUTH_QUICK_REFERENCE.md) | Auth cheat sheet |
-| [MFA Quick Start](docs/university_system/security/MFA_QUICK_START.md) | MFA setup guide |
-| [MFA Documentation](docs/university_system/security/MFA_SYSTEM_DOCUMENTATION.md) | Full MFA docs |
-| [Security Integration](docs/university_system/security/SECURITY_INTEGRATION_GUIDE.md) | Security integration guide |
-
-**Infrastructure**
-
-| Document | Description |
-|----------|-------------|
-| [Database](docs/university_system/infrastructure/DATABASE.md) | Database architecture |
-| [Transactions](docs/university_system/infrastructure/TRANSACTIONS.md) | Transaction handling |
-| [Email Scheduler](docs/university_system/infrastructure/EMAIL_SCHEDULER.md) | Email scheduling |
-| [Admin Monitoring](docs/university_system/infrastructure/ADMIN_MONITORING_GUIDE.md) | Admin dashboard monitoring |
-| [CLI Integration](docs/university_system/infrastructure/CLI_INTEGRATION_SUMMARY.md) | CLI module integration |
-| [Enhancements](docs/university_system/infrastructure/ENHANCEMENTS_GUIDE.md) | Infrastructure improvements |
-| [Implementation Summary](docs/university_system/infrastructure/IMPLEMENTATION_SUMMARY.md) | Implementation details |
-
-**Development**
-
-| Document | Description |
-|----------|-------------|
-| [Development Guide](docs/university_system/development/README.md) | Developer setup |
-| [Adding Modules](docs/university_system/development/ADDING_MODULES.md) | How to add new modules |
-| [API Guide](docs/university_system/development/API.md) | REST API development |
-| [Testing Guide](docs/university_system/development/TESTING_GUIDE.md) | Testing practices |
-| [Exception Handling](docs/university_system/development/EXCEPTION_HANDLING.md) | Error handling patterns |
-| [Migration Guide](docs/university_system/development/MIGRATION_GUIDE.md) | Database migrations |
-
-**AI & ML**
-
-| Document | Description |
-|----------|-------------|
-| [AI Dependencies](docs/university_system/ai/AI_DEPENDENCIES.md) | AI/ML library setup |
-| [Voice Features](docs/university_system/ai/VOICE_FEATURES.md) | Speech-to-text, TTS |
-
-**Academic Guides**
-
-| Document | Description |
-|----------|-------------|
-| [Academic Calendar](docs/university_system/guides/academics/academic-calendar.md) | Calendar management |
-| [AI Detector](docs/university_system/guides/academics/AI_DETECTOR_GUIDE.md) | AI content detection |
-| [Assignments](docs/university_system/guides/academics/ASSIGNMENT_SYSTEM_GUIDE.md) | Assignment system |
-| [Attendance Tracking](docs/university_system/guides/academics/attendance-tracking.md) | Attendance system |
-| [Blockchain Credentials](docs/university_system/guides/academics/BLOCKCHAIN_CREDENTIALS_GUIDE.md) | Credential verification |
-| [Course Management](docs/university_system/guides/academics/COURSE_MANAGEMENT_GUIDE.md) | Course CRUD |
-| [Degree Audit](docs/university_system/guides/academics/DEGREE_AUDIT_GUIDE.md) | Degree progress tracking |
-| [Exam Scheduler](docs/university_system/guides/academics/EXAM_SCHEDULER_GUIDE.md) | Exam scheduling |
-| [Grade Tracking](docs/university_system/guides/academics/GRADE_TRACKING_GUIDE.md) | Grading system |
-| [Library Management](docs/university_system/guides/academics/library-management.md) | Library system |
-| [Module Scheduling](docs/university_system/guides/academics/module-scheduling.md) | Timetable scheduling |
-| [Plagiarism Detection](docs/university_system/guides/academics/PLAGIARISM_DETECTION_GUIDE.md) | Plagiarism checker |
-| [Research Grants](docs/university_system/guides/academics/RESEARCH_GRANTS_GUIDE.md) | Grant management |
-| [Virtual Classroom](docs/university_system/guides/academics/VIRTUAL_CLASSROOM_GUIDE.md) | Online classroom |
-
-**Administration Guides**
-
-| Document | Description |
-|----------|-------------|
-| [Accessibility Services](docs/university_system/guides/administration/ACCESSIBILITY_SERVICES_GUIDE.md) | Accessibility features |
-| [Activity Logger](docs/university_system/guides/administration/ACTIVITY_LOGGER_AUDIT_TRAIL_GUIDE.md) | Audit trail |
-| [Admissions CRM](docs/university_system/guides/administration/ADMISSIONS_CRM_GUIDE.md) | Admissions management |
-| [Advanced Search](docs/university_system/guides/administration/ADVANCED_SEARCH_ANALYTICS_GUIDE.md) | Search & analytics |
-| [Auth & MFA](docs/university_system/guides/administration/authentication-mfa.md) | Authentication guide |
-| [Dark Mode](docs/university_system/guides/administration/DARK_MODE_GUIDE.md) | Theme customisation |
-| [Database Management](docs/university_system/guides/administration/database-management.md) | DB admin |
-| [Data Encryption](docs/university_system/guides/administration/DATA_ENCRYPTION_GUIDE.md) | Encryption guide |
-| [Email Receipts](docs/university_system/guides/administration/EMAIL_RECEIPTS_GUIDE.md) | Email receipts |
-| [Email System Admin](docs/university_system/guides/administration/EMAIL_SYSTEM_ADMIN_GUIDE.md) | Email administration |
-| [Mobile App/PWA](docs/university_system/guides/administration/MOBILE_APP_PWA_GUIDE.md) | PWA features |
-| [Security Dashboard](docs/university_system/guides/administration/SECURITY_DASHBOARD_GUIDE.md) | Security monitoring |
-| [Staff CRUD](docs/university_system/guides/administration/STAFF_CRUD_GUIDE.md) | Staff management |
-
-**Campus Guides**
-
-| Document | Description |
-|----------|-------------|
-| [Campus Events](docs/university_system/guides/campus/CAMPUS_EVENTS_GUIDE.md) | Events management |
-| [Campus Navigation](docs/university_system/guides/campus/CAMPUS_NAVIGATION_GUIDE.md) | Campus map/navigation |
-| [Dentist](docs/university_system/guides/campus/DENTIST_GUIDE.md) | Dental services |
-| [Equipment Management](docs/university_system/guides/campus/EQUIPMENT_MANAGEMENT_GUIDE.md) | Equipment tracking |
-| [Facilities](docs/university_system/guides/campus/FACILITIES_MANAGEMENT_GUIDE.md) | Facilities management |
-| [Gym & Fitness](docs/university_system/guides/campus/GYM_FITNESS_GUIDE.md) | Gym booking |
-| [Health Portal](docs/university_system/guides/campus/HEALTH_PORTAL_GUIDE.md) | Health services |
-| [Housing](docs/university_system/guides/campus/housing-accommodation.md) | Student housing |
-| [Mail & Post](docs/university_system/guides/campus/MAIL_POST_GUIDE.md) | Mail services |
-| [Parking](docs/university_system/guides/campus/PARKING_MANAGEMENT_GUIDE.md) | Parking management |
-
-**Commerce Guides**
-
-| Document | Description |
-|----------|-------------|
-| [Barber Shop](docs/university_system/guides/commerce/BARBER_SHOP_GUIDE.md) | Barber booking |
-| [Bar/Cafe/Grocery/Takeaway](docs/university_system/guides/commerce/BAR_CAFE_GROCERY_TAKEAWAY_GUIDE.md) | Food & drink |
-| [Betting Shop](docs/university_system/guides/commerce/BETTING_SHOP_GUIDE.md) | Betting services |
-| [Butcher Shop](docs/university_system/guides/commerce/BUTCHER_SHOP_GUIDE.md) | Butcher shop |
-| [Car Rental](docs/university_system/guides/commerce/CAR_RENTAL_GUIDE.md) | Car rental |
-| [Cinema Booking](docs/university_system/guides/commerce/CINEMA_BOOKING_GUIDE.md) | Cinema reservations |
-| [Legal Services](docs/university_system/guides/commerce/LEGAL_SERVICES_GUIDE.md) | Legal support |
-| [Music Shop](docs/university_system/guides/commerce/MUSIC_SHOP_GUIDE.md) | Music shop |
-| [Nail Bar/Phone Shop](docs/university_system/guides/commerce/NAIL_BAR_PHONE_SHOP_GUIDE.md) | Services |
-| [Restaurant Management](docs/university_system/guides/commerce/RESTAURANT_MANAGEMENT_GUIDE.md) | Restaurant system |
-| [Restaurant Reports](docs/university_system/guides/commerce/RESTAURANT_REPORTS_GUIDE.md) | Restaurant analytics |
-| [Taxi/Train/Trip](docs/university_system/guides/commerce/TAXI_TRAIN_TRIP_GUIDE.md) | Transport booking |
-
-**Student Life Guides**
-
-| Document | Description |
-|----------|-------------|
-| [Alumni Management](docs/university_system/guides/student-life/ALUMNI_MANAGEMENT_GUIDE.md) | Alumni tracking |
-| [Budgeting & Portfolio](docs/university_system/guides/student-life/BUDGETING_PORTFOLIO_GUIDE.md) | Financial tools |
-| [Career Services](docs/university_system/guides/student-life/CAREER_SERVICES_GUIDE.md) | Career support |
-| [Early Warning](docs/university_system/guides/student-life/EARLY_WARNING_GUIDE.md) | At-risk student alerts |
-| [Finance Management](docs/university_system/guides/student-life/finance-management.md) | Student finance |
-| [Financial Aid](docs/university_system/guides/student-life/FINANCIAL_AID_GUIDE.md) | Financial aid |
-| [Helpdesk](docs/university_system/guides/student-life/HELPDESK_SUPPORT_GUIDE.md) | Support tickets |
-| [Lost & Found](docs/university_system/guides/student-life/LOST_FOUND_FEEDBACK_NOTIFICATIONS_GUIDE.md) | Lost items & feedback |
-| [Roommate Matching](docs/university_system/guides/student-life/ROOMMATE_SOCIAL_STUDY_MATCHING_GUIDE.md) | Social matching |
-| [Scholarship Finder](docs/university_system/guides/student-life/SCHOLARSHIP_FINDER_GUIDE.md) | Scholarship search |
-| [Student Jobs](docs/university_system/guides/student-life/STUDENT_JOBS_GUIDE.md) | Job board |
-| [Student Marketplace](docs/university_system/guides/student-life/STUDENT_MARKETPLACE_GUIDE.md) | Buy/sell marketplace |
-| [Student Union](docs/university_system/guides/student-life/STUDENT_UNION_GUIDE.md) | Union management |
-
-</details>
-
----
-
-### Sixth Form College Docs
-
-<details>
-<summary>Click to expand</summary>
-
-| Document | Description |
-|----------|-------------|
-| [College README](docs/college_system/README.md) | College system overview |
-| [Quick Start](docs/college_system/QUICK_START.md) | Getting started |
-| [Troubleshooting](docs/college_system/TROUBLESHOOTING.md) | Common issues |
-| **Development** | |
-| [Development Guide](docs/college_system/development/README.md) | Developer setup |
-| [Adding Modules](docs/college_system/development/ADDING_MODULES.md) | New module guide |
-| [API Guide](docs/college_system/development/API.md) | REST API development |
-| [Testing Guide](docs/college_system/development/TESTING_GUIDE.md) | Testing practices |
-| **Infrastructure** | |
-| [Authentication](docs/college_system/infrastructure/AUTHENTICATION.md) | Auth config |
-| [Configuration](docs/college_system/infrastructure/CONFIGURATION.md) | System config |
-| [Database](docs/college_system/infrastructure/DATABASE.md) | Database setup |
-| **Security** | |
-| [Security](docs/college_system/security/SECURITY.md) | Security overview |
-| [MFA Guide](docs/college_system/security/MFA_GUIDE.md) | MFA setup |
-| **User Guides** | |
-| [Academics](docs/college_system/guides/academics.md) | Academic management |
-| [Admissions](docs/college_system/guides/admissions.md) | Admissions process |
-| [Careers & Destinations](docs/college_system/guides/careers_destinations.md) | Career tracking |
-| [Communication](docs/college_system/guides/communication.md) | Messaging & email |
-| [Facilities](docs/college_system/guides/facilities.md) | Facility management |
-| [Finance & Funding](docs/college_system/guides/finance_funding.md) | Financial management |
-| [Quality Assurance](docs/college_system/guides/quality_assurance.md) | QA processes |
-| [Reporting](docs/college_system/guides/reporting.md) | Reports & exports |
-| [Staff Management](docs/college_system/guides/staff_management.md) | Staff admin |
-| [Student Support](docs/college_system/guides/student_support.md) | Student services |
-
-</details>
-
----
-
-### Secondary School Docs
-
-<details>
-<summary>Click to expand</summary>
-
-| Document | Description |
-|----------|-------------|
-| [Secondary README](docs/secondary_school/README.md) | Secondary system overview |
-| [Quick Start](docs/secondary_school/QUICK_START.md) | Getting started |
-| [Troubleshooting](docs/secondary_school/TROUBLESHOOTING.md) | Common issues |
-| **Development** | |
-| [Development Guide](docs/secondary_school/development/README.md) | Developer setup |
-| [Adding Modules](docs/secondary_school/development/ADDING_MODULES.md) | New module guide |
-| [API Guide](docs/secondary_school/development/API.md) | REST API development |
-| [Testing Guide](docs/secondary_school/development/TESTING_GUIDE.md) | Testing practices |
-| **Infrastructure** | |
-| [Authentication](docs/secondary_school/infrastructure/AUTHENTICATION.md) | Auth config |
-| [Configuration](docs/secondary_school/infrastructure/CONFIGURATION.md) | System config |
-| [Database](docs/secondary_school/infrastructure/DATABASE.md) | Database setup |
-| **Security** | |
-| [Security](docs/secondary_school/security/SECURITY.md) | Security overview |
-| [MFA Guide](docs/secondary_school/security/MFA_GUIDE.md) | MFA setup |
-| **User Guides** | |
-| [Academics](docs/secondary_school/guides/academics.md) | Academic management |
-| [Admin](docs/secondary_school/guides/admin.md) | Administration |
-| [Communication](docs/secondary_school/guides/communication.md) | Messaging & email |
-| [Facilities](docs/secondary_school/guides/facilities.md) | Facility management |
-| [Pastoral Care](docs/secondary_school/guides/pastoral_care.md) | Pastoral support |
-| [Staff Management](docs/secondary_school/guides/staff_management.md) | Staff admin |
-| [Student Life](docs/secondary_school/guides/student_life.md) | Student activities |
-
-</details>
-
----
-
-### Primary School Docs
-
-<details>
-<summary>Click to expand</summary>
-
-| Document | Description |
-|----------|-------------|
-| [Primary README](docs/primary_school/README.md) | Primary system overview |
-| [Quick Start](docs/primary_school/QUICK_START.md) | Getting started |
-| [Troubleshooting](docs/primary_school/TROUBLESHOOTING.md) | Common issues |
-| **Development** | |
-| [Development Guide](docs/primary_school/development/README.md) | Developer setup |
-| [Adding Modules](docs/primary_school/development/ADDING_MODULES.md) | New module guide |
-| [API Guide](docs/primary_school/development/API.md) | REST API development |
-| [Testing Guide](docs/primary_school/development/TESTING_GUIDE.md) | Testing practices |
-| **Infrastructure** | |
-| [Authentication](docs/primary_school/infrastructure/AUTHENTICATION.md) | Auth config |
-| [Configuration](docs/primary_school/infrastructure/CONFIGURATION.md) | System config |
-| [Database](docs/primary_school/infrastructure/DATABASE.md) | Database setup |
-| **Security** | |
-| [Security](docs/primary_school/security/SECURITY.md) | Security overview |
-| [MFA Guide](docs/primary_school/security/MFA_GUIDE.md) | MFA setup |
-| **User Guides** | |
-| [Academics](docs/primary_school/guides/academics.md) | Academic management |
-| [Admin](docs/primary_school/guides/admin.md) | Administration |
-| [Communication](docs/primary_school/guides/communication.md) | Messaging & email |
-| [Facilities](docs/primary_school/guides/facilities.md) | Facility management |
-| [Pastoral Care](docs/primary_school/guides/pastoral_care.md) | Pastoral support |
-| [Pupil Life](docs/primary_school/guides/pupil_life.md) | Pupil activities |
-| [Staff Management](docs/primary_school/guides/staff_management.md) | Staff admin |
-
-</details>
+| System | Docs Index |
+|--------|------------|
+| University | [docs/university_system/README.md](docs/university_system/README.md) |
+| Sixth Form College | [docs/college_system/README.md](docs/college_system/README.md) |
+| Secondary School | [docs/secondary_school/README.md](docs/secondary_school/README.md) |
+| Primary School | [docs/primary_school/README.md](docs/primary_school/README.md) |
 
 ---
 
 ## What's New
 
-### Cross-domain integration sweep (April 29, 2026)
-
-- **Assignment GUI ↔ 9 other domains.** New `assignment_system/integrations/` package with adapters for parent_portal, library, attendance, finance (late-submission fines via `record_payment_to_finance`), helpdesk (dispute-ticket escalation), legal (academic-integrity case creation), gradebook (`student_grades` sync so transcripts pick up assignment grades), KPI dashboard, and academic calendar (deadline mirroring). Hooks fire from existing managers (submit / grade / dispute / integrity-event / assignment-create paths). New "View Integrations Activity" panel on the dashboard shows recent rows produced in each downstream domain.
-- **Grade Tracking GUI ↔ 10 other domains.** Parallel `grade_tracking/integrations/` package: parent_portal grade reads, external-examiner moderation gate, calendar sync for assessment due dates, attendance correlation column on the at-risk view, automatic `early_warning_indicators` flagging for at-risk students, wellbeing referrals, grade-appeal helpdesk tickets, KPI push (Average GPA + Pass Rate %), financial-aid GPA review tagging, legal audit-trail export. Sidebar gains a "Cross-Domain Activity" panel mirroring the assignment-side one.
-- **Cross-launch buttons** between assignment GUI and grade management — both subsystems now reuse the same auth context in a Toplevel.
-- **Internal dedup** in grade tracking GUI: `calculate_all_gpas` delegates to `grade_calculation.gpa.calculate_student_gpa`; `risk.identify_at_risk_students` delegates to `predictive_analytics.calculate_dropout_risk_score`; `module_manager` and `assessment_manager` now write the same FERPA `safe_log_security_event` audit trail as `grade_manager`.
-- **Auth fixes:** unified login now honours MFA enabled via the university `mfa_user_settings` / `mfa_methods` tables (was previously checking only the shared `mfa_secrets`, so MFA-enrolled admins were silently bypassed); the OTP screen's `masked_email` is now computed in the right branch so the "code sent to ***" message renders correctly.
-
-### Version 8.104.0 (April 28, 2026)
-
-- **Module scheduling ↔ rest of university.** Derived student/instructor timetables, attendance-session materialisation from `module_schedule`, schedule-change in-app + email notifications fanned out to enrolled students, and recurring lectures mirrored onto the academic calendar (deterministic `LEC-{id}` events, semester-window resolution with 16-week fallback).
-
-### Version 8.103.0 (April 28, 2026)
-
-- **Course management ↔ rest of university.** Exam grades now appear in the grade-management GUI (UNION on `student_grades`, double-click hands off to exam scheduler's `ResultsEntryDialog`); enrolment fee assessment, library hold auto-placement, course-level external-examiner appointments, teaching workload mirroring, academic-calendar sync for years/semesters, per-course academic-integrity toggles. All four enrolment writers now sync to finance + library.
-
-### Version 8.102.0 (April 28, 2026)
-
-- **Auth recovery overhaul.** Forgot-password resets now null `legacy_salt` (fixed silent rejection of fresh bcrypt hashes for migrated PBKDF2 users); MFA-aware temp-password delivery to email; recovery codes accepted as login bypass (single-use, forces password change); `change_password` wrapper propagates real errors instead of silently falling back to the legacy `user_accounts` table.
-- **Exam scheduler ↔ rest of university.** Idempotent `EXAM-{id}` calendar sync, in-app notification fan-out via `NotificationsService`, shared `room_bookings` reservations, results writeback to `student_grades` + `grade_audit_log`, deferred-exam accommodations honour `student_accommodations` + `exam_accommodations`, and external-examiner attachment per exam.
-
-### Version 8.91.0 (April 24, 2026)
-
-- **Log consolidation** — 8 specialised log files collapsed into `app.log` (43 literal substitutions across 34 files). Rotation handled centrally by `infrastructure/logging/log_config.py` (5 MB × 5 backups).
-
-### Version 8.90.0 (April 24, 2026)
-
-- **Path centralization** across `university_system` — ~97 hardcoded paths eliminated across 70 files. Five absolute/`~`-relative paths fixed; 14 config/template filename call sites consolidated onto 8 new constants in `core/paths.py`; 41 of 42 fragile `Path(__file__).resolve().parents[N]` constructions eliminated; 13 hardcoded directory strings replaced; 12 subdirectory-name literals in the assignments domain replaced with constants from new `assignments/core/constants.py`. Four latent bugs fixed in passing (CWD-relative file writes, wrong parent depth) plus `church_management_gui` `unified_events` column-name bug.
-
-### Version 8.89.0 (April 23, 2026)
-
-- **Module Scheduling enterprise features** — recurring sessions, draft workflow, audit trail, multi-term, what-if scenarios; bulk ops + per-student view + drag-drop grid; schema extended with 6 new columns + 7 indexes + schedule-history; iCal RRULE now per-row; saved-views per user; pagination; schedule-insert bug fix.
-
-### Version 8.88.0 (April 23, 2026)
-
-- **System Administration** — missing translations filled in (`database_admin_gui.*`, `gui.manage_permissions.*`); role-level permission management API (`list_roles`, `grant_role_permission`, `revoke_role_permission`); Manage Permissions GUI fully implemented; Add New User wired to real form; `paths.EMAIL_CONFIG_FILE` resolution and System Changelog viewer fixed.
-
-### Version 8.87.0 (April 23, 2026)
-
-- **Staff HR cold-start 11.3 s → 2.6 s** (77% faster) — 25 sibling GUI imports made lazy, chatbot/auth chain deferred until first use.
-
-### Version 8.84.0–8.86.0 (April 22–23, 2026)
-
-- **Certificates / Transcript** merge into a single Print & Certificates surface; Portfolio FK migration; role-dispatch fix for printing payments; Staff HR schemas consolidated to a single public entry point; student export includes attendance with a shared section-schema across comprehensive exporters.
-
-### Version 8.80.0–8.83.0 (April 21–22, 2026)
-
-- **Role-scoped Course Management portals** with LMS UX polish + data-layer fixes; assignment submission pipeline unified with AI Auto-Grading portal, Grade Tracking rewire, student feedback viewer; login-shell launchers + role portals de-duplicated; **v8.80.0** relocated misplaced files into their correct architectural layers across the `education_system` tree.
-
-### Version 8.77.0 (April 14, 2026)
-
-- **Domain directory reorganisation** — `university_system/modules/domain/` collapsed from 63 folders into 15 top-level categories (`academics`, `finance`, `health`, `commerce`, `campus`, `student_affairs`, etc.). Sub-modules moved, not deleted.
-
-See [CHANGELOG.md](CHANGELOG.md) for the complete v8.x history (178 releases) and [docs/changelogs/CHANGELOG-v5.md](docs/changelogs/CHANGELOG-v5.md) for earlier versions.
+See [CHANGELOG.md](CHANGELOG.md) for the full v8.x release history. Earlier versions are in [docs/changelogs/CHANGELOG-v5.md](docs/changelogs/CHANGELOG-v5.md).
 
 ---
 

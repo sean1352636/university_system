@@ -22,7 +22,7 @@ from __future__ import annotations
 
 import importlib
 
-__version__ = "8.60.0"
+__version__ = "8.117.72"
 __author__ = "University System Team"
 __description__ = "Consolidated University System Services"
 
