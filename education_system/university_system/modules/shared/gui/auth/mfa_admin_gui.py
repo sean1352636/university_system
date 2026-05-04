@@ -14,12 +14,16 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 init_i18n()
 
 def _ensure_mfa_tables_exist():
-    """Ensure required MFA tables exist in the database"""
-    try:
-        from education_system.university_system.infrastructure.database.migrations.add_mfa_system import run_migration
-        run_migration()
-    except Exception as e:
-        print(_("mfa_admin.messages.tables_init_note", error=str(e)))
+    """No-op since 8.117.84.
+
+    Pre-Alembic safety net that called
+    ``infrastructure.database.migrations.add_mfa_system.run_migration``.
+    The MFA tables are now part of the Alembic baseline
+    (``migrations/versions/877b10b0175b_baseline.py``) so this hook is
+    redundant. Kept as a stub so the call site in ``__init__`` doesn't
+    need editing.
+    """
+    return
 
 class MFAAdminPanel(tk.Toplevel):
     """

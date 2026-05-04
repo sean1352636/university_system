@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.84 — 2026-05-04](#811784---2026-05-04)
 - [8.117.78 — 2026-05-04](#811778---2026-05-04)
 - [8.117.77 — 2026-05-04](#811777---2026-05-04)
 - [8.117.76 — 2026-05-04](#811776---2026-05-04)
@@ -305,6 +306,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.84] — 2026-05-04
+
+### Removed — Pre-Alembic migration scripts; Alembic config moved into the project tree
+
+Schema management moved to Alembic on 2026-04-27 (baseline revision
+``877b10b0175b``, which captures the full ``student_records.db`` —
+1402 tables / 444 indexes / 5 triggers — followed by ``d1bde3fa4179``
+seeding the 14-module catalog). The two older migration systems that
+predated that move have been kept around alongside, and one of them
+still had a runtime caller. This release deletes them and pulls the
+Alembic config inside the repo's project directory.
+
+#### Deleted
+
+- ``university_system/infrastructure/database/migrations/`` — 13
+  bespoke per-feature Python migration scripts plus a single SQL
+  one-shot, ``README.md`` and ``__init__.py``. ~80 KB.
+- ``shared/migrations/`` — the older custom ``MigrationRunner`` and
+  its ``__init__.py``.
+- ``university_system/tests/cli/infrastructure/database/test_database_migrations.py``
+  — only purpose was running the now-deleted scripts.
+- The ``TestMigrationFramework`` class in
+  ``shared/tests/test_cross_system.py`` (other tests in the file
+  untouched).
+
+#### Edited — runtime safety net stubbed
+
+``modules/shared/gui/auth/mfa_admin_gui.py:_ensure_mfa_tables_exist``
+used to import and call
+``infrastructure.database.migrations.add_mfa_system.run_migration`` as
+a defensive "create MFA tables if missing" hook on panel open. The
+MFA tables are part of the Alembic baseline now, so this is dead
+weight. The function is kept as a docstring-only no-op so the call
+site in ``MFAAdminPanel.__init__`` doesn't need editing.
+
+#### Moved — alembic config relocated into ``education_system/``
+
+``alembic.ini`` and the ``migrations/`` directory (previously at the
+repo root next to ``education_system/``) now live inside
+``education_system/``:
+
+```
+education_system/
+├── alembic.ini
+└── migrations/
+    ├── env.py, script.py.mako, README
+    └── versions/
+        ├── 877b10b0175b_baseline.py
+        └── d1bde3fa4179_seed_module_catalog_…py
+```
+
+``sqlalchemy.url`` updated to drop the leading ``education_system/``
+prefix (``sqlite:///university_system/data/db_files/student_records.db``)
+since the working dir for ``alembic`` is now the project directory.
+
+**Run command change:** ``cd education_system && alembic <subcommand>``
+instead of running from the repo root.
+
+#### Verified
+
+``cd education_system && alembic current`` returns
+``d1bde3fa4179 (head)`` — the seed-catalog revision is correctly
+identified as the active head, so the relocation didn't break the
+chain. No stale references to the deleted paths remain (one
+docstring mention in ``mfa_admin_gui`` for historical context).
 
 ---
 

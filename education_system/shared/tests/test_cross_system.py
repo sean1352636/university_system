@@ -47,21 +47,6 @@ class TestAuditLogging:
         assert len(s.query()) == 1
 
 
-class TestMigrationFramework:
-    def test_applied_once(self, tmp_path):
-        from education_system.shared.migrations.runner import MigrationRunner
-        runner = MigrationRunner(str(tmp_path / "test.db"))
-        assert runner.apply_sql("001", "CREATE TABLE t1 (id INTEGER);") is True
-        assert runner.apply_sql("001", "CREATE TABLE t1 (id INTEGER);") is False
-
-    def test_status(self, tmp_path):
-        from education_system.shared.migrations.runner import MigrationRunner
-        runner = MigrationRunner(str(tmp_path / "test.db"))
-        runner.apply_sql("001", "CREATE TABLE t1 (id INTEGER);")
-        runner.apply_sql("002", "CREATE TABLE t2 (id INTEGER);")
-        assert len(runner.status()) == 2
-
-
 class TestStudentPortability:
     def test_json_roundtrip(self, tmp_path):
         from education_system.shared.transfer.portability import StudentDataExporter, StudentDataImporter
