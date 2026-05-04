@@ -70,12 +70,8 @@ class EnhancedActivityLoggerGUI:
 
     def setup_ui(self):
         """Setup the main user interface"""
-        # Main menu (skip in embedded mode — a ttk.Frame parent has no
-        # menubar slot, so calling self.root.config(menu=...) raises
-        # "unknown option -menu". Operations Console hosts this GUI in
-        # a notebook tab, which is exactly that situation.)
-        if self._standalone:
-            self.setup_menu()
+        # Main menu
+        self.setup_menu()
 
         # Header
         header_frame = ttk.Frame(self.root, style='AL.Card.TFrame')

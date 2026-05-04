@@ -403,45 +403,14 @@ def show_security_dashboard(self):
         print(_t("config_gui.messages.security_dashboard_opened"))
     except Exception as e:
         messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.errors.failed_to_open_security_dashboard", error=str(e)))
-def show_operations_console(self, initial_tab=None):
-    """Open the unified Operations Console (Activity Log / Audit
-    Viewer / Activity Logger / Log Analyzer / System Monitoring).
-
-    The four legacy ``show_*`` methods below delegate here with the
-    appropriate ``initial_tab`` so existing menus / toolbars keep
-    working while everything ends up in one window.
-    """
-    if not self.auth.current_user or self.auth.current_user.get('role') != 'admin':
-        messagebox.showerror(_t("config_gui.access.denied"),
-                             _t("config_gui.access.admin_required_audit_log"))
-        return
-    try:
-        from education_system.university_system.modules.shared.gui.operations_console import (
-            open_operations_console,
-        )
-        from education_system.university_system.modules.shared.gui.operations_console.console import (
-            TAB_ACTIVITY_LOG,
-        )
-        user_id = self.auth.current_user.get('id', 1)
-        open_operations_console(self.root, auth=self.auth,
-                                admin_user_id=user_id,
-                                initial_tab=initial_tab or TAB_ACTIVITY_LOG)
-    except Exception as e:
-        logger.exception("Failed to open Operations Console")
-        messagebox.showerror(_t("config_gui.errors.error"),
-                             f"Failed to open Operations Console: {e}")
-
-
 def show_audit_log_viewer(self):
-    """Open Operations Console focused on the Audit Viewer tab.
+    """Launch audit log viewer for searching and analyzing audit logs.
 
-    Preserves the academic-context prefilter behaviour: if a
-    right-click in Library / Course Mgmt placed a context dict on
-    ``self._last_academic_context``, we still consume it — but the
-    full audit viewer is opened detached from the console summary
-    panel rather than directly, so the prefilter is forwarded that
-    way.
-    """
+    If a contextual right-click brought the user here (e.g. Library →
+    "View audit log for this book"), the pending academic context dict
+    on ``self._last_academic_context`` is consumed and forwarded as a
+    ``prefilter`` so the most-specific id is dropped into the search
+    box before the initial query runs."""
     if not self.auth.current_user or self.auth.current_user.get('role') != 'admin':
         messagebox.showerror(_t("config_gui.access.denied"), _t("config_gui.access.admin_required_audit_log"))
         return
@@ -459,54 +428,74 @@ def show_audit_log_viewer(self):
     except Exception:
         logger.debug("audit viewer: could not consume academic context", exc_info=True)
 
-    # If a prefilter was supplied, retain the legacy direct-launch path
-    # — the console's summary panel doesn't accept prefilters.
-    if prefilter:
-        try:
-            user_id = self.auth.current_user.get('id', 1)
-            _open_audit_log_viewer(self.root, user_id, prefilter=prefilter)
-        except Exception as e:
-            messagebox.showerror(_t("config_gui.errors.error"),
-                                 _t("config_gui.errors.failed_to_open_audit_log_viewer", error=str(e)))
-        return
-
-    from education_system.university_system.modules.shared.gui.operations_console.console import (
-        TAB_AUDIT_VIEWER,
-    )
-    show_operations_console(self, initial_tab=TAB_AUDIT_VIEWER)
+    try:
+        user_id = self.auth.current_user.get('id', 1)
+        viewer = _open_audit_log_viewer(self.root, user_id, prefilter=prefilter)
+        print(_t("config_gui.messages.audit_log_viewer_opened"))
+    except Exception as e:
+        messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.errors.failed_to_open_audit_log_viewer", error=str(e)))
 def show_activity_logger(self):
-    """Open Operations Console focused on the Activity Logger tab."""
-    user = self.auth.current_user
-    if not user:
-        messagebox.showerror(_t("config_gui.errors.error"),
-                             _t("config_gui.access.login_required_activity_logger"))
+    """Launch the Enhanced Activity Logger GUI in a child window"""
+    if not self.auth.current_user:
+        messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.access.login_required_activity_logger"))
         return
-    if user.get('role') not in ['admin', 'staff']:
-        messagebox.showerror(_t("config_gui.errors.error"),
-                             _t("config_gui.access.no_permission_activity_logger"))
-        return
-    if not ACTIVITY_LOGGER_GUI_AVAILABLE:
-        messagebox.showerror(
-            _t("config_gui.activity_logger.title"),
-            _t("config_gui.errors.activity_logger_unavailable", error="Module not available"))
-        return
-    from education_system.university_system.modules.shared.gui.operations_console.console import (
-        TAB_ACTIVITY_LOGGER,
-    )
-    show_operations_console(self, initial_tab=TAB_ACTIVITY_LOGGER)
 
+    # Check permissions - allow admin and staff
+    user_role = self.auth.current_user.get('role', '')
+    if user_role not in ['admin', 'staff']:
+        messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.access.no_permission_activity_logger"))
+        return
 
+    try:
+        if not ACTIVITY_LOGGER_GUI_AVAILABLE:
+            messagebox.showerror(_t("config_gui.activity_logger.title"), _t("config_gui.errors.activity_logger_unavailable", error="Module not available"))
+            return
+
+        # Create a new window for the Activity Logger GUI
+        logger_window = tk.Toplevel(self.root)
+        _install_clean_close(logger_window)
+        logger_window.title(_t("config_gui.activity_logger.window_title"))
+        logger_window.geometry("1400x900")
+        logger_window.minsize(1200, 800)
+
+        # Center the window
+        logger_window.update_idletasks()
+        x = (logger_window.winfo_screenwidth() - logger_window.winfo_width()) // 2
+        y = (logger_window.winfo_screenheight() - logger_window.winfo_height()) // 2
+        logger_window.geometry(f"+{x}+{y}")
+
+        try:
+            logger_window.transient(self.root)
+        except Exception:
+            pass  # Continue if transient fails
+
+        # Initialize the Activity Logger GUI in the new window using parent parameter
+        activity_logger_gui = ActivityLoggerGUI(auth=self.auth, parent=logger_window)
+
+        print(_t("config_gui.messages.activity_logger_opened", default="Activity Logger opened"))
+
+    except Exception as e:
+        messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.errors.failed_to_open_activity_logger", error=str(e)))
+        print(f"Activity Logger error: {e}")
 def show_activity_log(self):
-    """Open Operations Console focused on the Activity Log tab."""
-    from education_system.university_system.modules.shared.gui.operations_console.console import (
-        TAB_ACTIVITY_LOG,
-    )
-    show_operations_console(self, initial_tab=TAB_ACTIVITY_LOG)
+    """Open Log Management GUI (in a separate window)"""
+    try:
+        # Prefer the local file the user provided
+        from education_system.university_system.infrastructure.logging.gui.log_management_gui import LogManagementGUI
+    except Exception:
+        # Optional fallback to the refactored package if present
+        try:
+            from education_system.university_system.infrastructure.logging.gui.log_management_gui import LogManagementGUI
+        except Exception as e:
+            messagebox.showerror(_t("config_gui.log_management.unavailable"), _t("config_gui.errors.log_management_not_found", error=str(e)))
+            return
 
-
-def show_log_analyzer(self):
-    """Open Operations Console focused on the Log Analyzer tab."""
-    from education_system.university_system.modules.shared.gui.operations_console.console import (
-        TAB_LOG_ANALYZER,
-    )
-    show_operations_console(self, initial_tab=TAB_LOG_ANALYZER)
+    try:
+        # Open inside the existing app as a child window (no extra mainloop)
+        win = tk.Toplevel(self.root)
+        _install_clean_close(win)
+        win.title(_t("config_gui.log_management.title"))
+        win.geometry("1200x800")
+        LogManagementGUI(win, auth=self.auth)   # instantiate GUI from the file
+    except Exception as e:
+        messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.errors.failed_to_open_log_management", error=str(e)))

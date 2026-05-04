@@ -199,13 +199,11 @@ class TimelineChart(tk.Canvas):
 class LogAnalyzerApp:
     """Main Log Analyzer application."""
 
-    def __init__(self, root, embedded=False):
+    def __init__(self, root):
         self.root = root
-        self.embedded = embedded
-        if not embedded:
-            self.root.title("Log Analyzer")
-            self.root.geometry("1150x750")
-            self.root.minsize(900, 600)
+        self.root.title("Log Analyzer")
+        self.root.geometry("1150x750")
+        self.root.minsize(900, 600)
 
         self.style = ttk.Style()
         self.style.theme_use("clam")
