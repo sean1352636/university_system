@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.79 — 2026-05-04](#811779---2026-05-04)
+- [8.117.78 — 2026-05-04](#811778---2026-05-04)
 - [8.117.77 — 2026-05-04](#811777---2026-05-04)
 - [8.117.76 — 2026-05-04](#811776---2026-05-04)
 - [8.117.75 — 2026-05-04](#811775---2026-05-04)
@@ -304,6 +306,165 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.79] — 2026-05-04
+
+### Added — Operations Console: five logging/monitoring GUIs unified
+
+The four buttons in *System Administration → Operations → Monitoring &
+Logs* (Audit Log Viewer, Activity Logger, Activity Log, System
+Monitoring) plus the previously-orphaned **Log Analyzer** in
+``shared/extras/`` were five independent windows with overlapping
+purpose and no shared navigation. They are now hosted inside a single
+``OperationsConsole`` Toplevel with a ``ttk.Notebook``, one tab per
+feature, lazy-built so opening the console is fast and embedded GUIs
+don't all spin up their background threads up front.
+
+#### New package — ``modules/shared/gui/operations_console/``
+
+- ``__init__.py`` — exports ``OperationsConsole`` and
+  ``open_operations_console``.
+- ``console.py`` — ``OperationsConsole(tk.Toplevel)`` + lazy tab
+  build. Exposes constants ``TAB_ACTIVITY_LOG``, ``TAB_AUDIT_VIEWER``,
+  ``TAB_ACTIVITY_LOGGER``, ``TAB_LOG_ANALYZER``,
+  ``TAB_SYSTEM_MONITORING`` so callers can pre-select a tab.
+- ``activity_log.py`` — embeds the existing
+  ``LogManagementGUI`` via its ``embedded=True`` mode.
+- ``audit_viewer.py`` — summary panel (total events, failed logins
+  in last hour, most recent event) + "Open full Audit Viewer"
+  button. The full viewer (``AuditLogViewerGUI``) inherits from
+  ``tk.Toplevel`` and resists re-parenting, so it stays detached and
+  is launched as a child of the console window.
+- ``activity_logger.py`` — embeds ``EnhancedActivityLoggerGUI`` via
+  its ``parent=`` kwarg (the class already supports an embedded mode
+  that skips ``self.root.title``/``geometry``/``mainloop`` calls).
+- ``log_analyzer.py`` — embeds ``LogAnalyzerApp`` from
+  ``shared/extras/log-analyzer/log_analyzer.py``. The extras module
+  isn't a Python package, so the adapter loads it via
+  ``importlib.util.spec_from_file_location``.
+- ``system_monitoring.py`` — extracted from the inline
+  ``show_system_monitoring_dashboard`` body in ``admin_tools_gui``.
+  Same CPU/memory/disk/DB cards, same 10-second auto-refresh, with a
+  ``stop`` callable so the console can cancel the ``after`` loop on
+  close.
+
+#### Wiring
+
+- ``config_gui.py`` gains ``show_operations_console(self, initial_tab=None)``.
+  ``show_audit_log_viewer``, ``show_activity_logger``,
+  ``show_activity_log`` are rewritten as one-line delegates that
+  pass the appropriate ``initial_tab``. A new
+  ``show_log_analyzer`` is added that targets the Log Analyzer tab.
+  ``show_audit_log_viewer`` keeps its legacy direct-launch path
+  *only* when an academic-context prefilter is supplied (the console
+  summary panel has no prefilter slot), so right-click-into-audit
+  flows from Library / Course Management still work.
+- ``admin_tools_gui.show_system_monitoring_dashboard`` is now a
+  wrapper that delegates to the console; the original Toplevel-based
+  body is preserved as ``_show_system_monitoring_dashboard_legacy``
+  and used as a fallback if the operations_console import fails.
+- ``main_gui.py`` imports and binds the new ``show_log_analyzer`` /
+  ``show_operations_console`` methods onto ``UnifiedManagementGUI``.
+- ``system_admin_gui.create_operations_tab`` Monitoring & Logs row
+  now lists six buttons: **Operations Console** (one-click entry to
+  the unified hub), plus the five existing/new feature buttons —
+  each routes through the console with the right initial tab so
+  users can swap freely once inside.
+
+#### One small refactor to the analyzer
+
+``shared/extras/log-analyzer/log_analyzer.py`` ``LogAnalyzerApp.__init__``
+gained an ``embedded=False`` kwarg. When True, the title/geometry/
+minsize calls are skipped — exactly the same pattern
+``LogManagementGUI`` and ``EnhancedActivityLoggerGUI`` already used.
+Standalone ``__main__`` execution is unchanged.
+
+#### Files
+
+- new package ``university_system/modules/shared/gui/operations_console/``
+  (``__init__.py``, ``console.py``, ``activity_log.py``,
+  ``activity_logger.py``, ``audit_viewer.py``, ``log_analyzer.py``,
+  ``system_monitoring.py``).
+- ``university_system/modules/shared/gui/main/admin/config_gui.py``
+  rewritten methods + new ``show_operations_console`` /
+  ``show_log_analyzer``.
+- ``university_system/modules/shared/gui/main/admin/admin_tools_gui.py``
+  ``show_system_monitoring_dashboard`` rewritten as wrapper; legacy
+  body renamed to ``_show_system_monitoring_dashboard_legacy``.
+- ``university_system/modules/shared/gui/main/admin/system_admin_gui.py``
+  Monitoring & Logs button row updated.
+- ``university_system/modules/shared/gui/main/main_gui.py``
+  imports and binds the two new module-level methods.
+- ``shared/extras/log-analyzer/log_analyzer.py``
+  ``LogAnalyzerApp.__init__`` gains ``embedded=False`` kwarg.
+
+---
+
+## [8.117.78] — 2026-05-04
+
+### Changed — System Overview tab reworked into a real landing page
+
+The dashboard's Overview tab was effectively a static welcome card:
+a frozen timestamp, a hardcoded "DB connected" string, and six
+launcher buttons that ignored the user's role. Rebuilt
+``create_overview_tab`` end-to-end. Eleven concrete improvements:
+
+1. **Role-aware quick actions.** Each action now declares the
+   permissions that justify showing it. Non-admins only see actions
+   they can actually use; admins see everything. Empty roles get a
+   friendly "no actions" placeholder instead of a wall of buttons.
+2. **Live clock.** Replaced the once-set timestamp with an
+   ``after(1000, …)`` tick driving a ``StringVar``. Guards on
+   ``winfo_exists`` so the loop self-terminates when the tab is torn
+   down.
+3. **Real DB indicator.** A coloured dot + label that runs
+   ``SELECT 1`` every ~30 ticks. Green when reachable, red with the
+   exception type when not — replaces the hardcoded text claim.
+4. **KPI tiles.** Four big-number cards (Total Students, Active
+   Courses, Logins 24h, Pending Assignments) reusing the same
+   queries the Statistics tab already runs, surfaced where the user
+   lands first.
+5. **Recent activity preview.** Last 5 ``activity_log`` rows in a
+   compact ``Treeview`` plus a "See all activity →" hyperlink that
+   selects the existing Activity tab in the workspace notebook.
+6. **Pinnable quick actions.** Right-click a quick-action button to
+   pin/unpin it. Pins are persisted to
+   ``CONFIG_DIR/overview_pins.json`` keyed by username; pinned
+   entries float to the top with a ★ marker.
+7. **Announcements strip.** Reads up to 3 active rows from the
+   existing ``announcements`` table (filtering by ``is_active`` and
+   today's date against ``start_date`` / ``end_date``), ordering by
+   priority. Falls back to a "No active announcements" line if the
+   table is missing or empty.
+8. **Search bar.** Routes a query to the most likely launcher based
+   on shape: ``S12345`` → student records; alpha+digits like
+   ``CS101`` → course management; otherwise student records.
+9. **Header polish.** Full name + role badge + last-login timestamp
+   pulled from ``login_attempts`` (skips the current session row via
+   ``LIMIT 1, 1``).
+10. **Visual polish.** Quick-action buttons now use the existing
+    ``Action.TButton`` style for consistency with toolbars
+    elsewhere; KPI tiles use ``uniform`` grid columns so they share
+    width evenly.
+11. **Tooltips.** Lightweight in-file ``_Tooltip`` helper attached
+    to each quick-action button, explaining what it opens and that
+    right-click pins/unpins it.
+
+The whole tab now lives inside a scrollable canvas so smaller
+windows still see the activity strip at the bottom.
+
+#### Files
+
+- ``university_system/modules/shared/gui/main/dashboard/dashboard_gui.py``
+  Module-level: added ``_Tooltip`` class, ``_pins_path`` /
+  ``_load_pins`` / ``_save_pins`` for per-user pin persistence in
+  ``CONFIG_DIR/overview_pins.json``.
+  ``create_overview_tab``: full rewrite — header (name + role badge
+  + last login + live clock + DB indicator), search bar,
+  announcements strip, KPI tiles, role-filtered pinnable quick
+  actions, recent activity preview with link to Activity tab.
 
 ---
 

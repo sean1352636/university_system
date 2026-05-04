@@ -142,13 +142,18 @@ class AnomalyDetector:
         return anomalies
 
 
-class AuditLogViewerGUI(tk.Toplevel):
+class AuditLogViewerGUI(ttk.Frame):
     """
     Comprehensive Audit Log Viewer with search, filter, export, and anomaly detection.
+
+    Refactored in 8.117.80 from ``tk.Toplevel`` to ``ttk.Frame`` so the
+    same widget tree can be embedded inside the Operations Console
+    notebook. Standalone use is preserved by ``show_audit_log_viewer``
+    factory below, which wraps this Frame in a Toplevel.
     """
 
     def __init__(self, parent, admin_user_id: Optional[int] = None,
-                 prefilter: Optional[dict] = None):
+                 prefilter: Optional[dict] = None, embedded: bool = False):
         super().__init__(parent)
 
         self.admin_user_id = admin_user_id
@@ -158,24 +163,35 @@ class AuditLogViewerGUI(tk.Toplevel):
         self._refresh_interval = 5000  # 5 seconds
         self._refresh_job = None
         self._current_entries: List[AuditEntry] = []
+        self.embedded = embedded
 
-        self.title(_t("audit_log.title"))
-        self.geometry("1200x800")
-        self.minsize(900, 600)
+        # Window-level setup only applies when this Frame is hosted in
+        # its own Toplevel (the standalone factory below). When embedded
+        # in a notebook tab, the parent Frame can't take title / geometry /
+        # protocol calls.
+        if not embedded:
+            try:
+                parent.title(_t("audit_log.title"))
+                parent.geometry("1200x800")
+                parent.minsize(900, 600)
+            except (tk.TclError, AttributeError):
+                pass
+            self.pack(fill=tk.BOTH, expand=True)
 
         self._create_widgets()
         self._load_filter_options()
         self._apply_prefilter(prefilter)
         self._search_logs()
 
-        # Center window
-        self.update_idletasks()
-        x = (self.winfo_screenwidth() // 2) - (self.winfo_width() // 2)
-        y = (self.winfo_screenheight() // 2) - (self.winfo_height() // 2)
-        self.geometry(f"+{x}+{y}")
-
-        # Bind close event
-        self.protocol("WM_DELETE_WINDOW", self._on_close)
+        if not embedded:
+            try:
+                parent.update_idletasks()
+                x = (parent.winfo_screenwidth() // 2) - (parent.winfo_width() // 2)
+                y = (parent.winfo_screenheight() // 2) - (parent.winfo_height() // 2)
+                parent.geometry(f"+{x}+{y}")
+                parent.protocol("WM_DELETE_WINDOW", self._on_close)
+            except (tk.TclError, AttributeError):
+                pass
 
     def _create_widgets(self):
         """Create all GUI widgets."""
@@ -1008,7 +1024,15 @@ class AuditLogViewerGUI(tk.Toplevel):
     def _on_close(self):
         """Handle window close."""
         self._stop_auto_refresh()
-        self.destroy()
+        if self.embedded:
+            self.destroy()
+        else:
+            # Standalone mode: destroy the wrapping Toplevel rather than
+            # just our Frame so the window actually closes.
+            try:
+                self.master.destroy()
+            except Exception:
+                self.destroy()
 
     def _apply_prefilter(self, prefilter: Optional[dict]) -> None:
         """Pre-populate the search box from a context dict.
@@ -1040,18 +1064,20 @@ class AuditLogViewerGUI(tk.Toplevel):
 def show_audit_log_viewer(parent, admin_user_id: Optional[int] = None,
                           prefilter: Optional[dict] = None):
     """
-    Show the audit log viewer GUI.
+    Show the audit log viewer GUI in its own Toplevel window.
 
     Args:
-        parent: Parent tkinter window
+        parent: Parent tkinter window (the Toplevel is created as its child)
         admin_user_id: Optional admin user ID for context
         prefilter: Optional context dict whose most-specific id is
             dropped into the search box before the initial query runs.
 
     Returns:
-        AuditLogViewerGUI instance
+        AuditLogViewerGUI instance (a ttk.Frame packed into the new Toplevel)
     """
-    viewer = AuditLogViewerGUI(parent, admin_user_id, prefilter=prefilter)
+    win = tk.Toplevel(parent)
+    viewer = AuditLogViewerGUI(win, admin_user_id, prefilter=prefilter,
+                               embedded=False)
     return viewer
 
 

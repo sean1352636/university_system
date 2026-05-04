@@ -385,9 +385,9 @@ def create_operations_tab(self, parent):
     main_frame = ttk.Frame(parent, padding="20")
     main_frame.pack(fill=tk.BOTH, expand=True)
 
-    # Monitoring & Logs
-    logs_frame = ttk.LabelFrame(main_frame, text="Monitoring & Logs", padding="15")
-    logs_frame.pack(fill=tk.X, pady=(0, 15))
+    # Monitoring & Logs section removed in 8.117.82 — its six entries
+    # now live in the Integrated Dashboard's Operations → Logs sub-tab,
+    # which routes through the unified Operations Console.
 
     def launch_feature(title, method_name):
         try:
@@ -398,22 +398,6 @@ def create_operations_tab(self, parent):
                 messagebox.showinfo("Info", f"{title} is accessible via the main menu.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open {title}: {e}")
-
-    row, col = 0, 0
-    monitoring_buttons = [
-        ("Audit Log Viewer", 'show_audit_log_viewer'),
-        ("Activity Logger", 'show_activity_logger'),
-        ("Activity Log", 'show_activity_log'),
-        ("System Monitoring", 'show_system_monitoring_dashboard'),
-    ]
-    for label, method in monitoring_buttons:
-        ttk.Button(logs_frame, text=label,
-                  command=lambda m=method, l=label: launch_feature(l, m)).grid(
-            row=row, column=col, padx=5, pady=5, sticky='ew')
-        col += 1
-        if col >= 3:
-            col = 0
-            row += 1
 
     # System Configuration
     config_frame = ttk.LabelFrame(main_frame, text="System Configuration", padding="15")

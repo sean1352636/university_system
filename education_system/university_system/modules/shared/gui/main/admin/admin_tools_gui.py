@@ -44,11 +44,37 @@ def _save_json(path, data):
 # ---------------------------------------------------------------------------
 
 def show_system_monitoring_dashboard(self):
-    """Real-time system monitoring dashboard with CPU, memory, disk, and DB metrics."""
+    """Real-time system monitoring dashboard.
+
+    Now opens inside the unified Operations Console (8.117.79). The
+    legacy standalone-Toplevel implementation is preserved below
+    behind ``_show_system_monitoring_dashboard_legacy`` for fallback
+    if the console import fails.
+    """
     if not self.auth.current_user or self.auth.current_user.get('role') != 'admin':
         messagebox.showerror(_t("admin_tools.access_denied"), _t("admin_tools.admin_required"))
         return
+    try:
+        from education_system.university_system.modules.shared.gui.operations_console import (
+            open_operations_console,
+        )
+        from education_system.university_system.modules.shared.gui.operations_console.console import (
+            TAB_SYSTEM_MONITORING,
+        )
+        user_id = self.auth.current_user.get('id', 1)
+        open_operations_console(self.root, auth=self.auth,
+                                admin_user_id=user_id,
+                                initial_tab=TAB_SYSTEM_MONITORING)
+        return
+    except Exception as e:
+        logger.warning(f"Operations Console unavailable, falling back: {e}")
+        return _show_system_monitoring_dashboard_legacy(self)
 
+
+def _show_system_monitoring_dashboard_legacy(self):
+    """Original standalone Toplevel-based monitoring dashboard. Kept
+    as a fallback for environments where the operations_console
+    package can't be imported."""
     try:
         import psutil
     except ImportError:

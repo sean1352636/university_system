@@ -129,6 +129,11 @@ class UnifiedManagementGUI:
 
             # Initialize Tkinter
             self.root = tk.Tk()
+            # Stash a back-reference so widgets nested deep in the
+            # dashboard can resolve the GUI instance via the master
+            # chain (used by the dashboard's Logs sub-tab to call
+            # show_operations_console / show_*).
+            self.root._unified_gui = self
             self.root.title(_t("gui.window_title"))
             # Sizing matches Finance Management (and Library, after
             # 8.117.36): 1400x900 fixed geometry with a 1200x800
@@ -328,7 +333,9 @@ from education_system.university_system.modules.shared.gui.main.admin.config_gui
     show_security_dashboard,
     show_audit_log_viewer,
     show_activity_logger,
-    show_activity_log
+    show_activity_log,
+    show_log_analyzer,
+    show_operations_console,
 )
 from education_system.university_system.modules.shared.gui.main.admin.admin_tools_gui import (
     show_system_monitoring_dashboard,
@@ -640,6 +647,8 @@ UnifiedManagementGUI.show_security_dashboard = show_security_dashboard
 UnifiedManagementGUI.show_audit_log_viewer = show_audit_log_viewer
 UnifiedManagementGUI.show_activity_logger = show_activity_logger
 UnifiedManagementGUI.show_activity_log = show_activity_log
+UnifiedManagementGUI.show_log_analyzer = show_log_analyzer
+UnifiedManagementGUI.show_operations_console = show_operations_console
 UnifiedManagementGUI.show_system_monitoring_dashboard = show_system_monitoring_dashboard
 UnifiedManagementGUI.show_configuration_editor = show_configuration_editor
 UnifiedManagementGUI.show_query_analyser = show_query_analyser

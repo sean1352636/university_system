@@ -1,4 +1,5 @@
 # Auto-generated module
+import json
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 from datetime import datetime, timedelta
@@ -8,6 +9,71 @@ from education_system.university_system.modules.shared.gui.main._tk_callback_fil
 
 # Import database connection
 from education_system.university_system.infrastructure.database.db import get_connection
+from education_system.university_system.modules.shared.constants import paths as _paths
+
+
+# --- Lightweight tooltip helper (#11) ---------------------------------
+class _Tooltip:
+    """Minimal hover tooltip. One per widget; auto-cleans on destroy."""
+
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tip = None
+        widget.bind("<Enter>", self._show, add="+")
+        widget.bind("<Leave>", self._hide, add="+")
+        widget.bind("<ButtonPress>", self._hide, add="+")
+
+    def _show(self, _e=None):
+        if self.tip or not self.text:
+            return
+        try:
+            x = self.widget.winfo_rootx() + 20
+            y = self.widget.winfo_rooty() + self.widget.winfo_height() + 4
+        except tk.TclError:
+            return
+        self.tip = tk.Toplevel(self.widget)
+        self.tip.wm_overrideredirect(True)
+        self.tip.wm_geometry(f"+{x}+{y}")
+        tk.Label(self.tip, text=self.text, background="#ffffe0",
+                 relief=tk.SOLID, borderwidth=1, font=("Arial", 9),
+                 padx=6, pady=2).pack()
+
+    def _hide(self, _e=None):
+        if self.tip is not None:
+            try:
+                self.tip.destroy()
+            except tk.TclError:
+                pass
+            self.tip = None
+
+
+# --- Pinned-actions storage (#6) --------------------------------------
+def _pins_path():
+    return _paths.CONFIG_DIR / "overview_pins.json"
+
+
+def _load_pins(username):
+    try:
+        with open(_pins_path(), 'r') as f:
+            return list(json.load(f).get(username, []))
+    except (OSError, ValueError):
+        return []
+
+
+def _save_pins(username, pin_keys):
+    try:
+        _paths.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+        try:
+            with open(_pins_path(), 'r') as f:
+                data = json.load(f)
+        except (OSError, ValueError):
+            data = {}
+        data[username] = list(pin_keys)
+        with open(_pins_path(), 'w') as f:
+            json.dump(data, f)
+    except OSError as e:
+        logging.warning(f"Could not persist overview pins: {e}")
 
 # Import i18n for language support
 from education_system.university_system.modules.shared.utils.i18n import get_text as _
@@ -154,45 +220,331 @@ def show_integrated_dashboard(self):
 
     print(_("dashboard.messages.opened_successfully"))
 def create_overview_tab(self, parent):
-    """Create system overview tab"""
-    overview_container = ttk.Frame(parent, padding="20")
-    overview_container.pack(fill=tk.BOTH, expand=True)
+    """Create the system overview tab.
 
-    # Welcome message
-    welcome_text = _("dashboard.overview.welcome", username=self.auth.current_user.get('username', _("common.user")))
-    ttk.Label(overview_container, text=welcome_text, font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+    Reworked in 8.117.78 to be a real landing page rather than a static
+    welcome card. Sections, top to bottom:
+      - Header: full name + role badge, last-login, live clock, DB indicator
+      - Search bar (jumps to the relevant launcher)
+      - Announcements strip (active rows from ``announcements`` table)
+      - KPI tiles (Students / Active Courses / Logins 24h / Pending Assignments)
+      - Quick actions (role-aware, pinnable via right-click, tooltipped)
+      - Recent activity preview (last 5) + "See all" link
+    """
+    user = self.auth.current_user or {}
+    username = user.get('username', _("common.user"))
+    role = user.get('role', _("common.unknown"))
 
-    # Quick access buttons in a grid
-    buttons_frame = ttk.LabelFrame(overview_container, text=_("dashboard.overview.quick_access"), padding="15")
-    buttons_frame.pack(fill=tk.X, pady=(0, 20))
+    # Master container with a vertical scroll so smaller screens still
+    # see the activity strip at the bottom.
+    canvas = tk.Canvas(parent, highlightthickness=0)
+    vbar = ttk.Scrollbar(parent, orient=tk.VERTICAL, command=canvas.yview)
+    canvas.configure(yscrollcommand=vbar.set)
+    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    vbar.pack(side=tk.RIGHT, fill=tk.Y)
+    overview_container = ttk.Frame(canvas, padding="20")
+    canvas.create_window((0, 0), window=overview_container, anchor="nw")
+    overview_container.bind(
+        "<Configure>",
+        lambda e: canvas.configure(scrollregion=canvas.bbox("all")),
+    )
 
-    # Configure grid
-    for i in range(3):
-        buttons_frame.columnconfigure(i, weight=1)
+    # ---------------------- HEADER (#9, #2, #3) -----------------------
+    header = ttk.Frame(overview_container)
+    header.pack(fill=tk.X, pady=(0, 15))
 
-    # Quick access buttons
-    ttk.Button(buttons_frame, text=_("dashboard.overview.buttons.student_records"),
-              command=self.show_student_records).grid(row=0, column=0, padx=5, pady=5, sticky="ew")
-    ttk.Button(buttons_frame, text=_("dashboard.overview.buttons.grade_tracking"),
-              command=self.show_grade_tracking_gui).grid(row=0, column=1, padx=5, pady=5, sticky="ew")
-    ttk.Button(buttons_frame, text=_("dashboard.overview.buttons.attendance"),
-              command=self.open_attendance_gui).grid(row=0, column=2, padx=5, pady=5, sticky="ew")
+    full_name = (
+        user.get('full_name')
+        or " ".join(filter(None, [user.get('first_name'), user.get('last_name')]))
+        or username
+    )
+    ttk.Label(header, text=full_name,
+              font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
+    role_badge = ttk.Label(header, text=f"  {role.upper()}  ",
+                           font=('Arial', 9, 'bold'),
+                           background="#d0e4ff", foreground="#003366",
+                           padding=4)
+    role_badge.pack(side=tk.LEFT, padx=10)
 
-    ttk.Button(buttons_frame, text=_("dashboard.overview.buttons.course_management"),
-              command=self.show_course_management).grid(row=1, column=0, padx=5, pady=5, sticky="ew")
-    ttk.Button(buttons_frame, text=_("dashboard.overview.buttons.finance_management"),
-              command=self.show_finance_management).grid(row=1, column=1, padx=5, pady=5, sticky="ew")
-    ttk.Button(buttons_frame, text=_("dashboard.overview.buttons.reports"),
-              command=self.show_enhanced_reporting_dashboard).grid(row=1, column=2, padx=5, pady=5, sticky="ew")
+    # Last-login lookup from login_attempts.
+    last_login_text = "Last login: —"
+    try:
+        with get_connection() as conn:
+            row = conn.execute(
+                "SELECT attempt_time FROM login_attempts "
+                "WHERE username = ? AND success = 1 "
+                "ORDER BY id DESC LIMIT 1, 1",
+                (username,),
+            ).fetchone()
+            if row and row['attempt_time']:
+                last_login_text = f"Last login: {row['attempt_time']}"
+    except Exception:
+        pass
+    ttk.Label(header, text=last_login_text,
+              foreground="#555").pack(side=tk.LEFT, padx=15)
 
-    # System status
-    status_frame = ttk.LabelFrame(overview_container, text=_("dashboard.overview.system_status"), padding="15")
-    status_frame.pack(fill=tk.X, pady=(0, 20))
+    # Live clock + DB indicator on the right.
+    right = ttk.Frame(header)
+    right.pack(side=tk.RIGHT)
+    clock_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    ttk.Label(right, textvariable=clock_var,
+              font=('Consolas', 11)).pack(side=tk.LEFT, padx=10)
+    db_dot = tk.Label(right, text="●", font=('Arial', 14), foreground="gray")
+    db_dot.pack(side=tk.LEFT)
+    db_label = ttk.Label(right, text="DB: checking…")
+    db_label.pack(side=tk.LEFT, padx=4)
 
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    ttk.Label(status_frame, text=_("dashboard.overview.current_time", time=current_time)).pack(anchor="w")
-    ttk.Label(status_frame, text=_("dashboard.overview.user_role", role=self.auth.current_user.get('role', _("common.unknown")))).pack(anchor="w")
-    ttk.Label(status_frame, text=_("dashboard.overview.database_connected")).pack(anchor="w")
+    def _tick():
+        if not overview_container.winfo_exists():
+            return
+        clock_var.set(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+        # Re-check DB every 30 ticks (~30s) so the dot reflects reality
+        # without hammering the pool.
+        _tick.counter = getattr(_tick, 'counter', 0) + 1
+        if _tick.counter % 30 == 1:
+            try:
+                with get_connection() as conn:
+                    conn.execute("SELECT 1").fetchone()
+                db_dot.config(foreground="#2ca02c")
+                db_label.config(text="DB: connected")
+            except Exception as e:
+                db_dot.config(foreground="#d62728")
+                db_label.config(text=f"DB: {type(e).__name__}")
+        overview_container.after(1000, _tick)
+
+    overview_container.after(0, _tick)
+
+    # ---------------------- SEARCH BAR (#8) ---------------------------
+    search_row = ttk.Frame(overview_container)
+    search_row.pack(fill=tk.X, pady=(0, 15))
+    ttk.Label(search_row, text="🔎").pack(side=tk.LEFT)
+    search_var = tk.StringVar()
+    search_entry = ttk.Entry(search_row, textvariable=search_var)
+    search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5, 5))
+    search_entry.insert(0, "")
+
+    def _do_search(_e=None):
+        q = search_var.get().strip()
+        if not q:
+            return
+        # Pick the most likely destination from the query shape and
+        # hand off to the existing launcher; the user can then refine.
+        ql = q.lower()
+        try:
+            if ql.startswith('s') and q[1:].isdigit():
+                self.show_student_records()
+            elif any(c.isalpha() for c in q) and any(c.isdigit() for c in q):
+                # Looks like a course/module code (CS101).
+                self.show_course_management()
+            else:
+                self.show_student_records()
+        except Exception as e:
+            messagebox.showerror(_("common.error"), str(e))
+
+    ttk.Button(search_row, text="Go",
+               command=_do_search).pack(side=tk.LEFT)
+    search_entry.bind("<Return>", _do_search)
+
+    # ---------------------- ANNOUNCEMENTS (#7) ------------------------
+    ann_frame = ttk.LabelFrame(overview_container, text="Announcements",
+                               padding="10")
+    ann_frame.pack(fill=tk.X, pady=(0, 15))
+    announcements = []
+    try:
+        with get_connection() as conn:
+            rows = conn.execute(
+                "SELECT title, content, priority FROM announcements "
+                "WHERE is_active = 1 "
+                "AND (start_date IS NULL OR start_date <= date('now')) "
+                "AND (end_date   IS NULL OR end_date   >= date('now')) "
+                "ORDER BY CASE priority "
+                "  WHEN 'urgent' THEN 0 WHEN 'high' THEN 1 "
+                "  WHEN 'normal' THEN 2 ELSE 3 END, "
+                "announcement_id DESC LIMIT 3"
+            ).fetchall()
+            announcements = list(rows)
+    except Exception:
+        pass
+
+    if announcements:
+        priority_color = {
+            'urgent': '#b00020', 'high': '#cc6600',
+            'normal': '#003366', 'low': '#555',
+        }
+        for r in announcements:
+            colour = priority_color.get(
+                (r['priority'] or 'normal').lower(), '#003366')
+            line = ttk.Frame(ann_frame)
+            line.pack(fill=tk.X, anchor='w', pady=2)
+            tk.Label(line, text=f"● {r['title']}",
+                     foreground=colour, font=('Arial', 10, 'bold')).pack(side=tk.LEFT)
+            ttk.Label(line, text=f" — {r['content']}").pack(side=tk.LEFT)
+    else:
+        ttk.Label(ann_frame, text="No active announcements.",
+                  foreground="#777").pack(anchor='w')
+
+    # ---------------------- KPI TILES (#4) ----------------------------
+    kpi_frame = ttk.Frame(overview_container)
+    kpi_frame.pack(fill=tk.X, pady=(0, 15))
+    for i in range(4):
+        kpi_frame.columnconfigure(i, weight=1, uniform='kpi')
+
+    def _query_one(sql):
+        try:
+            with get_connection() as conn:
+                row = conn.execute(sql).fetchone()
+                return row[0] if row else 0
+        except Exception:
+            return "—"
+
+    kpis = [
+        ("Total Students",  "SELECT COUNT(*) FROM students"),
+        ("Active Courses",  "SELECT COUNT(*) FROM modules WHERE is_active = 1"),
+        ("Logins (24h)",    "SELECT COUNT(*) FROM login_attempts "
+                            "WHERE success = 1 "
+                            "AND attempt_time >= datetime('now','-24 hours')"),
+        ("Pending Assignments",
+                            "SELECT COUNT(*) FROM assignments "
+                            "WHERE due_date >= date('now') AND status = 'active'"),
+    ]
+    for col, (label, sql) in enumerate(kpis):
+        tile = ttk.LabelFrame(kpi_frame, text=label, padding=10)
+        tile.grid(row=0, column=col, padx=5, sticky="ew")
+        value = _query_one(sql)
+        value_str = f"{value:,}" if isinstance(value, int) else str(value)
+        ttk.Label(tile, text=value_str,
+                  font=('Arial', 22, 'bold')).pack()
+
+    # ---------------------- QUICK ACTIONS (#1, #6, #10, #11) ----------
+    # (key, label, command, tooltip, [permissions...])
+    # An empty permissions list means "always show".
+    actions = [
+        ('student_records',
+         _("dashboard.overview.buttons.student_records"),
+         self.show_student_records,
+         "Browse, edit and manage student records.",
+         ['view_any_student', 'view_own_student']),
+        ('grade_tracking',
+         _("dashboard.overview.buttons.grade_tracking"),
+         self.show_grade_tracking_gui,
+         "View and record grades and assessment results.",
+         ['view_grades', 'manage_grades']),
+        ('attendance',
+         _("dashboard.overview.buttons.attendance"),
+         self.open_attendance_gui,
+         "Mark attendance, run reports, view trends.",
+         ['view_attendance', 'manage_attendance']),
+        ('course_management',
+         _("dashboard.overview.buttons.course_management"),
+         self.show_course_management,
+         "Create, edit and schedule courses and modules.",
+         ['view_courses', 'manage_courses']),
+        ('finance_management',
+         _("dashboard.overview.buttons.finance_management"),
+         self.show_finance_management,
+         "Fees, invoices, scholarships and ledgers.",
+         ['view_finance', 'manage_finance']),
+        ('reports',
+         _("dashboard.overview.buttons.reports"),
+         self.show_enhanced_reporting_dashboard,
+         "Open the enhanced reporting dashboard.",
+         ['view_reports', 'export_data']),
+    ]
+
+    perms = set(user.get('permissions') or [])
+    is_admin = role == 'admin'
+
+    def _allowed(required):
+        if not required:
+            return True
+        if is_admin:
+            return True
+        return any(p in perms for p in required)
+
+    visible = [a for a in actions if _allowed(a[4])]
+
+    pins = set(_load_pins(username))
+    visible.sort(key=lambda a: (0 if a[0] in pins else 1, a[1]))
+
+    qa_frame = ttk.LabelFrame(
+        overview_container, text=_("dashboard.overview.quick_access"),
+        padding="15")
+    qa_frame.pack(fill=tk.X, pady=(0, 15))
+
+    if not visible:
+        ttk.Label(qa_frame,
+                  text="No quick actions available for your role.",
+                  foreground="#777").pack(anchor='w')
+    else:
+        cols = 3
+        for i in range(cols):
+            qa_frame.columnconfigure(i, weight=1)
+
+        def _toggle_pin(key, btn):
+            current = set(_load_pins(username))
+            if key in current:
+                current.discard(key)
+            else:
+                current.add(key)
+            _save_pins(username, current)
+            # Update label inline so the user sees the pin without a rebuild.
+            label = btn.cget('text').lstrip('★ ').rstrip()
+            btn.config(text=f"★ {label}" if key in current else label)
+
+        for idx, (key, label, cmd, tip, _req) in enumerate(visible):
+            display = f"★ {label}" if key in pins else label
+            btn = ttk.Button(qa_frame, text=display, command=cmd,
+                             style='Action.TButton')
+            btn.grid(row=idx // cols, column=idx % cols,
+                     padx=5, pady=5, sticky="ew")
+            _Tooltip(btn,
+                     f"{tip}\n(Right-click to {'unpin' if key in pins else 'pin'})")
+            btn.bind("<Button-3>",
+                     lambda _e, k=key, b=btn: _toggle_pin(k, b))
+
+    # ---------------------- RECENT ACTIVITY (#5) ----------------------
+    ra_frame = ttk.LabelFrame(overview_container,
+                              text="Recent activity", padding="10")
+    ra_frame.pack(fill=tk.X, pady=(0, 10))
+
+    ra_cols = ('timestamp', 'username', 'action')
+    ra_tree = ttk.Treeview(ra_frame, columns=ra_cols, show='headings',
+                           height=5)
+    ra_tree.heading('timestamp', text='Time')
+    ra_tree.heading('username', text='User')
+    ra_tree.heading('action', text='Action')
+    ra_tree.column('timestamp', width=160)
+    ra_tree.column('username', width=120)
+    ra_tree.column('action', width=300)
+    ra_tree.pack(fill=tk.X)
+
+    try:
+        with get_connection() as conn:
+            rows = conn.execute(
+                "SELECT timestamp, username, action FROM activity_log "
+                "ORDER BY id DESC LIMIT 5"
+            ).fetchall()
+            for r in rows:
+                ra_tree.insert('', tk.END, values=(
+                    r['timestamp'] or '', r['username'] or '',
+                    r['action'] or ''))
+    except Exception as e:
+        ra_tree.insert('', tk.END,
+                       values=('', '', f'Error: {e}'))
+
+    def _see_all_activity():
+        nb = getattr(self, 'workspace_notebook', None)
+        if nb is None:
+            return
+        for tab_id in nb.tabs():
+            if 'activity' in nb.tab(tab_id, 'text').lower():
+                nb.select(tab_id)
+                return
+
+    see_all = ttk.Label(ra_frame, text="See all activity →",
+                        foreground="#1a73e8", cursor="hand2")
+    see_all.pack(anchor='e', pady=(5, 0))
+    see_all.bind("<Button-1>", lambda _e: _see_all_activity())
 
 def create_stats_tab(self, parent):
     """Create quick statistics tab"""
