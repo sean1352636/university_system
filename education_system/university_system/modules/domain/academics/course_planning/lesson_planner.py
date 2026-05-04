@@ -155,20 +155,14 @@ class LessonPlannerApp:
     # ---------- UI Setup ----------
 
     def _setup_styles(self):
+        # ttk.Style is process-global. When this app is embedded in the
+        # main GUI workspace via _embed_or_subprocess, configuring base
+        # style names (TNotebook, TFrame, TLabel, …) leaks out and
+        # recolours the host. Only named styles are safe.
         style = ttk.Style()
-
-        style.configure("TNotebook", background="#f0f0f0", borderwidth=0)
-        style.configure("TNotebook.Tab", padding=[18, 8], font=("Segoe UI", 10))
-        style.configure("Treeview", font=("Segoe UI", 9), rowheight=26)
-        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
-        style.configure("TButton", font=("Segoe UI", 9), padding=6)
         style.configure("Accent.TButton", font=("Segoe UI", 9, "bold"))
-        style.configure("TLabel", background="#f0f0f0", font=("Segoe UI", 10))
         style.configure("Header.TLabel", font=("Segoe UI", 14, "bold"),
                         background="#f0f0f0", foreground="#000000")
-        style.configure("TLabelframe", background="#f0f0f0")
-        style.configure("TLabelframe.Label", background="#f0f0f0",
-                        font=("Segoe UI", 10, "bold"), foreground="#000000")
 
     def _build_ui(self):
         # Top header bar — flat #f0f0f0 bg with dark text to match the

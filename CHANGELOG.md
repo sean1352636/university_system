@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.75 — 2026-05-04](#811775---2026-05-04)
 - [8.117.74 — 2026-05-04](#811774---2026-05-04)
 - [8.117.73 — 2026-05-04](#811773---2026-05-04)
 - [8.117.72 — 2026-05-04](#811772---2026-05-04)
@@ -301,6 +302,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.75] — 2026-05-04
+
+### Fixed — Five more embedded features no longer recolour the main GUI
+
+Sweep of every app launched through ``main_gui._embed_or_subprocess``
+(15 features in total) found five more with the same base-ttk-style
+leak fixed in 8.117.74. ``ttk.Style`` is process-global, so when these
+apps embed in the main GUI workspace, ``style.configure("TFrame", …)``
+/ ``"TLabel"`` / ``"TButton"`` / ``"TNotebook"`` / ``"Treeview"`` /
+``"."`` calls inside their setup bleed out and recolour the host.
+
+- ``course_planning/lesson_planner.py``: dropped six base-style
+  configures (TNotebook, TNotebook.Tab, Treeview, Treeview.Heading,
+  TButton, TLabel, TLabelframe, TLabelframe.Label) — they were
+  cosmetic Segoe-UI/grey defaults; clam covers it. Named
+  ``Accent.TButton`` and ``Header.TLabel`` preserved.
+- ``communications/feedback/complaints_portal.py``: namespaced the
+  TNotebook + TNotebook.Tab block to ``Complaints.TNotebook`` /
+  ``Complaints.TNotebook.Tab`` and the Treeview block to
+  ``Complaints.Treeview`` / ``Complaints.Treeview.Heading``; applied
+  ``style="Complaints.TNotebook"`` on the notebook construction and
+  ``style="Complaints.Treeview"`` on the complaints tree. Dropped
+  cosmetic TFrame / TLabel / TButton overrides. ``Submit.TButton``
+  and ``Header.TLabel`` (already named) preserved.
+- ``student_affairs/safeguarding/safeguarding_system.py``: dropped
+  the ``TButton`` padding override; named ``Header.TLabel`` /
+  ``Sub.TLabel`` preserved.
+- ``health/first_aid/first_aid_portal.py``: namespaced TNotebook +
+  TNotebook.Tab (configure + map) to ``FirstAid.TNotebook`` and
+  applied ``style="FirstAid.TNotebook"`` on the notebook
+  construction.
+- ``staff_hr/background_checks/university_bg_checker.py``: dropped
+  the global ``"."`` font configure and the TLabel / TFrame
+  light/dark mode background configures (the rest of the BG
+  Checker chrome already uses tk.Frame / tk.Label with explicit
+  ``bg=`` / ``fg=`` so dark mode still works); the Treeview
+  light/dark mode block was namespaced to ``BgChecker.Treeview``
+  and applied via ``style=`` on the people tree.
+
+The remaining 10 of 15 embedded apps (intervention_outcomes,
+mentoring_matching, tutor_groups, employer_portal, kpi_dashboard,
+apprenticeship_system, room_booking, plus the three already fixed
+in 8.117.74) had no base-style mutations.
+
+#### Files
+
+- ``modules/domain/academics/course_planning/lesson_planner.py``
+- ``modules/domain/communications/feedback/complaints_portal.py``
+- ``modules/domain/student_affairs/safeguarding/safeguarding_system.py``
+- ``modules/domain/health/first_aid/first_aid_portal.py``
+- ``modules/domain/staff_hr/background_checks/university_bg_checker.py``
 
 ---
 

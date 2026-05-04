@@ -402,9 +402,9 @@ class SafeguardingApp(tk.Tk):
 
         self.user = _get_current_user()
 
-        # ttk theming
+        # ttk theming — process-global style; only configure named styles
+        # to avoid leaking into the host main GUI when embedded.
         style = ttk.Style(self._host)
-        style.configure("TButton", padding=6)
         style.configure("Header.TLabel",
                         font=("Segoe UI", 16, "bold"),
                         background="#f4f6fa")

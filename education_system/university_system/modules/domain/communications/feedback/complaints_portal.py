@@ -499,21 +499,23 @@ class ComplaintsPortal(tk.Tk):
                      (datetime.now() - t0).total_seconds() * 1000)
 
     def _configure_styles(self):
+        # ttk.Style is process-global even when given a master; embedded
+        # in the main GUI workspace, base-style mutations (TNotebook,
+        # TFrame, TLabel, TButton, Treeview) leak out. Use namespaced
+        # styles for structural widgets and skip purely cosmetic
+        # base-name overrides.
         style = ttk.Style(self._host)
-        style.configure("TNotebook", background="#f0f4f8", borderwidth=0)
-        style.configure("TNotebook.Tab", padding=[20, 10], font=("Segoe UI", 10, "bold"))
-        style.map("TNotebook.Tab",
+        style.configure("Complaints.TNotebook", background="#f0f4f8", borderwidth=0)
+        style.configure("Complaints.TNotebook.Tab", padding=[20, 10], font=("Segoe UI", 10, "bold"))
+        style.map("Complaints.TNotebook.Tab",
                   background=[("selected", "#1e3a8a"), ("!selected", "#cbd5e1")],
                   foreground=[("selected", "white"), ("!selected", "#1e293b")])
-        style.configure("TFrame", background="#f0f4f8")
-        style.configure("TLabel", background="#f0f4f8", font=("Segoe UI", 10))
         style.configure("Header.TLabel", background="#1e3a8a", foreground="white",
                         font=("Segoe UI", 18, "bold"), padding=15)
-        style.configure("TButton", font=("Segoe UI", 10, "bold"), padding=8)
         style.configure("Submit.TButton", background="#1e3a8a", foreground="white")
         style.map("Submit.TButton", background=[("active", "#2563eb")])
-        style.configure("Treeview", font=("Segoe UI", 10), rowheight=28)
-        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"),
+        style.configure("Complaints.Treeview", font=("Segoe UI", 10), rowheight=28)
+        style.configure("Complaints.Treeview.Heading", font=("Segoe UI", 10, "bold"),
                         background="#1e3a8a", foreground="white")
 
     def _build_header(self):
@@ -522,7 +524,7 @@ class ComplaintsPortal(tk.Tk):
         header.pack(fill="x")
 
     def _build_notebook(self):
-        self.notebook = ttk.Notebook(self._host)
+        self.notebook = ttk.Notebook(self._host, style="Complaints.TNotebook")
         self.notebook.pack(fill="both", expand=True, padx=15, pady=15)
 
         self.submit_tab = SubmitTab(self.notebook, self)
@@ -885,7 +887,7 @@ class AdminTab(ttk.Frame):
         tree_frame.pack(fill="both", expand=True, pady=10)
 
         columns = ("ID", "Name", "Category", "Priority", "Subject", "Status", "Date")
-        self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=12)
+        self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=12, style="Complaints.Treeview")
 
         widths = {"ID": 90, "Name": 140, "Category": 130, "Priority": 80,
                   "Subject": 200, "Status": 100, "Date": 130}

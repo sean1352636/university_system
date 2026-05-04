@@ -324,17 +324,19 @@ class FirstAidPortal:
         self._create_footer()
 
     def _setup_styles(self):
+        # Namespaced so that embedding this app in the main GUI workspace
+        # (process-global ttk.Style) doesn't recolour the host's notebook.
         style = ttk.Style()
-        style.configure("TNotebook", background=self.colors["bg"], borderwidth=0)
+        style.configure("FirstAid.TNotebook", background=self.colors["bg"], borderwidth=0)
         style.configure(
-            "TNotebook.Tab",
+            "FirstAid.TNotebook.Tab",
             padding=[20, 10],
             font=("Segoe UI", 10, "bold"),
             background="#d6dde5",
             foreground=self.colors["text"],
         )
         style.map(
-            "TNotebook.Tab",
+            "FirstAid.TNotebook.Tab",
             background=[("selected", self.colors["primary"])],
             foreground=[("selected", "white")],
         )
@@ -373,7 +375,7 @@ class FirstAidPortal:
         ).pack(side="right", padx=15, pady=25)
 
     def _create_main_content(self):
-        self.notebook = ttk.Notebook(self.root)
+        self.notebook = ttk.Notebook(self.root, style="FirstAid.TNotebook")
         self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
 
         self._create_home_tab()

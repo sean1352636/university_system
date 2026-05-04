@@ -637,7 +637,7 @@ class BGCheckerApp(tk.Tk):
 
         # Table
         cols = ("case_id", "person_id", "full_name", "role", "email", "department", "status", "risk_score")
-        self.tree = ttk.Treeview(self._host, columns=cols, show="headings", selectmode="browse")
+        self.tree = ttk.Treeview(self._host, columns=cols, show="headings", selectmode="browse", style="BgChecker.Treeview")
         widths = {"case_id": 110, "person_id": 100, "full_name": 200, "role": 80,
                   "email": 200, "department": 140, "status": 100, "risk_score": 80}
         for c in cols:
@@ -670,15 +670,19 @@ class BGCheckerApp(tk.Tk):
             pass
         try:
             style = ttk.Style(self._host)
-            style.configure(".", font=("TkDefaultFont", self.font_size))
+            # Note: avoid base-style configures (TLabel / TFrame / "."
+            # / Treeview) here — ttk.Style is process-global, so when
+            # this app is embedded in the main GUI workspace those
+            # mutations leak out and recolour every widget in the host.
+            # Only the namespaced BgChecker.Treeview is touched; the
+            # rest of the BG Checker chrome uses tk.Frame / tk.Label
+            # with explicit bg=/fg= so dark mode still works.
             if self.dark_mode:
-                style.configure("Treeview", background="#333", foreground=fg, fieldbackground="#333")
-                style.configure("TLabel", background=bg, foreground=fg)
-                style.configure("TFrame", background=bg)
+                style.configure("BgChecker.Treeview",
+                                background="#333", foreground=fg, fieldbackground="#333")
             else:
-                style.configure("Treeview", background="white", foreground="black", fieldbackground="white")
-                style.configure("TLabel", background=bg, foreground=fg)
-                style.configure("TFrame", background=bg)
+                style.configure("BgChecker.Treeview",
+                                background="white", foreground="black", fieldbackground="white")
         except tk.TclError:
             logger.exception("Theme apply failed")
 
