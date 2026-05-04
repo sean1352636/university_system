@@ -134,7 +134,7 @@ def _student_hash(student_id):
     """SHA-256 of the student_id — matches the `eval_form_responses.
     student_hash` column's anonymization intent.
     """
-    return hashlib.sha256((student_id or '').encode('utf-8')).hexdigest()
+    return hashlib.sha256(str(student_id or '').encode('utf-8')).hexdigest()
 
 
 def _current_academic_year():

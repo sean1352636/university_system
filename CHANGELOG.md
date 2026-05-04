@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.76 — 2026-05-04](#811776---2026-05-04)
 - [8.117.75 — 2026-05-04](#811775---2026-05-04)
 - [8.117.74 — 2026-05-04](#811774---2026-05-04)
 - [8.117.73 — 2026-05-04](#811773---2026-05-04)
@@ -302,6 +303,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.76] — 2026-05-04
+
+### Fixed — Module Evaluation start_evaluation crash on integer student IDs
+
+``module_evaluation_portal._student_hash`` did
+``(student_id or '').encode('utf-8')`` — assuming ``student_id`` was
+always a string. ``_resolve_student_identity`` returns the value
+straight from the auth user record's ``id`` field, which for the
+default seeded student (``S12345``) and most test users is an
+``int``. Calling ``.encode`` on an int raised
+``AttributeError: 'int' object has no attribute 'encode'`` from
+``has_responded`` the moment a student clicked "Start Evaluation".
+
+Wrapped the value in ``str(...)`` so any int / None / other
+identifier coerces cleanly before SHA-256.
+
+The "Tk background error: unknown color name 'none'" stderr line
+that accompanied the traceback was Tk's bgerror backstop emitting
+a secondary diagnostic while unwinding the failed callback — it
+should go away with the underlying AttributeError fix.
+
+#### Files
+
+- ``modules/domain/academics/course_evaluation/module_evaluation_portal.py``
+  ``_student_hash``: coerce input via ``str(...)`` before encode.
 
 ---
 
