@@ -2,9 +2,28 @@
 import json
 import threading
 
+from education_system.university_system.modules.shared.constants import paths as _paths
 from education_system.university_system.modules.shared.gui.database.shared_imports import (
     BACKUP_DIR, logger,
 )
+
+
+def _backup_config_path():
+    """Return the absolute path for backup_config.json.
+
+    Pre-8.117.85 this writer used the bare relative string
+    ``"backup_config.json"``, which lands in whatever cwd Python was
+    launched from (typically ``$HOME``). Now anchors to the project's
+    config dir so the file ends up next to other persisted config and
+    matches the path used by ``infrastructure/database/data_backup/config.py``.
+    """
+    _paths.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    return _paths.CONFIG_DIR / "backup_config.json"
+
+
+def _gui_config_path():
+    _paths.CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    return _paths.CONFIG_DIR / "gui_config.json"
 
 # Initialize basic config if not available
 config = {
@@ -101,7 +120,7 @@ GUI_CONFIG = {
 def save_config():
     """Save configuration to file"""
     try:
-        with open("backup_config.json", "w") as f:
+        with open(_backup_config_path(), "w") as f:
             json.dump(config, f, indent=4)
     except Exception as e:
         print(f"Could not save config: {e}")
@@ -110,7 +129,7 @@ def load_config():
     """Load configuration from file"""
     global config
     try:
-        with open("backup_config.json", "r") as f:
+        with open(_backup_config_path(), "r") as f:
             loaded_config = json.load(f)
             config.update(loaded_config)
     except FileNotFoundError:
@@ -121,7 +140,7 @@ def load_config():
 def save_gui_config():
     """Save GUI-specific configuration"""
     try:
-        with open("gui_config.json", "w") as f:
+        with open(_gui_config_path(), "w") as f:
             json.dump(GUI_CONFIG, f, indent=4)
     except Exception as e:
         logger.error(f"Failed to save GUI config: {e}")
@@ -130,9 +149,9 @@ def load_gui_config():
     """Load GUI-specific configuration"""
     global GUI_CONFIG
     try:
-        import os
-        if os.path.exists("gui_config.json"):
-            with open("gui_config.json", "r") as f:
+        path = _gui_config_path()
+        if path.exists():
+            with open(path, "r") as f:
                 loaded_config = json.load(f)
                 GUI_CONFIG.update(loaded_config)
     except Exception as e:

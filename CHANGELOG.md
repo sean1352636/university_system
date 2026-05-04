@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.85 — 2026-05-04](#811785---2026-05-04)
 - [8.117.84 — 2026-05-04](#811784---2026-05-04)
 - [8.117.78 — 2026-05-04](#811778---2026-05-04)
 - [8.117.77 — 2026-05-04](#811777---2026-05-04)
@@ -306,6 +307,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.85] — 2026-05-04
+
+### Fixed — Backup GUI config writer leaked ``backup_config.json`` into ``$HOME``
+
+``modules/shared/gui/database/config.py:save_config`` /
+``load_config`` / ``save_gui_config`` / ``load_gui_config`` opened the
+files with the bare relative path ``"backup_config.json"`` (and
+``"gui_config.json"``). Relative paths resolve against the current
+working directory, which is wherever ``run.py`` was launched from —
+typically ``$HOME``, so each session quietly created or read
+``~/backup_config.json``. Meanwhile
+``infrastructure/database/data_backup/config.py`` already wrote the
+same-named file to ``DATA_DIR / "backup_config.json"``, so the two
+writers disagreed about which file was canonical.
+
+Both GUI helpers now resolve their paths through
+``paths.CONFIG_DIR`` via ``_backup_config_path`` /
+``_gui_config_path`` helpers — same directory the infrastructure
+writer uses. Stray ``~/backup_config.json`` was relocated into the
+project's config dir as part of this change.
+
+#### Files
+
+- ``university_system/modules/shared/gui/database/config.py``
+  added ``_backup_config_path`` / ``_gui_config_path`` helpers; the
+  four save/load functions now open paths anchored under
+  ``paths.CONFIG_DIR`` instead of bare relative strings.
 
 ---
 
