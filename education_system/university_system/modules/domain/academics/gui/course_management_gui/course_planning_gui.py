@@ -434,7 +434,7 @@ class CoursePlanningGUI:
         planner_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
         # Canvas for scrolling
-        canvas = tk.Canvas(planner_frame)
+        canvas = tk.Canvas(planner_frame, highlightthickness=0)
         scrollbar = ttk.Scrollbar(planner_frame, orient=tk.VERTICAL, command=canvas.yview)
         self.planner_content = ttk.Frame(canvas)
 
@@ -443,8 +443,15 @@ class CoursePlanningGUI:
             lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
 
-        canvas.create_window((0, 0), window=self.planner_content, anchor="nw")
+        canvas_window = canvas.create_window((0, 0), window=self.planner_content, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
+        # 8.117.98: bind the inner frame's width to the canvas so the
+        # empty-state placeholder and semester blocks actually fill the
+        # visible area instead of collapsing to their natural width.
+        canvas.bind(
+            "<Configure>",
+            lambda e: canvas.itemconfig(canvas_window, width=e.width)
+        )
 
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -458,8 +465,63 @@ class CoursePlanningGUI:
             widget.destroy()
 
         if not self.current_plan_id or not self.current_plan_data:
-            ttk.Label(self.planner_content, text="No plan loaded. Create or load a plan to begin.",
-                     font=('Arial', 12), foreground='gray').pack(pady=50)
+            # 8.117.98: actionable empty state. Pre-fix this was a
+            # single grey label "No plan loaded. Create or load a plan
+            # to begin." parented to a tiny zero-width frame, so the
+            # tab looked empty and the user had no way to create a
+            # plan without navigating to the Dashboard tab.
+            empty = ttk.Frame(self.planner_content, padding=40)
+            empty.pack(fill=tk.BOTH, expand=True)
+            ttk.Label(empty, text="No plan loaded",
+                      font=('Arial', 16, 'bold')).pack(pady=(20, 4))
+            ttk.Label(empty,
+                      text="Create a new semester plan or pick an existing one below.",
+                      font=('Arial', 11), foreground='#555').pack(pady=(0, 20))
+
+            # Inline Create / Auto-Generate buttons.
+            btns = ttk.Frame(empty)
+            btns.pack(pady=10)
+            ttk.Button(btns, text="Create New Plan",
+                       command=self._create_new_plan).pack(side=tk.LEFT, padx=5)
+            ttk.Button(btns, text="Auto-Generate Plan",
+                       command=self._auto_generate_plan).pack(side=tk.LEFT, padx=5)
+
+            # Existing plans list — double-click to load.
+            try:
+                existing_plans = self.planning_service.get_student_plans(self.student_id)
+            except Exception:
+                existing_plans = []
+
+            if existing_plans:
+                box = ttk.LabelFrame(empty, text="Existing plans (double-click to load)",
+                                     padding=10)
+                box.pack(fill=tk.X, pady=(20, 0))
+                lb = tk.Listbox(box, height=min(8, len(existing_plans)),
+                                font=('Arial', 10))
+                lb.pack(fill=tk.X)
+                self._empty_state_plans = list(existing_plans)
+                for p in existing_plans:
+                    lb.insert(tk.END,
+                              f"#{p['plan_id']} — {p['plan_name']} "
+                              f"({p.get('status', 'Active')}) — "
+                              f"{p.get('total_semesters', '?')} semesters")
+
+                def _load_picked(_e=None):
+                    sel = lb.curselection()
+                    if not sel:
+                        return
+                    plan = self._empty_state_plans[sel[0]]
+                    self.current_plan_id = plan['plan_id']
+                    self.current_plan_data = self.planning_service.get_semester_plan(
+                        self.current_plan_id)
+                    if self.current_plan_data:
+                        try:
+                            self.plan_name_label.config(
+                                text=plan['plan_name'], foreground='#1a73e8')
+                        except Exception:
+                            pass
+                        self._display_planner_content()
+                lb.bind('<Double-Button-1>', _load_picked)
             return
 
         plan = self.current_plan_data['plan']
@@ -860,9 +922,11 @@ class CoursePlanningGUI:
         if available_modules:
             course_combo.current(0)
 
-        # Semester number
+        # Semester number — defaults to 1 so a blank submission doesn't
+        # raise "invalid literal for int() with base 10: ''" (8.117.99).
         ttk.Label(form_frame, text="Semester Number:").grid(row=1, column=0, sticky=tk.W, pady=5)
         sem_num_entry = ttk.Entry(form_frame, width=30)
+        sem_num_entry.insert(0, "1")
         sem_num_entry.grid(row=1, column=1, pady=5, sticky=tk.EW)
 
         # Semester name
@@ -963,7 +1027,21 @@ class CoursePlanningGUI:
                 dialog.destroy()
 
             except Exception as e:
-                messagebox.showerror("Error", f"Failed to add course: {e}")
+                # Translate the schema-level UNIQUE constraint error into
+                # something a user can act on (8.117.99). The schema has
+                # ``UNIQUE(plan_id, course_id)`` so each module can only
+                # appear once in a plan; on retry the friendlier text
+                # tells the user to use Move/Remove instead.
+                msg = str(e)
+                if 'UNIQUE constraint failed' in msg \
+                        and 'plan_id' in msg and 'course_id' in msg:
+                    messagebox.showerror(
+                        "Already in plan",
+                        f"{course_id} is already in this plan. Each module "
+                        "can only appear once — use the Move or Remove "
+                        "controls on the existing entry instead.")
+                else:
+                    messagebox.showerror("Error", f"Failed to add course: {e}")
 
         ttk.Button(button_frame, text="Add", command=add_course).pack(side=tk.RIGHT, padx=5)
         ttk.Button(button_frame, text="Cancel", command=dialog.destroy).pack(side=tk.RIGHT, padx=5)

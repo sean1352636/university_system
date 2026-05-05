@@ -153,25 +153,34 @@ class Database:
             raise
 
     def get_courses(self):
-        """Return [(module_code, module_code, module_name, instructor_or_blank,
-        department_or_blank)] — shape mirrors what the UI expected from
-        the legacy local `courses` table.
+        """Return [(course_code, course_code, course_name, instructor_or_blank,
+        department_or_blank)] from the central ``courses`` table.
+
+        Pre-8.117.91 this read from ``modules`` instead — the dropdown
+        was populated with every individual module the catalog seeded
+        rather than the actual courses students are enrolled in.
+        Now matches the Course Management list / Course Details
+        dropdown's shape (any row with non-NULL code and name).
         """
         conn = self._connect()
         try:
             rows = conn.execute(
-                "SELECT module_code, module_name, "
-                "       COALESCE(instructor, ''), "
-                "       COALESCE(department, '') "
-                "FROM modules WHERE COALESCE(is_active, 1) = 1 "
-                "ORDER BY module_code"
+                "SELECT COALESCE(course_code, code) AS code, "
+                "       COALESCE(course_name, name) AS name, "
+                "       COALESCE(department, '')   AS dept "
+                "FROM courses "
+                "WHERE COALESCE(course_code, code) IS NOT NULL "
+                "AND   COALESCE(course_name, name) IS NOT NULL "
+                "ORDER BY code"
             ).fetchall()
         finally:
             conn.close()
-        # Repeat module_code as both the "id" and the "code" so existing
-        # call sites that index [0] for id and [1] for code still work.
-        return [(code, code, name, instr, dept)
-                for code, name, instr, dept in rows]
+        # Instructor field stays blank — courses don't carry a single
+        # instructor (modules do, but we deliberately moved off the
+        # modules catalog). UI tolerates an empty instructor; it just
+        # omits the "(<name>)" suffix in the dropdown label.
+        return [(code, code, name, "", dept)
+                for code, name, dept in rows]
 
     def submit_evaluation(self, data):
         """Insert an evaluation row.

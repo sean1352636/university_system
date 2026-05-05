@@ -711,16 +711,23 @@ def display_course_evaluation_menu(auth):
 
         input("\nPress Enter to continue...")
 
-# Import the full GUI
-try:
-    from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_gui import (
-        launch_course_evaluation_gui
-    )
-except ImportError:
-    # Fallback to factory launcher if GUI not available
-    launch_course_evaluation_gui = create_gui_launcher(
-        title="Course Evaluation System",
-        description="""Comprehensive course and instructor evaluation system.
+# Lazy launcher (8.117.96 — was a top-level
+# ``from ...course_evaluation_gui import launch_course_evaluation_gui``,
+# which closed a circular import: course_evaluation_gui imports
+# ``EvaluationTemplateManager`` / ``CourseEvaluationManager`` /
+# ``ResponseManager`` from this module, so when any sibling module
+# triggered ``course_evaluation_core`` load first, every other importer
+# of ``launch_course_evaluation_gui`` saw it as undefined on the
+# partially-loaded module and the eight wrappers in
+# ``course_management_gui/*`` all printed
+# "Academic systems not fully available: cannot import name
+# 'launch_course_evaluation_gui'…").
+#
+# By moving the GUI import into the function body, the resolution
+# happens at call time when both modules are fully loaded.
+_FALLBACK_LAUNCHER = create_gui_launcher(
+    title="Course Evaluation System",
+    description="""Comprehensive course and instructor evaluation system.
 
 Features:
 • Evaluation templates
@@ -729,8 +736,20 @@ Features:
 • Results analytics
 • Instructor performance
 • Evaluation history""",
-        cli_instruction="Use CLI: Course Evaluation System"
-    )
+    cli_instruction="Use CLI: Course Evaluation System",
+)
+
+
+def launch_course_evaluation_gui(*args, **kwargs):
+    """Launch the full Course Evaluation GUI, falling back to the
+    factory launcher if the GUI module can't be imported."""
+    try:
+        from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_gui import (
+            launch_course_evaluation_gui as _impl,
+        )
+    except ImportError:
+        return _FALLBACK_LAUNCHER(*args, **kwargs)
+    return _impl(*args, **kwargs)
 
 __all__ = [
     'EvaluationTemplateManager', 'CourseEvaluationManager',

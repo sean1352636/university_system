@@ -20,8 +20,72 @@ class PlanningService:
         """Initialize the Planning Service."""
         self._ensure_tables_exist()
 
+    def _migrate_drop_planned_courses_course_fk(self):
+        """One-shot migration: rebuild ``planned_courses`` without the
+        ``course_id → courses(code)`` foreign key. SQLite has no
+        ``ALTER TABLE … DROP CONSTRAINT``, so we copy rows into a fresh
+        table and swap.
+
+        Runs every PlanningService construction but no-ops once the FK
+        is gone, so the cost on subsequent boots is one PRAGMA query.
+        """
+        with transaction() as conn:
+            cur = conn.execute("PRAGMA foreign_key_list(planned_courses)")
+            fks = cur.fetchall()
+            if not fks:
+                return  # table doesn't exist yet — _ensure_tables_exist will create it
+            has_bad_fk = any(
+                (fk[2] == 'courses' and fk[3] == 'course_id')
+                for fk in fks
+            )
+            if not has_bad_fk:
+                return
+
+            # Disable FK enforcement for the duration of the rebuild
+            # so old rows whose course_id values don't match courses.code
+            # don't block the copy.
+            conn.execute("PRAGMA foreign_keys = OFF")
+            try:
+                conn.execute("ALTER TABLE planned_courses RENAME TO planned_courses_old")
+                conn.execute("""
+                    CREATE TABLE planned_courses (
+                        planned_course_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        plan_id INTEGER NOT NULL,
+                        course_id TEXT NOT NULL,
+                        semester_number INTEGER NOT NULL,
+                        semester_name TEXT NOT NULL,
+                        is_locked BOOLEAN DEFAULT 0,
+                        priority INTEGER DEFAULT 0,
+                        notes TEXT,
+                        added_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (plan_id) REFERENCES semester_plans(plan_id) ON DELETE CASCADE,
+                        UNIQUE(plan_id, course_id)
+                    )
+                """)
+                conn.execute("""
+                    INSERT INTO planned_courses
+                    (planned_course_id, plan_id, course_id, semester_number,
+                     semester_name, is_locked, priority, notes, added_at)
+                    SELECT planned_course_id, plan_id, course_id, semester_number,
+                           semester_name, is_locked, priority, notes, added_at
+                    FROM planned_courses_old
+                """)
+                conn.execute("DROP TABLE planned_courses_old")
+            finally:
+                conn.execute("PRAGMA foreign_keys = ON")
+
     def _ensure_tables_exist(self):
         """Create database tables if they don't exist."""
+        # 8.117.97: drop a stale FK on planned_courses.course_id if
+        # one is present. An older migration FK'd it to ``courses(code)``,
+        # but ``planned_courses.course_id`` semantically stores
+        # *module* codes (CIS0001 etc), not course codes (CS / DS) —
+        # so adding a CIS0001 module-row to a plan failed with
+        # "FOREIGN KEY constraint failed". The CREATE TABLE statement
+        # in this method is the source of truth and has no such FK,
+        # so we rebuild the live table to match. Idempotent: if no
+        # rogue FK is present this is a no-op.
+        self._migrate_drop_planned_courses_course_fk()
         with transaction() as conn:
             # Course Prerequisites table (enhanced)
             conn.execute("""

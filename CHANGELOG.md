@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.100 — 2026-05-05](#8117100---2026-05-05)
+- [8.117.99 — 2026-05-05](#811799---2026-05-05)
+- [8.117.98 — 2026-05-05](#811798---2026-05-05)
+- [8.117.97 — 2026-05-05](#811797---2026-05-05)
+- [8.117.96 — 2026-05-05](#811796---2026-05-05)
+- [8.117.95 — 2026-05-05](#811795---2026-05-05)
+- [8.117.94 — 2026-05-05](#811794---2026-05-05)
+- [8.117.93 — 2026-05-05](#811793---2026-05-05)
+- [8.117.92 — 2026-05-05](#811792---2026-05-05)
+- [8.117.91 — 2026-05-05](#811791---2026-05-05)
 - [8.117.90 — 2026-05-05](#811790---2026-05-05)
 - [8.117.89 — 2026-05-05](#811789---2026-05-05)
 - [8.117.88 — 2026-05-05](#811788---2026-05-05)
@@ -317,6 +327,333 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.100] — 2026-05-05
+
+### Added — Admin "All DB Records" tab on the Student Details view
+
+When an admin opens an individual student record, the detail window
+now gets an extra ``🛡 All Records (Admin)`` tab between Summary and
+Actions. The tab walks ``sqlite_master`` for every table whose schema
+has a ``student_id`` column, counts rows scoped to the current
+student, and shows the non-empty ones in a Treeview with the table
+name, row count, and a preview of the first eight column names.
+Double-clicking any row pops a 1100×500 sub-window listing the actual
+columns/values for up to 500 rows (most-recent-first).
+
+Discovery is dynamic, so future schema additions get picked up
+automatically. Tables that link to students via a different column
+(``username``, ``email``) won't appear — the schema is consistent on
+``student_id`` for student-scoped data, so this catches the common
+case. Read-only; editing still goes through the existing Actions tab.
+
+#### Files
+
+- ``modules/shared/gui/main/students/student_records_gui.py``
+  ``show_student_details``: when ``current_user['role'] == 'admin'``,
+  inserts an admin-only tab calling new ``_build_student_all_records_tab``
+  helper.
+
+---
+
+## [8.117.99] — 2026-05-05
+
+### Fixed — Course Planning add-course dialog crashed on blank inputs and noisy retries
+
+Two paper cuts in the *Semester Planner → Add Course* flow:
+
+- **Empty Semester Number** raised
+  ``ValueError: invalid literal for int() with base 10: ''``. The
+  field had no default. Now defaults to ``"1"`` (matches Priority and
+  Semester Name, which already had defaults).
+- **Re-adding the same module** raised the raw SQLite error
+  ``UNIQUE constraint failed: planned_courses.plan_id, planned_courses.course_id``.
+  The schema correctly enforces one row per (plan, module). The
+  dialog now translates that specific error into *"CIS0001 is already
+  in this plan. Each module can only appear once — use the Move or
+  Remove controls on the existing entry instead"* while leaving other
+  failures with the generic message.
+
+#### Files
+
+- ``modules/domain/academics/gui/course_management_gui/course_planning_gui.py``
+  ``_add_course_dialog``: ``sem_num_entry.insert(0, "1")``;
+  ``add_course`` exception block intercepts the UNIQUE error.
+
+---
+
+## [8.117.98] — 2026-05-05
+
+### Fixed — Semester Planner tab looked empty until a plan was loaded
+
+The *Semester Planner* tab showed only the "Current Plan: No plan
+loaded" header and what looked like an empty body. Two issues:
+
+1. The scrollable canvas hosting ``planner_content`` never bound the
+   inner-frame width to the canvas, so the placeholder Label
+   collapsed to its natural width and rendered effectively invisible
+   on a wide window.
+2. The empty state read *"No plan loaded. Create or load a plan to
+   begin."* but offered no way to do either — the user had to switch
+   to the Dashboard tab to find the Create / Auto-Generate / Load
+   buttons.
+
+Now: the canvas binds its window's width to the canvas's `<Configure>`
+event so content fills the visible area, and the empty state is a
+proper actionable panel — bold "No plan loaded" header, instruction
+line, **Create New Plan** + **Auto-Generate Plan** buttons, plus an
+"Existing plans (double-click to load)" listbox sourced from
+``planning_service.get_student_plans`` so prior plans are reachable
+without leaving the tab.
+
+#### Files
+
+- ``modules/domain/academics/gui/course_management_gui/course_planning_gui.py``
+  ``_create_planner_tab``: bind canvas window width to canvas.
+  ``_display_planner_content``: replace single-Label empty state
+  with the actionable panel.
+
+---
+
+## [8.117.97] — 2026-05-05
+
+### Fixed — planned_courses had a stale FK that blocked module-code rows
+
+Adding a course to a semester plan failed with
+``FOREIGN KEY constraint failed`` because the live ``planned_courses``
+table had a foreign key ``course_id → courses(code)`` that an older
+migration had introduced. The column semantically holds *module*
+codes (``CIS0001`` etc), not course codes (``CS`` / ``DS``), and the
+canonical ``CREATE TABLE`` in
+``planning_service._ensure_tables_exist`` never declared that FK.
+
+Added ``_migrate_drop_planned_courses_course_fk`` to
+``PlanningService``: queries ``PRAGMA foreign_key_list``, and if the
+rogue FK is present, rebuilds the table with the canonical schema
+(``CREATE TABLE … RENAME old TO new`` pattern, FK enforcement
+disabled for the duration of the copy so existing rows survive).
+Idempotent; runs once and is a near-no-op afterwards.
+
+Smoke-tested: ``INSERT INTO planned_courses (..., 'CIS0001', …)``
+which previously failed now succeeds.
+
+#### Files
+
+- ``modules/domain/academics/course_planning/services/planning_service.py``
+  ``__init__``: calls ``_migrate_drop_planned_courses_course_fk()``
+  before ``_ensure_tables_exist()``.
+
+---
+
+## [8.117.96] — 2026-05-05
+
+### Fixed — circular-import warning on every course-management import
+
+Eight wrappers in ``course_management_gui/*`` printed
+``"Academic systems not fully available: cannot import name 'launch_course_evaluation_gui' from partially initialized module …course_evaluation_core"``
+on every load. The cycle: ``course_evaluation_core``'s bottom did a
+top-level ``from …course_evaluation_gui import launch_course_evaluation_gui``,
+but ``course_evaluation_gui`` itself imports the managers
+(``EvaluationTemplateManager`` etc.) back from ``course_evaluation_core``.
+When any sibling triggered ``course_evaluation_core`` first, the
+``launch_course_evaluation_gui`` name wasn't bound yet and the
+wrappers' ``except ImportError`` branch printed the warning.
+
+Replaced the top-level import with a lazy function that imports the
+GUI at call time. The factory fallback is preserved as
+``_FALLBACK_LAUNCHER`` and used only if the GUI module truly can't
+be imported.
+
+#### Files
+
+- ``modules/domain/academics/services/evaluation/course_evaluation_core.py``
+  Top-level ``from … import launch_course_evaluation_gui`` removed;
+  ``launch_course_evaluation_gui(*args, **kwargs)`` defined as a
+  lazy wrapper.
+
+---
+
+## [8.117.95] — 2026-05-05
+
+### Added — Course Evaluation GUI auto-imports bundled JSON templates
+
+The 15 evaluation templates shipped at
+``templates/course_evaluation/*.json`` were only reachable via the
+manual *Load Template From File* dialog, so the *Launch Evaluation*
+dropdown only listed the 3 admin-created DB templates and the bundled
+ones were invisible. New ``_auto_import_bundled_templates`` runs at
+GUI construction (after ``initialize_evaluation_database``): scans
+the directory, queries existing ``template_name`` values into a set,
+and for any JSON whose ``template_name`` isn't already in the DB it
+calls ``EvaluationTemplateManager.create_template`` + ``add_question``
+for every question. Idempotent — admin edits to a DB row aren't
+overwritten by what's on disk.
+
+Smoke-tested: imported 14 of 15 (1 was already present), DB went
+from 3 → 17 templates.
+
+#### Files
+
+- ``modules/domain/academics/gui/course_management_gui/course_evaluation_gui.py``
+  ``__init__``: calls new ``_auto_import_bundled_templates``.
+
+---
+
+## [8.117.94] — 2026-05-05
+
+### Added — ``COURSE_EVALUATION_TEMPLATES_DIR`` path constant
+
+``course_evaluation_gui.load_template_from_file`` was building the
+templates path with five hand-counted ``os.path.dirname`` hops, and a
+prior fix added the wrong number of hops (landed in ``modules/``
+instead of ``university_system/``) producing the error
+*"Templates directory not found: …/modules/templates/course_evaluation"*.
+Replaced the manual path math with a new
+``COURSE_EVALUATION_TEMPLATES_DIR = TEMPLATES_DIR / "course_evaluation"``
+constant in the canonical paths module, re-exported through the
+shared shim.
+
+### Fixed — Course Management GUI window centering
+
+Reverted the 8.117.94-attempt to "improve" the centering math in
+``CourseManagementGUI.__init__``. The replacement called
+``update_idletasks()`` then read ``winfo_width()`` — but at that
+point the window has no realised content, so ``winfo_width()``
+returned 1, the centering math placed the window at
+``((screen-1) // 2, (screen-1) // 2)``, and the window opened in
+the bottom-right corner. Restored the single-geometry form with the
+math split into ``x``/``y`` locals so it's still readable.
+
+A separate "slightly off-centre with a gap on the right" report on
+multi-monitor setups remains — that's a Tk multi-monitor limitation
+where ``winfo_screenwidth()`` returns the full virtual desktop. Not
+fixed here; a future pass could omit position entirely and let the
+window manager place the window.
+
+#### Files
+
+- ``university_system/core/paths.py`` and
+  ``modules/shared/constants/paths.py``: added
+  ``COURSE_EVALUATION_TEMPLATES_DIR`` constant + ``__all__`` entry.
+- ``modules/domain/academics/gui/course_management_gui/course_evaluation_gui.py``
+  ``load_template_from_file``: use ``paths.COURSE_EVALUATION_TEMPLATES_DIR``.
+- ``modules/domain/academics/gui/course_management_gui/core/main_gui.py``
+  ``__init__``: revert centering to single-geometry form with x/y
+  computed from ``winfo_screenwidth/height``.
+
+---
+
+## [8.117.93] — 2026-05-05
+
+### Fixed — Advising Appointments tab Schedule button was off-screen
+
+The schedule form's natural height plus the appointments list below
+it overflowed the tab height on smaller windows, pushing the Schedule
+Appointment button (and the Scheduled Appointments list) below the
+visible area with no way to scroll. Wrapped the entire tab in a
+``tk.Canvas`` + ``ttk.Scrollbar`` pair: the scrollbar appears when
+content exceeds tab height, the inner frame's width tracks the
+canvas so wide widgets don't trigger horizontal scroll, and mouse-
+wheel scrolling is bound only while the cursor is over the tab so
+it doesn't fight the outer notebook tab strip.
+
+#### Files
+
+- ``modules/domain/academics/gui/course_management_gui/degree_audit_gui.py``
+  ``create_advising_tab``: outer ``tab_outer`` Frame holds Canvas +
+  Scrollbar; inner ``tab`` Frame is the canvas's window. Mouse-wheel
+  bind/unbind on ``<Enter>``/``<Leave>``.
+
+---
+
+## [8.117.92] — 2026-05-05
+
+### Changed — Degree Audit GUI: dropdowns, autofill, advising email templates
+
+Six requested changes to the Degree Audit GUI:
+
+1. **Degree Progress** student-ID Entry replaced with a Combobox
+   sourced from the students table (label format
+   ``"S12345 — Jane Doe (CS)"``). Helper ``_student_id_from_label``
+   strips the formatted label back to the bare ID; ``load_student_progress``
+   and ``update_progress`` use it.
+2. **Initialise Progress button removed** — it conflicted with
+   existing degree-progress data by overwriting it. The
+   ``initialize_progress`` method itself is kept in case other
+   callers reference it; it just isn't reachable from the UI.
+3. **Prerequisites** got two Comboboxes. The Module combo
+   re-populates from ``_student_modules(sid)`` whenever the student
+   changes, so only the chosen student's enrolments appear.
+4. **What If Scenarios** student-ID Entry → Combobox. On selection,
+   the target-program combo auto-fills with the student's current
+   course; admin can override before clicking Create.
+5. **Advising Appointments**: confirmation emails moved off
+   inline f-strings onto two new JSON templates at
+   ``templates/email/academics/advising/appointment_{student,advisor}.json``,
+   loaded and substituted via ``string.Template.safe_substitute``.
+   New ``_send_appointment_emails`` helper handles both recipients.
+6. **Graduation Audit** mirrors What If — student combo + autofill
+   on the program combo. ``run_graduation_audit`` /
+   ``approve_graduation`` use ``_student_id_from_label``.
+
+Shared helpers added to the GUI class so the four tabs use identical
+plumbing: ``_load_student_options``, ``_populate_student_combo``,
+``_student_id_from_label``, ``_student_modules``, ``_student_course``.
+
+#### Files
+
+- ``modules/domain/academics/gui/course_management_gui/degree_audit_gui.py``
+  Class-level helpers (above) plus per-tab edits across
+  ``create_progress_tab`` / ``create_prerequisites_tab`` /
+  ``create_whatif_tab`` / ``create_graduation_tab``;
+  ``schedule_appointment`` delegates email work to
+  ``_send_appointment_emails``.
+- New ``templates/email/academics/advising/appointment_student.json``
+  and ``appointment_advisor.json``.
+
+---
+
+## [8.117.91] — 2026-05-05
+
+### Fixed — Course Evaluation showed modules; What-If FK-violated on save
+
+Two related fixes around the just-renamed Course Evaluation system.
+
+#### Course Evaluation GUI now lists *courses* in the dropdown
+
+``Database.get_courses`` was reading from the ``modules`` table, so
+the student-facing Course Evaluation app's dropdown listed every
+seeded module (CIS0001 etc.) rather than the actual course
+programmes (CS, DS). Switched to read from the ``courses`` table
+with the same shape used by Course Management's list / Course
+Details dropdown.
+
+#### What If Scenario insert auto-mirrors course → degree_program
+
+``degree_what_if_scenarios.target_program_id`` is FK'd to
+``degree_programs.program_id`` (an INTEGER). The handler in
+``degree_audit_gui.create_whatif_scenario`` did
+``int(course_row[0])``, but ``courses.id`` is the string ``'CS'``
+in this DB, so the conversion silently fell back to ``0`` —
+``degree_programs`` is empty so ``target_program_id = 0`` failed
+the FK check.
+
+Now: look up the course in ``courses``, ``INSERT OR IGNORE INTO
+degree_programs`` keyed by ``program_code = course_code`` (filling
+the NOT NULL columns from the course row), read back the resulting
+``program_id`` and use that as ``target_program_id``. Idempotent:
+re-clicks for the same course are no-ops on the degree_programs
+side.
+
+#### Files
+
+- ``modules/domain/academics/gui/course_management_gui/course_evaluation_system.py``
+  ``Database.get_courses``: source from ``courses`` not ``modules``.
+- ``modules/domain/academics/gui/course_management_gui/degree_audit_gui.py``
+  ``create_whatif_scenario``: auto-mirror course into
+  ``degree_programs`` and use the resulting ``program_id``.
 
 ---
 

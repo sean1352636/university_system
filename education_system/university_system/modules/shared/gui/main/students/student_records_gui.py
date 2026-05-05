@@ -836,6 +836,22 @@ def show_student_details(self, student_id):
         except Exception:
             logger.exception("Could not build student summary tab")
 
+        # ── All DB Records tab (admin only) ─────────────────────
+        # 8.117.100: surfaces every table in the central DB that
+        # references this student. Discovers tables dynamically by
+        # querying ``sqlite_master`` for any table with a column named
+        # ``student_id``, counts rows per table for the current
+        # student, and shows a Treeview with double-click drill-down
+        # to a sub-window listing the actual rows.
+        try:
+            current_role = (self.auth.current_user or {}).get('role', '') if self.auth else ''
+            if current_role == 'admin':
+                admin_tab = ttk.Frame(notebook)
+                notebook.add(admin_tab, text="🛡 All Records (Admin)")
+                _build_student_all_records_tab(admin_tab, student_id)
+        except Exception:
+            logger.exception("Could not build admin all-records tab")
+
         # ── Actions tab ─────────────────────────────────────────
         # Reduced from the 8.117.15 footprint: the Edit / Manage Grades
         # / View Attendance / View Timetable / Export / Send Email
@@ -1036,6 +1052,147 @@ def _load_academic_data(self, student_id, modules_tree, grades_tree,
     except Exception as e:
         summary_label.config(text=f"Error loading academic data: {e}",
                              foreground='#b00020')
+
+def _build_student_all_records_tab(tab, student_id):
+    """Render the admin-only "All DB Records" tab.
+
+    Discovers every table in the central DB that has a ``student_id``
+    column, counts rows per table for ``student_id``, and shows the
+    non-empty ones in a Treeview. Double-click a row to open a
+    sub-window with the actual columns/values.
+    """
+    # Header
+    ttk.Label(tab,
+              text=f"All database records for {student_id}",
+              font=('Arial', 13, 'bold')).pack(anchor='w', padx=15, pady=(15, 4))
+    ttk.Label(tab,
+              text=("Discovered automatically from sqlite_master — "
+                    "every table with a 'student_id' column. "
+                    "Empty tables are hidden."),
+              foreground='#555').pack(anchor='w', padx=15, pady=(0, 10))
+
+    # Toolbar (Refresh + status)
+    toolbar = ttk.Frame(tab)
+    toolbar.pack(fill=tk.X, padx=15, pady=(0, 6))
+    status_var = tk.StringVar(value="")
+    ttk.Label(toolbar, textvariable=status_var, foreground='#555').pack(side=tk.LEFT)
+
+    # Treeview
+    cols = ('table', 'rows', 'columns')
+    tree_frame = ttk.Frame(tab)
+    tree_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=(0, 12))
+    tree = ttk.Treeview(tree_frame, columns=cols, show='headings', height=18)
+    tree.heading('table',   text='Table')
+    tree.heading('rows',    text='Rows')
+    tree.heading('columns', text='Columns')
+    tree.column('table',   width=220)
+    tree.column('rows',    width=70, anchor='center')
+    tree.column('columns', width=520)
+    yscroll = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=tree.yview)
+    tree.configure(yscrollcommand=yscroll.set)
+    tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    yscroll.pack(side=tk.RIGHT, fill=tk.Y)
+
+    def _refresh():
+        for iid in tree.get_children():
+            tree.delete(iid)
+        try:
+            conn = get_db_connection()
+        except Exception as e:
+            status_var.set(f"DB error: {e}")
+            return
+        try:
+            tables_with_sid = []
+            for (name,) in conn.execute(
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' AND name NOT LIKE 'sqlite_%' "
+                "ORDER BY name"
+            ).fetchall():
+                try:
+                    info = conn.execute(f"PRAGMA table_info({name})").fetchall()
+                except Exception:
+                    continue
+                cols_in_table = [c[1] for c in info]
+                if 'student_id' in cols_in_table:
+                    tables_with_sid.append((name, cols_in_table))
+
+            non_empty = 0
+            for name, cols_in_table in tables_with_sid:
+                try:
+                    cnt = conn.execute(
+                        f"SELECT COUNT(*) FROM {name} WHERE student_id = ?",
+                        (student_id,)
+                    ).fetchone()[0]
+                except Exception:
+                    cnt = 0
+                if cnt:
+                    non_empty += 1
+                    tree.insert('', tk.END, values=(
+                        name, cnt, ", ".join(cols_in_table[:8]) +
+                        (" …" if len(cols_in_table) > 8 else "")))
+            status_var.set(
+                f"{non_empty} table(s) with rows · "
+                f"{len(tables_with_sid)} table(s) referencing student_id")
+        finally:
+            try:
+                conn.close()
+            except Exception:
+                pass
+
+    ttk.Button(toolbar, text="Refresh",
+               command=_refresh).pack(side=tk.RIGHT)
+
+    def _open_drilldown(_e=None):
+        sel = tree.selection()
+        if not sel:
+            return
+        table = tree.item(sel[0], 'values')[0]
+        win = tk.Toplevel(tab.winfo_toplevel())
+        _install_clean_close(win)
+        win.title(f"{table} — student_id={student_id}")
+        win.geometry("1100x500")
+        win.transient(tab.winfo_toplevel())
+
+        try:
+            conn = get_db_connection()
+            info = conn.execute(f"PRAGMA table_info({table})").fetchall()
+            col_names = [c[1] for c in info]
+            rows = conn.execute(
+                f"SELECT * FROM {table} WHERE student_id = ? "
+                "ORDER BY rowid DESC LIMIT 500",
+                (student_id,)
+            ).fetchall()
+            conn.close()
+        except Exception as e:
+            ttk.Label(win, text=f"Query failed: {e}",
+                      foreground='#b00020').pack(padx=20, pady=20)
+            return
+
+        ttk.Label(win, text=f"{table} ({len(rows)} row(s), most recent first)",
+                  font=('Arial', 12, 'bold')).pack(anchor='w', padx=10, pady=8)
+        if not rows:
+            ttk.Label(win, text="No rows.").pack(padx=20, pady=20)
+            return
+        inner = ttk.Frame(win)
+        inner.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        rt = ttk.Treeview(inner, columns=col_names, show='headings', height=20)
+        for c in col_names:
+            rt.heading(c, text=c)
+            rt.column(c, width=120, anchor='w')
+        ys = ttk.Scrollbar(inner, orient=tk.VERTICAL, command=rt.yview)
+        xs = ttk.Scrollbar(inner, orient=tk.HORIZONTAL, command=rt.xview)
+        rt.configure(yscrollcommand=ys.set, xscrollcommand=xs.set)
+        rt.grid(row=0, column=0, sticky='nsew')
+        ys.grid(row=0, column=1, sticky='ns')
+        xs.grid(row=1, column=0, sticky='ew')
+        inner.rowconfigure(0, weight=1)
+        inner.columnconfigure(0, weight=1)
+        for r in rows:
+            rt.insert('', tk.END, values=tuple(r))
+
+    tree.bind('<Double-Button-1>', _open_drilldown)
+    _refresh()
+
 
 def _build_student_summary(tab, student_id, na,
                            *, on_open_finance=None, on_open_attendance=None):

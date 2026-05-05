@@ -45,7 +45,17 @@ class CourseManagementGUI(
 
         if not self._is_embedded:
             self.root.title(_("course_management.title"))
-            self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
+            # Centre against the screen's reported width/height. The
+            # 8.117.94 attempt to "improve" this by deferring to
+            # ``update_idletasks`` then reading ``winfo_width`` was a
+            # mistake — the window has no realised size at that point
+            # so the math placed it in the bottom-right corner. The
+            # fixed-size form below is the correct one.
+            sw = self.root.winfo_screenwidth()
+            sh = self.root.winfo_screenheight()
+            x = max(0, (sw - 1400) // 2)
+            y = max(0, (sh - 900) // 2)
+            self.root.geometry(f"1400x900+{x}+{y}")
             self.root.minsize(1200, 800)
             self.root.configure(bg='#f0f0f0')
 

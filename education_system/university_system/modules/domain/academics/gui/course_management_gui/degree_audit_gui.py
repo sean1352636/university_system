@@ -43,6 +43,161 @@ class DegreeAuditGUI:
         self.create_widgets()
         self.load_courses()  # Changed from load_programs to load_courses
 
+    # ------------------------------------------------------------------
+    # Shared dropdown helpers (8.117.92)
+    # ------------------------------------------------------------------
+    def _load_student_options(self):
+        """Return [(label, student_id, course_code), ...] sorted by id.
+
+        Label format: ``"S12345 — Jane Doe (CS)"``. Empty courses
+        render as ``"(unassigned)"`` so the user can still see the
+        student. Cached on first call; call ``_load_student_options(refresh=True)``
+        if you've added a student mid-session and want it to appear.
+        """
+        try:
+            with get_connection() as conn:
+                rows = conn.execute(
+                    "SELECT student_id, "
+                    "       COALESCE(first_name, '') AS fn, "
+                    "       COALESCE(last_name, '')  AS ln, "
+                    "       COALESCE(course, '')     AS course "
+                    "FROM students "
+                    "WHERE student_id IS NOT NULL "
+                    "ORDER BY student_id"
+                ).fetchall()
+        except Exception:
+            return []
+        out = []
+        for sid, fn, ln, course in rows:
+            name = f"{fn} {ln}".strip() or "—"
+            label = f"{sid} — {name} ({course or 'unassigned'})"
+            out.append((label, sid, course))
+        return out
+
+    def _student_id_from_label(self, label):
+        """Reverse the formatted label back to the bare student_id."""
+        if not label:
+            return ""
+        return label.split(" — ", 1)[0].strip()
+
+    def _populate_student_combo(self, combo):
+        """Wire a Combobox to ``_load_student_options``."""
+        opts = self._load_student_options()
+        combo['values'] = [lbl for lbl, _sid, _c in opts]
+        return opts
+
+    def _student_modules(self, student_id):
+        """Return [(module_code, module_name), ...] the student is
+        enrolled on. Empty list if the student has none or the table
+        is missing."""
+        if not student_id:
+            return []
+        try:
+            with get_connection() as conn:
+                rows = conn.execute(
+                    "SELECT sm.module_code, COALESCE(m.module_name, sm.module_code) "
+                    "FROM student_modules sm "
+                    "LEFT JOIN modules m ON m.module_code = sm.module_code "
+                    "WHERE sm.student_id = ? "
+                    "AND   LOWER(COALESCE(sm.status, 'enrolled')) = 'enrolled' "
+                    "ORDER BY sm.module_code",
+                    (student_id,)
+                ).fetchall()
+            return list(rows)
+        except Exception:
+            return []
+
+    def _student_course(self, student_id):
+        """Return the student's current course code, or empty string."""
+        if not student_id:
+            return ""
+        try:
+            with get_connection() as conn:
+                row = conn.execute(
+                    "SELECT COALESCE(course, '') FROM students WHERE student_id = ?",
+                    (student_id,)
+                ).fetchone()
+            return row[0] if row else ""
+        except Exception:
+            return ""
+
+    # ------------------------------------------------------------------
+    # Appointment email helper (8.117.92)
+    # ------------------------------------------------------------------
+    def _send_appointment_emails(self, *, student_id, advisor_id, date, time,
+                                 duration, appointment_type, topic, notes):
+        """Send appointment confirmation to both student and advisor.
+
+        Loads JSON templates from
+        ``templates/email/academics/advising/appointment_{student,advisor}.json``
+        and substitutes the placeholders. The templates use Python's
+        ``string.Template`` ``$name`` syntax so they're shell-safe and
+        won't accidentally interpolate stray ``{}`` from notes.
+        """
+        import json
+        import os
+        from string import Template
+        from education_system.university_system.infrastructure.email.email_service import (
+            send_email,
+        )
+
+        # Locate the templates dir relative to this module.
+        here = os.path.dirname(os.path.abspath(__file__))
+        # gui/course_management_gui → gui → academics → modules/domain →
+        # modules → university_system
+        repo_uni = os.path.normpath(os.path.join(here, "..", "..", "..", "..", ".."))
+        tmpl_dir = os.path.join(repo_uni, "templates", "email", "academics", "advising")
+
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT email_address, first_name, last_name FROM students "
+                "WHERE student_id = ?", (student_id,))
+            stu = cursor.fetchone()
+            cursor.execute(
+                "SELECT email, first_name, last_name FROM instructors WHERE id = ?",
+                (advisor_id,))
+            adv = cursor.fetchone()
+
+        student_name = (
+            f"{(stu[1] or '').strip()} {(stu[2] or '').strip()}".strip()
+            if stu else student_id) or "Student"
+        advisor_name = (
+            f"{(adv[1] or '').strip()} {(adv[2] or '').strip()}".strip()
+            if adv else advisor_id) or "Advisor"
+
+        common = {
+            "student_name":     student_name,
+            "student_id":       student_id,
+            "advisor_name":     advisor_name,
+            "date":             date,
+            "time":             time,
+            "duration":         str(duration),
+            "appointment_type": appointment_type,
+            "topic":            topic or "N/A",
+            "notes":            notes or "(no additional notes)",
+        }
+
+        def _render_and_send(template_file, recipient_email):
+            if not recipient_email:
+                return
+            path = os.path.join(tmpl_dir, template_file)
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    tmpl = json.load(f)
+            except (OSError, ValueError) as e:
+                print(f"Could not load advising template {template_file}: {e}")
+                return
+            subject = Template(tmpl.get("subject", "")).safe_substitute(common)
+            body    = Template(tmpl.get("body", "")).safe_substitute(common)
+            send_email(recipient_email=recipient_email,
+                       subject=subject, body=body)
+
+        if stu:
+            _render_and_send("appointment_student.json", stu[0])
+        if adv:
+            _render_and_send("appointment_advisor.json", adv[0])
+
     def create_widgets(self):
         """Create all GUI widgets"""
         # Main container
@@ -81,15 +236,23 @@ class DegreeAuditGUI:
         select_frame.pack(fill=tk.X, pady=5)
 
         ttk.Label(select_frame, text=_("degree_audit.labels.student_id")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
-        self.progress_student_entry = ttk.Entry(select_frame, width=30)
+        # 8.117.92: replaced free-text Entry with Combobox sourced from
+        # the students table. The legacy attribute name
+        # ``progress_student_entry`` is preserved (and aliased to the
+        # combo) so existing callers like ``load_student_progress`` /
+        # ``update_progress`` continue to work via ``.get()``.
+        self.progress_student_entry = ttk.Combobox(select_frame, width=42, state='readonly')
         self.progress_student_entry.grid(row=0, column=1, padx=5, pady=5)
+        self._populate_student_combo(self.progress_student_entry)
 
         ttk.Button(select_frame, text=_("degree_audit.buttons.load_progress"),
                   command=self.load_student_progress).grid(row=0, column=2, padx=5, pady=5)
         ttk.Button(select_frame, text=_("degree_audit.buttons.update_progress"),
                   command=self.update_progress).grid(row=0, column=3, padx=5, pady=5)
-        ttk.Button(select_frame, text=_("degree_audit.buttons.initialize_progress"),
-                  command=self.initialize_progress).grid(row=0, column=4, padx=5, pady=5)
+        # 8.117.92: "Initialise Progress" button removed — it conflicted
+        # with existing degree-progress data by overwriting it. The
+        # ``initialize_progress`` method itself is kept in case other
+        # callers use it; it just isn't reachable from the UI.
 
         # Progress summary frame
         summary_frame = ttk.LabelFrame(tab, text=_("degree_audit.labels.progress_summary"), padding="10")
@@ -152,13 +315,26 @@ class DegreeAuditGUI:
         check_frame = ttk.LabelFrame(tab, text=_("degree_audit.labels.check_prerequisites"), padding="10")
         check_frame.pack(fill=tk.X, pady=5)
 
+        # 8.117.92: Combobox for the student, with the module Combobox
+        # below it scoped to that student's enrolments. Selecting a
+        # different student rebuilds the module list.
         ttk.Label(check_frame, text=_("degree_audit.labels.student_id")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
-        self.prereq_student_entry = ttk.Entry(check_frame, width=30)
+        self.prereq_student_entry = ttk.Combobox(check_frame, width=42, state='readonly')
         self.prereq_student_entry.grid(row=0, column=1, padx=5, pady=5)
+        self._populate_student_combo(self.prereq_student_entry)
 
         ttk.Label(check_frame, text=_("degree_audit.labels.module_code")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
-        self.prereq_module_entry = ttk.Entry(check_frame, width=30)
+        self.prereq_module_entry = ttk.Combobox(check_frame, width=42, state='readonly')
         self.prereq_module_entry.grid(row=1, column=1, padx=5, pady=5)
+
+        def _refresh_prereq_modules(_e=None):
+            sid = self._student_id_from_label(self.prereq_student_entry.get())
+            modules = self._student_modules(sid)
+            self.prereq_module_entry['values'] = [
+                f"{code} — {name}" for code, name in modules]
+            if not modules:
+                self.prereq_module_entry.set("")
+        self.prereq_student_entry.bind('<<ComboboxSelected>>', _refresh_prereq_modules)
 
         ttk.Button(check_frame, text=_("degree_audit.buttons.check_prerequisites"),
                   command=self.check_prerequisites).grid(row=0, column=2, rowspan=2, padx=10, pady=5)
@@ -203,16 +379,32 @@ class DegreeAuditGUI:
         create_frame.pack(fill=tk.X, pady=5)
 
         ttk.Label(create_frame, text=_("degree_audit.labels.student_id")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
-        self.whatif_student_entry = ttk.Entry(create_frame, width=30)
+        self.whatif_student_entry = ttk.Combobox(create_frame, width=42, state='readonly')
         self.whatif_student_entry.grid(row=0, column=1, padx=5, pady=5)
+        self._populate_student_combo(self.whatif_student_entry)
 
         ttk.Label(create_frame, text=_("degree_audit.labels.scenario_name")).grid(row=1, column=0, sticky=tk.W, padx=5, pady=5)
-        self.whatif_name_entry = ttk.Entry(create_frame, width=30)
+        self.whatif_name_entry = ttk.Entry(create_frame, width=42)
         self.whatif_name_entry.grid(row=1, column=1, padx=5, pady=5)
 
         ttk.Label(create_frame, text=_("degree_audit.labels.target_program")).grid(row=2, column=0, sticky=tk.W, padx=5, pady=5)
-        self.whatif_program_combo = ttk.Combobox(create_frame, width=28, state='readonly')
+        self.whatif_program_combo = ttk.Combobox(create_frame, width=40, state='readonly')
         self.whatif_program_combo.grid(row=2, column=1, padx=5, pady=5)
+
+        # 8.117.92: when the student changes, autofill target_program
+        # with their *current* course (admin can change it before
+        # creating the scenario).
+        def _autofill_whatif_course(_e=None):
+            sid = self._student_id_from_label(self.whatif_student_entry.get())
+            current = self._student_course(sid)
+            if not current:
+                return
+            for opt in self.whatif_program_combo['values']:
+                if f": {current} -" in opt or opt.startswith(f"{current} -") \
+                        or opt.split(":", 1)[-1].strip().startswith(current):
+                    self.whatif_program_combo.set(opt)
+                    return
+        self.whatif_student_entry.bind('<<ComboboxSelected>>', _autofill_whatif_course)
 
         ttk.Label(create_frame, text=_("degree_audit.labels.notes")).grid(row=3, column=0, sticky=tk.NW, padx=5, pady=5)
         self.whatif_notes_text = tk.Text(create_frame, width=40, height=4)
@@ -235,9 +427,41 @@ class DegreeAuditGUI:
         self.whatif_results_text.pack(fill=tk.BOTH, expand=True)
 
     def create_advising_tab(self):
-        """Create Academic Advising Appointments tab"""
-        tab = ttk.Frame(self.notebook, padding="10")
-        self.notebook.add(tab, text=_("degree_audit.tabs.advising_appointments"))
+        """Create Academic Advising Appointments tab.
+
+        8.117.93: wrapped in a scrollable Canvas so the Schedule
+        Appointment button at the bottom of the schedule form (and
+        the appointments list below it) stay reachable on smaller
+        windows. Previously the form's natural height plus the
+        appointments tree exceeded the tab's available space and the
+        Schedule button was pushed off-screen with no way to scroll.
+        """
+        tab_outer = ttk.Frame(self.notebook)
+        self.notebook.add(tab_outer, text=_("degree_audit.tabs.advising_appointments"))
+
+        canvas = tk.Canvas(tab_outer, highlightthickness=0)
+        vbar = ttk.Scrollbar(tab_outer, orient=tk.VERTICAL, command=canvas.yview)
+        canvas.configure(yscrollcommand=vbar.set)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        vbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        tab = ttk.Frame(canvas, padding="10")
+        canvas_window = canvas.create_window((0, 0), window=tab, anchor="nw")
+        # Keep the inner frame's width matched to the canvas so wide
+        # widgets (notes Text, topic Entry) don't trigger horizontal
+        # scrolling.
+        tab.bind("<Configure>",
+                 lambda _e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>",
+                    lambda e: canvas.itemconfig(canvas_window, width=e.width))
+        # Mouse-wheel scrolling — bound only while the cursor is over
+        # this tab so it doesn't fight the outer notebook.
+        def _on_mousewheel(event):
+            canvas.yview_scroll(int(-event.delta / 120), "units")
+        canvas.bind("<Enter>",
+                    lambda _e: canvas.bind_all("<MouseWheel>", _on_mousewheel))
+        canvas.bind("<Leave>",
+                    lambda _e: canvas.unbind_all("<MouseWheel>"))
 
         ttk.Label(tab, text=_("degree_audit.labels.academic_advising_appointments"),
                  font=('Arial', 12, 'bold')).pack(pady=10)
@@ -345,12 +569,27 @@ class DegreeAuditGUI:
         control_frame.pack(fill=tk.X, pady=5)
 
         ttk.Label(control_frame, text=_("degree_audit.labels.student_id")).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
-        self.grad_student_entry = ttk.Entry(control_frame, width=30)
+        self.grad_student_entry = ttk.Combobox(control_frame, width=42, state='readonly')
         self.grad_student_entry.grid(row=0, column=1, padx=5, pady=5)
+        self._populate_student_combo(self.grad_student_entry)
 
         ttk.Label(control_frame, text=_("degree_audit.labels.program")).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
-        self.grad_program_combo = ttk.Combobox(control_frame, width=28, state='readonly')
+        self.grad_program_combo = ttk.Combobox(control_frame, width=40, state='readonly')
         self.grad_program_combo.grid(row=0, column=3, padx=5, pady=5)
+
+        # 8.117.92: autofill the program combo with the student's
+        # current course on selection.
+        def _autofill_grad_course(_e=None):
+            sid = self._student_id_from_label(self.grad_student_entry.get())
+            current = self._student_course(sid)
+            if not current:
+                return
+            for opt in self.grad_program_combo['values']:
+                if f": {current} -" in opt or opt.startswith(f"{current} -") \
+                        or opt.split(":", 1)[-1].strip().startswith(current):
+                    self.grad_program_combo.set(opt)
+                    return
+        self.grad_student_entry.bind('<<ComboboxSelected>>', _autofill_grad_course)
 
         ttk.Button(control_frame, text=_("degree_audit.buttons.run_audit"),
                   command=self.run_graduation_audit).grid(row=0, column=4, padx=10, pady=5)
@@ -427,9 +666,11 @@ class DegreeAuditGUI:
     def load_student_progress(self):
         """Load and display student degree progress from actual database tables"""
         try:
-            student_id = self.progress_student_entry.get().strip()
+            # Combobox carries the formatted label "S12345 — Name (Course)";
+            # strip back to just the bare ID.
+            student_id = self._student_id_from_label(self.progress_student_entry.get())
             if not student_id:
-                messagebox.showwarning(_("common.warning"), "Please enter a Student ID")
+                messagebox.showwarning(_("common.warning"), "Please select a student")
                 return
 
             with get_connection() as conn:
@@ -576,9 +817,9 @@ class DegreeAuditGUI:
     def update_progress(self):
         """Refresh student's degree progress display"""
         try:
-            student_id = self.progress_student_entry.get().strip()
+            student_id = self._student_id_from_label(self.progress_student_entry.get())
             if not student_id:
-                messagebox.showwarning(_("common.warning"), "Please enter a Student ID")
+                messagebox.showwarning(_("common.warning"), "Please select a student")
                 return
 
             # Simply reload the progress to refresh display
@@ -675,11 +916,14 @@ class DegreeAuditGUI:
     def check_prerequisites(self):
         """Check if student met prerequisites for a module using student_modules table"""
         try:
-            student_id = self.prereq_student_entry.get().strip()
-            module_code = self.prereq_module_entry.get().strip()
+            student_id = self._student_id_from_label(self.prereq_student_entry.get())
+            module_label = self.prereq_module_entry.get().strip()
+            # Combobox entries are "CIS0001 — Module Name"; pull the code.
+            module_code = module_label.split(" — ", 1)[0].strip() if module_label else ""
 
             if not student_id or not module_code:
-                messagebox.showwarning(_("common.warning"), "Please enter both Student ID and Module Code")
+                messagebox.showwarning(_("common.warning"),
+                                       "Please select both a student and a module")
                 return
 
             with get_connection() as conn:
@@ -799,10 +1043,14 @@ class DegreeAuditGUI:
         except Exception as e:
             messagebox.showerror(_("common.error"), _("degree_audit.messages.failed_add_prerequisite").format(error=e))
 
+    def _whatif_student_id(self):
+        """Extract bare student_id from the formatted Combobox label."""
+        return self._student_id_from_label(self.whatif_student_entry.get())
+
     def create_whatif_scenario(self):
         """Create and analyze what-if scenario for course switching"""
         try:
-            student_id = self.whatif_student_entry.get().strip()
+            student_id = self._whatif_student_id()
             scenario_name = self.whatif_name_entry.get().strip()
             course_selection = self.whatif_program_combo.get()
             notes = self.whatif_notes_text.get('1.0', tk.END).strip()
@@ -826,13 +1074,41 @@ class DegreeAuditGUI:
 
                 current_course = student_data[0]
 
-                # Look up target course ID
+                # Look up target course details and ensure a matching
+                # ``degree_programs`` row exists. ``courses.id`` is a
+                # string ('CS', 'DS', …), and the scenario table FKs
+                # to ``degree_programs.program_id`` (an INTEGER), so
+                # we mirror the course into degree_programs on first
+                # use and use the resulting integer id (8.117.91 fix —
+                # previously this stored ``target_program_id = 0``,
+                # which violated the FK because degree_programs is
+                # empty out of the box).
                 cursor.execute(
-                    "SELECT id FROM courses WHERE UPPER(COALESCE(course_code, code)) = ?",
-                    (target_course_code.upper(),)
-                )
+                    "SELECT COALESCE(course_name, name), "
+                    "       COALESCE(course_type, 'Bachelors'), "
+                    "       COALESCE(department, ''), "
+                    "       COALESCE(credits, credit_hours, 360) "
+                    "FROM courses "
+                    "WHERE UPPER(COALESCE(course_code, code)) = ?",
+                    (target_course_code.upper(),))
                 course_row = cursor.fetchone()
-                target_program_id = int(course_row[0]) if course_row and str(course_row[0]).isdigit() else 0
+                if not course_row:
+                    messagebox.showerror(_("common.error"),
+                                         f"Course {target_course_code} not found")
+                    return
+                course_name, course_type, department, credits = course_row
+
+                cursor.execute(
+                    "INSERT OR IGNORE INTO degree_programs "
+                    "(program_code, program_name, degree_type, department, "
+                    " total_credits_required) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (target_course_code, course_name, course_type,
+                     department, int(credits) if credits else 360))
+                cursor.execute(
+                    "SELECT program_id FROM degree_programs WHERE program_code = ?",
+                    (target_course_code,))
+                target_program_id = cursor.fetchone()[0]
 
                 cursor.execute('''
                     INSERT INTO degree_what_if_scenarios
@@ -859,11 +1135,11 @@ class DegreeAuditGUI:
     def analyze_whatif(self):
         """Analyze what-if scenario for course switching"""
         try:
-            student_id = self.whatif_student_entry.get().strip()
+            student_id = self._whatif_student_id()
             course_selection = self.whatif_program_combo.get()
 
             if not student_id or not course_selection:
-                messagebox.showwarning(_("common.warning"), "Please enter Student ID and select Target Course")
+                messagebox.showwarning(_("common.warning"), "Please select a student and target course")
                 return
 
             # Extract target course code
@@ -1137,61 +1413,17 @@ class DegreeAuditGUI:
 
             messagebox.showinfo(_("common.success"), _("degree_audit.messages.appointment_scheduled_success").format(appointment_id=appointment_id))
 
-            # Send confirmation emails to student and advisor
+            # Send confirmation emails to student and advisor using
+            # the JSON templates at templates/email/academics/advising/
+            # (8.117.92 — replaced inline f-strings with file-based
+            # templates for consistency with the rest of the project's
+            # email infrastructure).
             try:
-                from education_system.university_system.infrastructure.email.email_service import send_email
-                with get_connection() as conn:
-                    cursor = conn.cursor()
-                    # Get student email and name
-                    cursor.execute(
-                        "SELECT email_address, first_name, last_name FROM students WHERE student_id = ?",
-                        (student_id,)
-                    )
-                    stu = cursor.fetchone()
-                    # Get advisor email and name
-                    cursor.execute(
-                        "SELECT email, first_name, last_name FROM instructors WHERE id = ?",
-                        (advisor_id,)
-                    )
-                    adv = cursor.fetchone()
-
-                appt_details = (
-                    f"Date: {date}\n"
-                    f"Time: {time}\n"
-                    f"Duration: {duration} minutes\n"
-                    f"Type: {appt_type}\n"
-                    f"Topic: {topic or 'N/A'}\n"
+                self._send_appointment_emails(
+                    student_id=student_id, advisor_id=advisor_id,
+                    date=date, time=time, duration=duration,
+                    appointment_type=appt_type, topic=topic, notes=notes,
                 )
-
-                if stu and stu[0]:
-                    student_name = f"{stu[1] or ''} {stu[2] or ''}".strip() or "Student"
-                    advisor_name = f"{adv[1] or ''} {adv[2] or ''}".strip() if adv else advisor_id
-                    send_email(
-                        recipient_email=stu[0],
-                        subject=f"Advising Appointment Confirmed - {date} at {time}",
-                        body=(
-                            f"Dear {student_name},\n\n"
-                            f"Your advising appointment has been scheduled.\n\n"
-                            f"{appt_details}\n"
-                            f"Advisor: {advisor_name}\n\n"
-                            f"Best regards,\nAcademic Administration"
-                        )
-                    )
-
-                if adv and adv[0]:
-                    advisor_name = f"{adv[1] or ''} {adv[2] or ''}".strip() or "Advisor"
-                    student_name = f"{stu[1] or ''} {stu[2] or ''}".strip() if stu else student_id
-                    send_email(
-                        recipient_email=adv[0],
-                        subject=f"Advising Appointment Scheduled - {date} at {time}",
-                        body=(
-                            f"Dear {advisor_name},\n\n"
-                            f"An advising appointment has been scheduled with you.\n\n"
-                            f"{appt_details}\n"
-                            f"Student: {student_name} ({student_id})\n\n"
-                            f"Best regards,\nAcademic Administration"
-                        )
-                    )
             except Exception as email_err:
                 print(f"Appointment email notification failed: {email_err}")
 
@@ -1234,7 +1466,7 @@ class DegreeAuditGUI:
     def run_graduation_audit(self):
         """Run comprehensive graduation audit using actual database data"""
         try:
-            student_id = self.grad_student_entry.get().strip()
+            student_id = self._student_id_from_label(self.grad_student_entry.get())
             course_selection = self.grad_program_combo.get()
 
             if not student_id or not course_selection:
@@ -1349,7 +1581,7 @@ class DegreeAuditGUI:
     def approve_graduation(self):
         """Approve student for graduation"""
         try:
-            student_id = self.grad_student_entry.get().strip()
+            student_id = self._student_id_from_label(self.grad_student_entry.get())
             course_selection = self.grad_program_combo.get()
             grad_date = self.grad_date_entry.get().strip()
 

@@ -48,8 +48,77 @@ class CourseEvaluationGUI:
         except Exception as e:
             print(f"Database initialization warning: {e}")
 
+        # Auto-import the bundled JSON templates from
+        # ``templates/course_evaluation/`` (8.117.95). Pre-fix, those
+        # templates were only reachable via the manual "Load Template
+        # From File" dialog, so the Launch Evaluation dropdown only
+        # showed admin-created templates and the 15 bundled ones were
+        # invisible. Idempotent: each template name is created once;
+        # subsequent runs skip rows that already exist.
+        try:
+            self._auto_import_bundled_templates()
+        except Exception as e:
+            print(f"Bundled-template auto-import warning: {e}")
+
         self.create_widgets()
         self.load_evaluations()
+
+    def _auto_import_bundled_templates(self):
+        """Import every JSON template from ``templates/course_evaluation/``
+        into the ``evaluation_templates`` table on first sight.
+
+        Idempotent — a template name that already exists is skipped, so
+        repeated launches don't create duplicates and admin edits to the
+        DB row aren't overwritten by what's on disk.
+        """
+        import json
+        from education_system.university_system.modules.shared.constants import paths
+        templates_dir = paths.COURSE_EVALUATION_TEMPLATES_DIR
+        if not templates_dir.is_dir():
+            return
+
+        # Collect existing template names so we don't INSERT duplicates.
+        with get_connection() as conn:
+            existing = {row[0] for row in conn.execute(
+                "SELECT template_name FROM evaluation_templates").fetchall()}
+
+        created_by = (self.auth.current_user or {}).get('username', 'system') \
+            if self.auth else 'system'
+
+        imported = 0
+        for path in sorted(templates_dir.glob("*.json")):
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            except (OSError, ValueError) as e:
+                print(f"Could not read {path.name}: {e}")
+                continue
+            name = data.get('template_name')
+            if not name or name in existing:
+                continue
+            try:
+                template_id = EvaluationTemplateManager.create_template(
+                    template_name=name,
+                    template_type=data.get('template_type', 'Course'),
+                    description=data.get('description', ''),
+                    created_by=created_by,
+                )
+                for q in data.get('questions', []):
+                    EvaluationTemplateManager.add_question(
+                        template_id=template_id,
+                        question_text=q.get('question_text', ''),
+                        question_type=q.get('question_type', 'Rating'),
+                        question_category=q.get('question_category', ''),
+                        scale_min=q.get('scale_min', 1),
+                        scale_max=q.get('scale_max', 5),
+                    )
+                existing.add(name)
+                imported += 1
+            except Exception as e:
+                print(f"Failed to import bundled template {path.name}: {e}")
+
+        if imported:
+            print(f"Auto-imported {imported} bundled course-evaluation template(s)")
 
     def create_widgets(self):
         """Create all GUI widgets"""
@@ -338,10 +407,14 @@ class CourseEvaluationGUI:
 
     def load_template_from_file(self):
         """Load evaluation template from JSON file"""
-        # Get the templates directory path
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        templates_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))),
-                                     'templates', 'course_evaluation')
+        # 8.117.94: pre-fix this computed the path with four
+        # ``os.path.dirname`` hops, landing in ``modules/`` instead of
+        # ``university_system/`` and producing the error
+        # "Templates directory not found: …/modules/templates/course_evaluation".
+        # Use the canonical constant from ``paths`` instead of building
+        # a relative path by hand.
+        from education_system.university_system.modules.shared.constants import paths
+        templates_dir = str(paths.COURSE_EVALUATION_TEMPLATES_DIR)
 
         # Check if templates directory exists
         if not os.path.exists(templates_dir):
