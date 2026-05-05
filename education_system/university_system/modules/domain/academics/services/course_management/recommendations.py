@@ -25,7 +25,7 @@ def recommend_courses(auth):
             SELECT course_code, course_name, current_enrollment,
                    ROUND(CAST(current_enrollment AS FLOAT) / max_enrollment * 100, 1) as popularity
             FROM courses
-            WHERE LOWER(status) = 'active' AND max_enrollment > 0
+            WHERE LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active' AND max_enrollment > 0
             ORDER BY current_enrollment DESC, popularity DESC
             LIMIT 10
             """)
@@ -43,7 +43,7 @@ def recommend_courses(auth):
             SELECT course_code, course_name, current_enrollment, max_enrollment,
                    (max_enrollment - current_enrollment) as available_spots
             FROM courses
-            WHERE LOWER(status) = 'active' AND current_enrollment < max_enrollment
+            WHERE LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active' AND current_enrollment < max_enrollment
             ORDER BY available_spots DESC, course_code
             """)
 
@@ -126,7 +126,7 @@ def find_alternative_courses(auth):
         print("=======================")
 
         # Show courses for reference
-        cursor.execute("SELECT id, course_code, course_name, department, level FROM courses WHERE LOWER(status) = 'active' ORDER BY course_code")
+        cursor.execute("SELECT id, course_code, course_name, department, level FROM courses WHERE LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active' ORDER BY course_code")
         courses = cursor.fetchall()
 
         if not courses:
@@ -169,7 +169,7 @@ def find_alternative_courses(auth):
         SELECT id, course_code, course_name, department, level, current_enrollment, max_enrollment,
                'Same Dept & Level' as match_type
         FROM courses
-        WHERE department = ? AND level = ? AND id != ? AND LOWER(status) = 'active'
+        WHERE department = ? AND level = ? AND id != ? AND LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'
         ORDER BY course_name
         """, (ref_dept, ref_level, ref_id))
 
@@ -180,7 +180,7 @@ def find_alternative_courses(auth):
         SELECT id, course_code, course_name, department, level, current_enrollment, max_enrollment,
                'Same Department' as match_type
         FROM courses
-        WHERE department = ? AND level != ? AND id != ? AND LOWER(status) = 'active'
+        WHERE department = ? AND level != ? AND id != ? AND LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'
         ORDER BY course_name
         """, (ref_dept, ref_level, ref_id))
 
@@ -191,7 +191,7 @@ def find_alternative_courses(auth):
         SELECT id, course_code, course_name, department, level, current_enrollment, max_enrollment,
                'Same Level' as match_type
         FROM courses
-        WHERE level = ? AND department != ? AND id != ? AND LOWER(status) = 'active'
+        WHERE level = ? AND department != ? AND id != ? AND LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'
         ORDER BY course_name
         """, (ref_level, ref_dept, ref_id))
 
@@ -206,7 +206,7 @@ def find_alternative_courses(auth):
         SELECT id, course_code, course_name, department, level, current_enrollment, max_enrollment,
                'Similar Credits' as match_type
         FROM courses
-        WHERE credit_hours = ? AND id != ? AND LOWER(status) = 'active'
+        WHERE credit_hours = ? AND id != ? AND LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'
           AND NOT (department = ? AND level = ?)
         ORDER BY course_name
         """, (ref_credits, ref_id, ref_dept, ref_level))

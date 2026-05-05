@@ -32,7 +32,11 @@ class CourseEvaluationGUI:
 
     def __init__(self, parent, auth: UserAuth):
         self.root = tk.Toplevel(parent)
-        self.root.title(_("course_evaluation.title"))
+        # 8.117.89: renamed from "Course Evaluation" to "Evaluation Admin".
+        # The student-facing form (with Submit Response) lives in the
+        # main GUI's Course Evaluation app; this dialog is now strictly
+        # the admin surface — Templates, Evaluations and Results.
+        self.root.title("Evaluation Admin")
         self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
         self.root.minsize(1200, 800)
         self.root.configure(bg='#f0f0f0')
@@ -54,18 +58,27 @@ class CourseEvaluationGUI:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         # Title
-        title = ttk.Label(main_frame, text=_("course_evaluation.title"),
+        title = ttk.Label(main_frame, text="Evaluation Admin",
                          font=('Arial', 16, 'bold'))
         title.pack(pady=10)
+        ttk.Label(main_frame,
+                  text="Templates, evaluations and results. The student "
+                       "Submit Response form lives in the main GUI's "
+                       "Course Evaluation app (8.117.89).",
+                  foreground="#666").pack()
 
         # Notebook for tabs
         self.notebook = ttk.Notebook(main_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
 
-        # Create tabs
+        # Create tabs — Submit Response moved out in 8.117.89; admins
+        # use the main GUI's student-facing form for any test
+        # submissions. The methods below (create_responses_tab,
+        # submit_response, load_evaluation_questions) are kept as
+        # dead code so the bridge work in a future commit can re-enable
+        # the tab without re-implementing the wiring.
         self.create_templates_tab()
         self.create_evaluations_tab()
-        self.create_responses_tab()
         self.create_results_tab()
 
     def create_templates_tab(self):

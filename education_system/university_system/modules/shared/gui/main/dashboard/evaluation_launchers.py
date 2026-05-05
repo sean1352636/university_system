@@ -16,11 +16,11 @@ logger = logging.getLogger(__name__)
 
 EVALUATION_MODULES = (
     ("Course Evaluation",
-     "education_system.university_system.modules.domain.academics.course_evaluation.course_evaluation_system"),
+     "education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_system"),
     ("Module Evaluation",
-     "education_system.university_system.modules.domain.academics.course_evaluation.module_evaluation_portal"),
+     "education_system.university_system.modules.domain.academics.gui.course_management_gui.module_evaluation_portal"),
     ("Lecturer Evaluation",
-     "education_system.university_system.modules.domain.academics.course_evaluation.lecturer_evaluation"),
+     "education_system.university_system.modules.domain.academics.gui.course_management_gui.lecturer_evaluation"),
 )
 
 

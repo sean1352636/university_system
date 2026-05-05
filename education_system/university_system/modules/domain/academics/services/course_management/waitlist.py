@@ -27,7 +27,7 @@ def add_to_waitlist(auth):
         cursor.execute("""
         SELECT id, course_code, course_name, current_enrollment, max_enrollment
         FROM courses
-        WHERE current_enrollment >= max_enrollment AND LOWER(status) = 'active'
+        WHERE current_enrollment >= max_enrollment AND LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'
         ORDER BY course_code
         """)
 

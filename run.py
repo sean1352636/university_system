@@ -237,8 +237,20 @@ def _run_alembic_upgrade():
     try:
         from alembic.config import Config
         from alembic import command
-        cfg = Config(os.path.join(os.path.dirname(os.path.abspath(__file__)), "alembic.ini"))
-        command.upgrade(cfg, "head")
+        # alembic.ini lives in education_system/ (8.117.84 moved it there
+        # so the project is self-contained). The config's relative
+        # sqlalchemy.url and script_location resolve against the directory
+        # that holds alembic.ini, so we also chdir there for the upgrade.
+        repo_root = os.path.dirname(os.path.abspath(__file__))
+        project_dir = os.path.join(repo_root, "education_system")
+        ini_path = os.path.join(project_dir, "alembic.ini")
+        prev_cwd = os.getcwd()
+        try:
+            os.chdir(project_dir)
+            cfg = Config(ini_path)
+            command.upgrade(cfg, "head")
+        finally:
+            os.chdir(prev_cwd)
     except Exception as e:
         logger.warning("Alembic upgrade skipped: %s", e)
 

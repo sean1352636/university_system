@@ -35,7 +35,7 @@ def create_system_health_tab(parent_frame, service):
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
     # Title
-    ttk.Label(scrollable, text="System Health Monitor",
+    ttk.Label(scrollable, text="DB Performance",
               font=('Arial', 14, 'bold')).pack(anchor="w", padx=15, pady=(15, 5))
 
     # --- Top-level summary ---

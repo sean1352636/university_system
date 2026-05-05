@@ -217,12 +217,20 @@ class SearchFilterMixin:
             with sqlite3.connect(str(DEFAULT_DB_PATH)) as conn:
                 cursor = conn.cursor()
 
+                # Match the Course List tab's filter shape: any row that
+                # has a code and a name. Don't constrain on status or
+                # course_type — the original query required
+                # ``course_type = 'Degree Program'`` which silently
+                # hid every row whose type was 'Bachelors', 'Masters',
+                # 'Certificate', etc., so the dropdown looked empty
+                # despite the list tab showing the same courses fine.
                 cursor.execute(
-                    "SELECT id, COALESCE(course_code, code) as ccode, COALESCE(course_name, name) as cname "
-                    "FROM courses WHERE COALESCE(course_code, code) IS NOT NULL "
-                    "AND COALESCE(course_name, name) IS NOT NULL "
-                    "AND LOWER(COALESCE(status, 'active')) = 'active' "
-                    "AND COALESCE(course_type, '') = 'Degree Program' "
+                    "SELECT id, "
+                    "       COALESCE(course_code, code) AS ccode, "
+                    "       COALESCE(course_name, name) AS cname "
+                    "FROM courses "
+                    "WHERE COALESCE(course_code, code) IS NOT NULL "
+                    "AND   COALESCE(course_name, name) IS NOT NULL "
                     "ORDER BY ccode"
                 )
                 courses = cursor.fetchall()

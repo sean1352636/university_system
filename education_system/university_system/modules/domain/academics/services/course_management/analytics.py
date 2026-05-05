@@ -94,7 +94,7 @@ def generate_course_analytics(auth):
             SUM(max_enrollment) as total_capacity,
             ROUND(AVG(CAST(current_enrollment AS FLOAT) / max_enrollment * 100), 2) as avg_fill_rate
         FROM courses
-        WHERE LOWER(status) = 'active'
+        WHERE LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'
         """)
 
         enrollment_stats = cursor.fetchone()
@@ -146,7 +146,7 @@ def generate_course_analytics(auth):
         SELECT course_code, course_name, current_enrollment, max_enrollment,
                ROUND(CAST(current_enrollment AS FLOAT) / max_enrollment * 100, 1) as fill_rate
         FROM courses
-        WHERE LOWER(status) = 'active' AND max_enrollment > 0
+        WHERE LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active' AND max_enrollment > 0
         ORDER BY current_enrollment DESC, fill_rate DESC
         LIMIT 10
         """)
@@ -164,7 +164,7 @@ def generate_course_analytics(auth):
         cursor.execute("""
         SELECT COUNT(*) as available_courses
         FROM courses
-        WHERE LOWER(status) = 'active' AND current_enrollment < max_enrollment
+        WHERE LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active' AND current_enrollment < max_enrollment
         """)
 
         available_count = cursor.fetchone()[0]
@@ -257,7 +257,7 @@ def generate_enrollment_report(auth):
                 AVG(current_enrollment) as avg_enrollment,
                 ROUND(AVG(CAST(current_enrollment AS FLOAT) / max_enrollment * 100), 2) as avg_fill_rate
             FROM courses
-            WHERE LOWER(status) = 'active'
+            WHERE LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'
             """)
 
             summary = cursor.fetchone()
@@ -289,7 +289,7 @@ def generate_enrollment_report(auth):
                 SUM(max_enrollment) as total_capacity,
                 ROUND(AVG(CAST(current_enrollment AS FLOAT) / max_enrollment * 100), 2) as fill_rate
             FROM courses
-            WHERE LOWER(status) = 'active'
+            WHERE LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'
             GROUP BY department
             ORDER BY total_students DESC
             """)
@@ -315,7 +315,7 @@ def generate_enrollment_report(auth):
                 AVG(credit_hours) as avg_credits,
                 ROUND(AVG(CAST(current_enrollment AS FLOAT) / max_enrollment * 100), 2) as fill_rate
             FROM courses
-            WHERE LOWER(status) = 'active'
+            WHERE LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'
             GROUP BY level
             ORDER BY total_students DESC
             """)
@@ -341,7 +341,7 @@ def generate_enrollment_report(auth):
                    ROUND(CAST(current_enrollment AS FLOAT) / max_enrollment * 100, 1) as fill_rate,
                    course_type, credit_hours
             FROM courses
-            WHERE LOWER(status) = 'active'
+            WHERE LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'
             ORDER BY current_enrollment DESC
             """)
 
@@ -363,7 +363,7 @@ def generate_enrollment_report(auth):
             cursor.execute("""
             SELECT course_code, course_name, current_enrollment, max_enrollment
             FROM courses
-            WHERE current_enrollment > max_enrollment AND LOWER(status) = 'active'
+            WHERE current_enrollment > max_enrollment AND LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'
             ORDER BY (current_enrollment - max_enrollment) DESC
             """)
 
@@ -381,7 +381,7 @@ def generate_enrollment_report(auth):
             SELECT course_code, course_name, current_enrollment, max_enrollment,
                    (max_enrollment - current_enrollment) as available
             FROM courses
-            WHERE current_enrollment < max_enrollment * 0.5 AND LOWER(status) = 'active'
+            WHERE current_enrollment < max_enrollment * 0.5 AND LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'
             ORDER BY available DESC
             """)
 
@@ -485,7 +485,7 @@ def department_statistics(auth):
                 SUM(max_enrollment) as total_capacity,
                 AVG(current_enrollment) as avg_enrollment,
                 AVG(credit_hours) as avg_credits,
-                COUNT(CASE WHEN LOWER(status) = 'active' THEN 1 END) as active_courses
+                COUNT(CASE WHEN LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active' THEN 1 END) as active_courses
             FROM courses
             WHERE department = ?
             """, (selected_dept,))
@@ -521,7 +521,7 @@ def department_statistics(auth):
             cursor.execute("""
             SELECT course_code, course_name, current_enrollment, max_enrollment
             FROM courses
-            WHERE department = ? AND LOWER(status) = 'active'
+            WHERE department = ? AND LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'
             ORDER BY current_enrollment DESC
             LIMIT 5
             """, (selected_dept,))
@@ -554,7 +554,7 @@ def department_statistics(auth):
                 SUM(current_enrollment) as total_students,
                 SUM(max_enrollment) as total_capacity,
                 ROUND(AVG(CAST(current_enrollment AS FLOAT) / max_enrollment * 100), 1) as fill_rate,
-                COUNT(CASE WHEN LOWER(status) = 'active' THEN 1 END) as active_courses
+                COUNT(CASE WHEN LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active' THEN 1 END) as active_courses
             FROM courses
             GROUP BY department
             ORDER BY total_students DESC

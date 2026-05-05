@@ -10,8 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.90 — 2026-05-05](#811790---2026-05-05)
+- [8.117.89 — 2026-05-05](#811789---2026-05-05)
+- [8.117.88 — 2026-05-05](#811788---2026-05-05)
+- [8.117.87 — 2026-05-04](#811787---2026-05-04)
+- [8.117.86 — 2026-05-04](#811786---2026-05-04)
 - [8.117.85 — 2026-05-04](#811785---2026-05-04)
 - [8.117.84 — 2026-05-04](#811784---2026-05-04)
+- [8.117.83 — 2026-05-04](#811783---2026-05-04)
+- [8.117.82 — 2026-05-04](#811782---2026-05-04)
+- [8.117.81 — 2026-05-04](#811781---2026-05-04)
+- [8.117.80 — 2026-05-04](#811780---2026-05-04)
+- [8.117.79 — 2026-05-04](#811779---2026-05-04)
 - [8.117.78 — 2026-05-04](#811778---2026-05-04)
 - [8.117.77 — 2026-05-04](#811777---2026-05-04)
 - [8.117.76 — 2026-05-04](#811776---2026-05-04)
@@ -310,6 +320,256 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [8.117.90] — 2026-05-05
+
+### Changed — Move course_evaluation/ files into course_management_gui/
+
+The student-facing evaluation apps (the three subprocess-launched
+Tk apps that live behind the dashboard's Course Evaluation / Module
+Evaluation / Lecturer Evaluation buttons) were in
+``modules/domain/academics/course_evaluation/`` while the admin GUI
+(8.117.89's Evaluation Admin) lived in
+``modules/domain/academics/gui/course_management_gui/``. Two
+neighbours, two folders. Co-located them so anything related to
+course evaluations lives under one roof:
+
+- ``course_evaluation/course_evaluation_system.py`` →
+  ``gui/course_management_gui/course_evaluation_system.py``
+- ``course_evaluation/module_evaluation_portal.py`` →
+  ``gui/course_management_gui/module_evaluation_portal.py``
+- ``course_evaluation/lecturer_evaluation.py`` →
+  ``gui/course_management_gui/lecturer_evaluation.py``
+- ``course_evaluation/__init__.py`` (empty) — deleted; directory removed.
+
+Moves done via ``git mv`` so history is preserved. References
+updated in the two callers — ``shared/gui/main/main_gui.py`` (3
+``from … import`` statements + 3 dotted-path strings in the
+launcher table) and ``shared/gui/main/dashboard/evaluation_launchers.py``
+(3 dotted-path strings) — by global substring rewrite of
+``…academics.course_evaluation.`` →
+``…academics.gui.course_management_gui.``.
+
+Verified end-to-end: all three moved modules + both callers parse
+cleanly and import-resolve to the new location.
+
+---
+
+## [8.117.89] — 2026-05-05
+
+### Changed — Two course-evaluation systems linked; admin GUI renamed
+
+The repo had two parallel "course evaluation" systems:
+
+- **System A** — student-facing Tk app at
+  ``course_evaluation/course_evaluation_system.py``, subprocess-launched
+  from the main dashboard. Five fixed criteria, writes to the legacy
+  ``evaluations`` table.
+- **System B** — admin/template service at
+  ``services/evaluation/course_evaluation_core.py`` plus its embedded
+  GUI at ``course_management_gui/course_evaluation_gui.py``. Pluggable
+  templates, response/results managers, own schema
+  (``course_evaluations`` / ``evaluation_responses`` / ``evaluation_answers``).
+
+They were two different products with the same name, **and** their
+data was disconnected — student submissions never appeared in the
+admin's results dashboard.
+
+Three concrete changes:
+
+1. **Renamed System B's GUI to "Evaluation Admin"**
+   (``course_management_gui/course_evaluation_gui.py``). Window title,
+   in-window header label, and a new subtitle line make it explicit:
+   *"Templates, evaluations and results. The student Submit Response
+   form lives in the main GUI's Course Evaluation app."*
+
+2. **Removed the "Submit Response" tab from the admin GUI.**
+   ``create_widgets`` no longer calls ``create_responses_tab``. The
+   methods (``create_responses_tab``, ``submit_response``,
+   ``load_evaluation_questions``) are kept as dead code so a future
+   commit can re-enable them without re-writing the wiring.
+
+3. **Bridged System A submissions into System B's tables.** After
+   ``Database.submit_evaluation``'s legacy ``INSERT INTO evaluations``,
+   a new ``_mirror_to_admin_system`` helper mirrors the same response
+   into ``evaluation_responses`` / ``evaluation_answers`` so the
+   Evaluation Admin results dashboard sees student-form responses.
+   The bridge bootstraps an auto-managed
+   ``Student Form (auto)`` template (5 questions: teaching quality /
+   course content / workload / communication / overall) and a
+   per-module ``course_evaluations`` row on first use, idempotent
+   thereafter. Failure in the bridge is logged but never blocks the
+   user-visible legacy submission.
+
+Smoke test: a manual ``_mirror_to_admin_system`` call for module
+``CIS0001`` created the auto-template, the per-module evaluation, and
+inserted 5 ``evaluation_answers`` rows linked to a single response.
+
+#### Files
+
+- ``modules/domain/academics/gui/course_management_gui/course_evaluation_gui.py``
+  Window title + main-frame label set to "Evaluation Admin"; subtitle
+  added; ``create_responses_tab`` no longer called from
+  ``create_widgets``.
+- ``modules/domain/academics/course_evaluation/course_evaluation_system.py``
+  ``Database.submit_evaluation`` now calls ``_mirror_to_admin_system``
+  after the legacy insert. New module-level helpers
+  ``_ensure_default_template``, ``_question_id_map``,
+  ``_ensure_module_evaluation``, ``_mirror_to_admin_system`` plus
+  module-level constants ``_DEFAULT_TEMPLATE_NAME``,
+  ``_CRITERION_TO_QUESTION``.
+
+---
+
+## [8.117.88] — 2026-05-05
+
+### Fixed — Course-type filter hid every course from analytics / dropdown
+
+Several course-management surfaces filtered courses with a literal
+``COALESCE(c.course_type, '') = 'Degree Program'`` constraint. In the
+seeded DB the two real courses are typed as ``'Bachelors'``, so every
+filter that included this clause silently returned zero rows even
+though the Course List tab (which has no such filter) showed the
+courses fine.
+
+**Symptom 1** — Course Details dropdown was empty after 8.117.77's
+"fix" because the file I edited (``courses/course_details.py``) wasn't
+the one actually wired up. The active dropdown lives in
+``core/search_filter.py:load_course_selector_options``, and *that*
+copy carried the ``course_type = 'Degree Program'`` filter.
+
+**Symptom 2** — Enrollment Report - Summary showed
+``Total Active Courses: 0``, ``Total Students Enrolled: 0`` etc.
+despite the Course List showing 2 courses. The same filter lived
+inside the report's shared SQL fragments.
+
+**Symptom 3** — analytics service queries for popular courses,
+courses with available seats, alternative-course recommendations,
+waitlist suggestions, and instructor scheduling were all empty for
+the same reason.
+
+Fix swept across the course-management tree:
+
+- ``gui/course_management_gui/core/search_filter.py:load_course_selector_options``
+  — dropped the ``course_type`` and ``status`` filters; query now
+  matches the Course List tab's shape (any row with a non-NULL code
+  and name).
+- ``gui/course_management_gui/core/analytics.py`` — ``_VALID_COURSE``
+  no longer carries ``course_type = 'Degree Program'``;
+  ``_ACTIVE_COURSE`` now uses ``LOWER(COALESCE(NULLIF(c.status, ''), 'active')) = 'active'``;
+  ``_enrollment_count`` joins with no course-type filter.
+- ``gui/course_management_gui/analytics/analytics.py`` — both inline
+  ``course_type = 'Degree Program' AND LOWER(COALESCE(c.status, 'active')) = 'active'``
+  filters reduced to the empty-aware status check only.
+- ``services/course_management/analytics.py`` — 12 occurrences of
+  ``LOWER(status) = 'active'`` rewritten to
+  ``LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active'`` so the
+  CLI/text-mode reports also count rows whose ``status`` is an empty
+  string or ``NULL``.
+- ``services/course_management/scheduling.py`` — the courses-only
+  filter at line 507 updated; the ``instructors`` filter at line 286
+  left untouched (different table, different semantic).
+- ``services/course_management/recommendations.py`` — 4 occurrences.
+- ``services/course_management/waitlist.py`` — 1 occurrence.
+
+Direct-DB verification afterwards: Summary report returns
+``Total Active Courses: 2``, ``Total Students Enrolled: 12``,
+``Total System Capacity: 210``.
+
+### Fixed — run.py couldn't find alembic.ini after 8.117.84
+
+The Alembic move into ``education_system/`` left ``run.py``'s
+``_run_alembic_upgrade`` looking for ``alembic.ini`` in
+``os.path.dirname(__file__)`` — i.e. the repo root, where the file
+no longer is. Startup logged
+``"Alembic upgrade skipped: No 'script_location' key found in
+configuration"`` every run.
+
+Fix: ``run.py`` now joins ``education_system/alembic.ini`` and
+``chdir``s into ``education_system/`` for the upgrade so the config's
+relative ``script_location`` and ``sqlalchemy.url`` resolve correctly,
+restoring the working dir afterwards.
+
+---
+
+## [8.117.87] — 2026-05-04
+
+### Changed — Statistics tab redesigned as cards instead of a Text widget
+
+``create_stats_tab`` rendered a frozen ``tk.Text`` blob that was a
+literal grey-on-white box of text — six labels, six numbers, all
+hardcoded indentation. Replaced with a 3×2 grid of stat cards:
+
+- Each card has a coloured top accent strip (4 px), a big bold number
+  (Arial 26), the card label below, and a small grey sub-line for
+  context (e.g. *"due today or later"*, *"successful"*, *"X% of
+  students"*).
+- Six cards across two rows: Total Students (blue) · Active Courses
+  (green) · Pending Assignments (yellow) · Logins 24h (purple) ·
+  Total Users (blue) · Active Enrollments (green).
+- Header has the title, an *"as of HH:MM:SS"* timestamp that updates
+  on refresh, and a Refresh button.
+- A query that fails (table missing, etc.) now shows ``—`` and
+  *"unavailable"* in its card sub-line instead of breaking the whole
+  tab.
+
+The pseudo-metric "System Uptime: Active" line from the old text blob
+was a hardcoded string — dropped here. The Health tab already shows
+real uptime.
+
+#### Files
+
+- ``modules/shared/gui/main/dashboard/dashboard_gui.py``
+  ``create_stats_tab`` rewritten end-to-end.
+
+---
+
+## [8.117.86] — 2026-05-04
+
+### Changed — Two health-related dashboard tabs
+
+#### "System Health (Live)" → "DB Performance"
+
+The integrated dashboard had two tabs called Health: *Health* (an
+operational view available to all users) and *System Health (Live)*
+(admin-only, focused on connection-pool wait times, slow queries,
+per-table drill-down). The "(Live)" suffix was misleading —
+**neither** tab auto-refreshes — and the two were stylistically
+similar enough that users expected them to show the same thing.
+Renamed the admin one to **DB Performance** at the tab label and at
+the inner heading inside the tab to make its actual focus explicit.
+
+#### Health tab now always shows live metrics + Quick self-test
+
+``create_health_tab`` previously delegated to
+``health_portal_gui.create_health_tab`` whenever the Health Portal was
+registered, which only rendered four self-test rows (Database
+connection / Authentication system / File system access / GUI
+components) and silently hid the rich live-metrics implementation
+that lived in the ``else`` branch.
+
+Inverted: the rich metrics (DB size, total tables, login attempts
+24h, recent errors tailed from ``app.log``, connection pool, uptime)
+always render, and the four boolean self-tests are added below as a
+new "Quick self-test" section. Each check runs in a daemon thread so
+a slow check doesn't block the tab from appearing; the Refresh
+button now re-runs the metrics *and* the self-tests.
+
+#### Files
+
+- ``modules/shared/gui/main/dashboard/dashboard_gui.py``
+  ``create_health_tab`` no longer delegates to the Health Portal stub;
+  rich metrics body promoted out of the ``else`` branch and
+  flat-indented; new "Quick self-test" section with four daemon-thread
+  checks; ``refresh_health`` calls the new ``_run_self_tests`` helper.
+- ``modules/shared/gui/main/dashboard/dashboard_gui.py:show_integrated_dashboard``
+  Admin-only tab label changed to "DB Performance" with a comment
+  explaining the rationale.
+- ``modules/shared/gui/main/dashboard/system_health_dashboard.py``
+  Inner title label changed from "System Health Monitor" to
+  "DB Performance".
+
+---
+
 ## [8.117.85] — 2026-05-04
 
 ### Fixed — Backup GUI config writer leaked ``backup_config.json`` into ``$HOME``
@@ -405,6 +665,131 @@ instead of running from the repo root.
 identified as the active head, so the relocation didn't break the
 chain. No stale references to the deleted paths remain (one
 docstring mention in ``mfa_admin_gui`` for historical context).
+
+---
+
+## [8.117.83] — 2026-05-04
+
+### Reverted — 8.117.79–82 logging consolidation
+
+The five-tab Operations Console (Activity Log / Audit Viewer /
+Activity Logger / Log Analyzer / System Monitoring), the
+``operations_console`` package, the ``AuditLogViewerGUI`` Toplevel→Frame
+refactor, the dashboard's *Operations → Logs* sub-tab, and the
+removal of the System Admin *Monitoring & Logs* row were all rolled
+back per user request after a "looks messy" review.
+
+Files restored from ``cff41678`` (the commit before the consolidation):
+
+- ``modules/shared/gui/security/audit_log_viewer_gui.py`` — back to
+  inheriting from ``tk.Toplevel``.
+- ``modules/shared/gui/main/admin/admin_tools_gui.py`` —
+  ``show_system_monitoring_dashboard`` restored as a single-function
+  Toplevel implementation.
+- ``modules/shared/gui/main/admin/config_gui.py`` —
+  ``show_audit_log_viewer`` / ``show_activity_logger`` /
+  ``show_activity_log`` restored to their pre-console implementations;
+  ``show_log_analyzer`` / ``show_operations_console`` removed.
+- ``modules/shared/gui/main/admin/system_admin_gui.py`` — *Monitoring
+  & Logs* labelframe with its six buttons restored to the Operations
+  tab.
+- ``modules/shared/gui/main/main_gui.py`` — ``UnifiedManagementGUI``
+  bindings for the two console launchers removed.
+- ``modules/shared/gui/main/dashboard/operations_dashboard.py`` —
+  *Logs* sub-tab removed.
+- ``modules/shared/gui/simple_activity_logger_gui/main_gui.py`` —
+  unconditional ``setup_menu()`` call restored.
+- ``shared/extras/log-analyzer/log_analyzer.py`` — ``LogAnalyzerApp``
+  reverted to its standalone-only constructor (no ``embedded`` kwarg).
+
+The 8.117.78 Overview rework was kept (it's an independent change).
+
+The original 8.117.79–82 changelog entries were removed at the same
+time, so version numbers in this file go ``.78`` → ``.83`` →
+``.84`` with no gap. The reverted features remain reachable in
+``ff7dbed5`` if anyone wants to revisit them.
+
+---
+
+## [8.117.82] — 2026-05-04
+
+### Removed — *Monitoring & Logs* section in System Admin → Operations
+
+> **Reverted in 8.117.83** alongside 8.117.79–81.
+
+The *Monitoring & Logs* labelframe (six buttons: Operations Console /
+Audit Log Viewer / Activity Logger / Activity Log / Log Analyzer /
+System Monitoring) was deleted from
+``system_admin_gui.create_operations_tab`` so the dashboard's *Logs*
+sub-tab (8.117.81) became the single home. Restored by 8.117.83.
+
+---
+
+## [8.117.81] — 2026-05-04
+
+### Added — *Logs* sub-tab inside the Integrated Dashboard's Operations area
+
+> **Reverted in 8.117.83** alongside 8.117.79–80, 82.
+
+A *Logs* sub-tab was appended to ``operations_dashboard.create_operations_tab``'s
+inner ``ttk.Notebook``, sitting alongside Course Utilization / Grade
+Distribution / Student Retention / Financial Aid / Support Tickets.
+The sub-tab carried a single **Operations Console** button that
+walked the ``master`` chain to find ``root._unified_gui`` (a
+back-ref added on the root window in ``main_gui.py``) and called the
+unified ``show_operations_console`` method. Five additional tool
+shortcuts were considered but trimmed to the single launcher per
+review. Restored by 8.117.83.
+
+---
+
+## [8.117.80] — 2026-05-04
+
+### Changed — AuditLogViewerGUI: ``tk.Toplevel`` → ``ttk.Frame``
+
+> **Reverted in 8.117.83** alongside 8.117.79, 81–82.
+
+So the existing 1064-LOC audit viewer could be embedded as a tab
+inside the Operations Console rather than always opening as its own
+window. ``AuditLogViewerGUI`` was made to inherit from ``ttk.Frame``
+with an ``embedded=False`` kwarg controlling whether window-level
+calls (``title`` / ``geometry`` / ``minsize`` / ``protocol`` /
+centering) were applied to ``parent`` (treated as the wrapping
+Toplevel when standalone). The standalone factory
+``show_audit_log_viewer`` was updated to create its own ``Toplevel``
+and pack the frame into it, so legacy callers stayed source-compatible.
+Restored by 8.117.83.
+
+---
+
+## [8.117.79] — 2026-05-04
+
+### Added — Operations Console (five logging/monitoring GUIs unified)
+
+> **Reverted in 8.117.83** alongside 8.117.80–82.
+
+A new ``modules/shared/gui/operations_console/`` package was
+introduced to host a single Toplevel + Notebook with five tabs —
+Activity Log / Audit Viewer / Activity Logger / Log Analyzer / System
+Monitoring — replacing the four scattered admin "Monitoring & Logs"
+buttons plus the previously-orphaned ``shared/extras/log-analyzer/``.
+Lazy-built panels, per-tab ``stop`` callbacks, an ``initial_tab``
+argument so individual launchers could deep-link to one feature.
+
+Wired through ``config_gui.show_operations_console`` and a sidebar
+revision that turned the inner Notebook into a left-side ``Listbox``
+of section names with a swappable content frame to remove a level of
+nested-notebook depth.
+
+Companion changes that were also rolled back in 8.117.83:
+- ``shared/extras/log-analyzer/log_analyzer.py`` — added an
+  ``embedded`` kwarg to ``LogAnalyzerApp.__init__``.
+- ``modules/shared/gui/simple_activity_logger_gui/main_gui.py`` —
+  guarded ``setup_menu()`` with ``if self._standalone`` because Frame
+  parents have no menubar slot.
+
+Restored by 8.117.83. The full implementation lives in commit
+``ff7dbed5`` if anyone wants to revisit.
 
 ---
 

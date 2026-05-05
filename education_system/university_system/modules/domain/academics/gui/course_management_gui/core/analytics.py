@@ -15,10 +15,14 @@ _COURSE_CODE = "COALESCE(c.course_code, c.code)"
 _COURSE_NAME = "COALESCE(c.course_name, c.name)"
 _VALID_COURSE = (
     f"WHERE {_COURSE_CODE} IS NOT NULL AND {_COURSE_NAME} IS NOT NULL"
-    " AND COALESCE(c.course_type, '') = 'Degree Program'"
 )
+# 8.117.88: dropped ``COALESCE(c.course_type, '') = 'Degree Program'``
+# from _VALID_COURSE — that filter silently excluded courses whose
+# course_type was 'Bachelors', 'Masters', 'Certificate', etc., so the
+# enrollment report reported zeros even when the Course List tab
+# showed real rows. _enrollment_count below had the same filter inline.
 _ACTIVE_COURSE = (
-    f"{_VALID_COURSE} AND LOWER(COALESCE(c.status, 'active')) = 'active'"
+    f"{_VALID_COURSE} AND LOWER(COALESCE(NULLIF(c.status, ''), 'active')) = 'active'"
 )
 # Join enrollment via students.course matching the course code
 _ENROLLMENT_JOIN = (
@@ -27,11 +31,10 @@ _ENROLLMENT_JOIN = (
 
 
 def _enrollment_count(cursor):
-    """Get total enrolled students across all degree-programme courses."""
+    """Total enrolled students across courses (any type)."""
     cursor.execute(
         "SELECT COUNT(*) FROM students s "
-        "JOIN courses c ON UPPER(s.course) = UPPER(COALESCE(c.course_code, c.code)) "
-        "WHERE COALESCE(c.course_type, '') = 'Degree Program'"
+        "JOIN courses c ON UPPER(s.course) = UPPER(COALESCE(c.course_code, c.code))"
     )
     return cursor.fetchone()[0] or 0
 

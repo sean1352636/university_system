@@ -504,7 +504,7 @@ def create_course_schedule(auth):
         cursor = conn.cursor()
 
         # Show available courses
-        cursor.execute("SELECT id, course_code, course_name FROM courses WHERE LOWER(status) = 'active' ORDER BY course_code")
+        cursor.execute("SELECT id, course_code, course_name FROM courses WHERE LOWER(COALESCE(NULLIF(status, ''), 'active')) = 'active' ORDER BY course_code")
         courses = cursor.fetchall()
 
         if not courses:

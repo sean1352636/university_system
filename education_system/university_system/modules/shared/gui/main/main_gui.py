@@ -971,11 +971,11 @@ _NEW_FEATURE_MODULES = [
     ("complaints_portal", "Complaints Portal",
      "education_system.university_system.modules.domain.communications.feedback.complaints_portal"),
     ("course_evaluation_system", "Course Evaluation",
-     "education_system.university_system.modules.domain.academics.course_evaluation.course_evaluation_system"),
+     "education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_system"),
     ("lecturer_evaluation", "Lecturer Evaluation",
-     "education_system.university_system.modules.domain.academics.course_evaluation.lecturer_evaluation"),
+     "education_system.university_system.modules.domain.academics.gui.course_management_gui.lecturer_evaluation"),
     ("module_evaluation_portal", "Module Evaluation",
-     "education_system.university_system.modules.domain.academics.course_evaluation.module_evaluation_portal"),
+     "education_system.university_system.modules.domain.academics.gui.course_management_gui.module_evaluation_portal"),
     ("disciplinary_portal", "Disciplinary Portal",
      "education_system.university_system.modules.domain.legal.disciplinary.disciplinary_portal"),
     ("risk_management", "Risk Management",
@@ -1177,7 +1177,7 @@ def show_new_feature_module_evaluation_portal(self):
     )
 
     def _build(host):
-        from education_system.university_system.modules.domain.academics.course_evaluation.module_evaluation_portal import ModuleEvaluationPortal
+        from education_system.university_system.modules.domain.academics.gui.course_management_gui.module_evaluation_portal import ModuleEvaluationPortal
         return ModuleEvaluationPortal(host)
     self._embed_or_subprocess(title, module_dotted, _build)
 
@@ -1190,7 +1190,7 @@ def show_new_feature_lecturer_evaluation(self):
     )
 
     def _build(host):
-        from education_system.university_system.modules.domain.academics.course_evaluation.lecturer_evaluation import App
+        from education_system.university_system.modules.domain.academics.gui.course_management_gui.lecturer_evaluation import App
         app = App(host=host)
         app.run()
         return app
@@ -1223,7 +1223,7 @@ def show_new_feature_course_evaluation_system(self):
     )
 
     def _build(host):
-        from education_system.university_system.modules.domain.academics.course_evaluation.course_evaluation_system import CourseEvaluationApp
+        from education_system.university_system.modules.domain.academics.gui.course_management_gui.course_evaluation_system import CourseEvaluationApp
         return CourseEvaluationApp(host)
     self._embed_or_subprocess(title, module_dotted, _build)
 

@@ -1455,8 +1455,7 @@ class CourseAnalyticsDialog:
             LEFT JOIN students s ON UPPER(s.course) = UPPER(COALESCE(c.course_code, c.code))
             WHERE COALESCE(c.course_code, c.code) IS NOT NULL
               AND COALESCE(c.course_name, c.name) IS NOT NULL
-              AND COALESCE(c.course_type, '') = 'Degree Program'
-              AND LOWER(COALESCE(c.status, 'active')) = 'active'
+              AND LOWER(COALESCE(NULLIF(c.status, ''), 'active')) = 'active'
             GROUP BY c.id
             ORDER BY enrollment DESC
             LIMIT 10
@@ -1478,8 +1477,7 @@ class CourseAnalyticsDialog:
             LEFT JOIN students s ON UPPER(s.course) = UPPER(COALESCE(c.course_code, c.code))
             WHERE COALESCE(c.course_code, c.code) IS NOT NULL
               AND COALESCE(c.course_name, c.name) IS NOT NULL
-              AND COALESCE(c.course_type, '') = 'Degree Program'
-              AND LOWER(COALESCE(c.status, 'active')) = 'active'
+              AND LOWER(COALESCE(NULLIF(c.status, ''), 'active')) = 'active'
               AND COALESCE(c.max_enrollment, 0) > 0
             GROUP BY c.id
             HAVING COUNT(s.student_id) < COALESCE(c.max_enrollment, 0)

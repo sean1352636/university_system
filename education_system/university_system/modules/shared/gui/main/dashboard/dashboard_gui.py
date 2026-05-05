@@ -205,7 +205,13 @@ def show_integrated_dashboard(self):
 
             # System Health (enhanced) tab (Feature 15)
             sys_health_frame = ttk.Frame(notebook)
-            notebook.add(sys_health_frame, text="System Health (Live)")
+            # Renamed in 8.117.86 from "System Health (Live)". Despite
+            # the old label, this tab doesn't auto-refresh, and its
+            # actual focus is DB-performance forensics (connection-pool
+            # wait times, slow queries, per-table drill-down) — not
+            # general health, which is what the regular "Health" tab
+            # already covers.
+            notebook.add(sys_health_frame, text="DB Performance")
             from education_system.university_system.modules.shared.gui.main.dashboard.system_health_dashboard import create_system_health_tab
             create_system_health_tab(sys_health_frame, _admin_svc)
         except Exception as e:
@@ -547,77 +553,116 @@ def create_overview_tab(self, parent):
     see_all.bind("<Button-1>", lambda _e: _see_all_activity())
 
 def create_stats_tab(self, parent):
-    """Create quick statistics tab"""
-    stats_container = ttk.Frame(parent, padding="20")
-    stats_container.pack(fill=tk.BOTH, expand=True)
+    """Create quick statistics tab.
 
-    ttk.Label(stats_container, text=_("dashboard.statistics.title"),
-             font=('Arial', 14, 'bold')).pack(pady=(0, 20))
+    Replaced the original ``tk.Text`` blob with a grid of stat cards in
+    8.117.87. Each card has a coloured top accent (so the eye can
+    triage by domain), a big number, a sub-label, and (where relevant)
+    a context line such as "last 24h" or "of N total".
+    """
+    container = ttk.Frame(parent, padding=20)
+    container.pack(fill=tk.BOTH, expand=True)
 
-    # Stats grid
-    stats_frame = ttk.Frame(stats_container)
-    stats_frame.pack(fill=tk.BOTH, expand=True)
+    # Header row: title + as-of timestamp + Refresh button
+    header = ttk.Frame(container)
+    header.pack(fill=tk.X, pady=(0, 15))
+    ttk.Label(header, text=_("dashboard.statistics.title"),
+              font=('Arial', 16, 'bold')).pack(side=tk.LEFT)
+    asof_var = tk.StringVar()
+    ttk.Label(header, textvariable=asof_var,
+              foreground="#666").pack(side=tk.LEFT, padx=15)
 
-    try:
-        # Fetch live statistics from the database
-        total_students = 0
-        active_courses = 0
-        pending_assignments = 0
-        recent_logins = 0
-        total_users = 0
-        active_enrollments = 0
+    # Stats grid (3 columns × 2 rows)
+    grid = ttk.Frame(container)
+    grid.pack(fill=tk.BOTH, expand=True)
+    for c in range(3):
+        grid.columnconfigure(c, weight=1, uniform='stats')
 
-        with get_connection() as conn:
-            row = conn.execute("SELECT COUNT(*) as cnt FROM students").fetchone()
-            total_students = row['cnt'] if row else 0
+    # Per-card state — populated by the renderer below
+    cards = {}
 
-            row = conn.execute("SELECT COUNT(*) as cnt FROM modules WHERE is_active = 1").fetchone()
-            active_courses = row['cnt'] if row else 0
+    def _make_card(row, col, label, accent, sub=""):
+        outer = tk.Frame(grid, bg=accent, bd=0)
+        outer.grid(row=row, column=col, padx=6, pady=6, sticky="nsew")
+        # Coloured accent strip at the top
+        tk.Frame(outer, bg=accent, height=4).pack(fill=tk.X)
+        # Card body
+        body = tk.Frame(outer, bg="#ffffff", padx=18, pady=14)
+        body.pack(fill=tk.BOTH, expand=True)
+        value_var = tk.StringVar(value="…")
+        tk.Label(body, textvariable=value_var, bg="#ffffff",
+                 fg="#1a1a1a",
+                 font=('Arial', 26, 'bold')).pack(anchor='w')
+        tk.Label(body, text=label, bg="#ffffff",
+                 fg="#444", font=('Arial', 10, 'bold')).pack(anchor='w', pady=(4, 0))
+        sub_var = tk.StringVar(value=sub)
+        tk.Label(body, textvariable=sub_var, bg="#ffffff",
+                 fg="#888", font=('Arial', 9)).pack(anchor='w')
+        cards[label] = {'value': value_var, 'sub': sub_var}
 
-            try:
-                row = conn.execute(
-                    "SELECT COUNT(*) as cnt FROM assignments WHERE due_date >= date('now') AND status = 'active'"
-                ).fetchone()
-                pending_assignments = row['cnt'] if row else 0
-            except Exception:
-                pass
+    # Define cards: (label, accent_colour)
+    _make_card(0, 0, "Total Students",       "#1a73e8")
+    _make_card(0, 1, "Active Courses",       "#0f9d58")
+    _make_card(0, 2, "Pending Assignments",  "#f4b400")
+    _make_card(1, 0, "Logins (24h)",         "#9334e6")
+    _make_card(1, 1, "Total Users",          "#1a73e8")
+    _make_card(1, 2, "Active Enrollments",   "#0f9d58")
 
-            try:
-                row = conn.execute(
-                    "SELECT COUNT(*) as cnt FROM login_attempts WHERE success = 1 AND attempt_time >= datetime('now', '-24 hours')"
-                ).fetchone()
-                recent_logins = row['cnt'] if row else 0
-            except Exception:
-                pass
+    # Spacer so the cards stay tight at the top instead of stretching.
+    grid.rowconfigure(0, weight=0)
+    grid.rowconfigure(1, weight=0)
+    grid.rowconfigure(2, weight=1)
 
-            row = conn.execute("SELECT COUNT(*) as cnt FROM users").fetchone()
-            total_users = row['cnt'] if row else 0
+    def _refresh_stats():
+        try:
+            with get_connection() as conn:
+                def _q(sql, default=0):
+                    try:
+                        row = conn.execute(sql).fetchone()
+                        return row[0] if row and row[0] is not None else default
+                    except Exception:
+                        return None  # signals "table missing / query failed"
 
-            try:
-                row = conn.execute(
-                    "SELECT COUNT(*) as cnt FROM student_modules WHERE status IN ('Enrolled', 'enrolled')"
-                ).fetchone()
-                active_enrollments = row['cnt'] if row else 0
-            except Exception:
-                pass
+                total_students = _q("SELECT COUNT(*) FROM students")
+                active_courses = _q("SELECT COUNT(*) FROM modules WHERE is_active = 1")
+                pending = _q("SELECT COUNT(*) FROM assignments "
+                             "WHERE due_date >= date('now') AND status = 'active'")
+                logins = _q("SELECT COUNT(*) FROM login_attempts "
+                            "WHERE success = 1 AND attempt_time >= datetime('now','-24 hours')")
+                total_users = _q("SELECT COUNT(*) FROM users")
+                active_enrol = _q("SELECT COUNT(*) FROM student_modules "
+                                  "WHERE status IN ('Enrolled', 'enrolled')")
 
-        stats_text = f"""{_("dashboard.statistics.database_stats")}
-  {_("dashboard.statistics.total_students")} {total_students}
-  {_("dashboard.statistics.active_courses")} {active_courses}
-  {_("dashboard.statistics.pending_assignments")} {pending_assignments}
-  {_("dashboard.statistics.system_uptime")} {_("common.active")}
-  {_("dashboard.statistics.recent_logins")} {recent_logins} (last 24h)
+            def _set(card_label, value, sub=""):
+                if value is None:
+                    cards[card_label]['value'].set("—")
+                    cards[card_label]['sub'].set("unavailable")
+                else:
+                    cards[card_label]['value'].set(f"{value:,}")
+                    cards[card_label]['sub'].set(sub)
 
-  Total Users: {total_users}
-  Active Enrollments: {active_enrollments}"""
+            _set("Total Students",       total_students)
+            _set("Active Courses",       active_courses,
+                 sub="active modules")
+            _set("Pending Assignments",  pending,
+                 sub="due today or later")
+            _set("Logins (24h)",         logins, sub="successful")
+            _set("Total Users",          total_users)
+            # If we know totals, show Active Enrollments as ratio.
+            if active_enrol is not None and total_students:
+                pct = (active_enrol / total_students) * 100 if total_students else 0
+                _set("Active Enrollments", active_enrol,
+                     sub=f"{pct:.0f}% of students")
+            else:
+                _set("Active Enrollments", active_enrol)
 
-        stats_display = tk.Text(stats_frame, wrap=tk.WORD, height=15, width=60)
-        stats_display.pack(fill=tk.BOTH, expand=True)
-        stats_display.insert(tk.END, stats_text)
-        stats_display.config(state=tk.DISABLED)
+            asof_var.set(f"as of {datetime.now().strftime('%H:%M:%S')}")
+        except Exception as e:
+            asof_var.set(f"load error: {e}")
 
-    except Exception as e:
-        ttk.Label(stats_frame, text=_("dashboard.statistics.load_error", error=str(e))).pack()
+    ttk.Button(header, text="Refresh",
+               command=_refresh_stats).pack(side=tk.RIGHT)
+    _refresh_stats()
 
 def create_activity_tab(self, parent):
     """Create recent activity tab with live data from activity_log table."""
@@ -692,188 +737,259 @@ def create_activity_tab(self, parent):
     load_activity()
 
 def create_health_tab(self, parent):
-    """Create system health monitoring tab with live metrics."""
-    if self.health_portal_gui:
-        self.health_portal_gui.create_health_tab(parent)
-    else:
-        import os
+    """Create system health monitoring tab.
 
-        health_container = ttk.Frame(parent, padding="20")
-        health_container.pack(fill=tk.BOTH, expand=True)
-        ttk.Label(health_container, text=_("dashboard.health.title"),
-                 font=('Arial', 14, 'bold')).pack(pady=(0, 10))
+    Renders rich live metrics (DB size, tables, users 24h, logins 24h,
+    failed logins, activity-log size, uptime, connection pool, recent
+    errors from app.log) plus a "Quick self-test" section that runs
+    four boolean checks (DB connection, auth, filesystem, GUI).
 
-        metrics_frame = ttk.LabelFrame(health_container, text="System Metrics", padding="10")
-        metrics_frame.pack(fill=tk.X, pady=(0, 10))
+    8.117.86: previously delegated to ``health_portal_gui.create_health_tab``
+    whenever the Health Portal was registered — that path only showed
+    the four self-test rows and hid the rich metrics. Inverted: the
+    rich metrics always render; the four self-tests live below as a
+    "Quick self-test" section so the visual of green ticks isn't lost.
+    """
+    import os
+    import tempfile
+    import threading
 
-        info_labels = {}
+    health_container = ttk.Frame(parent, padding="20")
+    health_container.pack(fill=tk.BOTH, expand=True)
+    ttk.Label(health_container, text=_("dashboard.health.title"),
+              font=('Arial', 14, 'bold')).pack(pady=(0, 10))
 
-        def _add_metric(parent_f, label, row):
-            ttk.Label(parent_f, text=label, width=25, anchor='w').grid(row=row, column=0, padx=5, pady=3, sticky='w')
-            val = ttk.Label(parent_f, text="...", anchor='w')
-            val.grid(row=row, column=1, padx=5, pady=3, sticky='w')
-            info_labels[label] = val
+    metrics_frame = ttk.LabelFrame(health_container, text="System Metrics", padding="10")
+    metrics_frame.pack(fill=tk.X, pady=(0, 10))
 
-        _add_metric(metrics_frame, "Database Size", 0)
-        _add_metric(metrics_frame, "Total Tables", 1)
-        _add_metric(metrics_frame, "Total Rows (est.)", 2)
-        _add_metric(metrics_frame, "Active Users (24h)", 3)
-        _add_metric(metrics_frame, "Login Attempts (24h)", 4)
-        _add_metric(metrics_frame, "Failed Logins (24h)", 5)
-        _add_metric(metrics_frame, "Activity Log Entries", 6)
-        _add_metric(metrics_frame, "Application Uptime", 7)
+    info_labels = {}
 
-        # Connection Pool section
-        pool_frame = ttk.LabelFrame(health_container, text="Connection Pool", padding="10")
-        pool_frame.pack(fill=tk.X, pady=(0, 10))
+    def _add_metric(parent_f, label, row):
+        ttk.Label(parent_f, text=label, width=25, anchor='w').grid(row=row, column=0, padx=5, pady=3, sticky='w')
+        val = ttk.Label(parent_f, text="...", anchor='w')
+        val.grid(row=row, column=1, padx=5, pady=3, sticky='w')
+        info_labels[label] = val
 
-        pool_labels = {}
+    _add_metric(metrics_frame, "Database Size", 0)
+    _add_metric(metrics_frame, "Total Tables", 1)
+    _add_metric(metrics_frame, "Total Rows (est.)", 2)
+    _add_metric(metrics_frame, "Active Users (24h)", 3)
+    _add_metric(metrics_frame, "Login Attempts (24h)", 4)
+    _add_metric(metrics_frame, "Failed Logins (24h)", 5)
+    _add_metric(metrics_frame, "Activity Log Entries", 6)
+    _add_metric(metrics_frame, "Application Uptime", 7)
 
-        def _add_pool_metric(parent_f, label, row):
-            ttk.Label(parent_f, text=label, width=25, anchor='w').grid(row=row, column=0, padx=5, pady=3, sticky='w')
-            val = ttk.Label(parent_f, text="...", anchor='w')
-            val.grid(row=row, column=1, padx=5, pady=3, sticky='w')
-            pool_labels[label] = val
+    # Connection Pool section
+    pool_frame = ttk.LabelFrame(health_container, text="Connection Pool", padding="10")
+    pool_frame.pack(fill=tk.X, pady=(0, 10))
 
-        _add_pool_metric(pool_frame, "Pool Status", 0)
-        _add_pool_metric(pool_frame, "Total Connections", 1)
-        _add_pool_metric(pool_frame, "Active Connections", 2)
-        _add_pool_metric(pool_frame, "Idle Connections", 3)
-        _add_pool_metric(pool_frame, "Connection Errors", 4)
+    pool_labels = {}
 
-        # Error counts section
-        errors_frame = ttk.LabelFrame(health_container, text="Recent Errors", padding="10")
-        errors_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+    def _add_pool_metric(parent_f, label, row):
+        ttk.Label(parent_f, text=label, width=25, anchor='w').grid(row=row, column=0, padx=5, pady=3, sticky='w')
+        val = ttk.Label(parent_f, text="...", anchor='w')
+        val.grid(row=row, column=1, padx=5, pady=3, sticky='w')
+        pool_labels[label] = val
 
-        error_text = tk.Text(errors_frame, wrap=tk.WORD, height=6)
-        error_text.pack(fill=tk.BOTH, expand=True)
-        error_text.config(state=tk.DISABLED)
+    _add_pool_metric(pool_frame, "Pool Status", 0)
+    _add_pool_metric(pool_frame, "Total Connections", 1)
+    _add_pool_metric(pool_frame, "Active Connections", 2)
+    _add_pool_metric(pool_frame, "Idle Connections", 3)
+    _add_pool_metric(pool_frame, "Connection Errors", 4)
 
-        _start_time = datetime.now()
+    # Error counts section
+    errors_frame = ttk.LabelFrame(health_container, text="Recent Errors", padding="10")
+    errors_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
 
-        def refresh_health():
+    error_text = tk.Text(errors_frame, wrap=tk.WORD, height=6)
+    error_text.pack(fill=tk.BOTH, expand=True)
+    error_text.config(state=tk.DISABLED)
+
+    # Quick self-test section — the four boolean checks the Health
+    # Portal stub used to render. Each runs in a daemon thread so a
+    # slow check doesn't block the tab from appearing.
+    selftest_frame = ttk.LabelFrame(health_container, text="Quick self-test", padding="10")
+    selftest_frame.pack(fill=tk.X, pady=(0, 10))
+    selftest_vars = {}
+
+    def _check_database():
+        try:
+            with get_connection() as conn:
+                conn.execute("SELECT 1").fetchone()
+            return True
+        except Exception:
+            return False
+
+    def _check_auth():
+        return self.auth is not None and hasattr(self.auth, 'current_user')
+
+    def _check_filesystem():
+        try:
+            with tempfile.NamedTemporaryFile() as tmp:
+                tmp.write(b"test")
+            return True
+        except Exception:
+            return False
+
+    def _check_gui_components():
+        # We're rendering inside Tk right now, so by definition GUI
+        # components are available. Kept for parity with the old
+        # Health Portal stub that surfaced this row.
+        return True
+
+    selftest_checks = [
+        ("Database connection", _check_database),
+        ("Authentication system", _check_auth),
+        ("File system access", _check_filesystem),
+        ("GUI components", _check_gui_components),
+    ]
+    for i, (label, _fn) in enumerate(selftest_checks):
+        ttk.Label(selftest_frame, text=label, width=25,
+                  anchor='w').grid(row=i, column=0, padx=5, pady=3, sticky='w')
+        var = tk.StringVar(value="Checking…")
+        ttk.Label(selftest_frame, textvariable=var,
+                  anchor='w').grid(row=i, column=1, padx=5, pady=3, sticky='w')
+        selftest_vars[label] = var
+
+    def _run_self_tests():
+        for lbl, fn in selftest_checks:
+            v = selftest_vars[lbl]
+            v.set("Checking…")
+            def _runner(label=lbl, func=fn, var=v):
+                try:
+                    var.set("✅ OK" if func() else "❌ FAIL")
+                except Exception as e:
+                    var.set(f"❌ ERROR: {str(e)[:50]}")
+            threading.Thread(target=_runner, daemon=True).start()
+
+    _start_time = datetime.now()
+
+    def refresh_health():
+        try:
+            from education_system.university_system.modules.shared.constants import paths
+            db_path = str(paths.DEFAULT_DB_PATH)
+
+            # Database size
             try:
-                from education_system.university_system.modules.shared.constants import paths
-                db_path = str(paths.DEFAULT_DB_PATH)
+                db_size = os.path.getsize(db_path)
+                if db_size >= 1_048_576:
+                    size_str = f"{db_size / 1_048_576:.1f} MB"
+                else:
+                    size_str = f"{db_size / 1024:.1f} KB"
+                info_labels["Database Size"].config(text=size_str)
+            except Exception:
+                info_labels["Database Size"].config(text="Unknown")
 
-                # Database size
+            with get_connection() as conn:
+                # Table count
+                row = conn.execute(
+                    "SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table'"
+                ).fetchone()
+                info_labels["Total Tables"].config(text=str(row['cnt'] if row else 0))
+
+                # Estimated total rows from sqlite_stat1
                 try:
-                    db_size = os.path.getsize(db_path)
-                    if db_size >= 1_048_576:
-                        size_str = f"{db_size / 1_048_576:.1f} MB"
-                    else:
-                        size_str = f"{db_size / 1024:.1f} KB"
-                    info_labels["Database Size"].config(text=size_str)
-                except Exception:
-                    info_labels["Database Size"].config(text="Unknown")
-
-                with get_connection() as conn:
-                    # Table count
                     row = conn.execute(
-                        "SELECT COUNT(*) as cnt FROM sqlite_master WHERE type='table'"
+                        "SELECT SUM(stat) as total FROM (SELECT CAST(stat AS INTEGER) as stat FROM sqlite_stat1)"
                     ).fetchone()
-                    info_labels["Total Tables"].config(text=str(row['cnt'] if row else 0))
-
-                    # Estimated total rows from sqlite_stat1
-                    try:
-                        row = conn.execute(
-                            "SELECT SUM(stat) as total FROM (SELECT CAST(stat AS INTEGER) as stat FROM sqlite_stat1)"
-                        ).fetchone()
-                        total = row['total'] if row and row['total'] else 0
-                        info_labels["Total Rows (est.)"].config(text=f"{total:,}")
-                    except Exception:
-                        info_labels["Total Rows (est.)"].config(text="N/A")
-
-                    # Active users (24h)
-                    try:
-                        row = conn.execute(
-                            "SELECT COUNT(DISTINCT username) as cnt FROM activity_log "
-                            "WHERE timestamp >= datetime('now', '-24 hours')"
-                        ).fetchone()
-                        info_labels["Active Users (24h)"].config(text=str(row['cnt'] if row else 0))
-                    except Exception:
-                        info_labels["Active Users (24h)"].config(text="N/A")
-
-                    # Login attempts (24h)
-                    try:
-                        row = conn.execute(
-                            "SELECT COUNT(*) as cnt FROM login_attempts "
-                            "WHERE attempt_time >= datetime('now', '-24 hours')"
-                        ).fetchone()
-                        info_labels["Login Attempts (24h)"].config(text=str(row['cnt'] if row else 0))
-                    except Exception:
-                        info_labels["Login Attempts (24h)"].config(text="N/A")
-
-                    # Failed logins (24h)
-                    try:
-                        row = conn.execute(
-                            "SELECT COUNT(*) as cnt FROM login_attempts "
-                            "WHERE success = 0 AND attempt_time >= datetime('now', '-24 hours')"
-                        ).fetchone()
-                        info_labels["Failed Logins (24h)"].config(text=str(row['cnt'] if row else 0))
-                    except Exception:
-                        info_labels["Failed Logins (24h)"].config(text="N/A")
-
-                    # Activity log count
-                    row = conn.execute("SELECT COUNT(*) as cnt FROM activity_log").fetchone()
-                    info_labels["Activity Log Entries"].config(text=f"{row['cnt']:,}" if row else "0")
-
-                # Uptime
-                delta = datetime.now() - _start_time
-                hours, remainder = divmod(int(delta.total_seconds()), 3600)
-                minutes, seconds = divmod(remainder, 60)
-                info_labels["Application Uptime"].config(text=f"{hours}h {minutes}m {seconds}s")
-
-                # Connection pool metrics
-                try:
-                    from education_system.university_system.infrastructure.database.pool_metrics import get_pool_metrics
-                    metrics = get_pool_metrics()
-                    if metrics:
-                        pool_labels["Pool Status"].config(text="Active")
-                        pool_labels["Total Connections"].config(text=str(metrics.total_connections))
-                        pool_labels["Active Connections"].config(text=str(metrics.active_connections))
-                        pool_labels["Idle Connections"].config(text=str(metrics.idle_connections))
-                        pool_labels["Connection Errors"].config(text=str(metrics.connection_errors))
-                    else:
-                        pool_labels["Pool Status"].config(text="Active (no collector)")
-                        pool_labels["Total Connections"].config(text="N/A")
-                        pool_labels["Active Connections"].config(text="N/A")
-                        pool_labels["Idle Connections"].config(text="N/A")
-                        pool_labels["Connection Errors"].config(text="N/A")
+                    total = row['total'] if row and row['total'] else 0
+                    info_labels["Total Rows (est.)"].config(text=f"{total:,}")
                 except Exception:
-                    pool_labels["Pool Status"].config(text="Active (metrics unavailable)")
-                    for k in ["Total Connections", "Active Connections", "Idle Connections", "Connection Errors"]:
-                        pool_labels[k].config(text="N/A")
+                    info_labels["Total Rows (est.)"].config(text="N/A")
 
-                # Recent errors from log file
+                # Active users (24h)
                 try:
-                    from education_system.university_system.modules.shared.constants import paths as _paths
-                    log_file = os.path.join(str(_paths.LOG_DIR), 'app.log')
-                    error_lines = []
-                    if os.path.exists(log_file):
-                        with open(log_file, 'r') as f:
-                            for line in f:
-                                if 'ERROR' in line:
-                                    error_lines.append(line.strip())
-                        error_lines = error_lines[-10:]  # last 10 errors
-                    error_text.config(state=tk.NORMAL)
-                    error_text.delete('1.0', tk.END)
-                    if error_lines:
-                        error_text.insert(tk.END, '\n'.join(error_lines))
-                    else:
-                        error_text.insert(tk.END, 'No recent errors.')
-                    error_text.config(state=tk.DISABLED)
+                    row = conn.execute(
+                        "SELECT COUNT(DISTINCT username) as cnt FROM activity_log "
+                        "WHERE timestamp >= datetime('now', '-24 hours')"
+                    ).fetchone()
+                    info_labels["Active Users (24h)"].config(text=str(row['cnt'] if row else 0))
                 except Exception:
-                    error_text.config(state=tk.NORMAL)
-                    error_text.delete('1.0', tk.END)
-                    error_text.insert(tk.END, 'Could not read log file.')
-                    error_text.config(state=tk.DISABLED)
+                    info_labels["Active Users (24h)"].config(text="N/A")
 
-            except Exception as e:
-                logging.warning(f"Health tab refresh error: {e}")
+                # Login attempts (24h)
+                try:
+                    row = conn.execute(
+                        "SELECT COUNT(*) as cnt FROM login_attempts "
+                        "WHERE attempt_time >= datetime('now', '-24 hours')"
+                    ).fetchone()
+                    info_labels["Login Attempts (24h)"].config(text=str(row['cnt'] if row else 0))
+                except Exception:
+                    info_labels["Login Attempts (24h)"].config(text="N/A")
 
-        ttk.Button(health_container, text="Refresh", command=refresh_health).pack(anchor='e', pady=(5, 0))
-        refresh_health()
+                # Failed logins (24h)
+                try:
+                    row = conn.execute(
+                        "SELECT COUNT(*) as cnt FROM login_attempts "
+                        "WHERE success = 0 AND attempt_time >= datetime('now', '-24 hours')"
+                    ).fetchone()
+                    info_labels["Failed Logins (24h)"].config(text=str(row['cnt'] if row else 0))
+                except Exception:
+                    info_labels["Failed Logins (24h)"].config(text="N/A")
+
+                # Activity log count
+                row = conn.execute("SELECT COUNT(*) as cnt FROM activity_log").fetchone()
+                info_labels["Activity Log Entries"].config(text=f"{row['cnt']:,}" if row else "0")
+
+            # Uptime
+            delta = datetime.now() - _start_time
+            hours, remainder = divmod(int(delta.total_seconds()), 3600)
+            minutes, seconds = divmod(remainder, 60)
+            info_labels["Application Uptime"].config(text=f"{hours}h {minutes}m {seconds}s")
+
+            # Connection pool metrics
+            try:
+                from education_system.university_system.infrastructure.database.pool_metrics import get_pool_metrics
+                metrics = get_pool_metrics()
+                if metrics:
+                    pool_labels["Pool Status"].config(text="Active")
+                    pool_labels["Total Connections"].config(text=str(metrics.total_connections))
+                    pool_labels["Active Connections"].config(text=str(metrics.active_connections))
+                    pool_labels["Idle Connections"].config(text=str(metrics.idle_connections))
+                    pool_labels["Connection Errors"].config(text=str(metrics.connection_errors))
+                else:
+                    pool_labels["Pool Status"].config(text="Active (no collector)")
+                    pool_labels["Total Connections"].config(text="N/A")
+                    pool_labels["Active Connections"].config(text="N/A")
+                    pool_labels["Idle Connections"].config(text="N/A")
+                    pool_labels["Connection Errors"].config(text="N/A")
+            except Exception:
+                pool_labels["Pool Status"].config(text="Active (metrics unavailable)")
+                for k in ["Total Connections", "Active Connections", "Idle Connections", "Connection Errors"]:
+                    pool_labels[k].config(text="N/A")
+
+            # Recent errors from log file
+            try:
+                from education_system.university_system.modules.shared.constants import paths as _paths
+                log_file = os.path.join(str(_paths.LOG_DIR), 'app.log')
+                error_lines = []
+                if os.path.exists(log_file):
+                    with open(log_file, 'r') as f:
+                        for line in f:
+                            if 'ERROR' in line:
+                                error_lines.append(line.strip())
+                    error_lines = error_lines[-10:]  # last 10 errors
+                error_text.config(state=tk.NORMAL)
+                error_text.delete('1.0', tk.END)
+                if error_lines:
+                    error_text.insert(tk.END, '\n'.join(error_lines))
+                else:
+                    error_text.insert(tk.END, 'No recent errors.')
+                error_text.config(state=tk.DISABLED)
+            except Exception:
+                error_text.config(state=tk.NORMAL)
+                error_text.delete('1.0', tk.END)
+                error_text.insert(tk.END, 'Could not read log file.')
+                error_text.config(state=tk.DISABLED)
+
+            # Re-run the four self-tests so the Refresh button updates them too
+            _run_self_tests()
+
+        except Exception as e:
+            logging.warning(f"Health tab refresh error: {e}")
+
+    ttk.Button(health_container, text="Refresh", command=refresh_health).pack(anchor='e', pady=(5, 0))
+    refresh_health()
 def show_analytics(self):
     """Launch the standalone Student Analytics GUI from student_analytics_gui.py"""
     if not self.auth.current_user or 'view_analytics' not in self.auth.current_user.get('permissions', []):
