@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.104 — 2026-05-06](#8117104---2026-05-06)
 - [8.117.103 — 2026-05-06](#8117103---2026-05-06)
 - [8.117.102 — 2026-05-06](#8117102---2026-05-06)
 - [8.117.101 — 2026-05-06](#8117101---2026-05-06)
@@ -332,6 +333,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.104] — 2026-05-06
+
+### Refactored — Finance email config files folded into the template files
+
+8.117.103 split the message text out of three
+``data/config/*_email_config.json`` files into
+``templates/email/finance/*.json``, leaving the configs as thin
+flag-only files (``enabled``, ``send_copy_to_finance``, ``finance_email``,
+plus a ``template`` pointer). Two files per flow was still one too
+many. This revision collapses both into the template file, deletes
+the configs, and routes the senders through ``EMAIL_TEMPLATES_DIR``
+via the canonical ``load_template()`` API in ``template_utils``.
+
+Changes:
+
+- ``templates/email/finance/invoice_dispatch.json``,
+  ``payment_recorded.json``, ``refund_created.json``,
+  ``refund_status_update.json``: gain ``enabled``,
+  ``send_copy_to_finance``, ``finance_email`` fields alongside
+  ``subject`` / ``body`` / ``variables``.
+- ``data/config/invoice_email_config.json``,
+  ``payment_email_config.json``,
+  ``refund_email_config.json``: removed.
+- ``modules/domain/finance/gui/finance/invoice_manager.py``
+  ``send_invoice`` now ``load_template('finance/invoice_dispatch')``,
+  reads the operational flags off the returned dict, and renders via
+  ``render_template`` — no more ``Path(CONFIG_DIR) / "*_email_config.json"``.
+- ``modules/domain/finance/gui/finance/transaction_manager/payment_recording.py``
+  ``_send_payment_confirmation_email`` switched to ``load_template`` +
+  ``render_template``; ``PAYMENT_EMAIL_TEMPLATE`` constant replaces
+  ``PAYMENT_EMAIL_CONFIG_FILE``. Dropped now-unused ``json`` and
+  ``pathlib.Path`` imports.
+- ``modules/domain/finance/gui/finance/transaction_manager/refunds.py``
+  ``_send_refund_email`` resolves the template name from a
+  ``REFUND_EMAIL_TEMPLATES`` dict (``created`` / ``status_update``) and
+  reads flags from each template file. The old
+  ``send_on_status_update`` flag is gone — disabling status-update
+  emails is now done by setting ``enabled: false`` on
+  ``refund_status_update.json``.
 
 ## [8.117.103] — 2026-05-06
 

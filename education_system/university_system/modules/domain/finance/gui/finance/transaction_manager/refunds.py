@@ -1,16 +1,8 @@
 """Refund processing GUI"""
 
-import json
-from pathlib import Path
-
 from education_system.university_system.modules.domain.finance.gui.finance.transaction_manager._imports import (
     tk, ttk, messagebox, _, datetime, get_connection, get_auth,
 )
-
-try:
-    from education_system.university_system.core.paths import CONFIG_DIR
-except Exception:
-    from education_system.university_system.modules.shared.constants.paths import CONFIG_DIR
 
 try:
     from education_system.university_system.infrastructure.email.email_service import send_email as _send_email
@@ -19,14 +11,21 @@ except Exception:
         return False
 
 try:
-    from education_system.university_system.infrastructure.email.template_utils import render_template
+    from education_system.university_system.infrastructure.email.template_utils import (
+        load_template, render_template,
+    )
 except Exception:
+    def load_template(*args, **kwargs):
+        return None
     def render_template(*args, **kwargs):
         return None, None
 
 
 REFUND_STATUSES = ["pending", "approved", "rejected", "processed", "cancelled"]
-REFUND_EMAIL_CONFIG_FILE = Path(CONFIG_DIR) / "refund_email_config.json"
+REFUND_EMAIL_TEMPLATES = {
+    'created': 'finance/refund_created',
+    'status_update': 'finance/refund_status_update',
+}
 
 
 def _lookup_student(student_id):
@@ -50,15 +49,19 @@ def _lookup_student(student_id):
 def _send_refund_email(*, kind, student_id, refund_id, amount, refund_type='',
                       refund_method='', status='pending', reason='',
                       request_date=''):
-    """Send a refund-related email. kind = 'created' or 'status_update'."""
+    """Send a refund-related email. kind = 'created' or 'status_update'.
+
+    Templates and operational flags both live in
+    ``templates/email/finance/refund_{kind}.json``. Disabling status-update
+    emails is done by setting ``enabled: false`` on
+    ``refund_status_update.json``.
+    """
     try:
-        if not REFUND_EMAIL_CONFIG_FILE.exists():
+        template_name = REFUND_EMAIL_TEMPLATES.get(kind)
+        if not template_name:
             return False
-        with open(REFUND_EMAIL_CONFIG_FILE, 'r') as f:
-            cfg = json.load(f)
-        if not cfg.get('enabled', True):
-            return False
-        if kind == 'status_update' and not cfg.get('send_on_status_update', True):
+        template_data = load_template(template_name)
+        if not template_data or not template_data.get('enabled', True):
             return False
 
         student_name, student_email = _lookup_student(student_id)
@@ -76,17 +79,12 @@ def _send_refund_email(*, kind, student_id, refund_id, amount, refund_type='',
             'reason': reason or '',
             'request_date': request_date or datetime.now().strftime('%Y-%m-%d'),
         }
-        if kind == 'status_update':
-            template_name = cfg.get('status_update_template') or 'finance/refund_status_update'
-        else:
-            template_name = cfg.get('template') or 'finance/refund_created'
-
         subject, body = render_template(template_name, fmt)
         if not subject or not body:
             return False
         cc = None
-        if cfg.get('send_copy_to_finance') and cfg.get('finance_email'):
-            cc = [cfg['finance_email']]
+        if template_data.get('send_copy_to_finance') and template_data.get('finance_email'):
+            cc = [template_data['finance_email']]
         return bool(_send_email(student_email, subject, body, cc=cc))
     except Exception as e:
         print(f"Failed to send refund email: {e}")

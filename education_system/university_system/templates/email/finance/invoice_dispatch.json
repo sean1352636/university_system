@@ -1,6 +1,9 @@
 {
     "subject": "Invoice {invoice_number} - University Finance",
     "body": "Dear {student_name},\n\nPlease find your invoice details below.\n\n{invoice_content}\n\nIf you have any questions about this invoice, please contact the Finance Department.\n\nKind regards,\nFinance Department\n",
+    "enabled": true,
+    "send_copy_to_finance": false,
+    "finance_email": "",
     "variables": {
         "invoice_number": "Generated invoice number",
         "student_name": "Recipient student's full name",

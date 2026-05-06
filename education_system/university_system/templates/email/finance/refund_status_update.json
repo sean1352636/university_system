@@ -1,6 +1,9 @@
 {
     "subject": "Refund {refund_id} status updated to {status}",
     "body": "Dear {student_name},\n\nThe status of your refund (ID {refund_id}, £{amount}) has been updated to: {status}.\n\nIf you have any questions, please contact the Finance Department.\n\nKind regards,\nFinance Department\n",
+    "enabled": true,
+    "send_copy_to_finance": false,
+    "finance_email": "",
     "variables": {
         "student_name": "Recipient student's full name",
         "refund_id": "Refund row id",

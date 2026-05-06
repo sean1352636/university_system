@@ -1,17 +1,10 @@
 """Payment recording dialogs and payment detail views"""
 
-import json
-from pathlib import Path
 from unittest.mock import Mock
 
 from education_system.university_system.modules.domain.finance.gui.finance.transaction_manager._imports import (
     tk, ttk, messagebox, simpledialog, _, datetime, get_connection, get_auth,
 )
-
-try:
-    from education_system.university_system.core.paths import CONFIG_DIR
-except Exception:
-    from education_system.university_system.modules.shared.constants.paths import CONFIG_DIR
 
 try:
     from education_system.university_system.infrastructure.email.email_service import send_email as _send_email
@@ -20,26 +13,33 @@ except Exception:
         return False
 
 try:
-    from education_system.university_system.infrastructure.email.template_utils import render_template
+    from education_system.university_system.infrastructure.email.template_utils import (
+        load_template, render_template,
+    )
 except Exception:
+    def load_template(*args, **kwargs):
+        return None
     def render_template(*args, **kwargs):
         return None, None
 
-PAYMENT_EMAIL_CONFIG_FILE = Path(CONFIG_DIR) / "payment_email_config.json"
+
+PAYMENT_EMAIL_TEMPLATE = 'finance/payment_recorded'
 
 
 def _send_payment_confirmation_email(student_email, student_name, payment_id,
                                      amount, payment_method, payment_date,
                                      purpose, transaction_id):
-    """Load config and send a payment confirmation email. Returns True on success."""
+    """Render the payment-recorded template and send it. Returns True on success.
+
+    Template lives at ``templates/email/finance/payment_recorded.json``;
+    operational flags (``enabled``, ``send_copy_to_finance``,
+    ``finance_email``) live alongside the subject/body in that file.
+    """
     try:
         if not student_email:
             return False
-        if not PAYMENT_EMAIL_CONFIG_FILE.exists():
-            return False
-        with open(PAYMENT_EMAIL_CONFIG_FILE, 'r') as f:
-            cfg = json.load(f)
-        if not cfg.get('enabled', True):
+        template_data = load_template(PAYMENT_EMAIL_TEMPLATE)
+        if not template_data or not template_data.get('enabled', True):
             return False
         fmt = {
             'student_name': student_name or 'Student',
@@ -51,13 +51,12 @@ def _send_payment_confirmation_email(student_email, student_name, payment_id,
             'purpose': purpose or '',
             'transaction_id': transaction_id or 'N/A',
         }
-        template_name = cfg.get('template') or 'finance/payment_recorded'
-        subject, body = render_template(template_name, fmt)
+        subject, body = render_template(PAYMENT_EMAIL_TEMPLATE, fmt)
         if not subject or not body:
             return False
         cc = None
-        if cfg.get('send_copy_to_finance') and cfg.get('finance_email'):
-            cc = [cfg['finance_email']]
+        if template_data.get('send_copy_to_finance') and template_data.get('finance_email'):
+            cc = [template_data['finance_email']]
         return bool(_send_email(student_email, subject, body, cc=cc))
     except Exception as e:
         print(f"Failed to send payment confirmation email: {e}")

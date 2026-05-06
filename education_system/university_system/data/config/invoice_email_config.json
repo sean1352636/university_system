@@ -1,6 +1,0 @@
-{
-    "enabled": true,
-    "template": "finance/invoice_dispatch",
-    "send_copy_to_finance": false,
-    "finance_email": ""
-}

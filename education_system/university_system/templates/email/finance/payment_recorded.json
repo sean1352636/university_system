@@ -1,6 +1,9 @@
 {
     "subject": "Payment Confirmation - {invoice_number}",
     "body": "Dear {student_name},\n\nThis is to confirm that your payment has been successfully recorded.\n\nPayment Details\n----------------\nPayment ID: {payment_id}\nAmount: £{amount}\nMethod: {payment_method}\nDate: {payment_date}\nFor: {purpose}\nReference: {transaction_id}\n\nThank you for your payment.\n\nKind regards,\nFinance Department\n",
+    "enabled": true,
+    "send_copy_to_finance": false,
+    "finance_email": "",
     "variables": {
         "student_name": "Recipient student's full name",
         "payment_id": "Internal payment row id",

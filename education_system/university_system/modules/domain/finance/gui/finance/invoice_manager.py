@@ -431,23 +431,24 @@ class InvoiceManager:
                 return
 
             try:
-                from education_system.university_system.core.paths import CONFIG_DIR
                 from education_system.university_system.infrastructure.email.email_service import (
                     send_email as _send_invoice_email,
                 )
                 from education_system.university_system.infrastructure.email.template_utils import (
-                    render_template,
+                    load_template, render_template,
                 )
 
-                cfg_path = Path(CONFIG_DIR) / "invoice_email_config.json"
-                cfg = {}
-                if cfg_path.exists():
-                    with open(cfg_path, 'r') as f:
-                        cfg = json.load(f)
+                template_name = 'finance/invoice_dispatch'
+                template_data = load_template(template_name) or {}
+                if not template_data:
+                    messagebox.showerror(_("finance_gui.messages.error"),
+                                        _("finance_gui.invoice_manager.error_send_invoice",
+                                          error=f"Email template '{template_name}' not found."))
+                    return
 
-                if not cfg.get('enabled', True):
+                if not template_data.get('enabled', True):
                     messagebox.showwarning(_("finance_gui.messages.warning"),
-                                          "Invoice email sending is disabled in invoice_email_config.json.")
+                                          f"Invoice email sending is disabled in {template_name}.json.")
                     return
 
                 inv = self.current_invoice
@@ -456,17 +457,16 @@ class InvoiceManager:
                     'student_name': inv.get('student_name', ''),
                     'invoice_content': inv['content'],
                 }
-                template_name = cfg.get('template') or 'finance/invoice_dispatch'
                 subject, message = render_template(template_name, fmt)
                 if not subject or not message:
                     messagebox.showerror(_("finance_gui.messages.error"),
                                         _("finance_gui.invoice_manager.error_send_invoice",
-                                          error=f"Email template '{template_name}' not found."))
+                                          error=f"Email template '{template_name}' could not be rendered."))
                     return
 
                 cc = None
-                if cfg.get('send_copy_to_finance') and cfg.get('finance_email'):
-                    cc = [cfg['finance_email']]
+                if template_data.get('send_copy_to_finance') and template_data.get('finance_email'):
+                    cc = [template_data['finance_email']]
 
                 ok = bool(_send_invoice_email(inv['student_email'], subject, message, cc=cc))
                 if ok:

@@ -1,6 +1,9 @@
 {
     "subject": "Refund {status_label} - Reference {refund_id}",
     "body": "Dear {student_name},\n\nThis is to confirm that a refund has been recorded on your account.\n\nRefund Details\n---------------\nRefund ID: {refund_id}\nAmount: £{amount}\nType: {refund_type}\nMethod: {refund_method}\nStatus: {status}\nReason: {reason}\nDate: {request_date}\n\nIf you have any questions, please contact the Finance Department.\n\nKind regards,\nFinance Department\n",
+    "enabled": true,
+    "send_copy_to_finance": false,
+    "finance_email": "",
     "variables": {
         "student_name": "Recipient student's full name",
         "refund_id": "Refund row id",
