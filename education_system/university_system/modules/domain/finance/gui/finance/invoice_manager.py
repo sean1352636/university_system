@@ -236,12 +236,26 @@ class InvoiceManager:
         """GUI wrapper for generate_invoice"""
         dialog = tk.Toplevel(self.root)
         dialog.title(_("finance_gui.invoice_manager.dialog_title"))
-        dialog.geometry("700x600")
+        dialog.geometry("980x820")
+        dialog.minsize(900, 700)
         dialog.transient(self.root)
         dialog.grab_set()
 
+        # Scrollable container so everything is reachable on smaller screens
+        outer = tk.Frame(dialog)
+        outer.pack(fill='both', expand=True)
+        canvas = tk.Canvas(outer, highlightthickness=0)
+        vbar = ttk.Scrollbar(outer, orient='vertical', command=canvas.yview)
+        body = tk.Frame(canvas)
+        body.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all')))
+        canvas.create_window((0, 0), window=body, anchor='nw')
+        canvas.configure(yscrollcommand=vbar.set)
+        canvas.pack(side='left', fill='both', expand=True)
+        vbar.pack(side='right', fill='y')
+        canvas.bind_all('<MouseWheel>', lambda e: canvas.yview_scroll(int(-1 * (e.delta / 120)), 'units'))
+
         # Student selection
-        input_frame = ttk.LabelFrame(dialog, text=_("finance_gui.invoice_manager.student_info_frame"), padding=15)
+        input_frame = ttk.LabelFrame(body, text=_("finance_gui.invoice_manager.student_info_frame"), padding=15)
         input_frame.pack(fill='x', padx=20, pady=10)
 
         ttk.Label(input_frame, text=_("finance_gui.invoice_manager.student_id_label"), font=('Arial', 12)).pack(anchor='w')
@@ -257,7 +271,7 @@ class InvoiceManager:
         student_info_text.pack(pady=5)
 
         # Outstanding fees display
-        fees_frame = ttk.LabelFrame(dialog, text=_("finance_gui.invoice_manager.outstanding_fees_frame"), padding=15)
+        fees_frame = ttk.LabelFrame(body, text=_("finance_gui.invoice_manager.outstanding_fees_frame"), padding=15)
         fees_frame.pack(fill='both', expand=True, padx=20, pady=10)
 
         # Fees treeview
@@ -277,11 +291,11 @@ class InvoiceManager:
         fees_tree.pack(fill='both', expand=True)
 
         # Invoice preview
-        preview_frame = ttk.LabelFrame(dialog, text=_("finance_gui.invoice_manager.invoice_preview_frame"), padding=15)
-        preview_frame.pack(fill='x', padx=20, pady=10)
+        preview_frame = ttk.LabelFrame(body, text=_("finance_gui.invoice_manager.invoice_preview_frame"), padding=15)
+        preview_frame.pack(fill='both', expand=True, padx=20, pady=10)
 
-        invoice_text = ScrolledText(preview_frame, height=6, width=80, font=('Courier', 9))
-        invoice_text.pack(fill='x')
+        invoice_text = ScrolledText(preview_frame, height=18, width=100, font=('Courier', 10))
+        invoice_text.pack(fill='both', expand=True)
 
         def generate_invoice():
             try:
@@ -416,52 +430,59 @@ class InvoiceManager:
                 messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.invoice_manager.error_no_invoice_generated"))
                 return
 
-            # Send invoice email using template system
             try:
-                from education_system.university_system.infrastructure.email.template_utils import render_template
+                from education_system.university_system.core.paths import CONFIG_DIR
+                from education_system.university_system.infrastructure.email.email_service import (
+                    send_email as _send_invoice_email,
+                )
+                from education_system.university_system.infrastructure.email.template_utils import (
+                    render_template,
+                )
 
-                subject, message = render_template("invoice_delivery", {
-                    "invoice_number": self.current_invoice['number'],
-                    "customer_name": self.current_invoice.get('customer_name', ''),
-                    "student_name": self.current_invoice.get('customer_name', ''),
-                    "invoice_date": self.current_invoice.get('date', ''),
-                    "amount": self.current_invoice.get('total', 0),
-                    "due_date": self.current_invoice.get('due_date', ''),
-                    "items": self.current_invoice.get('items', [])
-                })
+                cfg_path = Path(CONFIG_DIR) / "invoice_email_config.json"
+                cfg = {}
+                if cfg_path.exists():
+                    with open(cfg_path, 'r') as f:
+                        cfg = json.load(f)
 
-                if not (subject and message):
-                    # Fallback if template fails
-                    customer_name = self.current_invoice.get('customer_name', 'Customer')
-                    invoice_num = self.current_invoice['number']
-                    invoice_date = self.current_invoice.get('date', '')
-                    total_amount = self.current_invoice.get('total', 0)
-                    due_date = self.current_invoice.get('due_date', '')
+                if not cfg.get('enabled', True):
+                    messagebox.showwarning(_("finance_gui.messages.warning"),
+                                          "Invoice email sending is disabled in invoice_email_config.json.")
+                    return
 
-                    subject = _("finance_gui.invoice_manager.email_subject_fallback", invoice_number=invoice_num)
-                    message = f"""{_("finance_gui.invoice_manager.email_dear_customer", customer_name=customer_name)}
+                inv = self.current_invoice
+                fmt = {
+                    'invoice_number': inv['number'],
+                    'student_name': inv.get('student_name', ''),
+                    'invoice_content': inv['content'],
+                }
+                template_name = cfg.get('template') or 'finance/invoice_dispatch'
+                subject, message = render_template(template_name, fmt)
+                if not subject or not message:
+                    messagebox.showerror(_("finance_gui.messages.error"),
+                                        _("finance_gui.invoice_manager.error_send_invoice",
+                                          error=f"Email template '{template_name}' not found."))
+                    return
 
-{_("finance_gui.invoice_manager.email_invoice_attached")}
+                cc = None
+                if cfg.get('send_copy_to_finance') and cfg.get('finance_email'):
+                    cc = [cfg['finance_email']]
 
-{_("finance_gui.invoice_manager.email_invoice_number", invoice_number=invoice_num)}
-{_("finance_gui.invoice_manager.email_invoice_date", date=invoice_date)}
-{_("finance_gui.invoice_manager.email_amount_due", amount=total_amount)}
-{_("finance_gui.invoice_manager.email_due_date", due_date=due_date)}
-
-{_("finance_gui.invoice_manager.email_process_payment")}
-
-{_("finance_gui.invoice_manager.email_regards")}
-{_("finance_gui.invoice_manager.email_finance_dept")}
-"""
-
-                # Here you would integrate with your email system
-                messagebox.showinfo(_("finance_gui.messages.success"),
-                                   _("finance_gui.invoice_manager.success_invoice_sent", email=self.current_invoice['student_email']))
+                ok = bool(_send_invoice_email(inv['student_email'], subject, message, cc=cc))
+                if ok:
+                    messagebox.showinfo(_("finance_gui.messages.success"),
+                                       _("finance_gui.invoice_manager.success_invoice_sent",
+                                         email=inv['student_email']))
+                else:
+                    messagebox.showerror(_("finance_gui.messages.error"),
+                                        _("finance_gui.invoice_manager.error_send_invoice",
+                                          error="Email service returned failure."))
             except Exception as e:
-                messagebox.showerror(_("finance_gui.messages.error"), _("finance_gui.invoice_manager.error_send_invoice", error=str(e)))
+                messagebox.showerror(_("finance_gui.messages.error"),
+                                    _("finance_gui.invoice_manager.error_send_invoice", error=str(e)))
 
         # Buttons
-        button_frame = ttk.Frame(dialog)
+        button_frame = ttk.Frame(body)
         button_frame.pack(pady=10)
 
         ttk.Button(button_frame, text=_("finance_gui.invoice_manager.btn_generate_invoice"), command=generate_invoice).pack(side='left', padx=5)

@@ -1,10 +1,67 @@
 """Payment recording dialogs and payment detail views"""
 
+import json
+from pathlib import Path
 from unittest.mock import Mock
 
 from education_system.university_system.modules.domain.finance.gui.finance.transaction_manager._imports import (
     tk, ttk, messagebox, simpledialog, _, datetime, get_connection, get_auth,
 )
+
+try:
+    from education_system.university_system.core.paths import CONFIG_DIR
+except Exception:
+    from education_system.university_system.modules.shared.constants.paths import CONFIG_DIR
+
+try:
+    from education_system.university_system.infrastructure.email.email_service import send_email as _send_email
+except Exception:
+    def _send_email(*args, **kwargs):
+        return False
+
+try:
+    from education_system.university_system.infrastructure.email.template_utils import render_template
+except Exception:
+    def render_template(*args, **kwargs):
+        return None, None
+
+PAYMENT_EMAIL_CONFIG_FILE = Path(CONFIG_DIR) / "payment_email_config.json"
+
+
+def _send_payment_confirmation_email(student_email, student_name, payment_id,
+                                     amount, payment_method, payment_date,
+                                     purpose, transaction_id):
+    """Load config and send a payment confirmation email. Returns True on success."""
+    try:
+        if not student_email:
+            return False
+        if not PAYMENT_EMAIL_CONFIG_FILE.exists():
+            return False
+        with open(PAYMENT_EMAIL_CONFIG_FILE, 'r') as f:
+            cfg = json.load(f)
+        if not cfg.get('enabled', True):
+            return False
+        fmt = {
+            'student_name': student_name or 'Student',
+            'payment_id': payment_id,
+            'invoice_number': f"PAY-{payment_id}",
+            'amount': f"{amount:,.2f}",
+            'payment_method': payment_method or '',
+            'payment_date': payment_date or '',
+            'purpose': purpose or '',
+            'transaction_id': transaction_id or 'N/A',
+        }
+        template_name = cfg.get('template') or 'finance/payment_recorded'
+        subject, body = render_template(template_name, fmt)
+        if not subject or not body:
+            return False
+        cc = None
+        if cfg.get('send_copy_to_finance') and cfg.get('finance_email'):
+            cc = [cfg['finance_email']]
+        return bool(_send_email(student_email, subject, body, cc=cc))
+    except Exception as e:
+        print(f"Failed to send payment confirmation email: {e}")
+        return False
 
 
 class PaymentRecordingMixin:
@@ -332,16 +389,40 @@ class PaymentRecordingMixin:
                           f'Overpayment from payment ID {payment_id}', username, now, now))
                     allocated_fees.append(f"\u00a3{remaining_payment:.2f} \u2192 Student Credit")
 
+                # Fetch student email/name for confirmation email before closing connection
+                student_email = None
+                student_name = None
+                try:
+                    cursor.execute(
+                        'SELECT first_name, last_name, email_address FROM students WHERE student_id = ?',
+                        (student_id,))
+                    srow = cursor.fetchone()
+                    if srow:
+                        student_name = f"{srow[0]} {srow[1]}".strip()
+                        student_email = srow[2]
+                except Exception:
+                    pass
+
                 conn.commit()
                 conn.close()
 
+                # Send payment confirmation email
+                email_sent = _send_payment_confirmation_email(
+                    student_email, student_name, payment_id, amount,
+                    payment_method, payment_date, purpose, transaction_id,
+                )
+
                 # Success message
                 allocation_msg = "\n".join(allocated_fees) if allocated_fees else "No outstanding fees to allocate."
+                email_msg = (
+                    f"\n\nConfirmation email sent to {student_email}." if email_sent
+                    else ""
+                )
                 messagebox.showinfo(_("finance_gui.messages.success"),
                                    f"Payment recorded successfully!\n"
                                    f"Payment ID: {payment_id}\n"
                                    f"Amount: \u00a3{amount:.2f}\n\n"
-                                   f"Allocations:\n{allocation_msg}")
+                                   f"Allocations:\n{allocation_msg}{email_msg}")
 
                 dialog.destroy()
                 if hasattr(self, 'refresh_payments'):

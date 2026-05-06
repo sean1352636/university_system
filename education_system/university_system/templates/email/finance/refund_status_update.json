@@ -1,0 +1,15 @@
+{
+    "subject": "Refund {refund_id} status updated to {status}",
+    "body": "Dear {student_name},\n\nThe status of your refund (ID {refund_id}, £{amount}) has been updated to: {status}.\n\nIf you have any questions, please contact the Finance Department.\n\nKind regards,\nFinance Department\n",
+    "variables": {
+        "student_name": "Recipient student's full name",
+        "refund_id": "Refund row id",
+        "amount": "Formatted refund amount",
+        "status": "New refund status",
+        "status_label": "Title-cased status",
+        "refund_type": "full / partial / etc.",
+        "refund_method": "How the refund will be paid back",
+        "reason": "Reason recorded by staff",
+        "request_date": "Date the refund was requested"
+    }
+}

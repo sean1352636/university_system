@@ -1,0 +1,8 @@
+{
+    "enabled": true,
+    "template": "finance/refund_created",
+    "send_on_status_update": true,
+    "status_update_template": "finance/refund_status_update",
+    "send_copy_to_finance": false,
+    "finance_email": ""
+}

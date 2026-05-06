@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.103 — 2026-05-06](#8117103---2026-05-06)
 - [8.117.102 — 2026-05-06](#8117102---2026-05-06)
 - [8.117.101 — 2026-05-06](#8117101---2026-05-06)
 - [8.117.100 — 2026-05-05](#8117100---2026-05-05)
@@ -331,6 +332,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.103] — 2026-05-06
+
+### Refactored — Finance email templates extracted from inline configs
+
+The three finance email config files (``invoice_email_config.json``,
+``payment_email_config.json``, ``refund_email_config.json``) previously
+bundled message content (``subject``, ``body``, plus refund's
+``status_update_subject`` / ``status_update_body``) alongside operational
+flags (``enabled``, ``send_copy_to_finance``, ``finance_email``). Each
+sender hand-rolled ``str.format(**fmt)`` on the bundled body, bypassing
+the canonical ``infrastructure/email/template_utils.render_template``
+that powers the other ~80 email templates.
+
+Templates now live in ``templates/email/finance/`` and are rendered via
+``render_template``; configs keep only operational flags plus a
+``template`` field naming the template used. Editable from the Template
+Manager dialog like every other email template, and the ``$var`` /
+``{var}`` substitution behaviour is uniform across the system.
+
+- ``templates/email/finance/invoice_dispatch.json`` (new)
+- ``templates/email/finance/payment_recorded.json`` (new)
+- ``templates/email/finance/refund_created.json`` (new)
+- ``templates/email/finance/refund_status_update.json`` (new)
+- ``data/config/invoice_email_config.json`` (trimmed to flags +
+  ``template: finance/invoice_dispatch``).
+- ``data/config/payment_email_config.json`` (trimmed to flags +
+  ``template: finance/payment_recorded``).
+- ``data/config/refund_email_config.json`` (trimmed to flags +
+  ``template: finance/refund_created``,
+  ``status_update_template: finance/refund_status_update``).
+- ``modules/domain/finance/gui/finance/invoice_manager.py``
+  ``send_invoice`` calls ``render_template(cfg['template'], fmt)`` and
+  surfaces a clear error when the template is missing.
+- ``modules/domain/finance/gui/finance/transaction_manager/payment_recording.py``
+  ``_send_payment_confirmation_email`` calls ``render_template`` instead
+  of ``cfg['body'].format(**fmt)``.
+- ``modules/domain/finance/gui/finance/transaction_manager/refunds.py``
+  ``_send_refund_email`` resolves the template name from
+  ``template`` / ``status_update_template`` and calls ``render_template``;
+  the inline status-update body block is gone.
+
+This commit also ships the pending 8.117.101 finance GUI rework (the
+underlying invoice / payment / refund dialog rewrite — the three
+sender files had unstaged changes that overlap with the template
+extraction, so they're committed together rather than rebased).
 
 ## [8.117.102] — 2026-05-06
 
