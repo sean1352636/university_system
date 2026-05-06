@@ -4,8 +4,6 @@ import csv
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
-import seaborn as sns
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle

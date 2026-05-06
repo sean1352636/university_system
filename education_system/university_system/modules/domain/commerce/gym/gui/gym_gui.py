@@ -1499,17 +1499,24 @@ University Gym & Fitness Center"""
                 processed_by=self.user_id
             )
             if result:
-                # Record payment in central payments table for finance integration
+                # 8.117.104: unified record_payment() with source_type='gym'.
                 try:
+                    from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                        record_payment as _record_payment,
+                    )
+                    _record_payment(
+                        student_id=self.user_id,
+                        amount=amount,
+                        payment_method='gym_service',
+                        source_type='gym',
+                        source_payment_id=result.get('reference'),
+                        payment_type='service',
+                        department='gym',
+                        description=f"Gym: {description}",
+                        created_by=self.user_id,
+                    )
                     from education_system.university_system.infrastructure.database.db import transaction as db_transaction
                     with db_transaction() as conn:
-                        # Insert into payments table for finance tracking
-                        conn.execute('''
-                            INSERT INTO payments
-                            (student_id, amount, payment_method, payment_date, status, notes, created_by)
-                            VALUES (?, ?, ?, date("now"), ?, ?, ?)
-                        ''', (self.user_id, amount, 'gym_service', 'completed',
-                              f"Gym: {description} (Ref: {result['reference']})", self.user_id))
 
                         # Try to record revenue for finance reporting
                         try:

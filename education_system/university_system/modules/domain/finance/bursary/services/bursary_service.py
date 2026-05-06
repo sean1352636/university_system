@@ -502,13 +502,17 @@ class BursaryService:
                      start_date, end_date),
                 )
                 award_id = cur.lastrowid
+                created_payment_ids = []
                 for d, amt in zip(dates, amounts):
-                    conn.execute(
+                    inst_cur = conn.execute(
                         """INSERT INTO bursary_payments
                            (award_id, scheduled_date, amount, status, created_at)
                            VALUES (?, ?, ?, 'scheduled', datetime('now'))""",
                         (award_id, d.strftime("%Y-%m-%d"), amt),
                     )
+                    created_payment_ids.append((
+                        inst_cur.lastrowid, d.strftime("%Y-%m-%d"), amt,
+                    ))
                 conn.execute(
                     "UPDATE bursary_funds SET allocated = allocated + ?, "
                     "updated_at = datetime('now') WHERE fund_id = ?",
@@ -525,7 +529,37 @@ class BursaryService:
                     "Awarded bursary id=%s app=%s amount=%s freq=%s n=%s",
                     award_id, application_id, amount, frequency, num_payments,
                 )
-                return award_id
+
+            # 8.117.103: mirror each scheduled instalment into the
+            # unified ``payments`` table tagged source_type='bursary'.
+            # Failure is logged but doesn't roll back the bursary
+            # award — the canonical ledger above is bursary_payments.
+            try:
+                from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                    record_payment,
+                )
+                student_id = (app.get("student_id") or "").strip()
+                for bp_id, scheduled_date, amt in created_payment_ids:
+                    if not student_id:
+                        continue
+                    record_payment(
+                        student_id=student_id,
+                        amount=float(amt),
+                        payment_method='bursary',
+                        source_type='bursary',
+                        source_payment_id=str(bp_id),
+                        payment_type='bursary_disbursement',
+                        reference_type='bursary_award',
+                        reference_id=str(award_id),
+                        department='bursary',
+                        description='Bursary disbursement (scheduled)',
+                        payment_date=scheduled_date,
+                        status='pending',
+                    )
+            except Exception as exc:
+                logger.warning(f"Unified payment mirror failed (bursary): {exc}")
+
+            return award_id
         except BursaryError:
             raise
         except Exception as exc:
@@ -553,6 +587,22 @@ class BursaryService:
                 logger.info(
                     "Marked bursary payment id=%s paid ref=%s", payment_id, reference,
                 )
+                # 8.117.103: keep the unified payments mirror in sync.
+                try:
+                    conn.execute(
+                        """UPDATE payments
+                           SET status = 'completed',
+                               payment_date = datetime('now'),
+                               payment_reference = ?,
+                               updated_at = datetime('now')
+                           WHERE source_type = 'bursary'
+                             AND source_payment_id = ?""",
+                        (reference.strip(), str(payment_id)),
+                    )
+                    conn.commit()
+                except Exception as exc:
+                    logger.warning(
+                        f"Unified payments mirror update failed (bursary): {exc}")
         except BursaryError:
             raise
         except Exception as exc:

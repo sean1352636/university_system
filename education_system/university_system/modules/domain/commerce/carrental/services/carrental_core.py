@@ -481,13 +481,26 @@ class TransactionManager:
                     WHERE rental_id = ?
                 ''', (payment_method, rental_id))
 
-                # Record in main payments table for finance integration
-                conn.execute('''
-                    INSERT INTO payments
-                    (student_id, amount, payment_method, payment_date, status, notes, created_by)
-                    VALUES (?, ?, ?, ?, 'completed', 'Car Rental Payment', ?)
-                ''', (customer_id, amount, payment_method,
-                      datetime.now().strftime('%Y-%m-%d'), processed_by))
+                # 8.117.104: unified record_payment() with source_type='carrental'.
+                try:
+                    from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                        record_payment as _record_payment,
+                    )
+                    _record_payment(
+                        student_id=customer_id,
+                        amount=amount,
+                        payment_method=payment_method,
+                        source_type='carrental',
+                        source_payment_id=str(rental_id),
+                        payment_type='rental',
+                        reference_type='carrental_rental',
+                        reference_id=str(rental_id),
+                        department='carrental',
+                        description='Car Rental Payment',
+                        created_by=processed_by,
+                    )
+                except Exception as exc:
+                    logger.warning(f"Unified payment mirror failed (carrental): {exc}")
 
                 return cursor.lastrowid
         except Exception as e:

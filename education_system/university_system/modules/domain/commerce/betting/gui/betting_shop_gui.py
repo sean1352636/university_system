@@ -1818,19 +1818,25 @@ This is an automated message. Please do not reply.
             logger.error(f"Error sending withdrawal receipt email: {e}")
 
     def record_revenue_transaction(self, amount: float, description: str):
-        """Record deposit as revenue in finance system"""
+        """Record deposit as revenue in finance system.
+
+        8.117.104: routed through unified record_payment() with
+        source_type='betting'.
+        """
         try:
-            with transaction() as conn:
-                cursor = conn.cursor()
-                try:
-                    cursor.execute('''
-                        INSERT INTO payments
-                        (student_id, amount, payment_method, payment_date, status, notes, created_by, created_at)
-                        VALUES (?, ?, 'betting_deposit', ?, 'completed', ?, ?, ?)
-                    ''', (self.user_id, amount, datetime.now().strftime('%Y-%m-%d'),
-                          description, self.current_user.get('username'), datetime.now().isoformat()))
-                except Exception:
-                    pass
+            from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                record_payment as _record_payment,
+            )
+            _record_payment(
+                student_id=self.user_id,
+                amount=amount,
+                payment_method='betting_deposit',
+                source_type='betting',
+                payment_type='deposit',
+                department='betting',
+                description=description,
+                created_by=self.current_user.get('username'),
+            )
         except Exception as e:
             print(f"Error recording revenue: {e}")
 

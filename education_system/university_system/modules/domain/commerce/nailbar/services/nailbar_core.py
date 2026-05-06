@@ -481,14 +481,28 @@ class TransactionManager:
                 WHERE appointment_id = ?
             ''', (payment_method, datetime.now().isoformat(), appointment_id))
 
-            # Record in main finance system
+            # 8.117.104: unified record_payment() with source_type='nailbar'
+            # at the service layer too. (The CLI variant in
+            # services/cli/nailbar_cli.py was already migrated in
+            # 8.117.103.)
             try:
-                conn.execute('''
-                    INSERT INTO payments
-                    (student_id, amount, payment_method, payment_date, status, notes, created_by)
-                    VALUES (?, ?, ?, ?, 'completed', 'Nail Bar Service', ?)
-                ''', (customer_id, amount + tip_amount, payment_method,
-                      datetime.now().isoformat(), processed_by))
+                from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                    record_payment as _record_payment,
+                )
+                _record_payment(
+                    student_id=customer_id,
+                    amount=amount + tip_amount,
+                    payment_method=payment_method,
+                    source_type='nailbar',
+                    source_payment_id=f"appt-{appointment_id}",
+                    payment_type='service',
+                    reference_type='nailbar_appointment',
+                    reference_id=str(appointment_id),
+                    department='nailbar',
+                    description='Nail Bar Service',
+                    notes=(f'tip {tip_amount}' if tip_amount else None),
+                    created_by=processed_by,
+                )
             except Exception as e:
                 logger.warning(f"Could not record to main finance system: {e}")
 

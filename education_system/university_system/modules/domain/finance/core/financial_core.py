@@ -5,8 +5,6 @@ import pandas as pd
 from education_system.university_system.modules.shared.constants.paths import FINANCE_TEMPLATES_DIR
 import numpy as np
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
-import seaborn as sns
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -286,11 +284,97 @@ def set_finance_auth(auth_instance):
     else:
         logger.debug("finance_misc module not available; skipping misc auth configuration")
 
+def _migrate_drop_payments_old_fks(cursor):
+    """One-shot migration: rebuild ``payment_allocations`` and
+    ``payment_plan_installments`` if their ``payment_id`` FK still
+    points at a non-existent ``payments_old`` table (8.117.101).
+
+    Older migrations renamed the live table to ``payments_old`` and
+    introduced a fresh ``payments`` table, but never updated the FKs
+    in dependent tables. SQLite has no ``ALTER TABLE … DROP CONSTRAINT``,
+    so we copy rows into a fresh table and swap. Idempotent.
+    """
+    targets = [
+        # (table, CREATE TABLE statement, copyable column list)
+        (
+            'payment_allocations',
+            """
+            CREATE TABLE payment_allocations (
+                allocation_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                payment_id INTEGER NOT NULL,
+                student_fee_id INTEGER NOT NULL,
+                amount DECIMAL(10,2) NOT NULL,
+                created_at TEXT,
+                FOREIGN KEY (payment_id) REFERENCES payments (payment_id),
+                FOREIGN KEY (student_fee_id) REFERENCES student_fees (student_fee_id)
+            )
+            """,
+            ('allocation_id', 'payment_id', 'student_fee_id', 'amount', 'created_at'),
+        ),
+        (
+            'payment_plan_installments',
+            """
+            CREATE TABLE payment_plan_installments (
+                installment_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                payment_plan_id INTEGER NOT NULL,
+                installment_number INTEGER NOT NULL,
+                amount DECIMAL(10,2) NOT NULL,
+                due_date TEXT NOT NULL,
+                status TEXT DEFAULT 'pending',
+                payment_id INTEGER,
+                late_fee_amount DECIMAL(10,2) DEFAULT 0,
+                created_at TEXT,
+                updated_at TEXT,
+                FOREIGN KEY (payment_plan_id) REFERENCES student_payment_plans (payment_plan_id),
+                FOREIGN KEY (payment_id) REFERENCES payments (payment_id)
+            )
+            """,
+            ('installment_id', 'payment_plan_id', 'installment_number', 'amount',
+             'due_date', 'status', 'payment_id', 'late_fee_amount',
+             'created_at', 'updated_at'),
+        ),
+    ]
+    for table, create_sql, cols in targets:
+        try:
+            fks = cursor.execute(
+                f"PRAGMA foreign_key_list({table})").fetchall()
+        except Exception:
+            continue  # table doesn't exist yet — _ensure will create it correctly
+        if not any(fk[2] == 'payments_old' for fk in fks):
+            continue
+        cursor.execute("PRAGMA foreign_keys = OFF")
+        try:
+            cursor.execute(f"ALTER TABLE {table} RENAME TO {table}_migr_old")
+            cursor.execute(create_sql)
+            col_list = ", ".join(cols)
+            cursor.execute(
+                f"INSERT INTO {table} ({col_list}) "
+                f"SELECT {col_list} FROM {table}_migr_old"
+            )
+            cursor.execute(f"DROP TABLE {table}_migr_old")
+        finally:
+            cursor.execute("PRAGMA foreign_keys = ON")
+
+
 def init_enhanced_finance_db():
     """Initialize the enhanced finance database with all new tables"""
     try:
         conn = get_connection()
         cursor = conn.cursor()
+        # 8.117.101: fix stale "payments_old" FKs left behind by an
+        # earlier rename. Must run before the CREATE TABLE IF NOT
+        # EXISTS calls below — those are no-ops on existing tables, so
+        # they wouldn't repair the FK on their own.
+        _migrate_drop_payments_old_fks(cursor)
+        # 8.117.103: ensure the unified-payments idempotency index
+        # exists so domain mirrors can use INSERT-or-skip semantics.
+        try:
+            from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                ensure_unified_payments_index,
+            )
+            ensure_unified_payments_index()
+        except Exception as exc:
+            logger.debug(f"unified payments index bootstrap failed: {exc}")
 
         # Create scholarships table if it doesn't exist
         cursor.execute('''

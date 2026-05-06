@@ -391,13 +391,24 @@ class TransactionManager:
                 WHERE order_id = ? AND source_type = 'butcher'
             ''', (payment_method, reference_number, datetime.now().isoformat(), order_id))
 
-            # Record in main finance system
+            # 8.117.104: unified record_payment() with source_type='butcher'.
             try:
-                conn.execute('''
-                    INSERT INTO payments
-                    (student_id, amount, payment_method, payment_date, status, notes, created_by)
-                    VALUES (?, ?, ?, ?, 'completed', 'Butcher Shop Purchase', ?)
-                ''', (customer_id, amount, payment_method, datetime.now().isoformat(), processed_by))
+                from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                    record_payment as _record_payment,
+                )
+                _record_payment(
+                    student_id=customer_id,
+                    amount=amount,
+                    payment_method=payment_method,
+                    source_type='butcher',
+                    source_payment_id=reference_number,
+                    payment_type='purchase',
+                    reference_type='butcher_order',
+                    reference_id=str(order_id),
+                    department='butcher',
+                    description='Butcher Shop Purchase',
+                    created_by=processed_by,
+                )
             except Exception as e:
                 logger.warning(f"Could not record to main finance system: {e}")
 

@@ -456,20 +456,25 @@ def _process_student_account_payment(self, student_id, total_amount, transaction
             f'Shop purchase #{transaction_id} for {first_name} {last_name}', 'Paid', current_date
         ))
 
-        # Record payment
+        # 8.117.104: unified record_payment() with source_type='shop'.
         try:
-            payment_id = f"PAY_{fee_id}"
-            cursor.execute('''
-                INSERT INTO payments
-                (payment_id, student_id, amount, payment_method, payment_date, status, description)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                payment_id, student_id, total_amount, 'Student Account', current_date, 'completed',
-                f'Shop payment for transaction #{transaction_id}'
-            ))
-        except sqlite3.Error as e:
-            # Payments table might not exist or have different schema, continue anyway
-            logger.warning(f"Could not record payment in payments table for transaction {transaction_id}: {e}")
+            from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                record_payment as _record_payment,
+            )
+            _record_payment(
+                student_id=student_id,
+                amount=total_amount,
+                payment_method='Student Account',
+                source_type='shop',
+                source_payment_id=str(transaction_id),
+                payment_type='purchase',
+                reference_type='shop_transaction',
+                reference_id=str(transaction_id),
+                department='shop',
+                description=f'Shop payment for transaction #{transaction_id}',
+            )
+        except Exception as e:
+            logger.warning(f"Could not record unified payment for transaction {transaction_id}: {e}")
             # Fee is still recorded in student_fees, so transaction can continue
 
         conn.commit()

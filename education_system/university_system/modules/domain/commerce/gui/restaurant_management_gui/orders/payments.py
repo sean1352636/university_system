@@ -1146,19 +1146,24 @@ class PaymentDialog:
                 f'Restaurant order #{self.order_id} for {first_name} {last_name}', 'Paid', current_date
             ))
 
-            # Record payment
+            # 8.117.104: unified record_payment() with source_type='restaurant'.
             try:
-                payment_id = f"PAY_{fee_id}"
-                cursor.execute('''
-                    INSERT INTO payments
-                    (payment_id, student_id, amount, payment_method, payment_date, status, description)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    payment_id, student_id, total_amount, 'Finance Account', current_date, 'completed',
-                    f'Restaurant payment for order #{self.order_id}'
-                ))
-            except sqlite3.Error:
-                # Payments table might not exist, continue anyway
+                from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                    record_payment as _record_payment,
+                )
+                _record_payment(
+                    student_id=student_id,
+                    amount=total_amount,
+                    payment_method='Finance Account',
+                    source_type='restaurant',
+                    source_payment_id=str(self.order_id),
+                    payment_type='purchase',
+                    reference_type='restaurant_order',
+                    reference_id=str(self.order_id),
+                    department='restaurant',
+                    description=f'Restaurant payment for order #{self.order_id}',
+                )
+            except Exception:
                 pass
 
             conn.commit()

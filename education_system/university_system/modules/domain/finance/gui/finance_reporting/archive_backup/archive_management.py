@@ -349,28 +349,15 @@ def run_archive_process(self, parent_window):
         except Exception as e:
             log_progress(f"  ✗ Error archiving transactions: {e}")
 
-        # Archive payments
+        # 8.117.102: dropped the ``student_payments`` archive step.
+        # ``student_payments`` had no production writers (audit found
+        # zero ``INSERT INTO student_payments`` calls anywhere in the
+        # runtime app — only this archive routine and a one-shot
+        # bootstrap script touched it), so this loop was always
+        # archiving zero rows from a never-populated table. The
+        # canonical ``payments`` table above is what's actually used
+        # and is intentionally not deleted from (kept for audit).
         progress_var.set(35)
-        log_progress("\n[2/4] Archiving old payments...")
-        try:
-            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='student_payments'")
-            if cursor.fetchone():
-                cursor.execute('''
-                    INSERT INTO archived_payments
-                    SELECT *, CURRENT_TIMESTAMP FROM student_payments
-                    WHERE payment_date < ?
-                ''', (two_years_ago,))
-
-                archived_count = cursor.rowcount
-
-                cursor.execute('DELETE FROM student_payments WHERE payment_date < ?', (two_years_ago,))
-
-                total_archived += archived_count
-                log_progress(f"  ✓ Archived {archived_count} payment records")
-            else:
-                log_progress("  ⚠ Student payments table not found - skipping")
-        except Exception as e:
-            log_progress(f"  ✗ Error archiving payments: {e}")
 
         # Archive financial aid
         progress_var.set(60)

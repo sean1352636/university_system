@@ -776,23 +776,32 @@ class BarGUI:
         return True
 
     def record_revenue(self, amount, description):
-        """Add sale to finance system as revenue"""
-        if FINANCE_ACCOUNT_AVAILABLE:
-            try:
-                # Record to payments table as Bar revenue
-                conn = get_db_connection()
-                if conn:
-                    cursor = conn.cursor()
-                    cursor.execute('''
-                        INSERT INTO payments (student_id, amount, payment_method, payment_date, status, notes, created_by, created_at)
-                        VALUES (?, ?, 'Bar Revenue', ?, 'completed', ?, ?, ?)
-                    ''', ('BAR_REVENUE', amount, datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                          description, self.current_user.get('username', 'system'),
-                          datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
-                    conn.commit()
-                    conn.close()
-            except Exception as e:
-                print(f"Failed to record revenue: {e}")
+        """Add sale to finance system as revenue.
+
+        8.117.104: routed through unified record_payment() with
+        ``source_type='bar'`` so cross-domain reports can isolate bar
+        revenue. Pre-fix this did a raw INSERT with all rows tagged
+        ``payment_method='Bar Revenue'`` and student_id='BAR_REVENUE'
+        so analytics couldn't tell bar tabs apart from other revenue.
+        """
+        if not FINANCE_ACCOUNT_AVAILABLE:
+            return
+        try:
+            from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                record_payment,
+            )
+            record_payment(
+                student_id='BAR_REVENUE',
+                amount=amount,
+                payment_method='cash',
+                source_type='bar',
+                payment_type='revenue',
+                department='bar',
+                description=description,
+                created_by=self.current_user.get('username', 'system'),
+            )
+        except Exception as e:
+            print(f"Failed to record revenue: {e}")
 
     def get_student_finance_balance(self, student_id):
         """Check student's available balance"""

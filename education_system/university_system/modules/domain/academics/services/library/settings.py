@@ -652,13 +652,29 @@ def process_fine_payment(fine_id: int = None, user_id: str = None,
             )
         ''')
 
-        cursor.execute('''
-            INSERT INTO library_payments (receipt_id, user_id, amount, payment_method, payment_date)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (receipt_id, user_id, payment_amount, payment_method, datetime.now().isoformat()))
-
+        # 8.117.103: also write to the unified ``payments`` table so
+        # finance reports / cross-domain views see this payment. The
+        # legacy ``library_payments`` row above is kept until all
+        # readers migrate (only ``generate_fine_receipt`` reads it
+        # today). Idempotent on (source_type, source_payment_id).
         conn.commit()
         conn.close()
+        try:
+            from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                record_payment,
+            )
+            record_payment(
+                student_id=user_id,
+                amount=payment_amount,
+                payment_method=payment_method,
+                source_type='library',
+                source_payment_id=receipt_id,
+                payment_type='fine',
+                department='library',
+                description='Library fine payment',
+            )
+        except Exception as exc:
+            logger.warning(f"Unified payment mirror failed (library): {exc}")
 
         result['success'] = True
         result['message'] = f'Payment of £{payment_amount:.2f} processed successfully'
@@ -703,30 +719,48 @@ def generate_fine_receipt(receipt_id: str = None, payment_info: Dict = None) -> 
 
     try:
         if receipt_id:
-            conn = get_db_connection()
-            if conn:
-                cursor = conn.cursor()
-                cursor.execute('''
-                    SELECT user_id, amount, payment_method, payment_date
-                    FROM library_payments WHERE receipt_id = ?
-                ''', (receipt_id,))
-                payment = cursor.fetchone()
-                conn.close()
+            # 8.117.103: read from the unified payments table first
+            # (the new write path). Fall back to library_payments for
+            # rows recorded before the migration.
+            payment = None
+            try:
+                from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                    read_payments,
+                )
+                rows = read_payments(source_type='library',
+                                     source_payment_id=receipt_id, limit=1)
+                if rows:
+                    r = rows[0]
+                    payment = (r.get('student_id'), r.get('amount'),
+                               r.get('payment_method'), r.get('payment_date'))
+            except Exception:
+                payment = None
 
-                if payment:
-                    user_id, amount, method, date = payment
-                    receipt_lines.extend([
-                        f"Receipt #: {receipt_id}",
-                        f"Date: {date}",
-                        f"User ID: {user_id}",
-                        "-" * 50,
-                        f"Amount Paid: £{amount:.2f}",
-                        f"Payment Method: {method.title()}",
-                        "-" * 50,
-                        "",
-                        "Thank you for your payment!",
-                        "=" * 50,
-                    ])
+            if not payment:
+                conn = get_db_connection()
+                if conn:
+                    cursor = conn.cursor()
+                    cursor.execute('''
+                        SELECT user_id, amount, payment_method, payment_date
+                        FROM library_payments WHERE receipt_id = ?
+                    ''', (receipt_id,))
+                    payment = cursor.fetchone()
+                    conn.close()
+
+            if payment:
+                user_id, amount, method, date = payment
+                receipt_lines.extend([
+                    f"Receipt #: {receipt_id}",
+                    f"Date: {date}",
+                    f"User ID: {user_id}",
+                    "-" * 50,
+                    f"Amount Paid: £{amount:.2f}",
+                    f"Payment Method: {method.title()}",
+                    "-" * 50,
+                    "",
+                    "Thank you for your payment!",
+                    "=" * 50,
+                ])
         elif payment_info:
             receipt_lines.extend([
                 f"Receipt #: {payment_info.get('receipt_id', 'N/A')}",

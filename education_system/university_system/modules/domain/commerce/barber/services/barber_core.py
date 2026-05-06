@@ -433,14 +433,27 @@ class TransactionManager:
                 WHERE appointment_id = ?
             ''', (payment_method, datetime.now().isoformat(), appointment_id))
 
-            # Record in main finance system
+            # 8.117.104: route through unified record_payment() with
+            # source_type='barber' so cross-domain reports can isolate
+            # barber-shop revenue.
             try:
-                conn.execute('''
-                    INSERT INTO payments
-                    (student_id, amount, payment_method, payment_date, status, notes, created_by)
-                    VALUES (?, ?, ?, ?, 'completed', 'Barber Shop Service', ?)
-                ''', (customer_id, amount + tip_amount, payment_method,
-                      datetime.now().isoformat(), processed_by))
+                from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                    record_payment as _record_payment,
+                )
+                _record_payment(
+                    student_id=customer_id,
+                    amount=amount + tip_amount,
+                    payment_method=payment_method,
+                    source_type='barber',
+                    source_payment_id=str(appointment_id),
+                    payment_type='service',
+                    reference_type='barber_appointment',
+                    reference_id=str(appointment_id),
+                    department='barber',
+                    description='Barber Shop Service',
+                    notes=(f'tip {tip_amount}' if tip_amount else None),
+                    created_by=processed_by,
+                )
             except Exception as e:
                 logger.warning(f"Could not record to main finance system: {e}")
 

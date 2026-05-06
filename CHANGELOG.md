@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.105 — 2026-05-06](#8117105---2026-05-06)
 - [8.117.104 — 2026-05-06](#8117104---2026-05-06)
 - [8.117.103 — 2026-05-06](#8117103---2026-05-06)
 - [8.117.102 — 2026-05-06](#8117102---2026-05-06)
@@ -333,6 +334,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.105] — 2026-05-06
+
+### Refactored — Unified payments writer for cross-domain ledger consolidation
+
+Each commercial / finance domain (library, bursary, nailbar, butcher,
+barber, betting, carrental, gym, bar, restaurant) historically kept its
+own payment ledger table. The central ``payments`` table had
+polymorphic columns (``source_type``, ``source_payment_id``,
+``payment_type``, ``reference_type``, ``reference_id``,
+``department``) for unification, but nothing wrote to them. Reports
+spanning domains had to ``UNION`` per-domain tables.
+
+This change introduces a single writer module that any domain can call
+to mirror its payment row into the central ledger, and migrates ~12
+existing call sites to use it. Subsequent revisions will retire the
+per-domain payment tables.
+
+- ``modules/domain/finance/core/unified_payments.py`` (new) — single
+  entry point ``record_payment(...)`` with idempotent semantics:
+  ``(source_type, source_payment_id)`` is uniquely indexed where
+  ``source_payment_id`` is non-NULL, so re-mirroring the same domain
+  row is safe (``INSERT OR IGNORE``).
+- ``migrations/versions/d39533373ffb_drop_unused_student_payments_table.py``
+  Drops the ``student_payments`` table — zero production writers, only
+  read by a finance archive routine that's also being removed.
+- 15 call sites migrated to ``unified_payments.record_payment(...)``:
+  ``modules/domain/commerce/barber/services/barber_core.py``,
+  ``commerce/betting/gui/betting_shop_gui.py``,
+  ``commerce/butcher/{gui/butcher_gui,services/butcher_core}.py``,
+  ``commerce/carrental/services/carrental_core.py``,
+  ``commerce/gui/{bar_gui,restaurant_management_gui/orders/payments,shop_management_gui/checkout_manager}.py``,
+  ``commerce/gym/gui/gym_gui.py``,
+  ``commerce/nailbar/services/nailbar_core.py``,
+  ``finance/bursary/services/bursary_service.py``,
+  ``finance/core/{account_management,financial_core,security_automation}.py``,
+  ``finance/gui/finance/dashboard.py``,
+  ``finance/gui/finance_reporting/archive_backup/archive_management.py``,
+  ``services/cli/nailbar_cli.py``.
+- ``infrastructure/database/schemas/new_features_schemas.py``,
+  ``modules/domain/academics/services/library/settings.py``,
+  ``alembic.ini``: small supporting changes that ship alongside.
+- ``templates/email/academics/course_registration_confirmation.json``,
+  ``templates/email/user_management/welcome_message.json``: minor
+  template touch-ups.
+
+Note on version numbering: ``unified_payments.py``'s docstring still
+references "8.117.103" — that version number was reused by the email
+template extraction commit (931c9f8e / 9a9e9239 / e3b29b6b) before
+this work shipped. The docstring is left as-is for archaeology; this
+commit is 8.117.105.
 
 ## [8.117.104] — 2026-05-06
 

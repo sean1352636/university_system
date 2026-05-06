@@ -202,18 +202,28 @@ class ButcherGUI:
             return False
 
     def _add_to_revenue(self, amount: float, description: str, reference: str):
-        """Add payment to central finance revenue."""
+        """Add payment to central finance revenue.
+
+        8.117.104: routed through unified record_payment() with
+        ``source_type='butcher'``.
+        """
         try:
+            student_id = self.current_user.get('student_id') or self.current_user.get('username')
+            from education_system.university_system.modules.domain.finance.core.unified_payments import (
+                record_payment,
+            )
+            record_payment(
+                student_id=student_id,
+                amount=amount,
+                payment_method='butcher_shop',
+                source_type='butcher',
+                source_payment_id=reference,
+                payment_type='revenue',
+                department='butcher',
+                description=description,
+                created_by=self.current_user.get('username'),
+            )
             with transaction() as conn:
-                # Record in central payments table
-                student_id = self.current_user.get('student_id') or self.current_user.get('username')
-                conn.execute('''
-                    INSERT INTO payments (student_id, amount, payment_method, transaction_id,
-                                         payment_date, status, notes, created_by, created_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ''', (student_id, amount, 'butcher_shop', reference,
-                      datetime.now().strftime('%Y-%m-%d'), 'completed', description,
-                      self.current_user.get('username'), datetime.now().isoformat()))
 
                 # Try to add to finance revenue tracking if table exists
                 try:

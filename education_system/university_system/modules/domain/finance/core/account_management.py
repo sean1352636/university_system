@@ -4,8 +4,6 @@ import csv
 import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 # Import immutable audit logging for compliance
 try:

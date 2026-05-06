@@ -321,8 +321,8 @@ class DashboardManager:
                 cursor.execute("SELECT SUM(amount) FROM payments WHERE status = 'completed'")
                 total_revenue = cursor.fetchone()[0] or 0
 
-                # Get active students
-                cursor.execute("SELECT COUNT(*) FROM students WHERE status = 'active'")
+                # Get active students (case-insensitive to match seeded values like 'Active')
+                cursor.execute("SELECT COUNT(*) FROM students WHERE LOWER(status) = 'active'")
                 active_students = cursor.fetchone()[0] or 0
 
                 # Get overdue amount
@@ -502,7 +502,7 @@ class DashboardManager:
             active_plans = cursor.fetchone()[0] or 0
 
             # Total students
-            cursor.execute('''SELECT COUNT(*) FROM students WHERE status = 'active' ''')
+            cursor.execute('''SELECT COUNT(*) FROM students WHERE LOWER(status) = 'active' ''')
             total_students = cursor.fetchone()[0] or 0
 
             # Create or update stats labels

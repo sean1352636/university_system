@@ -49,17 +49,10 @@ def get_new_features_tables():
                 created_at TEXT DEFAULT (datetime('now'))
             )
         """,
-        "student_payments": """
-            CREATE TABLE IF NOT EXISTS student_payments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                fee_id INTEGER,
-                student_id TEXT NOT NULL,
-                amount_paid REAL NOT NULL,
-                payment_method TEXT,
-                reference TEXT,
-                payment_date TEXT DEFAULT (date('now'))
-            )
-        """,
+        # 8.117.102: ``student_payments`` removed. Audit confirmed
+        # zero production writers — only an archive routine read from
+        # it (now also gone) and a one-shot bootstrap script touched
+        # it. The canonical payments ledger is the ``payments`` table.
         "scholarships": """
             CREATE TABLE IF NOT EXISTS scholarships (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
