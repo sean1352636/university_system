@@ -138,3 +138,11 @@ education_system/university_system/data/submissions/submitted/
 # Local scratch directory — files dropped here for ad-hoc work, not for committing.
 add/
 
+# Per-instance runtime configs (defaults live in code; these files are written
+# by the admin GUI and contain host paths and credential placeholders).
+education_system/university_system/data/config/backup_config.json
+education_system/university_system/data/config/overview_pins.json
+
+# Generated audit dump
+missing_tests.txt
+
