@@ -35,6 +35,11 @@ except ImportError:
 # Templates are loaded dynamically from JSON files using load_template().
 DEFAULT_TEMPLATES = {}
 
+# Matches {identifier} placeholders for format-style template substitution.
+# Identifier rules match Python str.format: a letter or underscore followed by
+# letters, digits, or underscores. Stray '{' or '{1}' (positional) are ignored.
+_BRACE_VAR_RE = re.compile(r"\{([a-zA-Z_][a-zA-Z0-9_]*)\}")
+
 # Cache for the mapping file to avoid repeated file reads
 _MAPPING_CACHE = None
 
@@ -454,14 +459,25 @@ def render_template(template_name, template_vars):
     if 'signature' not in template_vars:
         template_vars['signature'] = config['email_signature']
 
-    # Render subject and body (support both 'body' and 'body_text'/'body_html' keys)
+    # Render subject and body. Supports both placeholder styles used across
+    # the email templates in this repo:
+    #   * $var / ${var}  (string.Template — ~11 templates)
+    #   * {var}          (Python format-style — ~72 templates)
+    # safe_substitute leaves unknown placeholders intact; the regex pass does
+    # the same for {var} so a missing key never silently sends a broken email,
+    # but is also forgiving enough not to choke on stray '{' in the body.
     try:
-        subject_template = Template(template_data['subject'])
         body_key = 'body' if 'body' in template_data else 'body_html' if 'body_html' in template_data else 'body_text'
-        body_template = Template(template_data[body_key])
 
-        subject = subject_template.safe_substitute(template_vars)
-        body = body_template.safe_substitute(template_vars)
+        def _render(text):
+            text = Template(text).safe_substitute(template_vars)
+            return _BRACE_VAR_RE.sub(
+                lambda m: str(template_vars.get(m.group(1), m.group(0))),
+                text,
+            )
+
+        subject = _render(template_data['subject'])
+        body = _render(template_data[body_key])
 
         return subject, body
     except Exception as e:

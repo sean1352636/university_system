@@ -12,6 +12,7 @@ from decimal import Decimal
 
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity
+from education_system.university_system.modules.domain.academics.grading.grade_calculation.gpa import calculate_student_gpa
 
 class ProgressService:
     """Service for academic progress tracking and forecasting."""
@@ -839,104 +840,20 @@ class ProgressService:
             return result
 
     def _calculate_current_gpa(self, student_id: str) -> Dict:
-        """Calculate student's current GPA and total points."""
-        grade_values = {
-            'A+': 4.0, 'A': 4.0, 'A-': 3.7,
-            'B+': 3.3, 'B': 3.0, 'B-': 2.7,
-            'C+': 2.3, 'C': 2.0, 'C-': 1.7,
-            'D+': 1.3, 'D': 1.0, 'D-': 0.7, 'F': 0.0
-        }
+        """Calculate student's current credit-weighted GPA.
 
-        def pct_to_letter(pct):
-            if pct >= 93: return 'A'
-            if pct >= 90: return 'A-'
-            if pct >= 87: return 'B+'
-            if pct >= 83: return 'B'
-            if pct >= 80: return 'B-'
-            if pct >= 77: return 'C+'
-            if pct >= 73: return 'C'
-            if pct >= 70: return 'C-'
-            if pct >= 67: return 'D+'
-            if pct >= 63: return 'D'
-            if pct >= 60: return 'D-'
-            return 'F'
-
+        Delegates to the canonical calculator in
+        ``grading.grade_calculation.gpa`` so every screen reports the same number.
+        """
         with get_connection() as conn:
-            # Source 1: module_grades (letter grades)
-            module_rows = conn.execute("""
-                SELECT mg.module_code, mg.final_grade as grade, COALESCE(m.credits, 1) as credits
-                FROM module_grades mg
-                LEFT JOIN modules m ON mg.module_code = m.module_code
-                WHERE mg.student_id = ?
-                AND mg.final_grade NOT IN ('W', 'I')
-                AND mg.final_grade IS NOT NULL
-            """, (student_id,)).fetchall()
+            cursor = conn.cursor()
+            gpa, total_credits, _details = calculate_student_gpa(cursor, student_id)
 
-            # Source 2: assignment_submissions (percentage grades, averaged per module)
-            assign_rows = conn.execute("""
-                SELECT a.module_code, ROUND(AVG(sub.grade), 2) as avg_pct,
-                       COALESCE(m.credits, 1) as credits
-                FROM assignment_submissions sub
-                JOIN assignments a ON sub.assignment_id = a.id
-                LEFT JOIN modules m ON a.module_code = m.module_code
-                WHERE sub.student_id = ? AND sub.grade IS NOT NULL
-                GROUP BY a.module_code
-            """, (student_id,)).fetchall()
-
-            # Source 3: grades table (score-based)
-            grade_rows = conn.execute("""
-                SELECT a.module_code,
-                       ROUND(AVG(g.score / a.max_points * 100), 2) as avg_pct,
-                       COALESCE(m.credits, 1) as credits
-                FROM grades g
-                JOIN assessments a ON g.assessment_id = a.assessment_id
-                LEFT JOIN modules m ON a.module_code = m.module_code
-                WHERE g.student_id = ? AND a.max_points > 0
-                GROUP BY a.module_code
-            """, (student_id,)).fetchall()
-
-        # Merge: module_grades takes priority
-        seen = set()
-        total_credits = 0
-        total_points = 0.0
-
-        for row in module_rows:
-            code = row['module_code']
-            if code in seen:
-                continue
-            seen.add(code)
-            grade_str = str(row['grade']).strip()
-            # Handle numeric grades stored as strings
-            try:
-                pct = float(grade_str)
-                letter = pct_to_letter(pct)
-            except (ValueError, TypeError):
-                letter = grade_str
-
-            if letter in grade_values:
-                cr = row['credits'] or 1
-                total_credits += cr
-                total_points += grade_values[letter] * cr
-
-        for row in list(assign_rows) + list(grade_rows):
-            code = row['module_code']
-            if code in seen:
-                continue
-            seen.add(code)
-            pct = row['avg_pct']
-            if pct is not None:
-                letter = pct_to_letter(pct)
-                if letter in grade_values:
-                    cr = row['credits'] or 1
-                    total_credits += cr
-                    total_points += grade_values[letter] * cr
-
-        current_gpa = total_points / total_credits if total_credits > 0 else 0.0
-
+        current_gpa = gpa if gpa is not None else 0.0
         return {
             'current_gpa': current_gpa,
             'total_credits': total_credits,
-            'total_points': total_points
+            'total_points': current_gpa * total_credits,
         }
 
     def _analyze_gpa_impact(self, gpa_change: float) -> str:

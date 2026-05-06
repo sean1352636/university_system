@@ -433,13 +433,16 @@ def create_student_dialog(self):
 
             success_msg = f"""Student created successfully!
 
+Login credentials (use these to sign in):
+- Username: {student_id}
+- Password: {temp_password}
+
 Student Details:
 - Student ID: {student_id}
 - Name: {title} {first_name} {middle_name} {last_name}
 - Email: {email_address}
 - Course: {course} (randomly assigned)
-- Age: {age}
-- Login Password: {temp_password}{modules_text}"""
+- Age: {age}{modules_text}"""
 
             messagebox.showinfo(_t("common.success"), success_msg)
 

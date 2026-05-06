@@ -394,11 +394,12 @@ class StudentExperienceManager:
             try:
                 cursor = conn.cursor()
 
-                # Try to get assignment title from submissions table
+                # Try to get assignment title from assignment_submissions table
                 assignment_title = "Unknown Assignment"
                 try:
                     cursor.execute(
-                        "SELECT assignment_id FROM submissions WHERE id = ?", (submission_id,)
+                        "SELECT assignment_id FROM assignment_submissions WHERE id = ?",
+                        (submission_id,),
                     )
                     sub_row = cursor.fetchone()
                     if sub_row:
@@ -506,98 +507,6 @@ class StudentExperienceManager:
             messagebox.showerror("Error", f"Failed to send receipt email: {e}")
 
     # ─── Progress Tracking ───────────────────────────────────────────────
-
-    def show_progress_tracker(self):
-        """Show multi-part assignment progress dashboard"""
-        self.gui.layout.clear_content_area()
-        container = self.gui.layout.content_area
-
-        header = ttk.Label(container, text="Assignment Progress Tracker", font=('Helvetica', 16, 'bold'))
-        header.pack(pady=(10, 5))
-
-        ttk.Label(
-            container,
-            text="Track your completion status across multi-part assignments",
-        ).pack(pady=(0, 10))
-
-        student_id = self._get_student_id()
-        if not student_id:
-            ttk.Label(container, text="Unable to identify student.", foreground='red').pack(pady=20)
-            return
-
-        # Scrollable frame for progress cards
-        canvas = tk.Canvas(container)
-        scrollbar = ttk.Scrollbar(container, orient=tk.VERTICAL, command=canvas.yview)
-        scroll_frame = ttk.Frame(canvas)
-
-        scroll_frame.bind(
-            '<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox('all'))
-        )
-        canvas.create_window((0, 0), window=scroll_frame, anchor=tk.NW)
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20, pady=10)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y, pady=10)
-
-        try:
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            try:
-                cursor = conn.cursor()
-
-                # Get assignments with total parts
-                cursor.execute(
-                    """SELECT a.id, a.title, a.total_parts
-                       FROM assignments a
-                       JOIN enrollments e ON a.module_id = e.module_id
-                       WHERE e.student_id = ? AND COALESCE(a.total_parts, 0) > 1
-                       ORDER BY a.title""",
-                    (student_id,),
-                )
-                assignments = cursor.fetchall()
-
-                if not assignments:
-                    ttk.Label(
-                        scroll_frame,
-                        text="No multi-part assignments found.",
-                        font=('Helvetica', 11),
-                    ).pack(pady=20)
-                    return
-
-                for assign_id, title, total_parts in assignments:
-                    # Count submitted parts
-                    cursor.execute(
-                        """SELECT COUNT(DISTINCT part_number) FROM submissions
-                           WHERE assignment_id = ? AND student_id = ? AND part_number IS NOT NULL""",
-                        (assign_id, student_id),
-                    )
-                    completed = cursor.fetchone()[0]
-                    total = total_parts or 1
-                    pct = int((completed / total) * 100) if total > 0 else 0
-
-                    card = ttk.LabelFrame(scroll_frame, text=title, padding=10)
-                    card.pack(fill=tk.X, padx=10, pady=5)
-
-                    info_frame = ttk.Frame(card)
-                    info_frame.pack(fill=tk.X)
-
-                    ttk.Label(info_frame, text=f"Parts completed: {completed}/{total}").pack(
-                        side=tk.LEFT
-                    )
-                    ttk.Label(info_frame, text=f"{pct}%", font=('Helvetica', 10, 'bold')).pack(
-                        side=tk.RIGHT
-                    )
-
-                    # Progress bar
-                    progress = ttk.Progressbar(card, length=400, mode='determinate', maximum=100)
-                    progress.pack(fill=tk.X, pady=(5, 0))
-                    progress['value'] = pct
-
-            finally:
-                conn.close()
-        except Exception as e:
-            ttk.Label(
-                scroll_frame, text=f"Error loading progress: {e}", foreground='red'
-            ).pack(pady=20)
 
     # ─── Accessibility ───────────────────────────────────────────────────
 

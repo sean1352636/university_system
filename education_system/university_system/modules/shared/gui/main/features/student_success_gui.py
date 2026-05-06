@@ -362,32 +362,17 @@ def show_portfolio_system_gui(self):
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Portfolio System", error=str(e)))
 
 def show_notifications_hub_gui(self):
-    """Launch Email Manager with Notifications tab focused"""
+    """Launch the standalone Notifications GUI."""
     try:
-        # Import email manager GUI
-        from education_system.university_system.modules.shared.gui.email.email_gui.email_manager_main import EmailManagerGUI
-        import tkinter as tk
-
-        # Create new window for email manager
-        email_window = tk.Toplevel(self.root)
-        _install_clean_close(email_window)
-        email_window.title(_t("student_success.windows.communication_center"))
-        email_window.geometry("1200x800")
-
-        # Create email manager GUI
-        email_gui = EmailManagerGUI(email_window, auth=self.auth)
-
-        # Switch to notifications tab after window is created
-        if hasattr(email_gui, 'show_notifications_tab'):
-            email_window.after(100, email_gui.show_notifications_tab)
-
-        logger.info("Opened Email Manager with Notifications tab")
+        from education_system.university_system.modules.domain.communications.notifications.gui.notifications_gui import NotificationsGUI
+        NotificationsGUI(parent=self.root)
+        logger.info("Opened Notifications Hub")
     except ImportError as e:
-        logger.error(f"Failed to import Email Manager GUI: {e}")
-        messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Email Manager", error=str(e)))
+        logger.error(f"Failed to import Notifications GUI: {e}")
+        messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Notifications Hub", error=str(e)))
     except Exception as e:
-        logger.error(f"Error launching Email Manager: {e}")
-        messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Email Manager", error=str(e)))
+        logger.error(f"Error launching Notifications GUI: {e}")
+        messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Notifications Hub", error=str(e)))
 
 def show_feedback_system_gui(self):
     """Launch Feedback System inside the main GUI's content notebook

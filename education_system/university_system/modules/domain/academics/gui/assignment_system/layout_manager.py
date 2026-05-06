@@ -260,7 +260,6 @@ class LayoutManager:
                 ("📤 Submit Assignment", self.gui.show_submit_assignment),
                 ("📋 My Submissions", self.gui.show_my_submissions),
                 ("💾 My Drafts", self.gui.show_draft_manager),
-                ("📊 Progress Tracker", self.gui.show_progress_tracker),
                 ("⏰ Request Extension", self.gui.show_extension_request),
                 ("⚖️ Submit Grade Dispute", self.gui.show_dispute_form),
                 ("📜 My Disputes", self.gui.show_my_disputes),

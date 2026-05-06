@@ -938,7 +938,8 @@ class AIAssistantManager:
             try:
                 cursor = conn.cursor()
                 cursor.execute(
-                    "SELECT student_id, content, submitted_at FROM submissions "
+                    "SELECT student_id, submission_text, submission_date "
+                    "FROM ai_detector_submissions "
                     "WHERE assignment_id = ? ORDER BY student_id",
                     (assignment_id,),
                 )
@@ -1387,11 +1388,11 @@ class AIAssistantManager:
 
                 # Get submission history
                 cursor.execute(
-                    "SELECT s.submitted_at, a.due_date, s.grade "
-                    "FROM submissions s "
+                    "SELECT s.submission_date, a.due_date, s.grade "
+                    "FROM assignment_submissions s "
                     "JOIN assignments a ON s.assignment_id = a.id "
                     "WHERE s.student_id = ? "
-                    "ORDER BY s.submitted_at",
+                    "ORDER BY s.submission_date",
                     (student_id,),
                 )
                 submissions = cursor.fetchall()

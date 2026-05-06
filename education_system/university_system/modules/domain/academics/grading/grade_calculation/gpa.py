@@ -4,68 +4,112 @@ import numpy as np
 from datetime import datetime
 
 from education_system.university_system.infrastructure.database.db import sqlite3, get_connection
-from education_system.university_system.modules.domain.academics.grading.grade_calculation.conversions import letter_to_gpa
+from education_system.university_system.modules.domain.academics.grading.grade_calculation.constants import GRADE_SYSTEMS
+from education_system.university_system.modules.domain.academics.grading.grade_calculation.conversions import letter_to_gpa, percentage_to_letter
 from education_system.university_system.modules.domain.academics.grading.grade_calculation.utils import select_student
 
 
-def calculate_student_gpa(cursor, student_id):
-    """Calculate the GPA for a specific student (from module_grades + assignment_submissions)"""
+def _coerce_to_letter(value):
+    """Coerce a stored grade value (letter or numeric string/number) to a letter grade."""
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return percentage_to_letter(float(value))
+    s = str(value).strip()
+    if not s:
+        return None
+    if s.upper() in GRADE_SYSTEMS["letter"]:
+        return s.upper()
     try:
-        # Get module grades for this student
+        return percentage_to_letter(float(s))
+    except (ValueError, TypeError):
+        return None
+
+
+def calculate_student_gpa(cursor, student_id):
+    """Credit-weighted GPA from module_grades, assignment_submissions, and grades.
+
+    Returns: (gpa, total_credits, detailed_grades)
+    detailed_grades: list of (module_code, module_name, letter_grade, gpa_points, credits)
+    Module priority: module_grades > assignment_submissions > grades.
+    """
+    try:
         cursor.execute('''
-        SELECT mg.module_code, m.module_name, mg.final_grade
-        FROM module_grades mg
-        JOIN modules m ON mg.module_code = m.module_code
-        WHERE mg.student_id = ?
+            SELECT mg.module_code, m.module_name, mg.final_grade,
+                   COALESCE(m.credits, 1) AS credits
+            FROM module_grades mg
+            LEFT JOIN modules m ON mg.module_code = m.module_code
+            WHERE mg.student_id = ?
+              AND mg.final_grade IS NOT NULL
+              AND mg.final_grade NOT IN ('W', 'I')
         ''', (student_id,))
+        module_rows = cursor.fetchall()
 
-        module_grades = cursor.fetchall()
-
-        # Also get graded assignment submissions (grouped by module for GPA)
         cursor.execute('''
-        SELECT a.module_code, m.module_name,
-               ROUND(AVG(sub.grade), 2) as avg_grade
-        FROM assignment_submissions sub
-        JOIN assignments a ON sub.assignment_id = a.id
-        JOIN modules m ON a.module_code = m.module_code
-        WHERE sub.student_id = ? AND sub.grade IS NOT NULL
-        GROUP BY a.module_code
+            SELECT a.module_code, m.module_name,
+                   ROUND(AVG(sub.grade), 2) AS avg_pct,
+                   COALESCE(m.credits, 1) AS credits
+            FROM assignment_submissions sub
+            JOIN assignments a ON sub.assignment_id = a.id
+            LEFT JOIN modules m ON a.module_code = m.module_code
+            WHERE sub.student_id = ? AND sub.grade IS NOT NULL
+            GROUP BY a.module_code
         ''', (student_id,))
+        assignment_rows = cursor.fetchall()
 
-        assignment_grades = cursor.fetchall()
+        try:
+            cursor.execute('''
+                SELECT a.module_code, m.module_name,
+                       ROUND(AVG(g.score / a.max_points * 100), 2) AS avg_pct,
+                       COALESCE(m.credits, 1) AS credits
+                FROM grades g
+                JOIN assessments a ON g.assessment_id = a.assessment_id
+                LEFT JOIN modules m ON a.module_code = m.module_code
+                WHERE g.student_id = ? AND a.max_points > 0
+                GROUP BY a.module_code
+            ''', (student_id,))
+            grade_rows = cursor.fetchall()
+        except sqlite3.Error:
+            grade_rows = []
 
-        # Merge: module_grades takes priority, fill in from assignment_submissions
-        seen_modules = set()
-        all_grades = []
+        seen = set()
+        detailed = []
+        total_credits = 0
+        total_points = 0.0
 
-        for module_code, module_name, grade in module_grades:
-            if grade:
-                seen_modules.add(module_code)
-                all_grades.append((module_code, module_name, grade))
+        for row in module_rows:
+            code, name, raw, credits = row[0], row[1], row[2], row[3]
+            letter = _coerce_to_letter(raw)
+            if not letter or letter not in GRADE_SYSTEMS["letter"] or code in seen:
+                continue
+            seen.add(code)
+            cr = credits or 1
+            pts = letter_to_gpa(letter)
+            total_credits += cr
+            total_points += pts * cr
+            detailed.append((code, name, letter, pts, cr))
 
-        for module_code, module_name, avg_grade in assignment_grades:
-            if module_code not in seen_modules and avg_grade is not None:
-                all_grades.append((module_code, module_name, avg_grade))
+        for row in list(assignment_rows) + list(grade_rows):
+            code, name, avg_pct, credits = row[0], row[1], row[2], row[3]
+            if code in seen or avg_pct is None:
+                continue
+            try:
+                letter = percentage_to_letter(float(avg_pct))
+            except (ValueError, TypeError):
+                continue
+            if letter not in GRADE_SYSTEMS["letter"]:
+                continue
+            seen.add(code)
+            cr = credits or 1
+            pts = letter_to_gpa(letter)
+            total_credits += cr
+            total_points += pts * cr
+            detailed.append((code, name, letter, pts, cr))
 
-        if not all_grades:
+        if total_credits == 0:
             return None, 0, []
 
-        total_points = 0
-        total_modules = 0
-        detailed_grades = []
-
-        for module_code, module_name, grade in all_grades:
-            gpa_points = letter_to_gpa(grade)
-            total_points += gpa_points
-            total_modules += 1
-            detailed_grades.append((module_code, module_name, grade, gpa_points))
-
-        if total_modules == 0:
-            return None, 0, []
-
-        gpa = total_points / total_modules
-
-        return gpa, total_modules, detailed_grades
+        return total_points / total_credits, total_credits, detailed
 
     except sqlite3.Error as e:
         print(f"Error calculating GPA: {e}")

@@ -349,8 +349,19 @@ class EmailManagerGUI:
     def setup_main_window(self):
         """Setup the main window properties"""
         self.root.title(_t("email.window_title", default="University Communication System - Email Manager"))
-        self.root.geometry("1200x800")
-        self.root.minsize(800, 600)
+
+        # Center on screen. withdraw → set geometry → (caller deiconifies) avoids
+        # a single-frame flash at the WM-default position before the move.
+        w, h = 1400, 900
+        try:
+            self.root.withdraw()
+            x = max(0, (self.root.winfo_screenwidth() - w) // 2)
+            y = max(0, (self.root.winfo_screenheight() - h) // 2)
+            self.root.geometry(f"{w}x{h}+{x}+{y}")
+            self.root.deiconify()
+        except tk.TclError:
+            self.root.geometry(f"{w}x{h}")
+        self.root.minsize(1200, 800)
 
         # Configure style
         style = ttk.Style()
@@ -531,9 +542,6 @@ class EmailManagerGUI:
         self.refresh_announcements()
         self.refresh_chat_rooms()
         self.update_stats()
-        # Load notification data if available
-        if hasattr(self, 'load_notification_user_data'):
-            self.load_notification_user_data()
 
     def update_status(self, message):
         """Update status bar message"""
@@ -584,21 +592,17 @@ class EmailManagerGUI:
             messagebox.showerror(_t("common.error", default="Error"), _t("email.dialogs.test_failed", default="Test failed: {error}").format(error=e))
 
     def show_notifications_hub(self):
-        """Switch to Notifications tab (replaces old popup window)"""
-        if hasattr(self, 'show_notifications_tab'):
-            self.show_notifications_tab()
-        else:
-            # Fallback to old behavior if notifications_tab not loaded
-            try:
-                from education_system.university_system.modules.domain.communications.notifications.gui.notifications_gui import NotificationsGUI
-                gui = NotificationsGUI(parent=self.root)
-                logger.info("Opened Notifications Hub from Email Manager")
-            except ImportError as e:
-                logger.error(f"Failed to import Notifications Hub GUI: {e}")
-                messagebox.showerror(_t("common.error", default="Error"), f"Notifications Hub GUI not available: {e}")
-            except Exception as e:
-                logger.error(f"Error launching Notifications Hub GUI: {e}")
-                messagebox.showerror(_t("common.error", default="Error"), f"Failed to launch Notifications Hub: {e}")
+        """Open the standalone Notifications GUI."""
+        try:
+            from education_system.university_system.modules.domain.communications.notifications.gui.notifications_gui import NotificationsGUI
+            NotificationsGUI(parent=self.root)
+            logger.info("Opened Notifications Hub from Email Manager")
+        except ImportError as e:
+            logger.error(f"Failed to import Notifications Hub GUI: {e}")
+            messagebox.showerror(_t("common.error", default="Error"), f"Notifications Hub GUI not available: {e}")
+        except Exception as e:
+            logger.error(f"Error launching Notifications Hub GUI: {e}")
+            messagebox.showerror(_t("common.error", default="Error"), f"Failed to launch Notifications Hub: {e}")
 
 
 # Import tab modules to bind their methods to EmailManagerGUI
@@ -611,7 +615,6 @@ try:
     from education_system.university_system.modules.shared.gui.email.email_gui import announcements_tab
     from education_system.university_system.modules.shared.gui.email.email_gui import chat_tab
     from education_system.university_system.modules.shared.gui.email.email_gui import reports_tab
-    from education_system.university_system.modules.shared.gui.email.email_gui import notifications_tab
 except ImportError as e:
     # Some tab modules may not exist yet
     logger.debug(f"Could not import all tab modules: {e}")

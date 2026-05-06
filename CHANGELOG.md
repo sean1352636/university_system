@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.102 — 2026-05-06](#8117102---2026-05-06)
+- [8.117.101 — 2026-05-06](#8117101---2026-05-06)
 - [8.117.100 — 2026-05-05](#8117100---2026-05-05)
 - [8.117.99 — 2026-05-05](#811799---2026-05-05)
 - [8.117.98 — 2026-05-05](#811798---2026-05-05)
@@ -327,6 +329,243 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.102] — 2026-05-06
+
+### Fixed / Refactored — Grade tracking GUI bug, GPA consolidation, Email Manager sizing, template body fallback, email template `{var}` substitution, Notifications sub-tab removed, assignment-system schema fixes, dead Progress Tracker removed, student-creation success dialog clarified, Email Manager centred on screen
+
+- **Grade tracking management GUI bug**: ``_view_grading_details`` in
+  ``grade_tracking_management_gui/core.py`` had an invalid f-string
+  format spec (``{x:.2f if x else 'N/A'}``) that raised ``ValueError``
+  whenever a user double-clicked an AI grading row. The conditional is
+  now lifted out of the format spec and ``None`` is handled cleanly.
+- **GPA calculator consolidation**: three independent implementations
+  disagreed on the math — un-weighted vs credit-weighted, ``A+ = 4.0``
+  vs ``4.3``, and different percentage→letter cutoffs — so the same
+  student saw different GPAs in different screens. Collapsed to a
+  single canonical implementation in
+  ``grading/grade_calculation/gpa.py::calculate_student_gpa``:
+  credit-weighted, multi-source (``module_grades`` →
+  ``assignment_submissions`` → ``grades``) with module-level dedup.
+  Detailed-grade tuples gained a 5th element (credits) — backward
+  compatible with all existing callers since they index ``m[0..3]``.
+  ``GRADE_SYSTEMS["letter"]["A+"]`` flipped from ``4.3`` to ``4.0``
+  (chosen default).
+  ``ProgressService._calculate_current_gpa`` and
+  ``course_planning_gui._calculate_current_gpa`` rewritten as thin
+  callers — ~230 lines of divergent duplicated logic removed. Two
+  student-facing screens (Academic Progress, Course Planning) that
+  used to disagree on GPA now agree.
+- **Email Manager window sizing**: ``EmailManagerGUI.setup_main_window``
+  bumped from ``1200x800`` / ``minsize 800x600`` to ``1400x900`` /
+  ``minsize 1200x800`` so it matches the Finance Management / Library
+  convention. (No ``state('zoomed')`` — that was tried in
+  ``library/base.py`` 8.117.36 and reverted because it flickered into
+  maximised state on some WMs.)
+- **Email template `{var}` substitution**: ``render_template`` only used
+  ``string.Template.safe_substitute``, which recognises ``$var`` /
+  ``${var}`` but **not** ``{var}``. The repo has 72 templates using
+  ``{var}`` style and 11 using ``$var`` style, so the majority of
+  template-based emails were going out with literal ``{department_name}``
+  / ``{report_date}`` / etc. text in subject and body. Confirmed by a
+  Department Statistics email arriving as
+  ``Subject: Department Statistics - {department_name} - {report_date}``.
+  ``render_template`` now runs ``safe_substitute`` first (preserving
+  ``$var`` support) and then a regex pass for ``{identifier}`` matches,
+  leaving stray ``{`` characters in the body untouched and preserving
+  unknown placeholders so a missing key still surfaces visibly.
+- **Email template body fallback**: both ``load_template`` methods in
+  ``email_dialogs.py`` (Compose Email and Template Editor dialogs)
+  hard-coded ``template_data['body']`` and crashed with ``KeyError:
+  'body'`` on templates that store the body under ``body_html`` or
+  ``body_text``. They now fall back through ``body`` → ``body_html``
+  → ``body_text`` → ``''`` (matching the renderer at
+  ``infrastructure/email/template_utils.py:460``) and use
+  ``.get('subject', '')`` so a missing subject can't crash either.
+
+#### Files
+
+- ``modules/domain/academics/gui/grade_tracking_management_gui/core.py``
+  Fix invalid f-string format spec in ``_view_grading_details``.
+- ``modules/domain/academics/grading/grade_calculation/constants.py``
+  ``A+`` GPA points 4.3 → 4.0.
+- ``modules/domain/academics/grading/grade_calculation/gpa.py``
+  Rewritten ``calculate_student_gpa`` as the canonical credit-weighted
+  multi-source calculator.
+- ``modules/domain/academics/academic_progress/services/progress_service.py``
+  ``_calculate_current_gpa`` now delegates to ``calculate_student_gpa``.
+- ``modules/domain/academics/gui/course_management_gui/course_planning_gui.py``
+  ``_calculate_current_gpa`` now delegates to ``calculate_student_gpa``;
+  duplicate scale/cutoff logic removed.
+- ``modules/shared/gui/email/email_gui/email_manager_main.py``
+  ``setup_main_window`` geometry / minsize aligned with Finance & Library.
+- ``modules/shared/gui/email/email_gui/email_dialogs.py``
+  Both ``load_template`` methods use ``body`` /
+  ``body_html`` / ``body_text`` fallback and ``.get('subject', '')``.
+- ``infrastructure/email/template_utils.py``
+  ``render_template`` now substitutes both ``$var`` and ``{var}``
+  placeholder styles via a regex pass after ``safe_substitute``.
+
+#### Notifications sub-tab removed from Email Manager
+
+The Notifications sub-tab inside Email Manager → Messages duplicated
+the standalone ``NotificationsGUI`` at
+``modules/domain/communications/notifications/gui/notifications_gui.py``
+— same ``NotificationsService``, drifted features. Removed the sub-tab
+and routed all entry points through the standalone GUI.
+
+- ``modules/shared/gui/email/email_gui/messages_tab.py``
+  Reduced from 1390 lines to 458. Stripped: ``NotificationsService`` /
+  ``NotificationPriority`` / ``NotificationChannel`` imports,
+  ``PRIORITY_COLORS`` / ``PRIORITY_BG_COLORS``, the entire
+  ``create_notifications_subtab`` UI (~430 lines), notification
+  helpers (``refresh_notifications``, ``mark_*_notifications_as_read``,
+  ``apply_notification_filters``, ``save_notification_preferences``,
+  ``create_test_notification``, ``show_notifications_tab``,
+  ``notification_preferences``, etc., ~410 lines), and 16
+  ``EmailManagerGUI.<notification_method> = ...`` bindings.
+  ``create_messages_tab`` no longer builds a sub-notebook — the
+  inbox is the tab body. Inbox helpers
+  (``refresh_messages``, ``compose_message``, ``reply_message``,
+  ``delete_message``, etc.) untouched.
+- ``modules/shared/gui/email/email_gui/email_manager_main.py``
+  ``show_notifications_hub`` now opens ``NotificationsGUI`` directly
+  (no more sub-tab fallback chain). Dropped the dead
+  ``import notifications_tab`` line and the
+  ``hasattr(self, 'load_notification_user_data')`` block in
+  ``refresh_all`` that no longer has a binding to call.
+- ``modules/shared/gui/main/features/student_success_gui.py``
+  ``show_notifications_hub_gui`` now opens ``NotificationsGUI``
+  instead of opening Email Manager and switching to a sub-tab that
+  no longer exists.
+- Deleted ``modules/shared/gui/email/email_gui/notifications_tab.py.old``
+  (orphan from a prior refactor).
+- ``notification_preferences`` on ``EmailManagerGUI`` now resolves
+  to the binding in ``reports_tab.py`` (opens the standalone
+  ``NotificationPreferencesDialog``) — the override in
+  ``messages_tab.py`` is gone.
+
+#### Assignment system schema fixes
+
+Three queries in the assignment GUI targeted a moderation/safeguarding
+``submissions`` table (columns: ``id, user_id, content, severity, …``)
+when they meant the academic submissions tables. Each one currently
+crashes the affected screen with ``no such column: student_id`` or
+similar.
+
+- ``modules/domain/academics/gui/assignment_system/ai_assistant_manager.py``
+  ``run_collusion_analysis`` now reads from ``ai_detector_submissions``
+  (``student_id``, ``submission_text``, ``submission_date``,
+  ``assignment_id``); the late-pass recommendation query at line ~1392
+  now reads ``submission_date`` from ``assignment_submissions``.
+- ``modules/domain/academics/gui/assignment_system/student_experience_manager.py``
+  Assignment-title lookup at line ~401 now queries
+  ``assignment_submissions`` instead of ``submissions``.
+
+#### Dead "Progress Tracker" feature removed
+
+``show_progress_tracker`` (GUI) and ``view_progress_tracker`` (CLI)
+were referencing schema that has never existed in this DB:
+``assignments.total_parts`` (no such column),
+``assignment_submissions.part_number`` (no such column), and
+an ``enrollments`` table (no such table — the join table is
+``student_modules``). No code anywhere in the repo writes those
+fields, so even after fixing the queries the tracker would always be
+empty. Removed the user-visible button + the four methods.
+
+- ``modules/domain/academics/gui/assignment_system/layout_manager.py``
+  Dropped the ``"📊 Progress Tracker"`` student-sidebar button.
+- ``modules/domain/academics/gui/assignment_system/assignment_gui.py``
+  Removed the ``show_progress_tracker`` shim.
+- ``modules/domain/academics/gui/assignment_system/student_experience_manager.py``
+  Removed the ~90-line ``show_progress_tracker`` implementation.
+- ``modules/domain/academics/services/assignments/assignment_submission.py``
+  Removed CLI menu entry ``('52', 'Progress Tracker', …)``.
+- ``modules/domain/academics/services/assignments/student_experience/student_experience.py``
+  Removed the ~100-line ``view_progress_tracker`` CLI counterpart.
+
+#### Student-creation success dialog clarified
+
+``modules/shared/gui/main/students/student_crud_gui.py``: the success
+``messagebox`` after creating a student bundled the auth username
+(``"Student ID: 8940853"``) next to the email
+(``"Email: C8940853@tees.ac.uk"``), with the password labelled only
+``"Login Password:"``. Users were typing the email-style ``C``-prefixed
+form as the login username and getting
+``Login failed: unknown user 'C8940853'``. The dialog now leads with a
+"Login credentials" block (``Username``, ``Password``) and pushes the
+student/email block below, so the C-prefixed email cannot be confused
+with the login.
+
+#### Email Manager centred on first open
+
+``modules/shared/gui/email/email_gui/email_manager_main.py::setup_main_window``
+now computes ``(screenwidth - 1400) // 2`` /
+``(screenheight - 900) // 2`` and applies the position via
+``withdraw → geometry → deiconify``, so the window opens centred
+instead of at the WM-default top-left position. Same pattern the
+Grade Tracking launcher uses.
+
+---
+
+## [8.117.101] — 2026-05-06
+
+### Fixed / Added — Finance GUI: dashboard count, payment/invoice/refund email + JSON, refund UX
+
+Finance GUI clean-up across the four flows the user reported:
+
+- **Dashboard active-student count**: previously read ``WHERE status =
+  'active'`` while the seeded ``students`` rows store ``Active``,
+  giving 0 instead of the 1 the Finance Reporting GUI shows. Both
+  refresh paths now use ``LOWER(status) = 'active'``.
+- **Record Payment**: after the payment commit the recorder now looks
+  up the student's ``email_address`` and sends a confirmation email
+  through ``email_service.send_email``. Subject/body templates and an
+  ``enabled`` switch live in the new
+  ``data/config/payment_email_config.json``. Success dialog reports
+  whether the email was sent.
+- **Create Invoice**: dialog enlarged to ``980x820`` with a vertical
+  scroll container so the preview, fees table, and buttons are all
+  reachable; preview text widget grew from 6 lines to 18 and now
+  expands. The Send Email button now actually sends the invoice via
+  ``email_service.send_email`` using the new
+  ``data/config/invoice_email_config.json`` template.
+- **Manage Refunds**: student-id text entry replaced with a dropdown
+  populated from ``students``. New "Existing Refunds" panel with a
+  status combobox (``pending / approved / rejected / processed /
+  cancelled``) lets users update ``unified_refunds.status``. The wide
+  white gap on the right is gone — the canvas now binds
+  ``<Configure>`` to resize the inner window to the canvas width.
+  Selecting ``full`` from the refund-type dropdown auto-fills the
+  refund amount from the highlighted payment row. The Process Refund
+  button is disabled the moment it's clicked (with an ``is_processing``
+  re-entry guard) and re-enabled only after success/validation/error,
+  preventing accidental duplicate submissions. Empty/invalid refund
+  amounts now produce a friendly warning instead of an uncaught
+  ``ValueError``. Refund creation and status updates both send an
+  email through the new ``data/config/refund_email_config.json``
+  templates (separate ``created`` vs ``status_update`` bodies).
+
+#### Files
+
+- ``modules/domain/finance/gui/finance/dashboard.py``
+  ``refresh_dashboard``, ``update_quick_stats``: case-insensitive
+  active-student query.
+- ``modules/domain/finance/gui/finance/transaction_manager/payment_recording.py``
+  Adds ``_send_payment_confirmation_email`` helper; hooks it into
+  ``_open_record_payment_form`` after commit.
+- ``modules/domain/finance/gui/finance/invoice_manager.py``
+  ``gui_generate_invoice``: scrollable container, larger geometry,
+  rewritten ``send_invoice`` using JSON config and real email service.
+- ``modules/domain/finance/gui/finance/transaction_manager/refunds.py``
+  Full rewrite of ``gui_process_refund``: student dropdown, existing
+  refunds tree + status update, canvas width binding, full-refund
+  auto-fill, single-press button, refund email helper.
+- ``data/config/payment_email_config.json`` (new)
+- ``data/config/invoice_email_config.json`` (new)
+- ``data/config/refund_email_config.json`` (new)
 
 ---
 

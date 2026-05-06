@@ -498,9 +498,6 @@ class AssignmentGUI:
     def show_draft_manager(self):
         return self.student_experience.show_draft_manager()
 
-    def show_progress_tracker(self):
-        return self.student_experience.show_progress_tracker()
-
     def show_accessibility_settings(self):
         return self.student_experience.show_accessibility_settings()
 

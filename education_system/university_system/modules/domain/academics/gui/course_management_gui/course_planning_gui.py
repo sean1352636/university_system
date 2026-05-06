@@ -21,6 +21,7 @@ from typing import Optional, Dict, List
 from education_system.university_system.infrastructure.database.db import get_connection, transaction
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.modules.domain.academics.course_planning.services.planning_service import PlanningService
+from education_system.university_system.modules.domain.academics.grading.grade_calculation.gpa import calculate_student_gpa
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity
 
 
@@ -2143,137 +2144,39 @@ SEMESTER BREAKDOWN
     # ===== Tools Tab Business Logic =====
 
     def _calculate_current_gpa(self):
-        """Calculate student's current GPA from completed modules."""
+        """Calculate student's current GPA via the canonical calculator."""
         try:
             with get_connection() as conn:
-                # Get grades from module_grades
-                module_grades = conn.execute("""
-                    SELECT m.module_code, m.module_name, COALESCE(m.credits, 1) as credits,
-                           mg.final_grade as grade
-                    FROM module_grades mg
-                    JOIN modules m ON mg.module_code = m.module_code
-                    WHERE mg.student_id = ? AND mg.final_grade IS NOT NULL
-                """, (self.student_id,)).fetchall()
+                cursor = conn.cursor()
+                gpa, total_credits, details = calculate_student_gpa(cursor, self.student_id)
 
-                # Get grades from assignment_submissions (averaged per module)
-                assignment_grades = conn.execute("""
-                    SELECT a.module_code, m.module_name, COALESCE(m.credits, 1) as credits,
-                           ROUND(AVG(sub.grade), 2) as grade
-                    FROM assignment_submissions sub
-                    JOIN assignments a ON sub.assignment_id = a.id
-                    JOIN modules m ON a.module_code = m.module_code
-                    WHERE sub.student_id = ? AND sub.grade IS NOT NULL
-                    GROUP BY a.module_code
-                """, (self.student_id,)).fetchall()
-
-                # Also try grades table
-                direct_grades = conn.execute("""
-                    SELECT a.module_code, m.module_name, COALESCE(m.credits, 1) as credits,
-                           ROUND((g.score / a.max_points) * 100, 2) as grade
-                    FROM grades g
-                    JOIN assessments a ON g.assessment_id = a.assessment_id
-                    JOIN modules m ON a.module_code = m.module_code
-                    WHERE g.student_id = ?
-                    GROUP BY a.module_code
-                """, (self.student_id,)).fetchall()
-
-            # GPA scale
-            grade_points = {
-                'A+': 4.3, 'A': 4.0, 'A-': 3.7,
-                'B+': 3.3, 'B': 3.0, 'B-': 2.7,
-                'C+': 2.3, 'C': 2.0, 'C-': 1.7,
-                'D+': 1.3, 'D': 1.0, 'D-': 0.7,
-                'F': 0.0
-            }
-
-            def percentage_to_letter(pct):
-                if pct >= 93: return 'A+'
-                if pct >= 90: return 'A'
-                if pct >= 87: return 'A-'
-                if pct >= 83: return 'B+'
-                if pct >= 80: return 'B'
-                if pct >= 77: return 'B-'
-                if pct >= 73: return 'C+'
-                if pct >= 70: return 'C'
-                if pct >= 67: return 'C-'
-                if pct >= 63: return 'D+'
-                if pct >= 60: return 'D'
-                if pct >= 57: return 'D-'
-                return 'F'
-
-            def to_letter(grade_val):
-                """Convert a grade value (letter or numeric) to a letter grade."""
-                if grade_val is None:
-                    return None
-                if isinstance(grade_val, (int, float)):
-                    return percentage_to_letter(grade_val)
-                grade_str = str(grade_val).strip().upper()
-                if grade_str in grade_points:
-                    return grade_str
-                try:
-                    return percentage_to_letter(float(grade_str))
-                except (ValueError, TypeError):
-                    return None
-
-            # Merge all sources, module_grades takes priority
-            seen_modules = set()
-            all_entries = []
-
-            for row in module_grades:
-                code = row['module_code']
-                if code not in seen_modules:
-                    seen_modules.add(code)
-                    letter = to_letter(row['grade'])
-                    if letter:
-                        all_entries.append((code, row['module_name'], row['credits'], letter))
-
-            for row in list(assignment_grades) + list(direct_grades):
-                code = row['module_code']
-                if code not in seen_modules:
-                    seen_modules.add(code)
-                    letter = to_letter(row['grade'])
-                    if letter:
-                        all_entries.append((code, row['module_name'], row['credits'], letter))
-
-            if not all_entries:
+            if gpa is None or not details:
                 messagebox.showinfo("Info", "No graded modules found.")
                 return
 
-            total_points = 0.0
-            total_credits = 0
-            details = []
+            total_points = gpa * total_credits
 
-            for code, name, credits, letter in all_entries:
-                cr = credits if credits and credits > 0 else 1
-                pts = grade_points.get(letter, 0.0)
-                total_points += pts * cr
-                total_credits += cr
-                details.append(f"  {code}: {name} - {letter} ({pts:.1f} x {cr} cr)")
-
-            if total_credits == 0:
-                messagebox.showinfo("Info", "No valid graded modules for GPA calculation.")
-                return
-
-            gpa = total_points / total_credits
-
-            # Update labels
             self.gpa_current_label.config(text=f"Current GPA: {gpa:.2f}")
             self.gpa_credits_label.config(text=f"Total Credits: {total_credits}")
 
-            # Show breakdown in the GPA text area if available
             if hasattr(self, 'gpa_projection_text'):
                 self.gpa_projection_text.delete(1.0, tk.END)
-                self.gpa_projection_text.insert(tk.END, f"=== Current GPA Breakdown ===\n\n")
+                self.gpa_projection_text.insert(tk.END, "=== Current GPA Breakdown ===\n\n")
                 self.gpa_projection_text.insert(tk.END, f"Student: {self.student_id}\n")
-                self.gpa_projection_text.insert(tk.END, f"Modules graded: {len(all_entries)}\n")
+                self.gpa_projection_text.insert(tk.END, f"Modules graded: {len(details)}\n")
                 self.gpa_projection_text.insert(tk.END, f"Total credits: {total_credits}\n")
                 self.gpa_projection_text.insert(tk.END, f"GPA: {gpa:.2f}\n\n")
                 self.gpa_projection_text.insert(tk.END, "Module Grades:\n")
                 self.gpa_projection_text.insert(tk.END, "-" * 60 + "\n")
-                for line in details:
-                    self.gpa_projection_text.insert(tk.END, line + "\n")
+                for code, name, letter, pts, cr in details:
+                    self.gpa_projection_text.insert(
+                        tk.END, f"  {code}: {name} - {letter} ({pts:.1f} x {cr} cr)\n"
+                    )
                 self.gpa_projection_text.insert(tk.END, "-" * 60 + "\n")
-                self.gpa_projection_text.insert(tk.END, f"\nWeighted Total: {total_points:.2f} / {total_credits} credits = {gpa:.2f} GPA\n")
+                self.gpa_projection_text.insert(
+                    tk.END,
+                    f"\nWeighted Total: {total_points:.2f} / {total_credits} credits = {gpa:.2f} GPA\n",
+                )
 
             log_activity('view', 'gpa_calculation', user_id=self.student_id,
                         details={'gpa': gpa, 'credits': total_credits})

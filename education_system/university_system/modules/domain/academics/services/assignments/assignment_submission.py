@@ -106,7 +106,6 @@ class AssignmentSubmission(
                     ('9', 'Manage My Drafts', self.manage_drafts),
                     ('10', 'Submit Grade Dispute', self.submit_grade_dispute),
                     ('51', 'View My Disputes', self.view_my_disputes),
-                    ('52', 'Progress Tracker', self.view_progress_tracker),
                     ('53', 'Submit External Link', self.submit_external_link),
                     ('54', 'Submit Assignment Stage', self.submit_stage),
                     ('55', 'Accessibility Settings', self.manage_accessibility_settings),

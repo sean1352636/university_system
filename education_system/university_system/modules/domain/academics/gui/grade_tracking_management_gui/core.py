@@ -434,13 +434,14 @@ class GradeTrackingManagementGUI(
                 main_frame.pack(fill='both', expand=True)
 
                 percentage = (grading['auto_score'] / grading['max_score'] * 100) if grading['max_score'] > 0 else 0
+                confidence_str = f"{grading['confidence_score']:.2f}" if grading['confidence_score'] is not None else 'N/A'
 
                 details = (
                     f"Grading ID: {grading['grading_id']}\n"
                     f"Submission ID: {grading['submission_id']}\n"
                     f"Assignment Type: {grading['assignment_type']}\n"
                     f"Auto Score: {grading['auto_score']}/{grading['max_score']} ({percentage:.1f}%)\n"
-                    f"Confidence Score: {grading['confidence_score']:.2f if grading['confidence_score'] else 'N/A'}\n"
+                    f"Confidence Score: {confidence_str}\n"
                     f"Requires Manual Review: {'Yes' if grading['requires_manual_review'] else 'No'}\n"
                     f"Manual Override Score: {grading['manual_override_score'] if grading['manual_override_score'] else 'None'}\n"
                     f"Graded At: {grading['graded_at']}\n\n"
