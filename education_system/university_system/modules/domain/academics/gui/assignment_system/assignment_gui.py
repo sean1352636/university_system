@@ -49,10 +49,16 @@ class AssignmentGUI:
             self.root = tk.Tk()
             self.is_standalone = True
 
-        self.root.title(_("assignment.title"))
-        self.root.geometry("1400x900+%d+%d" % ((self.root.winfo_screenwidth() - 1400) // 2, (self.root.winfo_screenheight() - 900) // 2))
-        self.root.minsize(1200, 800)
-        self.root.configure(bg='#f0f0f0')
+        self._is_embedded = not isinstance(self.root, (tk.Tk, tk.Toplevel))
+        if not self._is_embedded:
+            self.root.title(_("assignment.title"))
+            sw = self.root.winfo_screenwidth()
+            sh = self.root.winfo_screenheight()
+            x = max(0, (sw - 1400) // 2)
+            y = max(0, (sh - 900) // 2)
+            self.root.geometry(f"1400x900+{x}+{y}")
+            self.root.minsize(1200, 800)
+            self.root.configure(bg='#f0f0f0')
 
         # Style configuration. ttk.Style is process-global, so calling
         # theme_use() from a child window restyles the parent app. Only

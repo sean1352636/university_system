@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.108 — 2026-05-07](#8117108---2026-05-07)
 - [8.117.107 — 2026-05-07](#8117107---2026-05-07)
 - [8.117.106 — 2026-05-07](#8117106---2026-05-07)
 - [8.117.105 — 2026-05-06](#8117105---2026-05-06)
@@ -334,6 +335,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.108] — 2026-05-07
+
+### Fixed — Assignment GUI not centred when launched from the launcher
+
+``AssignmentSystem`` treated any non-``None`` ``parent`` as embedded
+and skipped window setup entirely, but the launcher passes a fresh
+``Toplevel`` as the parent — so the window opened wherever the WM
+chose to put it (typically slightly left of centre). Mirrors the
+``course_management_gui`` pattern: the embedded check now uses
+``isinstance(parent, (tk.Tk, tk.Toplevel))`` so launcher-provided
+Tk/Toplevel parents still get sized and centred against the screen.
 
 ---
 
