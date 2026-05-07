@@ -721,8 +721,11 @@ class AssignmentGUI:
         try:
             if self.auth and self.auth.current_user:
                 user_role = self.auth.current_user.get('role', '')
-                if user_role == 'Student':
-                    return self.auth.current_user.get('id')
+                if user_role.lower() == 'student':
+                    return (
+                        self.auth.current_user.get('student_id')
+                        or self.auth.current_user.get('username')
+                    )
             return None
         except (AttributeError, Exception):
             return None

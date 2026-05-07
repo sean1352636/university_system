@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.107 — 2026-05-07](#8117107---2026-05-07)
 - [8.117.106 — 2026-05-07](#8117106---2026-05-07)
 - [8.117.105 — 2026-05-06](#8117105---2026-05-06)
 - [8.117.104 — 2026-05-06](#8117104---2026-05-06)
@@ -333,6 +334,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.107] — 2026-05-07
+
+### Fixed — Students could not see assignments in the submission dialog
+
+``AssignmentSystem._get_student_id`` in
+``education_system/university_system/modules/domain/academics/gui/assignment_system/assignment_gui.py``
+had two bugs that caused the submission combo to be empty for every
+real student account:
+
+- The role check compared against ``'Student'`` (capital S), but the
+  ``users`` table stores the role as ``'student'`` (lowercase), so the
+  method always returned ``None`` and ``submission_manager`` short-
+  circuited to an empty list.
+- Even if the role matched, it returned ``current_user['id']`` (the
+  numeric users-table primary key), but the assignments query joins on
+  ``student_modules.student_id`` / ``assignment_submissions.student_id``,
+  which are the string student IDs (e.g. ``'8940853'``).
+
+The role check is now case-insensitive, and the method returns
+``current_user['student_id']`` (falling back to ``username``, which
+matches ``student_id`` for seeded student accounts). Enrolled students
+now see their active assignments in the submission picker as expected.
 
 ---
 
