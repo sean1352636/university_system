@@ -296,7 +296,6 @@ if optimize_database is None:
 
 # Import dialog classes used by EmailManagerGUI
 from education_system.university_system.modules.shared.gui.email.email_gui.utility_dialogs import HelpDialog, AboutDialog
-from education_system.shared.messaging.cross_system_panel import CrossSystemMessagePanel
 
 class EmailManagerGUI:
     def __init__(self, root, auth=None):
@@ -493,16 +492,6 @@ class EmailManagerGUI:
         self.create_announcements_tab()
         self.create_chat_tab()
         self.create_reports_tab()
-        self.create_cross_system_tab()
-
-    def create_cross_system_tab(self):
-        """Add a tab for cross-system messaging (replaces standalone frame)."""
-        tab = ttk.Frame(self.notebook)
-        self.notebook.add(tab, text=_t("email.tabs.cross_system", default="Cross-System"))
-        self._cross_system_panel = CrossSystemMessagePanel(
-            tab, auth=self.auth, system_key="university",
-        )
-        self._cross_system_panel.pack(fill=tk.BOTH, expand=True)
 
     def create_status_frame(self, parent):
         """Create status bar and notifications"""
@@ -592,17 +581,15 @@ class EmailManagerGUI:
             messagebox.showerror(_t("common.error", default="Error"), _t("email.dialogs.test_failed", default="Test failed: {error}").format(error=e))
 
     def show_notifications_hub(self):
-        """Open the standalone Notifications GUI."""
+        """Focus the unified Messages tab (notifications now live there)."""
         try:
-            from education_system.university_system.modules.domain.communications.notifications.gui.notifications_gui import NotificationsGUI
-            NotificationsGUI(parent=self.root)
-            logger.info("Opened Notifications Hub from Email Manager")
-        except ImportError as e:
-            logger.error(f"Failed to import Notifications Hub GUI: {e}")
-            messagebox.showerror(_t("common.error", default="Error"), f"Notifications Hub GUI not available: {e}")
+            self.open_messages()
+            if getattr(self, "_unified_inbox_panel", None):
+                self._unified_inbox_panel._type_var.set("Notification")
+                self._unified_inbox_panel._refresh_feed()
         except Exception as e:
-            logger.error(f"Error launching Notifications Hub GUI: {e}")
-            messagebox.showerror(_t("common.error", default="Error"), f"Failed to launch Notifications Hub: {e}")
+            logger.error(f"Error focusing Messages tab: {e}")
+            messagebox.showerror(_t("common.error", default="Error"), f"Failed to open Notifications: {e}")
 
 
 # Import tab modules to bind their methods to EmailManagerGUI

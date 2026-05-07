@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.106 — 2026-05-07](#8117106---2026-05-07)
 - [8.117.105 — 2026-05-06](#8117105---2026-05-06)
 - [8.117.104 — 2026-05-06](#8117104---2026-05-06)
 - [8.117.103 — 2026-05-06](#8117103---2026-05-06)
@@ -334,6 +335,125 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.106] — 2026-05-07
+
+### Changed — Unified inbox in University Email Manager (messages + cross-system + notifications)
+
+The University Email Manager previously surfaced three separate
+messaging interfaces: the **Messages** tab (intra-university user-to-
+user, served by ``CommunicationDashboard``), a **Cross-System** tab
+(``InterSystemMessagingService``), and a standalone **Notifications
+Hub** Toplevel (``NotificationsService``). Users had to track three
+inboxes and pick the right surface to send from.
+
+This change collapses all three streams into a single Inbox — laid
+out exactly like the original Messages tab (toolbar + horizontal
+PanedWindow with list-on-the-left / viewer-on-the-right) — and
+provides one unified Compose dialog covering both intra-university
+and cross-system sends.
+
+- ``education_system/shared/messaging/unified_inbox.py`` (new) —
+  ``UnifiedInboxPanel``. Aggregates all three sources into a common
+  normalized item shape (``kind``, ``id``, ``date``, ``sender``,
+  ``subject``, ``body``, ``channel``, ``priority``, ``is_read``,
+  ``raw``); single sortable Treeview with columns
+  ``Type / From / Subject / Date / Status``; row tags for
+  unread / urgent / high; filters for Type, Channel, Priority,
+  Unread-only; right-click context menu (Reply / Mark Read / Delete);
+  click-to-view auto-marks read with selection restoration.
+- ``shared/gui/email/email_gui/messages_tab.py`` — renamed tab to
+  **Inbox**; legacy user-to-user UI replaced with the unified panel.
+  ``refresh_messages`` and ``open_messages`` delegate to the panel.
+- ``shared/gui/email/email_gui/email_tab.py`` — tab renamed
+  **Email** → **All Emails** for clarity.
+- ``shared/gui/email/email_gui/email_manager_main.py`` — removed the
+  separate Cross-System tab; ``Communication → Notifications Hub``
+  menu now focuses the Inbox tab and pre-filters Type=Notification
+  instead of opening the standalone Toplevel.
+
+### Added — Unified Compose dialog covering both messaging backends
+
+Replaces the previous two-button setup (Compose Message / Cross-System
+Message) with a single **Compose** button that opens one dialog. The
+dialog merges every available recipient (university intra-system
+users + staff in the other three systems) into one searchable
+Combobox with a system suffix (e.g. *"J. Smith (staff) — University"*,
+*"A. Patel (admin) — Sixth Form College"*), auto-routes the send to
+the correct backend on Send, and reveals the **Student (optional)**
+field only when the chosen recipient is in another system. A live
+chip under the recipient shows ``[University] internal message`` or
+``[Cross-system] → <System Name>`` so the routing decision is
+visible. Replies for both kinds reuse the same dialog with auto
+pre-fill (recipient, ``Re:`` subject prefix, quoted body, original
+student where applicable).
+
+### Fixed — Cross-system messages were inserted but invisible to recipients (ID-namespace mismatch)
+
+``InterSystemMessagingService.get_staff_list()`` returns
+``auth.db users.id`` (the shared-auth integer id), but the University
+``UserAuth.current_user["id"]`` is set in
+``infrastructure/auth/core.py:1323`` to ``effective_id =
+legacy_user_id or user_info["user_id"]`` — i.e. the *legacy*
+university users.id. Sends were therefore inserting
+``sender_id = legacy_id`` while ``recipient_id`` was the auth.db id.
+When the recipient logged in their own ``current_user["id"]`` was
+also legacy, so ``WHERE recipient_id = ?`` never matched the row that
+had been written — the message lived in ``cross_system_messages`` but
+was invisible.
+
+The fix preferences ``shared_auth_id`` (which ``core.py:1328`` always
+populates with the auth.db ``users.id``) over ``id``/``user_id`` in
+the panel's ``_user_id()`` helper, so both INSERT and SELECT line up
+on the same id namespace.
+
+- ``shared/messaging/unified_inbox.py`` — ``_user_id()`` now prefers
+  ``shared_auth_id``; the username string fallback was removed
+  because a string username can never match an INTEGER id column.
+- ``shared/messaging/cross_system_panel.py`` — same fix applied to
+  the legacy panel (still imported from college subsystem).
+
+### Fixed — ``Unknown combination: __login__ + gui`` after logout in direct-launch mode
+
+``run.py``'s direct-launch loop (used when starting with
+``python run.py --university --gui``) did not handle the
+``("__login__", mode)`` sentinel that ``education_system/switch.py``
+schedules on logout. ``dispatch_gui`` and ``dispatch_cli`` already
+handled it, but the direct-launch loop blindly looked it up in
+``LAUNCHERS`` and aborted with ``Unknown combination: __login__ +
+gui``. After logout the user could not return to the universal login
+screen.
+
+- ``run.py`` — direct-launch loop now intercepts
+  ``system == "__login__"`` after ``consume()``, calls
+  ``gui_universal_login()`` / ``cli_universal_login()`` to re-prompt,
+  and hands off to ``dispatch_gui`` / ``dispatch_cli`` so further
+  switches keep working.
+
+### Fixed — ``grab failed: window not viewable`` on first open of compose / cross-system dialog
+
+Calling ``Toplevel.grab_set()`` immediately after construction races
+the window manager — the window isn't mapped yet, so Tk raises
+``_tkinter.TclError: grab failed: window not viewable``. This crashed
+the unified compose dialog on some WMs whenever it was opened via
+the Reply path.
+
+- ``shared/messaging/unified_inbox.py`` — dialog scheduling now
+  defers ``grab_set`` via ``after(50, …)`` and calls
+  ``wait_visibility()`` first; if Tk still rejects the grab (e.g.
+  the window was destroyed before the deferred call) the failure is
+  logged at debug level instead of bubbling up.
+
+### Data — Backfilled cross_system_messages rows with mismatched sender_id
+
+A one-off migration repointed 4 existing rows in
+``cross_system_messages`` from the university *legacy* user id to
+the corresponding auth.db ``users.id`` (admin: 6 → 19), so the rows
+become visible to their recipients under the new ID-namespace fix.
+Backup written to ``shared/data/db_files/auth.db.bak.<timestamp>``
+before mutation. One row was already correct (sender_id=1,
+superadmin) and was left alone.
+
 
 ## [8.117.105] — 2026-05-06
 

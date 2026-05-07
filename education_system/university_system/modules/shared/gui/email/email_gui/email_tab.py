@@ -44,7 +44,7 @@ from education_system.university_system.modules.shared.gui.email.email_gui.email
 def create_email_tab(self):
     """Create the email management tab"""
     tab_frame = ttk.Frame(self.notebook)
-    self.notebook.add(tab_frame, text=_t("email.tabs.email", default="Email"))
+    self.notebook.add(tab_frame, text=_t("email.tabs.email", default="All Emails"))
 
     # Email toolbar
     toolbar_frame = ttk.Frame(tab_frame)

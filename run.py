@@ -487,6 +487,29 @@ def main():
         if switch_request is None:
             break
         system, mode = switch_request
+
+        # A logout from any per-system launcher schedules ("__login__", mode);
+        # bounce through the universal login and then hand off to the full
+        # auth-aware dispatch loop so subsequent switches keep working.
+        if system == "__login__":
+            print("\n  Returning to login...\n")
+            if mode == "gui":
+                result = gui_universal_login()
+                if result is None:
+                    return
+                user_info, system, role, shared_auth = result
+                dispatch_gui(user_info, system, role, shared_auth)
+                return
+            if mode == "cli":
+                result = cli_universal_login()
+                if result is None:
+                    return
+                user_info, system, role, shared_auth = result
+                dispatch_cli(user_info, system, role, shared_auth)
+                return
+            print(f"  Cannot return to login in mode '{mode}'")
+            sys.exit(1)
+
         print(f"\n  Switching to {system} ({mode})...\n")
 
 

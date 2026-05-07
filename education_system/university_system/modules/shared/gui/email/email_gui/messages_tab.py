@@ -1,11 +1,15 @@
 """
-Messages Tab for Email Manager GUI — user-to-user inbox.
+Messages Tab for Email Manager GUI — unified inbox.
 
-System notifications used to live as a sub-tab here; that was removed
-because the canonical UI is the standalone ``NotificationsGUI`` at
-``modules/domain/communications/notifications/gui/notifications_gui.py``,
-which is now the only Notifications surface (launched from the Email
-Manager Communication menu and from ``show_notifications_hub_gui``).
+This tab now hosts the single :class:`UnifiedInboxPanel` which merges:
+  * University intra-system user-to-user messages (CommunicationDashboard)
+  * Cross-system staff messages (InterSystemMessagingService)
+  * System notifications (NotificationsService)
+
+Compose dispatches either an intra-university message (legacy modal) or
+a cross-system message (inline form). The previous standalone Cross-
+System tab and Notifications Hub window are no longer needed; both have
+been folded in here.
 """
 
 import tkinter as tk
@@ -34,13 +38,22 @@ if project_root not in sys.path:
 
 from education_system.university_system.modules.shared.gui.email.email_gui.email_manager_main import EmailManagerGUI
 from education_system.university_system.modules.shared.gui.email.email_gui.chat_dialogs import ComposeMessageDialog, ReplyMessageDialog
+from education_system.shared.messaging.unified_inbox import UnifiedInboxPanel
 
 
 def create_messages_tab(self):
-    """Create the messages tab (user-to-user inbox)."""
+    """Create the unified messages tab (university + cross-system + notifications)."""
     tab_frame = ttk.Frame(self.notebook)
-    self.notebook.add(tab_frame, text=_t("email.tabs.messages", default="Messages"))
-    create_inbox(self, tab_frame)
+    self.notebook.add(tab_frame, text=_t("email.tabs.messages", default="Inbox"))
+    self._messages_tab_frame = tab_frame
+    self._unified_inbox_panel = UnifiedInboxPanel(
+        tab_frame,
+        auth=self.auth,
+        system_key="university",
+        dashboard=self.dashboard,
+        root=self.root,
+    )
+    self._unified_inbox_panel.pack(fill=tk.BOTH, expand=True)
 
 
 # ==================== INBOX ====================
@@ -172,9 +185,15 @@ def create_inbox(self, inbox_frame):
 # ==================== INBOX MESSAGE METHODS ====================
 
 def refresh_messages(self):
-    """Refresh the messages list"""
+    """Refresh the unified inbox panel (delegates to UnifiedInboxPanel)."""
+    panel = getattr(self, "_unified_inbox_panel", None)
+    if panel is not None:
+        panel.refresh()
+        return
+    # Legacy path retained for safety if a caller wires the old UI
     try:
-        # Clear existing items
+        if not hasattr(self, "messages_tree"):
+            return
         for item in self.messages_tree.get_children():
             self.messages_tree.delete(item)
 
@@ -434,7 +453,7 @@ def open_messages(self):
     """Switch to messages tab"""
     # Find the messages tab index
     for i in range(self.notebook.index('end')):
-        if self.notebook.tab(i, 'text') in ['Messages', _t("email.tabs.messages", default="Messages")]:
+        if self.notebook.tab(i, 'text') in ['Messages', 'Inbox', _t("email.tabs.messages", default="Inbox")]:
             self.notebook.select(i)
             self.refresh_messages()
             return

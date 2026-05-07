@@ -41,11 +41,13 @@ class CrossSystemMessagePanel(tk.Frame):
     # ------------------------------------------------------------------
 
     def _user_id(self):
-        if isinstance(self._auth, dict):
-            return self._auth.get("user_id") or self._auth.get("id")
-        if hasattr(self._auth, "current_user") and self._auth.current_user:
-            cu = self._auth.current_user
-            return cu.get("user_id") or cu.get("id")
+        # Cross-system messaging IDs are auth.db users.id values (what
+        # get_staff_list returns). University auth stores a legacy id in
+        # current_user["id"] which does NOT match — prefer shared_auth_id
+        # so sender/recipient ids line up between INSERT and SELECT.
+        cu = self._auth if isinstance(self._auth, dict) else getattr(self._auth, "current_user", None)
+        if isinstance(cu, dict):
+            return cu.get("shared_auth_id") or cu.get("user_id") or cu.get("id")
         return None
 
     def _user_name(self):
