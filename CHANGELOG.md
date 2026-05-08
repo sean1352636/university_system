@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.121 — 2026-05-08](#8117121---2026-05-08)
 - [8.117.120 — 2026-05-08](#8117120---2026-05-08)
 - [8.117.119 — 2026-05-08](#8117119---2026-05-08)
 - [8.117.118 — 2026-05-08](#8117118---2026-05-08)
@@ -347,6 +348,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.121] — 2026-05-08
+
+### Added — ADRs 0016 (Multi-currency / FX) and 0017 (Fixed assets / depreciation)
+
+Closes the design-doc side of items 14 and 15 from the gap survey
+(2026-05-07). Both deferred from the implementation pass in 8.117.120
+because each is a multi-week build with accountancy decisions to make
+before code.
+
+- **`docs/adr/0016-multi-currency-fx-accounting.md`** (Proposed) —
+  schema additions (currency / fx_rate / base_amount columns on
+  payments/refunds/fees/journal-lines, fx_rates table, revaluation
+  runs), chart additions (4400 FX Gain, dedicated currency cash
+  accounts), posting changes, rate-fetch strategy, period-end
+  revaluation, migration path. Estimated ~3 weeks for one engineer.
+  Open questions: acquirer-vs-HMRC rate source, held bank account
+  list, monthly-vs-yearly revaluation frequency, rounding policy.
+- **`docs/adr/0017-fixed-assets-depreciation.md`** (Proposed) — asset
+  register schema (`fixed_assets`, `fixed_asset_categories`,
+  `depreciation_runs`, `depreciation_lines`), chart additions (1500–
+  1599 PPE, 1600–1699 accumulated depreciation contras, 5500 Dep.
+  Expense, 4500/5550 disposal gain/loss), depreciation methods
+  (straight-line, reducing balance, none), posting on acquisition /
+  monthly run / disposal, migration of historical register, default
+  category seed. Estimated ~4 weeks for one engineer. Open
+  questions: reporting framework (FRS 102 / IFRS), depreciation
+  frequency, capitalisation threshold per-category, lease
+  treatment, capital projects / WIP scope, component depreciation,
+  government grants amortisation.
+
+ADR numbering note: 0014 and 0015 remain reserved for Accounts
+Payable and VAT respectively (referenced as future work in 8.117.117
+and 8.117.118 changelog entries). FX and Fixed Assets take 0016 /
+0017 to avoid number conflicts when those ADRs are eventually
+written.
+
+No code changes. Both ADRs are decision-blocking documents for
+finance staff and external auditor input; once those questions are
+resolved the implementation passes can be commissioned.
 
 ---
 
