@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.116 — 2026-05-08](#8117116---2026-05-08)
 - [8.117.115 — 2026-05-08](#8117115---2026-05-08)
 - [8.117.114 — 2026-05-08](#8117114---2026-05-08)
 - [8.117.113 — 2026-05-08](#8117113---2026-05-08)
@@ -342,6 +343,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.116] — 2026-05-08
+
+### Changed — Student Union refund flow now writes one refund row, not a refund-shaped payment row
+
+The structural issue tagged in 8.117.115 as out-of-scope is now fixed.
+
+The Student Union refund handler in
+`student_union_gui/payments/payment_processing.py:process_refund` was
+recording each refund as **two** rows in two different tables:
+
+- An `UPDATE payments SET status = 'refunded'` on the original payment
+  (correct — this is the right audit trail for the original).
+- An `INSERT INTO payments` with positive amount and
+  `payment_type = 'refund_<original_type>'`, abusing the payments table
+  to record a refund (wrong — refund records belong in
+  `unified_refunds`). The 8.117.115 sweep deliberately skipped the GL
+  hook for this insert because `post_payment` would have posted a
+  refund as a debit to Cash and credit to Revenue, the opposite of
+  what cash basis requires for a refund.
+- A subsequent `notify_finance_gui` call that **also** wrote a row to
+  `unified_refunds` — the proper refund record. So the system was
+  storing each refund three times: original payment marked refunded,
+  duplicate "refund" row in payments, and the real refund row in
+  unified_refunds.
+
+This change deletes the wrong-shape `INSERT INTO payments` entirely
+(the original is still marked refunded for audit), and tightens
+`notify_finance_gui` so the single `unified_refunds` row carries the
+information that was lost: `reference_id` now points back to the
+original `payment_id`, and `processed_by` records the actual operator
+instead of the hardcoded literal `'student_union'`. Status is set
+explicitly to `'processed'` on insert so the GL hook (already attached)
+fires correctly under cash basis.
+
+Verified end-to-end against the live DB: a refund call now produces
+exactly one `unified_refunds` row (with the back-reference to the
+original payment) and one balanced GL journal posted by the actual
+operator. All previous loose ends from 8.117.115's "out of scope" list
+related to student union refunds are closed.
+
+26/26 ledger tests still pass.
 
 ---
 

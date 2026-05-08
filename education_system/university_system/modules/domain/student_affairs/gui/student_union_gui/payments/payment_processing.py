@@ -801,41 +801,44 @@ Status: {values[7]}
             success = True
 
         if success:
-            # Update payment status to refunded
+            # Update original payment to 'refunded' (audit trail) and create
+            # a single unified_refunds row that references it. Previously this
+            # block also did an INSERT INTO payments with positive amount and
+            # a 'refund_X' payment_type, abusing the payments table to record
+            # a refund — that row had to be skipped from GL hooks because
+            # post_payment would have posted it in the wrong direction under
+            # cash basis. notify_finance_gui below is the single source of
+            # truth for the refund record now.
             try:
                 conn = sqlite3.connect(str(DEFAULT_DB_PATH))
                 cursor = conn.cursor()
-
                 cursor.execute('''
                     UPDATE payments
                     SET status = 'refunded'
                     WHERE payment_id = ? AND source_type = 'club'
                 ''', (payment_id,))
+                conn.commit()
+                conn.close()
 
                 # Generate refund reference
                 import uuid
                 refund_ref = f"UNION-REFUND-{uuid.uuid4().hex[:12].upper()}"
 
-                # Record refund transaction
-                cursor.execute('''
-                    INSERT INTO payments
-                    (source_type, student_id, reference_id, reference_type,
-                     payment_type, amount, payment_method,
-                     payment_date, status, notes)
-                    SELECT 'club', student_id, reference_id, 'club',
-                           ?, ?, ?, date('now'), 'completed', ?
-                    FROM payments WHERE payment_id = ? AND source_type = 'club'
-                ''', (f'refund_{payment_type}', amount, refund_method.lower().replace(' ', '_'),
-                      f'Refund for payment {payment_id}', payment_id))
-
-                conn.commit()
-                conn.close()
+                processed_by = (
+                    self.current_user.get('username', 'student_union')
+                    if getattr(self, 'current_user', None) else 'student_union'
+                )
 
                 # Send refund receipt email
                 send_refund_receipt(student_id, amount, refund_method, payment_id, refund_ref, club_name)
 
-                # Notify finance GUI
-                notify_finance_gui(student_id, amount, refund_method, refund_ref)
+                # Record the refund in unified_refunds (the right table) and
+                # auto-post to the GL via the hook inside notify_finance_gui.
+                notify_finance_gui(
+                    student_id, amount, refund_method, refund_ref,
+                    original_payment_id=payment_id,
+                    processed_by=processed_by,
+                )
 
                 messagebox.showinfo("Refund Processed",
                                   f"Refund of GBP {amount:.2f} processed successfully\n\n"
@@ -1029,8 +1032,15 @@ def send_refund_receipt(student_id: str, amount: float, method: str,
         print(f"Error sending refund receipt: {e}")
 
 
-def notify_finance_gui(student_id: str, amount: float, method: str, refund_ref: str):
-    """Record refund in unified refunds table for finance integration"""
+def notify_finance_gui(student_id: str, amount: float, method: str, refund_ref: str,
+                       original_payment_id=None, processed_by: str = 'student_union'):
+    """Record refund in unified_refunds for finance integration.
+
+    Writes one row in `unified_refunds` (the correct table for refund records)
+    with a back-reference to the original payment via `reference_id`, then
+    auto-posts to the GL. Idempotent on (source_type, source_id) at the GL
+    layer via post_refund's UNIQUE constraint.
+    """
     try:
         conn = sqlite3.connect(str(DEFAULT_DB_PATH))
         cursor = conn.cursor()
@@ -1040,11 +1050,14 @@ def notify_finance_gui(student_id: str, amount: float, method: str, refund_ref: 
         try:
             cursor.execute('''
                 INSERT INTO unified_refunds
-                (refund_reference, source_type, reference_type, student_id,
-                 amount, refund_method, refund_date, processed_by, notes, status)
-                VALUES (?, 'student_union', 'payment', ?, ?, ?, date('now'),
-                        'student_union', 'Student Union Payment Refund', 'completed')
-            ''', (refund_ref, student_id, amount, method))
+                (refund_reference, source_type, reference_type, reference_id,
+                 student_id, amount, refund_method, refund_date,
+                 processed_by, notes, status)
+                VALUES (?, 'student_union', 'payment', ?, ?, ?, ?, date('now'),
+                        ?, 'Student Union Payment Refund', 'processed')
+            ''', (refund_ref,
+                  str(original_payment_id) if original_payment_id is not None else None,
+                  student_id, amount, method, processed_by))
             refund_row_id = cursor.lastrowid
             conn.commit()
             print(f"[Student Union] Refund recorded in unified_refunds: {refund_ref}")
@@ -1054,11 +1067,11 @@ def notify_finance_gui(student_id: str, amount: float, method: str, refund_ref: 
 
         conn.close()
 
-        # Auto-post to GL (cash has moved; status='completed' on insert). Never raises.
+        # Auto-post to GL (cash has moved; status='processed' on insert). Never raises.
         if refund_row_id is not None:
             try:
                 from education_system.university_system.modules.domain.finance.ledger import notify_ledger
-                notify_ledger('refund', refund_row_id, posted_by='student_union')
+                notify_ledger('refund', refund_row_id, posted_by=processed_by)
             except Exception:
                 import logging
                 logging.getLogger(__name__).exception(
