@@ -122,6 +122,8 @@ class NavigationMixin:
         self.create_settings_tab()
         self.create_trial_balance_tab()
         self.create_journals_tab()
+        self.create_period_close_tab()
+        self.create_bank_rec_tab()
 
         # Show default tab
         self.show_tab('dashboard')
@@ -156,6 +158,8 @@ class NavigationMixin:
             (_("finance_gui.nav.analytics"), "analytics", "admin"),  # Admin only
             (_("finance_gui.nav.trial_balance"), "trial_balance", "admin_staff"),  # Admin and Staff
             (_("finance_gui.nav.journals"), "journals", "admin_staff"),  # Admin and Staff
+            (_("finance_gui.nav.period_close"), "period_close", "admin"),  # Admin only
+            (_("finance_gui.nav.bank_rec"), "bank_rec", "admin_staff"),  # Admin and Staff
             (_("finance_gui.nav.research_grants"), "research_grants", "admin_staff"),  # Admin and Staff only
             ("Bursary Management", "bursary", "admin_staff"),  # Admin and Staff only — launches standalone Tk app
             (_("finance_gui.nav.bank_app"), "bank_app", "all"),  # All can access bank app

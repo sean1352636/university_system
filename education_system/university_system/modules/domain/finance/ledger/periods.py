@@ -79,3 +79,37 @@ def reopen_period(period_id):
         conn.commit()
     finally:
         conn.close()
+
+
+def list_periods(fiscal_year=None):
+    """Return all periods (or just one fiscal year) ordered by start_date.
+
+    Each row is a dict with: period_id, fiscal_year, period_no, start_date,
+    end_date, status, closed_at, closed_by, journal_count.
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        sql = """
+            SELECT p.period_id, p.fiscal_year, p.period_no, p.start_date,
+                   p.end_date, p.status, p.closed_at, p.closed_by,
+                   COALESCE((SELECT COUNT(*) FROM gl_journals
+                             WHERE period_id = p.period_id), 0) AS journal_count
+            FROM gl_periods p
+        """
+        params = ()
+        if fiscal_year is not None:
+            sql += " WHERE p.fiscal_year = ?"
+            params = (fiscal_year,)
+        sql += " ORDER BY p.start_date"
+        cur.execute(sql, params)
+        return [
+            {
+                'period_id': r[0], 'fiscal_year': r[1], 'period_no': r[2],
+                'start_date': r[3], 'end_date': r[4], 'status': r[5],
+                'closed_at': r[6], 'closed_by': r[7], 'journal_count': r[8],
+            }
+            for r in cur.fetchall()
+        ]
+    finally:
+        conn.close()

@@ -246,3 +246,178 @@ class LedgerMixin:
         messagebox.showinfo("Backfill complete", msg)
         if hasattr(self, '_tb_reload'):
             self._tb_reload()
+
+    # --- Period close --------------------------------------------------
+
+    def create_period_close_tab(self):
+        """Period close & lock tab — admin-only.
+
+        Lists every gl_period with status (open/closed/locked), the count
+        of journals posted into it, and per-row actions to close, reopen
+        (closed only), or lock. Posting into a closed/locked period is
+        blocked at the ledger layer (PeriodClosedError); this tab is the
+        UI for triggering those state transitions.
+        """
+        frame = tk.Frame(self.content_frame, bg='white')
+        self.tab_frames['period_close'] = frame
+
+        toolbar = ttk.Frame(frame)
+        toolbar.pack(fill='x', padx=10, pady=10)
+        ttk.Label(
+            toolbar,
+            text=_("finance_gui.ledger.period_close_title", default="🔒 Period Close & Lock"),
+            font=('Arial', 14, 'bold'),
+        ).pack(side='left')
+
+        # Table
+        table_frame = ttk.Frame(frame)
+        table_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        columns = ('PeriodID', 'FY', 'P#', 'Start', 'End', 'Status', 'Journals',
+                   'ClosedAt', 'ClosedBy')
+        tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=18)
+        widths = {'PeriodID': 70, 'FY': 60, 'P#': 40, 'Start': 100, 'End': 100,
+                  'Status': 80, 'Journals': 80, 'ClosedAt': 150, 'ClosedBy': 100}
+        anchors = {'PeriodID': 'center', 'FY': 'center', 'P#': 'center',
+                   'Start': 'center', 'End': 'center', 'Status': 'center',
+                   'Journals': 'e', 'ClosedAt': 'w', 'ClosedBy': 'w'}
+        for c in columns:
+            tree.heading(c, text=c)
+            tree.column(c, width=widths[c], anchor=anchors[c])
+        vsb = ttk.Scrollbar(table_frame, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=vsb.set)
+        tree.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
+        # Action buttons (operate on selected row)
+        action_frame = ttk.Frame(frame)
+        action_frame.pack(fill='x', padx=10, pady=5)
+
+        def _selected_period():
+            sel = tree.selection()
+            if not sel:
+                messagebox.showwarning(
+                    _("common.warning", default="Warning"),
+                    _("finance_gui.ledger.no_period_selected",
+                      default="Select a period row first."),
+                )
+                return None, None
+            values = tree.item(sel[0])['values']
+            return int(values[0]), values[5]  # period_id, status
+
+        def _resolve_user():
+            try:
+                from education_system.university_system.infrastructure.shared_context import get_auth
+                auth = get_auth()
+                if auth and getattr(auth, 'current_user', None):
+                    return auth.current_user.get('username', 'admin')
+            except Exception:
+                pass
+            return 'admin'
+
+        def reload_periods(*_a):
+            from education_system.university_system.modules.domain.finance.ledger import list_periods
+            for iid in tree.get_children():
+                tree.delete(iid)
+            try:
+                rows = list_periods()
+            except Exception as e:
+                messagebox.showerror("Error", f"Failed to load periods: {e}")
+                return
+            for r in rows:
+                tag = r['status']  # open/closed/locked → tag for color
+                tree.insert('', 'end', values=(
+                    r['period_id'], r['fiscal_year'], r['period_no'],
+                    r['start_date'], r['end_date'], r['status'],
+                    r['journal_count'],
+                    r['closed_at'] or '', r['closed_by'] or '',
+                ), tags=(tag,))
+            tree.tag_configure('open', background='white')
+            tree.tag_configure('closed', background='#fff8e1')   # amber
+            tree.tag_configure('locked', background='#ffebee')   # red
+
+        def close_action():
+            from education_system.university_system.modules.domain.finance.ledger import close_period
+            from education_system.university_system.modules.domain.finance.ledger.periods import PeriodStateError
+            pid, status = _selected_period()
+            if pid is None:
+                return
+            if status != 'open':
+                messagebox.showwarning("Cannot close", f"Period status is '{status}'; only 'open' periods can be closed.")
+                return
+            if not messagebox.askyesno("Confirm close",
+                                      f"Close period {pid}?\n\nPosting into this period "
+                                      "will be rejected until it is reopened."):
+                return
+            try:
+                close_period(pid, closed_by=_resolve_user())
+            except (PeriodStateError, Exception) as e:
+                messagebox.showerror("Close failed", str(e))
+                return
+            messagebox.showinfo("Closed", f"Period {pid} is now closed.")
+            reload_periods()
+
+        def reopen_action():
+            from education_system.university_system.modules.domain.finance.ledger import reopen_period
+            from education_system.university_system.modules.domain.finance.ledger.periods import PeriodStateError
+            pid, status = _selected_period()
+            if pid is None:
+                return
+            if status == 'locked':
+                messagebox.showwarning("Cannot reopen",
+                                      f"Period {pid} is locked. Only superseding journals in a "
+                                      "later period can correct entries here.")
+                return
+            if status == 'open':
+                return
+            if not messagebox.askyesno("Confirm reopen",
+                                      f"Reopen period {pid}? Posting will be allowed again."):
+                return
+            try:
+                reopen_period(pid)
+            except (PeriodStateError, Exception) as e:
+                messagebox.showerror("Reopen failed", str(e))
+                return
+            reload_periods()
+
+        def lock_action():
+            from education_system.university_system.modules.domain.finance.ledger import lock_period
+            pid, status = _selected_period()
+            if pid is None:
+                return
+            if status == 'locked':
+                return
+            if not messagebox.askyesno("Confirm lock",
+                                      f"Lock period {pid}?\n\nThis cannot be reversed. After "
+                                      "locking, only superseding journals in a later period can "
+                                      "correct entries."):
+                return
+            try:
+                lock_period(pid, locked_by=_resolve_user())
+            except Exception as e:
+                messagebox.showerror("Lock failed", str(e))
+                return
+            messagebox.showinfo("Locked", f"Period {pid} is now locked.")
+            reload_periods()
+
+        ttk.Button(action_frame, text=_("finance_gui.ledger.close_period", default="Close"),
+                   command=close_action).pack(side='left', padx=5)
+        ttk.Button(action_frame, text=_("finance_gui.ledger.reopen_period", default="Reopen"),
+                   command=reopen_action).pack(side='left', padx=5)
+        ttk.Button(action_frame, text=_("finance_gui.ledger.lock_period", default="Lock"),
+                   command=lock_action).pack(side='left', padx=5)
+        ttk.Button(action_frame, text=_("common.refresh", default="Refresh"),
+                   command=reload_periods).pack(side='right', padx=5)
+
+        # Help text
+        help_frame = ttk.Frame(frame)
+        help_frame.pack(fill='x', padx=10, pady=(0, 10))
+        ttk.Label(
+            help_frame,
+            text=("Open → Closed: posting into the period is rejected. Reversible by admin.\n"
+                  "Closed → Locked: stronger close (e.g. after external audit). Cannot be reversed."),
+            foreground='#666',
+        ).pack(side='left')
+
+        reload_periods()

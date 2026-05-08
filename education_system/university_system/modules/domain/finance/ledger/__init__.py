@@ -20,7 +20,7 @@ from education_system.university_system.modules.domain.finance.ledger.posting im
     backfill, JournalUnbalancedError, PeriodClosedError, AccountNotFoundError,
 )
 from education_system.university_system.modules.domain.finance.ledger.periods import (
-    close_period, lock_period, reopen_period,
+    close_period, lock_period, reopen_period, list_periods,
 )
 from education_system.university_system.modules.domain.finance.ledger.reports import trial_balance
 from education_system.university_system.modules.domain.finance.ledger.hooks import (
@@ -30,7 +30,7 @@ from education_system.university_system.modules.domain.finance.ledger.hooks impo
 __all__ = [
     'init_ledger',
     'post_payment', 'post_refund', 'post_fee_assignment', 'post_payroll_run', 'backfill',
-    'close_period', 'lock_period', 'reopen_period',
+    'close_period', 'lock_period', 'reopen_period', 'list_periods',
     'trial_balance',
     'notify_ledger', 'LEDGER_HOOK_FAILURES',
     'JournalUnbalancedError', 'PeriodClosedError', 'AccountNotFoundError',

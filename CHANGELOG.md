@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.119 — 2026-05-08](#8117119---2026-05-08)
 - [8.117.118 — 2026-05-08](#8117118---2026-05-08)
 - [8.117.117 — 2026-05-08](#8117117---2026-05-08)
 - [8.117.116 — 2026-05-08](#8117116---2026-05-08)
@@ -345,6 +346,102 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.119] — 2026-05-08
+
+### Added — Period Close & Lock GUI tab + Bank Reconciliation MVP
+
+Two related audit-controls features.
+
+**1. Period Close & Lock GUI tab.** The state machine
+(`open` → `closed` → `locked`) was already implemented in
+`ledger/periods.py` since 8.117.110, but had no UI. Added a
+🔒 Period Close tab (admin-only) that lists every `gl_period` with
+status, journal count, and per-row Close / Reopen / Lock actions.
+Existing PeriodClosedError on posting attempts at the ledger layer
+already enforces the rules; this tab is the operator surface.
+
+`list_periods(fiscal_year=None)` added to `ledger/periods.py` for the
+GUI to query without raw SQL. Tag-coloured rows (open=white,
+closed=amber, locked=red).
+
+**2. Bank reconciliation MVP.** New module
+`finance/bank_rec/` (`schema.py`, `service.py`) plus a 🏦 Bank Rec
+GUI tab. Imports a CSV statement, auto-matches lines against
+`payments` and `unified_refunds`, surfaces unmatched lines as an
+exception queue.
+
+Schema (idempotent `init_bank_rec()`):
+
+```
+bank_statements        statement_id, account_name, period dates,
+                       opening_/closing_balance, imported_at, imported_by,
+                       source_file
+bank_statement_lines   line_id, statement_id, line_no, txn_date, amount,
+                       description, reference,
+                       status (unmatched | matched_auto | matched_manual | discarded),
+                       matched_payment_id | matched_refund_id, matched_at, matched_by,
+                       notes
+```
+
+Auto-match algorithm (deliberately conservative):
+
+- **Date window**: ±3 days around the bank line's date
+- **Amount**: exact match (within 0.5p)
+- **Direction**: positive amount → look in `payments`, negative → look
+  in `unified_refunds`
+- **Already-matched filter**: candidates already paired to another bank
+  line are excluded — prevents one payment matching multiple bank lines
+- **Tiebreaker**: when multiple candidates exist, the bank line's
+  `reference` text is matched against `transaction_id` /
+  `payment_reference` / `notes` (or `refund_reference` / `notes`); a
+  match is recorded only when exactly ONE candidate is identified
+- **Otherwise**: ambiguous → left for operator to resolve manually
+
+CSV import accepts `date` (ISO YYYY-MM-DD plus a few common UK
+formats), `amount` (signed; `£` and `,` stripped), `description`,
+`reference`. Other columns are ignored.
+
+GUI tab actions:
+
+- Init Schema (idempotent — for first-time setup)
+- Import CSV… (file picker → account name → import + show summary)
+- Auto-match (runs over selected statement)
+- Per-row: Manual match (operator types payment_id / refund_id),
+  Unmatch (reset), Discard (mark non-relevant — bank fees, interest)
+- Status filter dropdown (defaults to `unmatched` — the exception queue)
+- Colour-coded rows: amber=unmatched, green=auto-matched, blue=manually
+  matched, grey=discarded
+
+Live-DB smoke test: imported a 2-line CSV against the existing 3
+payments in the dev DB. £500 line auto-matched to payment_id 2; the
+£1.50 fee correctly stayed unmatched. End-to-end works.
+
+**Test coverage.** 12 new tests in `test_bank_rec.py` cover: basic
+import + currency-symbol parsing + missing-column handling; unique
+match; ambiguous → no match (left for review); reference-based
+tiebreaker; refund matching via negative amounts; outside-window
+non-match; manual-match → unmatch round-trip; manual-match input
+validation; discard; already-matched payments aren't double-claimed.
+Total ledger + bank-rec suite is now 50/50 passing.
+
+**Out of scope this change** (deliberate):
+
+- No GL postings from bank reconciliation. The matcher confirms that
+  the bank's view agrees with the operational tables — it doesn't
+  create new journal entries. This is correct behaviour; a "bank
+  clearing" account would only be needed if we were using accrual
+  basis with a deferred-cash pattern, which we aren't.
+- No OFX / MT940 / Open Banking API import — CSV only. Most UK banks
+  export CSV; the wrapping for fancier formats can come later.
+- No fuzzy reference matching beyond simple substring. Levenshtein /
+  reference-cleaning are easy adds when needed.
+- Statement closing-balance reconciliation isn't enforced — the
+  `bank_statements` table has the columns but the matcher doesn't
+  check `Σ(matched lines) == closing - opening`. A useful sanity
+  check to add once a statement gets fully reconciled.
 
 ---
 
