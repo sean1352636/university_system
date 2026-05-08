@@ -78,6 +78,16 @@ class _MessagingMixin:
             return False
 
         def _send_message_op(cursor):
+            # DM block check: refuse if the recipient has blocked the sender.
+            sender_id = self.auth.current_user['id']
+            cursor.execute(
+                'SELECT 1 FROM dm_blocks WHERE user_id = ? AND blocked_user_id = ?',
+                (recipient_id, sender_id),
+            )
+            if cursor.fetchone():
+                log_event('error', f"DM blocked: recipient {recipient_id} has blocked sender")
+                return False
+
             # Validate recipient exists (check legacy users table, fall back to shared auth)
             cursor.execute('SELECT id, email, username FROM users WHERE id = ?', (recipient_id,))
             recipient_data = cursor.fetchone()

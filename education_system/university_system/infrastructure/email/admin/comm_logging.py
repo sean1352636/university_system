@@ -109,6 +109,30 @@ class _LoggingMixin:
                     # Don't fail the main operation for enhanced logging issues
                     logger.warning(f"Enhanced communication logging failed: {e}")
 
+            # Mirror into the central audit trail so chat moderation
+            # actions show up in audit_log_viewer_gui alongside the rest
+            # of the system. Best-effort: never propagate failures.
+            try:
+                from education_system.university_system.infrastructure.security.audit_trail import (
+                    AuditLogger,
+                )
+                username = None
+                cur_user = getattr(getattr(self, 'auth', None), 'current_user', None)
+                if isinstance(cur_user, dict):
+                    username = cur_user.get('username')
+                AuditLogger().log(
+                    action=action_type,
+                    resource_type='chat',
+                    resource_id=None,
+                    user_id=user_id,
+                    username=username,
+                    details={'description': action_details},
+                    function_name='_log_communication_action',
+                    module_name='communication_dashboard',
+                )
+            except Exception as e:
+                logger.debug(f"Central audit-trail mirror failed: {e}")
+
             return result
 
         except Exception as e:

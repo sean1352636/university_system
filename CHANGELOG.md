@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.123 — 2026-05-08](#8117123---2026-05-08)
 - [8.117.122 — 2026-05-08](#8117122---2026-05-08)
 - [8.117.121 — 2026-05-08](#8117121---2026-05-08)
 - [8.117.120 — 2026-05-08](#8117120---2026-05-08)
@@ -351,6 +352,191 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.123] — 2026-05-08
+
+### Added — chat-room overhaul: real-time UX, moderation, safety,
+academic features, and cross-system integrations
+
+A very large batch landed on the existing university chat
+(`shared/gui/email/email_gui/chat_*.py` and
+`infrastructure/email/admin/chat.py`). Schema migrations are
+all additive (`safe_alter_table_add_column`); new tables coexist
+with the existing `chat_messages` / `chat_rooms` / `chat_room_members`
+ones. The chat window itself was repackaged into a 1400×900
+`PanedWindow` layout with a live members sidebar and a richer
+context-menu-driven UX.
+
+**Real-time and rendering**
+
+- 2 s polling loop: incremental fetch via new
+  `get_chat_messages_since(room_id, since_message_id)`; keeps the
+  message cache (`_messages_by_id`) coherent without re-rendering.
+- Typing indicators: `chat_typing` table; `set_chat_typing` /
+  `clear_chat_typing` / `get_chat_typing_users(max_age_seconds=5)`;
+  throttled outbound ping every 2 s.
+- Presence: `chat_presence` heartbeat (10 s interval, 30 s online
+  window); header shows `● n/m online`; members sidebar marks each
+  row online/offline with last-seen.
+- Read receipts and unread counts: `chat_message_reads`;
+  `mark_chat_messages_read` / `get_chat_message_readers` /
+  `get_unread_chat_counts`; My Rooms tree picked up an Unread column.
+- Smart auto-scroll (only when the user was already at the bottom).
+- `@mention` highlighting + bell on self-mention; sender names and
+  mentions are now click-targets that open the new
+  `UserProfileDialog` (joined view of `users` + `staff_profiles`).
+
+**Per-message features**
+
+- Edit / soft-delete own messages (`edit_chat_message`,
+  `delete_chat_message`); `(edited)` indicator and `[deleted message]`
+  rendering.
+- Reply / quote-reply: `send_chat_message(reply_to_id=…)` plus a
+  reply-preview JOIN in the GET queries; inline `↪` quote line.
+- Reactions (`👍 ❤️ 🎉 😂 ✅ ❓`): `chat_message_reactions` table,
+  `add_chat_reaction` / `remove_chat_reaction` /
+  `get_chat_reactions_for_messages`; chips rendered under each
+  message, mine highlighted.
+- Pin / unpin: `pin_chat_message` + `get_pinned_messages`; ★ on the
+  header line and a Pinned panel.
+- Copy text / Copy link (internal `chat://room/<id>/message/<id>`).
+- Reporting + safeguarding escalation:
+  `report_chat_message(message_id, reason, escalate_safeguarding=False)`
+  optionally creates a `safeguarding_submissions` row and stores its
+  id on `chat_reports.safeguarding_submission_id`. The Reports panel
+  surfaces the linked case and opens it in an inline read-only view.
+
+**Composer**
+
+- Multi-line `tk.Text` input (Enter sends, Shift+Enter newline,
+  Ctrl+Enter also sends).
+- Markdown rendering: `**bold**`, `*italic*`, inline `` `code` ``,
+  triple-backtick code blocks, auto-linked URLs with an inline
+  `[domain]` preview badge.
+- File attachments: `send_chat_message` accepts
+  `attachment_path/name/mime/size`; clickable `📎` line opens via
+  `webbrowser.open("file://…")`.
+- In-room search bar (highlights matches with `search_hit` tag);
+  cross-room "Search All Rooms" toolbar dialog driven by
+  `search_chat_messages(query, room_id=None)`.
+
+**Room administration**
+
+- `chat_rooms` extended with `archived_at/by`, `category`, `icon`,
+  `colour`, `linked_course_code`, `linked_assignment_group_id`,
+  `linked_entity_type/id` (generic), `announcement_mode`,
+  `oh_starts_at`/`oh_ends_at`, `retention_days`, `slow_mode_seconds`,
+  `is_encrypted`.
+- `chat_room_members` extended with `is_banned`, `muted_until`,
+  `is_favourite`.
+- New methods: `update_chat_room` (rename, type, category, icon,
+  colour, max_members, OH window, announcement-only, retention,
+  slow-mode, encryption), `archive_chat_room`, `delete_chat_room`
+  (creator-only hard delete with cascade), `set_room_admin`,
+  `kick_room_member`, `ban_room_member`, `mute_room_member`,
+  `transfer_room_ownership`, `set_favourite_room`,
+  `list_chat_categories`.
+- `send_chat_message` enforces ban + mute + announcement-mode +
+  office-hours + slow-mode + filter wordlist (admins exempt where
+  appropriate).
+- My Rooms tree restructured: client-side filter, category groups
+  (★ Favourites first, then categories alphabetical, "Other" last),
+  per-room `colour` background and `icon` prefix, right-click
+  context menu (Favourite, Edit Room, Manage Members, Audit Log,
+  Reports for this room, Purge expired, Archive, Delete).
+
+**Academic features**
+
+- `chat_polls` / `chat_poll_options` / `chat_poll_votes`: poll
+  messages with single- or multi-choice + optional close time;
+  inline rendering with clickable option lines and total-voter
+  count. New `PollComposerDialog`.
+- `chat_room_notes` (one document per room, with `version` for
+  optimistic locking): the **Notes** panel is a `RoomNotesDialog`
+  with idle auto-save (1.5 s), 5 s remote-refresh polling, an
+  aggressive locked-conflict mode (Reload remote / Keep mine), and
+  a side-by-side `NotesDiffDialog` (line-diff colours via
+  `difflib.SequenceMatcher`; click a remote line to copy across).
+- `chat_room_queue`: 🙋 Raise hand / ✋ Lower hand / `QueueDialog`
+  with admin-only Call Next; calling next now posts a system
+  `@username you're up — please join the conversation.` message
+  authored by a seeded **system bot user** (`users.service_account = 1`,
+  `is_active = 0`, `password_hash = '!locked!'`), discovered or
+  lazily created at first need against whatever `users`-table shape
+  the deployment has.
+- Course-linked rooms: `linked_course_code` + `Sync Course Rooms`
+  (auto-creates one room per module, joins enrolled students /
+  instructors); `📚 Module` button on course rooms shows a Module
+  Info dialog (description + upcoming assignments); `Post Due Dates`
+  button posts dedup'd `[due]` system messages.
+- `sync_assignment_group_room(group_id)` for group-project rooms.
+- Read-only **announcement mode** with banner.
+- **Office-hours** window guard (string-timestamp comparison) plus
+  a banner explaining open / not-yet-open / closed states.
+- Role badges on senders (`INSTRUCTOR`, `TA`, `ADMIN`, `STAFF`,
+  `STUDENT`) sourced from `users.role`; `@team:<dept>` mentions
+  rendered as a pill that opens a team-members popup against
+  `staff_profiles.department`.
+
+**Safety, compliance, GDPR**
+
+- `chat_filter_words` + default starter wordlist; `severity='block'`
+  refuses sends for non-admins, `'flag'` records into
+  `safeguarding_flags`.
+- `chat_reports`: report message / report user; ReportsDialog for
+  moderators (status filter, Resolve, "Open case file" deep link).
+- Audit log mirror — `_log_communication_action` now also writes to
+  the central `AuditLogger` (`infrastructure/security/audit_trail`)
+  so every chat moderation action shows in `audit_log_viewer_gui`.
+  Per-room `AuditLogDialog` retained as a focused view.
+- GDPR — `export_user_chat_history` produces a JSON snapshot
+  (messages, votes, reactions, memberships) the user can save;
+  `erase_user_chat_history` soft-deletes their messages and removes
+  reactions, votes, typing/presence rows. `GDPRChatDialog` exposes
+  both.
+- `retention_days` per room + `purge_expired_chat_messages` (admin).
+- At-rest encryption (per-room Fernet key in `chat_room_keys`):
+  enabling `is_encrypted=1` encrypts new content on write and the
+  GET queries `LEFT JOIN chat_room_keys` to decrypt on read.
+  Documented as a deterrent (key sits next to data).
+- `slow_mode_seconds` per room; per-recipient `dm_blocks` enforced
+  in the DM `send_message` path.
+
+**Cross-cutting integrations**
+
+- `notifications` hub: chat events (mentions, reports) push rows
+  into the existing `notifications` table. The insert is
+  PRAGMA-driven and adapts to the deployed shape — verified against
+  the strict university schema (`channel`, `priority` NOT NULL,
+  `metadata`/`source_system`) and the lighter primary-school schema
+  (`notification_type`, `link`).
+- Calendar from polls: poll options containing ISO date strings are
+  proposed as `events` rows (status `'tentative'`) automatically
+  on poll creation, plus a manual "Propose dates to calendar"
+  context-menu item.
+- `chat_launchers.py`: `open_chat_for_event/club/residence/advisor_oh`
+  helpers domain GUIs can drop in. Worked-example wiring landed in
+  `domain/academics/gui/academic_calendar/events_view.py` (Open chat
+  button on the manage-events screen).
+- Generic linkage primitive: `linked_entity_type` / `linked_entity_id`
+  on `chat_rooms` plus `get_or_create_linked_room(entity_type,
+  entity_id, ...)` so any future domain can attach a room without a
+  dedicated column.
+
+**Polish**
+
+- Window sizing: 1400×900 + `minsize(1200, 800)` per the project
+  convention.
+- Keyboard shortcuts: Esc closes, Ctrl+Enter sends, Ctrl+K opens
+  `RoomSwitcherDialog` (quick-find palette over joined rooms).
+- Members sidebar: replaced the popup messagebox with a resizable
+  `PanedWindow` pane that auto-refreshes on the existing poll loop.
+- Notification insert is dynamic per `PRAGMA table_info` — only
+  fills columns the deployed `notifications` table actually has.
+- Pre-existing bug fix: `invite_user` referenced an unimported
+  `search_users` symbol; now imports it lazily via
+  `infrastructure.email.admin`.
+
 
 ## [8.117.122] — 2026-05-08
 

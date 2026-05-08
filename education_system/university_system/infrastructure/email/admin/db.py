@@ -121,7 +121,22 @@ class _DbMixin:
             chat_room_column_definitions = [
                 ('max_members', 'INTEGER DEFAULT 50'),
                 ('is_active', 'INTEGER DEFAULT 1'),
-                ('description', 'TEXT')
+                ('description', 'TEXT'),
+                ('archived_at', 'TEXT'),
+                ('archived_by', 'INTEGER'),
+                ('category', 'TEXT'),
+                ('icon', 'TEXT'),
+                ('colour', 'TEXT'),
+                ('linked_course_code', 'TEXT'),
+                ('linked_assignment_group_id', 'INTEGER'),
+                ('announcement_mode', 'INTEGER DEFAULT 0'),
+                ('oh_starts_at', 'TEXT'),
+                ('oh_ends_at', 'TEXT'),
+                ('retention_days', 'INTEGER'),
+                ('slow_mode_seconds', 'INTEGER DEFAULT 0'),
+                ('is_encrypted', 'INTEGER DEFAULT 0'),
+                ('linked_entity_type', 'TEXT'),
+                ('linked_entity_id', 'TEXT'),
             ]
 
             # Use centralized SQL safety validation for column definitions
@@ -148,6 +163,24 @@ class _DbMixin:
                 FOREIGN KEY (user_id) REFERENCES users (id)
             )
             ''')
+
+            # Migrate chat_room_members with moderation/favourite columns
+            cursor.execute("PRAGMA table_info(chat_room_members)")
+            crm_columns = {row[1] for row in cursor.fetchall()}
+            crm_column_definitions = [
+                ('is_banned', 'INTEGER DEFAULT 0'),
+                ('muted_until', 'TEXT'),
+                ('is_favourite', 'INTEGER DEFAULT 0'),
+            ]
+            for column_name, definition in crm_column_definitions:
+                if column_name not in crm_columns:
+                    try:
+                        safe_alter_table_add_column("chat_room_members", column_name, definition, cursor.connection)
+                        log_event('info', f"Added missing column {column_name} to chat_room_members")
+                    except SQLIdentifierError as e:
+                        log_event('warning', f"Invalid column definition for {column_name}: {e}")
+                    except Exception as e:
+                        log_event('warning', f"Could not add column {column_name} to chat_room_members: {e}")
 
             # Chat Messages table
             cursor.execute('''
@@ -228,6 +261,250 @@ class _DbMixin:
                             log_event('warning', f"Could not migrate notification_preferences table: {e}")
             except Exception as e:
                 log_event('warning', f"Could not check notification_preferences schema: {e}")
+
+            # Migrate chat_messages with new columns (edit/delete/reply/pin/attach)
+            cursor.execute("PRAGMA table_info(chat_messages)")
+            chat_message_columns = {row[1] for row in cursor.fetchall()}
+            chat_message_column_definitions = [
+                ('edited_at', 'TEXT'),
+                ('is_deleted', 'INTEGER DEFAULT 0'),
+                ('reply_to_id', 'INTEGER'),
+                ('pinned_at', 'TEXT'),
+                ('pinned_by', 'INTEGER'),
+                ('attachment_path', 'TEXT'),
+                ('attachment_name', 'TEXT'),
+                ('attachment_mime', 'TEXT'),
+                ('attachment_size', 'INTEGER'),
+                ('flagged_at', 'TEXT'),
+                ('is_encrypted', 'INTEGER DEFAULT 0'),
+            ]
+            for column_name, definition in chat_message_column_definitions:
+                if column_name not in chat_message_columns:
+                    try:
+                        safe_alter_table_add_column("chat_messages", column_name, definition, cursor.connection)
+                        log_event('info', f"Added missing column {column_name} to chat_messages")
+                    except SQLIdentifierError as e:
+                        log_event('warning', f"Invalid column definition for {column_name}: {e}")
+                    except Exception as e:
+                        log_event('warning', f"Could not add column {column_name} to chat_messages: {e}")
+
+            # Reactions
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_message_reactions (
+                message_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                emoji TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (message_id, user_id, emoji),
+                FOREIGN KEY (message_id) REFERENCES chat_messages (id),
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+            ''')
+
+            # Polls (one row per poll-message)
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_polls (
+                message_id INTEGER PRIMARY KEY,
+                question TEXT NOT NULL,
+                multi_choice INTEGER DEFAULT 0,
+                closes_at TEXT,
+                FOREIGN KEY (message_id) REFERENCES chat_messages (id)
+            )
+            ''')
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_poll_options (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                message_id INTEGER NOT NULL,
+                label TEXT NOT NULL,
+                sort_order INTEGER DEFAULT 0,
+                FOREIGN KEY (message_id) REFERENCES chat_polls (message_id)
+            )
+            ''')
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_poll_votes (
+                option_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                voted_at TEXT NOT NULL,
+                PRIMARY KEY (option_id, user_id),
+                FOREIGN KEY (option_id) REFERENCES chat_poll_options (id),
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+            ''')
+
+            # Shared notes (one document per room)
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_room_notes (
+                room_id INTEGER PRIMARY KEY,
+                content TEXT NOT NULL DEFAULT '',
+                updated_at TEXT NOT NULL,
+                updated_by INTEGER,
+                version INTEGER NOT NULL DEFAULT 1,
+                FOREIGN KEY (room_id) REFERENCES chat_rooms (id)
+            )
+            ''')
+            # Migrate notes table if version column is missing
+            cursor.execute("PRAGMA table_info(chat_room_notes)")
+            if 'version' not in {row[1] for row in cursor.fetchall()}:
+                try:
+                    safe_alter_table_add_column(
+                        "chat_room_notes", "version",
+                        "INTEGER NOT NULL DEFAULT 1",
+                        cursor.connection,
+                    )
+                except Exception:
+                    pass
+
+            # Profanity / safeguarding wordlist
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_filter_words (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                word TEXT NOT NULL UNIQUE,
+                severity TEXT NOT NULL DEFAULT 'flag',
+                created_at TEXT NOT NULL
+            )
+            ''')
+
+            # Safeguarding flags emitted when a filter word matches
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS safeguarding_flags (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                message_id INTEGER NOT NULL,
+                room_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                matched_word TEXT NOT NULL,
+                severity TEXT NOT NULL DEFAULT 'flag',
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (message_id) REFERENCES chat_messages (id),
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+            ''')
+
+            # Reports (a user reporting a message or another user)
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                reporter_id INTEGER NOT NULL,
+                target_message_id INTEGER,
+                target_user_id INTEGER,
+                room_id INTEGER,
+                reason TEXT,
+                status TEXT NOT NULL DEFAULT 'open',
+                created_at TEXT NOT NULL,
+                resolved_by INTEGER,
+                resolved_at TEXT,
+                resolution_note TEXT,
+                FOREIGN KEY (reporter_id) REFERENCES users (id)
+            )
+            ''')
+
+            # Migrate chat_reports with safeguarding link
+            cursor.execute("PRAGMA table_info(chat_reports)")
+            report_columns = {row[1] for row in cursor.fetchall()}
+            if 'safeguarding_submission_id' not in report_columns:
+                try:
+                    safe_alter_table_add_column(
+                        "chat_reports", "safeguarding_submission_id", "INTEGER",
+                        cursor.connection,
+                    )
+                except Exception:
+                    pass
+
+            # At-rest encryption keys (deterrent — DB-local; not E2E)
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_room_keys (
+                room_id INTEGER PRIMARY KEY,
+                key_b64 TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                FOREIGN KEY (room_id) REFERENCES chat_rooms (id)
+            )
+            ''')
+
+            # Migrate users with a service_account flag (additive; safe).
+            try:
+                cursor.execute("PRAGMA table_info(users)")
+                user_cols = {row[1] for row in cursor.fetchall()}
+                if user_cols and 'service_account' not in user_cols:
+                    safe_alter_table_add_column(
+                        "users", "service_account",
+                        "INTEGER DEFAULT 0", cursor.connection,
+                    )
+            except Exception as e:
+                log_event('warning', f"Could not add service_account to users: {e}")
+
+            # Idempotent system-generated posts (e.g. auto-posted assignment due dates)
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_system_posts (
+                room_id INTEGER NOT NULL,
+                kind TEXT NOT NULL,
+                key TEXT NOT NULL,
+                message_id INTEGER,
+                posted_at TEXT NOT NULL,
+                PRIMARY KEY (room_id, kind, key),
+                FOREIGN KEY (room_id) REFERENCES chat_rooms (id)
+            )
+            ''')
+
+            # DM block list
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS dm_blocks (
+                user_id INTEGER NOT NULL,
+                blocked_user_id INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (user_id, blocked_user_id),
+                FOREIGN KEY (user_id) REFERENCES users (id),
+                FOREIGN KEY (blocked_user_id) REFERENCES users (id)
+            )
+            ''')
+
+            # Office-hours queue ("raise hand")
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_room_queue (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                room_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                joined_at TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'waiting',
+                FOREIGN KEY (room_id) REFERENCES chat_rooms (id),
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+            ''')
+
+            # Chat read receipts / unread tracking
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_message_reads (
+                user_id INTEGER NOT NULL,
+                room_id INTEGER NOT NULL,
+                last_read_message_id INTEGER NOT NULL DEFAULT 0,
+                last_read_at TEXT NOT NULL,
+                PRIMARY KEY (user_id, room_id),
+                FOREIGN KEY (room_id) REFERENCES chat_rooms (id),
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+            ''')
+
+            # Chat typing indicator (ephemeral)
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_typing (
+                user_id INTEGER NOT NULL,
+                room_id INTEGER NOT NULL,
+                started_at TEXT NOT NULL,
+                PRIMARY KEY (user_id, room_id),
+                FOREIGN KEY (room_id) REFERENCES chat_rooms (id),
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+            ''')
+
+            # Chat presence (heartbeat per user per room)
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_presence (
+                user_id INTEGER NOT NULL,
+                room_id INTEGER NOT NULL,
+                last_seen_at TEXT NOT NULL,
+                PRIMARY KEY (user_id, room_id),
+                FOREIGN KEY (room_id) REFERENCES chat_rooms (id),
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+            ''')
 
             # Communication Log table (for audit purposes)
             cursor.execute('''

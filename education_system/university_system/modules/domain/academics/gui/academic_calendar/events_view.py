@@ -37,6 +37,9 @@ class EventsViewMixin:
                   command=self._show_add_event).pack(side=tk.LEFT, padx=5)
         ttk.Button(action_frame, text=_("academic_calendar.buttons.refresh"),
                   command=self._refresh_manage_events).pack(side=tk.LEFT, padx=5)
+        ttk.Button(action_frame, text=_("academic_calendar.buttons.open_chat",
+                                        default="Open chat"),
+                  command=self._open_event_chat).pack(side=tk.LEFT, padx=5)
 
         # Search frame
         search_frame = ttk.Frame(self.content_area)
@@ -763,4 +766,40 @@ Academic Calendar System"""
     def _refresh_manage_events(self):
         """Refresh events management"""
         self._load_events_data()
+
+    def _open_event_chat(self):
+        """Open (or create) the chat room linked to the selected event."""
+        sel = self.events_tree.selection() if hasattr(self, 'events_tree') else ()
+        if not sel:
+            from tkinter import messagebox
+            messagebox.showwarning("Open chat",
+                                   "Select an event first.")
+            return
+        item = self.events_tree.item(sel[0])
+        # Tree text holds the event name; the ID column is values[0].
+        event_name = item.get('text') or 'Event'
+        try:
+            event_id = item.get('values', [None])[0]
+        except Exception:
+            event_id = None
+        if not event_id:
+            from tkinter import messagebox
+            messagebox.showerror("Open chat", "Could not determine event id.")
+            return
+        try:
+            from education_system.university_system.infrastructure.email.admin import (
+                CommunicationDashboard,
+            )
+            from education_system.university_system.modules.shared.gui.email.email_gui.chat_launchers import (
+                open_chat_for_event,
+            )
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Open chat", f"Chat module unavailable: {e}")
+            return
+        dashboard = CommunicationDashboard(
+            auth=getattr(self, 'auth_manager', None) or getattr(self, 'auth', None),
+        )
+        open_chat_for_event(self.root if hasattr(self, 'root') else None,
+                            dashboard, event_id, event_name)
 
