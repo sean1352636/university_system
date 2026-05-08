@@ -184,6 +184,14 @@ def record_payment_to_finance(
 
         logger.info(f"Recorded payment to finance: {transaction_source} - {transaction_ref} - \u00a3{amount} (Payment ID: {payment_id})")
 
+        # Auto-post to GL (no-op if ledger not initialised; never raises)
+        if status == 'completed':
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('payment', payment_id, posted_by=created_by or 'auto')
+            except Exception:
+                logger.exception("ledger hook failed for payment %s", payment_id)
+
         return payment_id
 
     except sqlite3.Error as e:
@@ -269,6 +277,13 @@ def record_refund_to_finance(
             refund_id = cursor.lastrowid
 
         logger.info(f"Recorded refund to unified_refunds: {transaction_source} - {transaction_ref} - \u00a3{refund_amount} (Refund ID: {refund_id})")
+
+        # Auto-post to GL \u2014 this helper inserts with status='processed', so cash has moved.
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('refund', refund_id, posted_by=requested_by or 'auto')
+        except Exception:
+            logger.exception("ledger hook failed for refund %s", refund_id)
 
         return refund_id
 

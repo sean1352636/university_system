@@ -365,6 +365,18 @@ class RefundsMixin:
                 conn.commit()
                 conn.close()
 
+                # Auto-post to GL when cash actually moves (cash basis).
+                # 'approved' is a workflow gate; the cash-out moment is 'processed' or 'completed'.
+                if new_status in ('processed', 'completed'):
+                    try:
+                        from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                        notify_ledger('refund', refund_id, posted_by=username)
+                    except Exception:
+                        import logging
+                        logging.getLogger(__name__).exception(
+                            "ledger hook failed for refund %s", refund_id,
+                        )
+
                 email_sent = False
                 if refund_row:
                     sid, amt = refund_row

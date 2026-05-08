@@ -23,11 +23,15 @@ from education_system.university_system.modules.domain.finance.ledger.periods im
     close_period, lock_period, reopen_period,
 )
 from education_system.university_system.modules.domain.finance.ledger.reports import trial_balance
+from education_system.university_system.modules.domain.finance.ledger.hooks import (
+    notify_ledger, LEDGER_HOOK_FAILURES,
+)
 
 __all__ = [
     'init_ledger',
     'post_payment', 'post_refund', 'post_fee_assignment', 'backfill',
     'close_period', 'lock_period', 'reopen_period',
     'trial_balance',
+    'notify_ledger', 'LEDGER_HOOK_FAILURES',
     'JournalUnbalancedError', 'PeriodClosedError', 'AccountNotFoundError',
 ]

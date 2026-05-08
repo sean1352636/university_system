@@ -124,6 +124,16 @@ class FeeAssignmentMixin:
                 fee_id = cursor.lastrowid
                 conn.commit()
 
+                # Auto-post AR + revenue to GL (no-op if ledger not initialised; never raises)
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('fee_assignment', fee_id, posted_by='gui')
+                except Exception:
+                    import logging
+                    logging.getLogger(__name__).exception(
+                        "ledger hook failed for fee_assignment %s", fee_id,
+                    )
+
                 messagebox.showinfo(_("common.success"), _("expense_manager.messages.fee_assigned_success", fee_id=fee_id))
                 dialog.destroy()
                 self.update_status(_("expense_manager.status.fee_assigned_status", student_id=student_id))

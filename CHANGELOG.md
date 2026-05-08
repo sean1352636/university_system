@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.111 — 2026-05-08](#8117111---2026-05-08)
 - [8.117.110 — 2026-05-08](#8117110---2026-05-08)
 - [8.117.109 — 2026-05-08](#8117109---2026-05-08)
 - [8.117.108 — 2026-05-07](#8117108---2026-05-07)
@@ -337,6 +338,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.111] — 2026-05-08
+
+### Added — Auto-posting hooks: operational writes now flow into the General Ledger automatically
+
+8.117.110 added the GL but left finance staff needing to click "Backfill
+from Ops" before new payments and refunds appeared in the trial balance.
+This change wires four hook points so the GL stays current automatically.
+
+New module: `finance/ledger/hooks.py` — exposes `notify_ledger(source_type,
+source_id, posted_by='auto')`. The hook is **never allowed to raise**: a
+posting failure must not break the operational write path. Failures are
+logged and surface in `LEDGER_HOOK_FAILURES` (bounded list, 50 entries)
+for tests and a future health indicator. The hook also silently no-ops
+when `gl_journals` doesn't exist, so deployments without the ledger
+initialised continue working unchanged.
+
+Hook sites (each additionally wrapped in try/except + logger so an
+import-time failure also can't break the write):
+
+| Site | Fires when | Posted source |
+|------|-----------|---------------|
+| `shared/utils/finance_integration.py:record_payment_to_finance` | After payment INSERT, only if `status='completed'` | `('payment', payment_id)` |
+| `shared/utils/finance_integration.py:record_refund_to_finance` | After refund INSERT (helper inserts with status `'processed'` — cash has moved) | `('refund', refund_id)` |
+| `finance/gui/finance/transaction_manager/refunds.py:update_refund_status` | When status flips to `'processed'` or `'completed'` | `('refund', refund_id)` |
+| `finance/gui/finance/expense_manager/fee_assignment.py` | After fee INSERT (AR established) | `('fee_assignment', fee_id)` |
+
+Posting timing follows the cash-basis decision in ADR 0013: refunds are
+not posted while in `pending` or `approved` status because no cash has
+moved. They post when the user transitions to `processed`/`completed`,
+which matches the writer fix already in 8.117.110 that populates
+`processed_by` on those same transitions.
+
+Idempotency is provided by the underlying `post_*` functions via
+`UNIQUE(source_type, source_id)` on `gl_journals`, so a duplicate hook
+firing — for example, two threads racing on the same write, or the same
+status transition fired twice — is harmless.
+
+Tests: `tests/cli/domain/finance/ledger/test_hooks.py` adds 7 hook tests,
+covering: hook never raises on unknown source_type, missing source_id,
+absent ledger schema; happy-path payment posting; idempotent re-posting;
+end-to-end check that calling `record_payment_to_finance` produces a
+journal; and that pending-status payments are skipped. Total ledger
+suite is now 26/26 passing. Existing 46-test finance test suite
+(test_finance_compliance + test_report_manager) re-checked clean.
+
+Still deferred — three subsystem-specific writers bypass the central
+helpers and INSERT directly into `payments` / `unified_refunds`:
+`charity_shop_gui/refunds.py`,
+`student_union_gui/payments/payment_processing.py`, and the train
+station CLI/GUI. Each needs an individual `notify_ledger` call after
+its commit. Out of scope for this change to keep the surface area
+auditable; worth a follow-up sweep.
 
 ---
 
