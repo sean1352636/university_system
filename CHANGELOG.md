@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.113 — 2026-05-08](#8117113---2026-05-08)
 - [8.117.112 — 2026-05-08](#8117112---2026-05-08)
 - [8.117.111 — 2026-05-08](#8117111---2026-05-08)
 - [8.117.110 — 2026-05-08](#8117110---2026-05-08)
@@ -339,6 +340,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.113] — 2026-05-08
+
+### Fixed — Notification preferences: three places hitting nonexistent columns
+
+The email admin path was producing a recurring warning:
+
+```
+Error checking notification preferences: no such column: np.email_notifications
+```
+
+Investigation found three files reading/writing notification preferences
+against schemas that don't match the actual database:
+
+- `infrastructure/email/admin/messaging.py` queried
+  `notification_preferences.email_notifications` /
+  `.message_notifications` — neither column exists on that table
+  (`notification_preferences` has the normalized
+  `notification_type` / `method` / `enabled` shape).
+- `infrastructure/email/admin/preferences.py` (`_PreferencesMixin`,
+  used by the email GUI's Notification Preferences dialog) read AND
+  wrote five nonexistent columns (`email_notifications`,
+  `message_notifications`, `announcement_notifications`,
+  `chat_notifications`, `daily_digest`) on the same wrong table.
+  Save and load both silently failed.
+- `modules/shared/gui/email/email_gui/utility_dialogs.py` save path
+  wrote to a `preferences` column on `user_preferences` (real column
+  is `preferences_json`), referenced an `updated_at` column that
+  doesn't exist, and used a hardcoded `user_id=1` instead of the
+  authenticated user.
+
+Fix: aligned all three on `user_preferences`, which is the table that
+actually has the columns these paths assumed.
+
+- `messaging.py` now reads `email_notifications` from `user_preferences`,
+  cast `recipient_id` to TEXT to match the column type, and removed
+  the secondary `message_notifications` check (per-message-type
+  toggles live inside `preferences_json` and aren't reliably
+  populated). Defaults to "send" when no row exists.
+- `preferences.py` rewritten: `get_/update_notification_preferences`
+  use the typed `email_notifications` column for the top-level flag
+  and `preferences_json` for the per-message-type keys, with
+  `ON CONFLICT(user_id)` upsert (PK is `user_id`). Pulls user from
+  `self.auth.current_user` instead of a hardcoded constant.
+  Defaults defined in one place; partial updates merge with defaults
+  rather than dropping unset keys.
+- `utility_dialogs.NotificationPreferencesDialog.save_preferences`
+  no longer does raw SQL — delegates to
+  `self.dashboard.update_notification_preferences(preferences)` so
+  the dialog and the dashboard share one storage path.
+
+Verified by end-to-end roundtrip: save → load preserves values; partial
+save preserves unchanged keys; double save (ON CONFLICT path) works;
+`messaging.py`'s query sees what `preferences.py` writes.
+
+The `notification_preferences` table is no longer touched by any of
+these paths.
 
 ---
 

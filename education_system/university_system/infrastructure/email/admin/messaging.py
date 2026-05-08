@@ -110,17 +110,20 @@ class _MessagingMixin:
             )
 
             try:
+                # Email opt-in lives on user_preferences.email_notifications.
+                # Per-message-type toggles live inside preferences_json (managed by the
+                # email GUI's Notification Preferences dialog) and aren't reliably
+                # populated for every user, so we treat the top-level email flag as
+                # the source of truth. Default to 'send' when no row exists.
                 cursor.execute('''
-                SELECT np.email_notifications, np.message_notifications
-                FROM notification_preferences np
-                WHERE np.user_id = ?
-                ''', (recipient_id,))
+                SELECT email_notifications
+                FROM user_preferences
+                WHERE user_id = ?
+                ''', (str(recipient_id),))
 
                 prefs = cursor.fetchone()
-                if prefs:
-                    email_notifications = prefs[0] if prefs[0] is not None else 1
-                    message_notifications = prefs[1] if prefs[1] is not None else 1
-                    should_notify = bool(email_notifications and message_notifications and recipient_email)
+                email_notifications = prefs[0] if prefs and prefs[0] is not None else 1
+                should_notify = bool(email_notifications and recipient_email)
             except Exception as notif_error:
                 log_event('warning', f"Error checking notification preferences: {notif_error}")
 

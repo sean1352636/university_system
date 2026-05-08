@@ -715,37 +715,24 @@ class NotificationPreferencesDialog:
             print(f"Error loading preferences: {e}")
 
     def save_preferences(self):
+        preferences = {
+            'email_notifications': self.email_var.get(),
+            'message_notifications': self.message_var.get(),
+            'announcement_notifications': self.announcement_var.get(),
+            'chat_notifications': self.chat_var.get(),
+            'daily_digest': self.digest_var.get(),
+        }
         try:
-            preferences = {
-                'email_notifications': self.email_var.get(),
-                'message_notifications': self.message_var.get(),
-                'announcement_notifications': self.announcement_var.get(),
-                'chat_notifications': self.chat_var.get(),
-                'daily_digest': self.digest_var.get()
-            }
-
-            # Save directly to database
-            from education_system.university_system.infrastructure.database.db import get_db_connection
-            import json
-
-            conn = get_db_connection()
-            cursor = conn.cursor()
-
-            # Save preferences (using user_id 1 as default)
-            user_id = 1  # Would need actual user ID from auth
-
-            # Store preferences as JSON string
-            prefs_json = json.dumps(preferences)
-
-            # Use INSERT OR REPLACE to handle existing records
-            cursor.execute('''
-                INSERT OR REPLACE INTO user_preferences (user_id, preferences, updated_at)
-                VALUES (?, ?, CURRENT_TIMESTAMP)
-            ''', (user_id, prefs_json))
-
-            conn.commit()
-            conn.close()
-
+            if not self.dashboard:
+                messagebox.showerror("Error", "No dashboard available to save preferences.")
+                return
+            ok = self.dashboard.update_notification_preferences(preferences)
+            if not ok:
+                messagebox.showerror(
+                    "Error",
+                    "Could not save preferences. You may need to be logged in.",
+                )
+                return
             messagebox.showinfo("Success", "Preferences saved successfully!")
             self.dialog.destroy()
         except Exception as e:
