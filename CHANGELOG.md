@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.122 — 2026-05-08](#8117122---2026-05-08)
 - [8.117.121 — 2026-05-08](#8117121---2026-05-08)
 - [8.117.120 — 2026-05-08](#8117120---2026-05-08)
 - [8.117.119 — 2026-05-08](#8117119---2026-05-08)
@@ -348,6 +349,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.122] — 2026-05-08
+
+### Added — ADRs 0014 (Accounts Payable) and 0015 (VAT)
+
+Closes the design-doc side of items 3 (AP) and 4 (VAT) from the
+Tier-1 gap survey. ADR 0015 documents what 8.117.118 already
+delivered for VAT and scopes the three remaining phases.
+
+- **`docs/adr/0014-accounts-payable.md`** (Proposed) — modified
+  cash basis approach (cash-basis posting below threshold, AP
+  recognition above), 8 new tables (`vendors`, `ap_purchase_orders`
+  + lines, `ap_goods_receipts` + lines, `ap_supplier_invoices` +
+  lines, `ap_payment_runs` + lines), 3-way match design, payment-run
+  workflow with segregation of duties, deliberate non-migration of
+  per-subsystem supplier tables (restaurant, cafe, etc. keep their
+  local registers — central AP is for institutional procurement
+  only). Estimated ~6 weeks for one engineer. 10 open questions
+  including capitalisation threshold, 3-way match tolerance,
+  Bacs/SEPA file format, multi-currency dependency on ADR 0016.
+- **`docs/adr/0015-vat.md`** (Proposed) — sequel to the data-layer
+  work delivered in 8.117.118 (`vat_rate` / `vat_amount` columns,
+  classification map, GL split). Three phases: (1) quarterly return
+  assembly producing 9-box figures from GL — ~1 week; (2) partial
+  exemption configuration + year-end adjustment journal generator —
+  ~1 week, depends on AP existing; (3) HMRC Making Tax Digital API
+  integration — ~3 weeks plus HMRC application calendar time. Plus
+  a classification refinement sweep with finance staff (research
+  grants, conferences, room hire, adult-ed, charity-shop margin
+  scheme).
+
+ADR numbering corrected — 0014 and 0015 now actually exist in
+`docs/adr/` (previously they were referenced as future work in
+8.117.117 and 8.117.118 changelog entries but the files weren't
+written). The full set of finance ADRs is now:
+
+| ADR | Topic | Status | Estimate |
+|-----|-------|--------|----------|
+| 0013 | General Ledger | Proposed (partially implemented since 8.117.110) | 3–5 weeks (mostly delivered) |
+| 0014 | Accounts Payable | Proposed | ~6 weeks |
+| 0015 | VAT | Proposed (data layer in 8.117.118) | ~5–6 weeks remaining + HMRC calendar |
+| 0016 | Multi-currency / FX | Proposed | ~3 weeks |
+| 0017 | Fixed Assets / Depreciation | Proposed | ~4 weeks |
+
+No code changes. The four remaining ADRs (0014, 0015 phases 1-3,
+0016, 0017) interact: AP needs FX for foreign suppliers; VAT
+phase 2 needs AP for input VAT to materialise; fixed assets needs
+AP for non-cash acquisition. Sensible build order if commissioned:
+**AP first** (unblocks several others), then **VAT phase 1** (no
+dependencies), then **fixed assets**, then **multi-currency**, then
+**VAT phase 2** (partial exemption), then **VAT phase 3** (MTD).
 
 ---
 
