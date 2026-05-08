@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.112 — 2026-05-08](#8117112---2026-05-08)
 - [8.117.111 — 2026-05-08](#8117111---2026-05-08)
 - [8.117.110 — 2026-05-08](#8117110---2026-05-08)
 - [8.117.109 — 2026-05-08](#8117109---2026-05-08)
@@ -338,6 +339,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.112] — 2026-05-08
+
+### Added — Auto-posting hooks for subsystem refund writers (charity shop, student union, train station)
+
+8.117.111 hooked the four central finance write paths but left three
+subsystem-specific writers that bypass the central helpers and INSERT
+directly into `unified_refunds`. This change wires them in.
+
+Hook sites added:
+
+- `services/gui/charity_shop_gui/refunds.py` — INSERT after a charity
+  shop transaction is refunded.
+- `domain/student_affairs/gui/student_union_gui/payments/payment_processing.py` —
+  `notify_finance_gui` INSERT for student union payment refunds.
+- `domain/mobility/gui/train_station_gui.py` — two refund methods (refund
+  to original method, refund to student account), each with a paired
+  local-DB + central-DB INSERT. Only the **central** INSERT is hooked,
+  using the central DB's `refund_id`, since `post_refund` reads through
+  the GL connection (DEFAULT_DB_PATH).
+- `services/cli/train_station_cli.py` — CLI refund INSERT.
+
+Each hook captures `cursor.lastrowid` after the INSERT, commits, then
+calls `notify_ledger('refund', refund_id, ...)`. All five sites are
+wrapped in try/except so a posting failure cannot break the operational
+write — same contract as the previous hook batch.
+
+Drive-by data-quality fix: each of these writers previously omitted the
+`status` column on insert, defaulting to `'pending'` per the schema —
+incorrect, because by the time the row is written the cash has already
+left (the original sale/payment status was updated to `'refunded'`).
+All five INSERTs now set `status='processed'` explicitly so the row's
+state reflects reality. This also means the new GL hooks fire correctly
+under the cash-basis posting timing rule (refunds post on cash-out, not
+while pending).
+
+After this change, every known operational refund write path in the
+codebase auto-posts to the GL. Combined with 8.117.111's payment and
+fee-assignment hooks, the trial balance now stays current without
+manual backfill.
+
+26/26 ledger tests still passing; no test changes needed (the hook
+contract was already covered by the helper-level tests).
 
 ---
 

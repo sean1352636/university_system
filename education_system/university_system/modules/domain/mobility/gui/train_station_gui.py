@@ -1390,14 +1390,27 @@ class TrainStationApp:
             conn.close()
 
             # Also create refund record in central database for reporting
+            central_refund_id = None
             with central_transaction() as conn:
                 cursor = conn.cursor()
 
                 cursor.execute("""
                     INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by)
-                    VALUES ('train', ?, 'ticket', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                    (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by, status)
+                    VALUES ('train', ?, 'ticket', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
                 """, (ticket_number, student_id, amount, refund_method, refund_ref, processed_by))
+                central_refund_id = cursor.lastrowid
+
+            # Auto-post to GL using the central DB's refund_id (cash has moved). Never raises.
+            if central_refund_id is not None:
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('refund', central_refund_id, posted_by=processed_by or 'train_station')
+                except Exception:
+                    import logging
+                    logging.getLogger(__name__).exception(
+                        "ledger hook failed for train refund %s", central_refund_id,
+                    )
 
             # Send receipt
             self.send_train_refund_receipt(student_id, amount, refund_method, refund_ref, ticket_number)
@@ -1477,15 +1490,17 @@ class TrainStationApp:
             conn.close()
 
             # Process in central database
+            central_refund_id = None
             with central_transaction() as conn:
                 cursor = conn.cursor()
 
                 # Create refund record in central database
                 cursor.execute("""
                     INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by)
-                    VALUES ('train', ?, 'ticket', ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?)
+                    (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by, status)
+                    VALUES ('train', ?, 'ticket', ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?, 'processed')
                 """, (ticket_number, student_id, amount, refund_ref, processed_by))
+                central_refund_id = cursor.lastrowid
 
                 # Add to student finance account
                 cursor.execute("""
@@ -1510,6 +1525,17 @@ class TrainStationApp:
                     VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
                 """, (account_id, student_id, amount, new_balance, f'Train ticket refund - {refund_ref}',
                       refund_ref, processed_by, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+            # Auto-post to GL using the central DB's refund_id (cash has moved). Never raises.
+            if central_refund_id is not None:
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('refund', central_refund_id, posted_by=processed_by or 'train_station')
+                except Exception:
+                    import logging
+                    logging.getLogger(__name__).exception(
+                        "ledger hook failed for train refund %s", central_refund_id,
+                    )
 
             # Send receipt
             self.send_train_refund_receipt(student_id, amount, 'student_account', refund_ref, ticket_number, new_balance)

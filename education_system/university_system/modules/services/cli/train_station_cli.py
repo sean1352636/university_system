@@ -267,13 +267,26 @@ def process_refund(ticket_number, amount, refund_method, student_id=None):
         current_user = get_current_user()
         refund_reference = "REF-" + ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
+        refund_row_id = None
         with get_connection() as conn:
-            conn.execute("""
+            cur = conn.execute("""
                 INSERT INTO unified_refunds
-                (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by)
-                VALUES ('train', ?, 'ticket', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                (source_type, reference_id, reference_type, student_id, amount, refund_method, refund_reference, refund_date, processed_by, status)
+                VALUES ('train', ?, 'ticket', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
             """, (ticket_number, student_id, amount, refund_method, refund_reference, current_user.get('name', 'System')))
+            refund_row_id = cur.lastrowid
             conn.commit()
+
+        # Auto-post to GL (cash has moved). Never raises.
+        if refund_row_id is not None:
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('refund', refund_row_id, posted_by=current_user.get('name', 'train_cli'))
+            except Exception:
+                import logging
+                logging.getLogger(__name__).exception(
+                    "ledger hook failed for train refund %s", refund_row_id,
+                )
         return refund_reference
     except Exception as e:
         print(f"Error processing refund: {e}")

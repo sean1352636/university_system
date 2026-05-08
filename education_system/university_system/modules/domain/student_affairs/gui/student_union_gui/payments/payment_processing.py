@@ -1025,6 +1025,7 @@ def notify_finance_gui(student_id: str, amount: float, method: str, refund_ref: 
         cursor = conn.cursor()
 
         # Insert into unified_refunds table
+        refund_row_id = None
         try:
             cursor.execute('''
                 INSERT INTO unified_refunds
@@ -1033,6 +1034,7 @@ def notify_finance_gui(student_id: str, amount: float, method: str, refund_ref: 
                 VALUES (?, 'student_union', 'payment', ?, ?, ?, date('now'),
                         'student_union', 'Student Union Payment Refund', 'completed')
             ''', (refund_ref, student_id, amount, method))
+            refund_row_id = cursor.lastrowid
             conn.commit()
             print(f"[Student Union] Refund recorded in unified_refunds: {refund_ref}")
         except sqlite3.Error:
@@ -1040,6 +1042,17 @@ def notify_finance_gui(student_id: str, amount: float, method: str, refund_ref: 
             pass
 
         conn.close()
+
+        # Auto-post to GL (cash has moved; status='completed' on insert). Never raises.
+        if refund_row_id is not None:
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('refund', refund_row_id, posted_by='student_union')
+            except Exception:
+                import logging
+                logging.getLogger(__name__).exception(
+                    "ledger hook failed for student_union refund %s", refund_row_id,
+                )
     except Exception as e:
         print(f"Error notifying finance GUI: {e}")
 
