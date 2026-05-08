@@ -63,29 +63,37 @@ class _AnnouncementsMixin:
             # Send email notifications to target audience
             if target_audience == 'all':
                 cursor.execute('''
-                SELECT u.id, u.email, np.email_notifications, np.announcement_notifications
+                SELECT u.id, u.email,
+                       COALESCE(up.email_notifications, 1) AS email_notifications,
+                       1 AS announcement_notifications
                 FROM users u
-                LEFT JOIN notification_preferences np ON u.id = np.user_id
+                LEFT JOIN user_preferences up ON CAST(u.id AS TEXT) = up.user_id
                 ''')
             elif target_audience == 'students':
                 cursor.execute('''
-                SELECT u.id, u.email, np.email_notifications, np.announcement_notifications
+                SELECT u.id, u.email,
+                       COALESCE(up.email_notifications, 1) AS email_notifications,
+                       1 AS announcement_notifications
                 FROM users u
-                LEFT JOIN notification_preferences np ON u.id = np.user_id
+                LEFT JOIN user_preferences up ON CAST(u.id AS TEXT) = up.user_id
                 WHERE u.role = 'student'
                 ''')
             elif target_audience == 'staff':
                 cursor.execute('''
-                SELECT u.id, u.email, np.email_notifications, np.announcement_notifications
+                SELECT u.id, u.email,
+                       COALESCE(up.email_notifications, 1) AS email_notifications,
+                       1 AS announcement_notifications
                 FROM users u
-                LEFT JOIN notification_preferences np ON u.id = np.user_id
+                LEFT JOIN user_preferences up ON CAST(u.id AS TEXT) = up.user_id
                 WHERE u.role IN ('staff', 'admin')
                 ''')
             elif target_audience == 'instructors':
                 cursor.execute('''
-                SELECT u.id, u.email, np.email_notifications, np.announcement_notifications
+                SELECT u.id, u.email,
+                       COALESCE(up.email_notifications, 1) AS email_notifications,
+                       1 AS announcement_notifications
                 FROM users u
-                LEFT JOIN notification_preferences np ON u.id = np.user_id
+                LEFT JOIN user_preferences up ON CAST(u.id AS TEXT) = up.user_id
                 WHERE u.role = 'instructor'
                 ''')
             else:

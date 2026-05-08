@@ -474,14 +474,19 @@ class BulkEmailDialog:
                 template_data = load_template(template_name)
                 if template_data:
                     # Load subject if provided
-                    if 'subject' in template_data and template_data['subject']:
+                    subject = template_data.get('subject') or ''
+                    if subject:
                         self.subject_entry.delete(0, tk.END)
-                        self.subject_entry.insert(0, template_data['subject'])
+                        self.subject_entry.insert(0, subject)
 
-                    # Load body if provided
-                    if 'body' in template_data and template_data['body']:
+                    # Body may be stored under any of body / body_html / body_text
+                    body = (template_data.get('body')
+                            or template_data.get('body_html')
+                            or template_data.get('body_text')
+                            or '')
+                    if body:
                         self.body_text.delete(1.0, tk.END)
-                        self.body_text.insert(1.0, template_data['body'])
+                        self.body_text.insert(1.0, body)
 
                     messagebox.showinfo("Success", f"Template '{template_name}' loaded successfully!")
                 else:

@@ -108,9 +108,13 @@ class TemplateEditor:
             try:
                 template_data = load_template(self.template_name)
                 if template_data:
+                    body = (template_data.get('body')
+                            or template_data.get('body_html')
+                            or template_data.get('body_text')
+                            or '')
                     self.name_entry.insert(0, self.template_name)
-                    self.subject_entry.insert(0, template_data['subject'])
-                    self.body_text.insert(1.0, template_data['body'])
+                    self.subject_entry.insert(0, template_data.get('subject', ''))
+                    self.body_text.insert(1.0, body)
             except Exception as e:
                 messagebox.showerror("Error", f"Error loading template: {e}")
 

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.114 — 2026-05-08](#8117114---2026-05-08)
 - [8.117.113 — 2026-05-08](#8117113---2026-05-08)
 - [8.117.112 — 2026-05-08](#8117112---2026-05-08)
 - [8.117.111 — 2026-05-08](#8117111---2026-05-08)
@@ -340,6 +341,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.114] — 2026-05-08
+
+### Fixed — More email GUI bugs uncovered by following 8.117.113's audit thread
+
+Continued the email-subsystem audit started in 8.117.113. Found three
+more real bugs by static-scanning every SQL reference in the email
+modules against the actual schema, plus checking the live app log.
+
+**1. Announcement broadcasts were silently sending to zero recipients.**
+`infrastructure/email/admin/announcements.py` — all four `send to all /
+students / staff / instructors` queries did
+`SELECT ... np.email_notifications, np.announcement_notifications
+FROM users JOIN notification_preferences np ...`. Neither column exists
+on `notification_preferences` (same shape as the bug fixed in 8.117.113),
+so every announcement raised `no such column: np.email_notifications`,
+the surrounding try/except swallowed it, and the recipient list was
+empty. Fix: join through `user_preferences` (with `CAST(u.id AS TEXT)`
+since `user_preferences.user_id` is TEXT) and use the typed
+`email_notifications` column with `COALESCE(..., 1)` so users without a
+preference row still get notified. Per-message-type opt-out
+(`announcement_notifications`) is stubbed to constant `1` because the
+schema doesn't have that toggle as a typed column and the value would
+otherwise live inside `preferences_json` — not worth a JSON parse here.
+
+**2. Group/role SMS recipient lookup queried nonexistent columns.**
+`modules/shared/gui/email/email_gui/sms_tab.py` —
+`get_recipients_for_group_or_role` did
+`SELECT phone, name FROM users WHERE role = ?`. The `users` table has
+neither `phone` nor `name` (it has `first_name`, `last_name`,
+`student_id`, etc.). Phone numbers actually live on the role-specific
+tables — `students.phone` for students, scattered across `staff`,
+`alumni`, etc. for the rest. The `try/except` at the bottom returned
+`[]` so every group/role SMS silently sent to nobody. Fix: join through
+`students` for `role='student'`; non-student roles return `[]`
+explicitly because the current schema has no canonical phone source for
+them; name composed via `first_name || ' ' || last_name` with
+`username` fallback.
+
+**3. Template loader raised `KeyError: 'body'` for HTML templates.**
+`email_gui/utils.py:105` did `template_data['body']` raw, while the
+two other sites doing the same operation in the same module
+(`email_dialogs.py:131-136` and `:1252-1255`) had a
+`.get('body') or .get('body_html') or .get('body_text')` fallback chain.
+Templates that store the body as `body_html` (HTML emails) raised
+KeyError on load — visible in app.log on 2026-05-06. Applied the same
+fallback chain to `utils.py`. Also tightened the secondary site at
+`email_dialogs.py:482-484`, which had the right guard for missing
+`body` but no fallback to `body_html`/`body_text` — so HTML templates
+would load to a blank body field instead of erroring.
+
+**Out-of-scope notes from the same audit:**
+
+- `infrastructure/email/admin/db.py:191/220` references the same
+  nonexistent `notification_preferences` columns, but it's inside a
+  legacy-schema migration block that explicitly checks for
+  `preference_id` first and skips when the new normalised schema is
+  detected. The reference is unreachable on this DB. Left alone.
+- `logs/app.log:2026-05-06` shows repeated
+  `no such table: stored_emails` errors. Verified the table now exists
+  in the live DB with the expected columns. Stale.
+
+**Verified after fixes:** all 19 email GUI modules import cleanly; new
+announcements query runs and returns 5 rows from the dev DB; new SMS
+query runs without error (returns empty because no `students.phone`
+values are populated in dev data); `email_dialogs` and `utils` template
+loaders compile clean.
 
 ---
 

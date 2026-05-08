@@ -457,22 +457,39 @@ def validate_phone_number(self, phone):
 EmailManagerGUI.validate_phone_number = validate_phone_number
 
 def get_recipients_for_group_or_role(self, recipient_type, value):
-    """Get phone numbers for group or role"""
+    """Get (phone, name) tuples for users matching the given group or role.
+
+    Phone numbers are stored on role-specific tables (e.g. students.phone).
+    For role='student' we join through students; SMS for other roles isn't
+    supported by the current schema and returns an empty list.
+    """
     try:
         with get_db_connection() as conn:
             if recipient_type == "role":
-                # Get users by role
-                cursor = conn.execute("""
-                    SELECT phone, name FROM users
-                    WHERE role = ? AND phone IS NOT NULL AND phone != ''
-                """, (value,))
+                if value == 'student':
+                    cursor = conn.execute("""
+                        SELECT s.phone,
+                               COALESCE(NULLIF(TRIM(u.first_name || ' ' || u.last_name), ''),
+                                        u.username) AS name
+                        FROM users u
+                        JOIN students s ON u.student_id = s.student_id
+                        WHERE u.role = 'student'
+                          AND s.phone IS NOT NULL AND s.phone != ''
+                    """)
+                else:
+                    # No phone column on users for non-student roles; nothing to send.
+                    return []
             else:
-                # Get users by group
+                # student_groups has username FK; phone still lives on students.
                 cursor = conn.execute("""
-                    SELECT u.phone, u.name
+                    SELECT s.phone,
+                           COALESCE(NULLIF(TRIM(u.first_name || ' ' || u.last_name), ''),
+                                    u.username) AS name
                     FROM users u
                     JOIN student_groups sg ON u.username = sg.username
-                    WHERE sg.group_name = ? AND u.phone IS NOT NULL AND u.phone != ''
+                    JOIN students s        ON u.student_id = s.student_id
+                    WHERE sg.group_name = ?
+                      AND s.phone IS NOT NULL AND s.phone != ''
                 """, (value,))
 
             return cursor.fetchall()
