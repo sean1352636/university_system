@@ -431,6 +431,20 @@ class _DbMixin:
             except Exception as e:
                 log_event('warning', f"Could not add service_account to users: {e}")
 
+            # Persistent ban list (survives kicks / rejoins)
+            cursor.execute('''
+            CREATE TABLE IF NOT EXISTS chat_room_bans (
+                room_id INTEGER NOT NULL,
+                user_id INTEGER NOT NULL,
+                banned_at TEXT NOT NULL,
+                banned_by INTEGER,
+                reason TEXT,
+                PRIMARY KEY (room_id, user_id),
+                FOREIGN KEY (room_id) REFERENCES chat_rooms (id),
+                FOREIGN KEY (user_id) REFERENCES users (id)
+            )
+            ''')
+
             # Idempotent system-generated posts (e.g. auto-posted assignment due dates)
             cursor.execute('''
             CREATE TABLE IF NOT EXISTS chat_system_posts (

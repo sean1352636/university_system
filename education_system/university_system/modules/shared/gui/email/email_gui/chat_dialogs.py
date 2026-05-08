@@ -2275,8 +2275,9 @@ class ManageMembersDialog:
         ttk.Button(btns, text="Demote",
                    command=lambda: self._set_admin(False)).pack(side=tk.LEFT, padx=2)
         ttk.Button(btns, text="Kick", command=self._kick).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Ban", command=lambda: self._ban(True)).pack(side=tk.LEFT, padx=2)
-        ttk.Button(btns, text="Unban", command=lambda: self._ban(False)).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text="Ban", command=self._ban_with_reason).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btns, text="Bans…",
+                   command=self._show_bans).pack(side=tk.LEFT, padx=2)
         ttk.Button(btns, text="Mute…", command=self._mute).pack(side=tk.LEFT, padx=2)
         ttk.Button(btns, text="Unmute", command=self._unmute).pack(side=tk.LEFT, padx=2)
         ttk.Button(btns, text="Transfer Ownership",
@@ -2342,8 +2343,107 @@ class ManageMembersDialog:
             return
         self._act(self.dashboard.kick_room_member)
 
-    def _ban(self, banned):
-        self._act(self.dashboard.ban_room_member, banned)
+    def _ban(self, banned, reason=None):
+        # Underlying API now takes a reason kwarg.
+        uid = self._selected_user_id()
+        if not uid:
+            messagebox.showwarning("Select", "Select a member first.",
+                                   parent=self.dialog)
+            return
+        try:
+            ok = self.dashboard.ban_room_member(self.room_id, uid,
+                                                banned=banned, reason=reason)
+            if ok:
+                self._load()
+                if self.refresh_callback:
+                    self.refresh_callback()
+            else:
+                messagebox.showerror("Error",
+                                     "Action denied (creator can't be banned, "
+                                     "or you lack permission).",
+                                     parent=self.dialog)
+        except Exception as e:
+            messagebox.showerror("Error", str(e), parent=self.dialog)
+
+    def _ban_with_reason(self):
+        uid = self._selected_user_id()
+        if not uid:
+            messagebox.showwarning("Select", "Select a member first.",
+                                   parent=self.dialog)
+            return
+        if not messagebox.askyesno(
+            "Ban member",
+            "Ban this user from the room? They will be removed and unable "
+            "to rejoin until you unban them.",
+            parent=self.dialog,
+        ):
+            return
+        reason = askstring("Ban reason",
+                           "Reason (optional, shown in audit log):",
+                           parent=self.dialog) or ''
+        self._ban(True, reason=reason)
+
+    def _show_bans(self):
+        try:
+            bans = self.dashboard.list_room_bans(self.room_id) or []
+        except Exception as e:
+            messagebox.showerror("Error", str(e), parent=self.dialog)
+            return
+        dlg = tk.Toplevel(self.dialog)
+        dlg.title(f"Bans — {self.room.get('name', '')}")
+        dlg.geometry("520x340")
+        dlg.transient(self.dialog)
+        frame = ttk.Frame(dlg, padding=10)
+        frame.pack(fill=tk.BOTH, expand=True)
+        if not bans:
+            ttk.Label(frame, text="No active bans.",
+                      foreground="#666").pack(padx=10, pady=20)
+        else:
+            cols = ("User", "Banned at", "By", "Reason")
+            tree = ttk.Treeview(frame, columns=cols, show="headings")
+            for c in cols:
+                tree.heading(c, text=c)
+            tree.column("User", width=150)
+            tree.column("Banned at", width=130)
+            tree.column("By", width=90)
+            tree.column("Reason", width=140)
+            for b in bans:
+                tree.insert(
+                    '', tk.END,
+                    values=(
+                        f"{b['full_name']} (@{b['username']})",
+                        (b.get('banned_at') or '')[:16],
+                        f"@{b.get('banned_by') or ''}" if b.get('banned_by') else '',
+                        b.get('reason') or '',
+                    ),
+                    tags=(str(b['user_id']),),
+                )
+            tree.pack(fill=tk.BOTH, expand=True)
+
+            def unban_selected():
+                sel = tree.selection()
+                if not sel:
+                    return
+                uid = int(tree.item(sel[0])['tags'][0])
+                try:
+                    ok = self.dashboard.ban_room_member(
+                        self.room_id, uid, banned=False,
+                    )
+                    if ok:
+                        dlg.destroy()
+                        self._show_bans()  # refresh
+                        if self.refresh_callback:
+                            self.refresh_callback()
+                    else:
+                        messagebox.showerror("Error", "Could not unban.",
+                                             parent=dlg)
+                except Exception as e:
+                    messagebox.showerror("Error", str(e), parent=dlg)
+
+            ttk.Button(frame, text="Unban selected",
+                       command=unban_selected).pack(pady=(8, 0))
+        ttk.Button(frame, text="Close",
+                   command=dlg.destroy).pack(pady=(8, 0))
 
     def _mute(self):
         minutes = askinteger("Mute", "Mute for how many minutes?",

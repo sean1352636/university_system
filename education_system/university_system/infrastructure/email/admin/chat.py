@@ -252,6 +252,16 @@ class _ChatMixin:
 
             room_name, room_type = room_data
 
+            # Banned users may not rejoin (under any circumstances).
+            cursor.execute(
+                'SELECT 1 FROM chat_room_bans WHERE room_id = ? AND user_id = ?',
+                (room_id, user_id),
+            )
+            if cursor.fetchone():
+                log_event('warning',
+                          f"Banned user {user_id} attempted to rejoin room {room_id}")
+                return "banned"
+
             # Check if user is already a member
             cursor.execute('''
             SELECT id FROM chat_room_members
@@ -806,6 +816,16 @@ class _ChatMixin:
 
             username = user_data[0]
 
+            # Refuse to invite a banned user — admin must unban first.
+            cursor.execute(
+                'SELECT 1 FROM chat_room_bans WHERE room_id = ? AND user_id = ?',
+                (room_id, user_id_to_invite),
+            )
+            if cursor.fetchone():
+                log_event('warning',
+                          f"Refused invite of banned user {user_id_to_invite} to room {room_id}")
+                return "banned"
+
             # Check if user is already a member
             cursor.execute('''
             SELECT 1 FROM chat_room_members
@@ -980,6 +1000,17 @@ class _ChatMixin:
             if invited_user_id != user_id:
                 log_event('error', f"Invitation not for current user")
                 return False
+
+            # Banned users cannot accept invitations either.
+            if accept:
+                cursor.execute(
+                    'SELECT 1 FROM chat_room_bans WHERE room_id = ? AND user_id = ?',
+                    (room_id, user_id),
+                )
+                if cursor.fetchone():
+                    log_event('warning',
+                              f"Banned user {user_id} tried to accept invitation to room {room_id}")
+                    return "banned"
 
             status = 'accepted' if accept else 'declined'
 
@@ -1921,12 +1952,20 @@ class _ChatMixin:
             return False
 
     @handle_exception
-    def ban_room_member(self, room_id, target_user_id, banned=True):
-        """Ban (or unban) a member. Banned users keep the membership row so
-        the ban survives, but cannot send messages."""
+    def ban_room_member(self, room_id, target_user_id, banned=True, reason=None):
+        """Ban (or unban) a user from a room.
+
+        Ban: records (room_id, user_id) in chat_room_bans AND removes any
+        existing membership row, so the ban survives a leave/rejoin attempt
+        on a public room. The legacy `is_banned` flag on chat_room_members
+        is also flipped if a row remains, for backwards compatibility.
+
+        Unban: deletes the chat_room_bans row; the user can then rejoin
+        public rooms or be re-invited."""
         if not self.auth or not self.auth.current_user:
             return False
         user_id = self.auth.current_user['id']
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         def _ban(cursor):
             if not self._is_room_admin(cursor, room_id, user_id):
@@ -1934,14 +1973,48 @@ class _ChatMixin:
             cursor.execute('SELECT created_by FROM chat_rooms WHERE id = ?', (room_id,))
             row = cursor.fetchone()
             if row and row[0] == target_user_id and banned:
+                # Can't ban the creator.
                 return False
-            cursor.execute(
-                'UPDATE chat_room_members SET is_banned = ? WHERE room_id = ? AND user_id = ?',
-                (1 if banned else 0, room_id, target_user_id),
-            )
+            if banned:
+                cursor.execute(
+                    '''INSERT INTO chat_room_bans
+                       (room_id, user_id, banned_at, banned_by, reason)
+                       VALUES (?, ?, ?, ?, ?)
+                       ON CONFLICT(room_id, user_id) DO UPDATE SET
+                           banned_at = excluded.banned_at,
+                           banned_by = excluded.banned_by,
+                           reason = excluded.reason''',
+                    (room_id, target_user_id, now, user_id, reason or ''),
+                )
+                # Remove from membership so they're no longer in the room.
+                cursor.execute(
+                    'DELETE FROM chat_room_members WHERE room_id = ? AND user_id = ?',
+                    (room_id, target_user_id),
+                )
+                # Cancel any pending invitations.
+                try:
+                    cursor.execute(
+                        '''UPDATE chat_room_invitations SET status = 'revoked'
+                           WHERE room_id = ? AND user_id = ? AND status = 'pending' ''',
+                        (room_id, target_user_id),
+                    )
+                except Exception:
+                    pass
+            else:
+                cursor.execute(
+                    'DELETE FROM chat_room_bans WHERE room_id = ? AND user_id = ?',
+                    (room_id, target_user_id),
+                )
+                # Clear legacy flag if a stale membership row still exists.
+                cursor.execute(
+                    'UPDATE chat_room_members SET is_banned = 0 '
+                    'WHERE room_id = ? AND user_id = ?',
+                    (room_id, target_user_id),
+                )
             self._log_communication_action(
                 user_id, "ban_room_member" if banned else "unban_room_member",
-                f"{'Banned' if banned else 'Unbanned'} user {target_user_id} in room {room_id}",
+                f"{'Banned' if banned else 'Unbanned'} user {target_user_id} in room {room_id}"
+                + (f" — reason: {reason}" if banned and reason else ""),
                 cursor=cursor,
             )
             return True
@@ -1951,6 +2024,48 @@ class _ChatMixin:
         except Exception as e:
             log_event('error', f"Error banning member: {e}")
             return False
+
+    @handle_exception
+    def list_room_bans(self, room_id):
+        """List active bans for a room. Admin/creator only."""
+        if not self.auth or not self.auth.current_user:
+            return []
+        user_id = self.auth.current_user['id']
+
+        def _list(cursor):
+            if not self._is_room_admin(cursor, room_id, user_id):
+                return []
+            cursor.execute(
+                '''SELECT b.user_id,
+                          COALESCE(u.username, ''),
+                          COALESCE(u.first_name, ''), COALESCE(u.last_name, ''),
+                          b.banned_at,
+                          COALESCE(bu.username, ''),
+                          b.reason
+                   FROM chat_room_bans b
+                   LEFT JOIN users u ON b.user_id = u.id
+                   LEFT JOIN users bu ON b.banned_by = bu.id
+                   WHERE b.room_id = ?
+                   ORDER BY b.banned_at DESC''',
+                (room_id,),
+            )
+            out = []
+            for r in cursor.fetchall():
+                full = f"{r[2]} {r[3]}".strip()
+                out.append({
+                    'user_id': r[0], 'username': r[1],
+                    'full_name': full or r[1],
+                    'banned_at': r[4],
+                    'banned_by': r[5] or '',
+                    'reason': r[6] or '',
+                })
+            return out
+
+        try:
+            return execute_db_operation(_list)
+        except Exception as e:
+            log_event('error', f"Error listing room bans: {e}")
+            return []
 
     @handle_exception
     def mute_room_member(self, room_id, target_user_id, minutes=None):
@@ -2800,7 +2915,7 @@ class _ChatMixin:
                         '''INSERT INTO safeguarding_submissions
                            (username, full_name, role, content, submitted_at,
                             severity, categories, status)
-                           VALUES (?, ?, ?, ?, ?, 'High', '["chat-report"]', 'Pending')''',
+                           VALUES (?, ?, ?, ?, ?, 'High', '{"chat-report": []}', 'Pending')''',
                         (username, full_name, role,
                          f"Chat report (msg #{message_id}): {(reason or '')}"
                          f"\n\nExcerpt:\n{excerpt}", now),

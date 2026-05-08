@@ -694,8 +694,17 @@ class SafeguardingApp(tk.Tk):
         tk.Label(self.detail, text=meta, bg="white", justify="left",
                  font=("Segoe UI", 9)).pack(anchor="w", **pad)
 
-        # Flagged categories
-        cats = json.loads(cats_json)
+        # Flagged categories. The column is free-form TEXT and rows from
+        # different sources have stored either a {cat: [snippets, …]} dict
+        # or a flat list of category names — accept both.
+        try:
+            cats = json.loads(cats_json) if cats_json else {}
+        except (TypeError, ValueError):
+            cats = {}
+        if isinstance(cats, list):
+            cats = {str(c): [] for c in cats}
+        elif not isinstance(cats, dict):
+            cats = {}
         if cats:
             tk.Label(self.detail, text="Flagged categories:",
                      bg="white", font=("Segoe UI", 9, "bold")
@@ -704,6 +713,8 @@ class SafeguardingApp(tk.Tk):
                 tk.Label(self.detail, text=f"• {cat}",
                          bg="white", font=("Segoe UI", 9),
                          fg="#b00020").pack(anchor="w", padx=24)
+                if not isinstance(snippets, (list, tuple)):
+                    snippets = []
                 for snip in snippets[:3]:
                     tk.Label(self.detail, text=f"   “{snip}”",
                              bg="white", font=("Segoe UI", 8),

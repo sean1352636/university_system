@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.125 — 2026-05-08](#8117125---2026-05-08)
 - [8.117.124 — 2026-05-08](#8117124---2026-05-08)
 - [8.117.123 — 2026-05-08](#8117123---2026-05-08)
 - [8.117.122 — 2026-05-08](#8117122---2026-05-08)
@@ -353,6 +354,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.125] — 2026-05-08
+
+### Added — persistent chat-room bans + Safeguarding standalone window;
+fix safeguarding viewer crash on list-shaped categories
+
+Three follow-ups to 8.117.123.
+
+- **Persistent room bans.** New `chat_room_bans(room_id, user_id,
+  banned_at, banned_by, reason)` table. `ban_room_member` now removes
+  the user from `chat_room_members` (so they can't see the room),
+  records the ban, and revokes any pending invitation; `unban` deletes
+  the ban row. `join_chat_room`, `invite_user_to_room`, and
+  `respond_to_invitation` all consult `chat_room_bans` first and
+  return `"banned"` so the user-facing "you have been banned from
+  this chat room" message appears in the GUI's Join Room handler.
+  ManageMembersDialog gained a Ban-with-reason confirmation prompt
+  and a Bans… viewer (name, when, by, reason, Unban-selected).
+  New dashboard helper `list_room_bans(room_id)`.
+- **Safeguarding fix.** `report_chat_message(escalate_safeguarding=True)`
+  was inserting `categories` as a JSON list (`["chat-report"]`); the
+  Safeguarding viewer expects a `{cat: [snippets, …]}` dict and
+  crashed with `AttributeError: 'list' object has no attribute 'items'`
+  on click. Source path now writes the dict shape; the viewer was
+  hardened to accept list / non-dict / invalid-JSON without raising
+  (defensive — `categories` is a free-form TEXT column).
+- **Safeguarding window.** `show_new_feature_safeguarding_system` no
+  longer goes through `_embed_or_subprocess`; it opens Safeguarding
+  in a `tk.Toplevel` sized 1400×900 with `minsize(1200, 800)` —
+  matching the Finance/chat convention — and passes a child Frame as
+  the SafeguardingApp host so the existing embedded-mode shims keep
+  working.
+
 
 ## [8.117.124] — 2026-05-08
 

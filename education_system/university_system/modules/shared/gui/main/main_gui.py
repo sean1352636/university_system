@@ -1266,16 +1266,39 @@ def show_new_feature_intervention_outcomes(self):
 
 
 def show_new_feature_safeguarding_system(self):
-    title = "Safeguarding"
-    module_dotted = (
-        "education_system.university_system.modules.domain.student_affairs."
-        "safeguarding.safeguarding_system"
-    )
+    """Launch Safeguarding in a standalone Toplevel sized like Finance,
+    rather than embedding it in the main content frame."""
+    try:
+        from education_system.university_system.modules.domain.student_affairs.safeguarding.safeguarding_system import (
+            SafeguardingApp,
+        )
+    except Exception as e:
+        from tkinter import messagebox
+        messagebox.showerror("Safeguarding",
+                             f"Could not load Safeguarding module: {e}")
+        return
 
-    def _build(host):
-        from education_system.university_system.modules.domain.student_affairs.safeguarding.safeguarding_system import SafeguardingApp
-        return SafeguardingApp(host=host)
-    self._embed_or_subprocess(title, module_dotted, _build)
+    parent = getattr(self, 'root', None) or self
+    win = tk.Toplevel(parent)
+    win.title("Safeguarding")
+    win.geometry("1400x900")
+    win.minsize(1200, 800)
+    try:
+        win.transient(parent)
+    except Exception:
+        pass
+    host = tk.Frame(win)
+    host.pack(fill="both", expand=True)
+    try:
+        SafeguardingApp(host=host)
+    except Exception as e:
+        from tkinter import messagebox
+        messagebox.showerror("Safeguarding",
+                             f"Could not start Safeguarding: {e}")
+        try:
+            win.destroy()
+        except Exception:
+            pass
 
 
 def show_new_feature_mentoring_matching(self):

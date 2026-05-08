@@ -445,6 +445,13 @@ def join_chat_room(self):
             self.refresh_chat_rooms()
         elif result == "already_member":
             messagebox.showinfo(_t("common.info", default="Info"), _t("email.chat.already_member", default="You are already a member of this room"))
+        elif result == "banned":
+            messagebox.showerror(
+                _t("common.error", default="Error"),
+                _t("email.chat.banned",
+                   default="You have been banned from this chat room. "
+                           "Contact a room admin if you think this is a mistake."),
+            )
         else:
             messagebox.showerror(_t("common.error", default="Error"), _t("email.chat.join_failed", default="Failed to join chat room"))
     except Exception as e:
