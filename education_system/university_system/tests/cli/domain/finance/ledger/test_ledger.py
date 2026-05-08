@@ -10,8 +10,8 @@ from datetime import date
 
 from education_system.university_system.infrastructure.database import db as db_module
 from education_system.university_system.modules.domain.finance.ledger import (
-    init_ledger, post_payment, post_refund, post_fee_assignment, backfill,
-    trial_balance, close_period, lock_period, reopen_period,
+    init_ledger, post_payment, post_refund, post_fee_assignment, post_payroll_run,
+    backfill, trial_balance, close_period, lock_period, reopen_period,
     JournalUnbalancedError, PeriodClosedError, AccountNotFoundError,
 )
 from education_system.university_system.modules.domain.finance.ledger.posting import _post_journal
@@ -49,6 +49,18 @@ def gl_db(tmp_path, monkeypatch):
             student_fee_id INTEGER PRIMARY KEY AUTOINCREMENT,
             student_id TEXT, fee_type_id INTEGER, amount DECIMAL(10,2),
             currency TEXT, status TEXT, due_date TEXT, created_at TEXT
+        );
+        CREATE TABLE payroll_periods (
+            period_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT, period_type TEXT, start_date TEXT, end_date TEXT,
+            payment_date TEXT, status TEXT
+        );
+        CREATE TABLE payroll_records (
+            record_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            period_id INTEGER, user_id TEXT,
+            basic_salary REAL, overtime_pay REAL, allowances_total REAL,
+            gross_pay REAL, tax_deduction REAL, ni_deduction REAL,
+            pension_deduction REAL, net_pay REAL
         );
         INSERT INTO fee_types (fee_type_id, fee_name) VALUES (1, 'Tuition Home/EU'), (2, 'Accommodation');
     """)
@@ -412,3 +424,96 @@ class TestBackfill:
         conn = sqlite3.connect(gl_db)
         n = conn.execute("SELECT COUNT(*) FROM gl_journals").fetchone()[0]
         assert n == 2
+
+
+# ---------------------------------------------------------------------------
+# Payroll
+# ---------------------------------------------------------------------------
+
+class TestPostPayrollRun:
+    def _seed_period(self, gl_db, *, payment_date=None, name='2026-04 Salaries'):
+        conn = sqlite3.connect(gl_db)
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO payroll_periods (name, period_type, start_date, end_date, "
+            "payment_date, status) VALUES (?, 'monthly', '2026-04-01', '2026-04-30', ?, 'completed')",
+            (name, payment_date or date.today().isoformat()),
+        )
+        period_id = cur.lastrowid
+        conn.commit()
+        conn.close()
+        return period_id
+
+    def _seed_records(self, gl_db, period_id, rows):
+        """rows is a list of (gross, net) tuples."""
+        conn = sqlite3.connect(gl_db)
+        cur = conn.cursor()
+        for i, (gross, net) in enumerate(rows):
+            cur.execute(
+                "INSERT INTO payroll_records (period_id, user_id, basic_salary, gross_pay, net_pay) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (period_id, f"U{i:03d}", gross, gross, net),
+            )
+        conn.commit()
+        conn.close()
+
+    def test_creates_balanced_3_line_journal(self, gl_db):
+        period_id = self._seed_period(gl_db)
+        # 3 employees: gross 3000 each, net 2400 each → total gross 9000, net 7200, deductions 1800
+        self._seed_records(gl_db, period_id, [(3000.0, 2400.0)] * 3)
+
+        jid = post_payroll_run(period_id)
+
+        conn = sqlite3.connect(gl_db)
+        # Lines should be Dr 5000 9000, Cr 1010 7200, Cr 2100 1800
+        rows = conn.execute(
+            """SELECT a.account_code, l.debit, l.credit
+               FROM gl_journal_lines l JOIN gl_accounts a ON a.account_id = l.account_id
+               WHERE l.journal_id = ?
+               ORDER BY a.account_code""",
+            (jid,),
+        ).fetchall()
+        rows = [(c, float(d or 0), float(cr or 0)) for c, d, cr in rows]
+        assert ('1010', 0.0, 7200.0) in rows
+        assert ('2100', 0.0, 1800.0) in rows
+        assert ('5000', 9000.0, 0.0) in rows
+        # Balanced
+        assert sum(r[1] for r in rows) == sum(r[2] for r in rows) == 9000.0
+
+    def test_no_deductions_skips_ap_credit(self, gl_db):
+        # Edge case: gross == net (no deductions). Journal should be 2 lines, not 3.
+        period_id = self._seed_period(gl_db, name='No-deductions period')
+        self._seed_records(gl_db, period_id, [(1000.0, 1000.0)])
+
+        jid = post_payroll_run(period_id)
+        conn = sqlite3.connect(gl_db)
+        n_lines = conn.execute(
+            "SELECT COUNT(*) FROM gl_journal_lines WHERE journal_id = ?", (jid,),
+        ).fetchone()[0]
+        assert n_lines == 2  # Dr Staff Costs, Cr Cash only
+
+    def test_idempotent(self, gl_db):
+        period_id = self._seed_period(gl_db, name='Idempotency test')
+        self._seed_records(gl_db, period_id, [(2000.0, 1700.0)])
+        j1 = post_payroll_run(period_id)
+        j2 = post_payroll_run(period_id)
+        assert j1 == j2
+        conn = sqlite3.connect(gl_db)
+        n = conn.execute(
+            "SELECT COUNT(*) FROM gl_journals WHERE source_type = 'payroll_run' AND source_id = ?",
+            (period_id,),
+        ).fetchone()[0]
+        assert n == 1
+
+    def test_empty_period_rejected(self, gl_db):
+        period_id = self._seed_period(gl_db, name='Empty period')
+        # No payroll_records inserted
+        with pytest.raises(ValueError, match="no records"):
+            post_payroll_run(period_id)
+
+    def test_net_exceeds_gross_rejected(self, gl_db):
+        period_id = self._seed_period(gl_db, name='Bad period')
+        # net > gross is a calculation error; should refuse to post
+        self._seed_records(gl_db, period_id, [(1000.0, 1100.0)])
+        with pytest.raises(ValueError, match="net.*>.*gross"):
+            post_payroll_run(period_id)

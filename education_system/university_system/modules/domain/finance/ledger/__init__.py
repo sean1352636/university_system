@@ -16,8 +16,8 @@ Public surface:
 
 from education_system.university_system.modules.domain.finance.ledger.schema import init_ledger
 from education_system.university_system.modules.domain.finance.ledger.posting import (
-    post_payment, post_refund, post_fee_assignment, backfill, JournalUnbalancedError,
-    PeriodClosedError, AccountNotFoundError,
+    post_payment, post_refund, post_fee_assignment, post_payroll_run,
+    backfill, JournalUnbalancedError, PeriodClosedError, AccountNotFoundError,
 )
 from education_system.university_system.modules.domain.finance.ledger.periods import (
     close_period, lock_period, reopen_period,
@@ -29,7 +29,7 @@ from education_system.university_system.modules.domain.finance.ledger.hooks impo
 
 __all__ = [
     'init_ledger',
-    'post_payment', 'post_refund', 'post_fee_assignment', 'backfill',
+    'post_payment', 'post_refund', 'post_fee_assignment', 'post_payroll_run', 'backfill',
     'close_period', 'lock_period', 'reopen_period',
     'trial_balance',
     'notify_ledger', 'LEDGER_HOOK_FAILURES',

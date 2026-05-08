@@ -21,7 +21,7 @@ import logging
 
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.modules.domain.finance.ledger.posting import (
-    post_payment, post_refund, post_fee_assignment,
+    post_payment, post_refund, post_fee_assignment, post_payroll_run,
 )
 
 
@@ -37,6 +37,7 @@ _DISPATCHERS = {
     'payment': post_payment,
     'refund': post_refund,
     'fee_assignment': post_fee_assignment,
+    'payroll_run': post_payroll_run,
 }
 
 

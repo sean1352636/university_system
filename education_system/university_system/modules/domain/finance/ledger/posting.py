@@ -9,6 +9,9 @@ Posting rules (cash basis, single default entity):
   payment received  : Dr Cash 1010              Cr AR or revenue (per source_type)
   refund processed  : Dr revenue (per source)   Cr Cash 1010
   fee assigned      : Dr AR (per fee_type)      Cr revenue (per fee_type)
+  payroll run       : Dr Staff Costs 5000 (gross) ;
+                      Cr Cash 1010 (net)
+                      Cr AP 2100 (deductions parked until remitted)
 
 Mappings live in `_REVENUE_FOR_PAYMENT_SOURCE` and friends below; finance staff
 can adjust by editing this module. A more elaborate config-driven ruleset is
@@ -349,6 +352,92 @@ def post_fee_assignment(student_fee_id, posted_by='system'):
                 {'account_code': rev_code, 'credit': float(amount),
                  'memo': f"Fee {sfid} — {fee_name}"},
             ],
+        )
+    finally:
+        conn.close()
+
+
+def post_payroll_run(period_id, posted_by='system'):
+    """Post a finalised payroll period to the GL.
+
+    Cash basis treatment:
+      Dr Staff Costs (5000)        gross_pay total
+      Cr Cash (1010)               net_pay total
+      Cr Accounts Payable (2100)   total deductions  [parked until remitted]
+
+    The deductions credit (PAYE, NI, pension, student loan, other) is parked
+    in Accounts Payable as a placeholder — when those deductions are actually
+    remitted to HMRC / the pension provider, that's a separate event:
+      Dr Accounts Payable (2100)   amount remitted
+      Cr Cash (1010)               amount remitted
+    which clears the parked liability without affecting Staff Costs again.
+
+    A dedicated 'Statutory Deductions Payable' account would be cleaner than
+    re-using AP; that's a chart-of-accounts decision deferred to finance.
+
+    Idempotent on (source_type='payroll_run', source_id=period_id).
+    """
+    conn = get_connection()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT period_id, name, payment_date, status FROM payroll_periods "
+            "WHERE period_id = ?",
+            (period_id,),
+        )
+        row = cur.fetchone()
+        if not row:
+            raise ValueError(f"payroll period {period_id} not found")
+        pid, name, payment_date, status = row[0], row[1], row[2], row[3]
+
+        # Sum the run from payroll_records. Use the cash transfer date —
+        # `payment_date` on the period — as the journal date.
+        cur.execute(
+            """SELECT COALESCE(SUM(gross_pay), 0)             AS gross,
+                      COALESCE(SUM(net_pay),   0)             AS net,
+                      COUNT(*)                                AS n
+               FROM payroll_records
+               WHERE period_id = ?""",
+            (period_id,),
+        )
+        totals = cur.fetchone()
+        gross = Decimal(str(totals[0] or 0))
+        net = Decimal(str(totals[1] or 0))
+        n_records = totals[2]
+        if n_records == 0:
+            raise ValueError(f"payroll period {period_id} has no records to post")
+        if gross <= 0:
+            raise ValueError(f"payroll period {period_id} gross is non-positive ({gross})")
+        deductions = gross - net
+        if deductions < 0:
+            # Sanity guard: net should never exceed gross.
+            raise ValueError(
+                f"payroll period {period_id} has net ({net}) > gross ({gross})"
+            )
+
+        journal_date = (payment_date or date.today().isoformat())[:10]
+
+        lines = [
+            {'account_code': '5000', 'debit': float(gross),
+             'memo': f"Payroll {name or pid} — gross over {n_records} records"},
+            {'account_code': _CASH_ACCOUNT_CODE, 'credit': float(net),
+             'memo': f"Payroll {name or pid} — net pay"},
+        ]
+        if deductions > 0:
+            lines.append({
+                'account_code': '2100', 'credit': float(deductions),
+                'memo': f"Payroll {name or pid} — deductions parked (PAYE/NI/pension/etc.)",
+            })
+
+        return _post_journal(
+            conn,
+            entity_id=_default_entity_id(cur),
+            journal_date=journal_date,
+            description=f"Payroll run {name or pid} ({n_records} records)",
+            source_type='payroll_run',
+            source_id=pid,
+            posted_by=posted_by,
+            lines=lines,
         )
     finally:
         conn.close()

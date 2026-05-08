@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.117 — 2026-05-08](#8117117---2026-05-08)
 - [8.117.116 — 2026-05-08](#8117116---2026-05-08)
 - [8.117.115 — 2026-05-08](#8117115---2026-05-08)
 - [8.117.114 — 2026-05-08](#8117114---2026-05-08)
@@ -343,6 +344,82 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.117] — 2026-05-08
+
+### Added — Payroll runs now post to the General Ledger
+
+This closes the single biggest expense-side gap in the trial balance.
+Payroll is the largest line item in any university's accounts; before
+this change, finalising a payroll period in the HR module produced
+audit logs and `payroll_records` rows but **left no trace in the GL**.
+Salaries were invisible in the trial balance even after the GL was
+otherwise complete.
+
+**Hook timing.** Cash basis (per ADR 0013): a payroll run posts when
+the period status flips to `completed` in `payroll_manager.run_payroll`.
+The journal date is the period's `payment_date`.
+
+**Journal shape (3 lines):**
+
+```
+Dr  5000 Staff Costs            <gross_pay>     -- gross over N records
+Cr  1010 Cash                                 <net_pay>     -- what actually leaves the bank
+Cr  2100 Accounts Payable                     <deductions>  -- PAYE/NI/pension/etc., parked until remitted
+```
+
+`<deductions>` = gross − net. When statutory remittance happens
+(separate event), the clearing journal will be Dr 2100 / Cr 1010.
+
+A dedicated "Statutory Deductions Payable" account would be cleaner
+than re-using AP; that's a chart-of-accounts decision deferred to
+finance staff, and changing the account code is a single line in
+`posting.py`.
+
+**Edge cases tested:**
+
+- Standard payroll run → 3-line balanced journal verified per-account
+- Zero-deduction case (gross == net) → 2-line journal, no AP credit
+- Idempotent: re-posting the same period_id returns the existing
+  journal_id (`UNIQUE(source_type='payroll_run', source_id)`)
+- Empty period (no records) → `ValueError`
+- Calculation error where net > gross → `ValueError`
+
+**Drive-by fix.** `payroll_manager.run_payroll` had a broken
+`INSERT INTO payroll_records` that referenced columns that don't exist
+on the schema (`allowances`, `tax`, `national_insurance`, `pension`).
+Real columns are `allowances_total`, `tax_deduction`, `ni_deduction`,
+`pension_deduction`. The function would have raised on first execution.
+Fixed.
+
+New module surface:
+
+- `finance/ledger/posting.py:post_payroll_run(period_id)` — the
+  posting function
+- `finance/ledger/hooks.py` dispatcher gains a `payroll_run` entry, so
+  `notify_ledger('payroll_run', period_id)` works end-to-end
+- `finance/ledger/__init__` exports `post_payroll_run`
+
+**Test coverage.** 5 new tests in
+`tests/cli/domain/finance/ledger/test_ledger.py:TestPostPayrollRun`.
+Total ledger suite is now 31/31 passing.
+
+**Out of scope this change** (full Accounts Payable still deferred):
+
+- No vendor master / consolidated AP officer view
+- No purchase-order workflow at the institution level (restaurant
+  has a working subsystem-specific PO GUI; commerce silos each have
+  their own supplier tables, none post to the GL)
+- No statutory remittance posting (the AP credit lands in 2100 but
+  the matching debit when payroll taxes are actually paid to HMRC is
+  not yet wired). Will be a small follow-up once that operational path
+  exists.
+
+ADR 0014 (Accounts Payable) is the proposed venue for those broader
+decisions; this change deliberately delivered just the highest-value
+slice without committing to the full AP build.
 
 ---
 

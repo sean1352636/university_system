@@ -209,12 +209,16 @@ class PayrollManager:
                 # Net pay
                 net = gross - tax - ni - pension
 
-                # Insert payroll record
+                # Insert payroll record. Column names match the schema —
+                # the previous version used 'allowances', 'tax',
+                # 'national_insurance', 'pension' which don't exist on
+                # payroll_records (real columns: allowances_total,
+                # tax_deduction, ni_deduction, pension_deduction). Fixed.
                 conn.execute('''
                     INSERT INTO payroll_records (
                         period_id, user_id, basic_salary, overtime_pay,
-                        allowances, gross_pay, tax, national_insurance,
-                        pension, net_pay, created_at
+                        allowances_total, gross_pay, tax_deduction, ni_deduction,
+                        pension_deduction, net_pay, created_at
                     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (
                     period_id, user_id, basic_salary, overtime_pay,
@@ -241,12 +245,22 @@ class PayrollManager:
                 'created_by': created_by,
             })
 
-            # 5. Return summary
-            return {
-                'total_records': total_records,
-                'total_gross': round(total_gross, 2),
-                'total_net': round(total_net, 2),
-            }
+        # Auto-post the run to the GL outside the transaction (the ledger
+        # opens its own connection). Never raises.
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('payroll_run', period_id, posted_by=created_by or 'payroll')
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed for payroll run %s: %s",
+                                                period_id, _e)
+
+        # 5. Return summary
+        return {
+            'total_records': total_records,
+            'total_gross': round(total_gross, 2),
+            'total_net': round(total_net, 2),
+        }
 
     @staticmethod
     def calculate_deductions(gross_annual: float,
