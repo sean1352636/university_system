@@ -4369,3 +4369,100 @@ class _ChatMixin:
         except Exception as e:
             log_event('error', f"Error batching polls: {e}")
             return {}
+
+    @handle_exception
+    def get_my_rooms_overview(self):
+        """One-shot fetch for the My Rooms / Public Rooms tab refresh.
+
+        Replaces three separate execute_db_operation calls (joined, unread,
+        public) with one cursor pass — the per-call connection-open overhead
+        was the dominant cost on actions like 'Join Room'.
+
+        Returns {'joined': [...], 'public': [...], 'unread': {room_id: n}}."""
+        if not self.auth or not self.auth.current_user:
+            return {'joined': [], 'public': [], 'unread': {}}
+        user_id = self.auth.current_user['id']
+
+        def _go(cursor):
+            # Joined rooms (with the same shape get_chat_rooms('joined') yields).
+            cursor.execute('''
+                SELECT r.id, r.name, r.description, r.room_type, r.created_at,
+                       u.username as creator, m.is_admin,
+                       (SELECT COUNT(*) FROM chat_room_members WHERE room_id = r.id),
+                       (SELECT COUNT(*) FROM chat_messages WHERE room_id = r.id),
+                       r.category, r.icon, r.colour,
+                       COALESCE(m.is_favourite, 0),
+                       COALESCE(m.is_banned, 0), m.muted_until,
+                       r.created_by,
+                       r.linked_course_code, r.linked_assignment_group_id,
+                       COALESCE(r.announcement_mode, 0),
+                       r.oh_starts_at, r.oh_ends_at
+                FROM chat_rooms r
+                JOIN chat_room_members m ON r.id = m.room_id
+                JOIN users u ON r.created_by = u.id
+                WHERE m.user_id = ? AND r.is_active = 1
+                ORDER BY COALESCE(m.is_favourite, 0) DESC,
+                         COALESCE(r.category, '~'), r.name
+            ''', (user_id,))
+            joined = []
+            for row in cursor.fetchall():
+                joined.append({
+                    'id': row[0], 'name': row[1], 'description': row[2],
+                    'room_type': row[3], 'created_at': row[4],
+                    'creator': row[5], 'is_admin': bool(row[6]),
+                    'member_count': row[7], 'message_count': row[8],
+                    'category': row[9], 'icon': row[10], 'colour': row[11],
+                    'is_favourite': bool(row[12]),
+                    'is_banned': bool(row[13]),
+                    'muted_until': row[14],
+                    'created_by': row[15],
+                    'linked_course_code': row[16],
+                    'linked_assignment_group_id': row[17],
+                    'announcement_mode': bool(row[18]),
+                    'oh_starts_at': row[19], 'oh_ends_at': row[20],
+                })
+
+            # Public rooms the user isn't already in.
+            cursor.execute('''
+                SELECT r.id, r.name, r.description, r.room_type, r.created_at,
+                       u.username, 0,
+                       (SELECT COUNT(*) FROM chat_room_members WHERE room_id = r.id),
+                       (SELECT COUNT(*) FROM chat_messages WHERE room_id = r.id)
+                FROM chat_rooms r
+                JOIN users u ON r.created_by = u.id
+                WHERE r.room_type = 'public' AND r.is_active = 1
+                  AND r.id NOT IN (
+                      SELECT room_id FROM chat_room_members WHERE user_id = ?
+                  )
+                ORDER BY r.name
+            ''', (user_id,))
+            public = [
+                {'id': row[0], 'name': row[1], 'description': row[2],
+                 'room_type': row[3], 'created_at': row[4],
+                 'creator': row[5], 'is_admin': False,
+                 'member_count': row[7], 'message_count': row[8]}
+                for row in cursor.fetchall()
+            ]
+
+            # Unread counts per room (single aggregate over the chat_messages
+            # index — fast post-migration).
+            cursor.execute('''
+                SELECT m.room_id,
+                       COUNT(*) FILTER (WHERE m.id > COALESCE(r.last_read_message_id, 0)
+                                        AND m.sender_id != ?)
+                FROM chat_room_members mem
+                JOIN chat_messages m ON m.room_id = mem.room_id
+                LEFT JOIN chat_message_reads r
+                  ON r.room_id = mem.room_id AND r.user_id = mem.user_id
+                WHERE mem.user_id = ?
+                GROUP BY m.room_id
+            ''', (user_id, user_id))
+            unread = {row[0]: row[1] for row in cursor.fetchall()}
+
+            return {'joined': joined, 'public': public, 'unread': unread}
+
+        try:
+            return execute_db_operation(_go)
+        except Exception as e:
+            log_event('error', f"Error in get_my_rooms_overview: {e}")
+            return {'joined': [], 'public': [], 'unread': {}}

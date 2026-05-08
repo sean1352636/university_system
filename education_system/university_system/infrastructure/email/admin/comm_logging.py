@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import queue
+import threading
+
 from education_system.university_system.infrastructure.email.admin._imports import (
     datetime,
     timedelta,
@@ -14,6 +17,58 @@ from education_system.university_system.infrastructure.email.admin._imports impo
     queue_email,
     LOG_MANAGEMENT_AVAILABLE,
 )
+
+
+# Lazy, process-wide background mirror for the central audit trail.
+# Posting `_log_communication_action` synchronously to AuditLogger added
+# 50–100 ms to every chat moderation action because it opens a separate
+# sqlite connection on a different DB. This worker drains a queue from a
+# daemon thread so the caller returns immediately.
+_audit_queue: "queue.Queue[dict] | None" = None
+_audit_worker_started = False
+_audit_worker_lock = threading.Lock()
+
+
+def _audit_worker_loop():
+    from education_system.university_system.infrastructure.security.audit_trail import (
+        AuditLogger,
+    )
+    while True:
+        try:
+            entry = _audit_queue.get()
+        except Exception:
+            return
+        if entry is None:  # shutdown sentinel
+            return
+        try:
+            AuditLogger().log(**entry)
+        except Exception as e:
+            try:
+                logger.debug(f"Async audit-trail mirror failed: {e}")
+            except Exception:
+                pass
+        finally:
+            try:
+                _audit_queue.task_done()
+            except Exception:
+                pass
+
+
+def _ensure_audit_worker():
+    global _audit_queue, _audit_worker_started
+    if _audit_worker_started:
+        return _audit_queue
+    with _audit_worker_lock:
+        if _audit_worker_started:
+            return _audit_queue
+        _audit_queue = queue.Queue(maxsize=1000)
+        threading.Thread(
+            target=_audit_worker_loop,
+            name="chat-audit-mirror",
+            daemon=True,
+        ).start()
+        _audit_worker_started = True
+    return _audit_queue
 
 
 class _LoggingMixin:
@@ -109,29 +164,35 @@ class _LoggingMixin:
                     # Don't fail the main operation for enhanced logging issues
                     logger.warning(f"Enhanced communication logging failed: {e}")
 
-            # Mirror into the central audit trail so chat moderation
-            # actions show up in audit_log_viewer_gui alongside the rest
-            # of the system. Best-effort: never propagate failures.
+            # Mirror into the central audit trail asynchronously so chat
+            # moderation actions show up in audit_log_viewer_gui without
+            # adding the audit DB's connection-open latency to the caller.
+            # Best-effort: never propagate failures.
             try:
-                from education_system.university_system.infrastructure.security.audit_trail import (
-                    AuditLogger,
-                )
                 username = None
                 cur_user = getattr(getattr(self, 'auth', None), 'current_user', None)
                 if isinstance(cur_user, dict):
                     username = cur_user.get('username')
-                AuditLogger().log(
-                    action=action_type,
-                    resource_type='chat',
-                    resource_id=None,
-                    user_id=user_id,
-                    username=username,
-                    details={'description': action_details},
-                    function_name='_log_communication_action',
-                    module_name='communication_dashboard',
-                )
+                q = _ensure_audit_worker()
+                if q is not None:
+                    try:
+                        q.put_nowait({
+                            'action': action_type,
+                            'resource_type': 'chat',
+                            'resource_id': None,
+                            'user_id': user_id,
+                            'username': username,
+                            'details': {'description': action_details},
+                            'function_name': '_log_communication_action',
+                            'module_name': 'communication_dashboard',
+                        })
+                    except queue.Full:
+                        # Audit queue saturated — drop and log; never block.
+                        logger.warning(
+                            "Audit-trail mirror queue full; dropping entry"
+                        )
             except Exception as e:
-                logger.debug(f"Central audit-trail mirror failed: {e}")
+                logger.debug(f"Central audit-trail mirror dispatch failed: {e}")
 
             return result
 

@@ -150,21 +150,30 @@ def create_public_rooms_tab(self):
 EmailManagerGUI.create_public_rooms_tab = create_public_rooms_tab
 
 def refresh_chat_rooms(self):
-    """Refresh caches and re-render both trees."""
+    """Refresh caches and re-render both trees. Uses the bundled
+    `get_my_rooms_overview` so this happens in a single connection
+    cycle instead of three separate ones."""
     try:
         if not self.dashboard:
             return
-        try:
-            unread_counts = self.dashboard.get_unread_chat_counts() or {}
-        except Exception:
-            unread_counts = {}
-        joined = self.dashboard.get_chat_rooms('joined') or {}
-        for room in joined.get('rooms', []):
+        # Prefer the bundled call; fall back to the legacy three-call path
+        # only if the dashboard is older than 8.117.128.
+        if hasattr(self.dashboard, 'get_my_rooms_overview'):
+            overview = self.dashboard.get_my_rooms_overview() or {}
+            joined_rooms = overview.get('joined') or []
+            public_rooms = overview.get('public') or []
+            unread_counts = overview.get('unread') or {}
+        else:
+            joined_rooms = (self.dashboard.get_chat_rooms('joined') or {}).get('rooms', [])
+            public_rooms = (self.dashboard.get_chat_rooms('public') or {}).get('rooms', [])
+            try:
+                unread_counts = self.dashboard.get_unread_chat_counts() or {}
+            except Exception:
+                unread_counts = {}
+        for room in joined_rooms:
             room['_unread'] = int(unread_counts.get(room['id'], 0) or 0)
-        self._joined_rooms_cache = joined.get('rooms', [])
-
-        public = self.dashboard.get_chat_rooms('public') or {}
-        self._public_rooms_cache = public.get('rooms', [])
+        self._joined_rooms_cache = joined_rooms
+        self._public_rooms_cache = public_rooms
 
         self._render_my_rooms()
         self._render_public_rooms()

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.128 — 2026-05-08](#8117128---2026-05-08)
 - [8.117.127 — 2026-05-08](#8117127---2026-05-08)
 - [8.117.126 — 2026-05-08](#8117126---2026-05-08)
 - [8.117.125 — 2026-05-08](#8117125---2026-05-08)
@@ -356,6 +357,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.128] — 2026-05-08
+
+### Changed — chat-room performance follow-up: snappy Join Room
+
+Profiling traced the perceived "Join Room takes ages" stall to two
+synchronous costs that each added a separate sqlite connection-open:
+the post-join refresh fired three independent dashboard calls, and
+`_log_communication_action` mirrored to the central `audit_trail`
+table on a different DB inline. Per-call wrapper overhead measured
+~100 ms (4 PRAGMA statements per `connect()` in
+`infrastructure/database/db.py`). Both are now collapsed.
+
+- **Bundled rooms refresh.** New
+  `get_my_rooms_overview()` on the chat dashboard runs joined-rooms,
+  public-rooms, and unread-counts inside a single
+  `execute_db_operation` cursor. `refresh_chat_rooms` calls it (and
+  falls back to the previous three-call path if the dashboard is
+  older than this version). Benchmark: 3 calls ≈ 430 ms → 1 bundled
+  call ≈ 135 ms (~3× faster).
+- **Async audit-trail mirror.** A module-level bounded queue +
+  daemon thread (`chat-audit-mirror`) drain into `AuditLogger.log()`
+  in the background. `_log_communication_action` enqueues a dict
+  and returns immediately, so the caller no longer pays the
+  audit-DB connection cost on every kick/ban/mute/join. Queue is
+  bounded (1000 entries); on overflow the entry is logged-and-
+  dropped rather than blocking the GUI thread.
+
 
 ## [8.117.127] — 2026-05-08
 
