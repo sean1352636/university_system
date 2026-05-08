@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.120 — 2026-05-08](#8117120---2026-05-08)
 - [8.117.119 — 2026-05-08](#8117119---2026-05-08)
 - [8.117.118 — 2026-05-08](#8117118---2026-05-08)
 - [8.117.117 — 2026-05-08](#8117117---2026-05-08)
@@ -346,6 +347,94 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.120] — 2026-05-08
+
+### Added — Audit Log nav entry (with wiring fix) + Periodic statement run
+
+**1. Audit log: top-level nav + wiring bug fix.** The audit-log dialog
+already existed (`CollectionsManager.gui_view_audit_logs` in
+`compliance.py:1159`) but was only reachable from a button in
+Settings → Admin. That button was also broken: `settings/admin.py:33`
+called `self.gui_view_audit_logs`, but the method lives on
+`CollectionsManager` (renamed from ComplianceManager in 8.117.110), not
+on `SettingsManager`. Same shape of bug as the Generate Invoice / Assign
+Fees ones fixed in 8.117.110. Clicking the button raised
+`AttributeError`.
+
+Fix: route the Settings button via `self.gui.collections.gui_view_audit_logs`,
+and add a top-level 📜 Audit Log nav entry (admin-only) that opens the
+same dialog. The nav entry uses the existing `show_tab` special-case
+mechanism (same pattern `my_finances` uses) so the dialog stays as a
+Toplevel rather than being rebuilt as an inline tab.
+
+**2. Periodic statement run.** New module
+`education_system/university_system/modules/domain/finance/statements/`
+adds the batch counterpart to `InvoiceManager.gui_generate_invoice`
+(which is one-student-on-demand). A statement run produces one snapshot
+row per student showing AR position as of a chosen `period_end`.
+
+Schema (idempotent `init_statements()`):
+
+```
+statement_runs        run_id, period_start, period_end, generated_at,
+                      generated_by, status, total_students, total_with_balance
+student_statements    statement_id, run_id, student_id, period_start, period_end,
+                      opening_balance, charges_in_period, payments_in_period,
+                      refunds_in_period, closing_balance
+```
+
+Calculation per student:
+
+```
+charges_total = Σ student_fees.amount with created_at ≤ period_end
+paid_total    = Σ payment_allocations.amount where the payment_date ≤ period_end
+closing       = charges_total − paid_total
+opening       = closing − charges_in_period + payments_in_period + refunds_in_period
+```
+
+The in-period numbers are derived from a `[period_start, period_end]`
+window. `period_start` defaults to "the beginning of time" so the
+first-ever run treats everything as in-period and opening = 0.
+
+GUI tab actions:
+
+- Init Schema (idempotent)
+- Run Statements… (date inputs → produces a run, shows summary)
+- Run dropdown — pick a previous run to inspect
+- "Only outstanding" filter (default on) — hides cleared balances
+- Per-row table: opening / charges / payments / refunds / closing
+- Total outstanding shown in the summary footer
+
+Each run is a separate snapshot; re-running for a new date doesn't
+overwrite previous runs (each row tagged with a `run_id`).
+
+Live-DB smoke test: 1 statement generated for the dev DB's existing
+student fee (which is fully paid → £0 closing). Math correct.
+
+**Test coverage.** 11 new tests in `test_statements.py` covering
+schema, empty DB, single unpaid fee, paid-in-full → zero balance,
+partial payment, opening-balance period-window, only-with-balance
+filter, two consecutive runs, refunds-in-period, run listing order.
+
+Total finance test suite is now 61/61 passing (38 ledger + 12
+bank-rec + 11 statements).
+
+**Out of scope this change** (deferred):
+
+- No statement-PDF generation. The data is in the table; rendering to
+  PDF or sending statements as email attachments is a follow-up.
+- No automatic scheduling. A finance-staff member triggers each run
+  manually from the GUI; cron-style scheduling is a separate concern.
+- No cancellation / regeneration of an existing run. A new run per
+  date is the simpler v1 — old runs stay as audit history.
+
+**Items 14 and 15 from the original gap survey** (Multi-currency / FX
+accounting, Fixed assets / depreciation) remain deferred. Both are
+multi-week structural builds with accountancy decisions to make first;
+each warrants its own ADR before implementation.
 
 ---
 

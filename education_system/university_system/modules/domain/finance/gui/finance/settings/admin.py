@@ -30,7 +30,7 @@ class AdminMixin:
             (_("finance_gui.settings.create_sample_data_btn"), self.gui_create_sample_students),
             (_("finance_gui.settings.setup_notifications_btn"), self.gui_setup_automated_notifications),
             (_("finance_gui.settings.send_notifications_btn"), self.gui_send_automated_notifications),
-            (_("finance_gui.settings.view_audit_logs_btn"), self.gui_view_audit_logs),
+            (_("finance_gui.settings.view_audit_logs_btn"), self.gui.collections.gui_view_audit_logs),
             (_("finance_gui.settings.system_settings_btn"), self.gui_system_settings),
             (_("finance_gui.settings.advanced_reporting_btn"), self.launch_reporting_gui),
             (_("finance_gui.settings.database_verification_btn"), self.gui_verify_fix),

@@ -250,6 +250,7 @@ from education_system.university_system.modules.domain.finance.gui.finance.layou
 from education_system.university_system.modules.domain.finance.gui.finance.layout._status_bar import StatusBarMixin
 from education_system.university_system.modules.domain.finance.gui.finance.layout._ledger import LedgerMixin
 from education_system.university_system.modules.domain.finance.gui.finance.layout._bank_rec import BankRecMixin
+from education_system.university_system.modules.domain.finance.gui.finance.layout._statements import StatementsMixin
 
 
 class LayoutManager(
@@ -280,6 +281,7 @@ class LayoutManager(
     StatusBarMixin,
     LedgerMixin,
     BankRecMixin,
+    StatementsMixin,
 ):
     """UI layout and navigation"""
 
