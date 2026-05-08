@@ -296,20 +296,48 @@ class FeeAssignmentMixin:
                         _("expense_manager.dialogs.confirm_bulk_assign") + f"\n\u00a3{amount_float:.2f} {fee_type} \u2192 {len(students)} {_('common.students')} ({course})"):
                         return
 
+                    # Resolve fee_type name to fee_type_id (single-assign path
+                    # does the same lookup; bulk path previously used columns
+                    # that don't exist on student_fees and silently failed).
+                    cursor.execute(
+                        'SELECT fee_type_id FROM fee_types WHERE fee_name = ?',
+                        (fee_type,),
+                    )
+                    fee_type_result = cursor.fetchone()
+                    if not fee_type_result:
+                        messagebox.showerror(
+                            _("common.error"),
+                            _("expense_manager.errors.fee_type_not_found"),
+                        )
+                        return
+                    fee_type_id = fee_type_result[0]
+
                     # Assign fees
                     assigned_count = 0
-                    current_date = datetime.now().strftime('%Y-%m-%d')
+                    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    fee_row_ids = []
 
                     for student in students:
                         student_id = student[0]
                         cursor.execute('''
-                            INSERT INTO student_fees (student_id, fee_type, amount, due_date, description, created_date)
+                            INSERT INTO student_fees
+                            (student_id, fee_type_id, amount, due_date, created_at, updated_at)
                             VALUES (?, ?, ?, ?, ?, ?)
-                        ''', (student_id, fee_type, amount_float, due_date, description, current_date))
+                        ''', (student_id, fee_type_id, amount_float, due_date, now, now))
+                        fee_row_ids.append(cursor.lastrowid)
                         assigned_count += 1
 
                     conn.commit()
                     conn.close()
+
+                    # Auto-post AR + revenue to GL for each newly assigned fee.
+                    try:
+                        from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                        for fid in fee_row_ids:
+                            notify_ledger('fee_assignment', fid, posted_by='bulk_assign')
+                    except Exception as _e:
+                        import logging
+                        logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
                     messagebox.showinfo(_("common.success"),
                         _("expense_manager.messages.bulk_assign_success", amount=amount_float, fee_type=fee_type, count=assigned_count, course=course))

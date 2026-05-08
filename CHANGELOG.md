@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.115 — 2026-05-08](#8117115---2026-05-08)
 - [8.117.114 — 2026-05-08](#8117114---2026-05-08)
 - [8.117.113 — 2026-05-08](#8117113---2026-05-08)
 - [8.117.112 — 2026-05-08](#8117112---2026-05-08)
@@ -341,6 +342,131 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.115] — 2026-05-08
+
+### Added — GL auto-posting hooks across the entire codebase + fixes for the broken/duplicate write paths surfaced en route
+
+8.117.111 hooked the four central finance write paths and 8.117.112
+covered the three subsystem refund writers known at the time. This
+change finishes the job: every direct INSERT into `payments`,
+`unified_refunds`, or `student_fees` that we found in the audit is
+either hooked into the GL or has been deliberately skipped with a
+documented reason.
+
+**Hook coverage by subsystem (Batches 1–9):**
+
+| Subsystem | Files | Hook sites |
+|-----------|-------|-----------|
+| `finance/core/` | account_management, aid, students, unified_payments | 6 |
+| `finance/gui/` | transaction_manager (×2), layout/_fees, _club_payments, library_finance_manager, billing/payment_plans, services/enrolment_fees | 9 |
+| `housing/` | refund_manager, payment_manager, finance_integration, services/payments | 4 |
+| `legal/` | gui/billing, gui/refunds, services/legal_services_core | 4 |
+| `mobility/` | parking_management, taxi_booking_gui | 4 |
+| `health/` | dentist_gui (2 payments + 1 refund) | 3 |
+| `library + academics` | library/finance, library/fines/payments, library/fines/recording, library/fines/refunds, parent_portal/financial | 5 |
+| `commerce/` | barber, butcher, carrental, cinema, cafe, grocery, restaurant (×2), shop_management/refund_manager, takeaway, gym, musicshop, nailbar, phoneshop | 13 |
+| `shared/api + student_union + campus + finance_integration` | finance_routes, legal_routes, student_finance_routes, student_union/payments, equipment_core, finance_integration:1001 | 6 |
+
+**Total: ~54 hook sites across 45 files.** All sites use the
+`notify_ledger(source_type, source_id)` helper introduced in 8.117.111
+and inherit its never-raises contract — a posting failure cannot break
+the operational write path. Hook timing follows the cash-basis decision
+in ADR 0013: payments post when status implies cash has moved
+(`completed`/`paid`/`success`), refunds post when status reaches
+`processed`/`completed`. Many subsystem refund writers had been
+inserting refund rows with the schema-default `pending` status even
+though cash had already moved; these were updated to set
+`status='processed'` explicitly so the cash-basis posting rule fires.
+
+**Pre-existing bugs surfaced and fixed in this same change:**
+
+The audit-and-hook sweep ran into multiple write paths that had been
+silently failing for unknown duration. The hooks couldn't be useful
+where the underlying SQL was broken, so each was repaired or removed:
+
+- `commerce/restaurant_management_gui/orders/payments.py:1149` and
+  `commerce/shop_management_gui/checkout_manager.py:451` — both had
+  legacy `INSERT INTO student_fees (fee_id, fee_type, description,
+  paid_status, created_date, …)` blocks. None of those columns exist on
+  `student_fees` (real columns: `fee_type_id`, `status`, `created_at`).
+  These were attempting to use `student_fees` (tuition AR) as a commerce
+  ledger — wrong abstraction. The unified `record_payment()` call right
+  next to each of them was already correctly recording the money to
+  `payments`. The broken INSERTs were removed.
+- `student_union_gui/core/utilities.py` — same broken `student_fees` +
+  `payments` pattern, inside a "legacy fallback" block whose `return
+  False` in a `finally:` clause made every line below it unreachable.
+  The whole dead fallback was deleted.
+- `library/fines/finance_integration.py:302` — payment INSERT used
+  `reference_number` (column doesn't exist on `payments`). Renamed to
+  `payment_reference`; the GL hook that had been deliberately skipped
+  for this site was added.
+- `shared/api/university/routes/student_finance_routes.py` — API
+  whitelist accepted `fee_type`, `description`, `academic_year` (none
+  exist on `student_fees`); every SELECT/UPDATE/DELETE used `WHERE id`
+  (the real PK is `student_fee_id`); list endpoint used `ORDER BY id`.
+  Whitelist now references real columns (`fee_type_id`, `currency`);
+  all `id` references replaced with `student_fee_id`. The fees REST
+  endpoint was effectively non-functional before this fix.
+- `expense_manager/fee_assignment.py:306` — bulk fee-assign loop
+  inserted with the same broken column set as the commerce paths,
+  except this is the only path for bulk assignment so it couldn't be
+  removed. Rewrote to do the `fee_name` → `fee_type_id` lookup the
+  single-assign path in the same file already does, and added the GL
+  hook now that the SQL is valid.
+
+**Duplicate-write paths eliminated:**
+
+Three flows were inserting two rows for one economic event, which
+would have double-posted in the GL:
+
+- `housing/services/housing_accommodation/payments.py` — rent payment
+  did a local `INSERT INTO payments` (with full housing context:
+  assignment_id, period_start/end, source_payment_id) followed by a
+  call to `record_payment_to_finance` which writes a separate row to
+  the same `payments` table without the housing context. Removed the
+  central helper call; `finance_payment_id` is now the local row id.
+- `library/fines/refunds.py` — refund did a local `INSERT INTO
+  unified_refunds` (with library context: book title, loan reference)
+  followed by a call to `record_refund_to_finance` writing a duplicate
+  row. Removed the central call.
+- `library/fines/payments.py` — every fine payment called both
+  `_record_fine_payment` (writes one payment row per paid loan, on a
+  caller-owned connection — N rows for N loans) **and**
+  `_record_library_payment_in_finance` (writes one summary row plus the
+  proper `payment_allocations` linking). One fine payment was producing
+  N+1 payment rows. Removed the per-loan calls at both sites in
+  `payments.py`; the summary helper is the single source of truth and
+  is GL-hooked. The `_record_fine_payment` function definition is kept
+  in case external callers depend on it.
+
+**Out of scope this change** (deliberately deferred, documented):
+
+- Subsystem-specific writers that hold caller-owned connections were
+  hooked at the self-committing layer where one existed; otherwise
+  skipped with a comment (e.g. library `_record_fine_payment`).
+- `student_union_gui/payments/payment_processing.py:820` writes a
+  refund into the `payments` table with a presumably-negative amount.
+  Hooking it as a payment would post in the wrong direction under cash
+  basis. Right fix is to route through `unified_refunds`; that's a
+  structural redesign tracked separately.
+- A few duplicate-log INSERTs that mirror an already-hooked primary row
+  (e.g. parking's secondary `source_type='finance'` row) are
+  deliberately not hooked to avoid double-posting.
+- Sample-data seed function in `finance_db_operations.py` — not a real
+  operational write path; users run "Backfill from Ops" once after
+  seeding.
+
+**Verification:** 26/26 ledger tests still pass after every batch.
+Full pipeline (init_ledger + backfill + trial_balance) re-checked;
+trial balance is balanced to the penny. All 47 modified hook sites
+plus the 9 pre-existing-bug fixes compile cleanly. The fees REST
+endpoint, the bulk fee-assign dialog, the library finance integration,
+and the cleaned-up duplicate writers are all newly functional in
+addition to being GL-integrated.
 
 ---
 

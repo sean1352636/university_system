@@ -822,58 +822,11 @@ Student Union Finance Team
                 messagebox.showinfo("Payment Processed", success_msg)
                 return True
 
-            # Fallback: Legacy method - add to student_fees without balance deduction
-            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
-            try:
-                cursor = conn.cursor()
-
-                # Get student details
-                cursor.execute('SELECT first_name, last_name, email FROM students WHERE student_id = ?', (student_id,))
-                student_result = cursor.fetchone()
-                if not student_result:
-                    messagebox.showerror("Error", f"Student ID {student_id} not found")
-            finally:
-                conn.close()
-                return False
-
-            first_name, last_name, email = student_result
-
-            # Add charge to student's finance account (legacy method)
-            fee_id = f"SU_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            current_date = datetime.now().strftime('%Y-%m-%d')
-
-            cursor.execute('''
-                INSERT INTO student_fees
-                (fee_id, student_id, fee_type, amount, due_date, description, paid_status, created_date)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                fee_id, student_id, payment_type, amount, current_date,
-                f'{description} for {first_name} {last_name}', 'Paid', current_date
-            ))
-
-            # Record payment
-            try:
-                payment_id = f"PAY_{fee_id}"
-                cursor.execute('''
-                    INSERT INTO payments
-                    (payment_id, student_id, amount, payment_method, payment_date, status, description)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (
-                    payment_id, student_id, amount, 'Student Account', current_date, 'completed',
-                    f'Student Union payment: {description}'
-                ))
-            except sqlite3.Error:
-                pass  # Payments table might not exist
-
-            conn.commit()
-            conn.close()
-
-            # Send payment confirmation email
-            self.send_payment_confirmation(payment_type, description, amount, email, f"{first_name} {last_name}")
-
-            messagebox.showinfo("Payment Processed",
-                f"Payment of £{amount:.2f} charged to {first_name} {last_name}'s student account (legacy)")
-            return True
+            # No legacy fallback: the primary path above is the only correct
+            # path. (A previous "legacy method" block here had unreachable
+            # control flow plus INSERTs against non-existent columns on
+            # student_fees + payments — removed.)
+            return False
 
         except sqlite3.Error as e:
             messagebox.showerror("Error", f"Failed to process payment: {e}")

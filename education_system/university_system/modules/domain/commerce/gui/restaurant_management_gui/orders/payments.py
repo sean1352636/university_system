@@ -332,6 +332,7 @@ def refund_order(self):
                             INSERT INTO unified_refunds (source_type, reference_type, reference_id, amount, refund_type, reason, notes, department, status, request_date)
                             VALUES ('restaurant', 'order', ?, ?, ?, ?, ?, 'restaurant', 'processed', datetime('now'))
                         ''', (order_id, refund_amount, refund_type_var.get(), reason, notes))
+                        refund_row_id = cursor.lastrowid
                         # Update order status
                         new_status = 'Refunded' if refund_type_var.get() == 'Full' else 'Partially Refunded'
                         cursor.execute('''
@@ -341,6 +342,14 @@ def refund_order(self):
                         ''', (new_status, refund_amount, order_id))
                         conn.commit()
                         conn.close()
+
+                        # Auto-post to GL (cash has moved). Never raises.
+                        try:
+                            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                            notify_ledger('refund', refund_row_id, posted_by='restaurant')
+                        except Exception as _e:
+                            import logging
+                            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
                         # Send refund receipt email
                         send_refund_receipt_email(order_id, refund_amount, payment_method,
@@ -1133,18 +1142,10 @@ class PaymentDialog:
 
             first_name, last_name, email = student_result
 
-            # Add charge to student's finance account (legacy method)
-            fee_id = f"REST_{self.order_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-            current_date = datetime.now().strftime('%Y-%m-%d')
-
-            cursor.execute('''
-                INSERT INTO student_fees
-                (fee_id, student_id, fee_type, amount, due_date, description, paid_status, created_date)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (
-                fee_id, student_id, 'Restaurant', total_amount, current_date,
-                f'Restaurant order #{self.order_id} for {first_name} {last_name}', 'Paid', current_date
-            ))
+            # Note: a legacy INSERT into student_fees with non-existent columns
+            # (fee_id, fee_type, description, paid_status, created_date) was
+            # removed here — student_fees is tuition AR, not a commerce ledger.
+            # The unified record_payment() call below is the correct path.
 
             # 8.117.104: unified record_payment() with source_type='restaurant'.
             try:

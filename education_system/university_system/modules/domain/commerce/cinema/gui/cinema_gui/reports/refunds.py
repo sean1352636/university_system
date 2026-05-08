@@ -425,13 +425,22 @@ def _complete_cinema_refund(self, booking_id, booking_ref, amount, refund_method
             cursor.execute("""
                 INSERT INTO unified_refunds
                 (source_type, reference_id, reference_type, customer_email, amount,
-                 refund_method, refund_reference, refund_date, processed_by)
-                VALUES ('cinema', ?, 'booking', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                 refund_method, refund_reference, refund_date, processed_by, status)
+                VALUES ('cinema', ?, 'booking', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
             """, (booking_ref, customer_email, amount, refund_method, refund_ref, processed_by))
+            refund_row_id = cursor.lastrowid
 
             conn.commit()
         finally:
             conn.close()
+
+        # Auto-post to GL (cash has moved). Never raises.
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('refund', refund_row_id, posted_by=processed_by or 'cinema')
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
         # Send receipt
         self.send_cinema_refund_receipt(customer_email, amount, refund_method, refund_ref, booking_ref)
@@ -486,13 +495,22 @@ def add_cinema_refund_to_student_account(self, booking_id, booking_ref, amount, 
             cursor.execute("""
                 INSERT INTO unified_refunds
                 (source_type, reference_id, reference_type, customer_email, amount,
-                 refund_method, refund_reference, refund_date, processed_by)
-                VALUES ('cinema', ?, 'booking', ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?)
+                 refund_method, refund_reference, refund_date, processed_by, status)
+                VALUES ('cinema', ?, 'booking', ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?, 'processed')
             """, (booking_ref, customer_email, amount, refund_ref, processed_by))
+            refund_row_id = cursor.lastrowid
 
             conn.commit()
         finally:
             conn.close()
+
+        # Auto-post to GL (cash has moved to student account). Never raises.
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('refund', refund_row_id, posted_by=processed_by or 'cinema')
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
         # Add to student finance account
         with transaction() as conn:

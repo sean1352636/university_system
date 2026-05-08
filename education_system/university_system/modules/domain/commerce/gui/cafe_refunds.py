@@ -270,12 +270,21 @@ Status: {values[6]}
                 # Record refund in unified_refunds table
                 cursor.execute('''
                     INSERT INTO unified_refunds
-                    (source_type, reference_id, reference_type, amount, refund_method, refund_reference, student_id, refund_date)
-                    VALUES ('cafe', ?, 'order', ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    (source_type, reference_id, reference_type, amount, refund_method, refund_reference, student_id, refund_date, status)
+                    VALUES ('cafe', ?, 'order', ?, ?, ?, ?, CURRENT_TIMESTAMP, 'processed')
                 ''', (str(order_id), amount, refund_method, refund_ref, student_id))
+                refund_row_id = cursor.lastrowid
 
                 conn.commit()
                 conn.close()
+
+                # Auto-post to GL (cash has moved). Never raises.
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('refund', refund_row_id, posted_by='cafe')
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
                 # Send refund receipt email
                 self.send_cafe_refund_receipt(order_id, customer_name, amount, refund_method, refund_ref, student_id)

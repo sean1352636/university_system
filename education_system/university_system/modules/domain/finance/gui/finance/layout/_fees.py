@@ -140,9 +140,18 @@ class FeesMixin:
                     (student_id, fee_type_id, amount, currency, status, due_date, created_at)
                     VALUES (?, ?, ?, ?, 'unpaid', ?, datetime('now'))
                 ''', (student_id, fee_type_id, amount, currency, due_date))
+                fee_row_id = cursor.lastrowid
 
                 conn.commit()
                 conn.close()
+
+                # Auto-post AR + revenue to GL (never raises)
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('fee_assignment', fee_row_id, posted_by='fees_tab')
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
                 messagebox.showinfo(_("common.success"), _("finance_gui.messages.fee_assigned"))
                 dialog.destroy()
@@ -380,6 +389,14 @@ class FeesMixin:
 
                 conn.commit()
                 conn.close()
+
+                # Auto-post to GL (never raises)
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('payment', payment_id, posted_by=username)
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
                 messagebox.showinfo(_("finance_gui.messages.success"),
                                   f"{_('finance_gui.messages.payment_recorded', amount=payment_amount)}\n"

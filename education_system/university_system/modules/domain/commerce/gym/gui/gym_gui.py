@@ -1396,17 +1396,18 @@ University Gym & Fitness Center"""
 
     def _notify_finance_gui(self, user_id: str, amount: float, method: str, refund_ref: str):
         """Record refund in finance system for integration."""
+        refund_row_id = None
         try:
             from education_system.university_system.infrastructure.database.db import transaction as db_transaction
             from datetime import datetime
             with db_transaction() as conn:
                 # Insert into unified refunds table
                 try:
-                    conn.execute('''
+                    cur = conn.execute('''
                         INSERT INTO unified_refunds
                         (student_id, refund_reference, source_type, reference_type,
-                         amount, refund_method, refund_date, processed_by, notes)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                         amount, refund_method, refund_date, processed_by, notes, status)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'processed')
                     ''', (
                         user_id,
                         refund_ref,
@@ -1418,6 +1419,7 @@ University Gym & Fitness Center"""
                         self.user_id,
                         'Gym Service Refund'
                     ))
+                    refund_row_id = cur.lastrowid
                     print(f"[Gym] Refund recorded in finance system: {refund_ref}")
                 except Exception as e:
                     print(f"[Gym] Error recording refund in finance system: {e}")
@@ -1425,6 +1427,15 @@ University Gym & Fitness Center"""
                     traceback.print_exc()
         except Exception as e:
             print(f"Error notifying finance GUI: {e}")
+
+        # Auto-post to GL (cash has moved). Never raises.
+        if refund_row_id is not None:
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('refund', refund_row_id, posted_by=self.user_id or 'gym')
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
     def _show_payment_dialog(self, amount: float, description: str) -> Optional[str]:
         """Show payment method selection dialog. Returns payment method or None if cancelled."""

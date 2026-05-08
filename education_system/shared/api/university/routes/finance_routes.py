@@ -115,6 +115,15 @@ def create_payment():
         )
         payment_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
+    # Auto-post to GL if status implies cash has moved (never raises)
+    if (data.get("status", "completed") or "").lower() in ("completed", "paid", "success"):
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger("payment", payment_id, posted_by=g.current_user.get("sub") or "api")
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+
     with get_connection() as conn:
         row = conn.execute(
             "SELECT * FROM payments WHERE payment_id = ?", (payment_id,)

@@ -150,6 +150,18 @@ def _record_library_payment_in_finance(self, user_id, amount, payment_method):
         conn.commit()
         conn.close()
 
+        # Auto-post to GL (never raises). The companion helper _record_fine_payment
+        # writes additional per-loan payment rows on a caller-owned connection;
+        # those are not hooked here to avoid posting before the caller's commit.
+        # Library-fine payments therefore double-post if the caller's rows aren't
+        # also reconciled — pre-existing duplication, tracked separately.
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('payment', payment_id, posted_by='library_fine')
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+
         return True
 
     except (sqlite3.Error, DatabaseError) as e:

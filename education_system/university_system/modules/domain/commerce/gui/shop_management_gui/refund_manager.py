@@ -313,12 +313,22 @@ def process_shop_refund(self):
             cursor.execute('''
                 INSERT INTO unified_refunds
                 (source_type, reference_id, reference_type, refund_date, amount,
-                 refund_method, refund_reference, student_id, processed_by)
-                VALUES ('shop', ?, 'transaction', ?, ?, ?, ?, ?, ?)
+                 refund_method, refund_reference, student_id, processed_by, status)
+                VALUES ('shop', ?, 'transaction', ?, ?, ?, ?, ?, ?, 'processed')
             ''', (transaction_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), amount, refund_method,
                   refund_ref, student_id, self.current_user.get('username', 'System')))
+            refund_row_id = cursor.lastrowid
 
             # Transaction auto-commits on successful exit from context
+
+        # Auto-post to GL (cash has moved). Never raises.
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('refund', refund_row_id,
+                          posted_by=self.current_user.get('username', 'shop'))
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
         # If student account refund, add to their account
         if refund_method == 'Student Account':

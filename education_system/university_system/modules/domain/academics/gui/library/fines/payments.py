@@ -123,15 +123,11 @@ def process_fine_payment(self):
                     ''', (new_fine_amount, loan_id))
                     remaining_payment = 0
 
-            # Record payment in payments table for refund tracking
-            self._record_fine_payment(
-                conn=conn,
-                user_id=user_id,
-                amount=amount,
-                payment_method="Cash/Card at Library Desk"
-            )
-
-            # Record payment in finance system
+            # _record_fine_payment was called here (per-loan payment rows on
+            # the caller-owned conn) but it duplicated the summary INSERT in
+            # _record_library_payment_in_finance below. One fine payment was
+            # producing N+1 payment rows. Removed; the summary helper does
+            # allocations and is GL-hooked.
             finance_success = self._record_library_payment_in_finance(
                 user_id=user_id,
                 amount=amount,
@@ -327,15 +323,9 @@ def pay_fine_from_finance_account(self):
                     ''', (new_fine_amount, loan_id))
                     remaining_payment = 0
 
-            # Record payment in payments table for refund tracking
-            self._record_fine_payment(
-                conn=conn,
-                user_id=user_id,
-                amount=amount,
-                payment_method="Student Finance Account"
-            )
-
-            # Record payment in library system
+            # _record_fine_payment was called here too (same duplication as
+            # the cash/card flow above). Removed; the summary helper below is
+            # the single source of truth for the payment row.
             self._record_library_payment_in_finance(
                 user_id=user_id,
                 amount=amount,
@@ -604,6 +594,7 @@ def process_fine_payment_gui(self):
                       get_current_user_id(), payment_date,
                       str(loan_id),
                       f'FINE_{loan_id}_{datetime.now().strftime("%Y%m%d%H%M%S")}'))
+                payment_row_id = cursor.lastrowid
 
                 # Update loan - mark fine as paid
                 cursor.execute('''
@@ -614,6 +605,14 @@ def process_fine_payment_gui(self):
 
                 conn.commit()
                 conn.close()
+
+                # Auto-post to GL (never raises)
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('payment', payment_row_id, posted_by=str(get_current_user_id() or 'library_fine'))
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
                 log_audit_event(get_current_user_id(),
                               f"Processed fine payment: £{fine_amount:.2f} for loan {loan_id} via {payment_method}",

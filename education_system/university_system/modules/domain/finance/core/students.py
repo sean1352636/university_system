@@ -409,6 +409,7 @@ def apply_credit_to_fees():
         # Process applications
         remaining_to_apply = apply_amount
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        credit_application_payment_ids = []
 
         for fee_id, fee_name, total_amt, paid_amt, outstanding in fees:
             if remaining_to_apply <= 0:
@@ -427,6 +428,7 @@ def apply_credit_to_fees():
                   get_current_user()['username'] if get_current_user() else 'system', now))
 
             payment_id = cursor.lastrowid
+            credit_application_payment_ids.append(payment_id)
 
             # Create payment allocation
             cursor.execute('''
@@ -468,6 +470,15 @@ def apply_credit_to_fees():
             remaining_credit_to_use -= credit_used
 
         conn.commit()
+
+        # Auto-post each credit-application payment to GL (never raises)
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            for pid in credit_application_payment_ids:
+                notify_ledger('payment', pid, posted_by='credit_application')
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
         print(f"\nCredit application completed!")
         print(f"Total applied: £{apply_amount:.2f}")

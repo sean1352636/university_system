@@ -311,6 +311,7 @@ def make_payment(self, student_id):
 
             # Record payment for each fee
             # fee tuple: (fee_name, amount, status, student_fee_id, currency)
+            payment_ids = []
             for fee in unpaid_fees:
                 fee_name = fee[0] or 'Unknown Fee'
                 fee_amount = fee[1]
@@ -323,6 +324,7 @@ def make_payment(self, student_id):
                 VALUES (?, ?, ?, ?, ?, datetime('now'), 'completed', ?)
                 """, (student_id, fee_amount, fee_currency, payment_method.get(),
                       confirmation, f"Payment for: {fee_name}"))
+                payment_ids.append(cursor.lastrowid)
 
                 # Update fee status to paid using the specific student_fee_id
                 cursor.execute("""
@@ -333,6 +335,15 @@ def make_payment(self, student_id):
 
             conn.commit()
             conn.close()
+
+            # Auto-post each payment to GL (never raises)
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                for pid in payment_ids:
+                    notify_ledger('payment', pid, posted_by='parent_portal')
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
             messagebox.showinfo("Success",
                                f"Payment of {currency} {total_amount:.2f} processed successfully!\n\n"

@@ -261,12 +261,21 @@ Status: {values[5]}
                 cursor.execute('''
                     INSERT INTO unified_refunds
                     (source_type, reference_id, reference_type, amount, refund_type,
-                     refund_method, refund_reference, reason, refund_date)
-                    VALUES ('order', ?, 'order', ?, 'Full', ?, ?, 'Customer Request', CURRENT_TIMESTAMP)
+                     refund_method, refund_reference, reason, refund_date, status)
+                    VALUES ('order', ?, 'order', ?, 'Full', ?, ?, 'Customer Request', CURRENT_TIMESTAMP, 'processed')
                 ''', (str(order_id), amount, refund_method, refund_ref))
+                refund_row_id = cursor.lastrowid
 
                 conn.commit()
                 conn.close()
+
+                # Auto-post to GL (cash has moved). Never raises.
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('refund', refund_row_id, posted_by='restaurant')
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
                 # Send refund receipt email to the payer
                 email_sent = send_refund_receipt(order_id, amount, refund_method, refund_ref,

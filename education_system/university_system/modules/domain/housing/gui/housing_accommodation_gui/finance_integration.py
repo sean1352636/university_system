@@ -572,9 +572,19 @@ class HousingFinanceManager:
                          method_var.get(), notes_text.get('1.0', 'end').strip(),
                          period_start_entry.get(), period_end_entry.get(),
                          status_var.get(), received_by, current_time, current_time))
+                    payment_row_id = cursor.lastrowid
 
                     conn.commit()
                     conn.close()
+
+                    # Auto-post to GL only if cash has actually moved (never raises)
+                    if (status_var.get() or '').strip().lower() in ('completed', 'paid', 'success'):
+                        try:
+                            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                            notify_ledger('payment', payment_row_id, posted_by=received_by or 'housing')
+                        except Exception as _e:
+                            import logging
+                            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
                     messagebox.showinfo("Success", f"Payment {payment_id} recorded successfully!")
                     dialog.destroy()

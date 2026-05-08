@@ -1467,9 +1467,18 @@ Average Rental Value: £{avg_rental_value:.2f}
                 cursor.execute("""
                     INSERT INTO unified_refunds
                     (source_type, reference_id, reference_type, student_id, amount,
-                     refund_method, refund_reference, refund_date, processed_by)
-                    VALUES ('car_rental', ?, 'transaction', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                     refund_method, refund_reference, refund_date, processed_by, status)
+                    VALUES ('car_rental', ?, 'transaction', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
                 """, (str(transaction_id), customer_id, amount, refund_method, refund_ref, processed_by))
+                refund_row_id = cursor.lastrowid
+
+            # Auto-post to GL (cash has moved). Never raises.
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('refund', refund_row_id, posted_by=processed_by or 'car_rental')
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
             # Send receipt
             self.send_carrental_refund_receipt(customer_id, amount, refund_method, refund_ref)
@@ -1518,9 +1527,10 @@ Average Rental Value: £{avg_rental_value:.2f}
                 cursor.execute("""
                     INSERT INTO unified_refunds
                     (source_type, reference_id, reference_type, student_id, amount,
-                     refund_method, refund_reference, refund_date, processed_by)
-                    VALUES ('car_rental', ?, 'transaction', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                     refund_method, refund_reference, refund_date, processed_by, status)
+                    VALUES ('car_rental', ?, 'transaction', ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
                 """, (str(transaction_id), customer_id, amount, 'student_account', refund_ref, processed_by))
+                refund_row_id = cursor.lastrowid
 
                 # Add to student finance account
                 cursor.execute("""
@@ -1545,6 +1555,14 @@ Average Rental Value: £{avg_rental_value:.2f}
                     VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
                 """, (account_id, customer_id, amount, new_balance, f'Car rental refund - {refund_ref}',
                       refund_ref, processed_by, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+            # Auto-post to GL (cash has moved to student account). Never raises.
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('refund', refund_row_id, posted_by=processed_by or 'car_rental')
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
             # Send receipt
             self.send_carrental_refund_receipt(customer_id, amount, 'student_account', refund_ref, new_balance)

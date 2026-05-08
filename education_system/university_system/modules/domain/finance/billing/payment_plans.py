@@ -476,6 +476,15 @@ def process_payment_plan_payment():
             ''', (new_remaining, next_due, now.strftime('%Y-%m-%d %H:%M:%S'), plan_id))
 
         conn.commit()
+
+        # Auto-post to GL (never raises)
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('payment', payment_id, posted_by=auth.current_user.get('username', 'plan_installment'))
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+
         print(f"Payment of £{payment_amount:.2f} processed successfully!")
         print(f"Remaining balance: £{new_remaining:.2f}")
 

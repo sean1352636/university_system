@@ -1088,6 +1088,14 @@ University Library System
                 conn.commit()
                 conn.close()
 
+                # Auto-post to GL (never raises)
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('payment', payment_id, posted_by='library_fine')
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+
                 # Send payment receipt email
                 user_info = self.get_user_email(user_id)
                 if user_info:

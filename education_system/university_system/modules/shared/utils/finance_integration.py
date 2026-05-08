@@ -1004,6 +1004,14 @@ def process_student_finance_account_payment(
                 VALUES (?, ?, 'GBP', 'Student Finance Account', ?, ?, 'completed', ?, ?, ?)
             ''', (student_id, amount, transaction_id, payment_date,
                   f"[{transaction_source}] {description}", processed_by, payment_date))
+            payment_row_id = cursor.lastrowid
+
+        # Auto-post to GL (status hardcoded 'completed'; cash has moved). Never raises.
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('payment', payment_row_id, posted_by=processed_by or 'finance_integration')
+        except Exception as _e:
+            logger.warning("ledger hook failed: %s", _e)
 
         result['success'] = True
         result['message'] = f"Payment of \u00a3{amount:.2f} processed successfully"

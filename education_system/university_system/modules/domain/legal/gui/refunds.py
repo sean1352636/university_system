@@ -314,9 +314,19 @@ class RefundsMixin:
                 cursor.execute("""
                     INSERT INTO unified_refunds
                     (source_type, reference_id, reference_type, student_id, customer_email,
-                     amount, refund_method, refund_reference, refund_date, processed_by)
-                    VALUES ('legal', ?, 'payment', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                     amount, refund_method, refund_reference, refund_date, processed_by, status)
+                    VALUES ('legal', ?, 'payment', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
                 """, (str(payment_id), client_id, client_email, amount, refund_method, refund_ref, processed_by))
+                refund_row_id = cursor.lastrowid
+
+            # Auto-post to GL (cash has moved). Never raises.
+            if refund_row_id is not None:
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('refund', refund_row_id, posted_by=processed_by or 'legal')
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
             # Log activity
             log_activity('refund', 'legal_payment',
@@ -377,9 +387,10 @@ class RefundsMixin:
                 cursor.execute("""
                     INSERT INTO unified_refunds
                     (source_type, reference_id, reference_type, student_id, customer_email,
-                     amount, refund_method, refund_reference, refund_date, processed_by)
-                    VALUES ('legal', ?, 'payment', ?, ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?)
+                     amount, refund_method, refund_reference, refund_date, processed_by, status)
+                    VALUES ('legal', ?, 'payment', ?, ?, ?, 'student_account', ?, CURRENT_TIMESTAMP, ?, 'processed')
                 """, (str(payment_id), client_id, client_email, amount, refund_ref, processed_by))
+                refund_row_id = cursor.lastrowid
 
                 # Add to student finance account
                 cursor.execute("""
@@ -404,6 +415,15 @@ class RefundsMixin:
                     VALUES ('student_finance', ?, ?, 'credit', ?, ?, ?, ?, ?, ?)
                 """, (account_id, client_id, amount, new_balance, f'Legal services refund - {refund_ref}',
                       refund_ref, processed_by, datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+            # Auto-post to GL (cash has moved to student account). Never raises.
+            if refund_row_id is not None:
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('refund', refund_row_id, posted_by=processed_by or 'legal')
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
             # Log activity
             log_activity('refund', 'legal_payment',

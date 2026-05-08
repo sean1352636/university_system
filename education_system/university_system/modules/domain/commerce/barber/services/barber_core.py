@@ -1256,17 +1256,26 @@ class RefundManager:
             cursor = conn.execute('''
                 INSERT INTO unified_refunds
                 (source_type, reference_id, reference_type, original_amount, amount,
-                 refund_type, reason, processed_by, refund_date, notes)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                 refund_type, reason, processed_by, refund_date, notes, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
             ''', ('barber', str(trans['reference_id']), 'appointment',
                   trans['amount'], amount, refund_type, reason, processed_by,
                   f'barber_transaction_{transaction_id}'))
+            refund_row_id = cursor.lastrowid
 
             conn.execute('''
                 UPDATE transactions SET status = 'refunded' WHERE transaction_id = ? AND source_type = 'barber'
             ''', (transaction_id,))
 
-            return cursor.lastrowid
+        # Auto-post to GL (cash has moved). Never raises.
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('refund', refund_row_id, posted_by=processed_by or 'barber')
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+
+        return refund_row_id
 
 class CashDrawerManager:
     """Manages cash drawer"""

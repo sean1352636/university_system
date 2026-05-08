@@ -262,7 +262,7 @@ def list_fees():
         params.extend([per_page, offset])
 
         rows = conn.execute(
-            "SELECT * FROM student_fees" + where + " ORDER BY id DESC LIMIT ? OFFSET ?",
+            "SELECT * FROM student_fees" + where + " ORDER BY student_fee_id DESC LIMIT ? OFFSET ?",
             params,
         ).fetchall()
         total_row = conn.execute(
@@ -281,7 +281,7 @@ def list_fees():
 def get_fee(fee_id: int):
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM student_fees WHERE id = ?", (fee_id,)
+            "SELECT * FROM student_fees WHERE student_fee_id = ?", (fee_id,)
         ).fetchone()
     if not row:
         raise ValidationError(f"Fee record {fee_id} not found")
@@ -297,8 +297,11 @@ def create_fee():
         raise ValidationError("Missing required field: student_id")
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    allowed = ["student_id", "fee_type", "amount", "due_date", "status",
-               "description", "academic_year"]
+    # Whitelist of valid student_fees columns; 'description' and 'academic_year'
+    # are not on the table and were dropped (the previous list silently broke
+    # callers that posted them). 'fee_type' was renamed to 'fee_type_id' to
+    # match the actual FK column.
+    allowed = ["student_id", "fee_type_id", "amount", "currency", "due_date", "status"]
     cols = []
     vals = []
     for key in allowed:
@@ -314,9 +317,19 @@ def create_fee():
         )
         new_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
 
+    # Auto-post AR + revenue to GL (never raises; no-op if SQL above didn't actually
+    # produce a usable row, e.g. when the caller posts a 'fee_type' key that the
+    # current schema doesn't have).
+    try:
+        from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+        notify_ledger("fee_assignment", new_id, posted_by=g.current_user.get("sub") or "api")
+    except Exception as _e:
+        import logging
+        logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM student_fees WHERE id = ?", (new_id,)
+            "SELECT * FROM student_fees WHERE student_fee_id = ?", (new_id,)
         ).fetchone()
 
     log_activity("create", "student_fee", user=g.current_user.get("sub"))
@@ -328,13 +341,13 @@ def create_fee():
 def update_fee(fee_id: int):
     with get_connection() as conn:
         existing = conn.execute(
-            "SELECT * FROM student_fees WHERE id = ?", (fee_id,)
+            "SELECT * FROM student_fees WHERE student_fee_id = ?", (fee_id,)
         ).fetchone()
     if not existing:
         raise ValidationError(f"Fee record {fee_id} not found")
 
     data = request.get_json(silent=True) or {}
-    allowed = ["fee_type", "amount", "due_date", "status", "description", "academic_year"]
+    allowed = ["fee_type_id", "amount", "currency", "due_date", "status"]
     sets = []
     params: list = []
     for key in allowed:
@@ -347,12 +360,12 @@ def update_fee(fee_id: int):
 
     with transaction() as conn:
         conn.execute(
-            f"UPDATE student_fees SET {', '.join(sets)} WHERE id = ?", params
+            f"UPDATE student_fees SET {', '.join(sets)} WHERE student_fee_id = ?", params
         )
 
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT * FROM student_fees WHERE id = ?", (fee_id,)
+            "SELECT * FROM student_fees WHERE student_fee_id = ?", (fee_id,)
         ).fetchone()
 
     log_activity("update", "student_fee", user=g.current_user.get("sub"))
@@ -364,13 +377,13 @@ def update_fee(fee_id: int):
 def delete_fee(fee_id: int):
     with get_connection() as conn:
         existing = conn.execute(
-            "SELECT * FROM student_fees WHERE id = ?", (fee_id,)
+            "SELECT * FROM student_fees WHERE student_fee_id = ?", (fee_id,)
         ).fetchone()
     if not existing:
         raise ValidationError(f"Fee record {fee_id} not found")
 
     with transaction() as conn:
-        conn.execute("DELETE FROM student_fees WHERE id = ?", (fee_id,))
+        conn.execute("DELETE FROM student_fees WHERE student_fee_id = ?", (fee_id,))
 
     log_activity("delete", "student_fee", user=g.current_user.get("sub"))
     return jsonify({"message": "Fee record deleted"})

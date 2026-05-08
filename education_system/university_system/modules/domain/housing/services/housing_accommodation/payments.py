@@ -154,19 +154,27 @@ def record_payment():
             transaction_ref, period_start, period_end, 'Completed',
             auth.current_user['username'], timestamp, timestamp
         ))
+        local_payment_row_id = cursor.lastrowid
 
         conn.commit()
 
-        # Record payment to central finance system
-        finance_payment_id = record_payment_to_finance(
-            student_id=student_id,
-            amount=payment_amount,
-            payment_method=payment_method,
-            transaction_source='Housing',
-            transaction_ref=payment_id,
-            notes=f'Housing rent payment for period {period_start} to {period_end}',
-            created_by=auth.current_user['username'] if auth and auth.current_user else None
-        )
+        # Auto-post local payment row to GL (never raises).
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('payment', local_payment_row_id,
+                          posted_by=auth.current_user.get('username', 'housing'))
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+
+        # Note: a duplicate call to record_payment_to_finance was removed here.
+        # That central helper writes to the same `payments` table (DEFAULT_DB_PATH)
+        # the local INSERT above already targets, producing two rows for one
+        # rent payment and double-posting in the GL. The local INSERT has the
+        # full housing context (assignment, period dates, source_payment_id);
+        # the central helper would lose that. Set finance_payment_id to the
+        # local row so downstream code that reads it keeps working.
+        finance_payment_id = local_payment_row_id
 
         # Cross-domain: a successful rent payment clears any active
         # arrears hold on this assignment, unblocking enrolment / room

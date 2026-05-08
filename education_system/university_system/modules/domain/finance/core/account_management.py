@@ -177,6 +177,14 @@ def assign_fees_to_student():
 
         conn.commit()
 
+        # Auto-post to GL (never raises)
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('fee_assignment', fee_id, posted_by='account_mgmt')
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+
         # Immutable audit log for fee assignment
         if IMMUTABLE_AUDIT_AVAILABLE:
             admin_id = str(auth.current_user.get('id', '')) if auth and auth.current_user else 'system'
@@ -304,6 +312,14 @@ def record_payment():
                       f'Overpayment from payment ID {payment_id}', auth.current_user['username'], now, now))
 
         conn.commit()
+
+        # Auto-post to GL (never raises)
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('payment', payment_id, posted_by='account_mgmt')
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
         # Immutable audit log for payment recording
         if IMMUTABLE_AUDIT_AVAILABLE:
@@ -780,6 +796,14 @@ def api_record_payment():
 
         conn.commit()
         conn.close()
+
+        # Auto-post to GL (never raises)
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('payment', payment_id, posted_by='api')
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
         return jsonify({
             'payment_id': payment_id,

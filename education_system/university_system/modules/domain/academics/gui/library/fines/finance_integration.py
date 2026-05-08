@@ -296,11 +296,12 @@ def _process_library_fine_payment(self, student_id, amount, student_name, email)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 ''', (student_id, 3, 0.00, 'GBP', 'paid', due_date, current_date, current_date))
                 student_fee_id = cursor.lastrowid
+                # Skip GL hook — zero-amount synthetic placeholder fee, not a real revenue event.
 
             # Record payment in payments table
             cursor.execute('''
                 INSERT INTO payments
-                (student_id, amount, payment_method, payment_date, status, reference_number, description, created_at)
+                (student_id, amount, payment_method, payment_date, status, payment_reference, description, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ''', (
                 student_id, amount, 'Student Account', current_date, 'completed',
@@ -308,6 +309,14 @@ def _process_library_fine_payment(self, student_id, amount, student_name, email)
                 f'Library fine payment for {student_name}', current_date
             ))
             payment_id = cursor.lastrowid
+
+            # Auto-post to GL now that the SQL is valid (never raises).
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('payment', payment_id, posted_by='library_fine')
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
             # Link payment to fee via payment_allocations
             cursor.execute('''

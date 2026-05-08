@@ -870,13 +870,23 @@ Payment Status: {values[7]}
                     refund_ref = f"BUTCH-REFUND-{uuid.uuid4().hex[:12].upper()}"
 
                     # Record refund in unified_refunds table
-                    conn.execute('''
+                    cur = conn.execute('''
                         INSERT INTO unified_refunds
                         (source_type, reference_id, reference_type, amount, refund_method,
-                         refund_reference, student_id, customer_name, refund_date, processed_by)
-                        VALUES ('butcher', ?, 'order', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
+                         refund_reference, student_id, customer_name, refund_date, processed_by, status)
+                        VALUES ('butcher', ?, 'order', ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?, 'processed')
                     ''', (str(order_id), amount, refund_method, refund_ref, customer_id, customer_name,
                           self.current_user.get('username', 'system')))
+                    refund_row_id = cur.lastrowid
+
+                # Auto-post to GL (cash has moved). Never raises.
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('refund', refund_row_id,
+                                  posted_by=self.current_user.get('username', 'butcher'))
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
                 # Send refund receipt email
                 self.send_butcher_refund_receipt(order_id, customer_id, amount, refund_method, refund_ref, customer_name, order_number)

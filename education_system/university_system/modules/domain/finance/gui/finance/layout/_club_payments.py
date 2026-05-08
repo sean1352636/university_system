@@ -215,9 +215,10 @@ class ClubPaymentsMixin:
             if auth and getattr(auth, 'current_user', None):
                 processed_by = auth.current_user.get('username') or auth.current_user.get('id')
 
+            payment_row_id = None
             try:
                 with get_db_connection() as conn:
-                    conn.execute(
+                    cur = conn.execute(
                         """
                         INSERT INTO payments (
                             amount, currency, payment_method, payment_date, status, notes,
@@ -233,10 +234,20 @@ class ClubPaymentsMixin:
                             datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         ),
                     )
+                    payment_row_id = cur.lastrowid
                     conn.commit()
             except Exception as exc:
                 status_var.set(_("finance_gui.club_payments_tab.save_failed", error=str(exc)))
                 return
+
+            # Auto-post to GL (never raises)
+            if payment_row_id is not None:
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('payment', payment_row_id, posted_by=processed_by or 'club_payments')
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
             status_var.set(_(
                 "finance_gui.club_payments_tab.save_success",

@@ -266,6 +266,7 @@ def _create_record_payment_tab(self, parent):
             processed_by = self.current_user.get('username', 'Unknown') if self.current_user else 'Unknown'
             # Insert into payments with source_type='club'
             conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            payment_row_id = None
             try:
                 cursor = conn.cursor()
                 cursor.execute('''
@@ -284,9 +285,19 @@ def _create_record_payment_tab(self, parent):
                     notes_text.get('1.0', tk.END).strip() or None,
                     processed_by
                 ))
+                payment_row_id = cursor.lastrowid
                 conn.commit()
             finally:
                 conn.close()
+
+            # Auto-post to GL (status hardcoded 'completed'; cash has moved). Never raises.
+            if payment_row_id is not None:
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('payment', payment_row_id, posted_by=processed_by)
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
             messagebox.showinfo("Success", f"Payment of £{amount:.2f} recorded successfully!")
             # Clear form
             club_combo.set('')

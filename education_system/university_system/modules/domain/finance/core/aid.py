@@ -596,6 +596,7 @@ def process_loan_payment(loans):
         ''', (student_id, payment_amount, 'Loan Repayment', payment_date,
               f'Loan repayment for Aid ID {aid_id}',
               get_current_user()['username'] if get_current_user() else 'system', now))
+        loan_payment_id = cursor.lastrowid
 
         # Update loan record
         new_total_repaid = (repaid or 0) + payment_amount
@@ -607,6 +608,14 @@ def process_loan_payment(loans):
         ''', (new_total_repaid, now, aid_id))
 
         conn.commit()
+
+        # Auto-post to GL (never raises)
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('payment', loan_payment_id, posted_by='aid_loan_repayment')
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
         print(f"Loan payment processed successfully!")
         print(f"Payment: £{payment_amount:.2f}")
@@ -868,6 +877,7 @@ def apply_aid_to_fees(student_id, amount, aid_id):
         remaining_aid = amount
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
+        aid_payment_ids = []
         for fee_id, fee_name, total_amount, paid_amount, outstanding in fees:
             if remaining_aid <= 0:
                 break
@@ -885,6 +895,7 @@ def apply_aid_to_fees(student_id, amount, aid_id):
                   get_current_user()['username'] if get_current_user() else 'system', now))
 
             payment_id = cursor.lastrowid
+            aid_payment_ids.append(payment_id)
 
             # Create payment allocation
             cursor.execute('''
@@ -908,6 +919,15 @@ def apply_aid_to_fees(student_id, amount, aid_id):
 
         conn.commit()
         conn.close()
+
+        # Auto-post each aid-disbursement payment to GL (never raises)
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            for pid in aid_payment_ids:
+                notify_ledger('payment', pid, posted_by='aid_disbursement')
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
     except Exception as e:
         print(f"Error applying aid to fees: {e}")

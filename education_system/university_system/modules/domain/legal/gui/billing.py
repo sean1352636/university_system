@@ -36,6 +36,7 @@ class BillingMixin:
                 cursor = conn.cursor()
 
                 # Try to record in the main payments table
+                payment_row_id = None
                 try:
                     cursor.execute('''
                         INSERT INTO payments
@@ -43,8 +44,19 @@ class BillingMixin:
                         VALUES (?, ?, ?, ?, 'completed', ?, ?, ?)
                     ''', (client_id, amount, payment_method, datetime.now().strftime('%Y-%m-%d'),
                           description, self.current_user.get('username'), datetime.now().isoformat()))
+                    payment_row_id = cursor.lastrowid
                 except Exception:
                     pass  # payments table may not exist
+
+                # Auto-post to GL if the INSERT succeeded (never raises)
+                if payment_row_id is not None:
+                    try:
+                        from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                        notify_ledger('payment', payment_row_id,
+                                      posted_by=self.current_user.get('username') or 'legal')
+                    except Exception as _e:
+                        import logging
+                        logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
                 # Try to update student finance account
                 try:

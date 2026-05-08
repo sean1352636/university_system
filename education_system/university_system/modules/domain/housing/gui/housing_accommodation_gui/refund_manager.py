@@ -400,18 +400,21 @@ def _add_to_student_account(self, student_id: str, amount: float, original_ref: 
 
 def _notify_finance_for_housing_refund(self, student_id: str, amount: float, method: str, refund_ref: str):
         """Record refund in unified refunds table for finance integration"""
+        refund_row_id = None
+        processed_by = (self.auth.current_user.get('username', 'System')
+                        if self.auth and self.auth.current_user else 'System')
         try:
             from education_system.university_system.infrastructure.database.db import transaction as db_transaction
             from datetime import datetime
             with db_transaction() as conn:
                 # Insert into unified refunds table with source_type='housing'
                 try:
-                    conn.execute('''
+                    cur = conn.execute('''
                         INSERT INTO unified_refunds
                         (student_id, refund_reference, department, reference_id,
                          amount, refund_method, refund_date, processed_by, notes,
-                         source_type, reference_type)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'housing', 'payment')
+                         source_type, reference_type, status)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'housing', 'payment', 'processed')
                     ''', (
                         student_id,
                         refund_ref,
@@ -420,9 +423,10 @@ def _notify_finance_for_housing_refund(self, student_id: str, amount: float, met
                         amount,
                         method.lower().replace(' ', '_'),
                         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                        self.auth.current_user.get('username', 'System') if self.auth and self.auth.current_user else 'System',
-                        'Housing Payment Refund'
+                        processed_by,
+                        'Housing Payment Refund',
                     ))
+                    refund_row_id = cur.lastrowid
                     print(f"[Housing] Refund recorded in unified_refunds: {refund_ref}")
                 except Exception as e:
                     print(f"[Housing] Error recording refund in unified_refunds: {e}")
@@ -430,6 +434,15 @@ def _notify_finance_for_housing_refund(self, student_id: str, amount: float, met
                     traceback.print_exc()
         except Exception as e:
             print(f"Error notifying finance system: {e}")
+
+        # Auto-post to GL (cash has moved). Never raises.
+        if refund_row_id is not None:
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('refund', refund_row_id, posted_by=processed_by)
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
 def _send_housing_refund_receipt(self, student_id: str, amount: float, method: str, payment_id: str):
         """Send refund receipt email to student"""

@@ -524,14 +524,23 @@ class TransactionManager:
                 ''', (payment_method, rental_id))
 
                 # Record in main payments table for finance integration
-                conn.execute('''
+                pay_cur = conn.execute('''
                     INSERT INTO payments
                     (student_id, amount, payment_method, payment_date, status, notes, created_by)
                     VALUES (?, ?, ?, ?, 'completed', 'Equipment Rental Payment', ?)
                 ''', (borrower_id, amount, payment_method,
                       datetime.now().strftime('%Y-%m-%d'), processed_by))
+                payment_row_id = pay_cur.lastrowid
+                rental_lastrow = cursor.lastrowid
 
-                return cursor.lastrowid
+            # Auto-post to GL (cash has moved). Never raises.
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('payment', payment_row_id, posted_by=processed_by or 'equipment')
+            except Exception as _e:
+                logger.warning("ledger hook failed: %s", _e)
+
+            return rental_lastrow
         except Exception as e:
             logger.error(f"Failed to record payment: {e}")
             return None

@@ -148,7 +148,17 @@ def record_payment(
                 created_by, now,
             ),
         )
-        return int(cursor.lastrowid)
+        payment_id = int(cursor.lastrowid)
+
+    # Auto-post to GL only if status is completed (cash-in moment). Never raises.
+    if status == 'completed':
+        try:
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('payment', payment_id, posted_by=created_by or 'unified_payments')
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+    return payment_id
 
 
 # ----------------------------------------------------------------------

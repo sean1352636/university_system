@@ -329,17 +329,28 @@ Proceed to payment?"""
             )
 
             # Record in central payments table
+            payment_row_id = None
             try:
                 from education_system.university_system.infrastructure.database.db import transaction as db_transaction
                 with db_transaction() as conn:
-                    conn.execute('''
+                    cur = conn.execute('''
                         INSERT INTO payments
                         (student_id, amount, payment_method, payment_date, status, notes, created_by)
                         VALUES (?, ?, ?, date("now"), ?, ?, ?)
                     ''', (self.user_id, treatment_fee, f'dentist_{payment_method}', 'completed',
                           f"Dental Appointment: {treatment_name} (Ref: {result['appointment_ref']})", self.user_id))
+                    payment_row_id = cur.lastrowid
             except Exception as e:
                 print(f"Finance integration error: {e}")
+
+            # Auto-post to GL (never raises)
+            if payment_row_id is not None:
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('payment', payment_row_id, posted_by=self.user_id or 'dentist')
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
             payment_method_display = {'cash': 'Cash', 'card': 'Card', 'student_account': 'Student Account'}.get(payment_method, payment_method)
 
@@ -1343,16 +1354,27 @@ Last Visit: {self.patient.get('last_visit', 'Never')}"""
             )
             if result:
                 # Record payment in central payments table for finance integration
+                payment_row_id = None
                 try:
                     from education_system.university_system.infrastructure.database.db import transaction as db_transaction
                     with db_transaction() as conn:
                         # Insert into payments table for finance tracking
-                        conn.execute('''
+                        cur = conn.execute('''
                             INSERT INTO payments
                             (student_id, amount, payment_method, payment_date, status, notes, created_by)
                             VALUES (?, ?, ?, date("now"), ?, ?, ?)
                         ''', (self.user_id, amount, f'dentist_{payment_method}', 'completed',
                               f"Dental: {description} (Ref: {result['reference']})", self.user_id))
+                        payment_row_id = cur.lastrowid
+
+                        # Auto-post to GL (never raises)
+                        if payment_row_id is not None:
+                            try:
+                                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                                notify_ledger('payment', payment_row_id, posted_by=self.user_id or 'dentist')
+                            except Exception as _e:
+                                import logging
+                                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
                         # Try to record revenue for finance reporting
                         try:
@@ -1883,17 +1905,18 @@ University Dental Clinic"""
 
     def _notify_finance_for_refund(self, user_id: str, amount: float, method: str, refund_ref: str):
         """Record refund in finance system for integration."""
+        refund_row_id = None
         try:
             from education_system.university_system.infrastructure.database.db import transaction as db_transaction
             from datetime import datetime
             with db_transaction() as conn:
                 # Record refund in unified_refunds table
                 try:
-                    conn.execute('''
+                    cur = conn.execute('''
                         INSERT INTO unified_refunds
                         (source_type, student_id, refund_reference, department,
-                         amount, refund_method, refund_date, processed_by, notes, reference_type)
-                        VALUES ('dentist', ?, ?, 'Dentist', ?, ?, ?, ?, 'Dental Clinic Payment Refund', 'payment')
+                         amount, refund_method, refund_date, processed_by, notes, reference_type, status)
+                        VALUES ('dentist', ?, ?, 'Dentist', ?, ?, ?, ?, 'Dental Clinic Payment Refund', 'payment', 'processed')
                     ''', (
                         user_id,
                         refund_ref,
@@ -1902,6 +1925,7 @@ University Dental Clinic"""
                         datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                         self.user_id,
                     ))
+                    refund_row_id = cur.lastrowid
                     print(f"[Dentist] Refund recorded in finance system: {refund_ref}")
                 except Exception as e:
                     print(f"[Dentist] Error recording refund in finance system: {e}")
@@ -1909,6 +1933,15 @@ University Dental Clinic"""
                     traceback.print_exc()
         except Exception as e:
             print(f"Error notifying finance system: {e}")
+
+        # Auto-post to GL (cash has moved). Never raises.
+        if refund_row_id is not None:
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('refund', refund_row_id, posted_by=self.user_id or 'dentist')
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
 
 def launch_dentist_gui(root=None, auth=None):

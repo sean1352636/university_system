@@ -679,6 +679,14 @@ class PaymentManager:
                 'transaction_ref': transaction_ref
             })
 
+            # Auto-post to GL (status was hardcoded 'completed'; cash has moved). Never raises.
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('payment', payment_id, posted_by=processed_by or 'legal_services')
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+
             return payment_id
 
         except sqlite3.Error as e:

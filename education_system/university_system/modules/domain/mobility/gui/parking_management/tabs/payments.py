@@ -243,6 +243,7 @@ Notes: {payment[8] or 'None'}
                     VALUES ('parking', ?, 'violation', ?, ?, ?, ?, ?, ?)
                 """, (dialog.result['violation_id'], dialog.result['amount'], dialog.result['payment_method'],
                       payment_ref, dialog.result['student_id'], processed_by, 'Parking fine payment'))
+                payment_row_id = cursor.lastrowid
 
                 # Update violation status
                 cursor.execute("""
@@ -284,6 +285,15 @@ Notes: {payment[8] or 'None'}
                           dialog.result['payment_method'], processed_by, 'Parking fine payment'))
                 except Exception as e:
                     logging.warning(f"Could not log to payments (finance): {e}")
+
+            # Auto-post the parking payment to GL (never raises). The second
+            # INSERT above with source_type='finance' is a redundant log entry
+            # and is intentionally NOT hooked to avoid double-posting.
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('payment', payment_row_id, posted_by=processed_by)
+            except Exception as _e:
+                logging.warning("ledger hook failed: %s", _e)
 
             # Send confirmation email
             self.send_payment_confirmation_email(dialog.result['violation_id'], dialog.result['amount'],
@@ -402,12 +412,13 @@ University Parking Management
                 cursor.execute("""
                     INSERT INTO unified_refunds
                     (source_type, reference_id, reference_type, amount, refund_method, refund_reference,
-                     student_id, processed_by, reason, refund_date)
-                    VALUES ('parking', ?, 'payment', ?, ?, ?, ?, ?, ?, ?)
+                     student_id, processed_by, reason, refund_date, status)
+                    VALUES ('parking', ?, 'payment', ?, ?, ?, ?, ?, ?, ?, 'processed')
                 """, (str(dialog.result['payment_id']), dialog.result['amount'],
                       dialog.result['refund_method'], refund_ref, dialog.result['student_id'], processed_by,
                       f"Parking fine refund (violation: {dialog.result['violation_id']})",
                       datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+                refund_row_id = cursor.lastrowid
 
                 # Update violation status
                 cursor.execute("""
@@ -448,6 +459,13 @@ University Parking Management
                         """, (account_id, dialog.result['student_id'], dialog.result['amount'], new_balance,
                               f"Parking fine refund - {refund_ref}", refund_ref, processed_by,
                               datetime.now().strftime('%Y-%m-%d %H:%M:%S')))
+
+            # Auto-post refund to GL (cash has moved). Never raises.
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('refund', refund_row_id, posted_by=processed_by)
+            except Exception as _e:
+                logging.warning("ledger hook failed: %s", _e)
 
             # Send confirmation email
             self.send_refund_confirmation_email(dialog.result['violation_id'], dialog.result['amount'],

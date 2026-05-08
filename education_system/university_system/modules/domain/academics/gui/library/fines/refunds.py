@@ -463,27 +463,26 @@ def _process_library_fine_refund(self, user_id, payment_id, loan_id, book_title,
             f"Book: {book_title}; Refund {refund_amount:.2f} via {refund_method}",
             current_datetime
         ))
+        local_refund_row_id = cursor.lastrowid
 
-        # Also record in finance system if available
+        # Auto-post local refund to GL (cash has moved). Never raises.
+        # Note: record_refund_to_finance below also creates a SEPARATE row
+        # which is itself hooked at the central helper — pre-existing
+        # duplication for library-fine refunds, tracked separately.
         try:
-            from education_system.university_system.modules.shared.utils.finance_integration import record_refund_to_finance
+            from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+            notify_ledger('refund', local_refund_row_id, posted_by=str(processed_by or 'library_fine'))
+        except Exception as _e:
+            import logging
+            logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
-            refund_id = record_refund_to_finance(
-                student_id=user_id,
-                refund_amount=refund_amount,
-                original_payment_id=None,
-                refund_reason=refund_reason,
-                refund_type="library_fine",
-                transaction_source="Library",
-                transaction_ref=f"FINE_REFUND_{payment_id}",
-                refund_method=refund_method.lower().replace(' ', '_'),
-                currency="GBP",
-                requested_by=processed_by,
-                notes=f"Book: {book_title}"
-            )
-        except ImportError:
-            refund_id = None
-            print("Warning: Could not record refund in finance system")
+        # Note: a duplicate call to record_refund_to_finance was removed here.
+        # That central helper writes a SECOND row to the same unified_refunds
+        # table the local INSERT above already targets, double-posting in the
+        # GL. The local row has the full library context (book title, loan
+        # reference); finance integration is now via the GL hook on the
+        # local INSERT.
+        refund_id = local_refund_row_id
 
         conn.commit()
         conn.close()

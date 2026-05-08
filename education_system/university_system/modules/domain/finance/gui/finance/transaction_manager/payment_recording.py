@@ -405,6 +405,14 @@ class PaymentRecordingMixin:
                 conn.commit()
                 conn.close()
 
+                # Auto-post to GL (never raises)
+                try:
+                    from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                    notify_ledger('payment', payment_id, posted_by=username)
+                except Exception as _e:
+                    import logging
+                    logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+
                 # Send payment confirmation email
                 email_sent = _send_payment_confirmation_email(
                     student_email, student_name, payment_id, amount,
@@ -514,7 +522,17 @@ class PaymentRecordingMixin:
                 ''',
                 (student_id, amount, method, reference or None, 'Recorded via transaction manager', now)
             )
+            payment_id = cursor.lastrowid
             conn.commit()
+
+            # Auto-post to GL (never raises)
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                notify_ledger('payment', payment_id, posted_by='record_payment')
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+
             messagebox.showinfo(_("finance_gui.messages.success"), "Payment recorded successfully.")
             return True
         except Exception as e:

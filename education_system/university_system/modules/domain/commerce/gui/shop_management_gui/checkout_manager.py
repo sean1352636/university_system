@@ -443,18 +443,9 @@ def _process_student_account_payment(self, student_id, total_amount, transaction
 
         first_name, last_name, email = student_result
 
-        # Add charge to student's finance account (legacy method)
-        fee_id = f"SHOP_{transaction_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        current_date = datetime.now().strftime('%Y-%m-%d')
-
-        cursor.execute('''
-            INSERT INTO student_fees
-            (fee_id, student_id, fee_type, amount, due_date, description, paid_status, created_date)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (
-            fee_id, student_id, 'Shop Purchase', total_amount, current_date,
-            f'Shop purchase #{transaction_id} for {first_name} {last_name}', 'Paid', current_date
-        ))
+        # Note: a legacy INSERT into student_fees with non-existent columns
+        # was removed here — student_fees is tuition AR, not a commerce ledger.
+        # The unified record_payment() call below is the correct path.
 
         # 8.117.104: unified record_payment() with source_type='shop'.
         try:

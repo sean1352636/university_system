@@ -467,6 +467,14 @@ def record_payment():
                 (str(new_id), data["consultation_id"]),
             )
 
+    # Auto-post to GL (status hardcoded 'completed', cash has moved). Never raises.
+    try:
+        from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+        notify_ledger("payment", new_id, posted_by=g.current_user.get("sub") or "legal_api")
+    except Exception as _e:
+        import logging
+        logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
+
     with get_connection() as conn:
         row = conn.execute(
             "SELECT * FROM payments WHERE payment_id = ? AND source_type = 'legal'",

@@ -156,6 +156,13 @@ def assess_module_enrolment_fee(student_id: str, module_code: str,
                 "Assessed %d fee(s) for student %s on module %s",
                 len(created), student_id, module_code,
             )
+            # Auto-post AR + revenue to GL for each new fee (never raises)
+            try:
+                from education_system.university_system.modules.domain.finance.ledger import notify_ledger
+                for fid in created:
+                    notify_ledger('fee_assignment', fid, posted_by='enrolment_fees')
+            except Exception as _e:
+                logger.warning("ledger hook failed: %s", _e)
         return created
     except Exception as exc:
         logger.error("assess_module_enrolment_fee failed: %s", exc)
