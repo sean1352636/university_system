@@ -1922,34 +1922,46 @@ class _ChatMixin:
             return False
 
     @handle_exception
-    def kick_room_member(self, room_id, target_user_id):
+    def kick_room_member(self, room_id, target_user_id, reason=None):
         """Remove a member from a room. Admin/creator only; cannot kick the creator."""
         if not self.auth or not self.auth.current_user:
             return False
         user_id = self.auth.current_user['id']
+        room_name_for_email = ''
 
         def _kick(cursor):
+            nonlocal room_name_for_email
             if not self._is_room_admin(cursor, room_id, user_id):
                 return False
-            cursor.execute('SELECT created_by FROM chat_rooms WHERE id = ?', (room_id,))
+            cursor.execute('SELECT created_by, name FROM chat_rooms WHERE id = ?', (room_id,))
             row = cursor.fetchone()
             if row and row[0] == target_user_id:
                 return False
+            if row:
+                room_name_for_email = row[1] or ''
             cursor.execute(
                 'DELETE FROM chat_room_members WHERE room_id = ? AND user_id = ?',
                 (room_id, target_user_id),
             )
             self._log_communication_action(
                 user_id, "kick_room_member",
-                f"Kicked user {target_user_id} from room {room_id}", cursor=cursor,
+                f"Kicked user {target_user_id} from room {room_id}"
+                + (f" — reason: {reason}" if reason else ""),
+                cursor=cursor,
             )
             return True
 
         try:
-            return execute_db_operation(_kick)
+            ok = execute_db_operation(_kick)
         except Exception as e:
             log_event('error', f"Error kicking member: {e}")
             return False
+        if ok:
+            self._email_room_action_notice(
+                target_user_id, action='kicked',
+                room_name=room_name_for_email, reason=reason,
+            )
+        return ok
 
     @handle_exception
     def ban_room_member(self, room_id, target_user_id, banned=True, reason=None):
@@ -1966,15 +1978,19 @@ class _ChatMixin:
             return False
         user_id = self.auth.current_user['id']
         now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        room_name_for_email = ''
 
         def _ban(cursor):
+            nonlocal room_name_for_email
             if not self._is_room_admin(cursor, room_id, user_id):
                 return False
-            cursor.execute('SELECT created_by FROM chat_rooms WHERE id = ?', (room_id,))
+            cursor.execute('SELECT created_by, name FROM chat_rooms WHERE id = ?', (room_id,))
             row = cursor.fetchone()
             if row and row[0] == target_user_id and banned:
                 # Can't ban the creator.
                 return False
+            if row:
+                room_name_for_email = row[1] or ''
             if banned:
                 cursor.execute(
                     '''INSERT INTO chat_room_bans
@@ -2020,10 +2036,17 @@ class _ChatMixin:
             return True
 
         try:
-            return execute_db_operation(_ban)
+            ok = execute_db_operation(_ban)
         except Exception as e:
             log_event('error', f"Error banning member: {e}")
             return False
+        if ok:
+            self._email_room_action_notice(
+                target_user_id,
+                action='banned' if banned else 'unbanned',
+                room_name=room_name_for_email, reason=reason,
+            )
+        return ok
 
     @handle_exception
     def list_room_bans(self, room_id):
@@ -2068,7 +2091,7 @@ class _ChatMixin:
             return []
 
     @handle_exception
-    def mute_room_member(self, room_id, target_user_id, minutes=None):
+    def mute_room_member(self, room_id, target_user_id, minutes=None, reason=None):
         """Mute a member for the given minutes; pass minutes=None to unmute."""
         if not self.auth or not self.auth.current_user:
             return False
@@ -2080,26 +2103,120 @@ class _ChatMixin:
             until = (datetime.now() + timedelta(minutes=int(minutes))).strftime(
                 '%Y-%m-%d %H:%M:%S'
             )
+        room_name_for_email = ''
 
         def _mute(cursor):
+            nonlocal room_name_for_email
             if not self._is_room_admin(cursor, room_id, user_id):
                 return False
+            cursor.execute('SELECT name FROM chat_rooms WHERE id = ?', (room_id,))
+            r = cursor.fetchone()
+            if r:
+                room_name_for_email = r[0] or ''
             cursor.execute(
                 'UPDATE chat_room_members SET muted_until = ? WHERE room_id = ? AND user_id = ?',
                 (until, room_id, target_user_id),
             )
             self._log_communication_action(
                 user_id, "mute_room_member",
-                f"Muted user {target_user_id} in room {room_id} until {until}",
+                f"Muted user {target_user_id} in room {room_id} until {until}"
+                + (f" — reason: {reason}" if reason else ""),
                 cursor=cursor,
             )
             return True
 
         try:
-            return execute_db_operation(_mute)
+            ok = execute_db_operation(_mute)
         except Exception as e:
             log_event('error', f"Error muting member: {e}")
             return False
+        if ok and until:  # only email when actually muting (not unmuting)
+            self._email_room_action_notice(
+                target_user_id, action='muted',
+                room_name=room_name_for_email, reason=reason,
+                muted_until=until,
+            )
+        return ok
+
+    def _email_room_action_notice(self, target_user_id, *, action,
+                                  room_name='', reason=None, muted_until=None):
+        """Send a templated email telling a user they've been kicked / banned /
+        unbanned / muted. Best-effort: failures are logged and swallowed so a
+        moderation action never fails because of an email-side issue."""
+        templates = {
+            'kicked': 'communications/chat_room_kicked',
+            'banned': 'communications/chat_room_banned',
+            'muted': 'communications/chat_room_muted',
+        }
+        template_path = templates.get(action)
+        if not template_path:
+            return
+        try:
+            from education_system.university_system.infrastructure.email.template_utils import (
+                load_template,
+            )
+            from education_system.university_system.infrastructure.email.email_service.queue import (
+                queue_email,
+            )
+        except Exception as e:
+            log_event('debug', f"Email template/queue not available: {e}")
+            return
+
+        def _lookup(cursor):
+            cursor.execute(
+                '''SELECT COALESCE(email, ''),
+                          COALESCE(first_name, ''), COALESCE(last_name, ''),
+                          COALESCE(username, '')
+                   FROM users WHERE id = ?''',
+                (target_user_id,),
+            )
+            target = cursor.fetchone()
+            actor_name = ''
+            if self.auth and self.auth.current_user:
+                actor_name = (self.auth.current_user.get('display_name')
+                              or self.auth.current_user.get('username') or '')
+            return target, actor_name
+
+        try:
+            target_row, actor_name = execute_db_operation(_lookup)
+        except Exception as e:
+            log_event('debug', f"Couldn't look up target for email notice: {e}")
+            return
+        if not target_row or not target_row[0]:
+            return  # no email address on file
+        recipient_email = target_row[0]
+        full_name = f"{target_row[1]} {target_row[2]}".strip() or target_row[3]
+
+        try:
+            template = load_template(template_path)
+        except Exception as e:
+            log_event('warning', f"Could not load email template {template_path}: {e}")
+            return
+        if not template:
+            log_event('warning', f"Email template {template_path} not found")
+            return
+
+        from string import Template as _StrTemplate
+        variables = {
+            'user_name': full_name,
+            'room_name': room_name or '(unnamed room)',
+            'actor_name': actor_name or 'A room admin',
+            'action_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'reason': (reason or 'No reason provided.'),
+            'muted_until': muted_until or 'Until lifted by an admin',
+        }
+        try:
+            subject = _StrTemplate(template.get('subject') or '').safe_substitute(variables)
+            body = _StrTemplate(template.get('body') or '').safe_substitute(variables)
+        except Exception as e:
+            log_event('warning', f"Email template substitution failed: {e}")
+            return
+        try:
+            queue_email(recipient_email, subject, body)
+            log_event('info',
+                      f"Sent room-{action} notice email to {recipient_email}")
+        except Exception as e:
+            log_event('warning', f"Could not send room-{action} notice email: {e}")
 
     @handle_exception
     def set_favourite_room(self, room_id, favourite=True):

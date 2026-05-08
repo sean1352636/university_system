@@ -771,6 +771,7 @@ class ChatRoomWindow:
                   font=("TkDefaultFont", 10, "bold")).pack(anchor=tk.W, padx=4, pady=(2, 2))
         cols = ("Status", "Member", "Role")
         self.members_tree = ttk.Treeview(self.members_pane, columns=cols, show="headings")
+        self.members_tree.bind("<Button-3>", self._on_member_right_click)
         for c in cols:
             self.members_tree.heading(c, text=c)
         self.members_tree.column("Status", width=70, anchor=tk.CENTER)
@@ -879,6 +880,12 @@ class ChatRoomWindow:
 
         ttk.Button(controls_frame, text="Members", command=self.show_members).pack(side=tk.LEFT, padx=5)
         ttk.Button(controls_frame, text="Invite", command=self.invite_user).pack(side=tk.LEFT, padx=5)
+        # Admins/creator: full member-management dialog (kick / ban / mute /
+        # promote / transfer ownership). Hidden for ordinary members.
+        if (self.room_info or {}).get('is_admin'):
+            ttk.Button(controls_frame, text="Manage…",
+                       command=self.open_manage_members
+                       ).pack(side=tk.LEFT, padx=5)
         ttk.Button(controls_frame, text="Seen By", command=self.show_seen_by).pack(side=tk.LEFT, padx=5)
         ttk.Button(controls_frame, text="Notes", command=self.open_notes).pack(side=tk.LEFT, padx=5)
         ttk.Button(controls_frame, text="Poll…", command=self.create_poll).pack(side=tk.LEFT, padx=5)
@@ -1542,8 +1549,159 @@ class ChatRoomWindow:
                     f"{m['full_name']} (@{m['username']})",
                     role,
                 ),
-                tags=("online" if online else "offline",),
+                tags=(str(m['user_id']),
+                      "online" if online else "offline"),
             )
+
+    def open_manage_members(self):
+        """Admin shortcut: open the full member-management dialog (kick / ban /
+        mute / promote / transfer ownership / Bans viewer)."""
+        if not (self.room_info or {}).get('is_admin'):
+            messagebox.showinfo("Manage members",
+                                "You need to be a room admin to manage members.")
+            return
+        ManageMembersDialog(self.window, self.dashboard, self.room_info,
+                            refresh_callback=self._refresh_members_panel)
+
+    def _on_member_right_click(self, event):
+        """Admin: right-click a sidebar row for quick kick / ban / promote /
+        demote without leaving the chat window."""
+        if not (self.room_info or {}).get('is_admin'):
+            return
+        iid = self.members_tree.identify_row(event.y)
+        if not iid:
+            return
+        self.members_tree.selection_set(iid)
+        tags = self.members_tree.item(iid).get('tags') or ()
+        target_uid = None
+        for t in tags:
+            if str(t).isdigit():
+                target_uid = int(t)
+                break
+        if not target_uid:
+            return
+        # Find the cached member dict so we know creator/admin status.
+        member = next(
+            (m for m in (self._cached_members or [])
+             if m.get('user_id') == target_uid),
+            {},
+        )
+        if member.get('is_creator'):
+            return  # no actions on the creator
+
+        menu = tk.Menu(self.window, tearoff=0)
+        if member.get('is_admin'):
+            menu.add_command(
+                label="Demote to member",
+                command=lambda: self._do_member_action(
+                    self.dashboard.set_room_admin, target_uid, False,
+                ),
+            )
+        else:
+            menu.add_command(
+                label="Promote to admin",
+                command=lambda: self._do_member_action(
+                    self.dashboard.set_room_admin, target_uid, True,
+                ),
+            )
+        menu.add_separator()
+        menu.add_command(
+            label="Kick from room",
+            command=lambda: self._confirm_and(
+                "Kick", f"Remove this member from the room?",
+                self.dashboard.kick_room_member, target_uid,
+            ),
+        )
+        menu.add_command(
+            label="Ban from room…",
+            command=lambda: self._ban_from_sidebar(target_uid),
+        )
+        menu.add_command(
+            label="Mute…",
+            command=lambda: self._mute_from_sidebar(target_uid),
+        )
+        try:
+            menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            menu.grab_release()
+
+    def _do_member_action(self, fn, target_uid, *args):
+        try:
+            ok = fn(self.room_id, target_uid, *args)
+            if ok:
+                self._refresh_members_panel()
+            else:
+                messagebox.showerror("Error",
+                                     "Action denied (creator can't be acted on, "
+                                     "or you lack permission).")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _confirm_and(self, title, prompt, fn, target_uid, *args):
+        if not messagebox.askyesno(title, prompt, parent=self.window):
+            return
+        # Kick path takes a reason kwarg for the email notice; ask for it.
+        if fn is getattr(self.dashboard, 'kick_room_member', None):
+            reason = askstring(
+                "Kick reason",
+                "Reason (optional, included in the email notice):",
+                parent=self.window,
+            ) or ''
+            try:
+                ok = self.dashboard.kick_room_member(
+                    self.room_id, target_uid, reason=reason,
+                )
+                if ok:
+                    self._refresh_members_panel()
+                else:
+                    messagebox.showerror("Error",
+                                         "Action denied (creator can't be acted on, "
+                                         "or you lack permission).")
+            except Exception as e:
+                messagebox.showerror("Error", str(e))
+            return
+        self._do_member_action(fn, target_uid, *args)
+
+    def _ban_from_sidebar(self, target_uid):
+        if not messagebox.askyesno(
+            "Ban member",
+            "Ban this user from the room? They will be removed and unable "
+            "to rejoin until you unban them.",
+            parent=self.window,
+        ):
+            return
+        reason = askstring("Ban reason",
+                           "Reason (optional, shown in audit log):",
+                           parent=self.window) or ''
+        try:
+            ok = self.dashboard.ban_room_member(
+                self.room_id, target_uid, banned=True, reason=reason,
+            )
+            if ok:
+                self._refresh_members_panel()
+            else:
+                messagebox.showerror("Error", "Could not ban (creator?).")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
+    def _mute_from_sidebar(self, target_uid):
+        minutes = askinteger("Mute", "Mute for how many minutes?",
+                             parent=self.window, minvalue=1, maxvalue=10080)
+        if not minutes:
+            return
+        reason = askstring(
+            "Mute reason",
+            "Reason (optional, included in the email notice):",
+            parent=self.window,
+        ) or ''
+        try:
+            ok = self.dashboard.mute_room_member(
+                self.room_id, target_uid, minutes, reason=reason,
+            )
+            if ok:
+                self._refresh_members_panel()
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
     def show_seen_by(self):
         """Show who has read up to the latest message."""
@@ -2341,7 +2499,12 @@ class ManageMembersDialog:
     def _kick(self):
         if not messagebox.askyesno("Kick", "Remove the selected member from this room?"):
             return
-        self._act(self.dashboard.kick_room_member)
+        reason = askstring(
+            "Kick reason",
+            "Reason (optional, included in the email notice):",
+            parent=self.dialog,
+        ) or ''
+        self._act(self.dashboard.kick_room_member, reason)
 
     def _ban(self, banned, reason=None):
         # Underlying API now takes a reason kwarg.
@@ -2450,7 +2613,12 @@ class ManageMembersDialog:
                              parent=self.dialog, minvalue=1, maxvalue=10080)
         if not minutes:
             return
-        self._act(self.dashboard.mute_room_member, minutes)
+        reason = askstring(
+            "Mute reason",
+            "Reason (optional, included in the email notice):",
+            parent=self.dialog,
+        ) or ''
+        self._act(self.dashboard.mute_room_member, minutes, reason)
 
     def _unmute(self):
         self._act(self.dashboard.mute_room_member, None)

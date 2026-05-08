@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.126 — 2026-05-08](#8117126---2026-05-08)
 - [8.117.125 — 2026-05-08](#8117125---2026-05-08)
 - [8.117.124 — 2026-05-08](#8117124---2026-05-08)
 - [8.117.123 — 2026-05-08](#8117123---2026-05-08)
@@ -354,6 +355,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.126] — 2026-05-08
+
+### Added — email notifications for chat-room kick / ban / mute
+
+Hooks the existing email pipeline (`load_template` +
+`queue_email`) into the chat-room moderation actions so the affected
+user gets a templated email explaining what happened, who did it,
+when, and why.
+
+- **Templates** under `templates/email/communications/`:
+  `chat_room_kicked.json`, `chat_room_banned.json` (high priority),
+  `chat_room_muted.json`. Variables: `user_name`, `room_name`,
+  `actor_name`, `action_date`, `reason` (plus `muted_until` for the
+  mute template). All three registered in
+  `templates/email_template_mapping.json` for the legacy name-only
+  lookup path.
+- **Dashboard** (`infrastructure/email/admin/chat.py`):
+  - New `_email_room_action_notice(target_user_id, *, action,
+    room_name, reason=None, muted_until=None)` — looks up the
+    recipient in `users`, loads the matching template, substitutes
+    via `string.Template.safe_substitute`, and ships through
+    `queue_email`. Best-effort: any failure (no email on file,
+    template missing, queue down) is logged and swallowed so the
+    moderation action itself never fails on email-side issues.
+  - `kick_room_member` and `mute_room_member` gained a `reason`
+    keyword (ban already had one) and now call the helper on
+    success. Audit-log entries also include the reason.
+  - Unban / unmute don't email by default — easy flip if wanted.
+- **GUI** (`chat_dialogs.py`): the existing kick/mute prompts in
+  `ManageMembersDialog` and in the chat-window member-sidebar
+  right-click menu now ask for an optional reason ("included in the
+  email notice") after the existing confirm step.
+
 
 ## [8.117.125] — 2026-05-08
 
