@@ -59,9 +59,9 @@ class TransactionManager(
         button_frame.pack(fill='x', padx=20, pady=10)
 
         buttons = [
-            (_("finance_gui.transaction_manager.btn_assign_fees"), self.gui_assign_fees_to_student, "#3498db"),
+            (_("finance_gui.transaction_manager.btn_assign_fees"), self.gui.expenses.gui_assign_fees_to_student, "#3498db"),
             (_("finance_gui.transaction_manager.btn_record_payment"), self.gui_record_payment, "#27ae60"),
-            (_("finance_gui.transaction_manager.btn_generate_invoice"), self.gui_generate_invoice, "#e74c3c"),
+            (_("finance_gui.transaction_manager.btn_generate_invoice"), self.gui.invoices.gui_generate_invoice, "#e74c3c"),
             (_("finance_gui.transaction_manager.btn_process_refund_full"), self.gui_process_refund, "#f39c12"),
             (_("finance_gui.transaction_manager.btn_manage_credits"), self.gui_manage_student_credits, "#9b59b6"),
             (_("finance_gui.transaction_manager.btn_view_statement"), self.gui_view_student_financial_statement, "#34495e")

@@ -102,6 +102,7 @@ class NavigationMixin:
         self.create_core_finance_tab()
         self.create_payments_tab()
         self.create_payment_plans_tab()
+        self.create_refunds_tab()
         self.create_fees_tab()
         self.create_late_fees_tab()
         self.create_students_tab()
@@ -139,7 +140,10 @@ class NavigationMixin:
             (_("finance_gui.nav.my_finances"), "my_finances", "student"),  # Students only - view own finances
             (_("finance_gui.nav.core_finance"), "core_finance", "admin_staff"),  # Admin and Staff only
             (_("finance_gui.nav.payments"), "payments", "all"),  # All can view payments
+            (_("finance_gui.nav.payment_plans"), "payment_plans", "admin_staff"),  # Admin and Staff only
+            (_("finance_gui.nav.refunds"), "refunds", "admin_staff"),  # Admin and Staff only
             (_("finance_gui.nav.fees"), "fees", "all"),  # All can view fees
+            (_("finance_gui.nav.late_fees"), "late_fees", "admin_staff"),  # Admin and Staff only
             (_("finance_gui.nav.students"), "students", "admin_staff"),  # Admin and Staff only
             (_("finance_gui.nav.reports"), "reports", "admin_staff"),  # Admin and Staff only
             (_("finance_gui.nav.revenue_source"), "revenue_source", "admin_staff"),  # Admin and Staff only
@@ -147,10 +151,12 @@ class NavigationMixin:
             (_("finance_gui.nav.aid"), "aid", "all"),  # All can view aid (students view their own)
             (_("finance_gui.nav.budget"), "budget", "admin"),  # Admin only
             (_("finance_gui.nav.forecasting"), "forecasting", "admin"),  # Admin only
+            (_("finance_gui.nav.analytics"), "analytics", "admin"),  # Admin only
             (_("finance_gui.nav.research_grants"), "research_grants", "admin_staff"),  # Admin and Staff only
             ("Bursary Management", "bursary", "admin_staff"),  # Admin and Staff only — launches standalone Tk app
             (_("finance_gui.nav.bank_app"), "bank_app", "all"),  # All can access bank app
             (_("finance_gui.nav.club_payments"), "club_payments", "admin_staff"),  # Admin and Staff only
+            (_("finance_gui.nav.currency"), "currency", "admin"),  # Admin only
             (_("finance_gui.nav.admin"), "admin", "admin"),  # Admin only
             (_("finance_gui.nav.settings"), "settings", "admin_staff")  # Admin and Staff only
         ]

@@ -411,14 +411,14 @@ class TestReportManagerCompliance(unittest.TestCase):
         self.mock_gui.layout.colors = {'primary': '#000'}
 
         # Mock compliance manager
-        self.mock_gui.compliance = Mock()
+        self.mock_gui.collections = Mock()
 
         self.manager = ReportManager(self.mock_gui)
 
     @patch('education_system.university_system.modules.domain.finance.gui.finance.report_manager.messagebox.showwarning')
     def test_gui_aging_analysis_report_not_available(self, mock_warning):
         """Test aging analysis when compliance manager not available"""
-        delattr(self.mock_gui, 'compliance')
+        delattr(self.mock_gui, 'collections')
         manager = ReportManager(self.mock_gui)
 
         manager.gui_aging_analysis_report()
@@ -429,7 +429,7 @@ class TestReportManagerCompliance(unittest.TestCase):
         """Test aging analysis when compliance manager available"""
         self.manager.gui_aging_analysis_report()
 
-        self.mock_gui.compliance.gui_aging_analysis_report.assert_called_once()
+        self.mock_gui.collections.gui_aging_analysis_report.assert_called_once()
 
 
 if __name__ == '__main__':

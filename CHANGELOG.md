@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.109 — 2026-05-08](#8117109---2026-05-08)
 - [8.117.108 — 2026-05-07](#8117108---2026-05-07)
 - [8.117.107 — 2026-05-07](#8117107---2026-05-07)
 - [8.117.106 — 2026-05-07](#8117106---2026-05-07)
@@ -335,6 +336,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.109] — 2026-05-08
+
+### Changed — University Finance GUI audit: surfaced orphan tabs, fixed broken buttons, renamed misnamed manager, added Refunds tab
+
+Audit of `education_system/university_system/modules/domain/finance/gui/finance/`
+turned up several gaps where backing code existed but was unreachable
+from the sidebar, plus two silently-broken buttons. Cleaned up in four
+parts:
+
+**1. Surfaced four orphan tabs.** `create_main_interface` was building
+`late_fees`, `currency`, `analytics`, and `payment_plans` tabs into
+`tab_frames`, but `setup_navigation` had no buttons for them — the
+content rendered but nothing could open it. Added nav rows in
+`layout/_navigation.py` (gating: `late_fees`/`payment_plans` →
+admin_staff; `analytics`/`currency` → admin) and i18n keys in
+`data/locales/en/finance/finance.json`.
+
+**2. Fixed Core Finance "Generate Invoice" and "Assign Fees" buttons.**
+`transaction_manager/transaction_manager.py:64` wired both buttons to
+`self.gui_generate_invoice` / `self.gui_assign_fees_to_student`, but
+those methods live on `InvoiceManager` and `ExpenseManager` — not on
+`TransactionManager` or any of its mixins. Clicking either button
+raised `AttributeError`. Routed through the GUI's manager refs
+(`self.gui.invoices.gui_generate_invoice`,
+`self.gui.expenses.gui_assign_fees_to_student`).
+
+**3. Renamed `ComplianceManager` → `CollectionsManager`.** The class in
+`compliance.py` only implemented collections workflows (overdue
+accounts, collection cases, agencies, aging/recovery reports); the
+"compliance" name was a misnomer. Renamed the class, the attribute
+(`self.compliance` → `self.collections`), updated 4 wrapper methods in
+`report_manager.py`, 2 hasattr checks in `settings/reports.py`, and
+both affected test files. The 46 tests in
+`test_finance_compliance.py` and `test_report_manager.py` pass.
+The `compliance.py` filename and `finance_gui.compliance.*` i18n key
+namespace were left intact to limit churn.
+
+**4. Added top-level Refunds tab.** Refunds previously existed only as
+a per-student dialog tab inside the student finance dialog and as a
+popup `Toplevel` window from `RefundsMixin._view_all_refunds`. Added
+`RefundsMixin.create_refunds_tab` in `layout/_refunds.py` that builds
+an aggregate refunds table (search, totals summary, Process Refund /
+Export to CSV / Refresh toolbar) over `unified_refunds`, reusing the
+existing `_load_refunds_to_table` / `_export_refunds_to_csv` /
+`_manage_refunds` helpers — no duplicated SQL. Wired in
+`create_main_interface` and added an admin_staff nav row.
+
+Only the English locale was updated for the new nav keys; other
+locales fall back to raw key strings until translated.
 
 ---
 

@@ -130,8 +130,8 @@ EXCHANGE_API_KEY = os.getenv('EXCHANGE_API_KEY', '')
 
 
 
-class ComplianceManager:
-    """Collections and compliance management"""
+class CollectionsManager:
+    """Collections management (overdue accounts, collection cases, agencies, aging/recovery reports)."""
 
     def __init__(self, gui):
         """Initialize manager with reference to main GUI"""

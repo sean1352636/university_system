@@ -1,7 +1,7 @@
 """
 Test suite for university_system/modules/domain/finance/gui/finance/compliance.py
 
-Tests the ComplianceManager class including:
+Tests the CollectionsManager class including:
 - Collections management
 - Agency management
 - Audit log viewing
@@ -14,7 +14,7 @@ import tkinter as tk
 from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime
 from education_system.university_system.infrastructure.database.db import sqlite3
-from education_system.university_system.modules.domain.finance.gui.finance.compliance import ComplianceManager
+from education_system.university_system.modules.domain.finance.gui.finance.compliance import CollectionsManager
 from education_system.university_system.infrastructure.database.db import get_connection
 
 @pytest.fixture
@@ -42,9 +42,9 @@ def mock_gui():
     return gui
 
 @pytest.fixture
-def compliance_manager(mock_gui):
-    """Create a ComplianceManager instance for testing"""
-    return ComplianceManager(mock_gui)
+def collections_manager(mock_gui):
+    """Create a CollectionsManager instance for testing"""
+    return CollectionsManager(mock_gui)
 
 @pytest.fixture
 def test_db_with_collection_data():
@@ -111,25 +111,25 @@ def test_db_with_collection_data():
     except Exception:
         pass  # Connection may already be closed by _isolate_db teardown
 
-class TestComplianceManagerInit:
-    """Test ComplianceManager initialization"""
+class TestCollectionsManagerInit:
+    """Test CollectionsManager initialization"""
 
-    def test_init_stores_gui_reference(self, compliance_manager, mock_gui):
+    def test_init_stores_gui_reference(self, collections_manager, mock_gui):
         """Test that initialization stores GUI reference"""
-        assert compliance_manager.gui == mock_gui
+        assert collections_manager.gui == mock_gui
 
-    def test_init_stores_root_reference(self, compliance_manager, mock_gui):
+    def test_init_stores_root_reference(self, collections_manager, mock_gui):
         """Test that initialization stores root window reference"""
-        assert compliance_manager.root == mock_gui.root
+        assert collections_manager.root == mock_gui.root
 
-    def test_init_stores_conn_reference(self, compliance_manager, mock_gui):
+    def test_init_stores_conn_reference(self, collections_manager, mock_gui):
         """Test that initialization stores database connection"""
-        assert compliance_manager.conn == mock_gui.conn
+        assert collections_manager.conn == mock_gui.conn
 
     def test_init_handles_missing_finance_system(self, mock_gui):
         """Test that initialization handles missing finance_system gracefully"""
         del mock_gui.finance_system
-        manager = ComplianceManager(mock_gui)
+        manager = CollectionsManager(mock_gui)
         assert manager.finance_system is None
 
 class TestCollectionManagement:
@@ -138,22 +138,22 @@ class TestCollectionManagement:
     @patch('tkinter.messagebox.showwarning')
     @patch('tkinter.messagebox.showinfo')
     @patch('tkinter.simpledialog.askstring', side_effect=['Test Case', 'STU001'])
-    def test_create_collection_case(self, mock_dialog, mock_info, mock_warning, compliance_manager):
+    def test_create_collection_case(self, mock_dialog, mock_info, mock_warning, collections_manager):
         """Test creating a collection case"""
-        compliance_manager.refresh_collections = Mock()
+        collections_manager.refresh_collections = Mock()
 
         # This method requires GUI elements that we'll mock
         # Test that the method exists and can be called
-        assert hasattr(compliance_manager, 'create_collection_case')
+        assert hasattr(collections_manager, 'create_collection_case')
 
 class TestAgencyManagement:
     """Test collection agency management"""
 
     @patch('tkinter.Toplevel')
-    def test_manage_agencies_creates_dialog(self, mock_toplevel, compliance_manager):
+    def test_manage_agencies_creates_dialog(self, mock_toplevel, collections_manager):
         """Test that manage_agencies creates a dialog"""
-        compliance_manager.load_agencies = Mock()
-        compliance_manager.manage_agencies()
+        collections_manager.load_agencies = Mock()
+        collections_manager.manage_agencies()
 
         # Verify dialog was created
         mock_toplevel.assert_called()
@@ -163,57 +163,57 @@ class TestGUIWrappers:
 
     @patch('tkinter.Toplevel')
     @patch('sys.stdout')
-    def test_gui_view_overdue_accounts(self, mock_stdout, mock_toplevel, compliance_manager):
+    def test_gui_view_overdue_accounts(self, mock_stdout, mock_toplevel, collections_manager):
         """Test GUI wrapper for viewing overdue accounts"""
-        compliance_manager.gui_view_overdue_accounts()
+        collections_manager.gui_view_overdue_accounts()
 
         # Verify dialog was created
         mock_toplevel.assert_called()
 
     @patch('tkinter.Toplevel')
-    def test_gui_create_collection_case(self, mock_toplevel, compliance_manager):
+    def test_gui_create_collection_case(self, mock_toplevel, collections_manager):
         """Test GUI wrapper for creating collection case"""
-        compliance_manager.gui_create_collection_case()
+        collections_manager.gui_create_collection_case()
 
         # Verify dialog was created
         mock_toplevel.assert_called()
 
     @patch('tkinter.Toplevel')
-    def test_gui_add_collection_agency(self, mock_toplevel, compliance_manager):
+    def test_gui_add_collection_agency(self, mock_toplevel, collections_manager):
         """Test GUI wrapper for adding collection agency"""
-        compliance_manager.gui_add_collection_agency()
+        collections_manager.gui_add_collection_agency()
 
         # Verify dialog was created
         mock_toplevel.assert_called()
 
     @patch('tkinter.Toplevel')
-    def test_gui_assign_to_collection_agency(self, mock_toplevel, compliance_manager):
+    def test_gui_assign_to_collection_agency(self, mock_toplevel, collections_manager):
         """Test GUI wrapper for assigning to collection agency"""
-        compliance_manager.gui_assign_to_collection_agency()
+        collections_manager.gui_assign_to_collection_agency()
 
         # Verify dialog was created
         mock_toplevel.assert_called()
 
     @patch('tkinter.Toplevel')
-    def test_gui_update_collection_case_status(self, mock_toplevel, compliance_manager):
+    def test_gui_update_collection_case_status(self, mock_toplevel, collections_manager):
         """Test GUI wrapper for updating collection case status"""
-        compliance_manager.gui_update_collection_case_status()
+        collections_manager.gui_update_collection_case_status()
 
         # Verify dialog was created
         mock_toplevel.assert_called()
 
     @patch('tkinter.Toplevel')
-    def test_gui_create_payment_arrangement(self, mock_toplevel, compliance_manager):
+    def test_gui_create_payment_arrangement(self, mock_toplevel, collections_manager):
         """Test GUI wrapper for creating payment arrangement"""
-        compliance_manager.gui_create_payment_arrangement()
+        collections_manager.gui_create_payment_arrangement()
 
         # Verify dialog was created
         mock_toplevel.assert_called()
 
     @patch('tkinter.Toplevel')
-    def test_gui_send_collection_notice(self, mock_toplevel, compliance_manager):
+    def test_gui_send_collection_notice(self, mock_toplevel, collections_manager):
         """Test GUI wrapper for sending collection notice"""
-        compliance_manager.gui_send_collection_notice()
+        collections_manager.gui_send_collection_notice()
 
         # Verify dialog was created
         mock_toplevel.assert_called()
@@ -223,11 +223,11 @@ class TestAuditLogs:
 
     @patch('tkinter.Toplevel')
     @patch('education_system.university_system.modules.domain.finance.gui.finance.compliance.get_connection')
-    def test_gui_view_audit_logs_creates_dialog(self, mock_conn, mock_toplevel, compliance_manager, test_db_with_collection_data):
+    def test_gui_view_audit_logs_creates_dialog(self, mock_conn, mock_toplevel, collections_manager, test_db_with_collection_data):
         """Test that audit log viewer creates a dialog"""
         mock_conn.return_value = test_db_with_collection_data
 
-        compliance_manager.gui_view_audit_logs()
+        collections_manager.gui_view_audit_logs()
 
         # Verify dialog was created
         mock_toplevel.assert_called()
@@ -257,7 +257,7 @@ class TestErrorHandling:
 
     @patch('tkinter.messagebox.showerror')
     @patch('sys.stdout')
-    def test_gui_view_overdue_accounts_handles_errors(self, mock_stdout, mock_error, compliance_manager, monkeypatch):
+    def test_gui_view_overdue_accounts_handles_errors(self, mock_stdout, mock_error, collections_manager, monkeypatch):
         """Test that overdue accounts view handles errors"""
         def mock_view():
             raise Exception("Test error")
@@ -267,10 +267,10 @@ class TestErrorHandling:
 
         # Should handle error gracefully
         with patch('tkinter.Toplevel'):
-            compliance_manager.gui_view_overdue_accounts()
+            collections_manager.gui_view_overdue_accounts()
 
     @patch('tkinter.messagebox.showerror')
-    def test_gui_track_collection_progress_handles_errors(self, mock_error, compliance_manager, monkeypatch):
+    def test_gui_track_collection_progress_handles_errors(self, mock_error, collections_manager, monkeypatch):
         """Test that collection progress tracking handles errors"""
         def mock_track():
             raise Exception("Test error")
@@ -278,47 +278,47 @@ class TestErrorHandling:
         monkeypatch.setattr('university_system.modules.domain.finance.gui.finance.common_imports.track_collection_progress',
                            mock_track)
 
-        compliance_manager.show_text_window = Mock()
-        compliance_manager.gui.layout.update_status = Mock()
+        collections_manager.show_text_window = Mock()
+        collections_manager.gui.layout.update_status = Mock()
 
         # Should handle error gracefully
-        compliance_manager.gui_track_collection_progress()
+        collections_manager.gui_track_collection_progress()
 
 class TestReportingWrappers:
     """Test reporting wrapper methods"""
 
     @patch('sys.stdout')
-    def test_gui_aging_analysis_report(self, mock_stdout, compliance_manager):
+    def test_gui_aging_analysis_report(self, mock_stdout, collections_manager):
         """Test aging analysis report wrapper"""
-        compliance_manager.show_tab = Mock()
-        compliance_manager.report_text = Mock()
-        compliance_manager.gui.layout.update_status = Mock()
+        collections_manager.show_tab = Mock()
+        collections_manager.report_text = Mock()
+        collections_manager.gui.layout.update_status = Mock()
 
-        compliance_manager.gui_aging_analysis_report()
+        collections_manager.gui_aging_analysis_report()
 
         # Should not crash
         assert True
 
     @patch('sys.stdout')
-    def test_gui_collection_case_status_report(self, mock_stdout, compliance_manager):
+    def test_gui_collection_case_status_report(self, mock_stdout, collections_manager):
         """Test collection case status report wrapper"""
-        compliance_manager.show_tab = Mock()
-        compliance_manager.report_text = Mock()
-        compliance_manager.gui.layout.update_status = Mock()
+        collections_manager.show_tab = Mock()
+        collections_manager.report_text = Mock()
+        collections_manager.gui.layout.update_status = Mock()
 
-        compliance_manager.gui_collection_case_status_report()
+        collections_manager.gui_collection_case_status_report()
 
         # Should not crash
         assert True
 
     @patch('sys.stdout')
-    def test_gui_recovery_rate_analysis(self, mock_stdout, compliance_manager):
+    def test_gui_recovery_rate_analysis(self, mock_stdout, collections_manager):
         """Test recovery rate analysis wrapper"""
-        compliance_manager.show_tab = Mock()
-        compliance_manager.report_text = Mock()
-        compliance_manager.gui.layout.update_status = Mock()
+        collections_manager.show_tab = Mock()
+        collections_manager.report_text = Mock()
+        collections_manager.gui.layout.update_status = Mock()
 
-        compliance_manager.gui_recovery_rate_analysis()
+        collections_manager.gui_recovery_rate_analysis()
 
         # Should not crash
         assert True
@@ -327,31 +327,31 @@ class TestWorkflowManagement:
     """Test workflow management"""
 
     @patch('tkinter.Toplevel')
-    def test_gui_create_approval_workflow(self, mock_toplevel, compliance_manager):
+    def test_gui_create_approval_workflow(self, mock_toplevel, collections_manager):
         """Test creating approval workflow"""
-        compliance_manager.gui_create_approval_workflow()
+        collections_manager.gui_create_approval_workflow()
 
         # Verify dialog was created
         mock_toplevel.assert_called()
 
     @patch('tkinter.messagebox.askyesno', return_value=True)
     @patch('tkinter.messagebox.showinfo')
-    def test_gui_setup_collection_workflows(self, mock_info, mock_confirm, compliance_manager):
+    def test_gui_setup_collection_workflows(self, mock_info, mock_confirm, collections_manager):
         """Test setting up collection workflows"""
-        compliance_manager.gui.layout.update_status = Mock()
+        collections_manager.gui.layout.update_status = Mock()
 
-        compliance_manager.gui_setup_collection_workflows()
+        collections_manager.gui_setup_collection_workflows()
 
         # Verify status was updated
-        compliance_manager.gui.layout.update_status.assert_called()
+        collections_manager.gui.layout.update_status.assert_called()
 
 class TestViewStudentCollectionDetail:
     """Test student collection detail viewing"""
 
     @patch('tkinter.Toplevel')
-    def test_gui_view_student_collection_detail(self, mock_toplevel, compliance_manager):
+    def test_gui_view_student_collection_detail(self, mock_toplevel, collections_manager):
         """Test viewing student collection details"""
-        compliance_manager.gui_view_student_collection_detail()
+        collections_manager.gui_view_student_collection_detail()
 
         # Verify dialog was created
         mock_toplevel.assert_called()

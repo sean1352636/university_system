@@ -14,7 +14,7 @@ from education_system.university_system.modules.domain.finance.gui.finance.invoi
 from education_system.university_system.modules.domain.finance.gui.finance.expense_manager import ExpenseManager
 from education_system.university_system.modules.domain.finance.gui.finance.report_manager import ReportManager
 from education_system.university_system.modules.domain.finance.gui.finance.analytics import AnalyticsManager
-from education_system.university_system.modules.domain.finance.gui.finance.compliance import ComplianceManager
+from education_system.university_system.modules.domain.finance.gui.finance.compliance import CollectionsManager
 from education_system.university_system.modules.domain.finance.gui.finance.settings import SettingsManager
 
 __all__ = [
@@ -28,6 +28,6 @@ __all__ = [
     'ExpenseManager',
     'ReportManager',
     'AnalyticsManager',
-    'ComplianceManager',
+    'CollectionsManager',
     'SettingsManager',
 ]

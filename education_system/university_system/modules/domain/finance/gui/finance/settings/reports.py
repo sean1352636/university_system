@@ -56,7 +56,7 @@ class ReportsMixin:
                         available_functions.append((category, func_name, display_name))
                     elif hasattr(self.gui, func_name):
                         available_functions.append((category, func_name, display_name))
-                    elif hasattr(self.gui, 'compliance') and hasattr(self.gui.compliance, func_name):
+                    elif hasattr(self.gui, 'collections') and hasattr(self.gui.collections, func_name):
                         available_functions.append((category, func_name, display_name))
                     elif hasattr(self.gui, 'db_manager') and hasattr(self.gui.db_manager, func_name):
                         available_functions.append((category, func_name, display_name))
@@ -169,7 +169,7 @@ class ReportsMixin:
                         found = True
                     elif hasattr(self.gui, 'analytics') and hasattr(self.gui.analytics, func_name):
                         found = True
-                    elif hasattr(self.gui, 'compliance') and hasattr(self.gui.compliance, func_name):
+                    elif hasattr(self.gui, 'collections') and hasattr(self.gui.collections, func_name):
                         found = True
 
                     if found:

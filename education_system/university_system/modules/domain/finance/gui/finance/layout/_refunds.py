@@ -12,6 +12,86 @@ from education_system.university_system.modules.shared.utils.i18n import get_tex
 class RefundsMixin:
     """Refund viewing, export, and financial summary."""
 
+    def create_refunds_tab(self):
+        """Top-level Refunds tab — aggregate view of all refunds across departments."""
+        frame = tk.Frame(self.content_frame, bg='white')
+        self.tab_frames['refunds'] = frame
+
+        # Table (built first so toolbar/search closures can reference it)
+        table_frame = ttk.Frame(frame)
+        columns = ('ID', 'Reference', 'Source', 'Department', 'Amount', 'Method', 'Date',
+                   'Reference ID', 'Processed By', 'Notes')
+        refunds_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=25)
+        column_specs = [
+            ('ID', 'ID', 50, 'center'),
+            ('Reference', 'Refund Reference', 180, 'w'),
+            ('Source', 'Source Type', 100, 'w'),
+            ('Department', 'Department', 120, 'w'),
+            ('Amount', 'Amount', 100, 'e'),
+            ('Method', 'Method', 120, 'w'),
+            ('Date', 'Date', 120, 'center'),
+            ('Reference ID', 'Reference ID', 150, 'w'),
+            ('Processed By', 'Processed By', 120, 'w'),
+            ('Notes', 'Notes', 200, 'w'),
+        ]
+        for col, heading, width, anchor in column_specs:
+            refunds_tree.heading(col, text=heading)
+            refunds_tree.column(col, width=width, anchor=anchor)
+
+        # Toolbar
+        toolbar = ttk.Frame(frame)
+        toolbar.pack(fill='x', padx=10, pady=10)
+        ttk.Label(
+            toolbar,
+            text=_("finance_gui.refunds.title", default="\U0001f501 Refunds"),
+            font=('Arial', 14, 'bold'),
+        ).pack(side='left')
+        ttk.Button(
+            toolbar,
+            text=_("common.refresh", default="Refresh"),
+            command=lambda: self._refresh_refunds_table(refunds_tree),
+        ).pack(side='right', padx=5)
+        ttk.Button(
+            toolbar,
+            text=_("finance_gui.refunds.export_csv", default="Export to CSV"),
+            command=lambda: self._export_refunds_to_csv(refunds_tree),
+        ).pack(side='right', padx=5)
+        ttk.Button(
+            toolbar,
+            text=_("finance_gui.refunds.process", default="Process Refund"),
+            command=self._manage_refunds,
+        ).pack(side='right', padx=5)
+
+        # Search
+        search_frame = ttk.Frame(frame)
+        search_frame.pack(fill='x', padx=10, pady=5)
+        ttk.Label(search_frame, text=_("common.search", default="Search") + ":").pack(side='left', padx=5)
+        search_var = tk.StringVar()
+        ttk.Entry(search_frame, textvariable=search_var, width=40).pack(side='left', padx=5)
+        search_var.trace(
+            'w',
+            lambda *_a: self._load_refunds_to_table(refunds_tree, search_var.get().lower() or None),
+        )
+
+        # Layout the table with scrollbars
+        table_frame.pack(fill='both', expand=True, padx=10, pady=10)
+        vsb = ttk.Scrollbar(table_frame, orient='vertical', command=refunds_tree.yview)
+        hsb = ttk.Scrollbar(table_frame, orient='horizontal', command=refunds_tree.xview)
+        refunds_tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
+        refunds_tree.grid(row=0, column=0, sticky='nsew')
+        vsb.grid(row=0, column=1, sticky='ns')
+        hsb.grid(row=1, column=0, sticky='ew')
+        table_frame.grid_rowconfigure(0, weight=1)
+        table_frame.grid_columnconfigure(0, weight=1)
+
+        # Summary
+        summary_frame = ttk.Frame(frame)
+        summary_frame.pack(fill='x', padx=10, pady=5)
+        self.summary_label = ttk.Label(summary_frame, text="Loading...", font=('Arial', 10, 'bold'))
+        self.summary_label.pack()
+
+        self._load_refunds_to_table(refunds_tree)
+
     def _manage_refunds(self):
         """Manage refunds"""
         try:

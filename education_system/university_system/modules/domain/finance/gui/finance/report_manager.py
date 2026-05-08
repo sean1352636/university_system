@@ -1118,29 +1118,29 @@ class ReportManager:
 
     def gui_aging_analysis_report(self):
         """Wrapper to call compliance manager's aging analysis report"""
-        if hasattr(self.gui, 'compliance'):
-            self.gui.compliance.gui_aging_analysis_report()
+        if hasattr(self.gui, 'collections'):
+            self.gui.collections.gui_aging_analysis_report()
         else:
             messagebox.showwarning("Not Available", "Compliance manager not initialized")
 
     def gui_collection_case_status_report(self):
         """Wrapper to call compliance manager's collection case status report"""
-        if hasattr(self.gui, 'compliance'):
-            self.gui.compliance.gui_collection_case_status_report()
+        if hasattr(self.gui, 'collections'):
+            self.gui.collections.gui_collection_case_status_report()
         else:
             messagebox.showwarning("Not Available", "Compliance manager not initialized")
 
     def gui_recovery_rate_analysis(self):
         """Wrapper to call compliance manager's recovery rate analysis"""
-        if hasattr(self.gui, 'compliance'):
-            self.gui.compliance.gui_recovery_rate_analysis()
+        if hasattr(self.gui, 'collections'):
+            self.gui.collections.gui_recovery_rate_analysis()
         else:
             messagebox.showwarning("Not Available", "Compliance manager not initialized")
 
     def gui_agency_performance_report(self):
         """Wrapper to call compliance manager's agency performance report"""
-        if hasattr(self.gui, 'compliance'):
-            self.gui.compliance.gui_agency_performance_report()
+        if hasattr(self.gui, 'collections'):
+            self.gui.collections.gui_agency_performance_report()
         else:
             messagebox.showwarning("Not Available", "Compliance manager not initialized")
 

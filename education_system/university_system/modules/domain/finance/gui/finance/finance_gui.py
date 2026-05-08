@@ -212,7 +212,7 @@ from education_system.university_system.modules.domain.finance.gui.finance.invoi
 from education_system.university_system.modules.domain.finance.gui.finance.expense_manager import ExpenseManager
 from education_system.university_system.modules.domain.finance.gui.finance.report_manager import ReportManager
 from education_system.university_system.modules.domain.finance.gui.finance.analytics import AnalyticsManager
-from education_system.university_system.modules.domain.finance.gui.finance.compliance import ComplianceManager
+from education_system.university_system.modules.domain.finance.gui.finance.compliance import CollectionsManager
 from education_system.university_system.modules.domain.finance.gui.finance.settings import SettingsManager
 from education_system.university_system.modules.domain.finance.gui.finance.revenue_source_manager import RevenueSourceManager
 
@@ -256,7 +256,7 @@ class FinanceGUI:
         self.expenses = ExpenseManager(self)
         self.reports = ReportManager(self)
         self.analytics = AnalyticsManager(self)
-        self.compliance = ComplianceManager(self)
+        self.collections = CollectionsManager(self)
         self.settings = SettingsManager(self)
         self.revenue_source = RevenueSourceManager(self)
 
