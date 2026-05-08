@@ -248,6 +248,7 @@ from education_system.university_system.modules.domain.finance.gui.finance.layou
 from education_system.university_system.modules.domain.finance.gui.finance.layout._club_payments import ClubPaymentsMixin
 from education_system.university_system.modules.domain.finance.gui.finance.layout._settings import SettingsMixin
 from education_system.university_system.modules.domain.finance.gui.finance.layout._status_bar import StatusBarMixin
+from education_system.university_system.modules.domain.finance.gui.finance.layout._ledger import LedgerMixin
 
 
 class LayoutManager(
@@ -276,6 +277,7 @@ class LayoutManager(
     ClubPaymentsMixin,
     SettingsMixin,
     StatusBarMixin,
+    LedgerMixin,
 ):
     """UI layout and navigation"""
 

@@ -344,6 +344,13 @@ class RefundsMixin:
                            WHERE refund_id = ?''',
                         (new_status, username, today, refund_id),
                     )
+                elif new_status in ('processed', 'completed'):
+                    cursor.execute(
+                        '''UPDATE unified_refunds
+                           SET status = ?, processed_by = ?, refund_date = ?
+                           WHERE refund_id = ?''',
+                        (new_status, username, today, refund_id),
+                    )
                 else:
                     cursor.execute(
                         'UPDATE unified_refunds SET status = ? WHERE refund_id = ?',

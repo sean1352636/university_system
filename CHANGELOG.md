@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.110 — 2026-05-08](#8117110---2026-05-08)
 - [8.117.109 — 2026-05-08](#8117109---2026-05-08)
 - [8.117.108 — 2026-05-07](#8117108---2026-05-07)
 - [8.117.107 — 2026-05-07](#8117107---2026-05-07)
@@ -336,6 +337,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.110] — 2026-05-08
+
+### Added — General Ledger module + refund approval queue + processed_by fallback/fix
+
+Three changes from a continued audit of the university Finance GUI.
+
+**1. Refund approval queue.** The new top-level Refunds tab now defaults to
+the approver's pending-refund queue. `layout/_refunds.py` gained a Status
+filter dropdown (`all / pending / approved / processed / completed /
+rejected`), a Status column on the table with colour coding (pending=amber,
+rejected=red), and Approve / Reject buttons that act on selected rows. The
+buttons are gated to `pending`-only refunds — selecting a row in any other
+state surfaces a clear warning rather than silently no-op'ing — and write
+`approved_by` + `approval_date` via a single bulk UPDATE. The existing
+search and CSV-export paths were updated to include the new column.
+
+**2. Processed-by display fallback + writer fix.** Investigation found the
+`unified_refunds.processed_by` column was empty for every row in the dev
+DB, even though the column was prominently shown in the Refunds tab.
+Two-part fix:
+
+- *Display* (retroactive): both refund SELECTs (`layout/_refunds.py`,
+  `finance_gui.py:_load_refunds_data`) now use
+  `COALESCE(processed_by, approved_by, requested_by)` so existing rows
+  show the requester rather than blank.
+- *Writer* (correct going forward): `transaction_manager/refunds.py`'s
+  `update_refund_status` previously only wrote `approved_by` when status
+  moved to `approved`; transitions to `processed` or `completed` updated
+  only the status column and never touched `processed_by`. Added a third
+  branch that writes `processed_by` and `refund_date` when those
+  transitions happen.
+
+**3. General Ledger (Tier 1 gap from earlier audit).** Added an internal
+double-entry ledger so the platform can produce a real trial balance
+instead of ad-hoc aggregations over `payments`/`unified_refunds`/
+`student_fees`. Designed against ADR
+[0013](docs/adr/0013-general-ledger.md) (proposed) with finance-staff
+defaults: cash basis, multi-entity ready, UK SORP-aligned chart, monthly
+periods with `open → closed → locked` lifecycle.
+
+New module: `education_system/university_system/modules/domain/finance/ledger/`
+
+- `schema.py` — 5 tables (`gl_entities`, `gl_accounts`, `gl_periods`,
+  `gl_journals`, `gl_journal_lines`) with type/state CHECK constraints
+  and per-line debit-XOR-credit enforcement. Idempotent `init_ledger()`.
+- `seed.py` — Default entity + 36-account simplified UK SORP chart
+  (assets/liabilities/equity/income/expense with hierarchy via
+  `parent_account_id`) + 12 monthly periods covering the current UK HE
+  fiscal year (1 Aug → 31 Jul).
+- `posting.py` — `post_payment`, `post_refund`, `post_fee_assignment`,
+  and `backfill()`. Idempotent on `(source_type, source_id)` via a UNIQUE
+  index. Balanced-journal validator enforces `Σdebit = Σcredit` and
+  rejects unknown account codes, mixed debit/credit lines, single-line
+  journals, and posts into closed or locked periods. Posting rules map
+  `payments.source_type` → revenue account, with `bank_topup` correctly
+  routed to liability `2500` (Student Account Liabilities) instead of
+  revenue.
+- `periods.py` — Period state machine. `close_period` is reversible by
+  admins via `reopen_period`; `lock_period` is one-way (only superseding
+  journals can correct errors after lock).
+- `reports.py` — `trial_balance(start, end, entity_id=None)` returns
+  per-account totals with type-correct sign on `balance`. Helpers for
+  the Journals viewer.
+
+UI: `layout/_ledger.py` adds two admin/staff nav tabs:
+
+- ⚖️ Trial Balance — date-range filter, account list with Dr/Cr/balance
+  columns, totals row with a `✓ balanced` / `⚠ diff` indicator. Toolbar
+  buttons "Init / Seed Ledger" and "Backfill from Ops" let finance staff
+  bootstrap from the GUI.
+- 📒 Journals — list with source-type filter; double-click a journal to
+  see its balanced lines.
+
+Tests: 19 tests in
+`tests/cli/domain/finance/ledger/test_ledger.py` cover schema init &
+idempotency, balanced-journal enforcement, top-up→liability routing,
+posting idempotency, period state transitions (close blocks posting,
+reopen allows it, lock cannot be reopened), trial balance correctness,
+and backfill idempotency. All passing.
+
+Live-data verification: backfill against the dev DB posted all 10
+existing operational events (3 payments + 6 refunds + 1 student fee)
+with zero errors. Trial balance shows Dr £102,160 = Cr £102,160 —
+balanced.
+
+Out of scope this change (separate follow-ups):
+
+- No auto-posting hooks into the existing payment/refund/fee write paths;
+  finance staff must click "Backfill from Ops" to land new operational
+  events into the ledger. Hooks belong in a separate change so the side
+  effects are visible.
+- No P&L / Balance Sheet reports yet (derivable from
+  `gl_accounts.account_type` × trial balance).
+- No CoA editor UI — the chart is seed-only for v1.
+- VAT, Accounts Payable, multi-currency: each warrants its own ADR
+  before implementation (`docs/adr/0013-general-ledger.md` flags VAT as
+  an explicit dependency).
 
 ---
 

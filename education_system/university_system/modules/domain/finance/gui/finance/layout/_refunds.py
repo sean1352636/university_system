@@ -20,7 +20,7 @@ class RefundsMixin:
         # Table (built first so toolbar/search closures can reference it)
         table_frame = ttk.Frame(frame)
         columns = ('ID', 'Reference', 'Source', 'Department', 'Amount', 'Method', 'Date',
-                   'Reference ID', 'Processed By', 'Notes')
+                   'Reference ID', 'Status', 'Processed By', 'Notes')
         refunds_tree = ttk.Treeview(table_frame, columns=columns, show='headings', height=25)
         column_specs = [
             ('ID', 'ID', 50, 'center'),
@@ -31,6 +31,7 @@ class RefundsMixin:
             ('Method', 'Method', 120, 'w'),
             ('Date', 'Date', 120, 'center'),
             ('Reference ID', 'Reference ID', 150, 'w'),
+            ('Status', 'Status', 90, 'center'),
             ('Processed By', 'Processed By', 120, 'w'),
             ('Notes', 'Notes', 200, 'w'),
         ]
@@ -46,15 +47,35 @@ class RefundsMixin:
             text=_("finance_gui.refunds.title", default="\U0001f501 Refunds"),
             font=('Arial', 14, 'bold'),
         ).pack(side='left')
+
+        # Status filter (defaults to Pending — approver's queue view)
+        ttk.Label(toolbar, text=_("finance_gui.refunds.status_filter", default="Status:")).pack(side='left', padx=(20, 5))
+        status_var = tk.StringVar(value='pending')
+        status_combo = ttk.Combobox(
+            toolbar, textvariable=status_var, width=12, state='readonly',
+            values=('all', 'pending', 'approved', 'processed', 'completed', 'rejected'),
+        )
+        status_combo.pack(side='left', padx=5)
+
         ttk.Button(
             toolbar,
             text=_("common.refresh", default="Refresh"),
-            command=lambda: self._refresh_refunds_table(refunds_tree),
+            command=lambda: self._refresh_refunds_table(refunds_tree, status_var.get()),
         ).pack(side='right', padx=5)
         ttk.Button(
             toolbar,
             text=_("finance_gui.refunds.export_csv", default="Export to CSV"),
             command=lambda: self._export_refunds_to_csv(refunds_tree),
+        ).pack(side='right', padx=5)
+        ttk.Button(
+            toolbar,
+            text=_("finance_gui.refunds.reject", default="Reject"),
+            command=lambda: self._set_refund_status(refunds_tree, 'rejected', status_var.get()),
+        ).pack(side='right', padx=5)
+        ttk.Button(
+            toolbar,
+            text=_("finance_gui.refunds.approve", default="Approve"),
+            command=lambda: self._set_refund_status(refunds_tree, 'approved', status_var.get()),
         ).pack(side='right', padx=5)
         ttk.Button(
             toolbar,
@@ -68,10 +89,16 @@ class RefundsMixin:
         ttk.Label(search_frame, text=_("common.search", default="Search") + ":").pack(side='left', padx=5)
         search_var = tk.StringVar()
         ttk.Entry(search_frame, textvariable=search_var, width=40).pack(side='left', padx=5)
-        search_var.trace(
-            'w',
-            lambda *_a: self._load_refunds_to_table(refunds_tree, search_var.get().lower() or None),
-        )
+
+        def reload_table(*_a):
+            self._load_refunds_to_table(
+                refunds_tree,
+                search_var.get().lower() or None,
+                status_var.get(),
+            )
+
+        search_var.trace('w', reload_table)
+        status_combo.bind('<<ComboboxSelected>>', reload_table)
 
         # Layout the table with scrollbars
         table_frame.pack(fill='both', expand=True, padx=10, pady=10)
@@ -90,7 +117,7 @@ class RefundsMixin:
         self.summary_label = ttk.Label(summary_frame, text="Loading...", font=('Arial', 10, 'bold'))
         self.summary_label.pack()
 
-        self._load_refunds_to_table(refunds_tree)
+        self._load_refunds_to_table(refunds_tree, None, status_var.get())
 
     def _manage_refunds(self):
         """Manage refunds"""
@@ -204,8 +231,12 @@ class RefundsMixin:
             import traceback
             traceback.print_exc()
 
-    def _load_refunds_to_table(self, tree, search_term=None):
-        """Load refunds data into the table"""
+    def _load_refunds_to_table(self, tree, search_term=None, status_filter=None):
+        """Load refunds data into the table.
+
+        status_filter: 'all'/None to show everything, or a specific status value
+        ('pending', 'approved', 'processed', 'completed', 'rejected') to filter.
+        """
         try:
             # Clear existing items
             for item in tree.get_children():
@@ -217,36 +248,42 @@ class RefundsMixin:
             # Check if unified_refunds table exists
             cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='unified_refunds'")
             if not cursor.fetchone():
-                tree.insert('', 'end', values=('No Data', 'unified_refunds table does not exist', '', '', '', '', '', '', '', ''))
+                tree.insert('', 'end', values=('No Data', 'unified_refunds table does not exist', '', '', '', '', '', '', '', '', ''))
                 conn.close()
                 return
 
-            # Build query
+            base_select = '''
+                SELECT refund_id, refund_reference, source_type,
+                       COALESCE(department, source_type) as department,
+                       amount, refund_method, refund_date,
+                       reference_id,
+                       COALESCE(status, 'pending') as status,
+                       COALESCE(processed_by, approved_by, requested_by) as processed_by,
+                       notes
+                FROM unified_refunds
+            '''
+
+            where_clauses = []
+            params = []
             if search_term:
-                cursor.execute('''
-                    SELECT refund_id, refund_reference, source_type,
-                           COALESCE(department, source_type) as department,
-                           amount, refund_method, refund_date,
-                           reference_id, processed_by, notes
-                    FROM unified_refunds
-                    WHERE LOWER(COALESCE(refund_reference, '')) LIKE ?
-                       OR LOWER(COALESCE(department, '')) LIKE ?
-                       OR LOWER(COALESCE(source_type, '')) LIKE ?
-                       OR LOWER(COALESCE(reference_id, '')) LIKE ?
-                       OR LOWER(COALESCE(processed_by, '')) LIKE ?
-                       OR LOWER(COALESCE(notes, '')) LIKE ?
-                    ORDER BY refund_id DESC
-                ''', (f'%{search_term}%', f'%{search_term}%', f'%{search_term}%',
-                      f'%{search_term}%', f'%{search_term}%', f'%{search_term}%'))
-            else:
-                cursor.execute('''
-                    SELECT refund_id, refund_reference, source_type,
-                           COALESCE(department, source_type) as department,
-                           amount, refund_method, refund_date,
-                           reference_id, processed_by, notes
-                    FROM unified_refunds
-                    ORDER BY refund_id DESC
-                ''')
+                where_clauses.append('''(
+                    LOWER(COALESCE(refund_reference, '')) LIKE ?
+                    OR LOWER(COALESCE(department, '')) LIKE ?
+                    OR LOWER(COALESCE(source_type, '')) LIKE ?
+                    OR LOWER(COALESCE(reference_id, '')) LIKE ?
+                    OR LOWER(COALESCE(processed_by, '')) LIKE ?
+                    OR LOWER(COALESCE(notes, '')) LIKE ?
+                )''')
+                params.extend([f'%{search_term}%'] * 6)
+            if status_filter and status_filter != 'all':
+                where_clauses.append("COALESCE(status, 'pending') = ?")
+                params.append(status_filter)
+
+            sql = base_select
+            if where_clauses:
+                sql += ' WHERE ' + ' AND '.join(where_clauses)
+            sql += ' ORDER BY refund_id DESC'
+            cursor.execute(sql, params)
 
             refunds = cursor.fetchall()
 
@@ -256,15 +293,23 @@ class RefundsMixin:
 
             # Insert data
             for refund in refunds:
-                refund_id, ref, source_type, dept, amount, method, date, ref_id, processed_by, notes = refund
+                refund_id, ref, source_type, dept, amount, method, date, ref_id, status, processed_by, notes = refund
 
                 # Format amount
                 amount_val = float(amount) if amount else 0.0
                 total_amount += amount_val
                 amount_str = f"\u00a3{amount_val:.2f}"
 
-                # Color code based on method
-                tag = 'student_account' if method == 'Student Account' else 'normal'
+                # Color code by status (overrides method-based tinting)
+                status_lc = (status or 'pending').lower()
+                if status_lc == 'pending':
+                    tag = 'pending'
+                elif status_lc == 'rejected':
+                    tag = 'rejected'
+                elif method == 'Student Account':
+                    tag = 'student_account'
+                else:
+                    tag = 'normal'
 
                 tree.insert('', 'end', values=(
                     refund_id or '',
@@ -275,6 +320,7 @@ class RefundsMixin:
                     method or '',
                     date or '',
                     ref_id or '',
+                    status or '',
                     processed_by or '',
                     notes or ''
                 ), tags=(tag,))
@@ -282,10 +328,16 @@ class RefundsMixin:
             # Configure tags
             tree.tag_configure('student_account', background='#e3f2fd')
             tree.tag_configure('normal', background='white')
+            tree.tag_configure('pending', background='#fff8e1')
+            tree.tag_configure('rejected', background='#ffebee')
 
-            # Update summary
+            # Update summary \u2014 context-aware label
             if hasattr(self, 'summary_label'):
-                summary_text = f"Total Refunds: {total_count} | Total Amount: \u00a3{total_amount:,.2f}"
+                if status_filter and status_filter != 'all':
+                    label = f"{status_filter.capitalize()} Refunds"
+                else:
+                    label = "Total Refunds"
+                summary_text = f"{label}: {total_count} | Total Amount: \u00a3{total_amount:,.2f}"
                 self.summary_label.config(text=summary_text)
 
             conn.close()
@@ -296,10 +348,91 @@ class RefundsMixin:
             import traceback
             traceback.print_exc()
 
-    def _refresh_refunds_table(self, tree):
+    def _refresh_refunds_table(self, tree, status_filter=None):
         """Refresh the refunds table"""
-        self._load_refunds_to_table(tree)
+        self._load_refunds_to_table(tree, None, status_filter)
         messagebox.showinfo("Success", "Refunds list refreshed successfully")
+
+    def _set_refund_status(self, tree, new_status, current_filter=None):
+        """Approve or reject the selected pending refund(s).
+
+        Only acts on rows currently in 'pending' status; any other status is
+        a no-op with a warning. Uses the auth'd user as approved_by; falls
+        back to 'system' if no user session is available.
+        """
+        from education_system.university_system.infrastructure.shared_context import get_auth
+
+        selection = tree.selection()
+        if not selection:
+            messagebox.showwarning(
+                _("common.warning", default="Warning"),
+                _("finance_gui.refunds.no_selection", default="Select a refund row first."),
+            )
+            return
+
+        # Index of Status column in the values tuple (0-based, matches columns spec)
+        status_idx = 8
+        id_idx = 0
+        eligible = []
+        skipped = []
+        for iid in selection:
+            values = tree.item(iid)['values']
+            row_id = values[id_idx]
+            row_status = (values[status_idx] or '').lower()
+            if row_status == 'pending':
+                eligible.append(row_id)
+            else:
+                skipped.append((row_id, row_status))
+
+        if not eligible:
+            messagebox.showwarning(
+                _("common.warning", default="Warning"),
+                _("finance_gui.refunds.not_pending",
+                  default="Only refunds in 'pending' status can be approved or rejected."),
+            )
+            return
+
+        verb = "approve" if new_status == 'approved' else "reject"
+        if not messagebox.askyesno(
+            _("common.confirm", default="Confirm"),
+            f"{verb.capitalize()} {len(eligible)} refund(s)?",
+        ):
+            return
+
+        # Resolve approver username
+        username = 'system'
+        try:
+            auth = get_auth()
+            if auth and getattr(auth, 'current_user', None):
+                username = auth.current_user.get('username', 'system')
+        except Exception:
+            pass
+
+        today = datetime.now().strftime('%Y-%m-%d')
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.executemany(
+                '''UPDATE unified_refunds
+                   SET status = ?, approved_by = ?, approval_date = ?
+                   WHERE refund_id = ? AND COALESCE(status, 'pending') = 'pending' ''',
+                [(new_status, username, today, rid) for rid in eligible],
+            )
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            messagebox.showerror(_("common.error", default="Error"), f"Failed to update: {e}")
+            return
+
+        msg_lines = [f"{len(eligible)} refund(s) {new_status}."]
+        if skipped:
+            msg_lines.append(
+                f"Skipped {len(skipped)} (not in 'pending' status)."
+            )
+        messagebox.showinfo(_("common.success", default="Success"), "\n".join(msg_lines))
+
+        # Reload preserving current filter
+        self._load_refunds_to_table(tree, None, current_filter)
 
     def _export_refunds_to_csv(self, tree):
         """Export refunds to CSV file"""
@@ -322,7 +455,7 @@ class RefundsMixin:
 
                 # Write headers
                 writer.writerow(['ID', 'Reference', 'Source Type', 'Department', 'Amount', 'Method', 'Date',
-                               'Reference ID', 'Processed By', 'Notes'])
+                               'Reference ID', 'Status', 'Processed By', 'Notes'])
 
                 # Write data
                 for item in tree.get_children():

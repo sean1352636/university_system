@@ -1564,7 +1564,9 @@ class FinanceGUI:
                     SELECT refund_id, refund_reference,
                            COALESCE(department, source_type) as department,
                            amount, refund_method, refund_date, '' as refund_time,
-                           reference_id, processed_by, notes
+                           reference_id,
+                           COALESCE(processed_by, approved_by, requested_by) as processed_by,
+                           notes
                     FROM unified_refunds
                     WHERE LOWER(COALESCE(refund_reference, '')) LIKE ?
                        OR LOWER(COALESCE(department, source_type, '')) LIKE ?
@@ -1579,7 +1581,9 @@ class FinanceGUI:
                     SELECT refund_id, refund_reference,
                            COALESCE(department, source_type) as department,
                            amount, refund_method, refund_date, '' as refund_time,
-                           reference_id, processed_by, notes
+                           reference_id,
+                           COALESCE(processed_by, approved_by, requested_by) as processed_by,
+                           notes
                     FROM unified_refunds
                     ORDER BY refund_date DESC
                 ''')
