@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.118 — 2026-05-08](#8117118---2026-05-08)
 - [8.117.117 — 2026-05-08](#8117117---2026-05-08)
 - [8.117.116 — 2026-05-08](#8117116---2026-05-08)
 - [8.117.115 — 2026-05-08](#8117115---2026-05-08)
@@ -344,6 +345,106 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.118] — 2026-05-08
+
+### Added — Per-transaction VAT split in the General Ledger
+
+Payments and refunds now post a third line for VAT when the source_type
+is standard- or reduced-rated. Tuition, club memberships, library
+fines, and other exempt or zero-rated activities continue to post the
+2-line journal they always did.
+
+**Schema migration (idempotent, runs in `init_ledger`):**
+
+- `payments.vat_rate` (TEXT) and `payments.vat_amount` (REAL) added
+- `unified_refunds.vat_rate` (TEXT) and `unified_refunds.vat_amount`
+  (REAL) added
+
+Existing rows have NULL in both — the posting service treats NULL as
+"use the default classification by source_type", so historical data
+keeps posting under the previous (no-VAT) journal shape and only new
+rows benefit. Running the live migration on the dev DB populated
+columns successfully.
+
+**Classification map (`_VAT_DEFAULT_BY_SOURCE` in `posting.py`):**
+
+| source_type | Treatment |
+|-------------|-----------|
+| tuition / club / housing / library / aid / fee_assignment / research_grants | exempt |
+| restaurant / cafe / takeaway / shop / charity_shop / grocery / butcher / musicshop / phoneshop / nailbar / barber / gym / cinema / car_rental / parking / legal | standard 20% |
+| train | zero-rated (passenger transport) |
+| bank_topup | exempt — not a supply (liability movement) |
+
+Per-row `vat_rate` / `vat_amount` on the operational row override the
+default — useful when the writer knows the transaction is non-default
+(e.g. accommodation rented to a commercial guest rather than a student
+should pass `vat_rate='standard'` even though the housing default is
+exempt).
+
+**Journal shapes:**
+
+```
+payment (standard-rated):
+    Dr  1010 Cash               <gross>
+    Cr  4350 Revenue            <net>
+    Cr  2200 VAT Output         <vat>
+
+refund (standard-rated):
+    Dr  4350 Revenue            <net>          -- reverse the original net
+    Dr  2200 VAT Output         <vat>          -- reverse the original output VAT
+    Cr  1010 Cash               <gross>
+
+payment (exempt / zero-rated): unchanged 2-line journal
+refund  (exempt / zero-rated): unchanged 2-line journal
+```
+
+VAT is calculated gross-inclusive: `vat = gross × rate / (1 + rate)`,
+matching the convention used by the existing restaurant VAT report.
+
+**Drive-by improvement.** While VAT-testing exposed it, the
+`_REVENUE_FOR_PAYMENT_SOURCE` map only had entries for ~10 source
+types; everything else was falling through to `4000 Tuition Fees`.
+Live smoke test showed a £120 restaurant payment crediting
+`4000 Tuition Fees`, which is wrong. Map extended to cover all known
+commerce subsystems (all → `4350 Catering / Commerce`), professional
+services (`legal`/`dentist` → `4300 Other Income`), and a few stragglers
+(`student_union` → `4340`, `library_fine` → `4330`, `taxi`/`parking`
+→ `4350`). A finer-grained chart (separate accounts per commerce type)
+is a finance-staff decision; current mapping consolidates them into
+existing accounts.
+
+**Test coverage.** 7 new tests in
+`tests/cli/domain/finance/ledger/test_ledger.py` —
+`TestVATPayments` and `TestVATRefunds` — cover: standard-rated
+3-line balanced journal, exempt 2-line journal preservation,
+zero-rated treatment, explicit `vat_amount` overriding the default,
+top-up never splits VAT, and refund-side VAT reversal in the opposite
+direction. Total ledger suite is now 38/38 passing.
+
+**Out of scope this change** (deliberate):
+
+- No partial-exemption calculation. UK universities can typically
+  only recover input VAT in proportion to taxable activities; that
+  recovery percentage comes from the year-end de minimis test and
+  needs accountancy input. The 1300 VAT Input account exists in the
+  chart but isn't yet credited from any flow.
+- No HMRC Making Tax Digital (MTD) integration. Quarterly return
+  Box 1–9 assembly + signed JSON submission requires HMRC sandbox /
+  production OAuth. Multi-week build.
+- No VAT on `purchase_orders` or supplier invoices — once Accounts
+  Payable exists (still deferred), input VAT will need similar
+  treatment on the AP side.
+- No backfill of historical journals. Existing journals stay as
+  posted (single revenue line). Trial balance "VAT Output" reflects
+  only post-this-change activity.
+
+ADR 0015 (VAT) is the proposed venue for the broader decisions
+(partial exemption strategy, MTD path, classification finalisation
+with finance staff); this change deliberately delivered the data
+layer + posting splits without committing to the full VAT build.
 
 ---
 

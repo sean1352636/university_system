@@ -33,13 +33,15 @@ def gl_db(tmp_path, monkeypatch):
         CREATE TABLE payments (
             payment_id INTEGER PRIMARY KEY AUTOINCREMENT,
             student_id TEXT, amount DECIMAL(10,2), payment_date TEXT,
-            source_type TEXT, payment_method TEXT, notes TEXT, status TEXT
+            source_type TEXT, payment_method TEXT, notes TEXT, status TEXT,
+            vat_rate TEXT, vat_amount REAL
         );
         CREATE TABLE unified_refunds (
             refund_id INTEGER PRIMARY KEY AUTOINCREMENT,
             student_id TEXT, amount DECIMAL(10,2), refund_date TEXT,
             source_type TEXT, refund_method TEXT, notes TEXT, status TEXT,
-            requested_by TEXT, approved_by TEXT, processed_by TEXT
+            requested_by TEXT, approved_by TEXT, processed_by TEXT,
+            vat_rate TEXT, vat_amount REAL
         );
         CREATE TABLE fee_types (
             fee_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -517,3 +519,144 @@ class TestPostPayrollRun:
         self._seed_records(gl_db, period_id, [(1000.0, 1100.0)])
         with pytest.raises(ValueError, match="net.*>.*gross"):
             post_payroll_run(period_id)
+
+
+# ---------------------------------------------------------------------------
+# VAT
+# ---------------------------------------------------------------------------
+
+class TestVATPayments:
+    def _seed_payment(self, gl_db, **kw):
+        conn = sqlite3.connect(gl_db)
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO payments (student_id, amount, payment_date, source_type, "
+            "payment_method, status, vat_rate, vat_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (kw.get('student_id', 'S001'), kw.get('amount', 120.00),
+             kw.get('payment_date', date.today().isoformat()),
+             kw.get('source_type', 'restaurant'),
+             kw.get('payment_method', 'card'),
+             'completed',
+             kw.get('vat_rate'), kw.get('vat_amount')),
+        )
+        pid = cur.lastrowid
+        conn.commit()
+        conn.close()
+        return pid
+
+    def test_standard_rated_source_splits_vat(self, gl_db):
+        # £120 gross at 20% VAT → £100 net + £20 VAT
+        pid = self._seed_payment(gl_db, source_type='restaurant', amount=120.00)
+        jid = post_payment(pid)
+
+        conn = sqlite3.connect(gl_db)
+        rows = conn.execute(
+            """SELECT a.account_code, l.debit, l.credit
+               FROM gl_journal_lines l JOIN gl_accounts a ON a.account_id = l.account_id
+               WHERE l.journal_id = ? ORDER BY a.account_code""",
+            (jid,),
+        ).fetchall()
+        rows = [(c, float(d or 0), float(cr or 0)) for c, d, cr in rows]
+        assert ('1010', 120.00, 0.0) in rows   # Cash gross
+        assert ('2200', 0.0,    20.00) in rows # VAT Output
+        # Revenue line at NET (100). Account is whatever maps from 'restaurant'.
+        revenue_line = [r for r in rows if r[0] not in ('1010', '2200')]
+        assert len(revenue_line) == 1
+        assert revenue_line[0][2] == 100.00
+        # Balanced
+        assert sum(r[1] for r in rows) == sum(r[2] for r in rows) == 120.00
+
+    def test_exempt_source_keeps_2_line_journal(self, gl_db):
+        # Tuition is exempt → 2-line journal, no VAT split
+        pid = self._seed_payment(gl_db, source_type='tuition', amount=100.00)
+        jid = post_payment(pid)
+        conn = sqlite3.connect(gl_db)
+        n = conn.execute("SELECT COUNT(*) FROM gl_journal_lines WHERE journal_id = ?",
+                         (jid,)).fetchone()[0]
+        assert n == 2  # Cash + Revenue, no VAT
+
+    def test_zero_rated_source_keeps_2_line_journal(self, gl_db):
+        # Train (passenger transport) is zero-rated → no VAT line
+        pid = self._seed_payment(gl_db, source_type='train', amount=10.00)
+        jid = post_payment(pid)
+        conn = sqlite3.connect(gl_db)
+        n = conn.execute("SELECT COUNT(*) FROM gl_journal_lines WHERE journal_id = ?",
+                         (jid,)).fetchone()[0]
+        assert n == 2
+
+    def test_explicit_vat_amount_overrides_default(self, gl_db):
+        # £100 with explicit £15 VAT (not the standard-rate 16.67)
+        pid = self._seed_payment(gl_db, source_type='restaurant',
+                                 amount=100.00, vat_rate='reduced', vat_amount=5.00)
+        jid = post_payment(pid)
+        conn = sqlite3.connect(gl_db)
+        vat = conn.execute(
+            "SELECT credit FROM gl_journal_lines l "
+            "JOIN gl_accounts a ON a.account_id = l.account_id "
+            "WHERE l.journal_id = ? AND a.account_code = '2200'",
+            (jid,),
+        ).fetchone()
+        assert float(vat[0]) == 5.00
+
+    def test_topup_never_splits_vat(self, gl_db):
+        # bank_topup must always be 2-line (Dr Cash, Cr Liability) — never VAT
+        pid = self._seed_payment(gl_db, source_type='bank_topup', amount=50.00,
+                                 vat_rate='standard')  # ignored on top-ups
+        jid = post_payment(pid)
+        conn = sqlite3.connect(gl_db)
+        rows = conn.execute(
+            "SELECT a.account_code FROM gl_journal_lines l "
+            "JOIN gl_accounts a ON a.account_id = l.account_id "
+            "WHERE l.journal_id = ?", (jid,),
+        ).fetchall()
+        codes = {r[0] for r in rows}
+        assert codes == {'1010', '2500'}  # Cash + Student Account Liability only
+
+
+class TestVATRefunds:
+    def _seed_refund(self, gl_db, **kw):
+        conn = sqlite3.connect(gl_db)
+        cur = conn.cursor()
+        cur.execute(
+            "INSERT INTO unified_refunds (student_id, amount, refund_date, source_type, "
+            "refund_method, status, requested_by, vat_rate, vat_amount) "
+            "VALUES (?, ?, ?, ?, ?, 'processed', 'admin', ?, ?)",
+            (kw.get('student_id', 'S001'), kw.get('amount', 60.00),
+             kw.get('refund_date', date.today().isoformat()),
+             kw.get('source_type', 'restaurant'),
+             kw.get('refund_method', 'card'),
+             kw.get('vat_rate'), kw.get('vat_amount')),
+        )
+        rid = cur.lastrowid
+        conn.commit()
+        conn.close()
+        return rid
+
+    def test_standard_refund_reverses_vat(self, gl_db):
+        # £60 gross refund at 20% → £50 net (Dr Revenue), £10 VAT (Dr 2200), £60 Cr Cash
+        rid = self._seed_refund(gl_db, source_type='restaurant', amount=60.00)
+        jid = post_refund(rid)
+        conn = sqlite3.connect(gl_db)
+        rows = conn.execute(
+            """SELECT a.account_code, l.debit, l.credit
+               FROM gl_journal_lines l JOIN gl_accounts a ON a.account_id = l.account_id
+               WHERE l.journal_id = ?""",
+            (jid,),
+        ).fetchall()
+        rows = [(c, float(d or 0), float(cr or 0)) for c, d, cr in rows]
+        # VAT Output is debited (reversing the previous output)
+        vat_line = [r for r in rows if r[0] == '2200']
+        assert vat_line and vat_line[0][1] == 10.00 and vat_line[0][2] == 0.0
+        # Cash credited at gross
+        cash_line = [r for r in rows if r[0] == '1010']
+        assert cash_line[0][2] == 60.00
+        # Balanced
+        assert sum(r[1] for r in rows) == sum(r[2] for r in rows) == 60.00
+
+    def test_exempt_refund_keeps_2_line_journal(self, gl_db):
+        rid = self._seed_refund(gl_db, source_type='tuition', amount=50.00)
+        jid = post_refund(rid)
+        conn = sqlite3.connect(gl_db)
+        n = conn.execute("SELECT COUNT(*) FROM gl_journal_lines WHERE journal_id = ?",
+                         (jid,)).fetchone()[0]
+        assert n == 2

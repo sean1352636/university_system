@@ -41,6 +41,113 @@ class AccountNotFoundError(Exception):
 
 
 # ---------------------------------------------------------------------------
+# VAT classification by source_type
+# ---------------------------------------------------------------------------
+#
+# UK VAT, defaults only. Each source_type is mapped to a vat_rate keyword:
+#   'standard' → 20% (most commercial supplies)
+#   'reduced'  →  5% (energy, certain things)
+#   'zero'     →  0% (passenger transport, books, food)
+#   'exempt'   → no VAT (tuition, club memberships, financial services,
+#                medical/dental, library penalties, education-related)
+#
+# Per-row vat_rate / vat_amount on the operational row OVERRIDES this default
+# (use them when the writer knows the correct treatment). The map below is
+# intentionally conservative: things that are clearly exempt are exempt;
+# commercial supplies are standard. Mixed cases (e.g. accommodation —
+# student halls vs commercial guest stays) default to the more common
+# institutional treatment (exempt for student halls); the writer should
+# pass an explicit vat_rate when commercial.
+#
+# Partial-exemption (the institution-level recovery percentage on input
+# VAT) is NOT handled here — that's a year-end accountancy decision.
+
+_VAT_RATES = {
+    'standard': 0.20,
+    'reduced':  0.05,
+    'zero':     0.0,
+    'exempt':   None,  # None means "no VAT line at all"
+}
+
+_VAT_DEFAULT_BY_SOURCE = {
+    # Exempt — tuition / education / non-business
+    'general':         'exempt',  # default tuition path
+    'tuition':         'exempt',
+    'application':     'exempt',
+    'late_fee':        'exempt',  # penalties aren't a supply
+    'club':            'exempt',  # student union — non-business
+    'housing':         'exempt',  # student halls; commercial guests must pass explicit
+    'library':         'exempt',
+    'library_fine':    'exempt',
+    'fee_assignment':  'exempt',  # AR for tuition
+    'aid_disbursement':'exempt',
+    'research_grants': 'exempt',
+    # Standard 20%
+    'restaurant':      'standard',
+    'cafe':            'standard',
+    'takeaway':        'standard',
+    'commerce':        'standard',
+    'shop':            'standard',
+    'charity_shop':    'standard',
+    'grocery':         'standard',
+    'butcher':         'standard',
+    'musicshop':       'standard',
+    'phoneshop':       'standard',
+    'nailbar':         'standard',
+    'nail_bar':        'standard',
+    'barber':          'standard',
+    'gym':             'standard',
+    'cinema':          'standard',
+    'car_rental':      'standard',
+    'taxi':            'standard',
+    'parking':         'standard',
+    'legal':           'standard',
+    # Zero-rated
+    'train':           'zero',     # passenger transport
+    # Special: not a supply, no VAT semantics
+    'bank_topup':      'exempt',
+    'order':           'standard',  # restaurant orders source_type
+}
+
+_VAT_OUTPUT_ACCOUNT = '2200'  # VAT Output (collected on sales)
+_VAT_INPUT_ACCOUNT  = '1300'  # VAT Input (recoverable on purchases)
+
+
+def _resolve_vat(source_type, explicit_rate, explicit_amount, gross):
+    """Return (rate_keyword, vat_amount, net_amount) for a transaction.
+
+    Precedence: explicit_amount > explicit_rate > default by source_type.
+    Returns ('exempt', 0, gross) when no VAT applies (so callers can post
+    a 2-line journal). Returns the keyword from _VAT_RATES for taxable
+    transactions plus the computed VAT and net.
+    """
+    gross = Decimal(str(gross or 0))
+    # Explicit amount wins if provided
+    if explicit_amount is not None:
+        try:
+            vat = Decimal(str(explicit_amount))
+            if vat < 0:
+                vat = Decimal('0')
+            net = gross - vat
+            keyword = (explicit_rate or 'standard').lower() if vat > 0 else 'exempt'
+            return keyword, vat, net
+        except Exception:
+            pass
+
+    rate_keyword = (explicit_rate or _VAT_DEFAULT_BY_SOURCE.get(
+        (source_type or '').lower(), 'exempt')).lower()
+    rate = _VAT_RATES.get(rate_keyword)
+    if rate is None or rate == 0:
+        # exempt / zero — no VAT line
+        return rate_keyword, Decimal('0'), gross
+    # Gross-inclusive: vat = gross * rate / (1 + rate)
+    vat = (gross * Decimal(str(rate)) / (Decimal('1') + Decimal(str(rate))))
+    vat = vat.quantize(Decimal('0.01'))
+    net = gross - vat
+    return rate_keyword, vat, net
+
+
+# ---------------------------------------------------------------------------
 # Posting rule mappings — payments.source_type → revenue account_code
 # ---------------------------------------------------------------------------
 
@@ -52,13 +159,38 @@ _REVENUE_FOR_PAYMENT_SOURCE = {
     'general':       '4000',  # Tuition Fees — Home/EU (default)
     'tuition':       '4000',
     'club':          '4340',  # Club / Membership Income
+    'student_union': '4340',
     'housing':       '4360',  # Accommodation Income
     'commerce':      '4350',  # Catering / Commerce
     'library':       '4330',  # Library Fines
+    'library_fine':  '4330',
     'late_fee':      '4310',  # Late Fee Income
     'application':   '4320',  # Application Fees
-    'train':         '4350',  # Catering / Commerce (transport — broad bucket for now)
+    'train':         '4350',  # broad commerce bucket — transport revenue
+    'taxi':          '4350',
+    'parking':       '4350',
+    # Commerce subsystems — all consolidate under Catering / Commerce (4350).
+    # A finer-grained chart (4351 Catering, 4352 Retail, 4353 Services, …)
+    # is a chart-of-accounts decision deferred to finance staff.
     'charity_shop':  '4350',
+    'restaurant':    '4350',
+    'cafe':          '4350',
+    'takeaway':      '4350',
+    'shop':          '4350',
+    'grocery':       '4350',
+    'butcher':       '4350',
+    'musicshop':     '4350',
+    'phoneshop':     '4350',
+    'nailbar':       '4350',
+    'nail_bar':      '4350',
+    'barber':        '4350',
+    'gym':           '4350',
+    'cinema':        '4350',
+    'car_rental':    '4350',
+    'order':         '4350',  # restaurant orders source_type
+    # Professional services
+    'legal':         '4300',  # Other Income
+    'dentist':       '4300',
 }
 
 # Bank-app top-ups are not revenue — they're a liability (we hold student cash).
@@ -202,30 +334,56 @@ def _resolve_payment_revenue_code(source_type, payment_method=None):
 def post_payment(payment_id, posted_by='system'):
     """Post a payments row to the GL.
 
-    Cash basis: Dr Cash, Cr Revenue (or Cr Student-Account Liability for top-ups).
+    Cash basis with VAT split: Dr Cash (gross), Cr Revenue (net), Cr VAT
+    Output 2200 (vat_amount) when applicable. Top-ups credit Student-Account
+    Liability 2500 instead of revenue (and never split VAT — top-ups aren't
+    a supply). Exempt/zero-rated source_types fall back to a 2-line journal.
     Idempotent — returns existing journal_id if already posted.
     """
     conn = get_connection()
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT payment_id, amount, payment_date, source_type, payment_method, notes "
+            "SELECT payment_id, amount, payment_date, source_type, payment_method, notes, "
+            "       vat_rate, vat_amount "
             "FROM payments WHERE payment_id = ?",
             (payment_id,),
         )
         row = cur.fetchone()
         if not row:
             raise ValueError(f"payment_id {payment_id} not found")
-        pid, amount, pay_date, source_type, payment_method, notes = (
-            row[0], row[1], row[2], row[3], row[4], row[5]
+        pid, gross_in, pay_date, source_type, payment_method, notes, vat_rate_in, vat_amount_in = (
+            row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]
         )
-        amount = Decimal(str(amount or 0))
-        if amount <= 0:
-            raise ValueError(f"payment {pid} has non-positive amount {amount}")
+        gross = Decimal(str(gross_in or 0))
+        if gross <= 0:
+            raise ValueError(f"payment {pid} has non-positive amount {gross}")
         # Normalise date — operational tables sometimes store full timestamps
         journal_date = (pay_date or datetime.now().isoformat())[:10]
 
         credit_code = _resolve_payment_revenue_code(source_type, payment_method)
+        is_topup = credit_code == _TOPUP_LIABILITY_CODE
+
+        # Top-ups are a liability movement, not a supply: no VAT.
+        if is_topup:
+            rate_keyword, vat, net = 'exempt', Decimal('0'), gross
+        else:
+            rate_keyword, vat, net = _resolve_vat(
+                source_type, vat_rate_in, vat_amount_in, gross,
+            )
+
+        lines = [
+            {'account_code': _CASH_ACCOUNT_CODE, 'debit': float(gross),
+             'memo': f"Payment {pid}"},
+            {'account_code': credit_code, 'credit': float(net),
+             'memo': f"Payment {pid} — {source_type or 'general'}"
+                     + (f" (net of {rate_keyword} VAT)" if vat > 0 else "")},
+        ]
+        if vat > 0:
+            lines.append({
+                'account_code': _VAT_OUTPUT_ACCOUNT, 'credit': float(vat),
+                'memo': f"VAT {rate_keyword} on payment {pid}",
+            })
 
         return _post_journal(
             conn,
@@ -236,12 +394,7 @@ def post_payment(payment_id, posted_by='system'):
             source_type='payment',
             source_id=pid,
             posted_by=posted_by,
-            lines=[
-                {'account_code': _CASH_ACCOUNT_CODE, 'debit': float(amount),
-                 'memo': f"Payment {pid}"},
-                {'account_code': credit_code, 'credit': float(amount),
-                 'memo': f"Payment {pid} — {source_type or 'general'}"},
-            ],
+            lines=lines,
         )
     finally:
         conn.close()
@@ -250,30 +403,57 @@ def post_payment(payment_id, posted_by='system'):
 def post_refund(refund_id, posted_by='system'):
     """Post a unified_refunds row to the GL.
 
-    Cash basis: Dr Revenue (reversing the original income line), Cr Cash.
+    Cash basis with VAT split: Dr Revenue (net), Dr VAT Output 2200 (vat —
+    reversing the previously-collected output VAT), Cr Cash (gross).
     For top-up withdrawals: Dr Student-Account Liability 2500, Cr Cash.
+    Exempt/zero-rated source_types fall back to the 2-line journal.
     """
     conn = get_connection()
     try:
         cur = conn.cursor()
         cur.execute(
-            "SELECT refund_id, amount, refund_date, source_type, refund_method, notes "
+            "SELECT refund_id, amount, refund_date, source_type, refund_method, notes, "
+            "       vat_rate, vat_amount "
             "FROM unified_refunds WHERE refund_id = ?",
             (refund_id,),
         )
         row = cur.fetchone()
         if not row:
             raise ValueError(f"refund_id {refund_id} not found")
-        rid, amount, refund_date, source_type, refund_method, notes = (
-            row[0], row[1], row[2], row[3], row[4], row[5]
+        rid, gross_in, refund_date, source_type, refund_method, notes, vat_rate_in, vat_amount_in = (
+            row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7]
         )
-        amount = Decimal(str(amount or 0))
-        if amount <= 0:
-            raise ValueError(f"refund {rid} has non-positive amount {amount}")
+        gross = Decimal(str(gross_in or 0))
+        if gross <= 0:
+            raise ValueError(f"refund {rid} has non-positive amount {gross}")
         journal_date = (refund_date or datetime.now().isoformat())[:10]
 
         # Refunds reverse whichever income (or liability) the original payment hit.
         debit_code = _resolve_payment_revenue_code(source_type, refund_method)
+        is_topup_withdrawal = debit_code == _TOPUP_LIABILITY_CODE
+
+        if is_topup_withdrawal:
+            rate_keyword, vat, net = 'exempt', Decimal('0'), gross
+        else:
+            rate_keyword, vat, net = _resolve_vat(
+                source_type, vat_rate_in, vat_amount_in, gross,
+            )
+
+        lines = [
+            {'account_code': debit_code, 'debit': float(net),
+             'memo': f"Refund {rid} — {source_type or 'general'}"
+                     + (f" (net of {rate_keyword} VAT)" if vat > 0 else "")},
+        ]
+        if vat > 0:
+            # Reverse output VAT previously collected
+            lines.append({
+                'account_code': _VAT_OUTPUT_ACCOUNT, 'debit': float(vat),
+                'memo': f"VAT {rate_keyword} reversed on refund {rid}",
+            })
+        lines.append({
+            'account_code': _CASH_ACCOUNT_CODE, 'credit': float(gross),
+            'memo': f"Refund {rid}",
+        })
 
         return _post_journal(
             conn,
@@ -284,12 +464,7 @@ def post_refund(refund_id, posted_by='system'):
             source_type='refund',
             source_id=rid,
             posted_by=posted_by,
-            lines=[
-                {'account_code': debit_code, 'debit': float(amount),
-                 'memo': f"Refund {rid} — {source_type or 'general'}"},
-                {'account_code': _CASH_ACCOUNT_CODE, 'credit': float(amount),
-                 'memo': f"Refund {rid}"},
-            ],
+            lines=lines,
         )
     finally:
         conn.close()

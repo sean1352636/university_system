@@ -95,11 +95,22 @@ def init_ledger():
     """Create GL schema (if absent) and seed default entity, chart, and periods.
 
     Idempotent — safe to call repeatedly. Returns True on success.
+    Also runs the VAT column migration for `payments` and `unified_refunds`,
+    which is non-destructive (ALTER TABLE ADD COLUMN with default NULL).
     """
     conn = get_connection()
     cur = conn.cursor()
     for stmt in SCHEMA_STATEMENTS:
         cur.execute(stmt)
+    conn.commit()
+
+    # VAT migration on operational tables. Idempotent: only adds columns
+    # that don't yet exist. Existing rows get NULL, which the posting
+    # service treats as "use the default classification by source_type".
+    _add_column_if_missing(cur, 'payments', 'vat_rate', 'TEXT')
+    _add_column_if_missing(cur, 'payments', 'vat_amount', 'REAL')
+    _add_column_if_missing(cur, 'unified_refunds', 'vat_rate', 'TEXT')
+    _add_column_if_missing(cur, 'unified_refunds', 'vat_amount', 'REAL')
     conn.commit()
 
     # Seed in dependency order. Each helper is itself idempotent.
@@ -112,3 +123,20 @@ def init_ledger():
     conn.commit()
     conn.close()
     return True
+
+
+def _add_column_if_missing(cursor, table, column, decl):
+    """Idempotent ADD COLUMN — silently skips if `table` doesn't exist or
+    `column` is already on it."""
+    try:
+        cursor.execute(f"PRAGMA table_info({table})")
+        existing = {row[1] for row in cursor.fetchall()}
+        if not existing:
+            return  # table doesn't exist — caller may not have seeded operational tables yet
+        if column in existing:
+            return
+        cursor.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
+    except Exception:
+        # Pre-existing columns under a different declaration, locked tables,
+        # or read-only DBs — never raise from migration.
+        pass
