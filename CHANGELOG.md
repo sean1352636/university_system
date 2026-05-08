@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.124 — 2026-05-08](#8117124---2026-05-08)
 - [8.117.123 — 2026-05-08](#8117123---2026-05-08)
 - [8.117.122 — 2026-05-08](#8117122---2026-05-08)
 - [8.117.121 — 2026-05-08](#8117121---2026-05-08)
@@ -352,6 +353,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.124] — 2026-05-08
+
+### Security — bump Mako 1.3.11 → 1.3.12 (CVE-2026-44307)
+
+Closes Dependabot alert #30. Upstream advisory
+[GHSA-2h4p-vjrc-8xpq](https://github.com/sqlalchemy/mako/security/advisories/GHSA-2h4p-vjrc-8xpq):
+backslash URI traversal in `TemplateLookup.get_template()` /
+`Template.__init__` on Windows allowed reads outside the template
+directory because `posixpath` and `ntpath` disagree on whether `\\`
+is a separator. Severity High (CVSS v4 8.7). Mako is a transitive
+dependency of `alembic` here; we don't pass user-controlled URIs
+into `TemplateLookup`, so exposure on this codebase is incidental,
+but the bump is straightforward.
+
+- **`requirements.txt`** — `Mako==1.3.11` → `Mako==1.3.12`,
+  comment updated to call out the CVE.
+
 
 ## [8.117.123] — 2026-05-08
 
