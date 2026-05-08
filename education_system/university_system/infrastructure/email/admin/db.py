@@ -532,6 +532,43 @@ class _DbMixin:
             )
             ''')
 
+            # Indexes for hot chat-side paths. The base tables only had their
+            # PRIMARY KEYs; per-room queries fell back to full scans once a
+            # busy room had thousands of messages. All `IF NOT EXISTS` so the
+            # migration is safe to re-run.
+            chat_indexes = [
+                ('idx_chat_messages_room_id',        'chat_messages',        '(room_id, id DESC)'),
+                ('idx_chat_messages_room_sent',      'chat_messages',        '(room_id, sent_at DESC)'),
+                ('idx_chat_messages_sender',         'chat_messages',        '(sender_id)'),
+                ('idx_chat_messages_reply_to',       'chat_messages',        '(reply_to_id)'),
+                ('idx_chat_room_members_user',       'chat_room_members',    '(user_id)'),
+                ('idx_chat_room_members_room',       'chat_room_members',    '(room_id, user_id)'),
+                ('idx_chat_message_reads_room',      'chat_message_reads',   '(room_id, user_id)'),
+                ('idx_chat_message_reactions_msg',   'chat_message_reactions', '(message_id)'),
+                ('idx_chat_typing_room',             'chat_typing',          '(room_id, started_at DESC)'),
+                ('idx_chat_presence_room',           'chat_presence',        '(room_id, last_seen_at DESC)'),
+                ('idx_chat_room_queue_room',         'chat_room_queue',      '(room_id, status, joined_at)'),
+                ('idx_chat_room_bans_user',          'chat_room_bans',       '(user_id)'),
+                ('idx_safeguarding_flags_room',      'safeguarding_flags',   '(room_id, created_at DESC)'),
+                ('idx_safeguarding_flags_msg',       'safeguarding_flags',   '(message_id)'),
+                ('idx_chat_polls_msg',               'chat_polls',           '(message_id)'),
+                ('idx_chat_poll_options_msg',        'chat_poll_options',    '(message_id, sort_order)'),
+                ('idx_chat_poll_votes_user',         'chat_poll_votes',      '(user_id)'),
+                ('idx_chat_reports_status',          'chat_reports',         '(status, created_at DESC)'),
+                ('idx_chat_reports_room',            'chat_reports',         '(room_id, status)'),
+                ('idx_chat_room_invitations_user',   'chat_room_invitations', '(user_id, status)'),
+                ('idx_chat_room_invitations_room',   'chat_room_invitations', '(room_id, status)'),
+                ('idx_communication_log_action',     'communication_log',    '(action_type, performed_at DESC)'),
+                ('idx_communication_log_user',       'communication_log',    '(user_id, performed_at DESC)'),
+            ]
+            for index_name, table, cols in chat_indexes:
+                try:
+                    cursor.execute(
+                        f'CREATE INDEX IF NOT EXISTS {index_name} ON {table} {cols}'
+                    )
+                except Exception as e:
+                    log_event('debug', f"Could not create {index_name}: {e}")
+
             return True
 
         try:

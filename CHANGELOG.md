@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.127 — 2026-05-08](#8117127---2026-05-08)
 - [8.117.126 — 2026-05-08](#8117126---2026-05-08)
 - [8.117.125 — 2026-05-08](#8117125---2026-05-08)
 - [8.117.124 — 2026-05-08](#8117124---2026-05-08)
@@ -355,6 +356,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.127] — 2026-05-08
+
+### Changed — chat-room performance: batched poll cycle + chat indexes
+
+The chat window's 2 s polling loop used to fan out into 5–7 separate
+`execute_db_operation` calls per tick, each opening a fresh
+sqlite3 connection. Combined with zero non-PK indexes on any of the
+chat tables introduced in 8.117.123, that was the source of the
+"why is the chatroom so slow" report. This release addresses both
+hotspots; the on-disk schema change is purely additive
+(`CREATE INDEX IF NOT EXISTS`).
+
+- **23 indexes** added in `_init_db`. Hot ones:
+  `chat_messages(room_id, id DESC)`, `chat_messages(room_id, sent_at DESC)`,
+  `chat_messages(reply_to_id)`, `chat_messages(sender_id)`,
+  `chat_room_members(user_id)` and `(room_id, user_id)`,
+  `chat_typing(room_id, started_at DESC)`,
+  `chat_presence(room_id, last_seen_at DESC)`,
+  `chat_room_queue(room_id, status, joined_at)`,
+  plus secondary indexes on `chat_message_reactions`,
+  `chat_message_reads`, `chat_poll_*`, `chat_reports`,
+  `chat_room_invitations`, `safeguarding_flags`, `communication_log`.
+- **Batched per-tick fetch**:
+  `get_room_realtime_state(room_id, since_message_id,
+  include_members=False, …)` replaces the per-tick fan-out. One
+  `execute_db_operation` runs membership check → `MAX(id)` probe
+  (skip the heavy join when nothing is newer) → message-since query
+  → typing → presence → optional members join → unread count for
+  this room, in one cursor.
+- **Batched poll hydration**:
+  `get_chat_polls_for_messages(message_ids)` does three batched
+  queries (polls / options+counts+mine / distinct voters) instead
+  of one `get_chat_poll(...)` round-trip per `[poll]` message.
+- `get_chat_messages_since` got the `MAX(id)` probe too, so any
+  caller benefits — not just the polling path.
+- `ChatRoomWindow._poll_once` rewritten to call
+  `get_room_realtime_state` once per tick; the new
+  `_render_members_panel` renders from the in-memory list with no
+  extra queries when the sidebar is visible. `last_message_id` is
+  advanced even when the probe finds no new messages so subsequent
+  ticks short-circuit on the probe.
+
+Net effect for a quiet tick: 1 connection open + 1 membership
+check + 1 MAX(id) + 2 small queries, vs ~5–7 connection cycles
+before.
+
 
 ## [8.117.126] — 2026-05-08
 

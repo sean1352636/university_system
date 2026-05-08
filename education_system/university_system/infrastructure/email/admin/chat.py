@@ -1059,6 +1059,15 @@ class _ChatMixin:
             )
             if not cursor.fetchone():
                 return []
+            # Cheap probe — skip the heavy join when nothing is newer than
+            # what the caller already has. Hits the (room_id, id) index.
+            cursor.execute(
+                'SELECT MAX(id) FROM chat_messages WHERE room_id = ?',
+                (room_id,),
+            )
+            mx = cursor.fetchone()
+            if not mx or not mx[0] or mx[0] <= (since_message_id or 0):
+                return []
             cursor.execute(
                 '''
                 SELECT m.id, m.content, m.sent_at,
@@ -4115,3 +4124,248 @@ class _ChatMixin:
         except Exception as e:
             log_event('error', f"Error proposing poll dates: {e}")
             return []
+
+    # ------------------------------------------------------------------
+    # Batched per-tick fetch and per-poll hydration. The per-window poll
+    # loop used to make 5–7 separate execute_db_operation calls (each
+    # opening a fresh connection); these helpers do everything inside one
+    # cursor so the connection-open overhead is paid once per tick.
+    # ------------------------------------------------------------------
+
+    @handle_exception
+    def get_room_realtime_state(self, room_id, since_message_id=0,
+                                include_members=False, typing_ttl_seconds=5,
+                                presence_window_seconds=30):
+        """One-shot fetch for the chat-window polling loop.
+
+        Returns a dict with keys:
+          - 'messages':       list of message dicts (oldest-first), only if
+                              there are new ones
+          - 'last_message_id': max id at fetch time
+          - 'typing_users':   list of display names (excluding self)
+          - 'presence':       {'online': N, 'total': M}
+          - 'unread_count':   count for current user (incl. all rooms? No —
+                              just this room) — useful for badge updates
+          - 'members':        only when include_members; same shape as
+                              get_room_members + presence merged in
+        """
+        if not self.auth or not self.auth.current_user:
+            return {}
+        user_id = self.auth.current_user['id']
+        from datetime import timedelta
+        now = datetime.now()
+        typing_cutoff = (now - timedelta(seconds=typing_ttl_seconds)).strftime(
+            '%Y-%m-%d %H:%M:%S'
+        )
+        presence_cutoff = (now - timedelta(seconds=presence_window_seconds)).strftime(
+            '%Y-%m-%d %H:%M:%S'
+        )
+
+        def _go(cursor):
+            # 1. Membership check
+            cursor.execute(
+                'SELECT 1 FROM chat_room_members WHERE room_id = ? AND user_id = ?',
+                (room_id, user_id),
+            )
+            if not cursor.fetchone():
+                return {}
+
+            out = {'messages': [], 'last_message_id': since_message_id or 0,
+                   'typing_users': [], 'presence': {'online': 0, 'total': 0},
+                   'unread_count': 0}
+
+            # 2. MAX(id) probe; skip heavy join if nothing new
+            cursor.execute(
+                'SELECT MAX(id) FROM chat_messages WHERE room_id = ?',
+                (room_id,),
+            )
+            mx_row = cursor.fetchone()
+            max_id = (mx_row and mx_row[0]) or 0
+            out['last_message_id'] = max_id
+            if max_id and max_id > (since_message_id or 0):
+                cursor.execute(
+                    '''
+                    SELECT m.id, m.content, m.sent_at,
+                           COALESCE(u.username, 'User ' || m.sender_id),
+                           COALESCE(u.first_name, ''), COALESCE(u.last_name, ''),
+                           m.sender_id, m.edited_at, COALESCE(m.is_deleted, 0),
+                           m.reply_to_id, m.pinned_at,
+                           m.attachment_path, m.attachment_name,
+                           m.attachment_mime, m.attachment_size,
+                           r.content,
+                           COALESCE(ru.username, 'User ' || r.sender_id),
+                           COALESCE(r.is_deleted, 0),
+                           u.role,
+                           COALESCE(m.is_encrypted, 0), k.key_b64
+                    FROM chat_messages m
+                    LEFT JOIN users u  ON m.sender_id = u.id
+                    LEFT JOIN chat_messages r ON m.reply_to_id = r.id
+                    LEFT JOIN users ru ON r.sender_id = ru.id
+                    LEFT JOIN chat_room_keys k ON k.room_id = m.room_id
+                    WHERE m.room_id = ? AND m.id > ?
+                    ORDER BY m.id ASC
+                    LIMIT 200
+                    ''',
+                    (room_id, since_message_id or 0),
+                )
+                for row in cursor.fetchall():
+                    full_name = f"{row[4]} {row[5]}".strip()
+                    out['messages'].append(_format_message_row(row, full_name))
+
+            # 3. Typing indicators
+            cursor.execute(
+                '''
+                SELECT COALESCE(u.username, 'User ' || u.id),
+                       COALESCE(u.first_name, ''), COALESCE(u.last_name, '')
+                FROM chat_typing t
+                JOIN users u ON u.id = t.user_id
+                WHERE t.room_id = ? AND t.user_id != ? AND t.started_at >= ?
+                ORDER BY t.started_at ASC
+                ''',
+                (room_id, user_id, typing_cutoff),
+            )
+            for row in cursor.fetchall():
+                full = f"{row[1]} {row[2]}".strip()
+                out['typing_users'].append(full or row[0])
+
+            # 4. Presence summary (and optional members list)
+            cursor.execute(
+                '''
+                SELECT mem.user_id, p.last_seen_at,
+                       CASE WHEN p.last_seen_at IS NOT NULL AND p.last_seen_at >= ?
+                            THEN 1 ELSE 0 END,
+                       mem.is_admin
+                FROM chat_room_members mem
+                LEFT JOIN chat_presence p
+                  ON p.room_id = mem.room_id AND p.user_id = mem.user_id
+                WHERE mem.room_id = ?
+                ''',
+                (presence_cutoff, room_id),
+            )
+            presence_rows = cursor.fetchall()
+            online = sum(1 for r in presence_rows if r[2])
+            out['presence'] = {'online': online, 'total': len(presence_rows)}
+
+            if include_members:
+                cursor.execute(
+                    'SELECT created_by FROM chat_rooms WHERE id = ?', (room_id,),
+                )
+                creator_row = cursor.fetchone()
+                creator_id = creator_row[0] if creator_row else None
+                cursor.execute(
+                    '''
+                    SELECT m.user_id, u.username, u.first_name, u.last_name,
+                           u.email, m.joined_at, m.is_admin,
+                           COALESCE(m.is_banned, 0), m.muted_until
+                    FROM chat_room_members m
+                    JOIN users u ON m.user_id = u.id
+                    WHERE m.room_id = ?
+                    ORDER BY m.is_admin DESC, m.joined_at ASC
+                    ''',
+                    (room_id,),
+                )
+                presence_map = {
+                    r[0]: {'last_seen_at': r[1], 'is_online': bool(r[2])}
+                    for r in presence_rows
+                }
+                members = []
+                for row in cursor.fetchall():
+                    full = f"{row[2]} {row[3]}".strip()
+                    p = presence_map.get(row[0], {})
+                    members.append({
+                        'user_id': row[0], 'username': row[1],
+                        'full_name': full or row[1],
+                        'email': row[4], 'joined_at': row[5],
+                        'is_admin': bool(row[6]),
+                        'is_banned': bool(row[7]),
+                        'muted_until': row[8],
+                        'is_creator': row[0] == creator_id,
+                        'is_online': p.get('is_online', False),
+                        'last_seen_at': p.get('last_seen_at'),
+                    })
+                out['members'] = members
+
+            # 5. Unread count for this room (small index lookup now)
+            cursor.execute(
+                '''
+                SELECT COUNT(*)
+                FROM chat_messages m
+                LEFT JOIN chat_message_reads r
+                  ON r.room_id = m.room_id AND r.user_id = ?
+                WHERE m.room_id = ?
+                  AND m.id > COALESCE(r.last_read_message_id, 0)
+                  AND m.sender_id != ?
+                ''',
+                (user_id, room_id, user_id),
+            )
+            row = cursor.fetchone()
+            out['unread_count'] = row[0] if row else 0
+
+            return out
+
+        try:
+            return execute_db_operation(_go)
+        except Exception as e:
+            log_event('error', f"Error in get_room_realtime_state: {e}")
+            return {}
+
+    @handle_exception
+    def get_chat_polls_for_messages(self, message_ids):
+        """Return {message_id: poll_dict} for any poll messages in the list.
+        Single round trip per table — replaces N+1 calls to get_chat_poll."""
+        if not self.auth or not self.auth.current_user or not message_ids:
+            return {}
+        user_id = self.auth.current_user['id']
+        ids = [int(m) for m in message_ids]
+        placeholders = ','.join('?' for _ in ids)
+
+        def _go(cursor):
+            cursor.execute(
+                f'''SELECT message_id, question, multi_choice, closes_at
+                    FROM chat_polls WHERE message_id IN ({placeholders})''',
+                ids,
+            )
+            polls = {row[0]: {
+                'message_id': row[0], 'question': row[1],
+                'multi_choice': bool(row[2]), 'closes_at': row[3],
+                'options': [], 'total_voters': 0,
+            } for row in cursor.fetchall()}
+            if not polls:
+                return {}
+            poll_ids = list(polls.keys())
+            placeholders2 = ','.join('?' for _ in poll_ids)
+            # Options + totals + my-vote in one go
+            cursor.execute(
+                f'''SELECT o.id, o.message_id, o.label, o.sort_order,
+                          (SELECT COUNT(*) FROM chat_poll_votes WHERE option_id = o.id),
+                          (SELECT COUNT(*) FROM chat_poll_votes
+                            WHERE option_id = o.id AND user_id = ?)
+                   FROM chat_poll_options o
+                   WHERE o.message_id IN ({placeholders2})
+                   ORDER BY o.message_id, o.sort_order, o.id''',
+                [user_id, *poll_ids],
+            )
+            for opt_id, mid, label, _so, count, mine in cursor.fetchall():
+                polls[mid]['options'].append({
+                    'id': opt_id, 'label': label, 'count': count,
+                    'mine': bool(mine),
+                })
+            # Distinct voter counts per poll
+            cursor.execute(
+                f'''SELECT o.message_id, COUNT(DISTINCT v.user_id)
+                    FROM chat_poll_votes v
+                    JOIN chat_poll_options o ON v.option_id = o.id
+                    WHERE o.message_id IN ({placeholders2})
+                    GROUP BY o.message_id''',
+                poll_ids,
+            )
+            for mid, total in cursor.fetchall():
+                if mid in polls:
+                    polls[mid]['total_voters'] = total
+            return polls
+
+        try:
+            return execute_db_operation(_go)
+        except Exception as e:
+            log_event('error', f"Error batching polls: {e}")
+            return {}

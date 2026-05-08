@@ -1410,20 +1410,35 @@ class ChatRoomWindow:
                 self._poll_job = self.window.after(self.POLL_MS, self._poll)
 
     def _poll_once(self):
+        """One batched fetch per tick — replaces the previous 5–7 separate
+        dashboard calls. The realtime helper opens a single connection and
+        returns messages, typing, presence, members (optional), and the
+        per-room unread count in one shot."""
         if not self.dashboard:
             return
-        # 1) New messages
         try:
-            new_msgs = self.dashboard.get_chat_messages_since(
-                self.room_id, since_message_id=self.last_message_id
-            )
+            state = self.dashboard.get_room_realtime_state(
+                self.room_id,
+                since_message_id=self.last_message_id,
+                include_members=bool(getattr(self, '_members_visible', False)),
+                typing_ttl_seconds=self.TYPING_TTL_SEC,
+            ) or {}
         except Exception:
-            new_msgs = []
-            logger.debug("get_chat_messages_since failed", exc_info=True)
+            state = {}
+            logger.debug("get_room_realtime_state failed", exc_info=True)
 
+        new_msgs = state.get('messages') or []
         if new_msgs:
             self._hydrate_reactions(new_msgs)
-            self._hydrate_polls(new_msgs)
+            try:
+                ids = [m['id'] for m in new_msgs if m.get('content', '').startswith('[poll]')]
+                if ids:
+                    polls = self.dashboard.get_chat_polls_for_messages(ids) or {}
+                    for m in new_msgs:
+                        if m['id'] in polls:
+                            m['poll'] = polls[m['id']]
+            except Exception:
+                pass
             was_at_bottom = self._is_at_bottom()
             self.chat_text.config(state=tk.NORMAL)
             for msg in new_msgs:
@@ -1436,29 +1451,53 @@ class ChatRoomWindow:
             if was_at_bottom:
                 self.chat_text.see(tk.END)
                 self._mark_read_up_to(self.last_message_id)
+        elif state.get('last_message_id'):
+            # Keep our pointer in sync even when the probe found nothing new.
+            self.last_message_id = max(
+                self.last_message_id or 0,
+                int(state.get('last_message_id') or 0),
+            )
 
-        # 2) Typing indicator
+        self._render_typing(state.get('typing_users') or [])
+
+        presence = state.get('presence') or {}
+        online = int(presence.get('online') or 0)
+        total = int(presence.get('total') or 0)
+        colour = "#2a8a2a" if online else "#888"
         try:
-            typing = self.dashboard.get_chat_typing_users(
-                self.room_id, max_age_seconds=self.TYPING_TTL_SEC
+            self.presence_label.config(
+                text=f"● {online}/{total} online", foreground=colour,
             )
         except Exception:
-            typing = []
-        self._render_typing(typing)
+            pass
 
-        # 3) Presence summary
-        try:
-            presence = self.dashboard.get_chat_presence(self.room_id)
-            online = sum(1 for p in presence if p.get('is_online'))
-            total = len(presence)
-            colour = "#2a8a2a" if online else "#888"
-            self.presence_label.config(text=f"● {online}/{total} online", foreground=colour)
-        except Exception:
-            logger.debug("get_chat_presence failed", exc_info=True)
-
-        # 4) Members sidebar (only when visible)
+        # Members sidebar (already fetched in the same round trip)
         if getattr(self, '_members_visible', False):
-            self._refresh_members_panel()
+            members = state.get('members')
+            if members is not None:
+                self._render_members_panel(members)
+
+    def _render_members_panel(self, members):
+        """Render the cached member list directly (no extra DB calls)."""
+        if not getattr(self, 'members_tree', None):
+            return
+        self._cached_members = members
+        for it in self.members_tree.get_children():
+            self.members_tree.delete(it)
+        for m in members:
+            online = m.get('is_online', False)
+            role = ("Creator" if m.get('is_creator')
+                    else "Admin" if m.get('is_admin') else "Member")
+            self.members_tree.insert(
+                '', tk.END,
+                values=(
+                    "● online" if online else "○ offline",
+                    f"{m['full_name']} (@{m['username']})",
+                    role,
+                ),
+                tags=(str(m['user_id']),
+                      "online" if online else "offline"),
+            )
 
     def _render_typing(self, names):
         if not names:
