@@ -22,6 +22,7 @@ from education_system.university_system.modules.shared.cli.imports import (
     TAXI_BOOKING_AVAILABLE, taxi_booking_menu,
     TRAIN_STATION_AVAILABLE, train_station_menu,
     LEGAL_SERVICES_AVAILABLE, legal_services_menu,
+    INFORMATION_RIGHTS_AVAILABLE, information_rights_menu,
     CARRENTAL_AVAILABLE, carrental_menu,
     EQUIPMENT_RENTAL_AVAILABLE, equipment_rental_menu,
     PHONE_SHOP_AVAILABLE, phone_shop_menu,
@@ -395,6 +396,8 @@ def display_menu():
         ]
         if LEGAL_SERVICES_AVAILABLE:
             items.append(add_option(get_text('cli.menu.legal_services', default='Legal Services'), "legal_services"))
+        if INFORMATION_RIGHTS_AVAILABLE:
+            items.append(add_option(get_text('cli.menu.information_rights', default='SAR / FOI Requests'), "information_rights"))
         print_row(items)
         items = []
         items.append(add_option("Advising", "advising"))
@@ -516,13 +519,18 @@ def display_menu():
         items = [
             add_option("HESA Export", "hesa_export"),
             add_option("External Examiners", "external_examiners"),
+            add_option("External QA (OfS/TEF/REF)", "external_qa"),
+            add_option("Mitigating Circumstances", "mitigating_circumstances"),
+            add_option("Curriculum Spec.", "curriculum_specification"),
         ]
         print_row(items)
         items = [
             add_option("Student App", "student_app"),
+            add_option("Status Letters", "enrolment_letters"),
             add_option("Achievement Badges", "achievement_badges"),
             add_option("Study Recommend.", "study_recommendations"),
             add_option("Clearing/Adjust.", "clearing_adjustment"),
+            add_option("APL/RPL", "prior_learning"),
         ]
         print_row(items)
         items = [
@@ -792,6 +800,12 @@ def display_menu():
                 else:
                     print("\n❌ Legal Services CLI is not available")
                     input("Press Enter to continue...")
+            elif option == "information_rights":
+                if INFORMATION_RIGHTS_AVAILABLE:
+                    information_rights_menu()
+                else:
+                    print("\n❌ Information Rights CLI is not available")
+                    input("Press Enter to continue...")
             elif option == "car_rental":
                 if CARRENTAL_AVAILABLE:
                     carrental_menu()
@@ -936,12 +950,40 @@ def display_menu():
                 except ImportError as e:
                     print(f"\n❌ External Examiners CLI is not available: {e}")
                     input("Press Enter to continue...")
+            elif option == "external_qa":
+                try:
+                    from education_system.university_system.modules.domain.research.external_quality_assurance.cli.eqa_cli import display_external_qa_menu
+                    display_external_qa_menu(auth)
+                except ImportError as e:
+                    print(f"\n❌ External QA CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "mitigating_circumstances":
+                try:
+                    from education_system.university_system.modules.domain.academics.mitigating_circumstances.cli.mitigating_circumstances_cli import display_mitigating_circumstances_menu
+                    display_mitigating_circumstances_menu(auth)
+                except ImportError as e:
+                    print(f"\n❌ Mitigating Circumstances CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "curriculum_specification":
+                try:
+                    from education_system.university_system.modules.domain.academics.curriculum_specification.cli.curriculum_specification_cli import display_curriculum_specification_menu
+                    display_curriculum_specification_menu(auth)
+                except ImportError as e:
+                    print(f"\n❌ Curriculum Specification CLI is not available: {e}")
+                    input("Press Enter to continue...")
             elif option == "student_app":
                 try:
                     from education_system.university_system.modules.domain.student_affairs.student_app.cli.student_app_cli import display_student_app_menu
                     display_student_app_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Student App CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "enrolment_letters":
+                try:
+                    from education_system.university_system.modules.domain.student_affairs.student_app.documentation.cli.documentation_cli import display_documentation_menu
+                    display_documentation_menu(auth)
+                except ImportError as e:
+                    print(f"\n❌ Status Letters CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "achievement_badges":
                 try:
@@ -963,6 +1005,13 @@ def display_menu():
                     display_clearing_adjustment_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ Clearing & Adjustment CLI is not available: {e}")
+                    input("Press Enter to continue...")
+            elif option == "prior_learning":
+                try:
+                    from education_system.university_system.modules.domain.academics.prior_learning_recognition.cli.prior_learning_cli import display_prior_learning_menu
+                    display_prior_learning_menu(auth)
+                except ImportError as e:
+                    print(f"\n❌ APL/RPL CLI is not available: {e}")
                     input("Press Enter to continue...")
             elif option == "course_planning":
                 try:

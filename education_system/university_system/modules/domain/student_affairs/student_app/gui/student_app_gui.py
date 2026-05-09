@@ -42,6 +42,37 @@ class StudentAppGUI:
         self._create_notifications_tab(notebook)
         self._create_preferences_tab(notebook)
         self._create_quick_links_tab(notebook)
+        self._create_documents_tab(notebook)
+
+    def _create_documents_tab(self, notebook):
+        tab = ttk.Frame(notebook)
+        notebook.add(tab, text="Status Letters")
+        ttk.Label(
+            tab,
+            text="Enrolment verification & status letters",
+            font=("", 14, "bold"),
+        ).pack(padx=10, pady=(15, 5))
+        ttk.Label(
+            tab,
+            text=(
+                "Self-serve proof of study for council tax, mortgage,\n"
+                "employer, visa / UKVI, and bank account opening."
+            ),
+            justify="left",
+        ).pack(padx=10, pady=5, anchor="w")
+        ttk.Button(tab, text="Open Status Letters", command=self._open_documents).pack(
+            padx=10, pady=15, anchor="w"
+        )
+
+    def _open_documents(self):
+        try:
+            from education_system.university_system.modules.domain.student_affairs.student_app.documentation.gui.documentation_gui import (
+                DocumentationGUI,
+            )
+            DocumentationGUI(parent=self.root, auth=self.auth)
+        except Exception as exc:
+            logger.error("Failed to open documentation GUI: %s", exc)
+            messagebox.showerror("Error", f"Could not open Status Letters: {exc}")
 
     # -------------------------------------------------------------- Dashboard
     def _create_dashboard_tab(self, notebook):

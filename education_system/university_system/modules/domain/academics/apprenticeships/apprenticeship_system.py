@@ -277,6 +277,7 @@ class StudentTab(ttk.Frame):
         ttk.Button(btn_frame, text="Delete", command=self.delete_student).pack(side="left", padx=2)
         ttk.Button(btn_frame, text="Clear Form", command=self.clear_form).pack(side="left", padx=2)
         ttk.Button(btn_frame, text="Refresh", command=self.refresh).pack(side="left", padx=2)
+        ttk.Button(btn_frame, text="Submit as APL evidence", command=self.submit_as_apl).pack(side="left", padx=2)
 
         # Search
         search_frame = ttk.Frame(self)
@@ -375,6 +376,54 @@ class StudentTab(ttk.Frame):
         for entry in self.entries.values():
             entry.delete(0, tk.END)
         self.tree.selection_remove(*self.tree.selection())
+
+    def submit_as_apl(self):
+        """Open or create a draft APL/RPL ``work_experience`` claim for
+        the selected student, seeded from their employer record."""
+        selected = self.tree.selection()
+        if not selected:
+            messagebox.showwarning("No Selection", "Select a student first.")
+            return
+        values = self.tree.item(selected[0])["values"]
+        student_id = str(values[1]) if len(values) > 1 else None
+        course = str(values[6]) if len(values) > 6 else None
+        if not student_id:
+            messagebox.showerror("Error", "Could not read student id.")
+            return
+        employer = "Apprenticeship employer"
+        try:
+            row = self.db.fetch_one(
+                """SELECT e.company_name FROM applications a
+                   JOIN apprenticeships ap ON a.apprenticeship_id = ap.apprenticeship_id
+                   JOIN employers e ON ap.employer_id = e.employer_id
+                   WHERE a.student_id = ?
+                   ORDER BY a.application_id DESC LIMIT 1""",
+                (student_id,),
+            )
+            if row:
+                employer = row[0] or employer
+        except Exception:
+            pass
+        try:
+            from education_system.university_system.modules.domain.academics.prior_learning_recognition.services.prior_learning_service import (
+                PriorLearningService,
+            )
+            apl = PriorLearningService()
+            cid = apl.create_evidence_from_placement(
+                student_id,
+                employer=employer,
+                total_hours=0.0,
+                signed_off_hours=0.0,
+                target_course=course,
+            )
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create APL evidence: {e}")
+            return
+        messagebox.showinfo(
+            "APL evidence added",
+            f"Added apprenticeship evidence to APL claim #{cid}\n"
+            f"for student {student_id}.",
+        )
 
     def on_select(self, _):
         selected = self.tree.selection()

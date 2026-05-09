@@ -32,6 +32,40 @@ class OverviewMixin:
         self._build_stat_cards(parent)
         self._build_todays_schedule(parent)
         self._build_recent_grades(parent)
+        self._build_mc_summary(parent)
+
+    def _build_mc_summary(self, parent):
+        """Compact list of the student's MC/EC claims with status. Hidden
+        when the student has no claims so the dashboard stays clean for
+        students who never need this feature."""
+        try:
+            from education_system.university_system.modules.domain.academics.mitigating_circumstances.integration import (
+                claims_for_student,
+            )
+        except Exception:
+            return
+        try:
+            claims = claims_for_student(self.student_id) if self.student_id else []
+        except Exception:
+            claims = []
+        if not claims:
+            return
+
+        frame = ttk.LabelFrame(parent, text=_t(
+            'dashboard.mc_summary', 'My Mitigating Circumstances'))
+        frame.pack(fill='x', padx=20, pady=(10, 10))
+
+        for c in claims[:5]:
+            line = (f"#{c['id']}  {c.get('module_code') or '—'}  "
+                    f"{c.get('assessment_ref') or ''}  · "
+                    f"{c.get('grounds') or '—'}  → {c['status']}")
+            ttk.Label(frame, text=line, font=('Arial', 10)).pack(
+                anchor='w', padx=10, pady=2)
+        if len(claims) > 5:
+            ttk.Label(frame,
+                      text=f"… and {len(claims) - 5} more (open MC GUI for full list)",
+                      font=('Arial', 9, 'italic'),
+                      foreground=COLORS['secondary']).pack(anchor='w', padx=10, pady=(2, 6))
 
     # ------------------------------------------------------------------
     # Welcome header

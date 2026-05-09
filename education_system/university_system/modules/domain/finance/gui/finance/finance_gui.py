@@ -415,6 +415,8 @@ class FinanceGUI:
                  bg=colors['secondary'], fg='white', font=('Arial', 9, 'bold')).pack(side='left', padx=5)
         tk.Button(toolbar, text=_("finance.buttons.view_finances"), command=self.view_student_finances,
                  bg=colors['dark'], fg='white', font=('Arial', 9, 'bold')).pack(side='left', padx=5)
+        tk.Button(toolbar, text="Status Letters", command=self._open_status_letters,
+                 bg=colors.get('warning', '#f39c12'), fg='white', font=('Arial', 9, 'bold')).pack(side='left', padx=5)
 
         # Search frame
         search_frame = tk.Frame(students_frame, bg='white')
@@ -543,6 +545,19 @@ class FinanceGUI:
         if search_term:
             self.student_search_var.set(search_term)
             self.on_student_search(None)
+
+
+    def _open_status_letters(self):
+        """Launch the Enrolment Verification / Status Letters GUI.
+
+        Council-tax exemption, mortgage / lender, and bank-account
+        opening letters all hang off tuition standing — natural fit
+        for the Bursar's toolbar."""
+        try:
+            from education_system.university_system.modules.domain.student_affairs.student_app.documentation.gui.documentation_gui import DocumentationGUI
+            DocumentationGUI(parent=self.root, auth=self.auth)
+        except Exception as exc:
+            messagebox.showerror(_("common.error"), f"Status Letters not available: {exc}")
 
 
     def view_student_finances(self):

@@ -62,6 +62,7 @@ _DDL = [
         notes TEXT,
         signed_off_by INTEGER,
         signed_off_at TEXT,
+        system_key TEXT NOT NULL DEFAULT 'university',
         created_at TEXT NOT NULL DEFAULT (datetime('now')),
         updated_at TEXT NOT NULL DEFAULT (datetime('now')),
         UNIQUE (framework, submission_year)
@@ -144,6 +145,12 @@ _DDL = [
         UNIQUE (uoa, version)
     )""",
     "CREATE INDEX IF NOT EXISTS idx_ref_env_uoa ON ref_environment_statements(uoa)",
+    """CREATE TABLE IF NOT EXISTS qa_hesa_links (
+        qa_submission_id INTEGER NOT NULL,
+        hesa_return_id INTEGER NOT NULL,
+        linked_at TEXT NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (qa_submission_id, hesa_return_id)
+    )""",
 ]
 
 
@@ -151,6 +158,19 @@ def init_db() -> None:
     with get_connection() as conn:
         for stmt in _DDL:
             conn.execute(stmt)
+        # #21 — idempotent column add for installs predating system_key.
+        try:
+            cols = {r[1] for r in conn.execute(
+                "PRAGMA table_info(qa_submissions)").fetchall()}
+            if "system_key" not in cols:
+                conn.execute(
+                    "ALTER TABLE qa_submissions ADD COLUMN system_key TEXT "
+                    "NOT NULL DEFAULT 'university'")
+        except Exception:
+            logger.exception("system_key migration failed")
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_qa_sub_system "
+            "ON qa_submissions(system_key)")
 
 
 def _now() -> str:
@@ -167,6 +187,7 @@ def _today() -> str:
 
 def _audit(action: str, resource_type: str = "qa", resource_id: Optional[str] = None,
            details: Optional[dict] = None) -> None:
+    event_type = f"qa.{action}"
     try:
         from education_system.university_system.infrastructure.security.audit_helpers import (
             safe_log_security_event,
@@ -184,10 +205,23 @@ def _audit(action: str, resource_type: str = "qa", resource_id: Optional[str] = 
         except Exception:
             pass
         safe_log_security_event(
-            action=f"qa.{action}", user_id=actor,
+            action=event_type, user_id=actor,
             resource_type=resource_type, resource_id=resource_id,
             details=details or {},
         )
+    except Exception:
+        pass
+    # #16 — fan out to webhook subscribers; lazy-imported to avoid a
+    # circular import (qa_integrations imports qa_service).
+    try:
+        from education_system.university_system.modules.domain.research.external_quality_assurance.services.qa_integrations import (
+            dispatch_qa_webhook,
+        )
+        dispatch_qa_webhook(event_type, {
+            "resource_type": resource_type,
+            "resource_id": resource_id,
+            "details": details or {},
+        })
     except Exception:
         pass
 
@@ -896,6 +930,187 @@ def record_external_qa_kpis() -> int:
     return n
 
 
+# ===========================================================================
+# Cross-module integration helpers (#8–#13, #16)
+# ===========================================================================
+
+# In-process subscriber registry. Other modules (Grades GUI, alert pipeline)
+# can register a callback to be invoked after a relevant event so EQA can
+# react without circular imports. Best-effort only: failures are logged.
+_GRADE_COMMIT_SUBSCRIBERS: list = []
+
+
+def subscribe_grade_commit(callback) -> None:
+    """Register ``callback(cohort_year:int, course:str|None)`` to fire when
+    the Grades module commits finals. Idempotent on identity."""
+    if callback not in _GRADE_COMMIT_SUBSCRIBERS:
+        _GRADE_COMMIT_SUBSCRIBERS.append(callback)
+
+
+def unsubscribe_grade_commit(callback) -> None:
+    if callback in _GRADE_COMMIT_SUBSCRIBERS:
+        _GRADE_COMMIT_SUBSCRIBERS.remove(callback)
+
+
+def notify_grade_commit(cohort_year: int, course: Optional[str] = None) -> int:
+    """Called by the Grades module after a finals commit. Fans out to
+    subscribers and returns the number that ran without raising."""
+    ok = 0
+    for cb in list(_GRADE_COMMIT_SUBSCRIBERS):
+        try:
+            cb(cohort_year, course)
+            ok += 1
+        except Exception:
+            logger.exception("grade_commit subscriber failed")
+    return ok
+
+
+def attach_grade_cohort_to_b3(cohort_year: int,
+                                course: Optional[str] = None) -> int:
+    """#10 — Default subscriber: when grades commit, refresh the B3
+    snapshot for that cohort. Returns metric count from
+    :func:`record_b3_snapshot`."""
+    return record_b3_snapshot(cohort_year, course=course)
+
+
+def add_output_to_impact_case(output_id: int, case_id: int) -> bool:
+    """#8 — Append ``output_id`` to ``ref_impact_cases.evidence_links``
+    (stored as a JSON list of ints). Idempotent — silently dedups."""
+    init_db()
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT evidence_links FROM ref_impact_cases WHERE id = ?", (case_id,),
+        ).fetchone()
+        if not row:
+            return False
+        raw = row[0] if isinstance(row, tuple) else row["evidence_links"]
+        try:
+            ids = json.loads(raw) if raw else []
+            if not isinstance(ids, list):
+                ids = []
+        except Exception:
+            ids = []
+        if output_id in ids:
+            return True
+        ids.append(output_id)
+        conn.execute(
+            "UPDATE ref_impact_cases SET evidence_links = ?, updated_at = ? WHERE id = ?",
+            (json.dumps(ids), _now(), case_id),
+        )
+    _audit("impact_case_evidence_added", resource_id=str(case_id),
+           details={"output_id": output_id})
+    return True
+
+
+def promote_alert_to_app_milestone(alert: dict,
+                                     plan_year: Optional[int] = None) -> int:
+    """#9 — Convert a Predictive Alert dict into an APP milestone.
+
+    ``alert`` is expected to be a dict roughly shaped like
+    ``{"title": str, "description"?: str, "metric"?: str, "target"?: float,
+       "due"?: "YYYY-MM-DD", "owner_id"?: int}``. Unknown keys are ignored;
+    only ``title`` is required.
+    """
+    title = (alert.get("title") or alert.get("name") or "").strip()
+    if not title:
+        raise ValueError("alert is missing 'title'")
+    text = title
+    desc = alert.get("description") or alert.get("summary")
+    if desc:
+        text = f"{title} — {desc}"
+    metric = alert.get("metric")
+    if metric:
+        text = f"[{metric}] {text}"
+    return create_app_milestone(
+        plan_year=int(plan_year or alert.get("plan_year") or date.today().year),
+        milestone_text=text,
+        target_value=alert.get("target") or alert.get("target_value"),
+        target_date=alert.get("due") or alert.get("target_date"),
+        owner_id=alert.get("owner_id"),
+        notes=f"promoted_from_alert:{alert.get('id', '')}",
+    )
+
+
+def link_qa_submission_to_hesa(qa_submission_id: int,
+                                 hesa_return_id: int) -> bool:
+    """#13 — Persist a cross-reference between an OfS/TEF/REF submission
+    and a HESA return so each side's exports can cite the other."""
+    init_db()
+    with get_connection() as conn:
+        try:
+            conn.execute(
+                """INSERT INTO qa_hesa_links (qa_submission_id, hesa_return_id)
+                   VALUES (?, ?)""",
+                (qa_submission_id, hesa_return_id),
+            )
+        except Exception:
+            return False
+    _audit("hesa_link_created", resource_id=str(qa_submission_id),
+           details={"hesa_return_id": hesa_return_id})
+    return True
+
+
+def list_hesa_links(qa_submission_id: Optional[int] = None) -> list[dict]:
+    init_db()
+    with get_connection() as conn:
+        if qa_submission_id is not None:
+            rows = conn.execute(
+                "SELECT * FROM qa_hesa_links WHERE qa_submission_id = ?",
+                (qa_submission_id,),
+            ).fetchall()
+        else:
+            rows = conn.execute("SELECT * FROM qa_hesa_links").fetchall()
+        return [dict(r) for r in rows]
+
+
+def sign_off_submission_and_publish(submission_id: int,
+                                      signed_off_by: int) -> tuple[bool, int]:
+    """#12 — Wrapper: sign off then immediately recompute & publish KPIs
+    so BI dashboards refresh in the same tick. Returns ``(signed, kpi_count)``."""
+    ok = sign_off_submission(submission_id, signed_off_by)
+    n = record_external_qa_kpis() if ok else 0
+    return ok, n
+
+
+def get_qa_summary_dict() -> dict:
+    """#16 — Headless summary suitable for embedding in other dashboards
+    or REST APIs. No Tk, no I/O beyond the QA tables."""
+    init_db()
+    summary: dict[str, Any] = {
+        "frameworks": {fw: {"latest_year": None, "latest_status": None}
+                       for fw in FRAMEWORKS},
+        "app_milestones": {"total": 0, "achieved": 0},
+        "ref": {"impact_cases": 0, "uoas_with_outputs": 0},
+        "latest_b3_year": None,
+    }
+    with get_connection() as conn:
+        for fw in FRAMEWORKS:
+            row = conn.execute(
+                "SELECT submission_year, status FROM qa_submissions "
+                "WHERE framework = ? ORDER BY submission_year DESC LIMIT 1",
+                (fw,),
+            ).fetchone()
+            if row:
+                yr = row[0] if isinstance(row, tuple) else row["submission_year"]
+                st = row[1] if isinstance(row, tuple) else row["status"]
+                summary["frameworks"][fw] = {"latest_year": yr, "latest_status": st}
+        total = conn.execute(
+            "SELECT COUNT(*) FROM ofs_app_milestones").fetchone()[0] or 0
+        achieved = conn.execute(
+            "SELECT COUNT(*) FROM ofs_app_milestones WHERE achieved = 1"
+        ).fetchone()[0] or 0
+        summary["app_milestones"] = {"total": total, "achieved": achieved}
+        summary["ref"]["impact_cases"] = conn.execute(
+            "SELECT COUNT(*) FROM ref_impact_cases").fetchone()[0] or 0
+        if _has_table(conn, "research_outputs"):
+            summary["ref"]["uoas_with_outputs"] = conn.execute(
+                "SELECT COUNT(DISTINCT uoa) FROM research_outputs WHERE uoa IS NOT NULL"
+            ).fetchone()[0] or 0
+        summary["latest_b3_year"] = conn.execute(
+            "SELECT MAX(cohort_year) FROM ofs_b3_metrics").fetchone()[0]
+    return summary
+
+
 __all__ = [
     "FRAMEWORKS", "QA_STATUSES", "OFS_B3_METRICS", "TEF_SECTIONS",
     "REF_UOAS", "REF_IMPACT_STATUSES",
@@ -913,4 +1128,15 @@ __all__ = [
     "list_environment_statements", "add_environment_statement",
     "compute_uoa_summary", "export_ref_submission",
     "compute_external_qa_kpis", "record_external_qa_kpis",
+    # Cross-module integration helpers
+    "subscribe_grade_commit", "unsubscribe_grade_commit", "notify_grade_commit",
+    "attach_grade_cohort_to_b3", "add_output_to_impact_case",
+    "promote_alert_to_app_milestone",
+    "link_qa_submission_to_hesa", "list_hesa_links",
+    "sign_off_submission_and_publish", "get_qa_summary_dict",
 ]
+
+
+# #11 — Default subscriber: a Grades-module commit refreshes the B3 snapshot
+# for the cohort. The Grades module just needs to call ``notify_grade_commit``.
+subscribe_grade_commit(attach_grade_cohort_to_b3)

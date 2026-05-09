@@ -225,6 +225,32 @@ def publish_adjustment_approved(request_id: int, *, student_id: str,
     )
 
 
+def publish_apl_approved(claim_id: int, *, student_id: str,
+                         credits_awarded: int,
+                         claim_type: str | None = None,
+                         decision: str = "approved",
+                         target_course: str | None = None) -> None:
+    """APL/RPL claim decision fan-out.
+
+    Triggered by ``PriorLearningService.review_claim`` when the
+    decision is ``approved`` or ``partial``. Logged on
+    ``EVENT_COURSE_CHANGED`` so HESA Export, External QA, and degree
+    audit subscribers can pick it up without the APL module having to
+    know who's listening.
+    """
+    log_and_publish(
+        EVENT_COURSE_CHANGED,
+        source="prior_learning_recognition",
+        action="apl_approved",
+        claim_id=int(claim_id),
+        student_id=str(student_id),
+        credits_awarded=int(credits_awarded or 0),
+        claim_type=claim_type,
+        decision=decision,
+        target_course=target_course,
+    )
+
+
 def publish_leave_decision(staff_id: str, *, action: str,
                            start_date: str | None = None,
                            end_date: str | None = None,
@@ -597,6 +623,25 @@ def _plan_is_on_track(conn: Any, plan_id: int) -> bool:
         return bool(row and row[0] == 0)
     except Exception:
         return False
+
+
+# ---------------------------------------------------------------------------
+# APL/RPL approved → log only (degree-audit + transcript queries read
+# directly from apl_credit_awards, so no cross-table mutation here).
+# ---------------------------------------------------------------------------
+
+def _on_apl_approved(**payload: Any) -> None:
+    if payload.get("action") != "apl_approved":
+        return
+    student_id = payload.get("student_id")
+    credits = payload.get("credits_awarded")
+    if not student_id:
+        return
+    logger.info(
+        "APL approved: student=%s credits=%s claim=%s type=%s",
+        student_id, credits, payload.get("claim_id"),
+        payload.get("claim_type"),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -2628,6 +2673,7 @@ def wire_subscribers() -> None:
     _ensure_log_table()
     subscribe(EVENT_COURSE_CHANGED, _on_clearing_accepted)
     subscribe(EVENT_COURSE_CHANGED, _on_adjustment_approved)
+    subscribe(EVENT_COURSE_CHANGED, _on_apl_approved)
     subscribe(EVENT_COURSE_CHANGED, _on_demand_forecast)
     subscribe(EVENT_STAFF_AVAILABILITY_CHANGED, _on_staff_availability_changed)
     subscribe(EVENT_MODULE_SCHEDULE_CHANGED, _on_timetable_locked)
@@ -2664,6 +2710,7 @@ __all__ = [
     "resolve_student_id",
     "publish_clearing_accepted",
     "publish_adjustment_approved",
+    "publish_apl_approved",
     "publish_leave_decision",
     "publish_timetable_locked",
     "publish_demand_forecast",

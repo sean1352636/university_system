@@ -56,11 +56,15 @@ class _TextEditor(tk.Toplevel):
 
 
 class QADashboardGUI:
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, app=None):
         self.window = tk.Toplevel(parent) if parent else tk.Tk()
         self.window.title("External Quality Assurance — OfS / TEF / REF")
         self.window.geometry("1300x820")
         self.window.minsize(1100, 720)
+
+        # Reference to the UnifiedManagementGUI so the "Open in…" bar can
+        # invoke sibling launchers (show_grade_tracking_gui, etc.).
+        self.app = app
 
         try:
             from education_system.university_system.infrastructure.shared_context import get_auth
@@ -68,13 +72,258 @@ class QADashboardGUI:
         except Exception:
             self.auth = None
 
-        nb = ttk.Notebook(self.window)
-        nb.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        self._build_overview_tab(nb)
-        self._build_ofs_tab(nb)
-        self._build_tef_tab(nb)
-        self._build_ref_tab(nb)
+        self._build_open_in_bar(self.window)
+        self.nb = ttk.Notebook(self.window)
+        self.nb.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
+        self._build_overview_tab(self.nb)
+        self._build_ofs_tab(self.nb)
+        self._build_tef_tab(self.nb)
+        self._build_ref_tab(self.nb)
         self._refresh_all()
+
+        # #17 — register the live dashboard on the parent app so
+        # ``with_qa_context`` can locate it. Cleared on window destroy.
+        if self.app is not None:
+            try:
+                self.app._eqa_dash = self
+                self.window.bind("<Destroy>", self._on_destroy, add="+")
+            except Exception:
+                pass
+
+    def _on_destroy(self, event) -> None:
+        if event.widget is not self.window:
+            return
+        try:
+            if getattr(self.app, "_eqa_dash", None) is self:
+                self.app._eqa_dash = None
+        except Exception:
+            pass
+
+    # ------------------------------------------------------------------
+    # Open-in bar — deep-links to sibling UnifiedManagementGUI launchers
+    # ------------------------------------------------------------------
+
+    _OPEN_IN_TARGETS = (
+        ("Grades", "show_grade_tracking_gui"),
+        ("Predictive Analytics", "show_predictive_analytics_gui"),
+        ("Predictive Alerts", "show_predictive_alerts_gui"),
+        ("Analytics Dashboard", "show_analytics_dashboard_gui"),
+        ("Business Intel", "show_business_intelligence_gui"),
+        ("HESA Export", "show_hesa_export_gui"),
+        ("Security Dashboard", "show_security_dashboard"),
+    )
+
+    def _build_open_in_bar(self, parent):
+        bar = ttk.Frame(parent, padding=(10, 6, 10, 0))
+        bar.pack(fill=tk.X)
+        ttk.Label(bar, text="Open in:",
+                  font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=(0, 6))
+        for label, method in self._OPEN_IN_TARGETS:
+            btn = ttk.Button(bar, text=label,
+                             command=lambda m=method, lab=label: self._open_in(m, lab))
+            btn.pack(side=tk.LEFT, padx=2)
+            if not (self.app and hasattr(self.app, method)):
+                btn.state(["disabled"])
+
+    def _open_in(self, method_name: str, label: str) -> None:
+        self._dispatch_with_context(method_name, label, context=None)
+
+    # ------------------------------------------------------------------
+    # #7 set_focus + #18 register_open_in
+    # ------------------------------------------------------------------
+
+    _TAB_INDEX = {"overview": 0, "ofs": 1, "tef": 2, "ref": 3}
+
+    def set_focus(self, framework: str | None = None,
+                   year: int | None = None,
+                   uoa: str | None = None) -> None:
+        """#7 — Programmatic focus API: switch tab and prefill state vars.
+
+        ``framework`` accepts ``"OfS" | "TEF" | "REF" | "overview"``
+        (case-insensitive). ``year`` is applied to whichever tab is
+        relevant (B3 spinner for OfS, narrative spinner for TEF).
+        ``uoa`` selects the REF combobox value."""
+        try:
+            if framework:
+                key = framework.lower()
+                if key in ("ofs", "office for students"):
+                    key = "ofs"
+                idx = self._TAB_INDEX.get(key)
+                if idx is not None:
+                    self.nb.select(idx)
+            if year is not None:
+                if framework and framework.lower() == "tef":
+                    self.tef_year.set(int(year))
+                else:
+                    self.b3_year.set(int(year))
+            if uoa:
+                self.ref_uoa.set(uoa)
+                # Trigger summary refresh if the REF tab provides it
+                fn = getattr(self, "_ref_load_summary", None) or getattr(
+                    self, "_refresh_uoa_summary", None)
+                if callable(fn):
+                    try:
+                        fn()
+                    except Exception:
+                        logger.exception("set_focus: REF summary refresh failed")
+        except Exception:
+            logger.exception("set_focus failed")
+
+    @classmethod
+    def register_open_in(cls, label: str,
+                           method_name: str,
+                           replace: bool = False) -> None:
+        """#18 — Extension point: append (or replace) a target on the
+        Open-in bar. ``method_name`` must be the name of a method on
+        ``UnifiedManagementGUI`` so existing instances dispatch to it."""
+        new = list(cls._OPEN_IN_TARGETS)
+        if replace:
+            new = [(lab, m) for lab, m in new if lab != label]
+        else:
+            for lab, _ in new:
+                if lab == label:
+                    return
+        new.append((label, method_name))
+        cls._OPEN_IN_TARGETS = tuple(new)
+
+    def _dispatch_with_context(self, method_name: str, label: str,
+                                context: dict | None) -> None:
+        """Stash ``context`` on the parent app (matches the codebase's
+        ``_last_academic_context`` convention) then invoke its ``show_*``
+        launcher. Receivers that read the context prefilter; receivers
+        that don't simply open at their default state."""
+        if not self.app:
+            messagebox.showinfo(
+                "Not available",
+                "Cross-module navigation requires the main GUI; open this dashboard "
+                "from the main menu rather than standalone.",
+                parent=self.window,
+            )
+            return
+        fn = getattr(self.app, method_name, None)
+        if fn is None:
+            messagebox.showwarning("Not available",
+                                   f"{label} is not registered on this build.",
+                                   parent=self.window)
+            return
+        try:
+            self.app._last_academic_context = context
+        except Exception:
+            pass
+        try:
+            fn()
+        except Exception as exc:
+            logger.exception("Open-in %s failed", method_name)
+            messagebox.showerror("Failed to open",
+                                 f"Could not open {label}: {exc}",
+                                 parent=self.window)
+
+    # ------------------------------------------------------------------
+    # Drill-through helpers (EQA → other GUIs)
+    #
+    # Each returns the context dict it would push, so unit tests / callers
+    # can verify the payload without launching a Toplevel. The context
+    # contract is a flat dict; all keys are optional from the receiver's
+    # point of view.
+    # ------------------------------------------------------------------
+
+    def _selected_b3(self) -> dict | None:
+        sel = getattr(self, "b3_tree", None) and self.b3_tree.selection()
+        if not sel:
+            return None
+        v = self.b3_tree.item(sel[0])["values"]
+        return {
+            "cohort_year": int(v[0]) if str(v[0]).isdigit() else None,
+            "course": None if v[1] in ("", "(all)") else str(v[1]),
+            "metric": str(v[2]),
+            "value_pct": v[3],
+        }
+
+    def _selected_submission(self) -> dict | None:
+        sel = getattr(self, "sub_tree", None) and self.sub_tree.selection()
+        if not sel:
+            return None
+        v = self.sub_tree.item(sel[0])["values"]
+        return {"submission_id": int(v[0]), "framework": str(v[1]),
+                "submission_year": int(v[2]), "status": str(v[3])}
+
+    def drill_through_b3(self) -> dict | None:
+        """1. Open Grades filtered to the cohort behind a B3 row."""
+        ctx = self._selected_b3()
+        if not ctx:
+            messagebox.showinfo("Pick a row",
+                                "Select a B3 metric row first.", parent=self.window)
+            return None
+        payload = {"source": "eqa.b3", "cohort_year": ctx["cohort_year"],
+                   "course": ctx["course"], "metric": ctx["metric"]}
+        self._dispatch_with_context("show_grade_tracking_gui", "Grades", payload)
+        return payload
+
+    def open_predictive_for_cohort(self) -> dict:
+        """2. Open Predictive Analytics scoped to the OfS cohort year spinner."""
+        try:
+            year = int(self.b3_year.get())
+        except Exception:
+            year = date.today().year - 1
+        payload = {"source": "eqa.b3", "cohort_year": year,
+                   "focus": "continuation_forecast"}
+        self._dispatch_with_context("show_predictive_analytics_gui",
+                                     "Predictive Analytics", payload)
+        return payload
+
+    def open_alerts_for_metric(self) -> dict | None:
+        """3. Open Predictive Alerts filtered to the selected B3 metric."""
+        ctx = self._selected_b3()
+        if not ctx:
+            messagebox.showinfo("Pick a row",
+                                "Select a B3 metric row to scope the alerts to.",
+                                parent=self.window)
+            return None
+        threshold = 80.0 if ctx["metric"] in ("continuation", "completion") else None
+        payload = {"source": "eqa.b3", "metric": ctx["metric"],
+                   "cohort_year": ctx["cohort_year"], "course": ctx["course"],
+                   "threshold_pct": threshold}
+        self._dispatch_with_context("show_predictive_alerts_gui",
+                                     "Predictive Alerts", payload)
+        return payload
+
+    def open_audit_for_submission(self) -> dict | None:
+        """4. Open the Security Dashboard filtered to ``qa.submission_*``
+        events for the selected submission."""
+        ctx = self._selected_submission()
+        if not ctx:
+            messagebox.showinfo("Pick a row",
+                                "Select a submission first.", parent=self.window)
+            return None
+        payload = {
+            "source": "eqa.submissions",
+            "audit_action_prefix": "qa.submission_",
+            "resource_type": "qa",
+            "resource_id": str(ctx["submission_id"]),
+            "framework": ctx["framework"],
+            "submission_year": ctx["submission_year"],
+        }
+        self._dispatch_with_context("show_security_dashboard",
+                                     "Security Dashboard", payload)
+        return payload
+
+    def open_hesa_for_year(self) -> dict:
+        """5. Open the HESA Export GUI pre-selected to the OfS B3 year."""
+        try:
+            year = int(self.b3_year.get())
+        except Exception:
+            year = date.today().year - 1
+        payload = {"source": "eqa.ofs", "cohort_year": year,
+                   "academic_year": f"{year}/{(year + 1) % 100:02d}"}
+        self._dispatch_with_context("show_hesa_export_gui", "HESA Export", payload)
+        return payload
+
+    def open_bi_for_kpi(self) -> dict:
+        """6. Open Business Intelligence filtered to EQA KPIs."""
+        payload = {"source": "eqa.kpis", "kpi_category": "external_qa"}
+        self._dispatch_with_context("show_business_intelligence_gui",
+                                     "Business Intel", payload)
+        return payload
 
     # ------------------------------------------------------------------
     # Overview tab — submissions tracker + KPI button
@@ -105,8 +354,62 @@ class QADashboardGUI:
                    command=self._sub_sign_off).pack(side=tk.LEFT, padx=6)
         ttk.Button(bar, text="Refresh",
                    command=self._refresh_submissions).pack(side=tk.LEFT)
+        ttk.Button(bar, text="View audit log",
+                   command=self.open_audit_for_submission).pack(side=tk.LEFT, padx=6)
+        ttk.Button(bar, text="Open in BI",
+                   command=self.open_bi_for_kpi).pack(side=tk.RIGHT, padx=6)
         ttk.Button(bar, text="Recompute & publish KPIs",
                    command=self._publish_kpis).pack(side=tk.RIGHT)
+
+        # Mitigating Circumstances (MC/EC) summary card. Volume and approval
+        # rate feed Student Outcomes / B3 narratives so reviewers see them
+        # alongside the submissions tracker.
+        mc_card = ttk.LabelFrame(f, text="Mitigating Circumstances (MC/EC)",
+                                 padding=8)
+        mc_card.pack(fill=tk.X, pady=(8, 4))
+        self._mc_summary_var = tk.StringVar(value="Loading…")
+        ttk.Label(mc_card, textvariable=self._mc_summary_var,
+                  font=("Arial", 10)).pack(anchor=tk.W)
+        ttk.Button(mc_card, text="Open MC GUI",
+                   command=self._open_mc_gui).pack(anchor=tk.E)
+        self._refresh_mc_summary()
+
+    def _refresh_mc_summary(self):
+        try:
+            from education_system.university_system.modules.domain.academics.mitigating_circumstances.integration import (
+                aggregate_stats,
+            )
+            stats = aggregate_stats()
+        except Exception:
+            self._mc_summary_var.set("MC stats unavailable.")
+            return
+        by_status = stats.get('by_status') or {}
+        approved = by_status.get('approved', 0)
+        rejected = by_status.get('rejected', 0)
+        in_flight = sum(by_status.get(s, 0) for s in
+                        ('submitted', 'evidence_pending',
+                         'under_review', 'panel_scheduled'))
+        rate = stats.get('approval_rate', 0.0)
+        self._mc_summary_var.set(
+            f"Total claims: {stats.get('total_claims', 0)}  ·  "
+            f"in-flight: {in_flight}  ·  approved: {approved}  ·  "
+            f"rejected: {rejected}  ·  approval rate: {rate * 100:.1f}%  ·  "
+            f"extensions granted: {stats.get('extensions_granted', 0)}"
+        )
+
+    def _open_mc_gui(self):
+        try:
+            from education_system.university_system.modules.domain.academics.mitigating_circumstances.integration import (
+                open_mc_gui_for_student,
+            )
+            open_mc_gui_for_student(self.window)
+        except Exception as exc:
+            try:
+                from tkinter import messagebox
+                messagebox.showerror("MC", f"Could not open MC GUI: {exc}",
+                                     parent=self.window)
+            except Exception:
+                pass
 
     def _refresh_submissions(self):
         self.sub_tree.delete(*self.sub_tree.get_children())
@@ -144,9 +447,13 @@ class QADashboardGUI:
             return
         sub_id = int(self.sub_tree.item(sel[0])["values"][0])
         signer = _user_id_from_auth(self.auth) or 0
-        if qa.sign_off_submission(sub_id, signer):
+        ok, kpi_n = qa.sign_off_submission_and_publish(sub_id, signer)
+        if ok:
             self._refresh_submissions()
-            messagebox.showinfo("Signed off", "Submission marked submitted.")
+            messagebox.showinfo(
+                "Signed off",
+                f"Submission marked submitted. {kpi_n} KPI(s) republished.",
+            )
         else:
             messagebox.showwarning("Already signed off",
                                     "This submission was already submitted.")
@@ -178,6 +485,19 @@ class QADashboardGUI:
                    command=self._b3_compute).grid(row=0, column=2, padx=8)
         ttk.Button(b3, text="Export OfS return (CSV)",
                    command=self._ofs_export).grid(row=0, column=3, padx=4)
+
+        drill = ttk.Frame(b3)
+        drill.grid(row=2, column=0, columnspan=4, sticky=tk.W, pady=(6, 0))
+        ttk.Label(drill, text="Drill-through:",
+                  font=("Arial", 9, "bold")).pack(side=tk.LEFT, padx=(0, 6))
+        ttk.Button(drill, text="Cohort in Grades",
+                   command=self.drill_through_b3).pack(side=tk.LEFT, padx=2)
+        ttk.Button(drill, text="Forecast in Predictive",
+                   command=self.open_predictive_for_cohort).pack(side=tk.LEFT, padx=2)
+        ttk.Button(drill, text="Alerts for metric",
+                   command=self.open_alerts_for_metric).pack(side=tk.LEFT, padx=2)
+        ttk.Button(drill, text="HESA for year",
+                   command=self.open_hesa_for_year).pack(side=tk.LEFT, padx=2)
 
         self.b3_tree = ttk.Treeview(
             b3, columns=("year", "course", "metric", "pct", "num", "denom", "computed"),

@@ -489,6 +489,8 @@ class PlacementTrackerApp:
         ttk.Button(log_btns, text="➕ Log Hours", command=self.open_hours_dialog).pack(side="left", padx=2)
         ttk.Button(log_btns, text="✏️ Edit", command=self.edit_selected_hours).pack(side="left", padx=2)
         ttk.Button(log_btns, text="🗑 Delete", command=self.delete_selected_hours).pack(side="left", padx=2)
+        ttk.Button(log_btns, text="🎓 Submit as APL evidence",
+                   command=self.submit_as_apl_evidence).pack(side="right", padx=2)
 
         cols = ("date", "hours", "activity", "signoff", "notes")
         self.hours_tree = ttk.Treeview(log_frame, columns=cols, show="headings", selectmode="browse")
@@ -622,6 +624,46 @@ class PlacementTrackerApp:
             self.status.set("Placement removed")
 
     # ---------- Hours dialogs ----------
+    def submit_as_apl_evidence(self):
+        """Push the selected student's placement hours into a draft
+        APL/RPL ``work_experience`` claim. Reuses an existing draft if
+        one is already open, otherwise creates one."""
+        if not self.current_student_pk:
+            messagebox.showwarning("No selection", "Select a student first.")
+            return
+        s = self.db.get_student(self.current_student_pk)
+        if not s:
+            return
+        student_id = s[1]
+        course = s[4] or None
+        employer = s[7] or "Placement employer"
+        date_range = None
+        if s[9] or s[10]:
+            date_range = f"{s[9] or '?'} → {s[10] or '?'}"
+        total_hours = float(self.db.get_total_hours(self.current_student_pk) or 0)
+        signed_hours = float(self.db.get_signed_off_hours(self.current_student_pk) or 0)
+        try:
+            from education_system.university_system.modules.domain.academics.prior_learning_recognition.services.prior_learning_service import (
+                PriorLearningService,
+            )
+            apl = PriorLearningService()
+            cid = apl.create_evidence_from_placement(
+                student_id,
+                employer=employer,
+                total_hours=total_hours,
+                signed_off_hours=signed_hours,
+                date_range=date_range,
+                target_course=course,
+            )
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create APL evidence: {e}")
+            return
+        messagebox.showinfo(
+            "APL evidence added",
+            f"Placement summary added to APL claim #{cid}\n"
+            f"for student {student_id} ({employer}, {total_hours:g} h).",
+        )
+
     def open_hours_dialog(self, existing=None):
         if not self.current_student_pk:
             messagebox.showinfo("Select student", "Please select a student first.")

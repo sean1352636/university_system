@@ -40,6 +40,8 @@ class QuickActionsMixin:
             (_t('dashboard.view_exams', 'View Exams'), 'exams', COLORS['warning']),
             (_t('dashboard.library', 'Library'), 'library', COLORS['secondary']),
             (_t('dashboard.financial_aid', 'Financial Aid'), 'financial_aid', COLORS['danger']),
+            (_t('dashboard.mitigating_circumstances', 'Mitigating Circumstances'),
+             'mitigating_circumstances', COLORS['warning']),
         ]
 
         for idx, (label, action_key, color) in enumerate(actions):
@@ -74,6 +76,10 @@ class QuickActionsMixin:
             'exams': ('show_exam_scheduler_gui', _t('dashboard.view_exams', 'View Exams')),
             'library': ('show_library_management', _t('dashboard.library', 'Library')),
             'financial_aid': ('show_financial_aid', _t('dashboard.financial_aid', 'Financial Aid')),
+            'mitigating_circumstances': (
+                'show_mitigating_circumstances_gui',
+                _t('dashboard.mitigating_circumstances', 'Mitigating Circumstances'),
+            ),
         }
 
         method_name, display_name = action_map.get(action_key, (None, action_key))

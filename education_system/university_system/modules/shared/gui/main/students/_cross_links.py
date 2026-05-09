@@ -120,6 +120,10 @@ def student_menu_items(values, *, parent=None, app=None):
          lambda u=sid: _jump("library", {"student_id": u})),
     )
     items.append(
+        ("🎓 Open APL/RPL claims",
+         lambda u=sid: _jump("prior_learning", {"student_id": u})),
+    )
+    items.append(
         ("🕓 View audit log for this student (GDPR)",
          lambda u=sid: _jump("audit_viewer", {"student_id": u})),
     )

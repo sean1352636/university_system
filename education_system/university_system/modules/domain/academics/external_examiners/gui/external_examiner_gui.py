@@ -136,6 +136,7 @@ class ExternalExaminerGUI:
         btn_frame.pack(fill=tk.X, padx=5, pady=5)
         ttk.Button(btn_frame, text="Schedule", command=self._schedule_visit).pack(side=tk.LEFT, padx=2)
         ttk.Button(btn_frame, text="Record Findings", command=self._record_findings).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text="View Module Descriptor", command=self._open_descriptor_for_visit).pack(side=tk.LEFT, padx=2)
         ttk.Button(btn_frame, text="Refresh", command=self._refresh_visits).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_visits()
@@ -241,6 +242,47 @@ class ExternalExaminerGUI:
                 messagebox.showerror("Error", str(e), parent=dlg)
 
         ttk.Button(dlg, text="Save", command=save).pack(pady=10)
+
+    def _open_descriptor_for_visit(self):
+        sel = self.visits_tree.selection()
+        if not sel:
+            messagebox.showwarning("Selection", "Select a visit first.", parent=self.root)
+            return
+        visit_id = self.visits_tree.item(sel[0], "values")[0]
+        try:
+            visit = self.service.get_visit(int(visit_id))
+            modules_reviewed = (visit or {}).get("modules_reviewed") or ""
+            from education_system.university_system.modules.domain.academics.curriculum_specification.services.curriculum_specification_service import CurriculumSpecificationService
+            curr = CurriculumSpecificationService()
+            descriptors = curr.list_module_descriptors()
+            matches = [d for d in descriptors if d["module_code"] in modules_reviewed]
+        except Exception as e:
+            messagebox.showerror("Error", str(e), parent=self.root)
+            return
+
+        dlg = tk.Toplevel(self.root)
+        dlg.title(f"Module Descriptors for Visit #{visit_id}")
+        dlg.geometry("800x420")
+        dlg.transient(self.root)
+        if not matches:
+            ttk.Label(dlg, text="No curriculum-spec descriptors match the modules\n"
+                                "listed for this visit. (Set 'Modules reviewed' on the\n"
+                                "visit using module codes.)",
+                      padding=20).pack()
+            return
+        cols = ("code", "version", "title", "credits", "level", "leader")
+        tree = ttk.Treeview(dlg, columns=cols, show="headings", height=15)
+        widths = {"code": 90, "version": 60, "title": 320, "credits": 70, "level": 60, "leader": 150}
+        for c in cols:
+            tree.heading(c, text=c.title())
+            tree.column(c, width=widths[c], anchor=tk.W)
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        for d in matches:
+            tree.insert("", tk.END, values=(
+                d["module_code"], d["version"], d["title"],
+                d.get("credits") or "", d.get("level") or "",
+                d.get("module_leader") or "",
+            ))
 
     # ------------------------------------------------------------- Action Items
     def _create_action_items_tab(self, notebook):

@@ -92,6 +92,17 @@ class GradeTrackingManagementGUI(
                     grade_gui.auth = self.auth
 
                 grade_window.deiconify()
+                # #2 — Honour any pending EQA drill-through. The
+                # bridge attaches eqa_context to *this manager*; forward
+                # it to the actual app so its filter widgets can react.
+                ctx = getattr(self, "eqa_context", None)
+                if ctx:
+                    try:
+                        grade_gui.eqa_context = ctx
+                        if hasattr(grade_gui, "_apply_eqa_context"):
+                            grade_gui._apply_eqa_context()
+                    except Exception:
+                        pass
                 print("Grade Tracking GUI opened successfully")
 
             else:
@@ -109,6 +120,106 @@ class GradeTrackingManagementGUI(
     def show_grades(self):
         """Alias method for compatibility"""
         self.show_grade_tracking_gui()
+
+    def show_mitigating_circumstances_for_student(self, student_id: str = None):
+        """Open the MC GUI from inside Grade Tracking, optionally pre-selecting
+        a student. Used when a grade row needs explanation (capped resit,
+        deferred sitting, extension-driven late mark)."""
+        if not self.auth or not self.auth.current_user:
+            messagebox.showerror(_("common.error"), _("grades.messages.login_required"))
+            return
+        try:
+            from education_system.university_system.modules.domain.academics.mitigating_circumstances.integration import (
+                open_mc_gui_for_student,
+            )
+            ok = open_mc_gui_for_student(self.root, student_id=student_id)
+            if not ok:
+                messagebox.showerror(_("common.error"),
+                                     "Mitigating Circumstances GUI is not available.")
+        except Exception as exc:
+            messagebox.showerror(_("common.error"), str(exc))
+
+    def get_mc_flags_for_grade(self, student_id: str, module_code: str,
+                               assessment_ref: str = None) -> dict:
+        """Return MC context for a single grade row — used by views to
+        show a badge ('MC', 'capped', 'extended') and a tooltip with detail."""
+        try:
+            from education_system.university_system.modules.domain.academics.mitigating_circumstances.integration import (
+                get_active_extension, claims_for_student,
+            )
+        except Exception:
+            return {}
+        flags = {}
+        try:
+            ext = get_active_extension(student_id, module_code, assessment_ref) if assessment_ref else None
+            if ext:
+                flags['extension'] = ext
+            for c in claims_for_student(student_id):
+                if c.get('module_code') == module_code and (
+                        not assessment_ref or c.get('assessment_ref') == assessment_ref):
+                    flags.setdefault('claims', []).append(c)
+        except Exception:
+            pass
+        return flags
+
+    def show_curriculum_assessment_strategy(self, module_code: str = None):
+        """Open the curriculum-spec assessment strategy for a module —
+        the canonical source of weightings against which actual grade
+        components should reconcile."""
+        import tkinter as _tk
+        from tkinter import ttk as _ttk, simpledialog as _sd
+        if not module_code:
+            module_code = _sd.askstring("Module Code",
+                                        "Enter module code:",
+                                        parent=self.root)
+            if not module_code:
+                return
+        try:
+            from education_system.university_system.modules.domain.academics.curriculum_specification.services.curriculum_specification_service import (
+                CurriculumSpecificationService,
+            )
+            curr = CurriculumSpecificationService()
+        except Exception as e:
+            messagebox.showerror(_("common.error"),
+                                 f"Curriculum Specification unavailable: {e}")
+            return
+
+        descriptors = [d for d in curr.list_module_descriptors()
+                       if d["module_code"] == module_code]
+        if not descriptors:
+            messagebox.showinfo("Not found",
+                                f"No curriculum-spec descriptor for {module_code}.",
+                                parent=self.root)
+            return
+        descriptor = descriptors[-1]
+        components = curr.list_assessment_components(descriptor["id"])
+        validation = curr.validate_assessment_strategy(descriptor["id"])
+
+        dlg = _tk.Toplevel(self.root)
+        dlg.title(f"Curriculum Assessment Strategy — {module_code} v{descriptor['version']}")
+        dlg.geometry("760x420")
+        _ttk.Label(dlg,
+                   text=f"{descriptor['title']} ({descriptor.get('credits') or '?'} credits)",
+                   font=("", 11, "bold")).pack(padx=10, pady=8)
+        cols = ("name", "type", "weighting", "los", "feedback")
+        tree = _ttk.Treeview(dlg, columns=cols, show="headings", height=12)
+        widths = {"name": 200, "type": 120, "weighting": 90,
+                  "los": 140, "feedback": 180}
+        for c in cols:
+            tree.heading(c, text=c.title())
+            tree.column(c, width=widths[c], anchor=_tk.W)
+        tree.pack(fill=_tk.BOTH, expand=True, padx=10, pady=5)
+        for c in components:
+            tree.insert("", _tk.END, values=(
+                c.get("name") or "", c.get("assessment_type") or "",
+                f"{c.get('weighting_pct') or 0:.1f}%",
+                c.get("learning_outcomes_assessed") or "",
+                c.get("feedback_method") or "",
+            ))
+        colour = "green" if validation["valid"] else "red"
+        _ttk.Label(dlg,
+                   text=f"Total weighting: {validation['total']:.2f}%   Valid: {validation['valid']}",
+                   foreground=colour).pack(padx=10, pady=5, anchor=_tk.W)
 
     # Database initialization methods
     def initialize_basic_database(self):

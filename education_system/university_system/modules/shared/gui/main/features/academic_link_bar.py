@@ -57,6 +57,7 @@ _EXTRA_DESTINATIONS = {
     "printing":        "show_printing_services_gui",
     "room_booking":    "show_study_room_booking_gui",
     "document_manager": "show_document_manager",
+    "prior_learning": "show_prior_learning_gui",
 }
 
 

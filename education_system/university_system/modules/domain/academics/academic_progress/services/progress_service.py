@@ -403,6 +403,22 @@ class ProgressService:
                 for enrolled in current_enrollments:
                     total_in_progress += enrolled['credits']
 
+            # Roll APL/RPL credits (approved/partial claims) into the
+            # completed total so degree progression reflects credits the
+            # student has been *granted* rather than only those earned
+            # through enrolled modules.
+            apl_credits = 0
+            try:
+                from education_system.university_system.modules.domain.academics.prior_learning_recognition.services.prior_learning_service import (
+                    PriorLearningService,
+                )
+                apl_credits = int(
+                    PriorLearningService().credits_for_student(student_id) or 0
+                )
+            except Exception:
+                apl_credits = 0
+            total_completed += apl_credits
+
             # Calculate overall progress
             overall_completion = (total_completed / total_required * 100) if total_required > 0 else 0
 
@@ -413,7 +429,8 @@ class ProgressService:
                 'total_credits_required': total_required,
                 'total_credits_completed': total_completed,
                 'total_credits_in_progress': total_in_progress,
-                'total_credits_remaining': total_required - total_completed - total_in_progress,
+                'total_credits_remaining': max(0, total_required - total_completed - total_in_progress),
+                'apl_credits_awarded': apl_credits,
                 'by_category': progress_by_category,
                 'last_updated': datetime.now().isoformat()
             }

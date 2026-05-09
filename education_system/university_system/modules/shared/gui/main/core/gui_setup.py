@@ -601,6 +601,7 @@ def create_navigation_panel(self, parent):
         ('portfolio', _t('nav.buttons.portfolio'), self.show_portfolio_system_gui),
         ('advising_portal', _t('nav.buttons.advising_portal'), self.show_advising_portal_gui),
         ('visa_compliance', 'Visa Sponsorship (Tier-4)', self.show_visa_compliance_gui),
+        ('enrolment_letters', 'Status Letters', self.show_enrolment_letters_gui),
     ]
 
     # ---------- Career & Alumni ----------
@@ -694,6 +695,9 @@ def create_navigation_panel(self, parent):
         ('custom_report_builder', _t('nav.buttons.custom_report_builder'), self.show_custom_report_builder),
         ('hesa_export', 'HESA Data Export', self.show_hesa_export_gui),
         ('clearing_adjustment', 'Clearing & Adjustment', self.show_clearing_adjustment_gui),
+        ('prior_learning', 'Prior Learning (APL/RPL)', self.show_prior_learning_gui),
+        ('mitigating_circumstances', 'Mitigating Circumstances', self.show_mitigating_circumstances_gui),
+        ('curriculum_specification', 'Curriculum Spec.', self.show_curriculum_specification_gui),
     ]
 
     # ---------- Cross-System ----------
@@ -1062,7 +1066,7 @@ def get_visible_buttons_for_role(self, role=None):
         # LMS
         'lms',
         # New features (modules 21-30) - student-accessible
-        'student_app', 'achievement_badges', 'study_recommendations',
+        'student_app', 'enrolment_letters', 'achievement_badges', 'study_recommendations',
         # New Features sidebar category (13 standalone Tk apps under
         # modules/domain/, launched as subprocesses by main_gui.py).
         'new_feature_complaints_portal',
@@ -1162,7 +1166,7 @@ def get_visible_buttons_for_role(self, role=None):
             # Admin-only shared modules
             'central_admin_portal', 'gdpr_compliance', 'equality_diversity',
             # New features - admin level
-            'hesa_export', 'clearing_adjustment',
+            'hesa_export', 'clearing_adjustment', 'curriculum_specification',
         })
 
     # Additional permission-based checks for edge cases

@@ -30,6 +30,44 @@ class PredictiveAlertsFrame(tk.Frame):
         self._service = PredictiveService()
         self._all_alerts = []
         self._build_ui()
+        self.after_idle(self._apply_eqa_context)
+
+    def _apply_eqa_context(self):
+        """#1 — Honour an EQA drill-through (set on ``self.eqa_context``
+        by the receiver bridge). Prefilters by metric / threshold when
+        the matching widgets exist; silently no-ops otherwise."""
+        ctx = getattr(self, "eqa_context", None)
+        if not ctx:
+            return
+        try:
+            metric = ctx.get("metric")
+            if metric:
+                for attr in ("_metric_var", "_filter_metric_var",
+                             "_category_var"):
+                    var = getattr(self, attr, None)
+                    if var is not None:
+                        try:
+                            var.set(metric)
+                            break
+                        except Exception:
+                            pass
+            thr = ctx.get("threshold_pct")
+            if thr is not None:
+                for attr in ("_threshold_var", "_min_score_var"):
+                    var = getattr(self, attr, None)
+                    if var is not None:
+                        try:
+                            var.set(thr)
+                            break
+                        except Exception:
+                            pass
+            for fn in ("_apply_filters", "refresh", "_refresh"):
+                m = getattr(self, fn, None)
+                if callable(m):
+                    m()
+                    break
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------
     # UI construction

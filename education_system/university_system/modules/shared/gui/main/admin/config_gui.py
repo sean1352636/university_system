@@ -400,6 +400,11 @@ def show_security_dashboard(self):
     try:
         user_id = self.auth.current_user.get('id', 1)
         dashboard = SecurityDashboard(self.root, user_id)
+        try:
+            from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+            consume_eqa_context(self, "Security Dashboard", target=dashboard)
+        except Exception:
+            pass
         print(_t("config_gui.messages.security_dashboard_opened"))
     except Exception as e:
         messagebox.showerror(_t("config_gui.errors.error"), _t("config_gui.errors.failed_to_open_security_dashboard", error=str(e)))

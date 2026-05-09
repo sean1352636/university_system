@@ -53,6 +53,33 @@ class BusinessIntelligenceGUI:
         log_activity('Accessed Business Intelligence Reports Dashboard', user=self.auth.current_user.get('username'))
         print(_t("business_intelligence.messages.gui_opened_success"))
 
+        try:
+            self.window.after_idle(self._apply_eqa_context)
+        except Exception:
+            pass
+
+    def _apply_eqa_context(self):
+        """#5 — Honour an EQA drill-through. When ``kpi_category`` is
+        present, scope the dashboard to that category by stashing the
+        request on ``self.bi_category_filter`` so report queries can
+        read it; emit a banner so the user sees it took effect."""
+        ctx = getattr(self, "eqa_context", None)
+        if not ctx:
+            return
+        try:
+            cat = ctx.get("kpi_category")
+            if cat:
+                self.bi_category_filter = cat
+                import tkinter as _tk
+                _tk.Label(
+                    self.window,
+                    text=f"Filtered to KPI category: {cat} (from EQA)",
+                    bg="#fff7d6", fg="#5a4500",
+                    font=("Helvetica", 9, "italic"), pady=3,
+                ).pack(fill="x", side="top", before=None)
+        except Exception:
+            pass
+
     def _init_database(self):
         """Initialize database tables if they don't exist"""
         try:

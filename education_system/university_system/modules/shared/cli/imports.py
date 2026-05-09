@@ -195,6 +195,17 @@ except ImportError as e:
     LEGAL_SERVICES_AVAILABLE = False
     logger.warning(f"Legal Services CLI not available: {e}")
 
+# Information Rights CLI (SAR / FOI / EIR)
+try:
+    from education_system.university_system.modules.domain.legal.information_rights.cli.information_rights_cli import (  # noqa: E501
+        display_menu as information_rights_menu,
+    )
+    INFORMATION_RIGHTS_AVAILABLE = True
+except ImportError as e:
+    information_rights_menu = None
+    INFORMATION_RIGHTS_AVAILABLE = False
+    logger.warning(f"Information Rights CLI not available: {e}")
+
 # Car Rental CLI
 try:
     from education_system.university_system.modules.services.cli.carrental_cli import carrental_menu

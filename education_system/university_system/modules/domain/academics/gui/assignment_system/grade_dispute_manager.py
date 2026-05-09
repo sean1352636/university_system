@@ -263,9 +263,29 @@ class GradeDisputeManager:
                         dispute_id, helpdesk_err,
                     )
 
+                # MC link: if this student has a non-rejected MC claim
+                # against the same assessment, surface it on the success
+                # dialog so the reviewer can read both records together.
+                # Disputes are post-result; MC is pre-result — they often
+                # arise from the same underlying event.
+                mc_note = ""
+                try:
+                    from education_system.university_system.modules.domain.academics.mitigating_circumstances.integration import (
+                        claims_for_student,
+                    )
+                    related = [c for c in claims_for_student(student_id)
+                               if c.get('module_code') and
+                               c.get('module_code') == info.get('module_code')]
+                    if related:
+                        ids = ", ".join(f"#{c['id']} ({c['status']})" for c in related[:5])
+                        mc_note = f"\nRelated MC claim(s): {ids}"
+                except Exception:
+                    pass
+
                 msg = "Grade dispute submitted successfully."
                 if ticket_id:
                     msg += f"\nHelpdesk ticket #{ticket_id} opened."
+                msg += mc_note
                 messagebox.showinfo("Success", msg)
                 self.show_my_disputes()
             finally:
@@ -623,7 +643,27 @@ class GradeDisputeManager:
             except Exception as e:
                 messagebox.showerror("Error", f"Failed to save review: {e}")
 
+        def view_related_mc():
+            """Open the MC GUI focused on this student so the reviewer can
+            see whether a pre-result claim was already lodged for the same
+            event — critical context for an appeal decision."""
+            try:
+                from education_system.university_system.modules.domain.academics.mitigating_circumstances.integration import (
+                    open_mc_gui_for_student, claims_for_student,
+                )
+                claims = claims_for_student(student_id)
+                if not claims:
+                    messagebox.showinfo("MC", "No MC claims on file for this student.",
+                                        parent=dialog)
+                    return
+                open_mc_gui_for_student(dialog, student_id=student_id)
+            except Exception as exc:
+                messagebox.showerror("MC", f"Could not open MC GUI: {exc}",
+                                     parent=dialog)
+
         ttk.Button(btn_frame, text="Save Review", command=save_review).pack(side='left', padx=5)
+        ttk.Button(btn_frame, text="View related MC claims",
+                   command=view_related_mc).pack(side='left', padx=5)
         ttk.Button(btn_frame, text="Cancel", command=dialog.destroy).pack(side='left', padx=5)
 
     # ------------------------------------------------------------------ #

@@ -24,6 +24,28 @@ class AnalyticsDashboardFrame(tk.Frame):
         self._service = AnalyticsService()
         self._build_ui()
         self.after(100, self.refresh)
+        self.after_idle(self._apply_eqa_context)
+
+    def _apply_eqa_context(self):
+        """#6 — Honour an EQA drill-through. When invoked from the EQA
+        dashboard's "Open in BI / Analytics" path, surface a banner
+        identifying the source so the user knows the dashboard was
+        opened in context."""
+        ctx = getattr(self, "eqa_context", None)
+        if not ctx:
+            return
+        try:
+            import tkinter as _tk
+            banner = _tk.Label(
+                self,
+                text=f"Opened from EQA · {ctx.get('source', '?')}",
+                bg="#fff7d6", fg="#5a4500",
+                font=("Helvetica", 9, "italic"), pady=3,
+            )
+            banner.pack(fill="x", before=self._cards_frame
+                         if hasattr(self, "_cards_frame") else None)
+        except Exception:
+            pass
 
     # ------------------------------------------------------------------
     # UI construction

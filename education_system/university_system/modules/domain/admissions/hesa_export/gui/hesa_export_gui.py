@@ -28,6 +28,28 @@ class HESAExportGUI:
         except Exception:
             self.auth = None
         self.setup_ui()
+        try:
+            if hasattr(self.root, "after_idle"):
+                self.root.after_idle(self._apply_eqa_context)
+        except Exception:
+            pass
+
+    def _apply_eqa_context(self):
+        """#4 — When opened from an EQA drill-through, preselect the
+        return for the requested academic year if it exists."""
+        ctx = getattr(self, "eqa_context", None)
+        if not ctx or not self.service:
+            return
+        target = ctx.get("academic_year")
+        if not target:
+            return
+        try:
+            for ret in self.service.list_returns():
+                if str(ret.get("academic_year")) == str(target):
+                    self._highlighted_return_id = ret.get("id")
+                    break
+        except Exception:
+            pass
 
     def setup_ui(self):
         notebook = ttk.Notebook(self.root)
@@ -36,6 +58,80 @@ class HESAExportGUI:
         self._create_field_mappings_tab(notebook)
         self._create_submission_log_tab(notebook)
         self._create_statistics_tab(notebook)
+        self._create_curriculum_programmes_tab(notebook)
+
+    # ------------------------------------------------ Curriculum Programmes
+    def _create_curriculum_programmes_tab(self, notebook):
+        """Show curriculum-spec programmes mapped to HESA-shaped fields, so
+        return preparers can see the canonical programme metadata that
+        feeds the HESA Course / Qualification entities."""
+        tab = ttk.Frame(notebook)
+        notebook.add(tab, text="Curriculum Programmes")
+
+        cols = ("code", "title", "award", "level", "credits", "version", "status")
+        self.curr_tree = ttk.Treeview(tab, columns=cols, show="headings", height=15)
+        widths = {"code": 100, "title": 320, "award": 120, "level": 70,
+                  "credits": 80, "version": 70, "status": 100}
+        for c in cols:
+            self.curr_tree.heading(c, text=c.title())
+            self.curr_tree.column(c, width=widths[c], anchor=tk.W)
+        self.curr_tree.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        btn = ttk.Frame(tab)
+        btn.pack(fill=tk.X, padx=5, pady=5)
+        ttk.Button(btn, text="Refresh",
+                   command=self._refresh_curriculum_programmes).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn, text="View HESA Payload",
+                   command=self._view_hesa_payload).pack(side=tk.LEFT, padx=2)
+        self._refresh_curriculum_programmes()
+
+    def _refresh_curriculum_programmes(self):
+        for r in self.curr_tree.get_children():
+            self.curr_tree.delete(r)
+        try:
+            from education_system.university_system.modules.domain.academics.curriculum_specification.services.curriculum_specification_service import (
+                CurriculumSpecificationService,
+            )
+            curr = CurriculumSpecificationService()
+            for p in curr.list_programmes():
+                self.curr_tree.insert("", tk.END, values=(
+                    p["code"], p["title"], p.get("award") or "",
+                    p.get("level") or "", p.get("credits") or "",
+                    p["version"], p["status"],
+                ))
+            self.curr_tree._service_cache = curr
+        except Exception as e:
+            logger.error(f"Error loading curriculum programmes: {e}")
+
+    def _view_hesa_payload(self):
+        sel = self.curr_tree.selection()
+        if not sel:
+            messagebox.showwarning("Selection", "Select a programme first.", parent=self.root)
+            return
+        code = self.curr_tree.item(sel[0], "values")[0]
+        version = self.curr_tree.item(sel[0], "values")[5]
+        try:
+            from education_system.university_system.modules.domain.academics.curriculum_specification.services.curriculum_specification_service import (
+                CurriculumSpecificationService,
+            )
+            curr = CurriculumSpecificationService()
+            match = next((p for p in curr.list_programmes()
+                          if p["code"] == code and p["version"] == version), None)
+            if not match:
+                return
+            payload = curr.hesa_programme_payload(match["id"])
+        except Exception as e:
+            messagebox.showerror("Error", str(e), parent=self.root)
+            return
+
+        dlg = tk.Toplevel(self.root)
+        dlg.title(f"HESA Payload — {code} v{version}")
+        dlg.geometry("520x420")
+        text = tk.Text(dlg, wrap=tk.WORD)
+        text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        for k, v in payload.items():
+            text.insert(tk.END, f"{k}: {v}\n")
+        text.configure(state=tk.DISABLED)
 
     # ------------------------------------------------------------------ Returns
     def _create_returns_tab(self, notebook):

@@ -286,6 +286,70 @@ class AssignmentGUI:
         except Exception as e:
             messagebox.showerror(_("common.error"), f"Failed to open External Examiners: {e}")
 
+    def show_curriculum_specification(self):
+        """Launch the Curriculum Specification GUI (programme specs &
+        module descriptors). Acts as the canonical source of assessment
+        strategy / weightings for assignments."""
+        try:
+            from education_system.university_system.modules.domain.academics.curriculum_specification.gui.curriculum_specification_gui import CurriculumSpecificationGUI
+            CurriculumSpecificationGUI(parent=self.root)
+        except Exception as e:
+            messagebox.showerror(_("common.error"), f"Failed to open Curriculum Specification: {e}")
+
+    def show_assessment_strategy_for_module(self, module_code: str = None):
+        """Open a small popup showing the curriculum-spec assessment
+        strategy for a module code (so coursework weightings stay aligned
+        with the module descriptor)."""
+        import tkinter as _tk
+        from tkinter import ttk as _ttk, simpledialog as _sd
+        try:
+            from education_system.university_system.modules.domain.academics.curriculum_specification.services.curriculum_specification_service import CurriculumSpecificationService
+            curr = CurriculumSpecificationService()
+        except Exception as e:
+            messagebox.showerror(_("common.error"), f"Curriculum Specification unavailable: {e}")
+            return
+
+        if not module_code:
+            module_code = _sd.askstring("Module Code", "Enter module code:", parent=self.root)
+            if not module_code:
+                return
+
+        descriptors = [d for d in curr.list_module_descriptors() if d["module_code"] == module_code]
+        if not descriptors:
+            messagebox.showinfo("Not found",
+                                f"No curriculum-spec descriptor for {module_code}.",
+                                parent=self.root)
+            return
+
+        descriptor = descriptors[-1]
+        components = curr.list_assessment_components(descriptor["id"])
+        validation = curr.validate_assessment_strategy(descriptor["id"])
+
+        dlg = _tk.Toplevel(self.root)
+        dlg.title(f"Assessment Strategy — {module_code} v{descriptor['version']}")
+        dlg.geometry("760x420")
+        _ttk.Label(dlg,
+                   text=f"{descriptor['title']} ({descriptor.get('credits') or '?'} credits)",
+                   font=("", 11, "bold")).pack(padx=10, pady=8)
+        cols = ("name", "type", "weighting", "los", "feedback")
+        tree = _ttk.Treeview(dlg, columns=cols, show="headings", height=12)
+        widths = {"name": 200, "type": 120, "weighting": 90, "los": 140, "feedback": 180}
+        for c in cols:
+            tree.heading(c, text=c.title())
+            tree.column(c, width=widths[c], anchor=_tk.W)
+        tree.pack(fill=_tk.BOTH, expand=True, padx=10, pady=5)
+        for c in components:
+            tree.insert("", _tk.END, values=(
+                c.get("name") or "", c.get("assessment_type") or "",
+                f"{c.get('weighting_pct') or 0:.1f}%",
+                c.get("learning_outcomes_assessed") or "",
+                c.get("feedback_method") or "",
+            ))
+        colour = "green" if validation["valid"] else "red"
+        _ttk.Label(dlg,
+                   text=f"Total weighting: {validation['total']:.2f}%   Valid: {validation['valid']}",
+                   foreground=colour).pack(padx=10, pady=5, anchor=_tk.W)
+
     def _launch_gui_feature(self, callback, feature_name):
         """Launch a GUI feature with error handling"""
         try:
@@ -338,6 +402,44 @@ class AssignmentGUI:
 
     def show_review_extensions(self):
         return self.extensions.show_review_extensions()
+
+    def get_effective_deadline(self, student_id, module_code,
+                               assessment_ref, original_deadline):
+        """Return (deadline, mc_extension_dict_or_None).
+
+        Lets assignment row formatters honour an MC-driven extension over the
+        original deadline. Helper rather than a hard rewrite of every list view —
+        callers stay free to choose whether to display the badge."""
+        try:
+            from education_system.university_system.modules.domain.academics.mitigating_circumstances.integration import (
+                get_active_extension,
+            )
+            ext = get_active_extension(student_id, module_code, assessment_ref)
+            if ext and ext.get('new_deadline'):
+                return ext['new_deadline'], ext
+        except Exception:
+            pass
+        return original_deadline, None
+
+    def show_mitigating_circumstances(self):
+        """Open the MC submission GUI from the assignment system. Students can
+        submit a claim against a missed/late assessment without leaving the
+        workflow; staff can review claims that may justify late submissions
+        they're about to grade."""
+        try:
+            from education_system.university_system.modules.domain.academics.mitigating_circumstances.integration import (
+                open_mc_gui_for_student,
+            )
+            student_id = None
+            try:
+                if hasattr(self.assignment_system, '_get_student_id'):
+                    student_id = self.assignment_system._get_student_id()
+            except Exception:
+                pass
+            open_mc_gui_for_student(self.root, student_id=student_id)
+        except Exception as exc:
+            from tkinter import messagebox
+            messagebox.showerror("Error", f"Failed to open MC GUI: {exc}")
 
     def show_send_messages(self):
         return self.messaging.show_send_messages()

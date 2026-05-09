@@ -446,6 +446,9 @@ from education_system.university_system.modules.shared.gui.main.features.academi
     show_business_intelligence_gui,
     show_hesa_export_gui,
     show_clearing_adjustment_gui,
+    show_prior_learning_gui,
+    show_mitigating_circumstances_gui,
+    show_curriculum_specification_gui,
 )
 from education_system.university_system.modules.shared.gui.main.features.student_affairs_gui import (
     show_communication_dashboard_gui,
@@ -465,6 +468,7 @@ from education_system.university_system.modules.shared.gui.main.features.student
     _show_feature_gui,
     show_todo_app_gui,
     show_student_app_gui,
+    show_enrolment_letters_gui,
     show_achievement_badge_gui,
     show_study_recommendations_gui,
 )
@@ -811,11 +815,25 @@ def show_student_journey_gui(self):
 
 
 def show_analytics_dashboard_gui(self):
-    """Launch the Analytics Dashboard in a top-level window."""
+    """Launch the Analytics Dashboard in a top-level window.
+
+    Also embeds the External-QA status strip at the top so the user can
+    see live OfS/TEF/REF submission state alongside their analytics.
+    """
     from education_system.shared.analytics.analytics_gui import AnalyticsDashboardFrame
     win = self.create_themed_toplevel(title="Analytics Dashboard", geometry="900x600")
+    try:
+        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_widgets import EQAStatusStrip
+        EQAStatusStrip(win).pack(fill='x', padx=8, pady=(6, 0))
+    except Exception:
+        pass
     frame = AnalyticsDashboardFrame(win, db_path=None, auth=self.auth)
     frame.pack(fill='both', expand=True)
+    try:
+        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+        consume_eqa_context(self, "Analytics Dashboard", target=frame)
+    except Exception:
+        pass
 
 
 def show_outcome_tracking_gui(self):
@@ -830,8 +848,18 @@ def show_predictive_alerts_gui(self):
     """Launch the Predictive Alerts frame in a top-level window."""
     from education_system.shared.predictive.predictive_gui import PredictiveAlertsFrame
     win = self.create_themed_toplevel(title="Predictive Alerts", geometry="900x600")
+    try:
+        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_widgets import EQAStatusStrip
+        EQAStatusStrip(win).pack(fill='x', padx=8, pady=(6, 0))
+    except Exception:
+        pass
     frame = PredictiveAlertsFrame(win, db_path=None, auth=self.auth)
     frame.pack(fill='both', expand=True)
+    try:
+        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+        consume_eqa_context(self, "Predictive Alerts", target=frame)
+    except Exception:
+        pass
 
 
 def show_bulk_transfer_gui(self):
@@ -934,6 +962,60 @@ def show_certificates_gui(self):
 UnifiedManagementGUI.show_certificates_gui = show_certificates_gui
 
 
+def show_information_rights_gui(self):
+    """In-process launcher for the Information Rights window.
+
+    The auto-generated subprocess handler (`show_new_feature_information_rights`)
+    still exists and is what the menu button uses by default; this
+    in-process variant is what reverse-drill helpers call when they
+    need ``app=self`` plumbed through so the Open-in bar and
+    drill-throughs work."""
+    try:
+        from education_system.university_system.modules.domain.legal.information_rights.gui.information_rights_gui import (
+            InformationRightsGUI,
+        )
+        import tkinter as _tk
+        win = _tk.Toplevel(self.root)
+        InformationRightsGUI(master=win, app=self)
+    except Exception as e:
+        logger.exception("show_information_rights_gui failed")
+        try:
+            from tkinter import messagebox
+            messagebox.showerror("Information Rights",
+                                  f"Could not open Information Rights: {e}",
+                                  parent=self.root)
+        except Exception:
+            pass
+
+
+UnifiedManagementGUI.show_information_rights_gui = show_information_rights_gui
+
+
+def show_fitness_to_practise_gui(self):
+    """In-process launcher for Fitness to Practise (alongside the
+    auto-generated ``show_new_feature_fitness_to_practise`` subprocess
+    handler)."""
+    try:
+        from education_system.university_system.modules.domain.legal.disciplinary.fitness_to_practise.gui.ftp_portal_gui import (
+            FitnessToPractisePortal,
+        )
+        import tkinter as _tk
+        win = _tk.Toplevel(self.root)
+        FitnessToPractisePortal(win, app=self)
+    except Exception as e:
+        logger.exception("show_fitness_to_practise_gui failed")
+        try:
+            from tkinter import messagebox
+            messagebox.showerror("Fitness to Practise",
+                                  f"Could not open FtP: {e}",
+                                  parent=self.root)
+        except Exception:
+            pass
+
+
+UnifiedManagementGUI.show_fitness_to_practise_gui = show_fitness_to_practise_gui
+
+
 # Cross-module link bar (academic hub itself was removed in 8.117.32 —
 # the sidebar accordion + Ctrl+K already cover navigation; the hub
 # was a glorified tile-launcher with no operational state of its own).
@@ -959,9 +1041,13 @@ UnifiedManagementGUI.__init__ = _patched_unified_init
 # New features (modules 21-30)
 UnifiedManagementGUI.show_hesa_export_gui = show_hesa_export_gui
 UnifiedManagementGUI.show_student_app_gui = show_student_app_gui
+UnifiedManagementGUI.show_enrolment_letters_gui = show_enrolment_letters_gui
 UnifiedManagementGUI.show_achievement_badge_gui = show_achievement_badge_gui
 UnifiedManagementGUI.show_study_recommendations_gui = show_study_recommendations_gui
 UnifiedManagementGUI.show_clearing_adjustment_gui = show_clearing_adjustment_gui
+UnifiedManagementGUI.show_prior_learning_gui = show_prior_learning_gui
+UnifiedManagementGUI.show_mitigating_circumstances_gui = show_mitigating_circumstances_gui
+UnifiedManagementGUI.show_curriculum_specification_gui = show_curriculum_specification_gui
 
 
 # ===========================================================================
@@ -993,6 +1079,8 @@ _NEW_FEATURE_MODULES = [
      "education_system.university_system.modules.domain.legal.disciplinary.fitness_to_practise.fitness_to_practise"),
     ("risk_management", "Risk Management",
      "education_system.university_system.modules.domain.legal.risk_management.university_risk_management"),
+    ("information_rights", "SAR / FOI Requests",
+     "education_system.university_system.modules.domain.legal.information_rights.gui.information_rights_gui"),
     ("first_aid_portal", "First Aid Portal",
      "education_system.university_system.modules.domain.health.first_aid.first_aid_portal"),
     ("health_safety_portal", "Health & Safety",

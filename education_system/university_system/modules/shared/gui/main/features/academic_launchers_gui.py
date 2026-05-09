@@ -502,6 +502,11 @@ def show_grade_tracking_gui(self):
     """Launch the Grade Tracking GUI in a child window"""
     if self.grade_tracking_gui:
         self.grade_tracking_gui.show_grade_tracking_gui()
+        try:
+            from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+            consume_eqa_context(self, "Grades", target=self.grade_tracking_gui)
+        except Exception:
+            pass
     else:
         messagebox.showerror(_t("academic_launchers.errors.title"), _t("academic_launchers.errors.grade_tracking_unavailable"))
 def show_auto_grading(self):
@@ -1149,9 +1154,26 @@ def show_student_analytics_gui(self):
 def show_predictive_analytics_gui(self):
     """Launch the Predictive Analytics GUI"""
     launch_predictive_analytics_gui(self.root, self.auth)
+    try:
+        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+        consume_eqa_context(self, "Predictive Analytics")
+    except Exception:
+        pass
 def show_business_intelligence_gui(self):
     """Launch the Business Intelligence GUI"""
-    launch_business_intelligence_gui(self.root, self.auth)
+    bi = launch_business_intelligence_gui(self.root, self.auth)
+    try:
+        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+        consume_eqa_context(self, "Business Intelligence", target=bi)
+    except Exception:
+        pass
+    try:
+        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_widgets import EQAStatusStrip
+        win = getattr(bi, "window", None) if bi is not None else None
+        if win is not None:
+            EQAStatusStrip(win).pack(fill='x', padx=8, pady=(6, 0))
+    except Exception:
+        pass
 def show_advanced_search_gui(self):
     """Open Advanced Search GUI in a new window"""
     if not ADVANCED_SEARCH_GUI_AVAILABLE:
@@ -1270,16 +1292,60 @@ def show_hesa_export_gui(self):
         return
 
     title = "HESA Export"
+
+    def _build_hesa(host):
+        gui = HESAExportGUI(parent=host)
+        try:
+            from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+            consume_eqa_context(self, "HESA Export", target=gui)
+        except Exception:
+            pass
+        return gui
+
     opener = getattr(self, "open_in_workspace", None)
     if callable(opener):
-        opener(title, lambda host: HESAExportGUI(parent=host))
+        opener(title, _build_hesa)
         return
 
     try:
-        HESAExportGUI(parent=self.root)
+        _build_hesa(self.root)
     except Exception as e:
         logger.error(f"Error launching HESA Export GUI: {e}")
         messagebox.showerror(_t("common.error"), f"Failed to launch HESA Export: {e}")
+
+
+def show_curriculum_specification_gui(self):
+    """Launch Curriculum Specification (programme specs & module descriptors)
+    inside the main GUI's content notebook when available, falling back
+    to a Toplevel."""
+    try:
+        from education_system.university_system.modules.domain.academics.curriculum_specification.gui.curriculum_specification_gui import CurriculumSpecificationGUI
+    except ImportError as e:
+        logger.error(f"Failed to import Curriculum Specification GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Curriculum Specification GUI not available: {e}")
+        return
+
+    title = "Curriculum Specification"
+
+    def _build_curr(host):
+        gui = CurriculumSpecificationGUI(parent=host)
+        try:
+            from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
+            consume_eqa_context(self, "Curriculum Specification", target=gui)
+        except Exception:
+            pass
+        return gui
+
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(title, _build_curr)
+        return
+
+    try:
+        _build_curr(self.root)
+    except Exception as e:
+        logger.error(f"Error launching Curriculum Specification GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Failed to launch Curriculum Specification: {e}")
 
 
 def show_clearing_adjustment_gui(self):
@@ -1304,3 +1370,90 @@ def show_clearing_adjustment_gui(self):
     except Exception as e:
         logger.error(f"Error launching Clearing & Adjustment GUI: {e}")
         messagebox.showerror(_t("common.error"), f"Failed to launch Clearing & Adjustment: {e}")
+
+
+def show_prior_learning_gui(self):
+    """Launch Accreditation of Prior Learning (APL/RPL) inside the
+    main GUI's content notebook when a workspace is available, falling
+    back to a Toplevel otherwise.
+
+    Honours an inbound ``student_id`` (or ``claimant_id``) on the
+    ``_last_academic_context`` slot — set by ``academic_link_bar``
+    when the user came here via a right-click on a student record or
+    a cross-module 'Open APL/RPL' jump — and pre-filters the Claims
+    tab accordingly."""
+    try:
+        from education_system.university_system.modules.domain.academics.prior_learning_recognition.gui.prior_learning_gui import PriorLearningGUI
+        from education_system.university_system.modules.shared.gui.main.features.academic_link_bar import (
+            consume_context as _consume,
+        )
+    except ImportError as e:
+        logger.error(f"Failed to import APL/RPL GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"APL/RPL GUI not available: {e}")
+        return
+
+    ctx = _consume(self) or {}
+    student_id = ctx.get("student_id") or ctx.get("claimant_id")
+
+    title = "Prior Learning (APL/RPL)"
+    if student_id:
+        title = f"{title}  ◆ student {student_id}"
+
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(
+            title,
+            lambda host, sid=student_id: PriorLearningGUI(parent=host, student_id=sid),
+        )
+        return
+
+    try:
+        PriorLearningGUI(parent=self.root, student_id=student_id)
+    except Exception as e:
+        logger.error(f"Error launching APL/RPL GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Failed to launch APL/RPL: {e}")
+
+
+def show_mitigating_circumstances_gui(self):
+    """Launch Mitigating Circumstances (MC/EC) inside the main GUI's content
+    notebook when a workspace is available, falling back to a Toplevel —
+    same pattern as Clearing & Adjustment / HESA Export."""
+    if not self.auth or not self.auth.current_user:
+        messagebox.showerror(_t("common.error"),
+                             "Please log in to access Mitigating Circumstances.")
+        return
+
+    user = self.auth.current_user
+    role = user.get('role', '')
+    perms = user.get('permissions', []) or []
+    allowed = (
+        role in ('admin', 'staff') or
+        any(p in perms for p in ('manage_mitigating_circumstances',
+                                 'review_mitigating_circumstances',
+                                 'submit_mitigating_circumstances'))
+    )
+    if not allowed:
+        messagebox.showerror(_t("common.error"),
+                             "You do not have permission to access Mitigating Circumstances.")
+        return
+
+    try:
+        from education_system.university_system.modules.domain.academics.mitigating_circumstances.gui.mitigating_circumstances_gui import MitigatingCircumstancesGUI
+    except ImportError as e:
+        logger.error(f"Failed to import Mitigating Circumstances GUI: {e}")
+        messagebox.showerror(_t("common.error"),
+                             f"Mitigating Circumstances GUI not available: {e}")
+        return
+
+    title = "Mitigating Circumstances"
+    opener = getattr(self, "open_in_workspace", None)
+    if callable(opener):
+        opener(title, lambda host: MitigatingCircumstancesGUI(parent=host))
+        return
+
+    try:
+        MitigatingCircumstancesGUI(parent=self.root)
+    except Exception as e:
+        logger.error(f"Error launching Mitigating Circumstances GUI: {e}")
+        messagebox.showerror(_t("common.error"),
+                             f"Failed to launch Mitigating Circumstances: {e}")

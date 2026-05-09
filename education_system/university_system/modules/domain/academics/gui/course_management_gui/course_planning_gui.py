@@ -153,6 +153,68 @@ class CoursePlanningGUI:
         log_activity('view', 'course_planning_gui', user_id=self.student_id,
                     details={'action': 'opened_gui'})
 
+    def _show_programme_curriculum_map(self):
+        """Open a dialog showing the curriculum-spec module list for a
+        programme — the canonical structure that course plans should
+        track."""
+        from tkinter import simpledialog
+        try:
+            from education_system.university_system.modules.domain.academics.curriculum_specification.services.curriculum_specification_service import (
+                CurriculumSpecificationService,
+            )
+            curr = CurriculumSpecificationService()
+        except Exception as e:
+            from tkinter import messagebox
+            messagebox.showerror("Error",
+                                 f"Curriculum Specification unavailable: {e}")
+            return
+
+        programmes = curr.list_programmes()
+        if not programmes:
+            from tkinter import messagebox
+            messagebox.showinfo("No data",
+                                "No programme specifications have been defined yet.")
+            return
+
+        choices = "\n".join(f"  [{p['id']}] {p['code']} v{p['version']} — {p['title']}"
+                            for p in programmes)
+        prog_id = simpledialog.askinteger(
+            "Programme",
+            f"Select a programme ID:\n\n{choices}",
+            parent=self.window if self.window else self.root,
+        )
+        if not prog_id:
+            return
+        summary = curr.programme_summary(prog_id)
+        if not summary:
+            return
+        modules = curr.list_module_descriptors(prog_id)
+
+        dlg = tk.Toplevel(self.window if self.window else self.root)
+        prog = summary["programme"]
+        dlg.title(f"Curriculum Map — {prog['code']} v{prog['version']}")
+        dlg.geometry("900x500")
+
+        ttk.Label(dlg,
+                  text=f"{prog['title']}  —  {summary['module_count']} modules, "
+                       f"{summary['total_credits']} credits",
+                  font=("", 11, "bold")).pack(padx=10, pady=8)
+
+        cols = ("code", "version", "title", "credits", "level", "core")
+        tree = ttk.Treeview(dlg, columns=cols, show="headings", height=18)
+        widths = {"code": 100, "version": 60, "title": 360, "credits": 70,
+                  "level": 60, "core": 70}
+        for c in cols:
+            tree.heading(c, text=c.title())
+            tree.column(c, width=widths[c], anchor=tk.W)
+        tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+        for m in modules:
+            tree.insert("", tk.END, values=(
+                m["module_code"], m["version"], m["title"],
+                m.get("credits") or "", m.get("level") or "",
+                "Y" if m.get("is_core") else "N",
+            ))
+
     def _switch_to_cli(self):
         """Switch from GUI to Course Planning CLI."""
         try:
@@ -366,6 +428,8 @@ class CoursePlanningGUI:
                   command=self._delete_plan).pack(side=tk.LEFT, padx=5, pady=5)
         ttk.Button(button_frame, text="Refresh",
                   command=self._refresh_plans_list).pack(side=tk.LEFT, padx=5, pady=5)
+        ttk.Button(button_frame, text="Programme Curriculum Map",
+                  command=self._show_programme_curriculum_map).pack(side=tk.LEFT, padx=5, pady=5)
 
         # Admin-only button to switch students
         if self.viewing_as_admin:

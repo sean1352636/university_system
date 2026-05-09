@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.148 — 2026-05-09](#8117148---2026-05-09)
+- [8.117.147 — 2026-05-09](#8117147---2026-05-09)
+- [8.117.146 — 2026-05-09](#8117146---2026-05-09)
+- [8.117.145 — 2026-05-09](#8117145---2026-05-09)
+- [8.117.144 — 2026-05-09](#8117144---2026-05-09)
+- [8.117.143 — 2026-05-09](#8117143---2026-05-09)
+- [8.117.142 — 2026-05-09](#8117142---2026-05-09)
+- [8.117.141 — 2026-05-09](#8117141---2026-05-09)
+- [8.117.140 — 2026-05-09](#8117140---2026-05-09)
+- [8.117.139 — 2026-05-09](#8117139---2026-05-09)
+- [8.117.138 — 2026-05-09](#8117138---2026-05-09)
+- [8.117.137 — 2026-05-09](#8117137---2026-05-09)
+- [8.117.136 — 2026-05-09](#8117136---2026-05-09)
 - [8.117.135 — 2026-05-09](#8117135---2026-05-09)
 - [8.117.134 — 2026-05-09](#8117134---2026-05-09)
 - [8.117.133 — 2026-05-09](#8117133---2026-05-09)
@@ -362,6 +375,1140 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Versions 5.x — 0.x](docs/changelogs/CHANGELOG-v5.md) (298 releases)
 - [Module-specific changelogs](docs/changelogs/CHANGELOG-modules.md) (29 entries)
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
+
+---
+
+## [8.117.148] — 2026-05-09
+
+### Added — APL/RPL cross-module linkage (7 hookups)
+
+The ``prior_learning_recognition`` module added in 8.117.142 now
+participates in every existing cross-module surface so credit grants
+for prior qualifications, work experience, and professional
+certifications flow through the same channels as enrolled-module
+credits.
+
+#### Bus event
+
+- New ``publish_apl_approved(claim_id, *, student_id,
+  credits_awarded, claim_type, decision, target_course)`` in
+  ``services/integration_bus.py``, logged on
+  ``EVENT_COURSE_CHANGED`` next to ``publish_clearing_accepted`` and
+  ``publish_adjustment_approved``. Subscriber ``_on_apl_approved``
+  records the grant in ``integration_log`` so HESA Export and
+  External QA can pick it up later without coupling. Fired
+  automatically by ``PriorLearningService.review_claim`` when the
+  decision is ``approved`` or ``partial``.
+
+#### Service-layer cross-module entry points
+
+Added to ``PriorLearningService``:
+
+- ``credits_for_student(student_id)`` — sum awarded credits across
+  approved/partial claims (used by transcripts and the academic
+  progress calculator).
+- ``awards_for_student(student_id)`` — per-row award detail (used by
+  the transcript table).
+- ``create_claim_from_clearing(application_id)`` — seeds a draft
+  ``prior_qualification`` claim from a ``clearing_applications``
+  row plus one declared-qualifications evidence item.
+- ``create_evidence_from_placement(student_id, *, employer,
+  total_hours, signed_off_hours, ...)`` — finds or creates a draft
+  ``work_experience`` claim and attaches a placement-summary
+  evidence row.
+- ``create_draft_from_crm_prospect(prospect_id, *, prospect_name,
+  intended_major)`` — pre-enrolment ``other``-type draft for
+  admissions advisors; claimant id stored as ``prospect:<id>``
+  pending conversion.
+
+#### GUI receivers + producers
+
+1. **Student Records right-click** — ``shared/gui/main/students/_cross_links.py``
+   gets a "🎓 Open APL/RPL claims" item that pushes
+   ``{student_id}`` through ``academic_link_bar.request_open``.
+2. **Receiver context** — ``prior_learning`` registered in
+   ``_EXTRA_DESTINATIONS``; ``show_prior_learning_gui`` consumes
+   ``_last_academic_context``, suffixes the title with
+   ``◆ student <id>``, and forwards ``student_id`` into
+   ``PriorLearningGUI`` which pre-filters the Claims tab.
+3. **Clearing & Adjustment** — Applications-tab gains a
+   "Create APL claim" button. The treeview now stores the
+   application id as the row ``iid`` so the handler can recover
+   it without changing the visible columns.
+4. **Apprenticeships** — StudentTab adds a "Submit as APL evidence"
+   button; the handler joins ``applications → apprenticeships →
+   employers`` to seed the evidence with the most recent employer.
+5. **Placements** — placement-detail panel adds a
+   "🎓 Submit as APL evidence" button that pushes total + signed-off
+   hours, employer, and date range into a draft work-experience
+   claim.
+6. **Admissions CRM** — Prospects-tab gains a "Draft APL claim"
+   button for pre-enrolment APL conversations.
+
+#### Read-side rollups
+
+- **Transcripts** — ``grade_calculation/transcripts.py`` queries
+  ``awards_for_student`` and renders a "Recognised Prior Learning
+  (APL/RPL)" section between Module Grades and Assessment Grades,
+  including a per-row table (module code/name, level, credits,
+  grade) and a total APL credits line.
+- **Academic progress** — ``progress_service.calculate_degree_progress``
+  rolls APL credits into ``total_credits_completed`` so the overall
+  completion percentage and remaining-credits delta reflect granted
+  prior learning. Exposes a new ``apl_credits_awarded`` field for
+  transparency.
+
+#### Verification
+
+End-to-end smoke test exercises all seven hookups: review fires
+``EVENT_COURSE_CHANGED`` with ``action=apl_approved``;
+``credits_for_student`` and ``awards_for_student`` return the
+written rows; clearing/placement/CRM builders create seeded claims
+with the expected ``claimant_id`` shapes
+(``UCAS<id>`` / canonical student id / ``prospect:<id>``);
+right-click menu lists "🎓 Open APL/RPL claims" for any selected
+student row.
+
+## [8.117.147] — 2026-05-09
+
+### Added — Curriculum Specification cross-module linkage
+
+Wires the new ``curriculum_specification`` module into five sibling
+GUIs so programme specs and module descriptors are addressable as
+the canonical source for assessment strategy, audit evidence, and
+HESA programme metadata.
+
+- **External QA (OfS/TEF/REF)**: launcher in
+  ``academic_launchers_gui.py`` calls ``consume_eqa_context`` after
+  building the Curriculum Spec window; the window itself embeds an
+  ``EQAStatusStrip``, matching the HESA Export pattern.
+- **External Examiners ↔ Module Descriptors**: new
+  ``examiner_findings_for_module`` service helper matches visit
+  records whose ``modules_reviewed`` references a module code.
+  Module Descriptors tab gets an *Examiner Findings* button;
+  reciprocally the Examiner GUI Visits tab gets a *View Module
+  Descriptor* button that resolves module codes named on the visit
+  back to curriculum-spec descriptors.
+- **Assignments ↔ Assessment Components**:
+  ``AssignmentGUI.show_curriculum_specification`` and
+  ``show_assessment_strategy_for_module(module_code)`` open the
+  programme-spec assessment strategy alongside live assignments,
+  making weighting drift visible.
+- **Grade Tracking ↔ Assessment Strategy**:
+  ``GradeTrackingManagementGUI.show_curriculum_assessment_strategy``
+  opens the same strategy view from the grades side, including the
+  validator's total/valid status indicator.
+- **Course Planning ↔ programme module list**: Dashboard tab gets
+  a *Programme Curriculum Map* button that lists the descriptors
+  attached to a programme version (code / title / credits / level
+  / core flag) so course plans can reconcile against the
+  curriculum.
+- **HESA Export ↔ curriculum programmes**: new *Curriculum
+  Programmes* tab in HESA Export, with a *View HESA Payload*
+  button that calls the new ``hesa_programme_payload`` helper to
+  render a programme as HESA-shaped fields (programme_code /
+  qualification_award / level / credit_value / etc.).
+
+
+## [8.117.146] — 2026-05-09
+
+### Added — Cross-GUI links for the Status Letters module
+
+The 8.117.145 ``student_app/documentation/`` subpackage was reachable
+only from the Student App portal and the CLI menu. This change wires
+it into every GUI surface where a registry / sponsorship / bursar user
+would expect to find it.
+
+#### DocumentationGUI prefill
+
+``DocumentationGUI.__init__`` now accepts three optional kwargs —
+``prefill_student_id``, ``prefill_letter_type``, ``prefill_purpose`` —
+so callers that already know the subject student and the kind of
+letter being requested can open the dialog with the Request tab fully
+populated. ``_resolve_student_id`` honours the prefill before falling
+back to ``auth.current_user``.
+
+#### Top-level launcher
+
+- ``modules/shared/gui/main/features/student_success_gui.py`` — new
+  ``show_enrolment_letters_gui(self)`` mirroring
+  ``show_student_app_gui``: imports ``DocumentationGUI`` lazily and
+  opens it with the active root + auth.
+- ``modules/shared/gui/main/main_gui.py`` — imports the new function
+  and binds it onto ``UnifiedManagementGUI`` next to the Student App
+  hook.
+- ``modules/shared/gui/main/core/gui_setup.py`` — adds
+  ``('enrolment_letters', 'Status Letters', self.show_enrolment_letters_gui)``
+  to the Student Services row, just after Visa Sponsorship; also adds
+  ``'enrolment_letters'`` to the student-accessible visibility list so
+  the button shows for student / parent roles, not just staff.
+
+#### Visa Sponsorship dashboard
+
+``modules/domain/student_affairs/international_compliance/gui/visa_compliance_gui.py``
+gains an *Issue Status Letter* button on the top toolbar, between
+*Save / Update Visa Record* and *Close*. The new
+``_open_status_letter`` handler:
+
+- requires a loaded student (warns instead of opening blank),
+- pre-fills student id from ``_sid()``,
+- defaults ``letter_type`` to ``visa`` (the UKVI / Student Route
+  template),
+- pre-fills the purpose with "UKVI / Student Route status letter
+  requested via Visa Sponsorship dashboard" so the audit trail on the
+  request explains where it came from.
+
+#### Bursar / Finance GUI
+
+``modules/domain/finance/gui/finance/finance_gui.py`` adds a *Status
+Letters* button on the students-tab toolbar (next to Search and View
+Finances), styled with the existing ``warning`` colour. ``_open_status_letters``
+opens the dialog without prefill — the bursar typically picks the
+letter type per case (council tax exemption, mortgage / lender, bank
+account opening). Failures fall through to the standard
+``messagebox.showerror``.
+
+#### Student dashboard tile
+
+``modules/shared/gui/main/dashboard/student_dashboard.py`` registers
+``enrolment_letters`` in the ``feature_map`` (kwarg-style launch,
+student-accessible) and appends a *Status Letters* tile alongside the
+existing *My Visa Status* tile, so students reach the same module
+either from the dashboard grid or from the Student App tab.
+
+#### Verification
+
+- ``py_compile`` clean across all seven touched modules.
+- Service smoke re-run: submit → approve → verify continues to round-
+  trip, issuing ``ELR-2026-000002`` for the visa-prefill path.
+
+---
+
+## [8.117.145] — 2026-05-09
+
+### Added — Self-serve enrolment verification / status letters
+
+University: new ``modules/domain/student_affairs/student_app/documentation/``
+subpackage, removing the manual registry task of producing council-tax /
+mortgage / employer / visa / bank "proof of study" letters.
+
+#### Subpackage layout
+
+- ``services/documentation_service.py`` — ``DocumentationService`` plus
+  ``LETTER_TYPES`` (council_tax, mortgage, employer, visa, bank,
+  general). Owns two SQLite tables created on first use:
+  - ``enrolment_letter_requests`` — student-submitted requests with
+    purpose, recipient name/address, status (pending / issued /
+    rejected), approver, decision timestamp.
+  - ``enrolment_letters`` — issued letters with a unique
+    ``ELR-YYYY-NNNNNN`` reference code, a 32-hex ``verification_token``,
+    rendered content, ``valid_until`` (default 90 days), and
+    revoke flags.
+- ``cli/documentation_cli.py`` — ``display_documentation_menu`` with
+  student paths (request, my requests, my letters, third-party verify)
+  and registry-staff paths (review pending, revoke). Staff/student
+  branching driven by ``auth.current_user['role']``.
+- ``gui/documentation_gui.py`` — ``DocumentationGUI`` Tk window
+  (1400x900 + minsize 1200x800, matching Finance / Library) with
+  notebook tabs: Request Letter, My Requests, My Letters (with .txt
+  save), Verify a Letter, and a Registry Review tab shown only to
+  staff.
+
+#### Letter generation
+
+``DocumentationService._render_letter`` produces a registry letter with
+header (reference, issued, valid until), recipient block, body keyed on
+``letter_type``, and a verification footer that quotes both the
+reference code and the verification token. Body templates cover:
+
+- council_tax — quotes Schedule 1, Local Government Finance Act 1992.
+- mortgage — confirms enrolment + tuition standing, explicit
+  disclaimer that the letter is not proof of income.
+- employer — confirms permission to work alongside study under any
+  applicable visa conditions.
+- visa — confirms UKVI Student Route sponsorship and active
+  compliance at issue.
+- bank — adds the address held on file for UK account opening.
+- general — falls back to the requested purpose.
+
+Student details are looked up via a best-effort ``_lookup_student``
+that probes ``students.student_id`` then ``students.id`` and degrades
+to an id-only stub if neither matches, so the module works against
+seeded auth-only environments.
+
+#### Approval & verification flow
+
+- ``submit_request`` validates ``letter_type`` against ``LETTER_TYPES``.
+- ``approve_request`` allocates the next ``ELR-YYYY-NNNNNN`` reference,
+  generates a ``secrets.token_hex(16)`` verification token, renders
+  the letter, inserts the row, then flips the request to ``issued``
+  and links the letter id — all in a single transaction.
+- ``reject_request`` records the reason and decider for audit, only
+  succeeds while still ``pending``.
+- ``verify_letter(token_or_reference)`` is the public third-party
+  entry point: looks up by either token or reference code, returns a
+  redacted dict (no full letter body) including ``is_valid`` derived
+  from ``revoked`` and ``valid_until``. Suitable for a future
+  unauthenticated ``/verify`` REST endpoint.
+- ``revoke_letter`` flips the flag and records a reason; subsequent
+  verifies report ``is_valid=False`` immediately.
+
+#### Wiring
+
+- ``modules/shared/cli/menu_router.py`` — added ``Status Letters`` row
+  option (``enrolment_letters``) next to ``Student App`` and the
+  matching dispatch branch that imports and runs
+  ``display_documentation_menu(auth)``.
+- ``modules/domain/student_affairs/student_app/gui/student_app_gui.py``
+  — added a fifth notebook tab *Status Letters* in the existing
+  Student App window that opens ``DocumentationGUI`` as a child
+  toplevel; falls back to a logged ``messagebox.showerror`` if the
+  service / GUI import fails.
+
+#### Smoke check
+
+Manual end-to-end against the dev DB confirms: submit → approve issues
+``ELR-2026-000001`` with a token, ``verify_letter`` returns
+``is_valid=True`` for both the token and the reference code,
+``revoke_letter`` flips the same letter to ``is_valid=False`` /
+``revoked=True``, and ``reject_request`` succeeds on a fresh pending
+request.
+
+---
+
+## [8.117.144] — 2026-05-09
+
+### Added — Mitigating Circumstances (MC / EC) module
+
+University: new ``modules/domain/academics/mitigating_circumstances/``
+covers the pre-result MC/EC pathway that was previously missing — the
+existing appeals module only handles post-result appeals, so there was
+no system of record for in-flight MC submissions, evidence handling,
+panel decisions, or downstream deadline extensions.
+
+- ``services/mitigating_circumstances_service.py`` —
+  ``MitigatingCircumstancesService`` with five tables
+  (``mc_claims``, ``mc_evidence``, ``mc_panels``, ``mc_panel_items``,
+  ``mc_deadline_extensions``). Validated grounds (medical /
+  bereavement / personal / family / accident / technical / other),
+  statuses (submitted → evidence_pending → under_review →
+  panel_scheduled → approved/rejected/withdrawn), and outcomes
+  (extension_granted / deferral_granted / uncapped_resit /
+  capped_resit / no_action / rejected). Adding evidence auto-advances
+  the claim out of ``submitted``/``evidence_pending``; recording a
+  panel decision propagates back to the claim status. Deadline
+  extensions accept either ``extension_days`` or a ``new_deadline``
+  and derive the other; ``get_active_extension`` exposes the
+  effective deadline for downstream assessment lookups.
+- ``cli/mitigating_circumstances_cli.py`` — 11-option menu covering
+  the full lifecycle (submit, list, view detail, evidence add/verify,
+  schedule panel, assign claim, record decision, grant extension,
+  list extensions per student, statistics).
+- ``gui/mitigating_circumstances_gui.py`` — five-tab GUI
+  (Claims / Evidence / Panels / Extensions / Statistics).
+  1400×900 with minsize 1200×800 to match the Finance / Library
+  convention.
+- Wired into ``shared/cli/menu_router.py`` (menu option +
+  dispatch under "NEW UNIVERSITY FEATURES"),
+  ``shared/gui/main/features/academic_launchers_gui.py``
+  (workspace-aware launcher with permission gate for
+  admin/staff or ``manage/review/submit_mitigating_circumstances``
+  perms), ``shared/gui/main/main_gui.py`` (import + class
+  registration), and ``shared/gui/main/core/gui_setup.py``
+  (admin nav button next to HESA / Clearing / APL).
+
+
+## [8.117.143] — 2026-05-09
+
+### Added — Curriculum Specification (programme specs & module descriptors)
+
+University: new ``modules/domain/academics/curriculum_specification/``
+module adds a QAA-style programme-spec / module-descriptor layer on
+top of the existing module catalogue. Closes the gap where the
+catalogue stopped at the module list with no formal LO /
+assessment-strategy / change-control wrapper.
+
+- ``services/curriculum_specification_service.py`` —
+  ``CurriculumSpecificationService`` with five tables
+  (``curr_programmes``, ``curr_module_descriptors``,
+  ``curr_learning_outcomes``, ``curr_assessment_components``,
+  ``curr_change_log``). Programme statuses: draft / approved /
+  active / withdrawn / under_review. Versioning is per
+  programme/module via a ``(code, version)`` uniqueness constraint
+  so revisions don't overwrite history. ``new_programme_version``
+  clones a programme into a fresh draft. LOs are mapped to either
+  a programme or a module and tagged with QAA domain
+  (knowledge / skills / professional / transferable) plus a
+  Bloom level. ``validate_assessment_strategy`` flags weightings
+  that don't sum to 100% and components without LO mappings.
+  ``generate_handbook`` renders a plain-text course handbook
+  spanning programme aims, LOs, module descriptors, and
+  assessment summaries.
+- ``cli/curriculum_specification_cli.py`` — text menu wired into
+  the university CLI menu router under the
+  ``Curriculum Spec.`` option.
+- ``gui/curriculum_specification_gui.py`` — six-tab GUI
+  (Programmes / Module Descriptors / Learning Outcomes /
+  Assessment Strategy / Change Control / Course Handbook).
+  1400×900 with minsize 1200×800 to match the Finance / Library
+  convention. Handbook tab exports to .txt / .md.
+- Wired into ``shared/cli/menu_router.py`` (menu option +
+  dispatch), ``shared/gui/main/features/academic_launchers_gui.py``
+  (workspace-aware launcher), ``shared/gui/main/main_gui.py``
+  (registration), and ``shared/gui/main/core/gui_setup.py``
+  (admin-visible button).
+
+
+## [8.117.142] — 2026-05-09
+
+### Added — Accreditation of Prior Learning (APL/RPL) module
+
+University: new ``modules/domain/academics/prior_learning_recognition/``
+module for formal APL/RPL claims. The existing ``clearing_adjustment``
+module already handles UCAS-tariff school-to-uni credit transfer, but
+there was no home for **work-experience claims**, **professional
+certifications**, or **prior HE qualifications** — applicants asking
+for advanced standing on the basis of learning outside the standard
+admissions flow. This adds that home.
+
+#### Subpackage layout
+
+- ``services/prior_learning_service.py`` — ``PriorLearningService``,
+  no Tk dependency. Owns three SQLite tables created on first use:
+  - ``apl_claims`` — claim header (claimant id/name, target course
+    or qualification, claim type, summary, ``credits_requested``,
+    ``credits_awarded``, status, submitted/decided timestamps,
+    reviewer, decision notes).
+  - ``apl_evidence`` — supporting evidence per claim (type, title,
+    description, file path, issuing body, issue date, ``verified``
+    flag with verifier + timestamp).
+  - ``apl_credit_awards`` — per-module credit grants
+    (module code/name, level 4–7, credits, optional grade, awarder,
+    notes). Inserting a row recomputes the parent claim's
+    ``credits_awarded`` total inside the same transaction so the
+    header stays consistent with the line items.
+- ``cli/prior_learning_cli.py`` — ``display_prior_learning_menu``
+  with a 9-option menu: create claim, list, drill into a claim
+  (header + evidence + awards), add/verify evidence, submit, review
+  decision, award credits, and statistics.
+- ``gui/prior_learning_gui.py`` — ``PriorLearningGUI`` Tk window
+  (1400×900 + minsize 1200×800, matching Finance / Library) with
+  four notebook tabs:
+  - **Claims** — treeview + New Claim / Submit / Review / Withdraw /
+    Refresh buttons. Review opens a decision dialog
+    (approved / partial / rejected / under_review + notes).
+  - **Evidence** — load by claim id, add evidence dialog (type,
+    title, issuer, issue date, file path, description), verify
+    selected.
+  - **Credit Awards** — load by claim id, award-credits dialog
+    (module code/name, level, credits, grade, notes); awarding
+    refreshes both the awards tab and the claims tab so the header's
+    ``credits_awarded`` stays visible.
+  - **Statistics** — totals, by-status / by-type breakdowns,
+    credits requested vs awarded, approval rate.
+
+#### Lifecycle and types
+
+- Claim types (validated on insert): ``prior_qualification``,
+  ``work_experience``, ``professional_certification``,
+  ``credit_transfer`` (kept for parity with the existing flow), and
+  ``other``.
+- Status lifecycle: ``draft`` → ``submitted`` → ``under_review`` →
+  ``approved`` / ``partial`` / ``rejected``, with ``withdrawn`` as a
+  terminal opt-out from any earlier state.
+- Approval rate in the statistics view is computed only over
+  *decided* claims (``approved + partial + rejected``) so a backlog
+  of drafts/submitted claims doesn't suppress the headline number.
+
+#### Wiring
+
+- CLI: new ``APL/RPL`` option added to the Academics row in
+  ``modules/shared/cli/menu_router.py`` (next to ``Clearing/Adjust.``)
+  with a matching dispatch branch.
+- GUI: ``show_prior_learning_gui`` added to
+  ``features/academic_launchers_gui.py`` (workspace-aware launcher,
+  same pattern as Clearing & Adjustment / HESA Export). Imported into
+  ``main_gui.py``, attached to ``UnifiedManagementGUI``, and added to
+  the Administration button group in ``core/gui_setup.py`` as
+  ``('prior_learning', 'Prior Learning (APL/RPL)', …)``.
+
+## [8.117.141] — 2026-05-09
+
+### Refactor — Fitness to Practise: split into services/gui + Open-in bar / drill-throughs
+
+The original ``fitness_to_practise.py`` (843 lines) bundled auth
+bootstrap, ``FtPDataAccess`` data layer, and the
+``FitnessToPractisePortal`` Tk class in one file. This change splits
+it the same way the other ``modules/domain/legal/`` modules are
+organised, then adds the cross-module Open-in bar that EQA / IR
+already carry.
+
+#### Tease-apart
+
+- New ``services/ftp_service.py`` — ``FtPDataAccess`` class plus a
+  ``current_username()`` helper, no Tk dependency. Suitable for
+  unit tests, REST routes, or background jobs that don't need the
+  portal window.
+- New ``services/__init__.py`` re-exports the above.
+- New ``gui/ftp_portal_gui.py`` — ``FitnessToPractisePortal`` Tk
+  class with the Open-in bar, drill-throughs, ``set_focus``, and
+  ``register_open_in`` extension point.
+- New ``gui/__init__.py`` re-exports the portal class.
+- ``fitness_to_practise.py`` rewritten as a 90-line shim:
+  - Still owns the env-var auth bootstrap (subprocess invocation
+    starts here when launched via the menu).
+  - Still owns the ``sys.path`` walk-up for direct execution
+    without ``PYTHONPATH``.
+  - Re-exports ``FtPDataAccess`` and ``FitnessToPractisePortal`` so
+    existing imports
+    ``from ...fitness_to_practise import FtPDataAccess`` continue
+    to work unchanged.
+  - Keeps ``main()`` and the ``__main__`` block — the menu's
+    subprocess handler still targets this file by dotted path.
+
+#### Open-in bar (8 targets)
+
+Buttons render above the notebook; auto-disabled when the parent app
+doesn't expose the launcher. Targets: Student Records, Disciplinary
+Portal, Information Rights, Background Checker, Documents,
+Communication Hub, Security Dashboard, Business Intel.
+
+#### Six contextual drill-throughs
+
+Each operates on the case currently selected in the Cases tab and
+pushes a payload onto ``app._last_academic_context`` (consumed by
+the existing ``qa_receivers.consume_eqa_context`` bridge):
+
+- ``drill_to_student_record`` → ``show_student_records`` with
+  ``{ftp_case_id, student_id, programme, regulator}``.
+- ``drill_to_source_disciplinary`` → ``show_new_feature_disciplinary_portal``
+  with ``{ftp_case_id, disciplinary_record_id}``. Warns when the FtP
+  case wasn't referred from the disciplinary portal
+  (``source_record_id`` is null).
+- ``drill_to_audit_log`` → ``show_security_dashboard`` with
+  ``{audit_action_prefix: "ftp.", resource_type: "ftp_case",
+     resource_id}``.
+- ``drill_to_communications`` → ``show_communication_hub_gui`` with
+  ``{ftp_case_id, student_id, thread_subject}``.
+- ``drill_to_information_rights`` → ``show_information_rights_gui``
+  with ``{ftp_case_id, subject_id}`` — common path: an FtP referral
+  often triggers a SAR for the same student.
+- ``drill_to_response_kpis`` → ``show_business_intelligence_gui``
+  with ``{kpi_category: "fitness_to_practise"}``.
+
+#### Dashboard-level helpers
+
+- ``set_focus(case_id=None, tab=None)`` — switches the notebook to
+  ``"cases"|"concerns"|"events"|"outcomes"`` and selects a case in
+  the cases tree if ``case_id`` is supplied.
+- ``register_open_in(label, method_name, replace=False)`` classmethod
+  — extension point for adding Open-in targets without editing the
+  class. Idempotent on label.
+- ``app._ftp_window = self`` registered on init, cleared on window
+  destroy, mirroring ``app._eqa_dash`` (8.117.137) and
+  ``app._ir_window`` (8.117.140) so future reverse-drill helpers
+  have a known live reference.
+
+#### New — ``UnifiedManagementGUI.show_fitness_to_practise_gui``
+
+In-process launcher in ``main_gui.py``. Opens FtP with ``app=self``
+plumbed through so the Open-in bar and drill-throughs work. Lives
+alongside the auto-generated ``show_new_feature_fitness_to_practise``
+subprocess handler — the menu button still defaults to the
+subprocess path.
+
+#### Backward compatibility
+
+- All public names re-exported from the shim: ``FtPDataAccess``,
+  ``FitnessToPractisePortal``, ``main``.
+- Subprocess launch path (menu → ``Popen([python, fitness_to_practise.py])``)
+  unchanged: the file still bootstraps auth from env vars and runs
+  ``main()`` on ``__main__``.
+- Internal ``_current_username`` helper is re-exported as the public
+  ``current_username`` from the services module; the shim aliases it
+  back to ``_current_username`` for any third-party code that
+  reached into the private name.
+
+#### Smoke test
+
+Confirms: shim re-exports resolve to the same classes as the new
+canonical paths, ``__init__`` accepts ``app``, 12 new methods
+present, ``register_open_in`` idempotent,
+``UnifiedManagementGUI.show_fitness_to_practise_gui`` registered,
+all FtP submodules re-import cleanly, and the subprocess
+``main()`` entry remains callable.
+
+---
+
+## [8.117.140] — 2026-05-09
+
+### Added — Information Rights: Open-in bar, drill-throughs, reverse helpers, status strip
+
+Mirrors the EQA cross-module integration (8.117.137–139) onto the
+Information Rights module from 8.117.136. Reuses the same
+``_last_academic_context`` bridge so no new receiver-side wiring is
+needed — all six EQA-side launcher patches transparently honour IR
+drill-throughs as well.
+
+#### `information_rights_gui.py` — dashboard hooks
+
+- ``InformationRightsGUI.__init__`` now accepts ``app=None`` (the
+  ``UnifiedManagementGUI`` instance). When supplied, the dashboard
+  registers itself as ``app._ir_window`` for reverse helpers and
+  clears the slot on window destroy.
+- New ``_OPEN_IN_TARGETS`` (7 entries): Student Records, Communication
+  Hub, Documents, Security Dashboard, Cross-System Calendar, Business
+  Intel, GDPR Cross-System. Buttons auto-disable when the parent app
+  doesn't expose the launcher — matches the EQA pattern.
+- ``_build_open_in_bar`` packs above the notebook with the seven
+  generic targets plus four contextual **"Selected request:"** drills
+  for the highlighted request in any of the three trees.
+- ``_dispatch_with_context(method_name, label, context)`` —
+  pushes the payload onto ``app._last_academic_context`` then
+  invokes the launcher. The existing ``qa_receivers.consume_eqa_context``
+  bridge in each sibling launcher (``show_student_records`` /
+  ``show_security_dashboard`` / etc.) consumes it transparently, so
+  no new launcher patches were needed.
+- Six drill-throughs:
+  - ``drill_to_data_subject`` → ``show_student_records`` with
+    ``{ir_reference, request_type, subject_id, subject_email}``.
+  - ``drill_to_audit_log`` → ``show_security_dashboard`` with
+    ``{audit_action_prefix: "ir.request_", resource_type: "ir",
+       resource_id, ir_reference}``.
+  - ``drill_to_communications`` → ``show_communication_hub_gui`` with
+    ``{ir_reference, request_type, thread_subject}``.
+  - ``drill_to_deadline_calendar`` → ``show_cross_system_calendar_gui``
+    with ``{deadline_on, ir_reference, request_type}``.
+  - ``drill_to_documents`` → ``show_data_documents_gui`` with
+    ``{ir_reference, subject_id, purpose: "sar_gathering"}``.
+  - ``drill_to_response_kpis`` → ``show_business_intelligence_gui``
+    with ``{kpi_category: "information_rights"}``.
+- ``_selected_request()`` resolves the highlighted row from
+  ``tv_list``, ``tv_overdue``, or ``tv_due_soon`` into a service
+  dict via ``svc.get_by_reference`` / ``get_request``.
+- ``set_focus(reference=None, tab=None, request_id=None)`` —
+  programmatic deep-link API. ``tab`` accepts
+  ``"dashboard" | "list" | "intake" | "detail"``; ``reference``
+  loads a request into the detail tab.
+- ``register_open_in(label, method_name, replace=False)`` classmethod —
+  extension point for adding targets without editing the class;
+  idempotent on label.
+
+#### New — ``gui/ir_widgets.py``
+
+- ``IRStatusStrip(parent, poll_seconds=60)`` — one-line ttk.Frame
+  showing **open · due 7d · overdue** counts with status colouring
+  (amber for due-soon, red for overdue). Auto-refreshes; mirrors
+  ``EQAStatusStrip``.
+
+#### New — ``gui/ir_reverse.py``
+
+Reverse drills other GUIs invoke to push state *into* IR:
+
+- ``log_sar_for_student(app, student_id, requester_name, email,
+  subject_summary, scope_details)`` — right-click on a student
+  record's "Log SAR for this subject" handler. Captures
+  ``subject_id`` in ``scope_details`` so the forward drill can
+  resolve it back, then ``set_focus`` on the new reference.
+- ``log_foi_from_audit_event(app, requester_name, email, summary,
+  source_event_id)`` — right-click on an audit event's "Open as FOI
+  request" handler.
+- ``log_communication_to_request(app, reference, direction, channel,
+  summary, body)`` — right-click in Communication Hub's "Attach to
+  IR request" handler. Appends to the request's comms thread and
+  focuses the detail tab.
+
+#### New — ``UnifiedManagementGUI.show_information_rights_gui``
+
+In-process launcher in ``main_gui.py`` that opens IR with
+``app=self`` plumbed through. Lives alongside the existing
+subprocess-based ``show_new_feature_information_rights`` (still used
+by the menu button by default); the new in-process variant is what
+reverse helpers call so the Open-in bar and drill-throughs work.
+
+#### Receiver-side reuse
+
+No new launcher patches were required: every sibling launcher already
+calls ``consume_eqa_context`` (8.117.138), and IR drill-through
+payloads use the same ``_last_academic_context`` slot. The receiver
+bridge is module-agnostic — the ``source`` key in the payload (e.g.
+``"ir.request"`` vs ``"eqa.b3"``) lets downstream GUIs disambiguate
+if they care.
+
+#### Smoke test
+
+Confirms: ``__init__`` accepts ``app``, 12 new methods present, 7
+Open-in targets registered, ``register_open_in`` idempotent,
+``IRStatusStrip`` + 3 reverse helpers exported,
+``UnifiedManagementGUI.show_information_rights_gui`` registered,
+IR module re-imports cleanly.
+
+---
+
+## [8.117.139] — 2026-05-09
+
+### Added — EQA full integration surface: receivers, reverse drills, scheduled jobs, REST, webhooks, AI hooks, evidence pack, GDPR redaction, cross-system
+
+Closes the External Quality Assurance integration backlog (items #1–#27
+from the design list). Builds on 8.117.137/138, which delivered the
+dashboard-side push and the receiver bridge respectively. This change
+makes the receivers actually consume the context, adds reverse-direction
+helpers, exposes a REST surface, fans events out to webhooks, and lands
+service helpers for compliance / AI / cross-system reporting.
+
+#### Receiver-side filter readers — context now applied (#1–#6)
+
+Each downstream GUI gained an `_apply_eqa_context` method called from
+its `__init__` after build, reading `self.eqa_context` (set by the
+8.117.138 bridge):
+
+- `PredictiveAlertsFrame` (`shared/predictive/predictive_gui.py`) —
+  prefills `_metric_var` / `_filter_metric_var` / `_category_var` and
+  threshold spinner if any are present, then calls `_apply_filters` /
+  `refresh`. Defensive against varied widget naming.
+- `AnalyticsDashboardFrame` (`shared/analytics/analytics_gui.py`) —
+  surfaces a "Opened from EQA · <source>" banner above the cards row.
+- `HESAExportGUI` — resolves `academic_year` into a matching return id,
+  stored on `self._highlighted_return_id` for downstream tabs.
+- `SecurityDashboard` — stores `audit_action_prefix` / `resource_type` /
+  `resource_id` on `self.audit_prefilter` and shows a banner.
+- `BusinessIntelligenceGUI` — stashes `kpi_category` filter on
+  `self.bi_category_filter` and shows a banner.
+- `GradeTrackingManagementGUI.show_grade_tracking_gui` — forwards
+  `eqa_context` from the manager onto the launched `GradeTrackingApp`
+  and calls its `_apply_eqa_context` if defined (graceful no-op
+  otherwise).
+
+#### Reverse drill helpers — `gui/qa_reverse.py` (#7–#11)
+
+Other GUIs can call these to push state *into* EQA, then the helper
+focuses the dashboard at the relevant tab:
+
+- `snapshot_cohort_to_b3(app, year, course)` — `record_b3_snapshot` then
+  `set_focus(framework="OfS", year=year)`.
+- `send_output_to_impact_case(app, output_id, case_id)` —
+  `add_output_to_impact_case`, then resolves the case's UoA and
+  `set_focus(framework="REF", uoa=uoa)`.
+- `promote_alert_to_milestone(app, alert)` —
+  `promote_alert_to_app_milestone` then focuses OfS.
+- `link_hesa_return_to_qa(app, qa_id, hesa_return_id)` — wraps
+  `link_qa_submission_to_hesa`.
+- `recompute_eqa_kpis(app)` — wraps `record_external_qa_kpis`.
+- `_ensure_dashboard(app)` — opens or lifts the dashboard before any
+  reverse helper runs.
+
+#### Service helpers — `services/qa_integrations.py` (#12–#17, #22–#27)
+
+Single home for everything that touches sibling subsystems. All entry
+points are best-effort and log on failure so EQA can never break a
+downstream module.
+
+- **#12** `b3_nightly_job()` — snapshots B3 for the current academic
+  year. Wire from the maintenance scheduler with a daily cron.
+- **#13** `eqa_deadline_watcher(threshold_days=14)` — returns
+  submissions and APP milestones due within the window
+  (`{kind: "submission"|"milestone", ...}`).
+- **#14** `auto_publish_kpis_on_change()` — convenience wrapper for
+  `record_external_qa_kpis`; sign-off already calls this since
+  8.117.137.
+- **#16** `dispatch_qa_webhook(event_type, payload, system_key)` —
+  fans `qa.*` events to subscribers via the existing
+  `shared.webhooks.WebhookService.dispatch`. Now wired into every
+  `_audit()` call in `qa_service`, so every audited mutation
+  automatically reaches webhook subscribers.
+- **#17** `enqueue_qa_outbox(event_type, payload)` — pushes onto the
+  offline-sync outbox so satellite installs converge; no-ops cleanly
+  when `shared.offline_sync.outbox` isn't installed.
+- **#22** `aggregate_qa_across_systems()` — combines
+  `get_qa_summary_dict` snapshots from `university` /
+  `college_system` / `secondary_school` / `primary_school`. Missing
+  subsystems are skipped.
+- **#23** `draft_tef_narrative(section, year, save=True)` — builds a
+  prompt from B3 snapshots, calls
+  `chatbot_integration.run_completion`, persists as a new TEF
+  narrative version when produced. Returns empty string and logs if
+  the chatbot module isn't configured.
+- **#24** `suggest_app_milestones_from_alerts(alerts, max_candidates=5)`
+  — clusters alerts by `metric` (or `category` / `type`); each cluster
+  of ≥3 becomes a milestone candidate the user can promote via
+  `qa.promote_alert_to_app_milestone`. Returns titles, descriptions,
+  and the underlying alert ids so callers can mark alerts resolved
+  on promotion.
+- **#25** `risk_score_for_b3(metric, value_pct)` — returns
+  `green` / `amber` / `red` / `n/a` for a B3 cell. Thresholds reflect
+  OfS B3 institution-wide minimums (continuation 80/90, completion
+  75/85, progression 60/75) and a generic 60/80 fallback for other
+  metrics.
+- **#26** `eqa_evidence_pack(submission_id, output_path)` — builds a
+  ZIP containing `submission.json`, `audit_log.json` (queried from
+  `security_events` filtered to `resource_type='qa'` +
+  `resource_id=<id>`), `hesa_links.json`, and the OfS B3 CSV when the
+  submission is OfS. One-click bundle for regulator data requests.
+- **#27** `gdpr_redact_qa(user_id)` — scrubs identifying foreign-key
+  columns across 7 EQA tables (`assigned_to`, `signed_off_by`,
+  `owner_id`, `approved_by`, `drafted_by`, `lead_author_id`) when the
+  GDPR module deletes a user. Records a `qa.gdpr_redacted` audit
+  event with the row count.
+
+#### REST surface — `api/qa_routes.py` (#15)
+
+New Flask blueprint (`bp = Blueprint("eqa", __name__)`) with 8
+read-only endpoints. Register with
+`app.register_blueprint(qa_bp, url_prefix="/api/eqa")`:
+
+- `GET /summary` → `get_qa_summary_dict()`.
+- `GET /summary/cross-system` → `aggregate_qa_across_systems()`.
+- `GET /submissions?framework=OfS|TEF|REF` → `list_submissions`.
+- `GET /b3/<cohort_year>?course=` → `compute_b3_metrics` +
+  `list_b3_snapshots`.
+- `GET /app-milestones?plan_year=` → `list_app_milestones`.
+- `GET /tef/<year>` → `list_tef_narratives` + `compute_tef_indicators`.
+- `GET /ref/<uoa>` → `compute_uoa_summary` + `list_impact_cases` +
+  `list_environment_statements`.
+- `GET /kpis` → `compute_external_qa_kpis`.
+
+Mutating endpoints are intentionally omitted — write paths remain in
+the CLI/GUI so audit hooks and webhook fan-out always fire.
+
+#### Webhook fan-out wiring (#16)
+
+`qa_service._audit()` now lazy-imports `dispatch_qa_webhook` and emits
+each audited event (`qa.submission_created`, `qa.b3_snapshot_recorded`,
+`qa.gdpr_redacted`, etc.) with a payload of
+`{resource_type, resource_id, details}`. The lazy import avoids a
+circular dependency since `qa_integrations` imports `qa_service`.
+
+#### Schema — `system_key` on `qa_submissions` (#21)
+
+- New column `system_key TEXT NOT NULL DEFAULT 'university'` plus
+  `idx_qa_sub_system` index.
+- Idempotent migration in `init_db()`: reads `PRAGMA table_info` and
+  runs `ALTER TABLE … ADD COLUMN` only when missing, so old installs
+  upgrade in place. Verified the column appears after `init_db()` on
+  the live DB.
+
+#### Extra embeds (#18)
+
+`EQAStatusStrip` now also packs above the **Predictive Alerts** and
+**Business Intelligence** windows (in addition to Analytics from
+8.117.138).
+
+#### Deliberately deferred
+
+- **#19 KPI panel on welcome screen** — welcome screen is pre-login,
+  wrong layer for institutional KPIs; the `embed_kpi_panel` widget
+  from 8.117.137 stays available for the post-login integrated
+  dashboard.
+- **#20 left-nav submission badge** — counting via
+  `get_qa_summary_dict` is trivial, but mutating
+  `rebuild_navigation_panel` risks regressing role-gating; the data
+  call is in place, the UI insertion is a future visual change.
+- **#11 grade-commit publisher** — auto-firing point still has no
+  canonical call site in the codebase (already noted in 8.117.138).
+
+#### Smoke test
+
+A consolidated test exercises: 11 helper functions present, 8 REST
+endpoints, 5 reverse drills, RAG threshold table, alert clustering,
+deadline watcher, GDPR redaction (no-op on missing user),
+cross-system aggregator surfaces `university`, all 6 receiver modules
+re-import cleanly, and the `system_key` migration applied to the
+live DB.
+
+---
+
+## [8.117.138] — 2026-05-09
+
+### Added — EQA receiver-side bridge: drill-through context now reaches sibling GUIs
+
+Follow-up to 8.117.137. The dashboard side already pushed a context dict
+onto ``app._last_academic_context`` before invoking sibling launchers, but
+no launcher consumed it, so the payload was discarded on the receiving
+end. This change adds a one-line bridge to each of the six target
+launchers and embeds the EQA status strip on the analytics dashboard.
+
+#### New — `qa_receivers.py`
+
+- `consume_eqa_context(app, label, target=None)` — single-purpose helper
+  every launcher calls after building its window. It pops
+  ``app._last_academic_context``, snapshots the dict on
+  ``app._active_eqa_context`` (so other code can introspect the most
+  recent drill-through), stamps it on the launched object as
+  ``target.eqa_context``, logs the drill-through at INFO, and clears
+  the source slot so a stale context can't bleed into the next plain
+  menu click. Same convention as
+  ``academic_link_bar.consume_context``.
+
+#### Launcher patches — one ``consume_eqa_context`` call each
+
+- `show_grade_tracking_gui` (`academic_launchers_gui.py`) — context
+  attaches to ``self.grade_tracking_gui``.
+- `show_predictive_analytics_gui` / `show_business_intelligence_gui`
+  (same file) — app-level snapshot only (launchers are bare function
+  calls; downstream GUIs read ``app._active_eqa_context``).
+- `show_hesa_export_gui` (same file) — refactored to a small
+  ``_build_hesa(host)`` factory so the launched ``HESAExportGUI``
+  instance receives ``eqa_context`` whether opened in workspace or
+  Toplevel.
+- `show_predictive_alerts_gui` (`main_gui.py`) — context attaches to
+  the ``PredictiveAlertsFrame``.
+- `show_analytics_dashboard_gui` (`main_gui.py`) — context attaches to
+  the ``AnalyticsDashboardFrame``; **also embeds**
+  ``EQAStatusStrip(win)`` above the frame so OfS/TEF/REF submission
+  state is visible inline whenever a user opens the analytics window.
+- `show_security_dashboard` (`admin/config_gui.py`) — context attaches
+  to the ``SecurityDashboard``.
+
+All bridge calls are wrapped in defensive ``try/except`` so the EQA
+module never breaks a sibling launcher if its import or call fails.
+
+#### Grade-commit publisher (#11) — deliberately not wired
+
+The pub/sub plumbing (`subscribe_grade_commit` / `notify_grade_commit`
+plus the default `attach_grade_cohort_to_b3` subscriber) is in place
+from 8.117.137, but ``students.status`` is never flipped to
+`'completed'` / `'graduated'` in one canonical place — only per-
+submission ``assignment_submissions.status`` updates exist via
+``submit_grade``. Hooking the publisher there would fire spuriously on
+every individual mark. When a real "release results" / "promote
+cohort" endpoint is introduced, a single
+``qa.notify_grade_commit(cohort_year, course)`` call there closes the
+loop without touching this module.
+
+#### Downstream filter wiring — out of scope, hook is universal
+
+Each target now owns a ``self.eqa_context`` dict; how to apply it to
+the local filter widgets is a per-GUI decision (e.g.
+``PredictiveAlertsFrame`` could read ``eqa_context["metric"]`` and
+preselect the matching combobox value during ``__init__``). The
+universal bridge means that wiring is a one-attribute lookup away on
+the receiver side — no further changes to the EQA module needed.
+
+---
+
+## [8.117.137] — 2026-05-09
+
+### Added — External Quality Assurance: CLI, cross-module integration & embeddable widgets
+
+Follow-up to 8.117.135 (the EQA module itself). The dashboard was reachable
+from the GUI but had no CLI entry point and no link to the rest of the
+university system. This change wires the module into the CLI, adds a deep
+"Open in…" bar with six drill-throughs to sibling GUIs, and exposes a
+service-level integration surface (subscribers, summary getter, embeddable
+widgets) so other modules can react to EQA state without circular imports.
+
+#### CLI
+
+- New `modules/domain/research/external_quality_assurance/cli/eqa_cli.py`
+  with `display_external_qa_menu(auth)` — five sub-menus (Submissions,
+  OfS, TEF, REF, KPIs) covering every public service function (B3
+  compute/snapshot/export, APP milestones CRUD, protection plans, TEF
+  narratives & indicators, REF impact cases & environment statements,
+  UoA summary, KPI publish).
+- `modules/shared/cli/menu_router.py`: new "External QA (OfS/TEF/REF)"
+  button under **NEW UNIVERSITY FEATURES**, dispatched via
+  `option == "external_qa"` next to HESA Export and External Examiners.
+
+#### Dashboard — Open-in bar + drill-throughs
+
+- `QADashboardGUI.__init__` now accepts an `app=None` param (the
+  `UnifiedManagementGUI` instance) so the dashboard can invoke sibling
+  launchers. The launcher in
+  `shared/gui/main/features/student_success_gui.py` passes `self`.
+- New "Open in:" toolbar above the notebook with seven targets — Grades,
+  Predictive Analytics, Predictive Alerts, Analytics Dashboard, Business
+  Intel, HESA Export, Security Dashboard. Buttons auto-disable when the
+  matching `show_*` method isn't registered.
+- Six drill-through methods that push a context dict onto
+  `app._last_academic_context` (matching the existing
+  `academic_link_bar.consume_context` convention) before launching the
+  target — receivers that read the context prefilter, receivers that
+  don't simply open at default state:
+  - `drill_through_b3` — selected B3 row → Grades, payload
+    `{cohort_year, course, metric}`.
+  - `open_predictive_for_cohort` — B3 spinner → Predictive Analytics,
+    payload `{cohort_year, focus: "continuation_forecast"}`.
+  - `open_alerts_for_metric` — selected B3 row → Predictive Alerts,
+    payload `{metric, cohort_year, course, threshold_pct}`.
+  - `open_audit_for_submission` — selected submission → Security
+    Dashboard, payload
+    `{audit_action_prefix: "qa.submission_", resource_type, resource_id}`.
+  - `open_hesa_for_year` — B3 spinner → HESA Export, payload
+    `{cohort_year, academic_year}`.
+  - `open_bi_for_kpi` — Overview button → Business Intel, payload
+    `{kpi_category: "external_qa"}`.
+- `set_focus(framework=None, year=None, uoa=None)` — programmatic API
+  that switches the notebook tab and prefills `b3_year` / `tef_year` /
+  `ref_uoa`. Enables external callers to deep-link into the dashboard.
+- `register_open_in(label, method_name, replace=False)` classmethod —
+  extension point so future modules can add Open-in targets without
+  editing `_OPEN_IN_TARGETS`. Idempotent on label.
+- New "View audit log" button (Overview) and the four B3 drill buttons
+  (OfS tab) trigger the methods above.
+- Sign-off now uses `sign_off_submission_and_publish`, republishing
+  KPIs in the same tick so BI dashboards refresh immediately.
+
+#### Service layer — `qa_service.py`
+
+- Pub/sub: `subscribe_grade_commit` / `unsubscribe_grade_commit` /
+  `notify_grade_commit(cohort_year, course)` — in-process registry the
+  Grades module can fire after a finals commit. Default subscriber
+  `attach_grade_cohort_to_b3` is registered at import so a commit
+  automatically refreshes the B3 snapshot.
+- `add_output_to_impact_case(output_id, case_id)` — appends to
+  `ref_impact_cases.evidence_links` (JSON list), idempotent.
+- `promote_alert_to_app_milestone(alert, plan_year=None)` — converts a
+  Predictive Alerts dict into an APP milestone; requires `title`, folds
+  `metric` / `description` into the milestone text.
+- `link_qa_submission_to_hesa(qa_id, hesa_return_id)` /
+  `list_hesa_links()` — new `qa_hesa_links` table (composite PK)
+  cross-referencing OfS/TEF/REF submissions and HESA returns so each
+  side's exports can cite the other.
+- `sign_off_submission_and_publish(submission_id, signer)` — wraps
+  sign-off + KPI republish, returns `(signed, kpi_count)`.
+- `get_qa_summary_dict()` — Tk-free summary
+  (`{frameworks, app_milestones, ref, latest_b3_year}`) suitable for
+  embedding in other dashboards or REST endpoints.
+
+#### Embeddable widgets — new `qa_widgets.py`
+
+- `EQAStatusStrip(parent, poll_seconds=30)` — one-line ttk.Frame that
+  shows the latest submission status per framework with status-coloured
+  labels, auto-refreshing.
+- `embed_kpi_panel(parent, category="external_qa")` — drops a Treeview
+  of EQA KPIs into any parent frame; reads
+  `compute_external_qa_kpis()`.
+- `with_qa_context(func)` — decorator that, while the dashboard is open
+  (`app._eqa_dash`), stamps `{b3_year, tef_year, uoa}` onto
+  `app._last_academic_context` before invoking the wrapped handler;
+  passes through unchanged when no dashboard is open.
+
+#### Schema delta
+
+- `qa_hesa_links (qa_submission_id, hesa_return_id, linked_at)` added
+  via the existing idempotent `_DDL` block (no migration needed; created
+  on first `init_db()`).
+
+---
+
+## [8.117.136] — 2026-05-09
+
+### Added — Information Rights module (SAR / FOI / EIR lifecycle)
+
+Closes audit gap #3: GDPR audit/log code existed, but the university had
+no end-to-end tracking for statutory information requests. New module
+home: `university_system/modules/domain/legal/information_rights/`.
+
+#### Schema (owns its own `ir_*` tables)
+
+- `ir_requests` — one row per request with `request_type`
+  (`SAR` / `FOI` / `EIR`), `received_on`, `deadline_on`,
+  `identity_status`, lifecycle `status`, `extended` flag, `outcome`,
+  `closed_on`. Reference auto-generated as `SAR-YYYY-NNNN` etc.
+- `ir_communications` — inbound/outbound/internal log per request
+  (channel, summary, body, author, timestamp).
+- `ir_exemptions` — per-request exemption records, regime-tagged
+  (`FOIA` / `DPA` / `EIR`) with mandatory `reason` (harm test /
+  public-interest balance / rationale).
+- `ir_redactions` — per-document redaction log linking back to
+  `ir_exemptions`. Captures *what was withheld*, *where*, and *why*
+  without retaining the redacted content.
+- `ir_audit` — append-only event stream covering create, identity
+  verification, status changes, extensions, comms, exemptions,
+  redactions, closure.
+
+#### Statutory deadline arithmetic
+
+- **SAR** (UK GDPR Art. 12(3) / DPA 2018): one calendar month from the
+  day after receipt; `_add_calendar_months` clamps to the corresponding
+  date or month-end (e.g. 31 Jan + 1 month → 28/29 Feb).
+- **SAR extension**: `apply_extension()` adds the further two calendar
+  months (3 total) under Art. 12(3); enforces single use, requires a
+  written reason, and records `extension_notified_on`.
+- **FOI** (FOIA 2000 s.10(1)) / **EIR** (EIR 2004 reg. 5(2)): 20
+  working days, weekends excluded. Bank holidays not modelled — override
+  `_add_working_days` to layer in a holiday calendar.
+- **Identity verification (SAR)**: `mark_identity_verified()` restarts
+  the clock from the verification date (ICO position) when
+  `restart_clock=True` (default).
+
+#### Exemption / exception catalogues
+
+Surfaced module-level for CLI/GUI dropdowns:
+
+- `FOIA_EXEMPTIONS`: s.12, s.14, s.21–s.44 (absolute and qualified).
+- `DPA_EXEMPTIONS`: Sch.2 Pt.1–4, Sch.3 Pt.4 (health), Art.15(4)
+  (third-party rights), manifestly-unfounded.
+- `EIR_EXCEPTIONS`: reg. 12(4)(a)–(e), 12(5)(a)–(g), reg. 13.
+
+#### Service surface (`InformationRightsService`)
+
+`create_request`, `mark_identity_verified` /
+`mark_identity_failed`, `apply_extension`, `set_status`,
+`assign_officer`, `log_communication`, `apply_exemption`,
+`log_redaction`, `close_request`, plus readers (`get_request`,
+`get_by_reference`, `list_requests`, `list_communications`,
+`list_exemptions`, `list_redactions`, `list_audit`) and dashboard
+helpers (`days_remaining`, `overdue`, `due_within`,
+`dashboard_summary`).
+
+Constructor accepts an optional `db_path`; defaults to
+`DEFAULT_DB_PATH` so production runs share the central university DB,
+while tests pin a tmp file.
+
+#### CLI (`information_rights_cli.display_menu`)
+
+Mirrors the `legal_cli` style: intake, list (with type/status filters
++ overdue/due-soon flags), view (full request with comms, exemptions,
+redactions), ID verify, extension, status change, log communication,
+apply exemption (catalogue-driven), log redaction, close, dashboard.
+
+#### GUI (`information_rights_gui.InformationRightsGUI`)
+
+Tk window 1400×900 / minsize 1200×800 (matches Finance / Library
+convention; no `state('zoomed')` / fullscreen). Notebook tabs:
+
+- **Dashboard** — counts (open/closed, overdue, due-within-7-days),
+  by-type and by-status breakdowns, drillable Overdue and Due-Soon
+  treeviews.
+- **All requests** — type + status filter, treeview with deadline /
+  days-remaining flags.
+- **New request** — intake form.
+- **Request detail** — header summary, action toolbar (verify ID,
+  extend, change status, log comm, apply exemption, log redaction,
+  close), and sub-tabs for Communications, Exemptions, Redactions,
+  Audit log.
+
+#### Launcher wiring
+
+- GUI: `("information_rights", "SAR / FOI Requests", …)` added to
+  `_NEW_FEATURE_MODULES` in `modules/shared/gui/main/main_gui.py` —
+  spawned as a Tk subprocess alongside Disciplinary Portal /
+  Risk Management.
+- CLI: import + `INFORMATION_RIGHTS_AVAILABLE` flag added to
+  `modules/shared/cli/imports.py`; "SAR / FOI Requests" menu item and
+  dispatch branch added to `modules/shared/cli/menu_router.py` next to
+  Legal Services.
+
+#### Tests
+
+`tests/test_information_rights.py` — 15 tests covering:
+
+- Calendar-month deadline clamping (incl. leap year).
+- 20-working-day arithmetic.
+- `compute_deadline` dispatch and validation.
+- SAR intake (`awaiting_id` start state) and FOI intake (skips ID).
+- Input validation (empty name, no-`@` email, empty summary, bad
+  type).
+- ID verification restarts the clock; only valid for SARs.
+- 2-month extension: SAR-only, single-use, requires reason.
+- Status transitions blocked once closed.
+- Exemption + redaction + audit chain (incl. cross-request
+  exemption rejection).
+- Dashboard buckets overdue and due-soon correctly.
+- Closure marks terminal and prevents further changes.
+
+All 15 tests pass; ruff clean across new files and launcher edits.
 
 ---
 

@@ -178,6 +178,11 @@ def _launch_feature(root, auth, feature_name):
             'education_system.university_system.modules.domain.student_affairs.international_compliance.gui.my_visa_status_gui',
             'MyVisaStatusGUI', 'none', True,
         ),
+        'enrolment_letters': (
+            'Status Letters',
+            'education_system.university_system.modules.domain.student_affairs.student_app.documentation.gui.documentation_gui',
+            'DocumentationGUI', 'kwarg', True,
+        ),
     }
 
     if feature_name not in feature_map:
@@ -275,6 +280,7 @@ def create_student_dashboard(parent_frame, auth, service):
         ("Wellness Hub", lambda: _launch_feature(root, auth, 'wellness_hub')),
         ("Todo App", lambda: _launch_feature(root, auth, 'todo_app')),
         ("My Visa Status", lambda: _launch_feature(root, auth, 'my_visa_status')),
+        ("Status Letters", lambda: _launch_feature(root, auth, 'enrolment_letters')),
     ]
     from education_system.university_system.modules.shared.gui.main.dashboard.evaluation_launchers import (
         EVALUATION_MODULES, launch_evaluation_module,

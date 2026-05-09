@@ -158,6 +158,7 @@ class AdmissionsCRMGUI:
         ttk.Button(btn_frame, text=_t("admissions_crm.prospects.add"), command=self._add_prospect).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("admissions_crm.prospects.log_interaction"), command=self._log_interaction).pack(side=tk.LEFT, padx=5)
         ttk.Button(btn_frame, text=_t("admissions_crm.prospects.refresh"), command=self._load_prospects).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Draft APL claim", command=self._draft_apl_for_prospect).pack(side=tk.LEFT, padx=5)
 
         # Prospects list
         list_frame = ttk.LabelFrame(tab, text=_t("admissions_crm.prospects.title"), padding="10")
@@ -564,6 +565,43 @@ class AdmissionsCRMGUI:
         item = self.prospects_tree.item(selection[0])
         prospect_id = item['values'][0]
         LogInteractionDialog(self.window, self.auth, prospect_id, self._load_prospects)
+
+    def _draft_apl_for_prospect(self):
+        """Seed a draft APL/RPL claim from the selected prospect.
+
+        Pre-enrolment APL enquiries get recorded against
+        ``prospect:<id>`` as the claimant — the canonical student id
+        replaces it once the prospect converts to an applicant."""
+        selection = self.prospects_tree.selection()
+        if not selection:
+            messagebox.showwarning(
+                _t("common.warning"),
+                _t("admissions_crm.prospects.select_prospect"),
+            )
+            return
+        vals = self.prospects_tree.item(selection[0])['values']
+        # columns: id, name, email, phone, intended_major, source, status, last_contact
+        prospect_id = vals[0]
+        name = vals[1]
+        intended_major = vals[4] if len(vals) > 4 else None
+        try:
+            from education_system.university_system.modules.domain.academics.prior_learning_recognition.services.prior_learning_service import (
+                PriorLearningService,
+            )
+            apl = PriorLearningService()
+            cid = apl.create_draft_from_crm_prospect(
+                int(prospect_id),
+                prospect_name=str(name),
+                intended_major=str(intended_major) if intended_major else None,
+            )
+        except Exception as e:
+            messagebox.showerror(_t("common.error"), f"Failed to draft APL claim: {e}")
+            return
+        messagebox.showinfo(
+            "APL claim drafted",
+            f"Draft APL claim #{cid} created for prospect #{prospect_id} ({name}).\n"
+            "Open Prior Learning (APL/RPL) from the navigation to review.",
+        )
 
     def _submit_application(self):
         """Submit a new application"""

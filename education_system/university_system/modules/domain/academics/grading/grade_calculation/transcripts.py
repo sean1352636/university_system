@@ -98,6 +98,18 @@ def generate_transcript():
             print("Invalid format choice. Using simple format.")
             format_choice = '1'
 
+        # Pull APL/RPL credits awarded to this student (approved/partial
+        # claims only) so the transcript surfaces recognised prior
+        # learning alongside the standard module grades.
+        apl_awards = []
+        try:
+            from education_system.university_system.modules.domain.academics.prior_learning_recognition.services.prior_learning_service import (
+                PriorLearningService,
+            )
+            apl_awards = PriorLearningService().awards_for_student(student_id)
+        except Exception:
+            apl_awards = []
+
         # Generate PDF transcript
         create_transcript_pdf(
             filename,
@@ -112,7 +124,8 @@ def generate_transcript():
             gpa,
             credits,
             module_grades,
-            assessment_grades if format_choice == '2' else None
+            assessment_grades if format_choice == '2' else None,
+            apl_awards=apl_awards,
         )
 
         print(f"\nTranscript generated successfully: {filename}")
@@ -123,7 +136,7 @@ def generate_transcript():
         print(f"Database error: {e}")
 
 
-def create_transcript_pdf(filename, student_id, first_name, middle_name, last_name, course, email, gender, dob, gpa, credits, module_grades, assessment_grades=None):
+def create_transcript_pdf(filename, student_id, first_name, middle_name, last_name, course, email, gender, dob, gpa, credits, module_grades, assessment_grades=None, apl_awards=None):
     """Create a PDF transcript for a student"""
     try:
         if not _REPORTLAB_AVAILABLE:
@@ -205,6 +218,37 @@ def create_transcript_pdf(filename, student_id, first_name, middle_name, last_na
             elements.append(Paragraph("No module grades recorded.", styles['Normal']))
 
         elements.append(Spacer(1, 20))
+
+        # Recognised Prior Learning section (APL/RPL credits) — only
+        # rendered when the student has at least one approved/partial
+        # claim with awarded credits.
+        if apl_awards:
+            elements.append(Paragraph("Recognised Prior Learning (APL/RPL)", styles['Heading2']))
+            apl_header = [['Module Code', 'Module Name', 'Level', 'Credits', 'Grade']]
+            apl_rows = []
+            total_apl = 0
+            for aw in apl_awards:
+                total_apl += int(aw.get('credits_awarded') or 0)
+                apl_rows.append([
+                    aw.get('module_code') or '—',
+                    aw.get('module_name') or '—',
+                    str(aw.get('level') or '—'),
+                    str(aw.get('credits_awarded') or 0),
+                    aw.get('grade') or '—',
+                ])
+            apl_table = Table(apl_header + apl_rows, colWidths=[80, 240, 60, 60, 60])
+            apl_table.setStyle(TableStyle([
+                ('FONTNAME', (0, 0), (4, 0), 'Helvetica-Bold'),
+                ('BACKGROUND', (0, 0), (4, 0), colors.lightgrey),
+                ('ALIGN', (2, 0), (4, -1), 'CENTER'),
+                ('GRID', (0, 0), (4, -1), 0.5, colors.black),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
+            elements.append(apl_table)
+            elements.append(Paragraph(
+                f"Total APL/RPL credits: {total_apl}", styles['Normal']
+            ))
+            elements.append(Spacer(1, 20))
 
         # Add assessment grades if detailed format
         if assessment_grades:

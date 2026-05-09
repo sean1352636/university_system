@@ -59,6 +59,8 @@ class VisaComplianceGUI:
         ttk.Button(top, text="Load", command=self._load_student).pack(side=tk.LEFT)
         ttk.Button(top, text="Save / Update Visa Record",
                    command=self._save_visa_record).pack(side=tk.LEFT, padx=12)
+        ttk.Button(top, text="Issue Status Letter",
+                   command=self._open_status_letter).pack(side=tk.LEFT)
         ttk.Button(top, text="Close", command=self.window.destroy).pack(side=tk.RIGHT)
 
         nb = ttk.Notebook(self.window)
@@ -372,6 +374,30 @@ class VisaComplianceGUI:
             self._load_student()
         except Exception as exc:
             messagebox.showerror("Error", str(exc))
+
+    def _open_status_letter(self):
+        """Open the Status Letters GUI pre-filled for the loaded student.
+
+        Defaults to a UKVI / Student Route letter type, which is the
+        common reason a sponsor compliance officer drops in here."""
+        sid = self._sid()
+        if not sid:
+            messagebox.showwarning(
+                "Status Letter", "Load a student first."
+            )
+            return
+        try:
+            from education_system.university_system.modules.domain.student_affairs.student_app.documentation.gui.documentation_gui import DocumentationGUI
+            DocumentationGUI(
+                parent=self.window,
+                auth=self.auth,
+                prefill_student_id=sid,
+                prefill_letter_type="visa",
+                prefill_purpose="UKVI / Student Route status letter requested via Visa Sponsorship dashboard",
+            )
+        except Exception as exc:
+            logger.error("Failed to open Status Letters GUI: %s", exc)
+            messagebox.showerror("Error", f"Could not open Status Letters: {exc}")
 
     def _issue_cas(self):
         sid = self._sid()

@@ -79,6 +79,7 @@ class SecurityDashboard(tk.Toplevel):
 
         self._create_widgets()
         self._load_data()
+        self.after_idle(self._apply_eqa_context)
 
         # Center window
         self.update_idletasks()
@@ -781,6 +782,33 @@ class SecurityDashboard(tk.Toplevel):
             messagebox.showinfo("Export Complete", f"Report exported to {file_path}")
         except Exception as e:
             messagebox.showerror("Error", f"Export failed: {e}")
+
+    def _apply_eqa_context(self):
+        """#3 — Honour an EQA drill-through ("View audit log for this
+        submission"). Stores the filter on ``self.audit_prefilter`` for
+        downstream tab queries to read; emits a banner above the
+        notebook so the user sees the active filter."""
+        ctx = getattr(self, "eqa_context", None)
+        if not ctx:
+            return
+        try:
+            self.audit_prefilter = {
+                "action_prefix": ctx.get("audit_action_prefix"),
+                "resource_type": ctx.get("resource_type"),
+                "resource_id": ctx.get("resource_id"),
+            }
+            import tkinter as _tk
+            banner = _tk.Label(
+                self,
+                text=(f"Audit filter: {self.audit_prefilter['action_prefix']}* "
+                      f"on {self.audit_prefilter['resource_type']}:"
+                      f"{self.audit_prefilter['resource_id']}"),
+                bg="#fff7d6", fg="#5a4500",
+                font=("Helvetica", 9, "italic"), pady=3,
+            )
+            banner.pack(fill="x", side="top")
+        except Exception:
+            pass
 
     def _load_data(self):
         """Load all dashboard data"""

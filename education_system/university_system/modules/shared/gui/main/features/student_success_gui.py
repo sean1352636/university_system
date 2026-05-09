@@ -450,7 +450,7 @@ def show_qa_dashboard_gui(self):
     """Launch External Quality Assurance dashboard (OfS / TEF / REF)."""
     try:
         from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_dashboard_gui import QADashboardGUI
-        QADashboardGUI(parent=self.root)
+        QADashboardGUI(parent=self.root, app=self)
     except ImportError as e:
         logger.error(f"Failed to import QA Dashboard GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="External QA", error=str(e)))
@@ -661,6 +661,19 @@ def show_student_app_gui(self):
     except Exception as e:
         logger.error(f"Error launching Student App GUI: {e}")
         messagebox.showerror(_t("common.error"), f"Failed to launch Student App: {e}")
+
+
+def show_enrolment_letters_gui(self):
+    """Launch the self-serve Enrolment Verification / Status Letters GUI."""
+    try:
+        from education_system.university_system.modules.domain.student_affairs.student_app.documentation.gui.documentation_gui import DocumentationGUI
+        DocumentationGUI(parent=self.root, auth=self.auth)
+    except ImportError as e:
+        logger.error(f"Failed to import Status Letters GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Status Letters GUI not available: {e}")
+    except Exception as e:
+        logger.error(f"Error launching Status Letters GUI: {e}")
+        messagebox.showerror(_t("common.error"), f"Failed to launch Status Letters: {e}")
 
 
 def show_achievement_badge_gui(self):

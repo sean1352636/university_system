@@ -56,7 +56,7 @@ class StudentExamViewer(tk.Toplevel):
         tree_frame = ttk.Frame(main_frame)
         tree_frame.pack(fill=tk.BOTH, expand=True)
 
-        columns = ("module", "exam_name", "date", "time", "room", "duration")
+        columns = ("module", "exam_name", "date", "time", "room", "duration", "mc")
         self.tree = ttk.Treeview(
             tree_frame, columns=columns, show="headings", selectmode="browse"
         )
@@ -67,6 +67,7 @@ class StudentExamViewer(tk.Toplevel):
             ("time", "Time", 120),
             ("room", "Room", 120),
             ("duration", "Duration", 90),
+            ("mc", "MC", 100),
         ):
             self.tree.heading(col, text=text)
             self.tree.column(col, width=width, minwidth=60)
@@ -115,6 +116,19 @@ class StudentExamViewer(tk.Toplevel):
             if not module_codes:
                 return
 
+            # Build per-module MC outcome lookup (deferral / capped resit /
+            # uncapped resit) so each exam row can flag whether the student
+            # is sitting it under MC arrangements.
+            mc_by_module = {}
+            try:
+                from education_system.university_system.modules.domain.academics.mitigating_circumstances.integration import (
+                    deferred_assessments_for_student,
+                )
+                for entry in deferred_assessments_for_student(self._student_id):
+                    mc_by_module.setdefault(entry.get('module_code'), []).append(entry)
+            except Exception:
+                pass
+
             with get_connection() as conn:
                 placeholders = ",".join("?" for _ in module_codes)
                 cursor = conn.execute(
@@ -125,6 +139,16 @@ class StudentExamViewer(tk.Toplevel):
                 )
                 for row in cursor.fetchall():
                     code, name, date, start, end, room = row
+                    mc_label = ""
+                    entries = mc_by_module.get(code) or []
+                    if entries:
+                        outcomes = {e.get('outcome') for e in entries if e.get('outcome')}
+                        if 'deferral_granted' in outcomes:
+                            mc_label = "Deferred"
+                        elif 'uncapped_resit' in outcomes:
+                            mc_label = "Resit (uncapped)"
+                        elif 'capped_resit' in outcomes:
+                            mc_label = "Resit (capped)"
                     self.tree.insert("", tk.END, values=(
                         code,
                         name or "",
@@ -132,6 +156,7 @@ class StudentExamViewer(tk.Toplevel):
                         f"{start} - {end}",
                         room or "",
                         self._compute_duration(start, end),
+                        mc_label,
                     ))
         except Exception as exc:
             logger.warning("Failed to load student exams: %s", exc)

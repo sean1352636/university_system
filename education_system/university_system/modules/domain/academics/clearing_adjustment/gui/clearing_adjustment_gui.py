@@ -176,6 +176,7 @@ class ClearingAdjustmentGUI:
         ttk.Button(btn_frame, text="Offer", command=lambda: self._update_app_status("Offered")).pack(side=tk.LEFT, padx=2)
         ttk.Button(btn_frame, text="Reject", command=lambda: self._update_app_status("Rejected")).pack(side=tk.LEFT, padx=2)
         ttk.Button(btn_frame, text="Auto-Shortlist", command=self._auto_shortlist).pack(side=tk.LEFT, padx=2)
+        ttk.Button(btn_frame, text="Create APL claim", command=self._create_apl_from_app).pack(side=tk.LEFT, padx=2)
         ttk.Button(btn_frame, text="Refresh", command=self._refresh_applications).pack(side=tk.RIGHT, padx=2)
 
         self._refresh_applications()
@@ -188,11 +189,15 @@ class ClearingAdjustmentGUI:
         try:
             apps = self.service.get_applications()
             for a in apps:
-                self.apps_tree.insert("", tk.END, values=(
-                    a.get("name", ""), a.get("ucas_id", ""),
-                    a.get("tariff", 0), a.get("course", ""),
-                    a.get("status", ""),
-                ))
+                self.apps_tree.insert(
+                    "", tk.END,
+                    iid=str(a.get("id")) if a.get("id") is not None else None,
+                    values=(
+                        a.get("name", ""), a.get("ucas_id", ""),
+                        a.get("tariff", 0), a.get("course", ""),
+                        a.get("status", ""),
+                    ),
+                )
         except Exception as e:
             logger.error(f"Error loading applications: {e}")
 
@@ -254,6 +259,41 @@ class ClearingAdjustmentGUI:
             messagebox.showinfo("Success", f"{count} applicants shortlisted.", parent=self.root)
         except Exception as e:
             messagebox.showerror("Error", str(e), parent=self.root)
+
+    def _create_apl_from_app(self):
+        sel = self.apps_tree.selection()
+        if not sel:
+            messagebox.showwarning("Selection", "Select an application first.", parent=self.root)
+            return
+        try:
+            app_id = int(sel[0])
+        except ValueError:
+            messagebox.showerror(
+                "Error",
+                "Could not read application id from selection.",
+                parent=self.root,
+            )
+            return
+        try:
+            from education_system.university_system.modules.domain.academics.prior_learning_recognition.services.prior_learning_service import (
+                PriorLearningService,
+            )
+            apl = PriorLearningService()
+            cid = apl.create_claim_from_clearing(app_id)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to create APL claim: {e}", parent=self.root)
+            return
+        if not cid:
+            messagebox.showerror(
+                "Error", "Could not load the clearing application.", parent=self.root,
+            )
+            return
+        messagebox.showinfo(
+            "APL claim created",
+            f"Draft APL claim #{cid} created from clearing application #{app_id}.\n"
+            "Open Prior Learning (APL/RPL) from the navigation to review.",
+            parent=self.root,
+        )
 
     # ------------------------------------------------------------- Adjustment
     def _create_adjustment_tab(self, notebook):
