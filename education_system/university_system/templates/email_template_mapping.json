@@ -54,6 +54,8 @@
   "campus_event_announcement.json": "campus_events/campus_event_announcement.json",
   "charity_shop_basket_receipt.json": "commerce/charity_shop_basket_receipt.json",
   "charity_shop_single_item_receipt.json": "commerce/charity_shop_single_item_receipt.json",
+  "cas_issued.json": "communications/cas_issued.json",
+  "change_of_circumstance_recorded.json": "communications/change_of_circumstance_recorded.json",
   "chat_room_auto_joined.json": "communications/chat_room_auto_joined.json",
   "chat_room_banned.json": "communications/chat_room_banned.json",
   "chat_room_kicked.json": "communications/chat_room_kicked.json",
@@ -209,6 +211,7 @@
   "restaurant_loyalty_update.json": "commerce/restaurant_loyalty_update.json",
   "restaurant_order_confirmation.json": "commerce/restaurant_order_confirmation.json",
   "restaurant_reservation_confirmation.json": "commerce/restaurant_reservation_confirmation.json",
+  "right_to_study_check_required.json": "communications/right_to_study_check_required.json",
   "room_change_notice.json": "housing/room_change_notice.json",
   "room_change_notification.json": "housing/room_change_notification.json",
   "satisfaction_survey.json": "general/satisfaction_survey.json",
@@ -255,5 +258,6 @@
   "tutoring_recommended.json": "mentorship/tutoring_recommended.json",
   "upcoming_payment_reminder.json": "finance/upcoming_payment_reminder.json",
   "update_confirmation.json": "user_management/update_confirmation.json",
+  "visa_expiry_warning.json": "communications/visa_expiry_warning.json",
   "welcome_message.json": "user_management/welcome_message.json"
 }

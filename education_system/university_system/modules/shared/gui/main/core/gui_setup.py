@@ -600,6 +600,7 @@ def create_navigation_panel(self, parent):
         ('equality_diversity', 'Equality & Diversity', self.show_equality_diversity_gui),
         ('portfolio', _t('nav.buttons.portfolio'), self.show_portfolio_system_gui),
         ('advising_portal', _t('nav.buttons.advising_portal'), self.show_advising_portal_gui),
+        ('visa_compliance', 'Visa Sponsorship (Tier-4)', self.show_visa_compliance_gui),
     ]
 
     # ---------- Career & Alumni ----------

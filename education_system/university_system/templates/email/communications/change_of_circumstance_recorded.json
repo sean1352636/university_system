@@ -1,0 +1,18 @@
+{
+  "template_name": "change_of_circumstance_recorded",
+  "description": "Acknowledgement to an international student that a change of circumstance reportable to UKVI has been opened against their record. Sponsors must report most changes within 10 working days.",
+  "category": "communications",
+  "subject": "Change of circumstance recorded — $change_type",
+  "body": "Dear $first_name,\n\nWe have opened a Change of Circumstance record against your sponsorship file. Under our duties as a Student Route sponsor we may need to report this change to UKVI within 10 working days.\n\nDetails:\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nStudent ID:        $student_id\nChange type:       $change_type\nOccurred on:       $occurred_on\nUKVI report due:   $ukvi_report_due\nDetails:           $details\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nWhat happens next:\n• The International Office will review the record and, where required, submit the report to UKVI before the date above.\n• If the change was logged in error or the details are wrong, contact us immediately so we can correct the record.\n• A reportable change may affect your immigration status (for example, withdrawal or suspension typically results in your visa being curtailed). If you are unsure how this affects your right to remain in the UK, please book a 1:1 with the International Office.\n\nKind regards,\nUniversity International Office\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nThis is an automated notification. Please do not reply to this email.",
+  "variables": [
+    "first_name",
+    "student_id",
+    "change_type",
+    "occurred_on",
+    "details",
+    "ukvi_report_due"
+  ],
+  "recipients": ["student"],
+  "priority": "high",
+  "active": true
+}

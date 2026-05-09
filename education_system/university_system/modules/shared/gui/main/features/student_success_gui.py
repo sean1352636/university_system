@@ -432,6 +432,19 @@ def show_student_id_gui(self):
         logger.error(f"Error launching Student ID GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Student ID", error=str(e)))
 
+
+def show_visa_compliance_gui(self):
+    """Launch Tier-4 / Student-Route Sponsorship GUI."""
+    try:
+        from education_system.university_system.modules.domain.student_affairs.international_compliance.gui.visa_compliance_gui import VisaComplianceGUI
+        VisaComplianceGUI(parent=self.root)
+    except ImportError as e:
+        logger.error(f"Failed to import Visa Compliance GUI: {e}")
+        messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="Visa Compliance", error=str(e)))
+    except Exception as e:
+        logger.error(f"Error launching Visa Compliance GUI: {e}")
+        messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Visa Compliance", error=str(e)))
+
 def show_study_room_booking_gui(self):
     """Launch Study Room Booking GUI.
 

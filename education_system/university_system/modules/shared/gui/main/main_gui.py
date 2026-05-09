@@ -485,6 +485,7 @@ from education_system.university_system.modules.shared.gui.main.features.student
     show_feedback_system_gui,
     show_advising_portal_gui,
     show_student_id_gui,
+    show_visa_compliance_gui,
     show_study_room_booking_gui,
     show_printing_services_gui,
 )
@@ -787,6 +788,7 @@ UnifiedManagementGUI.show_notifications_hub_gui = show_notifications_hub_gui
 UnifiedManagementGUI.show_feedback_system_gui = show_feedback_system_gui
 UnifiedManagementGUI.show_advising_portal_gui = show_advising_portal_gui
 UnifiedManagementGUI.show_student_id_gui = show_student_id_gui
+UnifiedManagementGUI.show_visa_compliance_gui = show_visa_compliance_gui
 UnifiedManagementGUI.show_study_room_booking_gui = show_study_room_booking_gui
 UnifiedManagementGUI.show_printing_services_gui = show_printing_services_gui
 

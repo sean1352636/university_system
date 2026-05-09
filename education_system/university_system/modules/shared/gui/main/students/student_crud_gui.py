@@ -40,6 +40,41 @@ except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
 
 
+def _create_visa_record_for_new_student(student_id, email_address, first_name,
+                                         nationality, passport_number,
+                                         visa_expiry_date, brp_number, module_codes):
+    """Create the initial Tier-4 visa record for a newly enrolled international
+    student, flag ATAS modules, and email a right-to-study check reminder.
+
+    All best-effort: a problem here must never block student creation. The
+    record starts in ``status='pending'`` because we don't yet have the
+    in-person right-to-study check on file."""
+    from education_system.university_system.modules.domain.student_affairs.international_compliance.services import (
+        visa_service as vs,
+    )
+
+    atas_codes = [c for c in (module_codes or []) if vs.is_atas_required_for_module(c)]
+    rec = vs.VisaRecord(
+        student_id=student_id,
+        nationality=nationality,
+        passport_number=passport_number,
+        visa_expiry_date=visa_expiry_date,
+        brp_number=brp_number,
+        atas_required=bool(atas_codes),
+        status="pending",
+    )
+    vs.upsert_visa_record(rec)
+    for code in atas_codes:
+        vs.record_atas_clearance(
+            student_id=student_id, module_code=code,
+            certificate_number=None, issued_on=None, expires_on=None,
+            status="pending",
+            notes=f"Auto-flagged at enrolment for {code} (ATAS-restricted prefix)",
+        )
+    if email_address:
+        vs.notify_right_to_study_required(student_id, email_address, first_name=first_name or "")
+
+
 def _ensure_shared_auth_user(username, password, display_name, email):
     """Create the user in the central shared auth.db if not already present.
 
@@ -477,15 +512,42 @@ def create_student_dialog(self):
                             foreground="blue")
     course_label.grid(row=0, column=1, pady=5, padx=(10, 0), sticky=tk.W)
 
+    # International / visa-sponsorship section
+    intl_frame = ttk.LabelFrame(scrollable_frame,
+                                text="International student (Tier-4 / Student Route)",
+                                padding=15)
+    intl_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+
+    fields['is_international'] = tk.BooleanVar(value=False)
+    ttk.Checkbutton(intl_frame, text="This student is on a Student Route visa",
+                    variable=fields['is_international']).grid(
+        row=0, column=0, columnspan=4, sticky=tk.W, pady=(0, 6))
+
+    ttk.Label(intl_frame, text="Nationality").grid(row=1, column=0, sticky=tk.W, pady=3)
+    fields['nationality'] = ttk.Entry(intl_frame, width=22)
+    fields['nationality'].grid(row=1, column=1, padx=(8, 16))
+
+    ttk.Label(intl_frame, text="Passport #").grid(row=1, column=2, sticky=tk.W)
+    fields['passport_number'] = ttk.Entry(intl_frame, width=22)
+    fields['passport_number'].grid(row=1, column=3, padx=8)
+
+    ttk.Label(intl_frame, text="Visa expiry (YYYY-MM-DD)").grid(row=2, column=0, sticky=tk.W, pady=3)
+    fields['visa_expiry_date'] = ttk.Entry(intl_frame, width=22)
+    fields['visa_expiry_date'].grid(row=2, column=1, padx=(8, 16))
+
+    ttk.Label(intl_frame, text="BRP #").grid(row=2, column=2, sticky=tk.W)
+    fields['brp_number'] = ttk.Entry(intl_frame, width=22)
+    fields['brp_number'].grid(row=2, column=3, padx=8)
+
     # Status information
     status_label = ttk.Label(scrollable_frame,
                             text=_t("student.auto_generated_note"),
                             foreground="blue")
-    status_label.grid(row=3, column=0, columnspan=2, pady=10)
+    status_label.grid(row=4, column=0, columnspan=2, pady=10)
 
     # Validation feedback
     validation_label = ttk.Label(scrollable_frame, text="", foreground="red")
-    validation_label.grid(row=4, column=0, columnspan=2, pady=5)
+    validation_label.grid(row=5, column=0, columnspan=2, pady=5)
 
     def validate_form():
         """Validate form inputs"""
@@ -698,6 +760,24 @@ def create_student_dialog(self):
                 )
             except Exception as e:
                 logging.warning(f"Shared-auth account creation failed for {student_id}: {e}")
+
+            # If the admin flagged this student as international, create the
+            # visa-sponsorship record and queue the right-to-study reminder.
+            # Best-effort; a failure must not block enrolment.
+            try:
+                if fields.get('is_international') and fields['is_international'].get():
+                    _create_visa_record_for_new_student(
+                        student_id=student_id,
+                        email_address=email_address,
+                        first_name=first_name,
+                        nationality=fields['nationality'].get().strip() or None,
+                        passport_number=fields['passport_number'].get().strip() or None,
+                        visa_expiry_date=fields['visa_expiry_date'].get().strip() or None,
+                        brp_number=fields['brp_number'].get().strip() or None,
+                        module_codes=selected_modules,
+                    )
+            except Exception as e:
+                logging.warning(f"Visa record setup failed for {student_id}: {e}")
 
             # Auto-join the new student to the chat room of every module they
             # were enrolled on, then email them the list. Best-effort: a

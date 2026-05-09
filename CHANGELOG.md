@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.130 — 2026-05-09](#8117130---2026-05-09)
 - [8.117.129 — 2026-05-09](#8117129---2026-05-09)
 - [8.117.128 — 2026-05-08](#8117128---2026-05-08)
 - [8.117.127 — 2026-05-08](#8117127---2026-05-08)
@@ -358,6 +359,69 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.130] — 2026-05-09
+
+### Added — Tier-4 / Student Route sponsor-compliance module
+
+Closes the largest of the eight regulatory gaps surfaced in the
+university-system audit. UK universities sponsoring Student-Route visas
+must track CAS issuance, run termly engagement checks, evidence
+right-to-study, gate ATAS-restricted modules, and report changes of
+circumstance to UKVI within 10 working days. None of that existed.
+
+- **New domain module** at
+  `modules/domain/student_affairs/international_compliance/` with a
+  single consolidated `services/visa_service.py` covering six entities:
+  `VisaRecord` (passport / visa / BRP profile, one row per student),
+  `CASRecord` (Confirmation of Acceptance for Studies — auto-generates
+  a placeholder reference), `EngagementCheck` (termly sponsor-duty log),
+  `ChangeOfCircumstance` (UKVI 10-day clock applied automatically on
+  insert), `RightToStudyCheck` (in-person / IDVT verification log) and
+  `ATASClearance` (Academic Technology Approval Scheme certificate
+  per restricted module). All CRUD is idempotent; `init_db()` mirrors
+  the alembic migration so the module works on a fresh DB.
+- **Tabbed admin GUI** at
+  `…/international_compliance/gui/visa_compliance_gui.py` — four tabs:
+  Visa Record (load/edit per-student profile, log right-to-study, issue
+  CAS), Engagement (log termly check + history), Changes (raise CoC,
+  list pending UKVI reports with overdue rows highlighted, mark as
+  reported with UKVI reference), and Expiry alerts (system-wide list of
+  visas/BRPs expiring within an admin-set threshold, plus a one-click
+  "send alert emails now" button driving `run_visa_expiry_alerts()`).
+- **Wired into the admin menu.** New `show_visa_compliance_gui` launcher
+  in `student_success_gui.py`, registered on `UnifiedManagementGUI` and
+  added to the Student Success button group as
+  *"Visa Sponsorship (Tier-4)"*.
+- **Student-create integration.** `create_student_dialog` now has an
+  *International student (Tier-4 / Student Route)* section with a
+  tickbox plus minimal fields (nationality, passport #, visa expiry,
+  BRP #). When ticked, `create_student()` calls a new
+  `_create_visa_record_for_new_student()` helper that creates the
+  `VisaRecord` in `status='pending'`, auto-flags any ATAS-restricted
+  modules the student was enrolled on (`CIS200x` / `CIS300x` prefixes),
+  and emails the right-to-study reminder. Best-effort — visa setup
+  failures never block enrolment.
+- **Four new email templates.** `cas_issued`, `visa_expiry_warning`,
+  `change_of_circumstance_recorded`, and `right_to_study_check_required`,
+  with matching entries in `email_template_mapping.json`. All four are
+  written for student-facing use and explain the UKVI duty driving the
+  message.
+- **Alembic migration `b7f2c1d83e44_visa_sponsorship_tables`** creates
+  the six tables with FKs to `students` plus indexes on
+  `visa_records.status` / `visa_expiry_date`, `cas_records.student_id`
+  / `status`, engagement and CoC by student/outcome/status, and ATAS by
+  student/status.
+
+### Known follow-ups
+
+- Visa-expiry alerts are admin-triggered for now; wiring them into the
+  existing maintenance scheduler so 90/60/30/14/7-day reminders fire
+  automatically is left for a later change.
+- The ATAS prefix list (`CIS200x`, `CIS300x`) is a starter heuristic
+  — admins can override the per-student `atas_required` flag from the
+  GUI. Pulling the canonical list from gov.uk is also a follow-up.
+
 
 ## [8.117.129] — 2026-05-09
 
