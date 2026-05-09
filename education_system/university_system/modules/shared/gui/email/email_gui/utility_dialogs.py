@@ -39,11 +39,15 @@ try:
         get_system_health_info,
         clear_stored_emails,
         optimize_database,
+        execute_db_operation,
     )
 except ImportError:
     get_system_health_info = None
     clear_stored_emails = None
     optimize_database = None
+    def execute_db_operation(func):
+        logger.warning("execute_db_operation unavailable")
+        return []
 
 # Import config
 try:

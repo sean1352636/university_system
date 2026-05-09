@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.129 — 2026-05-09](#8117129---2026-05-09)
 - [8.117.128 — 2026-05-08](#8117128---2026-05-08)
 - [8.117.127 — 2026-05-08](#8117127---2026-05-08)
 - [8.117.126 — 2026-05-08](#8117126---2026-05-08)
@@ -357,6 +358,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.129] — 2026-05-09
+
+### Added — module chat rooms wired into the student lifecycle
+
+The 14 default modules now each get a dedicated chat room, students get
+auto-joined when they enrol, and the room membership follows them through
+re-assignment and deletion. Forgot-password / login also stop quietly
+failing for students whose accounts only existed in `student_records.db`.
+
+- **Seeded 14 module chat rooms.** New alembic migration
+  `a4c91b7d2e10_seed_module_chat_rooms` creates one `course`-type room per
+  default module (`name = module_code`, `description = module_name`,
+  owned by the `admin` user). Idempotent — skips rooms that already exist
+  by name.
+- **Auto-join on student create.** `student_crud_gui.create_student`
+  now calls a new `_auto_join_module_chat_rooms()` helper after the user
+  account is created. It looks up `users.id` from the new student's
+  `username = student_id`, inserts membership rows for each enrolled
+  module's chat room, and emails the student via the new
+  `chat_room_auto_joined` template (vars: `first_name`, `last_name`,
+  `student_id`, `module_count`, `rooms_list`). Failures are best-effort
+  and never block enrolment.
+- **Membership follows module changes.** `reassign_modules` snapshots
+  the student's existing `student_modules` rows of the swapped type
+  before the DELETE, then calls `_sync_module_chat_rooms()` to drop the
+  student from old rooms, add them to the new ones (idempotent — skips
+  if already a member), and email them via the new
+  `chat_room_membership_changed` template. Computes a net diff so a
+  module that ends up in both old and new sets isn't churned.
+- **Full chat purge on student delete.** `perform_deletion` runs a new
+  `_purge_user_from_all_chat_rooms()` helper before
+  `self.auth.delete_user()`. It deletes every `chat_messages.sender_id`
+  match, every `chat_room_members.user_id` row, and every
+  `chat_room_invitations` row where the user is the recipient or the
+  inviter. Logged in the admin's deletion summary.
+- **Student accounts now mirrored into shared `auth.db`.** The legacy
+  `self.auth.create_user()` only writes to `student_records.db`'s
+  `users` / `user_accounts` tables, but login, forgot-password and MFA
+  all read from the central `shared/data/db_files/auth.db` — so newly
+  created students could be looked up by the admin GUI but couldn't log
+  in or reset their password. New `_ensure_shared_auth_user()` helper
+  calls `shared.auth.core.UserAuth.create_user()` after the legacy
+  create, with `systems=[("university","student")]`. Idempotent: a
+  duplicate username is treated as success.
+- **Hardened temp password.** Bumped from
+  `f"{first_name.lower()}123456"` (10 chars, no upper/special) to
+  `f"{first_name.capitalize()}{student_id}!"` (e.g. `Adam3910390!`).
+  The old form failed the shared-auth strength policy (≥12 chars,
+  upper + lower + digit + special); the new form satisfies both legacy
+  and shared validators while remaining readable at the enrolment desk.
+- **Backfill for `3910390`.** Inserted directly into `auth.db` (id=68)
+  with the new temp-password format so the affected student can log in
+  immediately. Verified `UserAuth.login('3910390', 'Adam3910390!')`
+  succeeds. All other students/admins were already present in `auth.db`.
+- **New email templates.** `templates/email/communications/chat_room_auto_joined.json`
+  and `chat_room_membership_changed.json`, plus matching entries in
+  `email_template_mapping.json`.
+- **`utility_dialogs.py` import fix.** `perform_search` referenced
+  `execute_db_operation` without importing it, blowing up with a
+  `NameError` on the email-utilities search dialog. Added it to the
+  `email_manager_main` import block (with a stub fallback for the
+  `ImportError` path).
+
 
 ## [8.117.128] — 2026-05-08
 

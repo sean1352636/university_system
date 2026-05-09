@@ -38,7 +38,264 @@ try:
     ACTIVITY_LOGGER_AVAILABLE = True
 except ImportError:
     ACTIVITY_LOGGER_AVAILABLE = False
-    log_activity = None
+
+
+def _ensure_shared_auth_user(username, password, display_name, email):
+    """Create the user in the central shared auth.db if not already present.
+
+    Login, forgot-password and MFA all read from auth.db, so a student that
+    only exists in student_records.db cannot log in. Idempotent: a duplicate
+    username comes back as a benign "already exists" and is treated as
+    success."""
+    from education_system.shared.auth.core import UserAuth as SharedUserAuth
+    from education_system.shared.auth.exceptions import AuthError as SharedAuthError
+
+    shared_auth = SharedUserAuth()
+    try:
+        return shared_auth.create_user(
+            username=username,
+            password=password,
+            display_name=display_name,
+            email=email,
+            systems=[("university", "student")],
+        )
+    except SharedAuthError as e:
+        # Existing username — that's fine, the row is there.
+        if "already exists" in str(e).lower():
+            return None
+        raise
+
+
+def _auto_join_module_chat_rooms(student_id, email_address, first_name, last_name, module_codes):
+    """Add the new student's user account to one chat room per enrolled module
+    and email them the resulting list. Best-effort; never raises to caller."""
+    if not module_codes:
+        return
+
+    conn = get_db_connection()
+    if not conn:
+        logger.warning("auto-join: no DB connection")
+        return
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE username = ?", (student_id,))
+        row = cursor.fetchone()
+        if not row:
+            logger.warning(f"auto-join: no user row for student {student_id}")
+            return
+        user_id = row[0]
+
+        joined = []  # list of (module_code, module_name)
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        for code in module_codes:
+            cursor.execute(
+                "SELECT id, description FROM chat_rooms WHERE name = ? AND is_active = 1",
+                (code,),
+            )
+            r = cursor.fetchone()
+            if not r:
+                logger.info(f"auto-join: no chat room for module {code}")
+                continue
+            room_id, room_desc = r[0], r[1]
+            # Prefer the chat-room description (seeded as module_name); fall
+            # back to the modules table, then to the code itself.
+            module_name = room_desc
+            if not module_name:
+                cursor.execute("SELECT module_name FROM modules WHERE module_code = ?", (code,))
+                mr = cursor.fetchone()
+                module_name = (mr[0] if mr and mr[0] else code)
+            cursor.execute(
+                "SELECT 1 FROM chat_room_members WHERE room_id = ? AND user_id = ?",
+                (room_id, user_id),
+            )
+            if cursor.fetchone():
+                joined.append((code, module_name))
+                continue
+            cursor.execute(
+                "INSERT INTO chat_room_members (room_id, user_id, joined_at, is_admin) "
+                "VALUES (?, ?, ?, 0)",
+                (room_id, user_id, now),
+            )
+            joined.append((code, module_name))
+        conn.commit()
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    if not joined or not email_address:
+        return
+
+    rooms_list = "\n".join(f"  • {code} — {name}" for code, name in joined)
+    try:
+        from education_system.university_system.infrastructure.email.email_service import send_template_email
+        send_template_email(
+            "chat_room_auto_joined",
+            email_address,
+            {
+                "first_name": first_name or "",
+                "last_name": last_name or "",
+                "student_id": student_id,
+                "module_count": str(len(joined)),
+                "rooms_list": rooms_list,
+            },
+        )
+    except Exception as e:
+        logger.warning(f"auto-join: failed to send chat-room email to {email_address}: {e}")
+
+
+def _resolve_module_name(cursor, code, fallback_desc=None):
+    """Return a human-readable module name for a code, with fallbacks."""
+    if fallback_desc:
+        return fallback_desc
+    cursor.execute("SELECT module_name FROM modules WHERE module_code = ?", (code,))
+    row = cursor.fetchone()
+    return (row[0] if row and row[0] else code)
+
+
+def _sync_module_chat_rooms(student_id, removed_codes, added_codes):
+    """Drop the student from chat rooms for ``removed_codes`` and add them
+    to chat rooms for ``added_codes``. Emails the student a summary of the
+    change. Best-effort; never raises."""
+    if not removed_codes and not added_codes:
+        return
+
+    conn = get_db_connection()
+    if not conn:
+        logger.warning("chat-sync: no DB connection")
+        return
+
+    removed_pairs, added_pairs = [], []
+    student_email = first_name = last_name = None
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT email_address, first_name, last_name FROM students WHERE student_id = ?",
+            (student_id,),
+        )
+        srow = cursor.fetchone()
+        if srow:
+            student_email, first_name, last_name = srow[0], srow[1], srow[2]
+
+        cursor.execute("SELECT id FROM users WHERE username = ?", (student_id,))
+        urow = cursor.fetchone()
+        if not urow:
+            logger.warning(f"chat-sync: no user row for student {student_id}")
+            return
+        user_id = urow[0]
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        for code in removed_codes or []:
+            cursor.execute(
+                "SELECT id, description FROM chat_rooms WHERE name = ? AND is_active = 1",
+                (code,),
+            )
+            r = cursor.fetchone()
+            if not r:
+                continue
+            room_id, room_desc = r[0], r[1]
+            cursor.execute(
+                "DELETE FROM chat_room_members WHERE room_id = ? AND user_id = ?",
+                (room_id, user_id),
+            )
+            if cursor.rowcount > 0:
+                removed_pairs.append((code, _resolve_module_name(cursor, code, room_desc)))
+
+        for code in added_codes or []:
+            cursor.execute(
+                "SELECT id, description FROM chat_rooms WHERE name = ? AND is_active = 1",
+                (code,),
+            )
+            r = cursor.fetchone()
+            if not r:
+                continue
+            room_id, room_desc = r[0], r[1]
+            cursor.execute(
+                "SELECT 1 FROM chat_room_members WHERE room_id = ? AND user_id = ?",
+                (room_id, user_id),
+            )
+            already = cursor.fetchone() is not None
+            if not already:
+                cursor.execute(
+                    "INSERT INTO chat_room_members (room_id, user_id, joined_at, is_admin) "
+                    "VALUES (?, ?, ?, 0)",
+                    (room_id, user_id, now),
+                )
+            added_pairs.append((code, _resolve_module_name(cursor, code, room_desc)))
+        conn.commit()
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    if not student_email or (not removed_pairs and not added_pairs):
+        return
+
+    def _fmt(pairs):
+        return "\n".join(f"  • {c} — {n}" for c, n in pairs) if pairs else "  (none)"
+
+    try:
+        from education_system.university_system.infrastructure.email.email_service import send_template_email
+        send_template_email(
+            "chat_room_membership_changed",
+            student_email,
+            {
+                "first_name": first_name or "",
+                "last_name": last_name or "",
+                "student_id": student_id,
+                "added_count": str(len(added_pairs)),
+                "added_list": _fmt(added_pairs),
+                "removed_count": str(len(removed_pairs)),
+                "removed_list": _fmt(removed_pairs),
+            },
+        )
+    except Exception as e:
+        logger.warning(f"chat-sync: failed to send membership-change email to {student_email}: {e}")
+
+
+def _purge_user_from_all_chat_rooms(user_id):
+    """Remove the user from every chat room and delete every message they
+    have sent. Used during student deletion. Best-effort; never raises."""
+    if not user_id:
+        return
+    conn = get_db_connection()
+    if not conn:
+        logger.warning("chat-purge: no DB connection")
+        return
+    try:
+        cursor = conn.cursor()
+        # Order matters only loosely (no FK from messages to members).
+        cursor.execute("DELETE FROM chat_messages WHERE sender_id = ?", (user_id,))
+        msgs = cursor.rowcount
+        cursor.execute("DELETE FROM chat_room_members WHERE user_id = ?", (user_id,))
+        members = cursor.rowcount
+        # Invitations for or by this user, if the table exists.
+        try:
+            cursor.execute(
+                "DELETE FROM chat_room_invitations WHERE user_id = ? OR invited_by = ?",
+                (user_id, user_id),
+            )
+        except sqlite3.OperationalError:
+            pass  # table might not exist on minimal installs
+        conn.commit()
+        logger.info(
+            f"chat-purge: user_id={user_id} → removed {members} memberships, "
+            f"deleted {msgs} messages"
+        )
+    except Exception as e:
+        logger.warning(f"chat-purge: failed for user_id={user_id}: {e}")
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
 
 # Helper functions for safely setting widget values
 def _safe_set_combobox(combobox, value):
@@ -409,8 +666,12 @@ def create_student_dialog(self):
             except Exception as e:
                 logging.warning(f"Failed to send registration confirmation email: {e}")
 
-            # Create user account
-            temp_password = f"{first_name.lower()}123456"
+            # Create user account.
+            # Format chosen so it satisfies the shared-auth strength policy
+            # (≥12 chars, upper + lower + digit + special) AND is still
+            # easy to read aloud at enrolment desk: "<First><StudentID>!"
+            # e.g. "Adam3910390!".
+            temp_password = f"{first_name.capitalize()}{student_id}!"
             try:
                 self.auth.create_user(
                     username=student_id,
@@ -423,6 +684,34 @@ def create_student_dialog(self):
                 )
             except Exception as e:
                 logging.warning(f"User account creation failed: {e}")
+
+            # Mirror the account into the shared auth.db so login,
+            # forgot-password, MFA and other shared-auth features can find
+            # the student. The legacy create_user above only writes to
+            # student_records.db's users/user_accounts tables.
+            try:
+                _ensure_shared_auth_user(
+                    username=student_id,
+                    password=temp_password,
+                    display_name=f"{first_name} {last_name}".strip(),
+                    email=email_address,
+                )
+            except Exception as e:
+                logging.warning(f"Shared-auth account creation failed for {student_id}: {e}")
+
+            # Auto-join the new student to the chat room of every module they
+            # were enrolled on, then email them the list. Best-effort: a
+            # failure here must not block the student create flow.
+            try:
+                _auto_join_module_chat_rooms(
+                    student_id=student_id,
+                    email_address=email_address,
+                    first_name=first_name,
+                    last_name=last_name,
+                    module_codes=selected_modules,
+                )
+            except Exception as e:
+                logging.warning(f"Auto-join of module chat rooms failed for {student_id}: {e}")
 
             # Success message with details
             modules_text = ""
@@ -1369,6 +1658,16 @@ Registration Date: {student[10]}"""
                 conn.close()
                 conn = None
 
+                # Purge chat-room memberships and any messages this user
+                # sent, BEFORE the user row goes away. Done on a fresh
+                # connection to keep this independent of the main delete tx.
+                if user_id is not None:
+                    try:
+                        _purge_user_from_all_chat_rooms(user_id)
+                        deletion_log.append("Removed user from all chat rooms (and deleted their messages)")
+                    except Exception as e:
+                        deletion_log.append(f"Warning: chat-room purge failed: {e}")
+
                 # Delete user account AFTER closing the connection to avoid DB lock
                 if user_id is not None:
                     if self.auth:
@@ -2045,6 +2344,16 @@ def reassign_modules(self, student_id, module_type, cursor=None):
         db_type_map = {'optional': 'optional', 'CS': 'CS_optional', 'DS': 'DS_optional'}
         db_module_type = db_type_map.get(module_type, module_type)
 
+        # Snapshot the modules being removed so we can drop the student
+        # from the corresponding chat rooms after the swap.
+        cursor.execute('''
+            SELECT module_code FROM student_modules
+            WHERE student_id = ? AND module_code IN (
+                SELECT module_code FROM modules WHERE module_type = ?
+            )
+        ''', (student_id, db_module_type))
+        removed_codes = [row[0] for row in cursor.fetchall()]
+
         # Delete existing modules of this type
         cursor.execute('''
             DELETE FROM student_modules
@@ -2075,6 +2384,16 @@ def reassign_modules(self, student_id, module_type, cursor=None):
         if should_close_conn:
             conn.commit()
             conn.close()
+
+        # Sync chat-room memberships and notify the student. Net of what
+        # actually changed: skip codes present in both old and new sets.
+        added_codes = [m['code'] for m in selected_modules]
+        removed_set = set(removed_codes) - set(added_codes)
+        added_set = set(added_codes) - set(removed_codes)
+        try:
+            _sync_module_chat_rooms(student_id, list(removed_set), list(added_set))
+        except Exception as e:
+            logger.warning(f"reassign_modules: chat-room sync failed for {student_id}: {e}")
 
         messagebox.showinfo(_t("common.success"), _t("student.reassign_modules_success", module_type=module_type))
 
