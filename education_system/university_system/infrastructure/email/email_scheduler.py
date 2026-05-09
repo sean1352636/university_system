@@ -204,6 +204,21 @@ def send_daily_satisfaction_surveys():
         log_event('error', f'Email Scheduler: Satisfaction survey batch failed: {e}')
 
 
+def check_visa_expiry_alerts():
+    """Send sponsor-duty visa-expiry warnings for any international student
+    whose visa or BRP is now inside a configured alert bucket
+    (90 / 60 / 30 / 14 / 7 days). Deduped per (student, threshold) by
+    ``visa_expiry_alert_log`` so re-running this every day is safe."""
+    try:
+        from education_system.university_system.modules.domain.student_affairs.international_compliance.services import visa_service as _vs
+        sent = _vs.run_scheduled_visa_expiry_alerts()
+        logger.info(f"Visa-expiry alerts: sent {sent} email(s)")
+        log_event('info', f'Email Scheduler: Sent {sent} visa-expiry alert(s)')
+    except Exception as e:
+        logger.error(f"Error running visa-expiry alerts: {e}")
+        log_event('error', f'Email Scheduler: Visa-expiry alert run failed: {e}')
+
+
 def setup_schedules():
     """Configure all scheduled tasks"""
 
@@ -211,6 +226,7 @@ def setup_schedules():
     schedule.every().day.at("09:00").do(send_daily_satisfaction_surveys)
     schedule.every().day.at("08:00").do(check_book_return_reminders)
     schedule.every().day.at("10:00").do(check_overdue_books)
+    schedule.every().day.at("07:00").do(check_visa_expiry_alerts)
 
     # Periodic tasks
     schedule.every(30).minutes.do(check_sla_breaches)
@@ -219,6 +235,7 @@ def setup_schedules():
     logger.info("  - Satisfaction surveys: Daily at 09:00")
     logger.info("  - Book return reminders: Daily at 08:00")
     logger.info("  - Overdue book notices: Daily at 10:00")
+    logger.info("  - Visa-expiry alerts: Daily at 07:00")
     logger.info("  - SLA breach alerts: Every 30 minutes")
 
 

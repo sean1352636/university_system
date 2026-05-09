@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.131 — 2026-05-09](#8117131---2026-05-09)
 - [8.117.130 — 2026-05-09](#8117130---2026-05-09)
 - [8.117.129 — 2026-05-09](#8117129---2026-05-09)
 - [8.117.128 — 2026-05-08](#8117128---2026-05-08)
@@ -359,6 +360,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.131] — 2026-05-09
+
+### Added — visa-expiry alerts wired into the email scheduler
+
+The Tier-4 sponsor-compliance module shipped in 8.117.130 had only an
+admin-triggered "send alerts now" button. This change auto-fires the
+alerts daily at 07:00 with per-(student, threshold) deduplication so
+re-running the job every morning is safe.
+
+- **New service entry point** `run_scheduled_visa_expiry_alerts()` in
+  `visa_service.py`. Buckets each expiring visa by the smallest matching
+  threshold in `VISA_EXPIRY_ALERT_THRESHOLDS` (90 / 60 / 30 / 14 / 7
+  days, computed off the soonest of visa/BRP expiry), looks the
+  combination up in the new dedup log, and only sends if it hasn't been
+  sent before. Returns the number of emails sent on this run.
+- **Dedup log table** `visa_expiry_alert_log(student_id, threshold_days,
+  sent_at)` with a composite PK so a re-run can never double-send the
+  same bucket. Created in alembic migration `c5d83e1f97a2` and mirrored
+  into `init_db()`.
+- **Hooked into the existing daily scheduler.** New
+  `check_visa_expiry_alerts()` task in
+  `infrastructure/email/email_scheduler.py`, registered as
+  `schedule.every().day.at("07:00")`. Picked 07:00 deliberately — runs
+  before the 08:00 / 09:00 / 10:00 student-facing batches, so a critical
+  visa-expiry email lands first in the recipient's inbox.
+- The admin "send alerts now" button (`run_visa_expiry_alerts()`) is
+  unchanged and remains useful for ad-hoc threshold-tuning runs; it
+  does **not** consult the dedup log so an admin can deliberately
+  re-send.
+
 
 ## [8.117.130] — 2026-05-09
 

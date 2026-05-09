@@ -151,6 +151,12 @@ _DDL = [
     )""",
     "CREATE INDEX IF NOT EXISTS idx_atas_student_id ON atas_clearances(student_id)",
     "CREATE INDEX IF NOT EXISTS idx_atas_status ON atas_clearances(status)",
+    """CREATE TABLE IF NOT EXISTS visa_expiry_alert_log (
+        student_id      TEXT    NOT NULL,
+        threshold_days  INTEGER NOT NULL,
+        sent_at         TEXT    NOT NULL DEFAULT (datetime('now')),
+        PRIMARY KEY (student_id, threshold_days)
+    )""",
 ]
 
 
@@ -731,6 +737,79 @@ def _student_email_lookup(student_ids: list[str]) -> dict[str, tuple[str, str]]:
     return out
 
 
+def _bucket_for_days_left(days_left: int) -> Optional[int]:
+    """Map ``days_left`` to the smallest matching alert threshold.
+
+    e.g. 95 → None (no alert yet), 89 → 90, 31 → 60, 14 → 14.
+    Thresholds are descending, smallest match wins."""
+    for t in sorted(VISA_EXPIRY_ALERT_THRESHOLDS):
+        if days_left <= t:
+            return t
+    return None
+
+
+def _alert_already_sent(student_id: str, threshold: int) -> bool:
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM visa_expiry_alert_log "
+            "WHERE student_id = ? AND threshold_days = ?",
+            (student_id, threshold),
+        ).fetchone()
+        return row is not None
+
+
+def _mark_alert_sent(student_id: str, threshold: int) -> None:
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT OR IGNORE INTO visa_expiry_alert_log (student_id, threshold_days) "
+            "VALUES (?, ?)",
+            (student_id, threshold),
+        )
+
+
+def run_scheduled_visa_expiry_alerts() -> int:
+    """Daily scheduler entry point.
+
+    For every active visa expiring within the largest configured threshold,
+    sends one email per (student, threshold) bucket and never re-sends the
+    same combination. Designed to be called once per day from the email
+    scheduler. Returns the number of emails sent on this run."""
+    init_db()
+    largest = max(VISA_EXPIRY_ALERT_THRESHOLDS)
+    candidates = list_expiring_visas(within_days=largest)
+    if not candidates:
+        return 0
+
+    contacts = _student_email_lookup([v["student_id"] for v in candidates])
+    today = date.today()
+    sent = 0
+    for v in candidates:
+        sid = v["student_id"]
+        email, first = contacts.get(sid, ("", ""))
+        if not email:
+            continue
+        # Pick the soonest of visa / BRP expiry
+        soonest = min(
+            (d for d in (_parse_date(v.get("visa_expiry_date")),
+                          _parse_date(v.get("brp_expiry_date"))) if d),
+            default=None,
+        )
+        if not soonest:
+            continue
+        days_left = (soonest - today).days
+        if days_left < 0:
+            continue  # already expired — handled by curtailment workflow
+        bucket = _bucket_for_days_left(days_left)
+        if bucket is None:
+            continue
+        if _alert_already_sent(sid, bucket):
+            continue
+        if notify_visa_expiry(sid, email, v, days_left, first_name=first):
+            _mark_alert_sent(sid, bucket)
+            sent += 1
+    return sent
+
+
 def run_visa_expiry_alerts(threshold_days: int = 90) -> int:
     """Send visa-expiry warning emails for visas expiring inside ``threshold_days``.
 
@@ -772,5 +851,5 @@ __all__ = [
     "atas_required_for_student_modules",
     "notify_cas_issued", "notify_visa_expiry",
     "notify_change_of_circumstance", "notify_right_to_study_required",
-    "run_visa_expiry_alerts",
+    "run_visa_expiry_alerts", "run_scheduled_visa_expiry_alerts",
 ]
