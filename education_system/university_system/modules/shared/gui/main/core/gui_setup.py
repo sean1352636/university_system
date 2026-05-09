@@ -1139,6 +1139,8 @@ def get_visible_buttons_for_role(self, role=None):
             'parent_continuity', 'cross_system_calendar',
             'shared_documents',
             'student_self_service', 'digital_transcript',
+            # International student / Tier-4 sponsor compliance
+            'visa_compliance',
         })
 
     # Admin-only additions (full access)
