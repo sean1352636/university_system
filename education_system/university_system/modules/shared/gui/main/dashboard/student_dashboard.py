@@ -173,6 +173,11 @@ def _launch_feature(root, auth, feature_name):
             'education_system.university_system.modules.shared.gui.tools.todo_app_gui',
             'TodoApp', 'none', False,
         ),
+        'my_visa_status': (
+            'My Visa Status',
+            'education_system.university_system.modules.domain.student_affairs.international_compliance.gui.my_visa_status_gui',
+            'MyVisaStatusGUI', 'none', True,
+        ),
     }
 
     if feature_name not in feature_map:
@@ -269,6 +274,7 @@ def create_student_dashboard(parent_frame, auth, service):
         ("Achievement Badges", lambda: _launch_feature(root, auth, 'achievement_badges')),
         ("Wellness Hub", lambda: _launch_feature(root, auth, 'wellness_hub')),
         ("Todo App", lambda: _launch_feature(root, auth, 'todo_app')),
+        ("My Visa Status", lambda: _launch_feature(root, auth, 'my_visa_status')),
     ]
     from education_system.university_system.modules.shared.gui.main.dashboard.evaluation_launchers import (
         EVALUATION_MODULES, launch_evaluation_module,

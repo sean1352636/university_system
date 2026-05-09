@@ -219,6 +219,20 @@ def check_visa_expiry_alerts():
         log_event('error', f'Email Scheduler: Visa-expiry alert run failed: {e}')
 
 
+def refresh_sponsor_compliance_kpis():
+    """Recompute and write the four sponsor-compliance KPIs into
+    ``kpi_metrics`` so the analytics dashboard tells the truth without
+    waiting for someone to open the visa GUI."""
+    try:
+        from education_system.university_system.modules.domain.student_affairs.international_compliance.services import visa_service as _vs
+        n = _vs.record_sponsor_compliance_kpis()
+        logger.info(f"Sponsor-compliance KPIs: recorded {n} metric(s)")
+        log_event('info', f'Email Scheduler: Recorded {n} sponsor-compliance KPI(s)')
+    except Exception as e:
+        logger.error(f"Error refreshing sponsor-compliance KPIs: {e}")
+        log_event('error', f'Email Scheduler: KPI refresh failed: {e}')
+
+
 def setup_schedules():
     """Configure all scheduled tasks"""
 
@@ -227,6 +241,7 @@ def setup_schedules():
     schedule.every().day.at("08:00").do(check_book_return_reminders)
     schedule.every().day.at("10:00").do(check_overdue_books)
     schedule.every().day.at("07:00").do(check_visa_expiry_alerts)
+    schedule.every().day.at("06:30").do(refresh_sponsor_compliance_kpis)
 
     # Periodic tasks
     schedule.every(30).minutes.do(check_sla_breaches)
@@ -236,6 +251,7 @@ def setup_schedules():
     logger.info("  - Book return reminders: Daily at 08:00")
     logger.info("  - Overdue book notices: Daily at 10:00")
     logger.info("  - Visa-expiry alerts: Daily at 07:00")
+    logger.info("  - Sponsor-compliance KPI refresh: Daily at 06:30")
     logger.info("  - SLA breach alerts: Every 30 minutes")
 
 

@@ -178,19 +178,50 @@ class VisaComplianceGUI:
             row=1, column=1, columnspan=4, sticky=(tk.W, tk.E), pady=(6, 0))
         ttk.Button(form, text="Log check", command=self._log_engagement).grid(
             row=1, column=5, padx=4, pady=(6, 0))
+        ttk.Button(form, text="Pull from attendance",
+                   command=self._pull_engagement_from_attendance).grid(
+            row=2, column=0, columnspan=2, sticky=tk.W, pady=(8, 0))
+        self.engagement_pull_status = ttk.Label(form, text="", foreground="#555555")
+        self.engagement_pull_status.grid(row=2, column=2, columnspan=4, sticky=tk.W,
+                                          pady=(8, 0), padx=(8, 0))
 
-        ttk.Label(frame, text="History (most recent first)",
+        ttk.Label(frame, text="History (most recent first — rows from attendance show source pipeline in Method)",
                   font=("Arial", 11, "bold")).pack(anchor=tk.W, pady=(14, 4))
         self.engagement_tree = ttk.Treeview(
             frame, columns=("date", "term", "method", "outcome", "evidence"),
-            show="headings", height=14,
+            show="headings", height=10,
         )
         for col, txt, w in [("date", "Date", 110), ("term", "Term", 90),
-                            ("method", "Method", 200), ("outcome", "Outcome", 100),
-                            ("evidence", "Evidence", 600)]:
+                            ("method", "Method", 240), ("outcome", "Outcome", 100),
+                            ("evidence", "Evidence", 560)]:
             self.engagement_tree.heading(col, text=txt)
             self.engagement_tree.column(col, width=w)
         self.engagement_tree.pack(fill=tk.BOTH, expand=True)
+
+        risk_label_row = ttk.Frame(frame)
+        risk_label_row.pack(fill=tk.X, pady=(14, 4))
+        ttk.Label(risk_label_row,
+                  text="At-risk international students (attendance < threshold, from the attendance pipeline)",
+                  font=("Arial", 11, "bold")).pack(side=tk.LEFT)
+        self.atrisk_threshold = tk.DoubleVar(value=80.0)
+        ttk.Label(risk_label_row, text="  Threshold %:").pack(side=tk.LEFT, padx=(12, 2))
+        ttk.Spinbox(risk_label_row, from_=50, to=100, increment=5,
+                    textvariable=self.atrisk_threshold, width=6).pack(side=tk.LEFT)
+        ttk.Button(risk_label_row, text="Refresh",
+                   command=self._refresh_at_risk).pack(side=tk.LEFT, padx=6)
+        ttk.Button(risk_label_row, text="Load selected into form",
+                   command=self._load_selected_at_risk).pack(side=tk.LEFT)
+
+        self.atrisk_tree = ttk.Treeview(
+            frame, columns=("student", "name", "pct", "missed"),
+            show="headings", height=8,
+        )
+        for col, txt, w in [("student", "Student", 110), ("name", "Name", 260),
+                            ("pct", "Attendance %", 110), ("missed", "Missed sessions", 130)]:
+            self.atrisk_tree.heading(col, text=txt)
+            self.atrisk_tree.column(col, width=w)
+        self.atrisk_tree.pack(fill=tk.BOTH, expand=False)
+        self._refresh_at_risk()
 
     def _build_changes_tab(self, nb):
         frame = ttk.Frame(nb, padding=10)
@@ -366,6 +397,44 @@ class VisaComplianceGUI:
         except Exception as exc:
             logger.exception("issue cas")
             messagebox.showerror("Error", str(exc))
+
+    def _pull_engagement_from_attendance(self):
+        sid = self._sid()
+        try:
+            n = vs.import_attendance_engagement_events(student_id=sid or None)
+        except Exception as exc:
+            logger.exception("import attendance")
+            messagebox.showerror("Error", str(exc))
+            return
+        scope = f"for {sid}" if sid else "across all students"
+        self.engagement_pull_status.config(
+            text=f"Imported {n} new event(s) from attendance {scope}.",
+            foreground=("green" if n else "#555555"),
+        )
+        if sid:
+            self._load_student()
+
+    def _refresh_at_risk(self):
+        try:
+            rows = vs.get_attendance_at_risk(min_pct=float(self.atrisk_threshold.get() or 80))
+        except Exception as exc:
+            logger.exception("at-risk")
+            rows = []
+        self.atrisk_tree.delete(*self.atrisk_tree.get_children())
+        for r in rows:
+            self.atrisk_tree.insert("", tk.END, values=(
+                r["student_id"], r["name"],
+                r["attendance_pct"], r["missed_sessions"],
+            ))
+
+    def _load_selected_at_risk(self):
+        sel = self.atrisk_tree.selection()
+        if not sel:
+            messagebox.showinfo("Pick one", "Select a row first.")
+            return
+        sid = self.atrisk_tree.item(sel[0])["values"][0]
+        self.current_student_id.set(str(sid))
+        self._load_student()
 
     def _log_engagement(self):
         sid = self._sid()

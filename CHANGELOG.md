@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.134 — 2026-05-09](#8117134---2026-05-09)
+- [8.117.133 — 2026-05-09](#8117133---2026-05-09)
+- [8.117.132 — 2026-05-09](#8117132---2026-05-09)
 - [8.117.131 — 2026-05-09](#8117131---2026-05-09)
 - [8.117.130 — 2026-05-09](#8117130---2026-05-09)
 - [8.117.129 — 2026-05-09](#8117129---2026-05-09)
@@ -360,6 +363,169 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.134] — 2026-05-09
+
+### Fixed — student deletion now cascades through visa-sponsorship tables
+
+`student_crud_gui.perform_deletion`'s `tables_to_clean` list was missing
+every visa-sponsorship table shipped in 8.117.130–8.117.132. Deleting
+a student left orphaned `visa_records`, `cas_records`,
+`visa_engagement_checks`, `visa_change_of_circumstance`,
+`right_to_study_checks`, `atas_clearances`, `visa_expiry_alert_log`
+and `ukvi_engagement_events` rows behind. The orphans were both a
+disclosure risk (PII surviving deletion) and a sponsor-licence audit
+hazard (no clean exit trail). Added all eight tables to the cascade.
+Existing loop already validates table/column names, runs under
+`PRAGMA foreign_keys = OFF`, and silently skips missing tables, so
+this works on minimal deployments too.
+
+### Added — module reassignment now re-evaluates ATAS
+
+`reassign_modules` synced chat rooms but didn't touch ATAS state. New
+`_resync_atas_after_module_change()` helper, called right after the
+chat-room sync, opens pending `atas_clearances` rows for newly added
+restricted modules (idempotent — skipped if a non-withdrawn row exists),
+marks rows for dropped restricted modules as `withdrawn` with a
+combined-history note, then sets `visa_records.atas_required` based on
+the student's *current* enrolment via
+`vs.atas_required_for_student_modules()` rather than the diff. No-op
+for domestic students (no visa record on file).
+
+### Verified
+
+End-to-end smoke test on student `3910390`: adding `CIS2003` opens
+pending row + flips flag 0→1; rerun is idempotent; dropping `CIS2003`
+marks the row withdrawn with a combined history note; flag stays 1
+because the student is still enrolled on `CIS2002` / `CIS2004`. A
+domestic student (`S12345`) gets zero ATAS rows created — no-op
+confirmed.
+
+
+## [8.117.133] — 2026-05-09
+
+### Added — visa-sponsorship integration hooks across the rest of the system
+
+The Tier-4 module had been a standalone island since 8.117.130. This
+change wires it into the seven adjacent surfaces it should care about:
+status transitions, fee posting, the student portal, the immutable
+audit log, the analytics KPI dashboard, and the daily scheduler. Hook
+#9 (address / programme-length CoC) is deferred — see Skipped below.
+
+#### #4 / #10 — Status transitions auto-raise UKVI Change of Circumstance
+
+- New `vs.handle_student_status_change(student_id, new_status, ...)` in
+  `visa_service.py`. Maps `students.status` values onto CoC change
+  types via a single `_STATUS_TO_COC` dict — `withdrawn` → `withdrawal`,
+  `suspended` → `suspension`, `interrupted` / `intermitted` /
+  `leave_of_absence` → `interruption`, `completed` / `completed_early`
+  / `graduated` → `completion_early`, `transferred` → `transfer`.
+  Same-day same-type CoC dedup so replaying a status event is safe.
+  No-op for domestic students (no visa record on file).
+- New `vs.set_student_status(student_id, new_status, ...)` — all-in-one
+  helper that reads the previous status, performs the UPDATE, fires
+  `handle_student_status_change`, and writes a `student_status_changed`
+  audit event. **All future withdrawal / suspension / completion code
+  paths should call this rather than writing the UPDATE directly**, so
+  the UKVI 10-day clock can never be forgotten. The two existing direct
+  UPDATEs in the tree are a college-DB transfer (out of scope) and a
+  docstring example (not real code) — no production sites needed
+  retrofitting today.
+
+#### #5 — Tuition payments credit the active CAS
+
+- New `vs.update_cas_payment(student_id, amount, payment_id=None)` finds
+  the most recent `status='issued'` CAS for the student and adds the
+  amount to `tuition_fee_paid_gbp`. Returns the credited CAS number, or
+  None for domestic students / applicants without a CAS.
+- Hooked into `finance/.../payment_recording.py:record_payment()` right
+  after `notify_ledger`. Best-effort — a missing visa module never
+  blocks a payment from being recorded. Matters for UKVI extension
+  applications, which ask for fee-payment evidence.
+
+#### #6 — Student-portal "My visa status" tile
+
+- New read-only `MyVisaStatusGUI` window at
+  `…/international_compliance/gui/my_visa_status_gui.py`. Shows visa /
+  BRP expiry chips (green / amber / red by days-left), right-to-study
+  status, ATAS state per restricted module, profile, and CAS history
+  (with `tuition_fee_paid_gbp / tuition_fee_gbp`). Renders a polite
+  "no record on file" message for domestic students.
+- Registered in `student_dashboard.py`'s `feature_map` and added to the
+  buttons grid as *"My Visa Status"*. Resolves the current student id
+  from `auth.current_user`.
+
+#### #7 — Immutable audit log writes
+
+- New `_audit(action, ...)` helper in `visa_service` wraps
+  `infrastructure/security/audit_helpers.safe_log_security_event`,
+  resolving the actor id from `shared_context.get_auth()` (falls back
+  to None / system on scheduler-driven writes). Best-effort; failure
+  to audit never blocks the user-visible action.
+- Wired into the eight write functions an auditor would care about:
+  `upsert_visa_record` (create + update events), `issue_cas`,
+  `withdraw_cas`, `record_engagement_check`, `log_change_of_circumstance`,
+  `mark_coc_reported`, `record_right_to_study_check`,
+  `record_atas_clearance`, plus `update_cas_payment` and
+  `set_student_status`. Audit actions are namespaced `visa.*`.
+
+#### #8 — Analytics: four sponsor-compliance KPIs
+
+- New `vs.compute_sponsor_compliance_kpis()` returns a list of dicts
+  shaped for `KPIManager.record_kpi`. Six metrics in total:
+  Right-to-Study coverage %, Overdue UKVI reports,
+  *Visas expiring within 30d / 60d / 90d* (cumulative), and
+  Engagement compliance % (90d).
+- New `vs.record_sponsor_compliance_kpis()` writes each one to
+  `kpi_metrics` via `KPIManager`. Smoke-tested: 6/6 metrics recorded.
+- New scheduler task `refresh_sponsor_compliance_kpis()` registered as
+  `schedule.every().day.at("06:30")` — runs 30 min before the visa
+  expiry alerts so the alerts log already has fresh KPIs to read.
+
+### Changed — single source of truth for UKVI engagement
+
+The visa-sponsorship module shipped in 8.117.130 wrote to its own
+`visa_engagement_checks` table while the older
+`absence_tracking/absence_enhancements.py:967` `ComplianceService`
+wrote to `ukvi_engagement_events`. Two parallel "engagement" stories
+on different tables. This change unifies them so the visa GUI shows
+the truth without anyone having to know which table to look in.
+
+- **Source link added.** New `source_event_id` column on
+  `visa_engagement_checks` (alembic migration `d6e34a915fb0`,
+  mirrored into `init_db()`). A unique partial index
+  (`source_event_id IS NOT NULL`) gives free dedup.
+- **Mirror on write.** `ComplianceService.ukvi_log()` now also inserts
+  into `visa_engagement_checks` on the same connection, mapping the
+  legacy `event_type` onto the visa module's three-valued `outcome`
+  (engaged / partial / missed). Best-effort: a missing visa table or
+  unique-index hit (parallel run) doesn't fail the original log.
+- **Backfill importer.** New
+  `vs.import_attendance_engagement_events(student_id=None, since=None)`
+  reads any `ukvi_engagement_events` rows that haven't been mirrored
+  yet and inserts them. Idempotent across re-runs. Safe no-op when the
+  attendance enhancements table doesn't exist (minimal deployment).
+- **At-risk wrapper.** New `vs.get_attendance_at_risk(min_pct=80)`
+  delegates to `ComplianceService.ukvi_at_risk()` so the visa dashboard
+  and the attendance dashboard share one definition of "at risk".
+- **GUI changes (visa\_compliance\_gui Engagement tab):**
+  - "Pull from attendance" button runs the backfill importer for the
+    loaded student (or for everyone if no student id is set) and shows
+    a status line with the number of new rows imported.
+  - New "At-risk international students" treeview at the bottom of the
+    tab, with a tunable threshold spinbox (default 80%), Refresh, and a
+    "Load selected into form" button that drops the chosen student into
+    the top form so the admin can immediately log a follow-up CoC or
+    record an engagement check.
+
+### Verified
+
+End-to-end smoke test on student `3910390`: two `ComplianceService.ukvi_log`
+calls produced two `visa_engagement_checks` rows with correct
+`engaged` / `partial` outcome mapping; a re-run of the backfill importer
+returned 0; an orphan `ukvi_engagement_events` insert was picked up on
+the next backfill (returned 1); a third backfill returned 0.
+
 
 ## [8.117.131] — 2026-05-09
 

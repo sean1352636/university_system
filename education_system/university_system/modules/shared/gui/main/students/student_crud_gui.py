@@ -75,6 +75,100 @@ def _create_visa_record_for_new_student(student_id, email_address, first_name,
         vs.notify_right_to_study_required(student_id, email_address, first_name=first_name or "")
 
 
+def _resync_atas_after_module_change(student_id, removed_codes, added_codes):
+    """When an international student's modules change, keep the ATAS picture
+    aligned with what they're now enrolled on.
+
+    For each newly-added module that matches an ATAS-restricted prefix:
+      - open a pending ``atas_clearances`` row (idempotent — skipped if a
+        non-withdrawn row for that (student, module) already exists).
+
+    For each removed module that matches an ATAS-restricted prefix:
+      - mark its existing pending/cleared row as ``withdrawn`` (we keep the
+        history rather than deleting, so a re-enrolment stays auditable).
+
+    Then flip the visa record's ``atas_required`` flag to reflect whether
+    the student now needs ATAS for *any* current module.
+
+    No-op when the student has no visa record on file (i.e. not flagged
+    international). Best-effort; failures only log."""
+    from education_system.university_system.modules.domain.student_affairs.international_compliance.services import (
+        visa_service as vs,
+    )
+
+    visa = vs.get_visa_record(student_id)
+    if not visa:
+        return  # Domestic student or no record yet — nothing to re-evaluate.
+
+    added_atas = [c for c in (added_codes or []) if vs.is_atas_required_for_module(c)]
+    removed_atas = [c for c in (removed_codes or []) if vs.is_atas_required_for_module(c)]
+
+    conn = get_db_connection()
+    if not conn:
+        logger.warning("ATAS resync: no DB connection")
+        return
+    try:
+        cursor = conn.cursor()
+        for code in added_atas:
+            cursor.execute(
+                "SELECT 1 FROM atas_clearances "
+                "WHERE student_id = ? AND module_code = ? AND status != 'withdrawn' "
+                "LIMIT 1",
+                (student_id, code),
+            )
+            if cursor.fetchone():
+                continue
+            cursor.execute(
+                """INSERT INTO atas_clearances (
+                    student_id, module_code, certificate_number,
+                    issued_on, expires_on, status, notes
+                ) VALUES (?, ?, NULL, NULL, NULL, 'pending', ?)""",
+                (student_id, code,
+                 f"Auto-opened on module reassignment ({code} added)"),
+            )
+        for code in removed_atas:
+            cursor.execute(
+                "UPDATE atas_clearances SET status = 'withdrawn', "
+                "notes = COALESCE(notes, '') || ? "
+                "WHERE student_id = ? AND module_code = ? AND status != 'withdrawn'",
+                (f" | Auto-withdrawn on module reassignment ({code} dropped)",
+                 student_id, code),
+            )
+        conn.commit()
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    # Flip the visa-record flag based on the current enrolment, not just
+    # the diff — a student can have remaining ATAS modules even after
+    # dropping one.
+    still_required = bool(vs.atas_required_for_student_modules(student_id))
+    if bool(visa.get("atas_required")) != still_required:
+        rec = vs.VisaRecord(
+            student_id=student_id,
+            nationality=visa.get("nationality"),
+            passport_number=visa.get("passport_number"),
+            passport_expiry=visa.get("passport_expiry"),
+            visa_type=visa.get("visa_type") or "student_route",
+            visa_number=visa.get("visa_number"),
+            visa_start_date=visa.get("visa_start_date"),
+            visa_expiry_date=visa.get("visa_expiry_date"),
+            brp_number=visa.get("brp_number"),
+            brp_expiry_date=visa.get("brp_expiry_date"),
+            sponsor_licence_ref=visa.get("sponsor_licence_ref"),
+            atas_required=still_required,
+            status=visa.get("status") or "pending",
+            notes=visa.get("notes"),
+        )
+        vs.upsert_visa_record(rec)
+    logger.info(
+        "ATAS resync sid=%s: opened=%s withdrawn=%s flag=%s",
+        student_id, added_atas, removed_atas, still_required,
+    )
+
+
 def _ensure_shared_auth_user(username, password, display_name, email):
     """Create the user in the central shared auth.db if not already present.
 
@@ -1686,7 +1780,19 @@ Registration Date: {student[10]}"""
                     ('loans', 'borrower_id'),
                     ('student_fees', 'student_id'),
                     ('support_tickets', 'student_id'),
-                    ('parent_student_relationships', 'student_id')
+                    ('parent_student_relationships', 'student_id'),
+                    # Tier-4 / Student Route sponsor-compliance tables —
+                    # leaving these orphaned is a UKVI data-protection
+                    # issue, not just clutter.
+                    ('visa_records', 'student_id'),
+                    ('cas_records', 'student_id'),
+                    ('visa_engagement_checks', 'student_id'),
+                    ('visa_change_of_circumstance', 'student_id'),
+                    ('right_to_study_checks', 'student_id'),
+                    ('atas_clearances', 'student_id'),
+                    ('visa_expiry_alert_log', 'student_id'),
+                    # Attendance pipeline's UKVI mirror — see 8.117.132.
+                    ('ukvi_engagement_events', 'student_id'),
                 ]
 
                 for table_name, column_name in tables_to_clean:
@@ -2474,6 +2580,18 @@ def reassign_modules(self, student_id, module_type, cursor=None):
             _sync_module_chat_rooms(student_id, list(removed_set), list(added_set))
         except Exception as e:
             logger.warning(f"reassign_modules: chat-room sync failed for {student_id}: {e}")
+
+        # Re-evaluate ATAS clearance requirements: open new pending rows
+        # for restricted modules the student has just been enrolled on,
+        # close rows for restricted modules they have just dropped, and
+        # flip the visa record's atas_required flag accordingly.
+        # No-op if the student doesn't have a visa record on file.
+        try:
+            _resync_atas_after_module_change(
+                student_id, list(removed_set), list(added_set),
+            )
+        except Exception as e:
+            logger.warning(f"reassign_modules: ATAS resync failed for {student_id}: {e}")
 
         messagebox.showinfo(_t("common.success"), _t("student.reassign_modules_success", module_type=module_type))
 

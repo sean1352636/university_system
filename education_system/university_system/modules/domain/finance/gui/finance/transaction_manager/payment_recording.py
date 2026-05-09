@@ -533,6 +533,20 @@ class PaymentRecordingMixin:
                 import logging
                 logging.getLogger(__name__).warning("ledger hook failed: %s", _e)
 
+            # If the student has an active CAS (international, Tier-4),
+            # credit this payment toward their stated tuition fee. UKVI
+            # asks for evidence of fee payment in extension applications,
+            # so keeping cas_records.tuition_fee_paid_gbp current matters.
+            # Best-effort: returns silently for domestic students.
+            try:
+                from education_system.university_system.modules.domain.student_affairs.international_compliance.services import (
+                    visa_service as _vs,
+                )
+                _vs.update_cas_payment(student_id, float(amount), payment_id=payment_id)
+            except Exception as _e:
+                import logging
+                logging.getLogger(__name__).debug("CAS payment update skipped: %s", _e)
+
             messagebox.showinfo(_("finance_gui.messages.success"), "Payment recorded successfully.")
             return True
         except Exception as e:

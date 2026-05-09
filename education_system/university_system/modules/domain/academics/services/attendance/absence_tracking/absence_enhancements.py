@@ -1030,19 +1030,69 @@ class ComplianceService:
                  event_date: Optional[str] = None,
                  notes: str = "", recorded_by: str = "") -> None:
         try:
-            self.conn.execute(
+            cur = self.conn.execute(
                 """INSERT INTO ukvi_engagement_events
                      (student_id, event_type, event_date, notes, recorded_by)
                    VALUES(?,?,?,?,?)""",
                 (student_id, event_type,
                  (event_date or date.today().isoformat()),
                  notes, recorded_by))
+            event_id = cur.lastrowid
             self.conn.commit()
         except sqlite3.Error:
             self.conn.rollback()
             logger.exception("UKVI log failed sid=%s ev=%s",
                              student_id, event_type)
             raise
+
+        # Mirror into the visa-sponsorship dashboard. Best-effort: if the
+        # international_compliance module isn't installed (e.g. minimal
+        # deployment) or the visa table isn't there yet, swallow the error
+        # — the source row is committed and that's what matters.
+        try:
+            self._mirror_to_visa_engagement(
+                event_id, student_id, event_type,
+                event_date or date.today().isoformat(),
+                notes, recorded_by,
+            )
+        except Exception:
+            logger.debug("visa-mirror skipped sid=%s ev=%s", student_id, event_type, exc_info=True)
+
+    def _mirror_to_visa_engagement(
+        self, event_id: int, student_id: str, event_type: str,
+        event_date: str, notes: str, recorded_by: str,
+    ) -> None:
+        """Insert a matching row into ``visa_engagement_checks`` on the
+        same DB connection. Idempotent via the unique partial index on
+        ``source_event_id``."""
+        # Map legacy event_type to the visa module's three-valued outcome.
+        et = (event_type or "").strip().lower()
+        if et in {"missed", "no_engagement", "absent_critical", "failed"}:
+            outcome = "missed"
+        elif et in {"at_risk", "low_attendance", "partial", "late"}:
+            outcome = "partial"
+        else:
+            outcome = "engaged"
+        try:
+            rec_by_int: Optional[int] = int(recorded_by) if recorded_by not in (None, "") else None
+        except (TypeError, ValueError):
+            rec_by_int = None
+        try:
+            self.conn.execute(
+                """INSERT INTO visa_engagement_checks
+                     (student_id, check_date, term, method, evidence,
+                      outcome, recorded_by, source_event_id)
+                   VALUES (?, ?, NULL, ?, ?, ?, ?, ?)""",
+                (
+                    student_id, event_date,
+                    f"attendance pipeline ({event_type or 'unspecified'})",
+                    notes, outcome, rec_by_int, event_id,
+                ),
+            )
+            self.conn.commit()
+        except sqlite3.IntegrityError:
+            # Already mirrored by a parallel run / earlier importer.
+            self.conn.rollback()
 
     def ukvi_at_risk(self, min_pct: float = 80.0) -> List[Tuple]:
         """Student-Route / Tier-4 holders below engagement threshold."""
