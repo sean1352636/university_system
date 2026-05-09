@@ -445,6 +445,19 @@ def show_visa_compliance_gui(self):
         logger.error(f"Error launching Visa Compliance GUI: {e}")
         messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="Visa Compliance", error=str(e)))
 
+
+def show_qa_dashboard_gui(self):
+    """Launch External Quality Assurance dashboard (OfS / TEF / REF)."""
+    try:
+        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_dashboard_gui import QADashboardGUI
+        QADashboardGUI(parent=self.root)
+    except ImportError as e:
+        logger.error(f"Failed to import QA Dashboard GUI: {e}")
+        messagebox.showerror(_t("common.error"), _t("student_success.errors.gui_not_available", feature="External QA", error=str(e)))
+    except Exception as e:
+        logger.error(f"Error launching QA Dashboard GUI: {e}")
+        messagebox.showerror(_t("common.error"), _t("student_success.errors.failed_to_launch", feature="External QA", error=str(e)))
+
 def show_study_room_booking_gui(self):
     """Launch Study Room Booking GUI.
 

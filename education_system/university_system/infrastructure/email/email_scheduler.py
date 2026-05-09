@@ -219,6 +219,22 @@ def check_visa_expiry_alerts():
         log_event('error', f'Email Scheduler: Visa-expiry alert run failed: {e}')
 
 
+def refresh_external_qa_kpis():
+    """Recompute and write the external-QA KPIs (OfS / TEF / REF) into
+    ``kpi_metrics`` so the analytics dashboard always shows current
+    institutional-reporting numbers."""
+    try:
+        from education_system.university_system.modules.domain.analytics.external_qa_kpis import (
+            record_external_qa_kpis,
+        )
+        n = record_external_qa_kpis()
+        logger.info(f"External-QA KPIs: recorded {n} metric(s)")
+        log_event('info', f'Email Scheduler: Recorded {n} external-QA KPI(s)')
+    except Exception as e:
+        logger.error(f"Error refreshing external-QA KPIs: {e}")
+        log_event('error', f'Email Scheduler: External-QA KPI refresh failed: {e}')
+
+
 def refresh_sponsor_compliance_kpis():
     """Recompute and write the four sponsor-compliance KPIs into
     ``kpi_metrics`` so the analytics dashboard tells the truth without
@@ -242,6 +258,7 @@ def setup_schedules():
     schedule.every().day.at("10:00").do(check_overdue_books)
     schedule.every().day.at("07:00").do(check_visa_expiry_alerts)
     schedule.every().day.at("06:30").do(refresh_sponsor_compliance_kpis)
+    schedule.every().day.at("06:35").do(refresh_external_qa_kpis)
 
     # Periodic tasks
     schedule.every(30).minutes.do(check_sla_breaches)
@@ -252,6 +269,7 @@ def setup_schedules():
     logger.info("  - Overdue book notices: Daily at 10:00")
     logger.info("  - Visa-expiry alerts: Daily at 07:00")
     logger.info("  - Sponsor-compliance KPI refresh: Daily at 06:30")
+    logger.info("  - External-QA KPI refresh: Daily at 06:35")
     logger.info("  - SLA breach alerts: Every 30 minutes")
 
 

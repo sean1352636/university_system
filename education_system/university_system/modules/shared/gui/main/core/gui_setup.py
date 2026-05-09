@@ -619,6 +619,7 @@ def create_navigation_panel(self, parent):
         ('parent_portal', _t('nav.buttons.family_portal'), self.open_parent_portal_gui),
         ('legal_services', _t('nav.buttons.legal_services'), self.show_legal_services_gui),
         ('new_feature_disciplinary_portal', 'Disciplinary Portal', self.show_new_feature_disciplinary_portal),
+        ('new_feature_fitness_to_practise', 'Fitness to Practise', self.show_new_feature_fitness_to_practise),
         ('new_feature_risk_management', 'Risk Management', self.show_new_feature_risk_management),
     ]
 
@@ -640,6 +641,7 @@ def create_navigation_panel(self, parent):
         ('integrated_dashboard', _t('nav.buttons.dashboard'), self.show_integrated_dashboard),
         ('analytics', _t('nav.buttons.analytics'), self.show_analytics),
         ('new_feature_kpi_dashboard', 'KPI Dashboard', self.show_new_feature_kpi_dashboard),
+        ('qa_dashboard', 'External QA (OfS / TEF / REF)', self.show_qa_dashboard_gui),
     ]
 
     # ---------- Documents & Export ----------
@@ -1068,6 +1070,7 @@ def get_visible_buttons_for_role(self, role=None):
         'new_feature_lecturer_evaluation',
         'new_feature_module_evaluation_portal',
         'new_feature_disciplinary_portal',
+        'new_feature_fitness_to_practise',
         'new_feature_risk_management',
         'new_feature_first_aid_portal',
         'new_feature_health_safety_portal',
@@ -1141,6 +1144,8 @@ def get_visible_buttons_for_role(self, role=None):
             'student_self_service', 'digital_transcript',
             # International student / Tier-4 sponsor compliance
             'visa_compliance',
+            # OfS / TEF / REF external quality assurance
+            'qa_dashboard',
         })
 
     # Admin-only additions (full access)

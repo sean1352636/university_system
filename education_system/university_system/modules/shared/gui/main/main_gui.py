@@ -46,6 +46,13 @@ def set_auth(auth_instance):
         ensure_disciplinary_schema()
     except Exception:
         logger.exception("disciplinary schema bootstrap failed at login")
+    try:
+        from education_system.university_system.modules.domain.legal.disciplinary.fitness_to_practise._db_init import (  # noqa: E501
+            ensure_ftp_schema,
+        )
+        ensure_ftp_schema()
+    except Exception:
+        logger.exception("FtP schema bootstrap failed at login")
 
 
 def init_gui(session_user=None):
@@ -486,6 +493,7 @@ from education_system.university_system.modules.shared.gui.main.features.student
     show_advising_portal_gui,
     show_student_id_gui,
     show_visa_compliance_gui,
+    show_qa_dashboard_gui,
     show_study_room_booking_gui,
     show_printing_services_gui,
 )
@@ -789,6 +797,7 @@ UnifiedManagementGUI.show_feedback_system_gui = show_feedback_system_gui
 UnifiedManagementGUI.show_advising_portal_gui = show_advising_portal_gui
 UnifiedManagementGUI.show_student_id_gui = show_student_id_gui
 UnifiedManagementGUI.show_visa_compliance_gui = show_visa_compliance_gui
+UnifiedManagementGUI.show_qa_dashboard_gui = show_qa_dashboard_gui
 UnifiedManagementGUI.show_study_room_booking_gui = show_study_room_booking_gui
 UnifiedManagementGUI.show_printing_services_gui = show_printing_services_gui
 
@@ -980,6 +989,8 @@ _NEW_FEATURE_MODULES = [
      "education_system.university_system.modules.domain.academics.gui.course_management_gui.module_evaluation_portal"),
     ("disciplinary_portal", "Disciplinary Portal",
      "education_system.university_system.modules.domain.legal.disciplinary.disciplinary_portal"),
+    ("fitness_to_practise", "Fitness to Practise",
+     "education_system.university_system.modules.domain.legal.disciplinary.fitness_to_practise.fitness_to_practise"),
     ("risk_management", "Risk Management",
      "education_system.university_system.modules.domain.legal.risk_management.university_risk_management"),
     ("first_aid_portal", "First Aid Portal",

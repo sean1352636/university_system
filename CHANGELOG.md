@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.135 — 2026-05-09](#8117135---2026-05-09)
 - [8.117.134 — 2026-05-09](#8117134---2026-05-09)
 - [8.117.133 — 2026-05-09](#8117133---2026-05-09)
 - [8.117.132 — 2026-05-09](#8117132---2026-05-09)
@@ -363,6 +364,136 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.135] — 2026-05-09
+
+### Added — External Quality Assurance module (OfS / TEF / REF)
+
+Closes audit gap #2: the institution had no centralised tooling for the
+three statutory reporting frameworks UK universities owe to the Office
+for Students (OfS), Teaching Excellence Framework (TEF), and Research
+Excellence Framework (REF).
+
+#### Schema (alembic migration `e8c4197a3b21`)
+
+Seven new tables, all with `init_db()` mirrors so the module works on
+a fresh DB even before the migration runs:
+
+- `qa_submissions` — one row per `(framework, year)` with sign-off
+  workflow (`status`, `signed_off_by`, `signed_off_at`).
+- `ofs_b3_metrics` — continuation / completion / progression snapshots
+  per cohort year (and optional course slice), with
+  `(cohort_year, course, metric_type)` UPSERT key.
+- `ofs_app_milestones` — Access & Participation Plan milestones with
+  target / current / achieved tracking.
+- `ofs_protection_plans` — versioned Student Protection Plan
+  revisions with approval audit.
+- `tef_provider_narratives` — TEF narrative drafts versioned per
+  `(submission_year, section)`. Sections: student_experience,
+  student_outcomes, provider_context, educational_gain.
+- `ref_impact_cases` — case studies per Unit of Assessment with
+  status workflow and quality rating.
+- `ref_environment_statements` — versioned environment narrative per
+  UoA.
+
+#### Service layer (`…/external_quality_assurance/services/qa_service.py`)
+
+- **Submissions**: `upsert_submission`, `list_submissions`,
+  `sign_off_submission` (flips status to `submitted`, records signer
+  + date, idempotent).
+- **OfS B3**: `compute_b3_metrics(cohort_year, course=None)` returns
+  `{metric: (pct, num, denom)}` derived from `students.status` /
+  `enrollment_date`. Continuation = % still
+  Active/Enrolled, Completion = % completed/graduated. Progression is
+  a stubbed sentinel (`-1.0`) because Graduate Outcomes data isn't
+  in this system. `record_b3_snapshot` UPSERTs into the metrics table.
+- **OfS APP milestones**: full CRUD (`list_app_milestones`,
+  `create_app_milestone`, `update_app_milestone` with field
+  whitelist, `delete_app_milestone`).
+- **OfS protection plans**: `list_protection_plans`,
+  `create_protection_plan` (versioned).
+- **TEF**: `list_tef_narratives`, `add_tef_narrative` (auto-bumps
+  version per (year, section)), `compute_tef_indicators` (pulls the
+  most recent institutional B3 cohort; reports NSS as
+  "n/a (NSS feed not configured)").
+- **REF**: `list_impact_cases`, `create_impact_case`,
+  `update_impact_case` (whitelisted fields), `delete_impact_case`,
+  `list_environment_statements`, `add_environment_statement`
+  (auto-versioned per UoA), `compute_uoa_summary` (joins existing
+  `research_outputs` table to derive output count, % submitted, %
+  open access, average quality stars).
+- **Exports**:
+  - `export_ofs_return(year, path)` writes B3 snapshots to CSV.
+  - `export_tef_submission(year, path)` writes JSON containing
+    indicators + the latest narrative per section.
+  - `export_ref_submission(uoa, path)` writes a CSV combining
+    outputs (from `research_outputs`), impact cases, and the latest
+    environment statement.
+
+Every write path also calls a `_audit("qa.<action>", …)` helper that
+wraps `infrastructure.security.audit_helpers.safe_log_security_event`
+so a sponsor licence visit gets the same tamper-evident trail the
+visa module already produces.
+
+#### Tabbed admin GUI (`…/gui/qa_dashboard_gui.py`)
+
+A single `QADashboardGUI` Toplevel with four tabs:
+
+- **Overview** — submissions tracker treeview, "New / update
+  submission", "Sign off selected", "Recompute & publish KPIs".
+- **OfS** — B3 row with cohort-year spinbox, "Compute & store
+  snapshot", "Export OfS return (CSV)", + B3 history treeview;
+  full APP milestones CRUD (add / mark achieved / set current value
+  / delete); Protection plans treeview with multi-line editor for
+  new versions.
+- **TEF** — computed indicators block; provider-narrative treeview
+  per section with version history, multi-line editor for "Add new
+  version", and "Export TEF JSON".
+- **REF** — UoA picker (combobox of REF 2021 UoAs, type-overrideable);
+  UoA summary block; impact-case CRUD with status / rating editors;
+  environment-statement treeview (latest 3 versions) with multi-line
+  editor for new versions; "Export REF CSV".
+
+A small reusable `_TextEditor` modal handles every multi-line text
+input so each narrative editor is consistent.
+
+#### Analytics counterpart
+
+- New `modules/domain/analytics/external_qa_kpis.py` re-exports
+  `compute_external_qa_kpis` / `record_external_qa_kpis` so the
+  analytics package owns its own entry point and can evolve KPI
+  shape independently.
+- 7 KPIs published into `kpi_metrics` under category `external_qa`:
+  one each for B3 continuation / completion / progression %, APP
+  milestones achieved %, REF UoAs with outputs, REF UoAs with impact
+  cases, and frameworks with an active submission for the current
+  year.
+
+#### Wiring
+
+- `show_qa_dashboard_gui` launcher in `student_success_gui.py`,
+  registered on `UnifiedManagementGUI`.
+- Added to the **Analytics & Reporting** sidebar group as
+  *"External QA (OfS / TEF / REF)"*.
+- `qa_dashboard` added to the `is_staff` visible-buttons set in
+  `get_visible_buttons_for_role` (admin + staff only — students don't
+  see it).
+- New `refresh_external_qa_kpis()` task in `email_scheduler.py`,
+  registered as `schedule.every().day.at("06:35")` (5 minutes after
+  the sponsor-compliance KPI refresh) so the analytics dashboard is
+  always current.
+
+### Verified
+
+End-to-end smoke test wrote: 2 submissions, 3 B3 snapshot rows for
+cohort 2024, 1 APP milestone with current/target values, 2 versioned
+TEF narratives for `student_experience`, 1 REF impact case in `UOA11`
+flipped to `in_review`/`3*`, 1 environment statement v1, 7 KPIs into
+`kpi_metrics`, OfS CSV (3 rows), TEF JSON (1 section), REF CSV (2
+rows: 1 impact case + 1 environment), and a successful sign-off that
+flipped the OfS submission to `submitted` with signer id and date
+populated.
+
 
 ## [8.117.134] — 2026-05-09
 
