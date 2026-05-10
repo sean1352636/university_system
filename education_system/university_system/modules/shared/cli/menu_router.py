@@ -597,18 +597,6 @@ def display_menu():
         if auth.current_user and auth.current_user.get('role') == 'admin':
             items.append(add_option(get_text('cli.menu.system_monitoring', default='System Monitoring'), "system_monitoring"))
         print_row(items)
-        # Switch system options for superadmin users
-        if auth.current_user and auth.current_user.get('systems'):
-            admin_keys = {s["system_key"] for s in auth.current_user["systems"] if s.get("role") == "admin"}
-            if admin_keys >= {"university", "college", "school", "primary"}:
-                print(f"\n🔀 SWITCH SYSTEM")
-                items = [
-                    add_option("Super Admin Dashboard", "switch_superadmin"),
-                    add_option("College System", "switch_college"),
-                    add_option("Secondary School", "switch_school"),
-                    add_option("Primary School", "switch_primary"),
-                ]
-                print_row(items)
         items = [
             add_option(get_text('cli.menu.logout', default='Logout'), "logout"),
         ]
@@ -924,16 +912,6 @@ def display_menu():
                 display_system_monitoring_menu(auth)
             elif option == "switch_to_gui":
                 switch_to_gui(auth)
-            elif option in ("switch_superadmin", "switch_college", "switch_school", "switch_primary"):
-                from education_system.switch import request_switch
-                target = {
-                    "switch_superadmin": "__superadmin__",
-                    "switch_college": "college",
-                    "switch_school": "school",
-                    "switch_primary": "primary",
-                }[option]
-                request_switch(target, "cli")
-                return
             elif option == "change_language":
                 display_language_menu_option()
             elif option == "hesa_export":

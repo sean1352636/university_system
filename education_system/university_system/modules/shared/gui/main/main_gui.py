@@ -244,7 +244,6 @@ from education_system.university_system.modules.shared.gui.main.auth_gui import 
     show_change_password,
     check_session_timer,
     switch_to_cli,
-    switch_system,
     shutdown_system,
     show_mfa_setup,
     _open_mfa_wizard,
@@ -581,7 +580,6 @@ UnifiedManagementGUI.show_security_questions = show_security_questions
 UnifiedManagementGUI.toggle_login_verification = toggle_login_verification
 UnifiedManagementGUI.check_session_timer = check_session_timer
 UnifiedManagementGUI.switch_to_cli = switch_to_cli
-UnifiedManagementGUI.switch_system = switch_system
 UnifiedManagementGUI.shutdown_system = shutdown_system
 UnifiedManagementGUI.show_student_records = show_student_records
 UnifiedManagementGUI.create_student_treeview = create_student_treeview

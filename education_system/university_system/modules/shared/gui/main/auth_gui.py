@@ -29,7 +29,7 @@ def _is_superadmin_user(gui_self):
     if not systems:
         return False
     admin_keys = {s["system_key"] for s in systems if s.get("role") == "admin"}
-    return admin_keys >= {"university", "college", "school", "primary"}
+    return "university" in admin_keys
 
 
 # ---------------------------------------------------------------------------
@@ -310,86 +310,6 @@ def switch_to_cli(self):
         except Exception as e:
             messagebox.showerror(_t("common.error"), _t("gui.errors.failed_switch_cli", error=str(e)))
             self.root.deiconify()
-
-
-def switch_system(self):
-    """Show a dialog to switch to another education system."""
-    dlg = tk.Toplevel(self.root)
-    _install_clean_close(dlg)
-    dlg.title(_t("gui.switch_system.title"))
-    dlg.geometry("400x420")
-    dlg.resizable(False, False)
-    dlg.transient(self.root)
-    dlg.grab_set()
-
-    dlg.update_idletasks()
-    x = self.root.winfo_x() + (self.root.winfo_width() - 400) // 2
-    y = self.root.winfo_y() + (self.root.winfo_height() - 350) // 2
-    dlg.geometry(f"+{x}+{y}")
-
-    tk.Label(
-        dlg, text=_t("gui.switch_system.header"),
-        font=("Helvetica", 14, "bold"), pady=16,
-    ).pack()
-
-    tk.Label(
-        dlg, text=_t("gui.switch_system.choose_system"),
-        font=("Helvetica", 11), pady=4,
-    ).pack()
-
-    btn_style = {"font": ("Helvetica", 12), "width": 28, "height": 2,
-                 "cursor": "hand2", "relief": tk.FLAT}
-
-    btn_frame = tk.Frame(dlg)
-    btn_frame.pack(expand=True, pady=8)
-
-    def _pick(system_name):
-        dlg.destroy()
-        try:
-            from education_system.switch import request_switch
-            request_switch(system_name, "gui")
-            try:
-                if self.auth and self.auth.current_user:
-                    self.auth.logout()
-            except Exception:
-                pass
-            self.root.quit()
-            self.root.destroy()
-        except Exception as e:
-            messagebox.showerror(_t("common.error"), _t("gui.switch_system.failed", error=str(e)))
-
-    tk.Button(
-        btn_frame, text=_t("gui.switch_system.college"),
-        bg="#27ae60", fg="white", activebackground="#2ecc71", activeforeground="white",
-        command=lambda: _pick("college"), **btn_style,
-    ).pack(pady=6)
-
-    tk.Button(
-        btn_frame, text=_t("gui.switch_system.secondary"),
-        bg="#8e44ad", fg="white", activebackground="#9b59b6", activeforeground="white",
-        command=lambda: _pick("school"), **btn_style,
-    ).pack(pady=6)
-
-    tk.Button(
-        btn_frame, text=_t("gui.switch_system.primary"),
-        bg="#e67e22", fg="white", activebackground="#f39c12", activeforeground="white",
-        command=lambda: _pick("primary"), **btn_style,
-    ).pack(pady=6)
-
-    # Super Admin Dashboard button (only for superadmin users)
-    if _is_superadmin_user(self):
-        ttk.Separator(btn_frame, orient="horizontal").pack(fill="x", pady=6)
-        tk.Button(
-            btn_frame, text="Super Admin Dashboard",
-            bg="#2c3e50", fg="white", activebackground="#34495e", activeforeground="white",
-            command=lambda: _pick("__superadmin__"), **btn_style,
-        ).pack(pady=6)
-
-    tk.Button(
-        btn_frame, text=_t("common.cancel"),
-        bg="#95a5a6", fg="white", activebackground="#bdc3c7", activeforeground="white",
-        command=dlg.destroy, **btn_style,
-    ).pack(pady=6)
 
 
 def shutdown_system(self):

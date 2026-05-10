@@ -162,12 +162,6 @@ def create_header(self, parent):
                command=lambda: self.switch_to_cli()).pack(
         side=tk.LEFT, padx=(0, 6))
 
-    from education_system.university_system.modules.shared.gui.main.auth_gui import _is_superadmin_user
-    if _is_superadmin_user(self):
-        ttk.Button(left, text=_t("gui.switch_system.title"),
-                   command=lambda: self.switch_system()).pack(
-            side=tk.LEFT, padx=(0, 6))
-
     # ── Destructive actions (right) ──
     right = ttk.Frame(header_frame)
     right.grid(row=0, column=2, sticky=tk.E)
