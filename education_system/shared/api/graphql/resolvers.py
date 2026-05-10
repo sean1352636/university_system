@@ -6,9 +6,6 @@ sqlite3 (no service-layer imports), keeping the GraphQL layer self-contained.
 Supported system keys
 ---------------------
 - ``university``  — university_system  (student_records.db)
-- ``college``     — college_system     (sixthform.db)
-- ``school``      — secondary_school   (secondary_school.db)
-- ``primary``     — primary_school     (primary_school.db)
 """
 
 from __future__ import annotations
@@ -35,15 +32,6 @@ _BASE = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__))
 _DB_PATHS: dict[str, str] = {
     "university": os.path.normpath(
         os.path.join(_BASE, "university_system", "data", "db_files", "student_records.db")
-    ),
-    "college": os.path.normpath(
-        os.path.join(_BASE, "college_system", "data", "db_files", "sixthform.db")
-    ),
-    "school": os.path.normpath(
-        os.path.join(_BASE, "secondary_school", "data", "db_files", "secondary_school.db")
-    ),
-    "primary": os.path.normpath(
-        os.path.join(_BASE, "primary_school", "data", "db_files", "primary_school.db")
     ),
 }
 

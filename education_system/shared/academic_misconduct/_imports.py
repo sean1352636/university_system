@@ -1,7 +1,6 @@
 """Shared imports for the Academic Misconduct Panel modules.
 
-System-agnostic: works with university, college, secondary, and primary systems.
-All university-specific imports have graceful fallbacks.
+University-specific imports use graceful fallbacks.
 """
 
 import sqlite3
@@ -20,18 +19,12 @@ logger = logging.getLogger(__name__)
 # Internationalisation — try each system's i18n, fall back to identity
 # ---------------------------------------------------------------------------
 _t = None
-for _mod in (
-    "education_system.university_system.modules.shared.utils.i18n",
-    "education_system.college_system.core.i18n",
-):
-    try:
-        import importlib
-        _m = importlib.import_module(_mod)
-        _t = getattr(_m, "get_text", None) or getattr(_m, "t", None)
-        if _t:
-            break
-    except ImportError:
-        continue
+try:
+    import importlib
+    _m = importlib.import_module("education_system.university_system.modules.shared.utils.i18n")
+    _t = getattr(_m, "get_text", None) or getattr(_m, "t", None)
+except ImportError:
+    pass
 
 if _t is None:
     def _t(key, default=None, **kwargs):
@@ -48,30 +41,6 @@ try:
     DEFAULT_DB_PATH = _p
 except ImportError:
     pass
-
-# Try college
-if DEFAULT_DB_PATH is None:
-    try:
-        from education_system.college_system.core.defaults import get_db_path
-        DEFAULT_DB_PATH = Path(get_db_path())
-    except (ImportError, Exception):
-        pass
-
-# Try secondary
-if DEFAULT_DB_PATH is None:
-    try:
-        from education_system.secondary_school.core.defaults import get_db_path
-        DEFAULT_DB_PATH = Path(get_db_path())
-    except (ImportError, Exception):
-        pass
-
-# Try primary
-if DEFAULT_DB_PATH is None:
-    try:
-        from education_system.primary_school.core.defaults import get_db_path
-        DEFAULT_DB_PATH = Path(get_db_path())
-    except (ImportError, Exception):
-        pass
 
 # Absolute fallback — use shared data dir
 if DEFAULT_DB_PATH is None:

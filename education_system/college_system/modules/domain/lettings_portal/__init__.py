@@ -1,1 +1,0 @@
-"""Lettings management portal module."""

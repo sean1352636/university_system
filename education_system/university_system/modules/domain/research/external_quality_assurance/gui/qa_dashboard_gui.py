@@ -106,7 +106,6 @@ class QADashboardGUI:
     _OPEN_IN_TARGETS = (
         ("Grades", "show_grade_tracking_gui"),
         ("Predictive Analytics", "show_predictive_analytics_gui"),
-        ("Predictive Alerts", "show_predictive_alerts_gui"),
         ("Analytics Dashboard", "show_analytics_dashboard_gui"),
         ("Business Intel", "show_business_intelligence_gui"),
         ("HESA Export", "show_hesa_export_gui"),
@@ -269,22 +268,6 @@ class QADashboardGUI:
                    "focus": "continuation_forecast"}
         self._dispatch_with_context("show_predictive_analytics_gui",
                                      "Predictive Analytics", payload)
-        return payload
-
-    def open_alerts_for_metric(self) -> dict | None:
-        """3. Open Predictive Alerts filtered to the selected B3 metric."""
-        ctx = self._selected_b3()
-        if not ctx:
-            messagebox.showinfo("Pick a row",
-                                "Select a B3 metric row to scope the alerts to.",
-                                parent=self.window)
-            return None
-        threshold = 80.0 if ctx["metric"] in ("continuation", "completion") else None
-        payload = {"source": "eqa.b3", "metric": ctx["metric"],
-                   "cohort_year": ctx["cohort_year"], "course": ctx["course"],
-                   "threshold_pct": threshold}
-        self._dispatch_with_context("show_predictive_alerts_gui",
-                                     "Predictive Alerts", payload)
         return payload
 
     def open_audit_for_submission(self) -> dict | None:
@@ -494,8 +477,6 @@ class QADashboardGUI:
                    command=self.drill_through_b3).pack(side=tk.LEFT, padx=2)
         ttk.Button(drill, text="Forecast in Predictive",
                    command=self.open_predictive_for_cohort).pack(side=tk.LEFT, padx=2)
-        ttk.Button(drill, text="Alerts for metric",
-                   command=self.open_alerts_for_metric).pack(side=tk.LEFT, padx=2)
         ttk.Button(drill, text="HESA for year",
                    command=self.open_hesa_for_year).pack(side=tk.LEFT, padx=2)
 

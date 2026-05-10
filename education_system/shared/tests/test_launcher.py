@@ -13,7 +13,7 @@ from unittest.mock import patch, MagicMock
 class TestDispatchTable:
     def test_all_system_mode_combos_present(self):
         from education_system.launcher.systems import LAUNCHERS
-        systems = ("university", "college", "school", "primary")
+        systems = ("university",)
         modes = ("cli", "gui", "api", "test")
         for system in systems:
             for mode in modes:
@@ -26,7 +26,7 @@ class TestDispatchTable:
 
     def test_auth_systems_cover_all(self):
         from education_system.launcher.systems import AUTH_GUI_SYSTEMS, AUTH_CLI_SYSTEMS
-        expected = {"university", "college", "school", "primary"}
+        expected = {"university"}
         assert AUTH_GUI_SYSTEMS == expected
         assert AUTH_CLI_SYSTEMS == expected
 
@@ -34,34 +34,14 @@ class TestDispatchTable:
 # ── Role picker ──────────────────────────────────────────────────────────────
 
 class TestRoles:
-    def test_is_superadmin_all_four(self):
+    def test_is_superadmin_university_admin(self):
         from education_system.launcher.roles import is_superadmin
-        user = {"systems": [
-            {"system_key": "university", "role": "admin"},
-            {"system_key": "college", "role": "admin"},
-            {"system_key": "school", "role": "admin"},
-            {"system_key": "primary", "role": "admin"},
-        ]}
+        user = {"systems": [{"system_key": "university", "role": "admin"}]}
         assert is_superadmin(user)
-
-    def test_is_superadmin_missing_system(self):
-        from education_system.launcher.roles import is_superadmin
-        user = {"systems": [
-            {"system_key": "university", "role": "admin"},
-            {"system_key": "college", "role": "admin"},
-            {"system_key": "school", "role": "admin"},
-            # missing primary
-        ]}
-        assert not is_superadmin(user)
 
     def test_is_superadmin_non_admin_role(self):
         from education_system.launcher.roles import is_superadmin
-        user = {"systems": [
-            {"system_key": "university", "role": "admin"},
-            {"system_key": "college", "role": "admin"},
-            {"system_key": "school", "role": "admin"},
-            {"system_key": "primary", "role": "student"},
-        ]}
+        user = {"systems": [{"system_key": "university", "role": "student"}]}
         assert not is_superadmin(user)
 
     def test_is_superadmin_none(self):
@@ -72,8 +52,7 @@ class TestRoles:
 
     def test_system_names_complete(self):
         from education_system.launcher.roles import SYSTEM_NAMES
-        for key in ("university", "college", "school", "primary"):
-            assert key in SYSTEM_NAMES
+        assert "university" in SYSTEM_NAMES
 
     @patch("builtins.input", return_value="1")
     def test_pick_role_cli_returns_admin(self, _mock_input):
@@ -83,7 +62,7 @@ class TestRoles:
     @patch("builtins.input", return_value="4")
     def test_pick_role_cli_returns_student(self, _mock_input):
         from education_system.launcher.roles import pick_role_cli
-        assert pick_role_cli("college") == "student"
+        assert pick_role_cli("university") == "student"
 
 
 # ── Menu helpers ─────────────────────────────────────────────────────────────
@@ -108,11 +87,6 @@ class TestMenus:
     def test_select_system_university(self, _):
         from education_system.launcher.menus import cli_select_system
         assert cli_select_system() == "university"
-
-    @patch("builtins.input", return_value="4")
-    def test_select_system_primary(self, _):
-        from education_system.launcher.menus import cli_select_system
-        assert cli_select_system() == "primary"
 
     @patch("builtins.input", return_value="0")
     def test_select_system_back(self, _):

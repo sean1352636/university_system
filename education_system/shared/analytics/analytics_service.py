@@ -21,9 +21,6 @@ def _default_db_paths():
     shared_dir = Path(__file__).resolve().parent.parent  # .../shared
     edu_root = shared_dir.parent  # .../education_system
     return {
-        "primary": edu_root / "primary_school" / "data" / "db_files" / "primary_school.db",
-        "secondary": edu_root / "secondary_school" / "data" / "db_files" / "secondary_school.db",
-        "college": edu_root / "college_system" / "data" / "db_files" / "sixthform.db",
         "university": edu_root / "university_system" / "data" / "db_files" / "student_records.db",
     }
 
@@ -44,9 +41,6 @@ def _get_columns(conn, table_name):
 
 
 SYSTEM_LABELS = {
-    "primary": "Primary School",
-    "secondary": "Secondary School",
-    "college": "Sixth Form College",
     "university": "University",
 }
 
@@ -59,9 +53,6 @@ class AnalyticsService:
     def __init__(self, primary_db=None, secondary_db=None, college_db=None, university_db=None):
         defaults = _default_db_paths()
         self._db_paths = {
-            "primary": Path(primary_db) if primary_db else defaults["primary"],
-            "secondary": Path(secondary_db) if secondary_db else defaults["secondary"],
-            "college": Path(college_db) if college_db else defaults["college"],
             "university": Path(university_db) if university_db else defaults["university"],
         }
 

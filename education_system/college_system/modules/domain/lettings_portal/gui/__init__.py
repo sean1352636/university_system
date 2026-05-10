@@ -1,1 +1,0 @@
-"""Lettings portal GUI."""

@@ -194,16 +194,7 @@ def _init_system_schema(conn: sqlite3.Connection, system_key: str) -> None:
         db_path = None
 
     try:
-        if system_key == "college":
-            from education_system.college_system.infrastructure.database.schema import init_db
-            init_db(db_path)
-        elif system_key == "school":
-            from education_system.secondary_school.infrastructure.database.schema import initialise_database
-            initialise_database(db_path)
-        elif system_key == "primary":
-            from education_system.primary_school.infrastructure.database.schema import initialise_database
-            initialise_database(db_path)
-        elif system_key == "university":
+        if system_key == "university":
             from education_system.university_system.infrastructure.database.database_utils import init_db
             init_db(db_path)
     except Exception as exc:

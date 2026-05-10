@@ -702,14 +702,7 @@ def create_navigation_panel(self, parent):
 
     # ---------- Cross-System ----------
     cross_system_buttons_data = [
-        ('student_journey', 'Student Journey', self.show_student_journey_gui),
         ('analytics_dashboard', 'Analytics Dashboard', self.show_analytics_dashboard_gui),
-        ('outcome_tracking', 'Outcome Tracking', self.show_outcome_tracking_gui),
-        ('predictive_alerts', 'Predictive Alerts', self.show_predictive_alerts_gui),
-        ('bulk_transfer', 'Bulk Transfer', self.show_bulk_transfer_gui),
-        ('transfer_documents', 'Transfer Documents', self.show_transfer_documents_gui),
-        ('reverse_lookup', 'Reverse Lookup', self.show_reverse_lookup_gui),
-        ('parent_continuity', 'Parent Continuity', self.show_parent_continuity_gui),
         ('cross_system_calendar', 'Cross-System Calendar', self.show_cross_system_calendar_gui),
         ('central_admin_portal', 'Central Admin Portal', self.show_central_admin_gui),
         ('gdpr_compliance', 'GDPR Compliance', self.show_gdpr_compliance_gui),

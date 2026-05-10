@@ -155,13 +155,7 @@ class SuperAdminDashboard(tk.Tk):
         return self._notification_service
 
     def _get_journey_service(self):
-        if self._journey_service is None:
-            try:
-                from education_system.shared.cross_system.journey_service import JourneyService
-                self._journey_service = JourneyService()
-            except Exception:
-                return None
-        return self._journey_service
+        return None
 
     # ------------------------------------------------------------------
     # UI construction

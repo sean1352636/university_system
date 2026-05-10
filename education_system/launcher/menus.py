@@ -28,8 +28,8 @@ def cli_select_mode() -> str | None:
         print("  [2] GUI    - Graphical interface")
         print("  [3] API    - REST API server (includes web dashboard)")
         print("  [4] Web    - Static HTML UI (login, students, email)")
-        print("  [5] Test   - Run test suite (single system)")
-        print("  [6] Test   - Run ALL tests (all systems)")
+        print("  [5] Test   - Run test suite")
+        print("  [6] Test   - Run ALL tests")
         print("  [0] Exit")
         print()
 
@@ -44,7 +44,7 @@ def cli_select_mode() -> str | None:
 
 def cli_select_system() -> str | None:
     """CLI menu: pick a system. Returns system key or None for back."""
-    mapping = {"1": "university", "2": "college", "3": "school", "4": "primary"}
+    mapping = {"1": "university"}
     _flush_stdin()
 
     while True:
@@ -52,9 +52,6 @@ def cli_select_system() -> str | None:
         print("  ── Select System ──")
         print()
         print("  [1] University Management System")
-        print("  [2] Sixth Form College System")
-        print("  [3] Secondary School Management System")
-        print("  [4] Primary School Management System")
         print("  [0] Back")
         print()
 

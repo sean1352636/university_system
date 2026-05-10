@@ -34,9 +34,6 @@ _TYPE_LABELS = {
 
 # Institution detection (same logic as transcript_service)
 _INSTITUTIONS = {
-    "primary_school": "Primary School",
-    "secondary_school": "Secondary School",
-    "sixthform": "Sixth Form College",
     "student_records": "University",
 }
 

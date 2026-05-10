@@ -1,0 +1,3 @@
+from education_system.university_system.modules.domain.academics.mitigating_circumstances.services.mitigating_circumstances_service import MitigatingCircumstancesService
+
+__all__ = ["MitigatingCircumstancesService"]
