@@ -18,19 +18,16 @@ _ROLE_COLOURS = {
 
 SYSTEM_NAMES = {
     "university": "University",
-    "college": "Sixth Form College",
-    "school": "Secondary School",
-    "primary": "Primary School",
 }
 
 
 def is_superadmin(user_info) -> bool:
-    """Check whether user_info represents a superadmin (admin in all 4 systems)."""
+    """Check whether user_info represents a superadmin (admin in the university system)."""
     if not user_info:
         return False
     systems = user_info.get("systems", [])
     admin_keys = {s["system_key"] for s in systems if s.get("role") == "admin"}
-    return admin_keys >= {"university", "college", "school", "primary"}
+    return "university" in admin_keys
 
 
 def pick_role_gui(target_system: str) -> str:

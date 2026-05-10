@@ -27,7 +27,7 @@ def setup_logging(
     Parameters
     ----------
     logger_name:
-        The logger namespace, e.g. ``"education_system.college_system"``.
+        The logger namespace, e.g. ``"education_system.university_system"``.
     log_dir:
         Directory where the log file will be written.
     log_filename:

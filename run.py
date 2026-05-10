@@ -341,9 +341,6 @@ def main():
 
     sys_group = parser.add_mutually_exclusive_group()
     sys_group.add_argument("--university", action="store_true", help="University system")
-    sys_group.add_argument("--college", action="store_true", help="College system")
-    sys_group.add_argument("--school", action="store_true", help="Secondary school system")
-    sys_group.add_argument("--primary", action="store_true", help="Primary school system")
 
     args = parser.parse_args()
 
@@ -363,15 +360,7 @@ def main():
         mode = "test-all"
 
     # Resolve system from flags
-    system = None
-    if args.university:
-        system = "university"
-    elif args.college:
-        system = "college"
-    elif args.school:
-        system = "school"
-    elif args.primary:
-        system = "primary"
+    system = "university" if args.university else None
 
     # ── Web mode ───────────────────────────────────────────────────────
     if mode == "web":

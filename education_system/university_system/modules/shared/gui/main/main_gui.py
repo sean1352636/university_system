@@ -244,7 +244,6 @@ from education_system.university_system.modules.shared.gui.main.auth_gui import 
     show_change_password,
     check_session_timer,
     switch_to_cli,
-    switch_system,
     shutdown_system,
     show_mfa_setup,
     _open_mfa_wizard,
@@ -581,7 +580,6 @@ UnifiedManagementGUI.show_security_questions = show_security_questions
 UnifiedManagementGUI.toggle_login_verification = toggle_login_verification
 UnifiedManagementGUI.check_session_timer = check_session_timer
 UnifiedManagementGUI.switch_to_cli = switch_to_cli
-UnifiedManagementGUI.switch_system = switch_system
 UnifiedManagementGUI.shutdown_system = shutdown_system
 UnifiedManagementGUI.show_student_records = show_student_records
 UnifiedManagementGUI.create_student_treeview = create_student_treeview
@@ -806,14 +804,6 @@ UnifiedManagementGUI.show_study_room_booking_gui = show_study_room_booking_gui
 UnifiedManagementGUI.show_printing_services_gui = show_printing_services_gui
 
 
-def show_student_journey_gui(self):
-    """Launch the Student Journey Dashboard in a top-level window."""
-    from education_system.shared.cross_system.journey_dashboard import JourneyDashboardFrame
-    win = self.create_themed_toplevel(title="Student Journey", geometry="900x600")
-    frame = JourneyDashboardFrame(win, db_path=None, auth=self.auth)
-    frame.pack(fill='both', expand=True)
-
-
 def show_analytics_dashboard_gui(self):
     """Launch the Analytics Dashboard in a top-level window.
 
@@ -834,64 +824,6 @@ def show_analytics_dashboard_gui(self):
         consume_eqa_context(self, "Analytics Dashboard", target=frame)
     except Exception:
         pass
-
-
-def show_outcome_tracking_gui(self):
-    """Launch the Outcome Tracking frame in a top-level window."""
-    from education_system.shared.outcomes.outcomes_gui import OutcomeTrackingFrame
-    win = self.create_themed_toplevel(title="Outcome Tracking", geometry="900x600")
-    frame = OutcomeTrackingFrame(win, db_path=None, auth=self.auth)
-    frame.pack(fill='both', expand=True)
-
-
-def show_predictive_alerts_gui(self):
-    """Launch the Predictive Alerts frame in a top-level window."""
-    from education_system.shared.predictive.predictive_gui import PredictiveAlertsFrame
-    win = self.create_themed_toplevel(title="Predictive Alerts", geometry="900x600")
-    try:
-        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_widgets import EQAStatusStrip
-        EQAStatusStrip(win).pack(fill='x', padx=8, pady=(6, 0))
-    except Exception:
-        pass
-    frame = PredictiveAlertsFrame(win, db_path=None, auth=self.auth)
-    frame.pack(fill='both', expand=True)
-    try:
-        from education_system.university_system.modules.domain.research.external_quality_assurance.gui.qa_receivers import consume_eqa_context
-        consume_eqa_context(self, "Predictive Alerts", target=frame)
-    except Exception:
-        pass
-
-
-def show_bulk_transfer_gui(self):
-    """Launch the Bulk Transfer frame in a top-level window."""
-    from education_system.shared.bulk_transfer.bulk_transfer_gui import BulkTransferFrame
-    win = self.create_themed_toplevel(title="Bulk Transfer", geometry="900x600")
-    frame = BulkTransferFrame(win, db_path=None, auth=self.auth)
-    frame.pack(fill='both', expand=True)
-
-
-def show_transfer_documents_gui(self):
-    """Launch the Transfer Documents frame in a top-level window."""
-    from education_system.shared.transfer_docs.transfer_docs_gui import TransferDocumentsFrame
-    win = self.create_themed_toplevel(title="Transfer Documents", geometry="900x600")
-    frame = TransferDocumentsFrame(win, db_path=None, auth=self.auth)
-    frame.pack(fill='both', expand=True)
-
-
-def show_reverse_lookup_gui(self):
-    """Launch the Reverse Lookup frame in a top-level window."""
-    from education_system.shared.reverse_lookup.reverse_lookup_gui import ReverseLookupFrame
-    win = self.create_themed_toplevel(title="Reverse Lookup", geometry="900x600")
-    frame = ReverseLookupFrame(win, db_path=None, auth=self.auth)
-    frame.pack(fill='both', expand=True)
-
-
-def show_parent_continuity_gui(self):
-    """Launch the Parent Continuity frame in a top-level window."""
-    from education_system.shared.parent_continuity.parent_gui import ParentContinuityFrame
-    win = self.create_themed_toplevel(title="Parent Continuity", geometry="900x600")
-    frame = ParentContinuityFrame(win, db_path=None, auth=self.auth)
-    frame.pack(fill='both', expand=True)
 
 
 def show_cross_system_calendar_gui(self):
@@ -936,14 +868,7 @@ def show_student_self_service_gui(self):
     frame.pack(fill='both', expand=True)
 
 
-UnifiedManagementGUI.show_student_journey_gui = show_student_journey_gui
 UnifiedManagementGUI.show_analytics_dashboard_gui = show_analytics_dashboard_gui
-UnifiedManagementGUI.show_outcome_tracking_gui = show_outcome_tracking_gui
-UnifiedManagementGUI.show_predictive_alerts_gui = show_predictive_alerts_gui
-UnifiedManagementGUI.show_bulk_transfer_gui = show_bulk_transfer_gui
-UnifiedManagementGUI.show_transfer_documents_gui = show_transfer_documents_gui
-UnifiedManagementGUI.show_reverse_lookup_gui = show_reverse_lookup_gui
-UnifiedManagementGUI.show_parent_continuity_gui = show_parent_continuity_gui
 UnifiedManagementGUI.show_cross_system_calendar_gui = show_cross_system_calendar_gui
 UnifiedManagementGUI.show_central_admin_gui = show_central_admin_gui
 UnifiedManagementGUI.show_gdpr_compliance_gui = show_gdpr_compliance_gui

@@ -1,7 +1,7 @@
 # Education Management System - Makefile
-# Development commands for all 4 subsystems
+# Development commands for the university system
 
-.PHONY: help install install-dev clean test test-all test-cov test-shared test-university test-college test-secondary test-primary test-integration test-security test-gui test-auth test-coverage test-coverage-report lint format run seed portal docker load-test perf-test load-test-ui
+.PHONY: help install install-dev clean test test-all test-cov test-shared test-university test-security test-gui test-auth test-coverage test-coverage-report lint format run seed portal docker load-test perf-test load-test-ui
 
 .DEFAULT_GOAL := help
 
@@ -11,7 +11,7 @@ PIP := $(VENV)/pip
 PYTEST := $(VENV)/pytest
 
 SRC := education_system
-TESTS := $(SRC)/shared/tests $(SRC)/university_system/tests $(SRC)/college_system/tests $(SRC)/secondary_school/tests $(SRC)/primary_school/tests
+TESTS := $(SRC)/shared/tests $(SRC)/university_system/tests
 
 help: ## Show this help
 	@echo "Education Management System"
@@ -41,8 +41,8 @@ run-cli: ## Run CLI mode
 run-gui: ## Run GUI mode
 	$(PYTHON) run.py --gui
 
-run-api: ## Run college API server
-	$(PYTHON) -m education_system.college_system.api.api_server
+run-api: ## Run unified API server
+	$(PYTHON) -m education_system.shared.api.unified_server
 
 portal: ## Run self-service web portal
 	$(PYTHON) run.py --portal
@@ -68,18 +68,6 @@ test-shared: ## Run shared module tests
 
 test-university: ## Run university tests
 	$(PYTEST) $(SRC)/university_system/tests/ -v --timeout=60
-
-test-college: ## Run college tests
-	$(PYTEST) $(SRC)/college_system/tests/ -v --timeout=60
-
-test-secondary: ## Run secondary school tests
-	$(PYTEST) $(SRC)/secondary_school/tests/ -v --timeout=60
-
-test-primary: ## Run primary school tests
-	$(PYTEST) $(SRC)/primary_school/tests/ -v --timeout=60
-
-test-integration: ## Run cross-system integration tests
-	$(PYTEST) $(SRC)/shared/tests/test_cross_system.py -v --timeout=60
 
 test-security: ## Run security tests
 	$(PYTEST) -m security -v --timeout=60

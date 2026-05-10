@@ -148,24 +148,6 @@ class MisconductDatabaseMixin:
                 return str(_p)
             except ImportError:
                 pass
-        elif system_key == 'college':
-            try:
-                from education_system.college_system.infrastructure.database.db import get_db_path
-                return str(get_db_path())
-            except (ImportError, Exception):
-                pass
-        elif system_key == 'secondary':
-            try:
-                from education_system.secondary_school.infrastructure.database.db import get_db_path
-                return str(get_db_path())
-            except (ImportError, Exception):
-                pass
-        elif system_key == 'primary':
-            try:
-                from education_system.primary_school.infrastructure.database.db import get_db_path
-                return str(get_db_path())
-            except (ImportError, Exception):
-                pass
         # Fallback — use the misconduct DB (may contain student tables
         # if the system was launched within the university context).
         return self._get_db_path()

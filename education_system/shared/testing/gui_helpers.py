@@ -58,7 +58,7 @@ class GUITestCase(unittest.TestCase):
     Usage:
         class TestStudentGUI(GUITestCase):
             def test_add_student_dialog(self):
-                from education_system.college_system.modules.domain.students.gui.student_gui import StudentGUI
+                from education_system.university_system.modules.domain.students.gui.student_gui import StudentGUI
                 gui = StudentGUI(self.root, user_info={"username": "admin"}, role="admin")
                 self.pump_events()
 

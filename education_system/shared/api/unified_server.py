@@ -308,63 +308,6 @@ def create_unified_app() -> Flask:
     except Exception as e:
         logger.warning("Failed to load GraphQL API (non-fatal): %s", e)
 
-    # ── College system ──────────────────────────────────────────────────
-    try:
-        from education_system.college_system.core.paths import ensure_directories as college_ensure
-        from education_system.college_system.infrastructure.database.schema import (
-            init_db as college_init_db, seed_default_data as college_seed,
-        )
-        from education_system.shared.api.college.routes import ALL_BLUEPRINTS as college_bps, ALL_INIT_FUNCS as college_inits
-
-        college_ensure()
-        college_init_db()
-        college_seed()
-        _register_system_blueprints(app, college_bps, college_inits, None,
-                                    "college", "Sixth Form College",
-                                    auth_db_path=str(AUTH_DB_FILE))
-    except Exception as e:
-        logger.error("Failed to load college system: %s", e)
-
-    # ── Secondary school ────────────────────────────────────────────────
-    try:
-        from education_system.secondary_school.core.paths import ensure_directories as school_ensure
-        from education_system.secondary_school.infrastructure.database.schema import (
-            initialise_database as school_init_db, seed_default_users as school_seed,
-            seed_default_staff as school_seed_staff,
-        )
-        from education_system.shared.api.secondary.routes import ALL_BLUEPRINTS as school_bps, ALL_INIT_FUNCS as school_inits
-
-        school_ensure()
-        school_init_db()
-        school_seed()
-        school_seed_staff()
-        _register_system_blueprints(app, school_bps, school_inits, None,
-                                    "school", "Secondary School",
-                                    auth_db_path=str(AUTH_DB_FILE))
-    except Exception as e:
-        logger.error("Failed to load secondary school system: %s", e)
-
-    # ── Primary school ──────────────────────────────────────────────────
-    try:
-        from education_system.primary_school.core.paths import ensure_directories as primary_ensure
-        from education_system.primary_school.infrastructure.database.db import get_db_path as primary_db_path
-        from education_system.primary_school.infrastructure.database.schema import (
-            initialise_database as primary_init_db, seed_default_users as primary_seed,
-            seed_default_staff as primary_seed_staff,
-        )
-        from education_system.shared.api.primary.routes import ALL_BLUEPRINTS as primary_bps, ALL_INIT_FUNCS as primary_inits
-
-        primary_ensure()
-        p_db = primary_db_path()
-        primary_init_db(p_db)
-        primary_seed(p_db)
-        primary_seed_staff(p_db)
-        _register_system_blueprints(app, primary_bps, primary_inits, p_db,
-                                    "primary", "Primary School",
-                                    auth_db_path=str(AUTH_DB_FILE))
-    except Exception as e:
-        logger.error("Failed to load primary school system: %s", e)
-
     # ── University system ───────────────────────────────────────────────
     try:
         from education_system.university_system.core.paths import ensure_directories as uni_ensure

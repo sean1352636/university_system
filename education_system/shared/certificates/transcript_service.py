@@ -29,9 +29,6 @@ _TEMPLATE_DIR = Path(__file__).resolve().parent / "templates"
 # Institution labels (fallback when DB doesn't provide one)
 # ---------------------------------------------------------------------------
 _INSTITUTIONS = {
-    "primary_school": "Primary School",
-    "secondary_school": "Secondary School",
-    "sixthform": "Sixth Form College",
     "student_records": "University",
 }
 

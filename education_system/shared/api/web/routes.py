@@ -69,16 +69,7 @@ def portal_assets(filename):
 def _resolve_db(system_key: str) -> str | None:
     """Resolve the database path for a given system key."""
     try:
-        if system_key == "college":
-            from education_system.college_system.core.paths import DEFAULT_DB_PATH
-            return str(DEFAULT_DB_PATH)
-        elif system_key == "school":
-            from education_system.secondary_school.core.paths import DEFAULT_DB_PATH
-            return str(DEFAULT_DB_PATH)
-        elif system_key == "primary":
-            from education_system.primary_school.infrastructure.database.db import get_db_path
-            return str(get_db_path())
-        elif system_key == "university":
+        if system_key == "university":
             from education_system.university_system.core.paths import DEFAULT_DB_PATH
             return str(DEFAULT_DB_PATH)
     except ImportError:

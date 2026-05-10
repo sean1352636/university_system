@@ -1,1 +1,0 @@
-"""Student support GUI components."""

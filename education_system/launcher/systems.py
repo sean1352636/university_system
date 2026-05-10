@@ -141,53 +141,6 @@ def run_university_gui(user_info=None, role=None, shared_auth=None):
     app.run()
 
 
-# ── College ──────────────────────────────────────────────────────────────────
-
-def _init_college_i18n():
-    try:
-        from education_system.shared.i18n import get_current_language
-        from education_system.college_system.core.i18n import init_i18n
-        init_i18n(get_current_language())
-    except Exception:
-        pass
-
-
-def run_college_cli(user_info=None, role=None, shared_auth=None):
-    _init_college_i18n()
-    from education_system.college_system.modules.shared.cli.cli_main import main
-    main(user_info=user_info, role=role, shared_auth=shared_auth)
-
-
-def run_college_gui(user_info=None, role=None, shared_auth=None):
-    _init_college_i18n()
-    from education_system.college_system.modules.shared.gui.main_gui import launch_gui
-    launch_gui(user_info=user_info, role=role, shared_auth=shared_auth)
-
-
-# ── Secondary School ─────────────────────────────────────────────────────────
-
-def run_school_cli(user_info=None, role=None, shared_auth=None):
-    from education_system.secondary_school.cli.cli_main import main
-    main(user_info=user_info, role=role, shared_auth=shared_auth)
-
-
-def run_school_gui(user_info=None, role=None, shared_auth=None):
-    from education_system.secondary_school.modules.shared.gui.main_gui import run
-    run(user_info=user_info, role=role, shared_auth=shared_auth)
-
-
-# ── Primary School ───────────────────────────────────────────────────────────
-
-def run_primary_cli(user_info=None, role=None, shared_auth=None):
-    from education_system.primary_school.cli.cli_main import main
-    main(user_info=user_info, role=role, shared_auth=shared_auth)
-
-
-def run_primary_gui(user_info=None, role=None, shared_auth=None):
-    from education_system.primary_school.modules.shared.gui.main_gui import run
-    run(user_info=user_info, role=role, shared_auth=shared_auth)
-
-
 # ── Shared ───────────────────────────────────────────────────────────────────
 
 def run_unified_api():
@@ -213,29 +166,12 @@ def _repo_root():
     return os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
-def run_college_tests():
-    return _run_pytest("education_system/college_system/tests/")
-
-
-def run_school_tests():
-    return _run_pytest("education_system/secondary_school/tests/")
-
-
-def run_primary_tests():
-    return _run_pytest("education_system/primary_school/tests/")
-
-
 def run_all_system_tests():
-    """Run tests across all four systems in a single pytest invocation."""
-    test_dirs = [
-        "education_system/university_system/tests/",
-        "education_system/college_system/tests/",
-        "education_system/secondary_school/tests/",
-        "education_system/primary_school/tests/",
-    ]
+    """Run the university test suite."""
+    test_dirs = ["education_system/university_system/tests/"]
     print()
     print("=" * 60)
-    print("  RUNNING TESTS ACROSS ALL SYSTEMS")
+    print("  RUNNING UNIVERSITY TESTS")
     print("=" * 60)
     print()
     result = subprocess.run(
@@ -248,10 +184,8 @@ def run_all_system_tests():
 
 
 def run_seed(system: str, count: int):
-    """Seed a system with demo data and export as portable files."""
+    """Seed the university system with demo data."""
     from education_system.shared.seeding import DemoSeeder
-    from education_system.shared.transfer.portability import StudentDataExporter
-    from pathlib import Path
 
     seeder = DemoSeeder(system_key=system)
     students = seeder.generate_students(count)
@@ -267,14 +201,6 @@ def run_seed(system: str, count: int):
     print(f"  Enrollments: {len(enrollments)}")
     print(f"  Attendance:  {len(attendance)}")
     print(f"  Grades:      {len(grades)}")
-
-    seed_dir = Path(__file__).resolve().parent.parent.parent / "education_system" / "shared" / "data" / "seed"
-    seed_dir.mkdir(parents=True, exist_ok=True)
-
-    exporter = StudentDataExporter(system_name=system.title(), system_key=system)
-    exporter.save(seed_dir / f"{system}_students.json", students)
-    exporter.save(seed_dir / f"{system}_students.csv", students)
-    print(f"\n  Saved to: {seed_dir}/")
     print()
 
 
@@ -285,20 +211,8 @@ LAUNCHERS = {
     ("university", "gui"):  run_university_gui,
     ("university", "api"):  run_unified_api,
     ("university", "test"): run_university_tests,
-    ("college", "cli"):     run_college_cli,
-    ("college", "gui"):     run_college_gui,
-    ("college", "api"):     run_unified_api,
-    ("college", "test"):    run_college_tests,
-    ("school", "cli"):      run_school_cli,
-    ("school", "gui"):      run_school_gui,
-    ("school", "api"):      run_unified_api,
-    ("school", "test"):     run_school_tests,
-    ("primary", "cli"):     run_primary_cli,
-    ("primary", "gui"):     run_primary_gui,
-    ("primary", "api"):     run_unified_api,
-    ("primary", "test"):    run_primary_tests,
 }
 
 # Systems that support pre-authenticated launch
-AUTH_GUI_SYSTEMS = {"university", "college", "school", "primary"}
-AUTH_CLI_SYSTEMS = {"university", "college", "school", "primary"}
+AUTH_GUI_SYSTEMS = {"university"}
+AUTH_CLI_SYSTEMS = {"university"}

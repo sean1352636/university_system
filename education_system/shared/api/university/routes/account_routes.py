@@ -12,7 +12,7 @@ from education_system.shared.api.university.validators import (
     validate_preferences_update,
     validate_profile_update,
 )
-from education_system.college_system.core.sql_safety import validate_identifier  # nosec B608
+from education_system.shared.database.sql_safety import validate_identifier  # nosec B608
 from education_system.university_system.infrastructure.auth import UserAuth
 from education_system.university_system.infrastructure.database.db import get_connection
 from education_system.university_system.modules.shared.utils.activity_logger import log_activity

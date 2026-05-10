@@ -161,15 +161,6 @@ def aggregate_qa_across_systems() -> dict:
         ("university",
          "education_system.university_system.modules.domain.research."
          "external_quality_assurance.services.qa_service"),
-        ("college",
-         "education_system.college_system.modules.domain.research."
-         "external_quality_assurance.services.qa_service"),
-        ("school",
-         "education_system.secondary_school.modules.domain.research."
-         "external_quality_assurance.services.qa_service"),
-        ("primary",
-         "education_system.primary_school.modules.domain.research."
-         "external_quality_assurance.services.qa_service"),
     ]
     import importlib
     for sys_key, modpath in candidates:

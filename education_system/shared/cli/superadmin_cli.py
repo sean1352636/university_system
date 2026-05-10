@@ -11,9 +11,6 @@ from datetime import datetime
 
 SYSTEM_KEYS = ["primary", "secondary", "college", "university"]
 SYSTEM_LABELS = {
-    "primary": "Primary School",
-    "secondary": "Secondary School",
-    "college": "Sixth Form College",
     "university": "University",
 }
 
@@ -85,14 +82,7 @@ def _get_notifications():
 
 
 def _get_journey():
-    global _journey_svc
-    if _journey_svc is None:
-        try:
-            from education_system.shared.cross_system.journey_service import JourneyService
-            _journey_svc = JourneyService()
-        except Exception as e:
-            print(f"  [!] JourneyService unavailable: {e}")
-    return _journey_svc
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -526,9 +516,6 @@ def _misconduct():
     edu_root = shared_dir.parent
 
     db_paths = {
-        "primary": edu_root / "primary_school" / "data" / "db_files" / "primary_school.db",
-        "secondary": edu_root / "secondary_school" / "data" / "db_files" / "secondary_school.db",
-        "college": edu_root / "college_system" / "data" / "db_files" / "sixthform.db",
         "university": edu_root / "university_system" / "data" / "db_files" / "student_records.db",
     }
 

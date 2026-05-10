@@ -1,1 +1,0 @@
-"""Lettings Portal CLI package."""

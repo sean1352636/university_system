@@ -20,15 +20,7 @@ class ServiceTestCase(unittest.TestCase):
 
     Usage:
         class TestStudentService(ServiceTestCase):
-            SCHEMA_MODULE = "education_system.college_system.infrastructure.database.schema"
-            DB_MODULE = "education_system.college_system.infrastructure.database.db"
-
-            def test_create_student(self):
-                from education_system.college_system.modules.domain.students.services.student_service import StudentService
-                svc = StudentService(self.db_path)
-                student = svc.create_student(first_name="John", last_name="Doe")
-                self.assertIsNotNone(student)
-                self.assertEqual(student["first_name"], "John")
+            SCHEMA_MODULE = "education_system.university_system.infrastructure.database.database_utils"
     """
 
     SCHEMA_MODULE: str = ""

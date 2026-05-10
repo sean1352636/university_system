@@ -28,9 +28,6 @@ _edu_root = _shared_root.parent
 
 _SYSTEM_DBS: dict[str, Path] = {
     "university": _edu_root / "university_system" / "data" / "db_files" / "student_records.db",
-    "college":    _edu_root / "college_system"    / "data" / "db_files" / "sixthform.db",
-    "secondary":  _edu_root / "secondary_school"  / "data" / "db_files" / "secondary_school.db",
-    "primary":    _edu_root / "primary_school"    / "data" / "db_files" / "primary_school.db",
     "auth":       _shared_root                    / "data" / "db_files" / "auth.db",
 }
 
@@ -42,15 +39,6 @@ _SUBJECT_TABLES: dict[str, list[str]] = {
     "university": [
         "students", "user_accounts", "contact_details", "applications",
         "alumni", "parent_contacts",
-    ],
-    "college": [
-        "students", "parent_contacts", "staff", "applications",
-    ],
-    "secondary": [
-        "students", "staff", "parent_contacts", "admissions",
-    ],
-    "primary": [
-        "pupils", "staff", "parent_contacts", "admissions",
     ],
     "auth": [
         "users",

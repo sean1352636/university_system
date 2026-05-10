@@ -224,9 +224,6 @@ class StaffPortalGUI:
 
         # Cross-System
         self._add_heading("Cross-System")
-        self._add_button("Student Journey", self._launch('show_student_journey_gui'))
-        self._add_button("Bulk Transfer", self._launch('show_bulk_transfer_gui'))
-        self._add_button("Transfer Documents", self._launch('show_transfer_documents_gui'))
         self._add_button("Shared Documents", self._launch('show_shared_documents_gui'))
         self._add_button("GDPR Compliance", self._launch('show_gdpr_compliance_gui'))
         self._add_button("Equality & Diversity", self._launch('show_equality_diversity_gui'))
