@@ -234,11 +234,30 @@ class EnrollmentService:
         finally:
             conn.close()
 
+    _SEARCH_COLUMNS = (
+        "s.student_id", "s.first_name", "s.last_name",
+        "c.course_code", "c.title", "c.term",
+    )
+
+    @classmethod
+    def _search_clause(cls, search: str | None) -> tuple[str, list]:
+        """Return ``(sql_fragment, params)`` for a free-text search across
+        student/course identifying columns. Empty/None search returns no-op."""
+        if not search:
+            return "", []
+        term = f"%{search.strip()}%"
+        ors = " OR ".join(f"{col} LIKE ?" for col in cls._SEARCH_COLUMNS)
+        return f" AND ({ors})", [term] * len(cls._SEARCH_COLUMNS)
+
     def list_enrollments(self, student_pk: int | None = None,
                          course_pk: int | None = None,
                          status: str | None = None,
+                         search: str | None = None,
                          limit: int = 100, offset: int = 0) -> list[dict]:
-        """List enrollments with optional filters."""
+        """List enrollments with optional filters.
+
+        ``search`` matches across student id/name and course code/title/term.
+        """
         sql = """SELECT e.*, s.student_id as sid, s.first_name, s.last_name,
                         c.course_code, c.title
                  FROM enrollments e
@@ -256,6 +275,9 @@ class EnrollmentService:
         if status:
             sql += " AND e.status = ?"
             params.append(status)
+        search_sql, search_params = self._search_clause(search)
+        sql += search_sql
+        params.extend(search_params)
 
         sql += " ORDER BY e.enrolled_at DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -269,7 +291,8 @@ class EnrollmentService:
 
     def count_enrollments(self, student_pk: int | None = None,
                           course_pk: int | None = None,
-                          status: str | None = None) -> int:
+                          status: str | None = None,
+                          search: str | None = None) -> int:
         """Count total enrollments with optional filters."""
         sql = """SELECT COUNT(*) as cnt
                  FROM enrollments e
@@ -286,10 +309,30 @@ class EnrollmentService:
         if status:
             sql += " AND e.status = ?"
             params.append(status)
+        search_sql, search_params = self._search_clause(search)
+        sql += search_sql
+        params.extend(search_params)
         conn = self._conn()
         try:
             row = conn.execute(sql, params).fetchone()
             return row["cnt"]
+        finally:
+            conn.close()
+
+    def promote_from_waitlist(self, course_pk: int) -> int | None:
+        """Public wrapper around the internal waitlist promotion helper.
+
+        Returns the promoted student's PK, or ``None`` if the waitlist for
+        ``course_pk`` was empty. Commits the change.
+        """
+        conn = self._conn()
+        try:
+            promoted = self._promote_from_waitlist(conn, course_pk)
+            conn.commit()
+            return promoted
+        except Exception:
+            conn.rollback()
+            raise
         finally:
             conn.close()
 

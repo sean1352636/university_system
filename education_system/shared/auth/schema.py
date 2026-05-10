@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at      TEXT    NOT NULL DEFAULT (datetime('now')),
     last_login      TEXT,
     legacy_salt     TEXT,
-    password_changed_at TEXT
+    password_changed_at TEXT,
+    line_manager_id INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
@@ -203,6 +204,96 @@ CREATE TABLE IF NOT EXISTS oauth_accounts (
 );
 CREATE INDEX IF NOT EXISTS idx_oauth_user ON oauth_accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_oauth_provider ON oauth_accounts(provider, provider_user_id);
+
+-- ── Cross-system identity continuity ──
+-- One row per student lifecycle. Per-system PKs / human IDs are NULL until
+-- that system has a record. Identity hints (DOB + name + UPN/NHS) bootstrap
+-- a journey when no link exists yet. See shared.cross_system.identity_service.
+CREATE TABLE IF NOT EXISTS student_journey (
+    journey_id            TEXT    PRIMARY KEY,
+    primary_pk            INTEGER,
+    school_pk             INTEGER,
+    college_pk            INTEGER,
+    university_pk         INTEGER,
+    primary_student_id    TEXT,
+    school_student_id     TEXT,
+    college_student_id    TEXT,
+    university_student_id TEXT,
+    legal_first_name      TEXT    NOT NULL,
+    legal_last_name       TEXT    NOT NULL,
+    date_of_birth         TEXT    NOT NULL,
+    nhs_number            TEXT,
+    upn                   TEXT,
+    current_system        TEXT    NOT NULL,
+    status                TEXT    NOT NULL DEFAULT 'active',
+    created_at            TEXT    NOT NULL DEFAULT (datetime('now')),
+    updated_at            TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_journey_dob_name
+    ON student_journey(date_of_birth, legal_last_name, legal_first_name);
+CREATE INDEX IF NOT EXISTS idx_journey_college_pk
+    ON student_journey(college_pk) WHERE college_pk IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_journey_university_pk
+    ON student_journey(university_pk) WHERE university_pk IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_journey_school_pk
+    ON student_journey(school_pk) WHERE school_pk IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_journey_primary_pk
+    ON student_journey(primary_pk) WHERE primary_pk IS NOT NULL;
+
+-- Append-only audit of every system transition.
+CREATE TABLE IF NOT EXISTS student_journey_transitions (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    journey_id    TEXT    NOT NULL REFERENCES student_journey(journey_id),
+    from_system   TEXT,
+    to_system     TEXT    NOT NULL,
+    reason        TEXT,
+    actor_user_id INTEGER,
+    occurred_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+    notes         TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_journey_trans_journey
+    ON student_journey_transitions(journey_id);
+
+-- ── Cross-system durable event bus ──
+-- Producers append; consumer pollers (one per subsystem process) read events
+-- targeted at their system (or with target_system NULL = broadcast) and
+-- record an ack row in cross_system_event_consumed. See
+-- shared.integrations.cross_system_bus.
+--
+-- NB: named ``cross_system_event_outbox`` because the table name
+-- ``cross_system_events`` was already taken by the calendar module
+-- (shared/calendar/calendar_service.py) for a completely different
+-- schema (title/date/time). Both live in this same auth DB.
+CREATE TABLE IF NOT EXISTS cross_system_event_outbox (
+    event_id       TEXT    PRIMARY KEY,
+    event_name     TEXT    NOT NULL,
+    journey_id     TEXT,
+    source_system  TEXT    NOT NULL,
+    source_module  TEXT    NOT NULL,
+    target_system  TEXT,
+    payload_json   TEXT    NOT NULL,
+    actor_user_id  INTEGER,
+    created_at     TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_cse_target_time
+    ON cross_system_event_outbox(target_system, created_at);
+CREATE INDEX IF NOT EXISTS idx_cse_event_name
+    ON cross_system_event_outbox(event_name, created_at);
+CREATE INDEX IF NOT EXISTS idx_cse_journey
+    ON cross_system_event_outbox(journey_id) WHERE journey_id IS NOT NULL;
+
+CREATE TABLE IF NOT EXISTS cross_system_event_consumed (
+    event_id         TEXT    NOT NULL REFERENCES cross_system_event_outbox(event_id),
+    consumer_system  TEXT    NOT NULL,
+    consumer_handler TEXT    NOT NULL,
+    status           TEXT    NOT NULL,
+    error_message    TEXT,
+    attempts         INTEGER NOT NULL DEFAULT 1,
+    consumed_at      TEXT    NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (event_id, consumer_system, consumer_handler)
+);
+CREATE INDEX IF NOT EXISTS idx_cse_consumed_status
+    ON cross_system_event_consumed(consumer_system, status, consumed_at);
 """
 
 # ── Default account definitions ──────────────────────────────────────────────
@@ -527,6 +618,8 @@ def initialise_auth_db(db_path: str | None = None):
             conn.execute("ALTER TABLE users ADD COLUMN password_changed_at TEXT")
         if "email_verified" not in cols:
             conn.execute("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0")
+        if "line_manager_id" not in cols:
+            conn.execute("ALTER TABLE users ADD COLUMN line_manager_id INTEGER")
         conn.commit()
 
         logger.info("Auth database initialised")

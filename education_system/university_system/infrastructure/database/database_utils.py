@@ -151,6 +151,39 @@ def init_db():
         except Exception:
             logging.debug("student_modules migration check skipped")
 
+        # Cross-system identity link (shared.cross_system.student_journey).
+        try:
+            conn = sqlite3.connect(str(DEFAULT_DB_PATH))
+            try:
+                stu_cols = [row[1] for row in conn.execute(
+                    "PRAGMA table_info(students)").fetchall()]
+                if "journey_id" not in stu_cols:
+                    conn.execute("ALTER TABLE students ADD COLUMN journey_id TEXT")
+                    conn.execute(
+                        "CREATE INDEX IF NOT EXISTS idx_students_journey_id "
+                        "ON students(journey_id)"
+                    )
+                    logging.info("Added students.journey_id column")
+                # Entry qualifications populated by
+                # ``on_progression_accepted`` when results day fires
+                # ``student.progression.accepted``. JSON of
+                # {qualification: grade}.
+                if "entry_qualifications" not in stu_cols:
+                    conn.execute(
+                        "ALTER TABLE students ADD COLUMN "
+                        "entry_qualifications TEXT"
+                    )
+                if "conditions_met" not in stu_cols:
+                    conn.execute(
+                        "ALTER TABLE students ADD COLUMN "
+                        "conditions_met INTEGER"
+                    )
+                conn.commit()
+            finally:
+                conn.close()
+        except Exception:
+            logging.debug("students cross-system migrations skipped")
+
         if not db_needs_setup:
             logging.info(f"Database already initialized with {len(tables)} tables")
             return True

@@ -87,12 +87,56 @@ class StudentService:
             )
             conn.commit()
             logger.info("Student created: %s (%s %s)", student_id, first_name, last_name)
-            return self.get_student_by_student_id(student_id)
+            created = self.get_student_by_student_id(student_id)
+            self._register_journey(created, date_of_birth)
+            return created
         except Exception as e:
             conn.rollback()
             raise StudentError(f"Failed to create student: {e}") from e
         finally:
             conn.close()
+
+    def _register_journey(self, student: dict | None,
+                           date_of_birth: str | None) -> None:
+        """Best-effort cross-system identity hook. Never raises.
+
+        See ``shared.cross_system.journey_events.register_student_journey``.
+        """
+        if not student or not date_of_birth:
+            return
+        try:
+            from education_system.shared.cross_system.journey_events import (
+                register_student_journey,
+            )
+        except Exception:
+            return
+        try:
+            journey_id = register_student_journey(
+                system="school",
+                pk=student.get("id"),
+                student_id=student.get("student_id"),
+                first_name=student.get("first_name"),
+                last_name=student.get("last_name"),
+                date_of_birth=date_of_birth,
+                source_module=(
+                    "secondary_school.academics.students.create_student"
+                ),
+            )
+            if journey_id:
+                conn = self._conn()
+                try:
+                    conn.execute(
+                        "UPDATE students SET journey_id = ? WHERE id = ?",
+                        (journey_id, student["id"]),
+                    )
+                    conn.commit()
+                finally:
+                    conn.close()
+        except Exception:
+            logger.warning(
+                "Secondary journey registration failed for student %s",
+                student.get("student_id"), exc_info=True,
+            )
 
     def get_student(self, student_pk: int) -> dict | None:
         """Get a student by primary key."""

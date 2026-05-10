@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 **Version 8.x**
 
+- [8.117.158 — 2026-05-10](#8117158---2026-05-10)
+- [8.117.157 — 2026-05-10](#8117157---2026-05-10)
+- [8.117.156 — 2026-05-10](#8117156---2026-05-10)
+- [8.117.155 — 2026-05-10](#8117155---2026-05-10)
+- [8.117.154 — 2026-05-10](#8117154---2026-05-10)
+- [8.117.153 — 2026-05-10](#8117153---2026-05-10)
+- [8.117.152 — 2026-05-10](#8117152---2026-05-10)
+- [8.117.151 — 2026-05-10](#8117151---2026-05-10)
+- [8.117.150 — 2026-05-09](#8117150---2026-05-09)
+- [8.117.149 — 2026-05-09](#8117149---2026-05-09)
 - [8.117.148 — 2026-05-09](#8117148---2026-05-09)
 - [8.117.147 — 2026-05-09](#8117147---2026-05-09)
 - [8.117.146 — 2026-05-09](#8117146---2026-05-09)
@@ -377,6 +387,672 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [Legacy notes & feature documentation](docs/changelogs/CHANGELOG-legacy-notes.md)
 
 ---
+
+## [8.117.158] — 2026-05-10
+
+### Changed — College module GUIs open in separate windows
+
+``college_system/modules/shared/gui/main_gui.py`` no longer embeds
+every module GUI inside the main window's content area. The dashboard
+stays embedded (it's the home screen); every other module now opens
+in its own ``tk.Toplevel`` so users can keep multiple modules visible
+side-by-side.
+
+#### Behaviour
+
+- Each ``frame_key`` maps 1:1 to a Toplevel. Re-clicking the same nav
+  button (or a dashboard card pointing at it) raises the existing
+  window via ``deiconify + lift + focus_force`` rather than opening a
+  duplicate.
+- Closing a module window via the X drops the cache entry, so the
+  next click reopens a fresh instance — no stale frame references.
+- Window title is ``"<Module label> — College"`` resolved via a new
+  ``_frame_label`` helper that walks ``_SIDEBAR_SECTIONS`` for the
+  human label and falls back to a tidied form of the key
+  (``progress_dashboard_gui`` → ``Progress Dashboard``).
+- Toplevel sizing is ``1400x900`` with a ``1200x800`` minsize —
+  matches the main window's documented Finance/Library sizing
+  convention so the popup feels like a peer, not a floating dialog.
+
+#### Implementation
+
+- New ``self._windows: dict[str, tk.Toplevel]`` in ``__init__``,
+  separate from ``self._frames`` (which now only caches the
+  dashboard).
+- ``_show_frame`` is a small dispatcher: dashboard →
+  ``_show_dashboard()`` (the old in-content path),
+  everything else → ``_open_frame_window(frame_key)``.
+- ``_open_frame_window`` builds the Toplevel, instantiates the module
+  class with the Toplevel as parent, wires
+  ``WM_DELETE_WINDOW → _on_window_close(frame_key)``, and renders a
+  red error label inside the popup if the module class fails to
+  load (rather than silently dropping the click).
+- ``MisconductFrame`` still gets its ``system_key='college'``
+  extra kwarg.
+
+#### Notes
+
+- Idle timeout (``shared.gui.idle_timeout.attach_idle_timeout``) uses
+  ``bind_all``, so activity inside any Toplevel still resets the
+  timer.
+- ``_do_logout`` / ``_do_exit`` call ``self.destroy()`` on the root,
+  which kills all child Toplevels — no leak.
+- ``_on_escape``'s "destroy the first Toplevel child" behaviour now
+  closes a module window first then on the next press goes to
+  dashboard. Reasonable; left unchanged.
+
+## [8.117.157] — 2026-05-10
+
+### Fixed — ``cross_system_events`` table name collided with calendar module
+
+The shared auth DB launcher startup raised
+``sqlite3.OperationalError: no such column: target_system`` from
+``initialise_auth_db → executescript(_TABLES_SQL)``.
+
+Root cause: ``shared/calendar/calendar_service.py`` already owned the
+table name ``cross_system_events`` in the same shared auth database,
+with a totally different schema (calendar entries: ``title``,
+``event_date``, ``event_time``, ``event_type``, etc.). The step 1
+(8.117.151) durable-bus schema reused the name, so its
+``CREATE TABLE IF NOT EXISTS cross_system_events (...)`` silently
+no-op'd against the existing calendar table — and the very next
+statement ``CREATE INDEX ... ON cross_system_events(target_system,
+created_at)`` blew up because the calendar's table doesn't have a
+``target_system`` column.
+
+#### Fix
+
+Renamed the durable-bus table to ``cross_system_event_outbox``.
+Calendar keeps its original name; less invasive than the other way
+around. Touched files:
+
+- ``shared/auth/schema.py`` — table + three indexes + the FK in
+  ``cross_system_event_consumed`` now reference
+  ``cross_system_event_outbox``. Comment added explaining the
+  rename so a future reader doesn't reintroduce the collision.
+- ``shared/integrations/cross_system_bus.py`` — ``INSERT`` and
+  ``SELECT`` use the new name (``replace_all`` rename, three sites).
+- Five test files under ``shared/tests/`` updated:
+  ``test_cross_system_identity.py``,
+  ``test_cross_system_journey_events.py``,
+  ``test_cross_system_progression.py``,
+  ``test_cross_system_progression_completed.py``,
+  ``test_cross_system_progression_accepted.py``.
+
+#### Verification
+
+- Reproduced the launcher path: instantiate
+  ``CrossSystemCalendarService`` first (so the calendar table
+  exists), then run ``initialise_auth_db`` against the same DB. Both
+  tables coexist with their separate schemas; the
+  ``OperationalError`` is gone.
+- 46 cross-system tests still pass after the rename.
+
+## [8.117.156] — 2026-05-10
+
+### Added — ``student.progression.accepted`` (results-day grades flow)
+
+Sits between step 4 (``offered`` — creates the uni Pending row) and
+step 5 (``completed`` — flips it to Active). Adds a third event so
+the university subsystem learns about results-day grades without
+anyone re-entering them.
+
+#### Schema migrations (additive)
+
+- ``college_system/.../schema.py`` —
+  ``ucas_applications.final_grades_json``,
+  ``ucas_applications.conditions_met``,
+  ``ucas_applications.results_recorded_at``.
+- ``university_system/.../database_utils.py`` —
+  ``students.entry_qualifications``,
+  ``students.conditions_met``.
+
+#### Producer
+
+- ``college_system/.../ucas/services/ucas_service.py`` — new
+  ``UCASService.record_results(application_id, *, grades,
+  conditions_met=None)``. Validates inputs (non-empty dict,
+  application exists), writes the three new columns to
+  ``ucas_applications``, then runs
+  ``_publish_progression_accepted(application_id)`` which re-reads
+  the firm choice + journey id and publishes
+  ``EVENT_STUDENT_PROGRESSION_ACCEPTED`` targeted at
+  ``"university"``. Payload: ``target_university``,
+  ``course_title``, ``ucas_code``, ``application_id``,
+  ``college_student_id``, ``final_grades``, ``conditions_met``. Bus
+  failure is isolated — the local update stays committed.
+
+#### Consumer
+
+- ``university_system/.../admissions/services/cross_system_progression.py``
+  gains ``on_progression_accepted(envelope, *, …)``. Resolves the
+  journey, **drops cleanly if there's no matching uni record yet**
+  (handles the offered/accepted race — accepted alone shouldn't
+  create a Pending row), otherwise updates the existing ``students``
+  row with ``entry_qualifications`` (JSON of grades) and
+  ``conditions_met``.
+- Promotion to ``Active`` stays a separate ``confirm_enrolment``
+  call. Staff need to review failed conditions before enrolling, so
+  grades alone don't enrol a student.
+- ``wire_subscribers`` now registers both the offered and accepted
+  handlers under stable dotted handler names so
+  ``cross_system_event_consumed`` acks remain consistent across
+  process restarts.
+
+#### Verification
+
+``shared/tests/test_cross_system_progression_accepted.py`` —
+8 tests:
+
+- Producer-only: grades + flag + timestamp recorded locally; bus
+  event landed with the right payload; conditions-not-met still
+  publishes (key signal for admissions); unknown application id
+  raises ``UCASError``; empty grades dict rejected.
+- End-to-end: uni Pending row gets grades + ``conditions_met=1``,
+  **stays Pending** (grades alone don't enrol); failed-conditions
+  case stays Pending with ``conditions_met=0``; accepted arriving
+  before offered drops cleanly without creating rows.
+- **Full chain**: offered → accepted → ``confirm_enrolment`` →
+  completed. All three events fire, uni ends up ``Active`` with
+  grades populated, college flips to ``progressed``, all three
+  event names present in the outbox for the same ``journey_id``.
+
+## [8.117.155] — 2026-05-10
+
+### Added — ``student.progression.completed`` (closing the progression loop)
+
+Closes the cycle started in 8.117.154: when the university confirms
+enrolment of a ``Pending`` student, the bus carries the news to the
+college, which flips the college student's ``status`` from
+``active`` to ``progressed`` and stores the back-link to the new
+university student id. The full college → uni → college cycle now
+runs unattended.
+
+#### Producer
+
+- ``university_system/.../admissions/services/cross_system_progression.py``
+  gains ``confirm_enrolment(student_id, *, university_db_path,
+  auth_db_path=None)``. Reads the uni ``students`` row, exits as a
+  no-op if it's not ``Pending``, otherwise flips
+  ``status='Active'`` and stamps ``enrollment_date``. Then publishes
+  ``EVENT_STUDENT_PROGRESSION_COMPLETED`` targeted at ``"college"``
+  with payload ``university_student_id``, ``course``,
+  ``enrolled_at``. Bus failure is isolated: the local status flip
+  is the source of truth and stays committed even if the publish
+  fails.
+
+#### Consumer
+
+- New
+  ``college_system/modules/domain/students/services/cross_system_progression_consumer.py``:
+  - ``wire_subscribers(*, college_db_path, auth_db_path=None)`` —
+    closure-binds DB paths, registers the handler under a stable
+    dotted handler name on ``cross_system_event_consumed``.
+  - ``on_progression_completed(envelope, *, …)`` — resolves the
+    journey, exits cleanly if there's no ``college_pk`` link,
+    otherwise flips the local college student to
+    ``status='progressed'`` and writes
+    ``progressed_to_university_id`` if the back-link column
+    exists. Idempotent: a student already ``progressed`` is a
+    no-op so re-deliveries don't churn ``updated_at``.
+
+#### Schema migration
+
+- ``college_system/infrastructure/database/schema.py`` — idempotent
+  ``ALTER TABLE students ADD COLUMN progressed_to_university_id
+  TEXT`` so the back-link is actually persistable.
+
+#### Verification
+
+``shared/tests/test_cross_system_progression_completed.py`` —
+6 tests:
+
+- Producer-only: ``confirm_enrolment`` flips Pending → Active,
+  stamps ``enrollment_date``, writes the bus row targeted at
+  ``"college"`` with the right payload; second call is an
+  idempotent no-op (no second event); unknown student returns
+  ``False``.
+- End-to-end round-trip: stages step-4 to a Pending uni row, wires
+  the new college consumer, calls ``confirm_enrolment``, polls for
+  ``"college"``, then asserts the college student is
+  ``status='progressed'`` with ``progressed_to_university_id``
+  set, and the ack is ``status='ok'``.
+- Idempotent re-delivery: republishing the same logical
+  completion event under a fresh ``event_id`` doesn't re-flip or
+  re-stamp anything.
+- Unknown journey: handler runs, doesn't raise, leaves the college
+  DB untouched.
+
+## [8.117.154] — 2026-05-10
+
+### Added — College UCAS firm choice → University draft student (Step 4)
+
+End-to-end proof-of-value for the cross-system integration plan. A
+college student designating their UCAS firm choice now auto-creates a
+``Pending`` admissions row on the university side, linked to the same
+``journey_id``. No manual "Import from College" step required.
+
+#### Producer
+
+- ``college_system/.../ucas/services/ucas_service.py`` —
+  ``set_firm_insurance`` now runs ``_publish_progression_offered``
+  after the firm/insurance state commits. Re-reads the firm
+  ``ucas_choices`` row + the applicant's college pk and student id,
+  resolves the journey via
+  ``journey_events.journey_id_for_system_record``, and publishes
+  ``student.progression.offered`` targeted at ``university``. Payload:
+  ``target_university``, ``course_title``, ``ucas_code``,
+  ``application_id``, ``conditions``, ``reply_deadline``,
+  ``college_student_id``. Best-effort: failures are caught and logged,
+  the firm choice itself is unaffected. DOB-less students (no journey)
+  skip the publish silently.
+
+#### Consumer
+
+- New
+  ``university_system/modules/domain/admissions/services/cross_system_progression.py``:
+  - ``wire_subscribers(*, university_db_path, auth_db_path=None,
+    email_domain='tees.ac.uk')`` — closure-binds DB paths so the
+    handler keeps the standard ``(envelope) -> None`` shape; registers
+    it under a stable dotted handler name so
+    ``cross_system_event_consumed`` acks remain consistent across
+    process restarts.
+  - ``on_progression_offered(envelope, *, …)`` — resolves the
+    ``journey_id``, drops cleanly if it's absent or unknown, and is
+    **idempotent**: if the journey already has a
+    ``university_student_id`` it returns that without writing.
+    Otherwise it generates a 7-digit numeric uni student id (matches
+    the existing ``create_student_dialog`` convention) with collision
+    retry, builds the ``C{id}@{email_domain}`` email, inserts a
+    ``students`` row with ``status='Pending'``, copies name + DOB from
+    the journey and ``course`` from the payload. On
+    ``IntegrityError`` (race / re-delivery) re-reads the journey and
+    recovers the existing student id. Then
+    ``attach_system_record(... "university", student_id=…)`` links
+    the journey back, and ``record_student_transition(... from=college,
+    to=university, reason=progression)`` records the move and
+    publishes ``journey.transitioned`` for downstream consumers.
+
+#### Verification
+
+``shared/tests/test_cross_system_progression.py`` — 5 tests:
+
+- Producer-only: firm choice publishes the event with the right
+  ``target_system``, ``journey_id``, and payload (university name +
+  UCAS code present); a DOB-less college student means no journey,
+  which means no publish.
+- End-to-end: real college service + real UCAS service + minimal
+  university DB + wired subscriber. After ``set_firm_insurance`` and
+  one ``poll_and_dispatch('university')`` — uni ``students`` has one
+  ``Pending`` row with the right name / DOB / course / ``journey_id``
+  / ``Cxxxxxxx@tees.ac.uk`` email; the shared journey row has
+  ``university_student_id`` set and ``current_system='university'``;
+  a ``from=college, to=university, reason=progression`` transition
+  row exists; ``cross_system_event_consumed`` shows ``status='ok'``.
+- Idempotent re-delivery: republishing the same logical event under a
+  fresh ``event_id`` doesn't create a second uni row.
+- Unknown ``journey_id``: handler runs, doesn't raise, doesn't create
+  rows, ack is recorded so the bus doesn't loop.
+
+98 tests pass across all four cross-system steps + existing auth,
+college student, enrollment, and UCAS suites.
+
+## [8.117.153] — 2026-05-10
+
+### Added — Cross-system journey events on student create / transfer (Step 3)
+
+Wires student lifecycle changes onto the cross-system identity table
++ the durable event bus, so creating a student or transferring one
+between systems now produces ``journey.registered`` /
+``journey.transitioned`` events without any manual step.
+
+#### Helper
+
+- New ``shared/cross_system/journey_events.py``:
+  - ``register_student_journey(...)`` — three calls in one:
+    ``get_or_create_journey`` → ``attach_system_record`` →
+    ``publish_cross_system(EVENT_JOURNEY_REGISTERED)``. Returns the
+    ``journey_id`` or ``None``. Every step is wrapped so failures
+    **never propagate** to the caller — the student insert is already
+    committed by the time we get here, and a broken bus must not
+    roll it back.
+  - ``record_student_transition(journey_id, *, from_system,
+    to_system, reason, …)`` — ``record_transition`` +
+    ``publish_cross_system(EVENT_JOURNEY_TRANSITIONED)`` with the
+    same isolation guarantees.
+  - ``journey_id_for_system_record(system, *, pk=None,
+    student_id=None)`` — convenience lookup, tries pk first then
+    falls back to student_id.
+
+#### Producers wired
+
+- ``college_system/.../students/services/student_service.py``:
+  ``create_student`` calls ``self._register_journey(...)`` after
+  insert and writes the resulting ``journey_id`` back onto the local
+  row + the returned dict. ``import_from_secondary`` ends with a new
+  ``_publish_school_to_college_transition(...)`` that resolves the
+  college student's ``journey_id`` and publishes
+  ``journey.transitioned`` with ``from_system='school'`` /
+  ``to_system='college'`` / ``reason='transfer'``.
+- ``secondary_school/.../students/services/student_service.py``:
+  ``create_student`` calls the same helper with ``system='school'``.
+- ``primary_school/.../pupils/services/pupil_service.py``:
+  ``create_pupil`` calls the helper with ``system='primary'``,
+  using ``cursor.lastrowid`` as the integer pk.
+
+The university subsystem is intentionally not wired in this step —
+its student-create paths run through a 2599-line GUI module rather
+than a single service method. It gets its own focused step (covered
+by Step 4 for the progression flow).
+
+#### Verification
+
+``shared/tests/test_cross_system_journey_events.py`` — 8 tests:
+
+- Helper unit: creates journey + attaches + publishes; missing keys
+  returns ``None`` with no publish; bus failure is isolated (helper
+  still returns the journey_id, identity row intact).
+- Transition: records transition + publishes event.
+- Lookup helper: by pk, by student_id.
+- **End-to-end via the real college ``StudentService``**: monkey-
+  patches ``shared.auth.db.AUTH_DB_FILE`` to a temp file, runs
+  ``init_db`` against a temp college DB, calls ``svc.create_student``,
+  asserts journey is attached, the row appears in
+  ``cross_system_events``, a polling consumer picks it up via
+  ``poll_and_dispatch('university', …)``, and an ack lands in
+  ``cross_system_event_consumed`` with ``status='ok'``.
+- DOB-less create: student created fine, no journey, no event.
+
+85 tests pass across step 1+2+3 + existing auth + college student +
+enrollment suites; no regressions.
+
+## [8.117.152] — 2026-05-10
+
+### Added — Cross-system journey-id backfill (Step 2)
+
+Pure-data migration: links existing student rows in all four
+subsystems to ``student_journey`` rows in the shared auth DB so
+event-driven flows in step 3+ have a stable identity to anchor to.
+Idempotent — safe to re-run.
+
+#### Schema migrations
+
+``journey_id TEXT`` column + non-unique index added (idempotent
+``ALTER TABLE`` if missing) to:
+
+- ``college_system/infrastructure/database/schema.py`` (students)
+- ``secondary_school/infrastructure/database/schema.py`` (students)
+- ``primary_school/infrastructure/database/schema.py`` (pupils)
+- ``university_system/infrastructure/database/database_utils.py``
+  (students — university uses a TEXT PK with no integer column,
+  handled by the next change)
+
+#### Identity service relaxation
+
+- ``shared/cross_system/identity_service.py`` —
+  ``attach_system_record`` now accepts ``pk: int | None = None`` so
+  the university subsystem (TEXT PK on ``students``, no integer pk)
+  can attach by ``student_id`` only. Conflict detection extended to
+  compare ``student_id`` as well as ``pk``.
+
+#### Backfill module
+
+- New ``shared/cross_system/journey_backfill.py`` (~230 lines):
+  - Per-system row shape declared as ``_SystemSpec`` (table name,
+    integer pk col or ``None``, student-id col, DOB col, first/last
+    name cols) — one config block per subsystem so the loop is
+    written once.
+  - ``backfill_system(system, db_path, *, auth_db_path=None,
+    dry_run=False, batch_size=500) -> BackfillReport`` — reads rows
+    where ``journey_id IS NULL``, calls ``get_or_create_journey`` +
+    ``attach_system_record``, batches the writes back to the system
+    DB, fails the migration up-front if the ``journey_id`` column
+    wasn't added.
+  - ``backfill_all(...)`` wrapper for one-shot runs across all four
+    DB paths; missing paths are silently skipped.
+  - ``BackfillReport`` dataclass with examined / linked-new /
+    linked-existing / skipped / errors counts and a ``.linked``
+    total.
+
+#### Verification
+
+``shared/tests/test_cross_system_backfill.py`` — 11 tests:
+
+- ``attach_system_record`` optional-pk: student_id-only attach,
+  both-missing rejected, conflicting student_id rejected.
+- College-shape backfill: rows linked with new journeys, rerun is a
+  no-op, missing keys skipped (not failed), ``dry_run=True`` writes
+  nothing to either DB, missing ``journey_id`` column raises early.
+- University-shape backfill: TEXT pk path uses ``student_id`` only,
+  ``university_pk`` stays ``NULL``.
+- Cross-system reuse: same identity in school + college lands on a
+  single shared ``journey_id``.
+- ``backfill_all`` only runs for the systems whose paths were
+  provided.
+
+## [8.117.151] — 2026-05-10
+
+### Added — Cross-system identity + durable event bus (Step 1)
+
+Foundation for linking the four subsystems beyond shared auth and
+buttons. Purely additive — no producers wired yet (those are
+8.117.153 / 8.117.154).
+
+The existing in-process ``_event_bus`` (under
+``university_system/.../academics/gui/_event_bus.py``) is fast-path
+only and cannot carry events between subsystem processes. This step
+adds a **durable outbox** in the shared auth DB plus the canonical
+``student_journey`` identity table; cross-system events reference a
+``journey_id`` instead of raw per-system pks.
+
+#### Schema (shared auth.db)
+
+Four tables added to ``shared/auth/schema.py`` ``_TABLES_SQL``
+(all ``IF NOT EXISTS`` — additive):
+
+- ``student_journey`` — identity row keyed by ``journey_id``
+  (UUIDv4) with per-system pks / student_ids and a unique
+  ``(date_of_birth, last_name, first_name)`` index for de-dup.
+- ``student_journey_transitions`` — append-only audit of every
+  system change.
+- ``cross_system_events`` — durable outbox (event_id, event_name,
+  journey_id, source_system, source_module, target_system,
+  payload_json, actor_user_id, created_at).
+- ``cross_system_event_consumed`` — per-handler ack rows;
+  ``(event_id, consumer_system, consumer_handler)`` PK gives
+  idempotency for re-delivery.
+
+#### Identity service
+
+- New ``shared/cross_system/identity_service.py`` (~230 lines):
+  - ``get_or_create_journey(*, first_name, last_name, dob,
+    current_system, …)`` — name-/DOB-keyed, case-insensitive,
+    records a ``registration`` transition on first insert.
+  - ``attach_system_record(journey_id, system, *, pk, student_id)``
+    — idempotent; raises ``IdentityError`` on conflicting re-attach
+    rather than silently overwriting.
+  - ``record_transition(...)`` — validates ``to_system`` and
+    ``reason`` against whitelists, updates ``current_system`` on the
+    parent row.
+  - Read API: ``get_journey``, ``find_journey_by_system_pk``,
+    ``find_journey_by_student_id``, ``list_transitions``.
+  - Deliberately separate from the existing
+    ``journey_service.JourneyService`` (read-only journey
+    reconstructor) — different concern, no behaviour change there.
+
+#### Cross-system bus
+
+- New ``shared/integrations/cross_system_bus.py`` (~290 lines):
+  - 10 event-name constants for the v1 catalogue
+    (``journey.registered``, ``journey.transitioned``,
+    ``student.progression.{offered,accepted,completed}``,
+    ``student.withdrawn``, ``qualification.awarded``,
+    ``safeguarding.flag.raised``, ``gdpr.redaction.requested``,
+    ``parent.linkage.changed``) + ``KNOWN_EVENTS`` set.
+  - ``subscribe(event_name, handler, handler_name=…)`` — in-process
+    registry, returns an unsubscribe callable.
+  - ``publish_cross_system(event_name, *, source_system,
+    source_module, journey_id, target_system, actor_user_id,
+    **payload)`` — JSON-serialises the payload, writes one outbox
+    row, returns ``event_id``.
+  - ``poll_and_dispatch(consumer_system, batch_size=50,
+    max_attempts=5)`` — pulls events targeted at this system or
+    broadcast (``target_system IS NULL``), dispatches to subscribers,
+    writes per-handler ack rows. Failed handlers retry until
+    ``max_attempts``. Re-delivery dropped via the PK on
+    ``cross_system_event_consumed``.
+  - ``clear_subscribers_for_test()`` for tests.
+
+#### Verification
+
+``shared/tests/test_cross_system_identity.py`` — 19 tests covering
+identity lifecycle (lookup-after-create idempotency, case-
+insensitive matching, DOB-distinct journeys, system whitelist,
+registration transition recorded), attach (lookup by pk and
+student_id, idempotent re-attach, conflicting pk rejected),
+transitions (progression updates ``current_system``, invalid reason
+rejected, unknown journey rejected), and bus (outbox row written,
+handler invoked with envelope, single-dispatch-per-handler,
+target-system filter, broadcast reaches every consumer, failed
+handler retried up to ``max_attempts``, no-subscriber no-dispatch).
+
+19 new tests pass; 26 existing auth tests still pass — schema
+additions are non-breaking.
+
+## [8.117.150] — 2026-05-09
+
+### Changed — Enrollment GUI overhaul (College)
+
+``college_system/modules/domain/enrollment/gui/enrollment_gui.py``
+restructured to bring it in line with the rebuilt
+``student_gui.py``: search, full status filter set, per-student /
+per-course filters, selection-driven actions, promote-from-waitlist,
+and uniform error handling.
+
+#### Service additions
+
+- ``EnrollmentService.list_enrollments`` and ``count_enrollments``
+  gained a ``search`` parameter that matches across
+  ``student_id``, ``first_name``, ``last_name``, ``course_code``,
+  ``title``, ``term`` (single shared ``_search_clause`` helper).
+- New public ``EnrollmentService.promote_from_waitlist(course_pk)``
+  wrapping the previously-private ``_promote_from_waitlist`` so the
+  GUI can promote on demand. Opens its own connection, commits, rolls
+  back on error.
+
+#### GUI: filters & search
+
+- New "Filters & Search" ``LabelFrame`` above the tree:
+  - Search entry + Go / Clear (server-side via the new ``search``
+    param, ``Ctrl+F`` to focus).
+  - Status combobox: ``All / enrolled / waitlisted / dropped /
+    completed`` — replacing the previous two-button (all / active)
+    affordance.
+  - Per-student filter (label + Pick… / ×) and per-course filter
+    (label + Pick… / ×), both backed by the reusable
+    ``_SearchPickerDialog``.
+
+#### GUI: selection-driven actions
+
+- New action toolbar below the tree: **View Selected**,
+  **Drop Selected**, **Export CSV**.
+- Double-click on the enrollments tree opens the details popup;
+  ``Return`` and ``Delete`` shortcuts retained.
+- "Drop Selected" pre-fills the enroll/drop form from the row before
+  invoking the existing drop flow.
+- Waitlist sidebar gains **Promote** and **Export CSV** buttons.
+
+#### GUI: error handling, logging, polish
+
+- Module-level ``logger`` added; every DB-touching path distinguishes
+  ``EnrollmentError`` (warning) from generic ``Exception``
+  (``logger.exception``). Resolve helpers, picker loads, waitlist
+  load, and CSV exports are all wrapped via a new ``_safe_load``
+  helper.
+- ``_resolve_ids`` now upper-cases both student id and course code so
+  ``sfc0002`` / ``cs101`` resolve the same as the canonical form.
+- Frame auto-loads on construction, so opening it standalone no
+  longer shows an empty tree until something triggers ``refresh()``.
+- Pagination / waitlist status strings routed through the existing
+  ``t(key, default, **kwargs)`` fallback so missing locale keys
+  degrade gracefully and translations can be added later — no more
+  hard-coded English ``f"Showing {start}-{end}"``.
+- Status bar resets to ``t("common.ready")`` after enroll / drop /
+  promote success.
+
+#### Verification
+
+``tests/academics/test_enrollment_service.py`` — 9 passed (search
+and promote additions are additive; existing call sites unchanged).
+
+## [8.117.149] — 2026-05-09
+
+### Changed — Student CRUD overhaul (College)
+
+The college Sixth-Form Student CRUD now mirrors the university
+system's CRUD layout, drops the email-entry box in favour of an
+auto-generated college email, and routes all failures through a
+module logger.
+
+#### Schema
+
+``infrastructure/database/schema.py`` adds idempotent
+``ALTER TABLE`` migrations for three new ``students`` columns —
+``title``, ``middle_name``, ``gender`` — alongside the existing
+``previous_system`` / ``previous_system_id`` migrations. New
+installs get them via ``CREATE TABLE``; existing DBs get the
+``ALTER`` on next ``init_db``.
+
+#### Service
+
+- ``StudentService.create_student`` accepts ``title``,
+  ``middle_name``, ``gender`` and auto-generates the email from the
+  freshly-allocated student id (``sfc0002@sixthform.ac.uk``) when
+  none is supplied. Exposed as
+  ``StudentService.email_for_student_id()`` /
+  ``StudentService.EMAIL_DOMAIN`` for callers.
+- ``update_student`` whitelist extended to cover the three new
+  columns.
+- Create-failure path now logs the traceback via
+  ``logger.exception`` instead of just stringifying the error.
+
+#### GUI dialog — university-style layout
+
+``modules/domain/students/gui/student_gui.py`` rebuilt:
+
+- Title at the top, sectioned ``LabelFrame``s
+  ("Personal Information", "Academic Information") inside a
+  scrollable canvas, fixed footer for Save / Cancel, inline red
+  validation strip — matching the existing university student
+  dialog.
+- Email entry replaced by an italic note explaining auto-generation.
+- New fields surfaced: title combobox, middle name, gender combobox.
+- Details viewer (admin/staff double-click) shows the new fields.
+
+#### GUI handlers — error handling and logging
+
+``_on_add`` / ``_on_edit`` / ``_on_delete`` / ``_load_students`` /
+``_show_student_details`` / ``_export_csv`` now split
+``StudentError`` / ``ValidationError`` / ``AuthError`` /
+``EnrollmentError`` from unexpected exceptions and route everything
+through ``logger`` (``warning`` for rejections, ``exception`` for
+unexpected). Best-effort dropdown loads (courses / form groups /
+staff) go through a small ``_safe_load`` helper that logs and falls
+back to ``[]``.
+
+#### CLI
+
+``modules/domain/students/cli/student_cli.py`` updated to match —
+email prompt removed, title / middle name / gender prompts added
+(with choice validation), every handler wraps service calls and
+distinguishes warning-level from unexpected-level failures in the
+log.
+
+#### Verification
+
+``tests/academics/test_student_service.py`` — 12 passed (changes
+are additive on the keyword surface; existing call sites
+unchanged).
 
 ## [8.117.148] — 2026-05-09
 

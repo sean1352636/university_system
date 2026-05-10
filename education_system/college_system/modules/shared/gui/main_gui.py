@@ -445,10 +445,18 @@ class CollegeApp(tk.Tk):
         self._auth = UserAuth(db_path)
         self._user_info: dict | None = None
         self._frames: dict[str, tk.Frame] = {}
+        # Module GUIs (other than the dashboard) open in their own
+        # ``tk.Toplevel``. Track them by frame_key so a second click on
+        # the nav button raises the existing window instead of
+        # opening a duplicate.
+        self._windows: dict[str, tk.Toplevel] = {}
 
         self.title(t("main.window_title"))
-        self.geometry("1200x800")
-        self.minsize(1000, 700)
+        # Sizing matches the university main GUI (and the project's
+        # documented Finance/Library convention): 1400x900 fixed
+        # geometry with a 1200x800 minsize.
+        self.geometry("1400x900")
+        self.minsize(1200, 800)
 
         # Configure ttk style to match university
         self.style = ttk.Style()
@@ -493,45 +501,59 @@ class CollegeApp(tk.Tk):
     # ── GUI setup ─────────────────────────────────────────────────────
 
     def _setup_gui(self):
+        """Three-row layout matching the university main GUI:
+
+        - row 0 — header (control buttons, no LabelFrame wrapper)
+        - row 1 — navigation panel + content area (expanding)
+        - row 2 — status bar (thin, status / user / system+version)
+        """
         main_frame = ttk.Frame(self, padding="10")
         main_frame.grid(row=0, column=0, sticky="nsew")
 
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-        main_frame.columnconfigure(0, weight=0)
-        main_frame.columnconfigure(1, weight=1)
-        main_frame.rowconfigure(1, weight=1)
+        main_frame.columnconfigure(0, weight=0)  # nav column — fixed
+        main_frame.columnconfigure(1, weight=1)  # content column — expands
+        main_frame.rowconfigure(1, weight=1)     # row 1 expands vertically
 
         self._create_header(main_frame)
         self._create_navigation_panel(main_frame)
         self._create_content_area(main_frame)
+        self._create_status_bar(main_frame)
 
     def _create_header(self, parent):
-        header_frame = ttk.LabelFrame(parent, text=t("gui.system_control") if hasattr(t, '__call__') else "System Control", padding="10")
-        header_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        """Top control bar — matches the university layout.
 
-        button_frame = ttk.Frame(header_frame)
-        button_frame.grid(row=0, column=0, columnspan=4, sticky="ew", pady=(0, 10))
-
-        ttk.Button(button_frame, text=t("main.exit"),
-                   command=self._do_exit).pack(side="left", padx=(0, 10))
-        ttk.Button(button_frame, text=t("main.logout"),
-                   command=self._do_logout).pack(side="left", padx=(0, 10))
-        ttk.Button(button_frame, text=t("main.switch_cli"),
-                   command=self._switch_to_cli).pack(side="left", padx=(0, 10))
-
-        # Switch System button — enabled after login if superadmin
-        self._switch_system_btn = ttk.Button(button_frame, text=t("main.switch_system"),
-                                              command=self._switch_system, state="disabled")
-        self._switch_system_btn.pack(side="left", padx=(0, 10))
-
-        ttk.Label(header_frame, text="Status:").grid(row=1, column=0, sticky="w")
-        ttk.Label(header_frame, textvariable=self.status_var).grid(row=1, column=1, sticky="w", padx=(10, 0))
-
-        ttk.Label(header_frame, text="Current User:").grid(row=2, column=0, sticky="w")
-        ttk.Label(header_frame, textvariable=self.current_user_var).grid(row=2, column=1, sticky="w", padx=(10, 0))
-
+        Plain Frame (no LabelFrame "System Control" wrapper). Routine
+        actions on the left as primary buttons; destructive Exit folded
+        into a "⏻ Power" button on the right so it's not one click of
+        muscle memory away from Logout. Status / current-user labels
+        moved to the bottom status bar (``_create_status_bar``).
+        """
+        header_frame = ttk.Frame(parent, padding=(0, 0, 0, 6))
+        header_frame.grid(row=0, column=0, columnspan=2, sticky="ew")
         header_frame.columnconfigure(1, weight=1)
+
+        # ── Routine actions (left) ──
+        left = ttk.Frame(header_frame)
+        left.grid(row=0, column=0, sticky="w")
+
+        ttk.Button(left, text=t("main.logout", "Logout"),
+                   command=self._do_logout).pack(side="left", padx=(0, 6))
+        ttk.Button(left, text=t("main.switch_cli", "Switch to CLI"),
+                   command=self._switch_to_cli).pack(side="left", padx=(0, 6))
+
+        # Switch System — enabled once a superadmin logs in
+        self._switch_system_btn = ttk.Button(
+            left, text=t("main.switch_system", "Switch System"),
+            command=self._switch_system, state="disabled")
+        self._switch_system_btn.pack(side="left", padx=(0, 6))
+
+        # ── Destructive actions (right) ──
+        right = ttk.Frame(header_frame)
+        right.grid(row=0, column=2, sticky="e")
+        ttk.Button(right, text="⏻ " + t("main.exit", "Exit"),
+                   command=self._do_exit).pack(side="right")
 
     def _create_navigation_panel(self, parent):
         self._nav_frame = ttk.LabelFrame(parent, text=t("main.navigation") if hasattr(t, '__call__') else "Navigation", padding="5")
@@ -662,8 +684,66 @@ class CollegeApp(tk.Tk):
                     command=lambda st=section_title, it=items: open_category_window(st, it),
                 ).pack(fill="x", pady=2, padx=5)
 
+    def _create_status_bar(self, parent):
+        """Thin status bar at row 2 — matches the university layout.
+
+        Three regions: status (left) · current user (centre) · system
+        name + version (right). A separator line on top visually
+        detaches it from the workspace canvas above. No LabelFrame
+        wrapper — convention for a status bar is a sunken-ish thin row.
+        """
+        ttk.Separator(parent, orient="horizontal").grid(
+            row=2, column=0, columnspan=2, sticky="new")
+
+        bar = ttk.Frame(parent)
+        bar.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(6, 0))
+        bar.columnconfigure(0, weight=1)
+        bar.columnconfigure(1, weight=1)
+        bar.columnconfigure(2, weight=1)
+
+        # Status (left)
+        left = ttk.Frame(bar, padding=(2, 4))
+        left.grid(row=0, column=0, sticky="w")
+        ttk.Label(left, text=t("gui.status", "Status") + ": ",
+                  foreground="#555555").pack(side="left")
+        ttk.Label(left, textvariable=self.status_var).pack(side="left")
+
+        # Current user (centre)
+        centre = ttk.Frame(bar, padding=(2, 4))
+        centre.grid(row=0, column=1, sticky="n")
+        ttk.Label(centre, text=t("gui.current_user", "Current User") + ": ",
+                  foreground="#555555").pack(side="left")
+        ttk.Label(centre, textvariable=self.current_user_var).pack(side="left")
+
+        # System name + version (right)
+        right_box = ttk.Frame(bar, padding=(2, 4))
+        right_box.grid(row=0, column=2, sticky="e")
+        ttk.Label(right_box, text="College",
+                  foreground="#555555").pack(side="left")
+        ver = self._detect_version()
+        if ver:
+            ttk.Label(right_box, text=" · ",
+                      foreground="#aaaaaa").pack(side="left")
+            ttk.Label(right_box, text=f"v{ver}",
+                      foreground="#555555").pack(side="left")
+
+    @staticmethod
+    def _detect_version() -> str:
+        try:
+            from education_system.college_system import __version__
+            return str(__version__)
+        except Exception:
+            return ""
+
     def _create_content_area(self, parent):
-        outer_frame = ttk.LabelFrame(parent, text=t("main.content") if hasattr(t, '__call__') else "Content", padding="5")
+        """Content area — plain Frame, vertical scrollbar only.
+
+        Mirrors the university version: pre-rework wrapped in a
+        ``LabelFrame "Content"`` with both H and V scrollbars; the H
+        scrollbar consumed vertical space + visual chrome for nothing
+        because dashboards always fit within the canvas width.
+        """
+        outer_frame = ttk.Frame(parent, padding=0)
         outer_frame.grid(row=1, column=1, sticky="nsew")
         outer_frame.columnconfigure(0, weight=1)
         outer_frame.rowconfigure(0, weight=1)
@@ -671,16 +751,14 @@ class CollegeApp(tk.Tk):
         self._content_canvas = tk.Canvas(outer_frame, highlightthickness=0)
         self._content_canvas.grid(row=0, column=0, sticky="nsew")
 
-        v_scrollbar = ttk.Scrollbar(outer_frame, orient="vertical", command=self._content_canvas.yview)
+        v_scrollbar = ttk.Scrollbar(outer_frame, orient="vertical",
+                                     command=self._content_canvas.yview)
         v_scrollbar.grid(row=0, column=1, sticky="ns")
-
-        h_scrollbar = ttk.Scrollbar(outer_frame, orient="horizontal", command=self._content_canvas.xview)
-        h_scrollbar.grid(row=1, column=0, sticky="ew")
-
-        self._content_canvas.configure(yscrollcommand=v_scrollbar.set, xscrollcommand=h_scrollbar.set)
+        self._content_canvas.configure(yscrollcommand=v_scrollbar.set)
 
         self._content = ttk.Frame(self._content_canvas, padding="10")
-        self._content_window = self._content_canvas.create_window((0, 0), window=self._content, anchor="nw")
+        self._content_window = self._content_canvas.create_window(
+            (0, 0), window=self._content, anchor="nw")
 
         self._content.bind("<Configure>",
                            lambda _: self._content_canvas.configure(scrollregion=self._content_canvas.bbox("all")))
@@ -718,21 +796,52 @@ class CollegeApp(tk.Tk):
         for widget in self._content.winfo_children():
             widget.destroy()
 
+    @staticmethod
+    def _frame_label(frame_key: str) -> str:
+        """Look up the human-readable nav label for a frame_key.
+
+        Falls back to a tidied form of the key (``progress_dashboard_gui``
+        → ``Progress Dashboard``) when the key isn't in the sidebar
+        (e.g. the dashboard itself, or anything reached via category
+        pop-ups whose label happens not to match)."""
+        for _section, items in _SIDEBAR_SECTIONS:
+            for label, fk, _role in items:
+                if fk == frame_key:
+                    return label
+        return (frame_key.removesuffix("_gui")
+                         .replace("_", " ").title())
+
     def _show_frame(self, frame_key: str):
-        """Show a module frame in the content area, lazy-loading on first access."""
-        # Toggle dashboard nav button: hide when on dashboard, show otherwise
+        """Open a module GUI.
+
+        The dashboard stays embedded in the main window's content area
+        (it's the home screen). Every other module opens in its own
+        ``tk.Toplevel`` so users can keep multiple modules visible at
+        once. Each ``frame_key`` maps 1:1 to a window — re-clicking a
+        nav button raises the existing window instead of opening a
+        duplicate. Closing a window drops the cache entry so the next
+        click reopens a fresh instance.
+        """
+        # Toggle dashboard nav button: hide when on dashboard, show otherwise.
         if hasattr(self, '_dashboard_nav_btn'):
             if frame_key == "dashboard_gui":
                 self._dashboard_nav_btn.pack_forget()
             elif not self._dashboard_nav_btn.winfo_ismapped():
-                # Pack at the top of navigation
                 self._dashboard_nav_btn.pack(fill="x", pady=2, padx=5)
                 first_child = self._nav_scrollable.pack_slaves()
                 if first_child and first_child[0] is not self._dashboard_nav_btn:
-                    self._dashboard_nav_btn.pack(fill="x", pady=2, padx=5, before=first_child[0])
+                    self._dashboard_nav_btn.pack(
+                        fill="x", pady=2, padx=5, before=first_child[0])
 
-        if frame_key == "dashboard_gui" and "dashboard_gui" in self._frames:
-            # Show existing dashboard
+        if frame_key == "dashboard_gui":
+            self._show_dashboard()
+            return
+
+        self._open_frame_window(frame_key)
+
+    def _show_dashboard(self):
+        """Show the dashboard frame in the main window's content area."""
+        if "dashboard_gui" in self._frames:
             for w in self._content.winfo_children():
                 w.pack_forget()
             frame = self._frames["dashboard_gui"]
@@ -744,42 +853,100 @@ class CollegeApp(tk.Tk):
                     pass
             return
 
-        if frame_key not in self._frames:
-            try:
-                frame_map = _get_frame_map()
-                cls = frame_map.get(frame_key)
-                if cls is None:
-                    messagebox.showwarning(t("common.warning"),
-                                           t("main.navigation_error", target=frame_key))
-                    return
+        try:
+            cls = _get_frame_map().get("dashboard_gui")
+            if cls is None:
+                messagebox.showwarning(
+                    t("common.warning"),
+                    t("main.navigation_error", target="dashboard_gui"))
+                return
+            frame = cls(self._content, db_path=self._db_path, auth=self._auth,
+                        on_navigate=self._on_navigate)
+            self._frames["dashboard_gui"] = frame
+        except Exception as e:
+            logger.error("Failed to load dashboard: %s", e, exc_info=True)
+            traceback.print_exc()
+            err_frame = ttk.Frame(self._content)
+            ttk.Label(err_frame, text=f"Failed to load dashboard:\n{e}",
+                      foreground="red", font=("Helvetica", 11)).pack(expand=True)
+            self._frames["dashboard_gui"] = err_frame
+            frame = err_frame
 
-                if frame_key == "dashboard_gui":
-                    frame = cls(self._content, db_path=self._db_path, auth=self._auth,
-                                on_navigate=self._on_navigate)
-                elif cls.__name__ == 'MisconductFrame':
-                    frame = cls(self._content, db_path=self._db_path, auth=self._auth,
-                                system_key='college')
-                else:
-                    frame = cls(self._content, db_path=self._db_path, auth=self._auth)
-                self._frames[frame_key] = frame
-            except Exception as e:
-                logger.error("Failed to load %s: %s", frame_key, e, exc_info=True)
-                traceback.print_exc()
-                err_frame = ttk.Frame(self._content)
-                ttk.Label(err_frame, text=f"Failed to load {frame_key}:\n{e}",
-                          foreground="red", font=("Helvetica", 11)).pack(expand=True)
-                self._frames[frame_key] = err_frame
-
-        # Hide all, show selected
         for w in self._content.winfo_children():
             w.pack_forget()
+        frame.pack(fill="both", expand=True)
 
-        frame = self._frames[frame_key]
+    def _open_frame_window(self, frame_key: str):
+        """Open or raise a ``tk.Toplevel`` for a module GUI."""
+        existing = self._windows.get(frame_key)
+        if existing is not None and existing.winfo_exists():
+            try:
+                existing.deiconify()
+                existing.lift()
+                existing.focus_force()
+            except tk.TclError:
+                pass
+            return
+
+        try:
+            cls = _get_frame_map().get(frame_key)
+            if cls is None:
+                messagebox.showwarning(
+                    t("common.warning"),
+                    t("main.navigation_error", target=frame_key))
+                return
+        except Exception as e:
+            logger.error("Failed to resolve %s: %s", frame_key, e, exc_info=True)
+            messagebox.showerror(
+                t("common.error"), f"Failed to load {frame_key}:\n{e}")
+            return
+
+        win = tk.Toplevel(self)
+        win.title(f"{self._frame_label(frame_key)} — College")
+        # Match the main window's documented sizing convention so the
+        # popup feels like a peer, not a floating dialog. See
+        # 8.117.151's GUI-sizing convention memory.
+        win.geometry("1400x900")
+        win.minsize(1200, 800)
+
+        try:
+            if cls.__name__ == 'MisconductFrame':
+                frame = cls(win, db_path=self._db_path, auth=self._auth,
+                            system_key='college')
+            else:
+                frame = cls(win, db_path=self._db_path, auth=self._auth)
+        except Exception as e:
+            logger.error("Failed to load %s: %s", frame_key, e, exc_info=True)
+            traceback.print_exc()
+            ttk.Label(win, text=f"Failed to load {frame_key}:\n{e}",
+                      foreground="red", font=("Helvetica", 11)).pack(expand=True)
+            self._windows[frame_key] = win
+            win.protocol(
+                "WM_DELETE_WINDOW",
+                lambda fk=frame_key: self._on_window_close(fk),
+            )
+            return
+
         frame.pack(fill="both", expand=True)
         if hasattr(frame, "refresh"):
             try:
                 frame.refresh()
             except Exception:
+                pass
+
+        win.protocol(
+            "WM_DELETE_WINDOW",
+            lambda fk=frame_key: self._on_window_close(fk),
+        )
+        self._windows[frame_key] = win
+
+    def _on_window_close(self, frame_key: str):
+        """Drop the cached window so the next click reopens a fresh one."""
+        win = self._windows.pop(frame_key, None)
+        if win is not None:
+            try:
+                win.destroy()
+            except tk.TclError:
                 pass
 
     # ── Callbacks ─────────────────────────────────────────────────────

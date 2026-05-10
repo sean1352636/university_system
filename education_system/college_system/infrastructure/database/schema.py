@@ -1503,11 +1503,39 @@ TABLES = {
             absence_type TEXT NOT NULL,
             start_date TEXT NOT NULL,
             end_date TEXT NOT NULL,
+            start_half TEXT NOT NULL DEFAULT 'full',
+            end_half TEXT NOT NULL DEFAULT 'full',
             reason TEXT,
             status TEXT NOT NULL DEFAULT 'pending',
             approved_by INTEGER,
+            cover_staff_id INTEGER,
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
             updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        )
+    """,
+    "absence_request_history": """
+        CREATE TABLE IF NOT EXISTS absence_request_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            request_id INTEGER NOT NULL,
+            from_status TEXT,
+            to_status TEXT NOT NULL,
+            actor_id INTEGER,
+            note TEXT,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            FOREIGN KEY (request_id) REFERENCES absence_requests(id) ON DELETE CASCADE
+        )
+    """,
+    "leave_entitlements": """
+        CREATE TABLE IF NOT EXISTS leave_entitlements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            staff_id INTEGER NOT NULL,
+            year INTEGER NOT NULL,
+            absence_type TEXT NOT NULL,
+            allowance REAL NOT NULL DEFAULT 0,
+            used REAL NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+            UNIQUE(staff_id, year, absence_type)
         )
     """,
     "swap_requests": """
@@ -4559,6 +4587,47 @@ def init_db(db_path: str | None = None):
             conn.execute("ALTER TABLE students ADD COLUMN previous_system TEXT")
         if "previous_system_id" not in cols:
             conn.execute("ALTER TABLE students ADD COLUMN previous_system_id TEXT")
+        if "title" not in cols:
+            conn.execute("ALTER TABLE students ADD COLUMN title TEXT")
+        if "middle_name" not in cols:
+            conn.execute("ALTER TABLE students ADD COLUMN middle_name TEXT")
+        if "gender" not in cols:
+            conn.execute("ALTER TABLE students ADD COLUMN gender TEXT")
+        # Cross-system identity link (shared.cross_system.student_journey).
+        if "journey_id" not in cols:
+            conn.execute("ALTER TABLE students ADD COLUMN journey_id TEXT")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_students_journey_id "
+                "ON students(journey_id)"
+            )
+        # Cross-system back-link populated by the
+        # ``cross_system_progression_consumer`` when the university
+        # confirms enrolment (status='progressed').
+        if "progressed_to_university_id" not in cols:
+            conn.execute(
+                "ALTER TABLE students ADD COLUMN "
+                "progressed_to_university_id TEXT"
+            )
+
+        # Results-day results recording for UCAS applications. Drives the
+        # ``student.progression.accepted`` cross-system event.
+        ua_cols = {r[1] for r in conn.execute(
+            "PRAGMA table_info(ucas_applications)").fetchall()}
+        if "final_grades_json" not in ua_cols:
+            conn.execute(
+                "ALTER TABLE ucas_applications ADD COLUMN "
+                "final_grades_json TEXT"
+            )
+        if "conditions_met" not in ua_cols:
+            conn.execute(
+                "ALTER TABLE ucas_applications ADD COLUMN "
+                "conditions_met INTEGER"
+            )
+        if "results_recorded_at" not in ua_cols:
+            conn.execute(
+                "ALTER TABLE ucas_applications ADD COLUMN "
+                "results_recorded_at TEXT"
+            )
 
         # Shared LMS tables
         from education_system.shared.lms.schema import create_lms_tables

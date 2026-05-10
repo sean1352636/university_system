@@ -94,6 +94,12 @@ class PupilService:
             )
             conn.commit()
             logger.info("Created pupil: %s %s (%s)", first_name, last_name, pupil_id)
+            new_pupil_pk = cursor.lastrowid
+            self._register_journey(
+                pupil_pk=new_pupil_pk, pupil_id=pupil_id,
+                first_name=first_name, last_name=last_name,
+                date_of_birth=kwargs.get("date_of_birth"),
+            )
             return {"pupil_id": pupil_id, "first_name": first_name, "last_name": last_name, "year_group": year_group}
         except Exception as e:
             traceback.print_exc()
@@ -101,6 +107,45 @@ class PupilService:
             raise PupilError(f"Failed to create pupil: {e}") from e
         finally:
             conn.close()
+
+    def _register_journey(self, *, pupil_pk: int | None, pupil_id: str,
+                           first_name: str, last_name: str,
+                           date_of_birth: str | None) -> None:
+        """Best-effort cross-system identity hook. Never raises.
+
+        See ``shared.cross_system.journey_events.register_student_journey``.
+        """
+        if not date_of_birth:
+            return
+        try:
+            from education_system.shared.cross_system.journey_events import (
+                register_student_journey,
+            )
+        except Exception:
+            return
+        try:
+            journey_id = register_student_journey(
+                system="primary",
+                pk=pupil_pk, student_id=pupil_id,
+                first_name=first_name, last_name=last_name,
+                date_of_birth=date_of_birth,
+                source_module="primary_school.academics.pupils.create_pupil",
+            )
+            if journey_id and pupil_pk is not None:
+                conn = self._conn()
+                try:
+                    conn.execute(
+                        "UPDATE pupils SET journey_id = ? WHERE id = ?",
+                        (journey_id, pupil_pk),
+                    )
+                    conn.commit()
+                finally:
+                    conn.close()
+        except Exception:
+            logger.warning(
+                "Primary journey registration failed for pupil %s",
+                pupil_id, exc_info=True,
+            )
 
     def get_pupil(self, pupil_id):
         conn = self._conn()

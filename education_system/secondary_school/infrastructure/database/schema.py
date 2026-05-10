@@ -2860,6 +2860,13 @@ def initialise_database(db_path: str | None = None):
             conn.execute("ALTER TABLE students ADD COLUMN previous_system TEXT")
         if "previous_system_id" not in cols:
             conn.execute("ALTER TABLE students ADD COLUMN previous_system_id TEXT")
+        # Cross-system identity link (shared.cross_system.student_journey).
+        if "journey_id" not in cols:
+            conn.execute("ALTER TABLE students ADD COLUMN journey_id TEXT")
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_students_journey_id "
+                "ON students(journey_id)"
+            )
 
         # Migration: add new columns to homework_submissions if missing
         hw_sub_cols = {r[1] for r in conn.execute("PRAGMA table_info(homework_submissions)").fetchall()}

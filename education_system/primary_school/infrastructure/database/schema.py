@@ -2211,6 +2211,15 @@ def initialise_database(db_path):
         if "is_late" not in hw_sub_cols:
             cursor.execute("ALTER TABLE homework_submissions ADD COLUMN is_late INTEGER DEFAULT 0")
 
+        # Cross-system identity link (shared.cross_system.student_journey).
+        pupil_cols = {r[1] for r in cursor.execute("PRAGMA table_info(pupils)").fetchall()}
+        if "journey_id" not in pupil_cols:
+            cursor.execute("ALTER TABLE pupils ADD COLUMN journey_id TEXT")
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_pupils_journey_id "
+                "ON pupils(journey_id)"
+            )
+
         # Shared LMS tables
         from education_system.shared.lms.schema import create_lms_tables
         create_lms_tables(conn)

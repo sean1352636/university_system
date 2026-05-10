@@ -39,36 +39,103 @@ class StudentService:
         finally:
             conn.close()
 
+    EMAIL_DOMAIN = "sixthform.ac.uk"
+
+    @classmethod
+    def email_for_student_id(cls, student_id: str) -> str:
+        """Build the auto-generated college email for a given student id."""
+        return f"{student_id.lower()}@{cls.EMAIL_DOMAIN}"
+
     def create_student(self, first_name: str, last_name: str,
                        email: str | None = None, phone: str | None = None,
                        date_of_birth: str | None = None, address: str | None = None,
                        year_group: str | None = None, form_group: str | None = None,
-                       form_tutor: str | None = None, user_id: int | None = None) -> dict:
-        """Create a new student record."""
+                       form_tutor: str | None = None, user_id: int | None = None,
+                       title: str | None = None, middle_name: str | None = None,
+                       gender: str | None = None) -> dict:
+        """Create a new student record.
+
+        Email is auto-generated from the student id (e.g. ``sfc0002@sixthform.ac.uk``)
+        if not supplied — callers are no longer expected to ask the user for one.
+        """
         first_name = validate_non_empty(first_name, "First name")
         last_name = validate_non_empty(last_name, "Last name")
-        if email:
-            email = validate_email(email)
 
         student_id = self._generate_student_id()
+        if not email:
+            email = self.email_for_student_id(student_id)
+        email = validate_email(email)
+
         conn = self._conn()
         try:
             conn.execute(
                 """INSERT INTO students
-                   (student_id, user_id, first_name, last_name, email, phone,
-                    date_of_birth, address, year_group, form_group, form_tutor)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                (student_id, user_id, first_name, last_name, email, phone,
-                 date_of_birth, address, year_group or "12", form_group, form_tutor),
+                   (student_id, user_id, title, first_name, middle_name, last_name,
+                    gender, email, phone, date_of_birth, address, year_group,
+                    form_group, form_tutor)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (student_id, user_id, title, first_name, middle_name, last_name,
+                 gender, email, phone, date_of_birth, address,
+                 year_group or "12", form_group, form_tutor),
             )
             conn.commit()
-            logger.info("Student created: %s (%s %s)", student_id, first_name, last_name)
-            return self.get_student_by_student_id(student_id)
+            logger.info(
+                "Student created: %s (%s %s) email=%s year=%s form=%s",
+                student_id, first_name, last_name, email,
+                year_group or "12", form_group or "-",
+            )
+            created = self.get_student_by_student_id(student_id)
+            self._register_journey(created, date_of_birth)
+            return created
         except Exception as e:
             conn.rollback()
+            logger.exception("Student creation failed for %s %s", first_name, last_name)
             raise StudentError(f"Failed to create student: {e}") from e
         finally:
             conn.close()
+
+    def _register_journey(self, student: dict | None,
+                           date_of_birth: str | None) -> None:
+        """Best-effort hook into the cross-system identity + bus.
+
+        Called from ``create_student`` after a successful insert. Failures
+        here must not bubble up — the student row is already committed.
+        """
+        if not student or not date_of_birth:
+            return
+        try:
+            from education_system.shared.cross_system.journey_events import (
+                register_student_journey,
+            )
+        except Exception:
+            return
+        try:
+            journey_id = register_student_journey(
+                system="college",
+                pk=student.get("id"),
+                student_id=student.get("student_id"),
+                first_name=student.get("first_name"),
+                last_name=student.get("last_name"),
+                date_of_birth=date_of_birth,
+                source_module="college_system.students.create_student",
+            )
+            if journey_id:
+                conn = self._conn()
+                try:
+                    conn.execute(
+                        "UPDATE students SET journey_id = ? WHERE id = ?",
+                        (journey_id, student["id"]),
+                    )
+                    conn.commit()
+                finally:
+                    conn.close()
+                # Reflect the link in the dict the caller already holds.
+                student["journey_id"] = journey_id
+        except Exception:
+            logger.warning(
+                "College journey registration failed for student %s",
+                student.get("student_id"), exc_info=True,
+            )
 
     def get_student(self, student_pk: int) -> dict | None:
         """Get a student by primary key."""
@@ -131,7 +198,7 @@ class StudentService:
         params: list = []
         for col in ("first_name", "last_name", "email", "phone", "date_of_birth",
                     "address", "year_group", "form_group", "form_tutor", "status",
-                    "user_id"):
+                    "user_id", "title", "middle_name", "gender"):
             val = kwargs.get(col)
             if val is None:
                 continue
@@ -326,6 +393,52 @@ class StudentService:
                 "Failed to set previous_system fields on transferred student",
                 exc_info=True,
             )
+
+        # 3) Publish journey.transitioned for the school -> college move.
+        # Best-effort — the student's already imported even if the bus is down.
+        try:
+            self._publish_school_to_college_transition(
+                student_pk, imported_data,
+            )
+        except Exception:
+            logger.warning(
+                "Failed to publish journey.transitioned for school->college transfer",
+                exc_info=True,
+            )
+
+    def _publish_school_to_college_transition(
+        self, college_student_pk: int, imported_data: dict,
+    ) -> None:
+        """Resolve the college student's journey_id and publish the transition.
+
+        Looked up by college pk first, then student_id — the journey is set
+        by ``_register_journey`` at create time, so the row should exist.
+        """
+        from education_system.shared.cross_system.journey_events import (
+            journey_id_for_system_record, record_student_transition,
+        )
+
+        college_row = self.get_student(college_student_pk)
+        if not college_row:
+            return
+        journey_id = journey_id_for_system_record(
+            "college",
+            pk=college_student_pk,
+            student_id=college_row.get("student_id"),
+        )
+        if not journey_id:
+            return
+        record_student_transition(
+            journey_id,
+            from_system="school", to_system="college", reason="transfer",
+            notes=f"Imported from secondary student "
+                  f"{imported_data.get('student_id', '')}",
+            source_module="college_system.students.import_from_secondary",
+            extra_payload={
+                "college_student_id": college_row.get("student_id"),
+                "school_student_id": imported_data.get("student_id"),
+            },
+        )
 
     def mark_secondary_as_transferred(self, secondary_student_pk: int,
                                       secondary_db_path: str) -> None:
