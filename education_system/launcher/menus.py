@@ -44,7 +44,12 @@ def cli_select_mode() -> str | None:
 
 def cli_select_system() -> str | None:
     """CLI menu: pick a system. Returns system key or None for back."""
-    mapping = {"1": "university"}
+    mapping = {
+        "1": "university",
+        "2": "college",
+        "3": "school",
+        "4": "primary",
+    }
     _flush_stdin()
 
     while True:
@@ -52,6 +57,9 @@ def cli_select_system() -> str | None:
         print("  ── Select System ──")
         print()
         print("  [1] University Management System")
+        print("  [2] Sixth Form College")
+        print("  [3] Secondary School")
+        print("  [4] Primary School")
         print("  [0] Back")
         print()
 

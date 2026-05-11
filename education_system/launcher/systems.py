@@ -141,6 +141,43 @@ def run_university_gui(user_info=None, role=None, shared_auth=None):
     app.run()
 
 
+# ── Sixth Form / Secondary / Primary ────────────────────────────────────────
+#
+# These systems use the shared (universal) login. The `UserAuth` returned
+# by `gui_universal_login` / `cli_universal_login` already has `current_user`
+# populated, so we pass it straight through as `shared_auth` — no per-system
+# login dialog runs.
+
+def run_sixthform_cli(user_info=None, role=None, shared_auth=None):
+    from education_system.sixthform_system.cli_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_sixthform_gui(user_info=None, role=None, shared_auth=None):
+    from education_system.sixthform_system.gui_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_secondarysch_cli(user_info=None, role=None, shared_auth=None):
+    from education_system.secondarysch_system.cli_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_secondarysch_gui(user_info=None, role=None, shared_auth=None):
+    from education_system.secondarysch_system.gui_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_primarysch_cli(user_info=None, role=None, shared_auth=None):
+    from education_system.primarysch_system.cli_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
+def run_primarysch_gui(user_info=None, role=None, shared_auth=None):
+    from education_system.primarysch_system.gui_main import run
+    run(user_info=user_info, role=role, shared_auth=shared_auth)
+
+
 # ── Shared ───────────────────────────────────────────────────────────────────
 
 def run_unified_api():
@@ -211,8 +248,17 @@ LAUNCHERS = {
     ("university", "gui"):  run_university_gui,
     ("university", "api"):  run_unified_api,
     ("university", "test"): run_university_tests,
+    # Sixth-form system — auth seed key is "college"
+    ("college", "cli"):     run_sixthform_cli,
+    ("college", "gui"):     run_sixthform_gui,
+    # Secondary school system — auth seed key is "school"
+    ("school", "cli"):      run_secondarysch_cli,
+    ("school", "gui"):      run_secondarysch_gui,
+    # Primary school system — auth seed key is "primary"
+    ("primary", "cli"):     run_primarysch_cli,
+    ("primary", "gui"):     run_primarysch_gui,
 }
 
 # Systems that support pre-authenticated launch
-AUTH_GUI_SYSTEMS = {"university"}
-AUTH_CLI_SYSTEMS = {"university"}
+AUTH_GUI_SYSTEMS = {"university", "college", "school", "primary"}
+AUTH_CLI_SYSTEMS = {"university", "college", "school", "primary"}
