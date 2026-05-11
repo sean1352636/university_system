@@ -343,9 +343,9 @@ class SixthFormMainGUI:
                 "Close the GUI and continue in the CLI?",
                 parent=self.root):
             return
+        from education_system import switch as _switch
+        _switch.request_switch("college", "cli")
         self.root.destroy()
-        from education_system.sixthform_system import cli_main
-        cli_main.run_authenticated(self.auth)
 
     def _shutdown(self) -> None:
         if messagebox.askyesno(
@@ -363,6 +363,27 @@ class SixthFormMainGUI:
         except Exception:
             pass
         self.root.destroy()
+
+    # ── Student CRUD (delegates to student_views) ────────────────────
+    def open_student_directory(self) -> None:
+        from education_system.sixthform_system import student_views
+        student_views.open_directory(self)
+
+    def open_add_student(self) -> None:
+        from education_system.sixthform_system import student_views
+        student_views.open_add_student(self)
+
+    def open_search_students(self) -> None:
+        from education_system.sixthform_system import student_views
+        student_views.open_search(self)
+
+    def open_student_profile(self) -> None:
+        from education_system.sixthform_system import student_views
+        student_views.open_profile(self)
+
+    def open_enrolment(self) -> None:
+        from education_system.sixthform_system import enrolment_views
+        enrolment_views.open_directory(self)
 
     # ── Concrete (stub) handlers ─────────────────────────────────────
     def open_about(self) -> None:
@@ -384,12 +405,17 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     is already populated. No per-system login is shown.
     """
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
+        logger.error("sixthform GUI invoked without a shared_auth session")
         raise RuntimeError(
             "sixthform_system GUI must be launched via run.py — "
             "no standalone login is available."
         )
+    cu = shared_auth.current_user or {}
+    logger.info("Sixth-form GUI starting for user=%s role=%s",
+                cu.get("username"), role)
     app = SixthFormMainGUI(shared_auth)
     app.root.mainloop()
+    logger.info("Sixth-form GUI exited for user=%s", cu.get("username"))
     return 0
 
 

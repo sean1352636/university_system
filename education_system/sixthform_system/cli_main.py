@@ -7,7 +7,11 @@ Stubs print a placeholder; real domain wiring goes in later.
 
 from __future__ import annotations
 
+import logging
+
 from education_system.sixthform_system import SYSTEM_NAME
+
+logger = logging.getLogger(__name__)
 
 # Same catalogue as the GUI — keep them in sync.
 CATEGORIES: list[tuple[str, list[str]]] = [
@@ -68,6 +72,10 @@ def _submenu(category: str, items: list[str]) -> None:
             print("Invalid selection.")
             continue
         label = items[int(choice) - 1]
+        logger.debug("Sixth-form CLI dispatch: %s / %s", category, label)
+        from education_system.sixthform_system import student_cli, enrolment_cli
+        if student_cli.dispatch(label) or enrolment_cli.dispatch(label):
+            continue
         print(f"\n[stub] {label} — not yet implemented.")
         _prompt("Press Enter to continue...")
 
@@ -101,14 +109,14 @@ def _main_menu(auth) -> None:
 
 
 def run_authenticated(auth) -> int:
-    """Entry point when the caller has already logged in (e.g. GUI → CLI switch)."""
-    try:
-        _main_menu(auth)
-    finally:
-        try:
-            auth.logout()
-        except Exception:
-            pass
+    """Entry point when the caller has already logged in (e.g. GUI → CLI switch).
+
+    The shared session is owned by the unified launcher — we never log it
+    out unconditionally here. The explicit "Logout" menu item handles that;
+    the "Switch to GUI" menu item leaves the session intact so dispatch
+    can hand it straight to the GUI.
+    """
+    _main_menu(auth)
     return 0
 
 
@@ -119,10 +127,14 @@ def run(user_info=None, role=None, shared_auth=None) -> int:
     login is shown — `shared_auth.current_user` must already be set.
     """
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
+        logger.error("sixthform CLI invoked without a shared_auth session")
         raise RuntimeError(
             "sixthform_system CLI must be launched via run.py — "
             "no standalone login is available."
         )
+    cu = shared_auth.current_user or {}
+    logger.info("Sixth-form CLI starting for user=%s role=%s",
+                cu.get("username"), role)
     return run_authenticated(shared_auth)
 
 

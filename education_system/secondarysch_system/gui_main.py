@@ -354,9 +354,9 @@ class SecondarySchoolMainGUI:
                 "Close the GUI and continue in the CLI?",
                 parent=self.root):
             return
+        from education_system import switch as _switch
+        _switch.request_switch("school", "cli")
         self.root.destroy()
-        from education_system.secondarysch_system import cli_main
-        cli_main.run_authenticated(self.auth)
 
     def _shutdown(self) -> None:
         if messagebox.askyesno(

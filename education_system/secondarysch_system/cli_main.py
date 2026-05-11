@@ -107,14 +107,14 @@ def _main_menu(auth) -> None:
 
 
 def run_authenticated(auth) -> int:
-    """Entry point when the caller has already logged in (e.g. GUI → CLI switch)."""
-    try:
-        _main_menu(auth)
-    finally:
-        try:
-            auth.logout()
-        except Exception:
-            pass
+    """Entry point when the caller has already logged in (e.g. GUI → CLI switch).
+
+    The shared session is owned by the unified launcher — we never log it
+    out unconditionally here. The explicit "Logout" menu item handles that;
+    the "Switch to GUI" menu item leaves the session intact so dispatch
+    can hand it straight to the GUI.
+    """
+    _main_menu(auth)
     return 0
 
 
