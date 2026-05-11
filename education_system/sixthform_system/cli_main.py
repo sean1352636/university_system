@@ -75,14 +75,15 @@ def _submenu(category: str, items: list[str]) -> None:
         logger.debug("Sixth-form CLI dispatch: %s / %s", category, label)
         from education_system.sixthform_system import (
             student_cli, enrolment_cli, course_cli, subject_cli,
-            class_group_cli, timetable_cli,
+            class_group_cli, timetable_cli, attendance_cli,
         )
         if (student_cli.dispatch(label)
                 or enrolment_cli.dispatch(label)
                 or course_cli.dispatch(label)
                 or subject_cli.dispatch(label)
                 or class_group_cli.dispatch(label)
-                or timetable_cli.dispatch(label)):
+                or timetable_cli.dispatch(label)
+                or attendance_cli.dispatch(label)):
             continue
         print(f"\n[stub] {label} — not yet implemented.")
         _prompt("Press Enter to continue...")
@@ -90,18 +91,29 @@ def _submenu(category: str, items: list[str]) -> None:
 
 def _main_menu(auth) -> None:
     from education_system import switch as _switch
+    from education_system.launcher.roles import is_superadmin
+    from education_system.launcher.system_switch import pick_system_cli
     user = auth.current_user or {}
+    show_system_switch = is_superadmin(user)
     while True:
         print(f"\n=== {SYSTEM_NAME} ===")
         print(f"Signed in: {user.get('username', '?')}")
         for i, (cat, _items) in enumerate(CATEGORIES, 1):
             print(f"  {i:2d}) {cat}")
         print("   G) Switch to GUI")
+        if show_system_switch:
+            print("   S) Switch System")
         print("   L) Logout (return to login)")
         choice = _prompt("Select: ").lower()
         if choice == "g":
             _switch.request_switch("college", "gui")
             return
+        if choice == "s" and show_system_switch:
+            target = pick_system_cli(user, "college")
+            if target:
+                _switch.request_switch(target, "cli")
+                return
+            continue
         if choice == "l":
             try:
                 auth.logout()

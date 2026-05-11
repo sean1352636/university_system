@@ -160,6 +160,16 @@ class SecondarySchoolMainGUI:
         ttk.Button(left, text="Switch to CLI", command=self._switch_to_cli).pack(
             side="left", padx=(0, 6))
 
+        try:
+            from education_system.launcher.roles import is_superadmin
+            if is_superadmin(self.auth.current_user):
+                ttk.Button(
+                    left, text="Switch System",
+                    command=self._switch_system,
+                ).pack(side="left", padx=(0, 6))
+        except Exception:
+            logger.exception("Could not evaluate superadmin status for header")
+
         title = ttk.Frame(header)
         title.grid(row=0, column=1)
         ttk.Label(title, text=SYSTEM_NAME, font=("", 14, "bold")).pack()
@@ -356,6 +366,15 @@ class SecondarySchoolMainGUI:
             return
         from education_system import switch as _switch
         _switch.request_switch("school", "cli")
+        self.root.destroy()
+
+    def _switch_system(self) -> None:
+        from education_system import switch as _switch
+        from education_system.launcher.system_switch import pick_system_gui
+        target = pick_system_gui(self.root, self.auth.current_user, "school")
+        if not target:
+            return
+        _switch.request_switch(target, "gui")
         self.root.destroy()
 
     def _shutdown(self) -> None:

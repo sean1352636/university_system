@@ -126,6 +126,38 @@ def setup_gui(self):
 
     # Show welcome message initially
     self.show_welcome()
+def _switch_system_dialog(self):
+    """Open the shared system-picker and, on selection, request a
+    switch to the chosen system and tear the university GUI down.
+
+    Hidden when the user isn't a superadmin (see ``create_header``).
+    """
+    try:
+        from education_system import switch as _switch
+        from education_system.launcher.system_switch import pick_system_gui
+        target = pick_system_gui(
+            self.root,
+            getattr(self.auth, "current_user", None),
+            "university",
+        )
+    except Exception:
+        logger.exception("System-switch picker failed")
+        return
+    if not target:
+        return
+    if not messagebox.askyesno(
+        "Switch System",
+        f"Close the University GUI and open the selected system?",
+        parent=self.root,
+    ):
+        return
+    _switch.request_switch(target, "gui")
+    try:
+        self.root.destroy()
+    except Exception:
+        logger.exception("Failed to destroy root during system switch")
+
+
 def create_header(self, parent):
     """Create the top control bar.
 
@@ -161,6 +193,19 @@ def create_header(self, parent):
     ttk.Button(left, text=_t("gui.switch_to_cli"),
                command=lambda: self.switch_to_cli()).pack(
         side=tk.LEFT, padx=(0, 6))
+
+    # Superadmins (admin role on the university system) can jump
+    # straight to one of the other systems without going through the
+    # login. Hidden for everyone else.
+    try:
+        from education_system.launcher.roles import is_superadmin
+        if is_superadmin(self.auth.current_user if self.auth else None):
+            ttk.Button(
+                left, text="Switch System",
+                command=lambda: _switch_system_dialog(self),
+            ).pack(side=tk.LEFT, padx=(0, 6))
+    except Exception:
+        logger.exception("Could not evaluate superadmin status for header")
 
     # ── Destructive actions (right) ──
     right = ttk.Frame(header_frame)

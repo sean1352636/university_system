@@ -593,6 +593,17 @@ def display_menu():
             add_option(get_text('cli.menu.switch_to_gui', default='Switch to GUI'), "switch_to_gui"),
             add_option(get_text('cli.menu.language', default='Language'), "change_language"),
         ]
+        # Superadmins (admin role on the university system) can jump
+        # straight to another system without going through the login.
+        try:
+            from education_system.launcher.roles import is_superadmin as _is_sa
+            if _is_sa(auth.current_user if auth else None):
+                items.append(add_option(
+                    get_text('cli.menu.switch_system', default='Switch System'),
+                    "switch_system",
+                ))
+        except Exception:
+            pass
         # Add monitoring/backup options for admin users
         if auth.current_user and auth.current_user.get('role') == 'admin':
             items.append(add_option(get_text('cli.menu.system_monitoring', default='System Monitoring'), "system_monitoring"))
@@ -912,6 +923,18 @@ def display_menu():
                 display_system_monitoring_menu(auth)
             elif option == "switch_to_gui":
                 switch_to_gui(auth)
+            elif option == "switch_system":
+                try:
+                    from education_system import switch as _switch
+                    from education_system.launcher.system_switch import pick_system_cli
+                    target = pick_system_cli(
+                        auth.current_user if auth else None, "university")
+                    if target:
+                        _switch.request_switch(target, "cli")
+                        return  # exits main menu loop; dispatcher takes over
+                except Exception as e:
+                    print(f"\n  ✗ Could not switch system: {e}")
+                    input("Press Enter to continue...")
             elif option == "change_language":
                 display_language_menu_option()
             elif option == "hesa_export":

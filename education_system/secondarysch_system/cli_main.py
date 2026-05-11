@@ -80,18 +80,29 @@ def _submenu(category: str, items: list[str]) -> None:
 
 def _main_menu(auth) -> None:
     from education_system import switch as _switch
+    from education_system.launcher.roles import is_superadmin
+    from education_system.launcher.system_switch import pick_system_cli
     user = auth.current_user or {}
+    show_system_switch = is_superadmin(user)
     while True:
         print(f"\n=== {SYSTEM_NAME} ===")
         print(f"Signed in: {user.get('username', '?')}")
         for i, (cat, _items) in enumerate(CATEGORIES, 1):
             print(f"  {i:2d}) {cat}")
         print("   G) Switch to GUI")
+        if show_system_switch:
+            print("   S) Switch System")
         print("   L) Logout (return to login)")
         choice = _prompt("Select: ").lower()
         if choice == "g":
             _switch.request_switch("school", "gui")
             return
+        if choice == "s" and show_system_switch:
+            target = pick_system_cli(user, "school")
+            if target:
+                _switch.request_switch(target, "cli")
+                return
+            continue
         if choice == "l":
             try:
                 auth.logout()

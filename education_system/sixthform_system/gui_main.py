@@ -147,6 +147,18 @@ class SixthFormMainGUI:
         ttk.Button(left, text="Switch to CLI", command=self._switch_to_cli).pack(
             side="left", padx=(0, 6))
 
+        # Superadmins (admin role on the university system) can hop
+        # straight to another system without going through the login.
+        try:
+            from education_system.launcher.roles import is_superadmin
+            if is_superadmin(self.auth.current_user):
+                ttk.Button(
+                    left, text="Switch System",
+                    command=self._switch_system,
+                ).pack(side="left", padx=(0, 6))
+        except Exception:
+            logger.exception("Could not evaluate superadmin status for header")
+
         title = ttk.Frame(header)
         title.grid(row=0, column=1)
         ttk.Label(title, text=SYSTEM_NAME, font=("", 14, "bold")).pack()
@@ -347,6 +359,15 @@ class SixthFormMainGUI:
         _switch.request_switch("college", "cli")
         self.root.destroy()
 
+    def _switch_system(self) -> None:
+        from education_system import switch as _switch
+        from education_system.launcher.system_switch import pick_system_gui
+        target = pick_system_gui(self.root, self.auth.current_user, "college")
+        if not target:
+            return
+        _switch.request_switch(target, "gui")
+        self.root.destroy()
+
     def _shutdown(self) -> None:
         if messagebox.askyesno(
                 "Shutdown", "Shut down the Sixth Form System?", parent=self.root):
@@ -400,6 +421,10 @@ class SixthFormMainGUI:
     def open_timetable(self) -> None:
         from education_system.sixthform_system import timetable_views
         timetable_views.open_directory(self)
+
+    def open_attendance(self) -> None:
+        from education_system.sixthform_system import attendance_views
+        attendance_views.open_directory(self)
 
     # ── Concrete (stub) handlers ─────────────────────────────────────
     def open_about(self) -> None:

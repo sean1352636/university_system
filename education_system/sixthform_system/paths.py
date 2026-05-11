@@ -49,6 +49,9 @@ CLASS_GROUPS_DB: Path = STUDENTS_DB
 # Timetable slots: which class group meets on which day/period/room.
 TIMETABLE_DB: Path = STUDENTS_DB
 
+# Attendance records: one row per (slot, student, date).
+ATTENDANCE_DB: Path = STUDENTS_DB
+
 
 def ensure_directories() -> None:
     """Create any directories listed above. Safe to call repeatedly."""
@@ -64,5 +67,6 @@ __all__ = [
     "SUBJECTS_DB",
     "CLASS_GROUPS_DB",
     "TIMETABLE_DB",
+    "ATTENDANCE_DB",
     "ensure_directories",
 ]
