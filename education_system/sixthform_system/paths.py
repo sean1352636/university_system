@@ -46,6 +46,9 @@ SUBJECTS_DB: Path = STUDENTS_DB
 # membership table.
 CLASS_GROUPS_DB: Path = STUDENTS_DB
 
+# Timetable slots: which class group meets on which day/period/room.
+TIMETABLE_DB: Path = STUDENTS_DB
+
 
 def ensure_directories() -> None:
     """Create any directories listed above. Safe to call repeatedly."""
@@ -60,5 +63,6 @@ __all__ = [
     "COURSES_DB",
     "SUBJECTS_DB",
     "CLASS_GROUPS_DB",
+    "TIMETABLE_DB",
     "ensure_directories",
 ]

@@ -397,6 +397,10 @@ class SixthFormMainGUI:
         from education_system.sixthform_system import class_group_views
         class_group_views.open_directory(self)
 
+    def open_timetable(self) -> None:
+        from education_system.sixthform_system import timetable_views
+        timetable_views.open_directory(self)
+
     # ── Concrete (stub) handlers ─────────────────────────────────────
     def open_about(self) -> None:
         self._clear_content()
