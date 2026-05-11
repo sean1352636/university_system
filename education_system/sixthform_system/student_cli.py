@@ -13,11 +13,21 @@ import logging
 from typing import Any, Callable
 
 from education_system.sixthform_system import students as data
+from education_system.sixthform_system import subjects as subjects_data
 from education_system.sixthform_system.students import (
     A_LEVEL_SUBJECTS,
     Student,
     ValidationError,
 )
+
+
+def _active_subjects() -> list[str]:
+    try:
+        names = subjects_data.get_active_names()
+        return names or list(A_LEVEL_SUBJECTS)
+    except Exception:
+        logger.exception("Falling back to seed subject list")
+        return list(A_LEVEL_SUBJECTS)
 
 logger = logging.getLogger(__name__)
 
@@ -62,12 +72,13 @@ def _pause() -> None:
 
 def _pick_subject(slot: int, existing: str | None = None) -> str:
     """Render the A-Level subject list and let the user pick one by number."""
+    choices = _active_subjects()
     print(f"\n  A-Level subject {slot}:")
-    for i, subj in enumerate(A_LEVEL_SUBJECTS, 1):
+    for i, subj in enumerate(choices, 1):
         marker = " *" if subj == existing else "  "
         print(f"    {marker}{i:>2}) {subj}")
     while True:
-        raw = _input(f"  Pick #1..{len(A_LEVEL_SUBJECTS)}",
+        raw = _input(f"  Pick #1..{len(choices)}",
                      default=existing or "")
         if existing and raw == existing:
             return existing
@@ -75,10 +86,10 @@ def _pick_subject(slot: int, existing: str | None = None) -> str:
             print("    Enter a number (or 'cancel' to abort).")
             continue
         n = int(raw)
-        if not (1 <= n <= len(A_LEVEL_SUBJECTS)):
-            print(f"    Out of range (1..{len(A_LEVEL_SUBJECTS)}).")
+        if not (1 <= n <= len(choices)):
+            print(f"    Out of range (1..{len(choices)}).")
             continue
-        return A_LEVEL_SUBJECTS[n - 1]
+        return choices[n - 1]
 
 
 # ── Form (add + edit) ────────────────────────────────────────────────

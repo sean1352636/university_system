@@ -385,6 +385,18 @@ class SixthFormMainGUI:
         from education_system.sixthform_system import enrolment_views
         enrolment_views.open_directory(self)
 
+    def open_courses(self) -> None:
+        from education_system.sixthform_system import course_views
+        course_views.open_directory(self)
+
+    def open_subjects(self) -> None:
+        from education_system.sixthform_system import subject_views
+        subject_views.open_directory(self)
+
+    def open_class_groups(self) -> None:
+        from education_system.sixthform_system import class_group_views
+        class_group_views.open_directory(self)
+
     # ── Concrete (stub) handlers ─────────────────────────────────────
     def open_about(self) -> None:
         self._clear_content()

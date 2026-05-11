@@ -211,9 +211,18 @@ def _validate_payload(data: dict[str, Any]) -> dict[str, Any]:
         raise ValidationError("Please choose three A-Level subjects")
     if len(set(chosen)) != 3:
         raise ValidationError("A-Level subjects must be distinct")
-    for s in chosen:
-        if s not in A_LEVEL_SUBJECTS:
-            raise ValidationError(f"Unknown A-Level subject: {s}")
+    # Validate against the live subjects table (source of truth) but
+    # fall back to the seed list if the table isn't there yet (e.g.
+    # during unit tests that don't import the subjects module).
+    try:
+        from education_system.sixthform_system import subjects as _subjects
+        for s in chosen:
+            if not _subjects.is_valid_subject(s):
+                raise ValidationError(f"Unknown A-Level subject: {s}")
+    except ImportError:
+        for s in chosen:
+            if s not in A_LEVEL_SUBJECTS:
+                raise ValidationError(f"Unknown A-Level subject: {s}")
     out["subject_1"], out["subject_2"], out["subject_3"] = subjects
     return out
 

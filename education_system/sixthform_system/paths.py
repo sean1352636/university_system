@@ -34,6 +34,18 @@ STUDENTS_DB: Path = DATA_DIR / "sixthform.db"
 # joins / FK cascades work without coordinating two connections.
 ENROLMENTS_DB: Path = STUDENTS_DB
 
+# Courses share the same DB for the same reason — staff want to filter
+# students by course / course by status etc.
+COURSES_DB: Path = STUDENTS_DB
+
+# Subjects (qualifications offered by the sixth form) are the source
+# of truth for what student/course dropdowns can pick from.
+SUBJECTS_DB: Path = STUDENTS_DB
+
+# Class groups (teaching sets within a course) and their many-to-many
+# membership table.
+CLASS_GROUPS_DB: Path = STUDENTS_DB
+
 
 def ensure_directories() -> None:
     """Create any directories listed above. Safe to call repeatedly."""
@@ -45,5 +57,8 @@ __all__ = [
     "DATA_DIR",
     "STUDENTS_DB",
     "ENROLMENTS_DB",
+    "COURSES_DB",
+    "SUBJECTS_DB",
+    "CLASS_GROUPS_DB",
     "ensure_directories",
 ]

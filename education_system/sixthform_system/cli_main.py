@@ -73,8 +73,15 @@ def _submenu(category: str, items: list[str]) -> None:
             continue
         label = items[int(choice) - 1]
         logger.debug("Sixth-form CLI dispatch: %s / %s", category, label)
-        from education_system.sixthform_system import student_cli, enrolment_cli
-        if student_cli.dispatch(label) or enrolment_cli.dispatch(label):
+        from education_system.sixthform_system import (
+            student_cli, enrolment_cli, course_cli, subject_cli,
+            class_group_cli,
+        )
+        if (student_cli.dispatch(label)
+                or enrolment_cli.dispatch(label)
+                or course_cli.dispatch(label)
+                or subject_cli.dispatch(label)
+                or class_group_cli.dispatch(label)):
             continue
         print(f"\n[stub] {label} — not yet implemented.")
         _prompt("Press Enter to continue...")

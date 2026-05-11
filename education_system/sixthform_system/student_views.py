@@ -13,12 +13,24 @@ from tkinter import messagebox, ttk
 from typing import Any, Callable
 
 from education_system.sixthform_system import students as data
+from education_system.sixthform_system import subjects as subjects_data
 from education_system.sixthform_system.students import (
     A_LEVEL_SUBJECTS,
     Student,
     ValidationError,
     generate_sixthform_email,
 )
+
+
+def _active_subjects() -> list[str]:
+    """Live list of subjects students can choose from. Falls back to the
+    seed list if the subjects module hasn't initialised yet."""
+    try:
+        names = subjects_data.get_active_names()
+        return names or list(A_LEVEL_SUBJECTS)
+    except Exception:
+        logger.exception("Falling back to seed subject list")
+        return list(A_LEVEL_SUBJECTS)
 
 logger = logging.getLogger(__name__)
 
@@ -83,9 +95,11 @@ def _student_form(
     def entry(var: tk.StringVar, *, show: str | None = None) -> ttk.Entry:
         return ttk.Entry(form, textvariable=var, show=show or "")
 
+    subject_choices = _active_subjects()
+
     def subject_combo(var: tk.StringVar) -> ttk.Combobox:
         return ttk.Combobox(
-            form, textvariable=var, values=A_LEVEL_SUBJECTS,
+            form, textvariable=var, values=subject_choices,
             state="readonly", width=30,
         )
 
