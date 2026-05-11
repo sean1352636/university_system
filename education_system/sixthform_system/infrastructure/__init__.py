@@ -1,0 +1,1 @@
+"""Sixth-form `infrastructure` package."""
