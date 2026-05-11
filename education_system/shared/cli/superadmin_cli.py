@@ -9,9 +9,12 @@ audit log, backup/restore, batch operations, active sessions, and quick launch.
 import getpass
 from datetime import datetime
 
-SYSTEM_KEYS = ["primary", "secondary", "college", "university"]
+SYSTEM_KEYS = ["primary", "school", "college", "university"]
 SYSTEM_LABELS = {
     "university": "University",
+    "college":    "Sixth Form College",
+    "school":     "Secondary School",
+    "primary":    "Primary School",
 }
 
 
@@ -1192,6 +1195,7 @@ def run(user_info, auth):
    6) Notifications             13) Active Sessions
    7) Student Search            14) Quick Launch
 
+   G) Switch to GUI Dashboard
    0) Logout                    Q) Shutdown
 """)
 
@@ -1227,6 +1231,11 @@ def run(user_info, auth):
             result = _quick_launch(user_info, auth)
             if result:
                 return result
+        elif choice.lower() == "g":
+            from education_system import switch as _switch
+            print("\n  Switching to GUI dashboard...\n")
+            _switch.request_switch("__superadmin__", "gui")
+            return None
         elif choice == "0":
             print("\n  Logging out...\n")
             return None

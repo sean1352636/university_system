@@ -25,6 +25,11 @@ def dispatch_gui(user_info, system, role, shared_auth):
                 dashboard = SuperAdminDashboard(user_info, shared_auth)
                 dashboard.mainloop()
 
+                if dashboard.switch_to_cli:
+                    print("\n  Switching to CLI dashboard...\n")
+                    dispatch_cli(user_info, "__superadmin__", role, shared_auth)
+                    break
+
                 if dashboard.logged_out:
                     result = gui_universal_login()
                     if result is None:
@@ -114,12 +119,19 @@ def dispatch_cli(user_info, system, role, shared_auth):
                     system, _launch_role = result
                     role = pick_role_cli(system)
                     continue
-                else:
-                    result = cli_universal_login()
-                    if result is None:
-                        break
-                    user_info, system, role, shared_auth = result
-                    continue
+
+                # CLI returned None — might be a scheduled mode switch.
+                from education_system.switch import consume
+                pending = consume()
+                if pending == ("__superadmin__", "gui"):
+                    dispatch_gui(user_info, "__superadmin__", role, shared_auth)
+                    break
+
+                result = cli_universal_login()
+                if result is None:
+                    break
+                user_info, system, role, shared_auth = result
+                continue
             except KeyboardInterrupt:
                 print("\n\n  Interrupted. Goodbye!")
                 break

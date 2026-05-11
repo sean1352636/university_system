@@ -18,18 +18,18 @@ from pathlib import Path
 SYSTEM_COLORS = {
     "university": "#2980b9",
     "college": "#27ae60",
-    "secondary": "#8e44ad",
+    "school": "#8e44ad",
     "primary": "#e67e22",
 }
 
 SYSTEM_LABELS = {
     "primary": "Primary School",
-    "secondary": "Secondary School",
+    "school": "Secondary School",
     "college": "Sixth Form College",
     "university": "University",
 }
 
-SYSTEM_ORDER = ["primary", "secondary", "college", "university"]
+SYSTEM_ORDER = ["primary", "school", "college", "university"]
 
 # ---------------------------------------------------------------------------
 # i18n helper (Feature 12)
@@ -89,6 +89,7 @@ class SuperAdminDashboard(tk.Tk):
         self.launch_system = None
         self.launch_role = None
         self.logged_out = False
+        self.switch_to_cli = False
 
         self._auth_db_path = auth_db_path
         self._current_section = None
@@ -203,6 +204,22 @@ class SuperAdminDashboard(tk.Tk):
             command=self._show_about,
         )
         about_btn.pack(side=tk.LEFT, padx=(0, 8))
+
+        switch_cli_btn = tk.Button(
+            right_header,
+            text="Switch to CLI",
+            font=("Segoe UI", 10),
+            bg="#34495e",
+            fg=TEXT_LIGHT,
+            activebackground="#2c3e50",
+            activeforeground=TEXT_LIGHT,
+            relief=tk.FLAT,
+            cursor="hand2",
+            padx=10,
+            pady=2,
+            command=self._on_switch_to_cli,
+        )
+        switch_cli_btn.pack(side=tk.LEFT, padx=(0, 8))
 
         logout_btn = tk.Button(
             right_header,
@@ -818,7 +835,7 @@ class SuperAdminDashboard(tk.Tk):
         system_combo = ttk.Combobox(
             filter_bar,
             textvariable=system_var,
-            values=["All", "primary", "secondary", "college", "university"],
+            values=["All", "primary", "school", "college", "university"],
             state="readonly",
             width=14,
         )
@@ -2429,14 +2446,14 @@ class SuperAdminDashboard(tk.Tk):
         tree_frame = tk.Frame(frame, bg=CONTENT_BG)
         tree_frame.pack(fill=tk.X, padx=24, pady=(0, 12))
 
-        columns = ("username", "display_name", "primary", "secondary", "college", "university")
+        columns = ("username", "display_name", "primary", "school", "college", "university")
         tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=22)
 
         for col, heading, w in [
             ("username", "Username", 120),
             ("display_name", "Display Name", 150),
             ("primary", "Primary", 110),
-            ("secondary", "Secondary", 110),
+            ("school", "Secondary", 110),
             ("college", "College", 110),
             ("university", "University", 110),
         ]:
@@ -2464,7 +2481,7 @@ class SuperAdminDashboard(tk.Tk):
                 u.get("username", ""),
                 u.get("display_name", ""),
                 sys_map.get("primary", "\u2014"),
-                sys_map.get("secondary", "\u2014"),
+                sys_map.get("school", "\u2014"),
                 sys_map.get("college", "\u2014"),
                 sys_map.get("university", "\u2014"),
             ))
@@ -2969,7 +2986,7 @@ class SuperAdminDashboard(tk.Tk):
 
         launch_configs = [
             ("primary", "Primary School", "#e67e22", "Reception - Year 6\nEYFS / KS1 / KS2"),
-            ("secondary", "Secondary School", "#8e44ad", "Years 7 - 11\nKS3 / KS4 / GCSE"),
+            ("school", "Secondary School", "#8e44ad", "Years 7 - 11\nKS3 / KS4 / GCSE"),
             ("college", "Sixth Form College", "#27ae60", "Years 12 - 13\nA-Levels / BTEC / T-Levels"),
             ("university", "University", "#2980b9", "Undergraduate & Postgraduate\nDegrees / Research"),
         ]
@@ -3148,6 +3165,14 @@ class SuperAdminDashboard(tk.Tk):
 
     def _on_close(self):
         self._stop_auto_refresh()
+        self.launch_system = None
+        self.launch_role = None
+        self.destroy()
+
+    def _on_switch_to_cli(self):
+        """Close the dashboard and signal dispatch to re-enter as CLI superadmin."""
+        self._stop_auto_refresh()
+        self.switch_to_cli = True
         self.launch_system = None
         self.launch_role = None
         self.destroy()
