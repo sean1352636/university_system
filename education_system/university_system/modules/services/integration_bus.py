@@ -409,7 +409,7 @@ def _on_staff_availability_changed(**payload: Any) -> None:
     if payload.get("action") == "approved":
         # CoverManager: open a cover request for each affected day.
         try:
-            from education_system.university_system.modules.domain.staff_hr.services.managers.cover_manager import (
+            from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.cover_manager import (
                 CoverManager,
             )
             for d in _date_range(start, end):
@@ -712,7 +712,7 @@ def _on_appraisal_completed(**payload: Any) -> None:
         if salary <= 0:
             return
         amount = round(salary * pct, 2)
-        from education_system.university_system.modules.domain.staff_hr.services.managers.payroll_manager import (
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.payroll_manager import (
             PayrollManager,
         )
         PayrollManager.add_allowance(
@@ -741,7 +741,7 @@ def sweep_expiring_certifications(*, within_days: int = 30) -> int:
     """
     found = 0
     try:
-        from education_system.university_system.modules.domain.staff_hr.services.managers.training_manager import (
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.training_manager import (
             TrainingManager,
         )
         rows = TrainingManager.get_expiring_certs(days=within_days)

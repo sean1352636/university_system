@@ -2,7 +2,7 @@
 Profile Menu - Staff profile management CLI.
 """
 
-from education_system.university_system.modules.domain.staff_hr.services import EmployeeManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services import EmployeeManager
 
 
 def display_profile_menu(user_id: str) -> None:

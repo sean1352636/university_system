@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch, MagicMock
 import os
 import tempfile
 
-from education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager import ContractManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager import ContractManager
 
 @pytest.fixture
 def test_db():
@@ -130,9 +130,9 @@ def mock_db_connection(test_db):
 class TestContractCreation:
     """Test contract creation functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.log_activity')
     def test_create_contract_success(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test successful contract creation."""
         conn = sqlite3.connect(test_db)
@@ -164,9 +164,9 @@ class TestContractCreation:
         assert contract['status'] == 'active'
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.log_activity')
     def test_create_fixed_term_contract(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test creating a fixed-term contract with end date."""
         conn = sqlite3.connect(test_db)
@@ -191,9 +191,9 @@ class TestContractCreation:
         assert contract['end_date'] == '2027-01-14'
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.log_activity')
     def test_create_contract_with_probation(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test creating a contract with probation period."""
         conn = sqlite3.connect(test_db)
@@ -220,7 +220,7 @@ class TestContractCreation:
 class TestContractRetrieval:
     """Test contract retrieval functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.get_connection')
     def test_get_active_contract(self, mock_get_conn, test_db):
         """Test retrieving active contract for a user."""
         conn = sqlite3.connect(test_db)
@@ -244,7 +244,7 @@ class TestContractRetrieval:
         assert contract['status'] == 'active'
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.get_connection')
     def test_get_active_contract_none_exists(self, mock_get_conn, test_db):
         """Test retrieving active contract when none exists."""
         conn = sqlite3.connect(test_db)
@@ -258,7 +258,7 @@ class TestContractRetrieval:
         assert contract is None
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.get_connection')
     def test_get_user_contracts_with_history(self, mock_get_conn, test_db):
         """Test retrieving all contracts for a user including inactive."""
         conn = sqlite3.connect(test_db)
@@ -287,9 +287,9 @@ class TestContractRetrieval:
 class TestContractAmendments:
     """Test contract amendment functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.log_activity')
     def test_create_amendment(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test creating a contract amendment."""
         conn = sqlite3.connect(test_db)
@@ -332,9 +332,9 @@ class TestContractAmendments:
 class TestProbationManagement:
     """Test probation-related functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.log_activity')
     def test_create_probation_review(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test creating a probation review."""
         conn = sqlite3.connect(test_db)
@@ -375,7 +375,7 @@ class TestProbationManagement:
         assert review['outcome'] == 'pass'
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.get_connection')
     def test_get_probation_reviews(self, mock_get_conn, test_db):
         """Test retrieving probation reviews for a user."""
         conn = sqlite3.connect(test_db)
@@ -400,9 +400,9 @@ class TestProbationManagement:
         assert len(reviews) == 2
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.log_activity')
     def test_extend_probation(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test extending probation period."""
         conn = sqlite3.connect(test_db)
@@ -438,7 +438,7 @@ class TestProbationManagement:
 class TestExpiringContracts:
     """Test contract expiry alert functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.get_connection')
     def test_get_expiring_contracts(self, mock_get_conn, test_db):
         """Test retrieving contracts expiring within specified days."""
         conn = sqlite3.connect(test_db)
@@ -476,7 +476,7 @@ class TestExpiringContracts:
 class TestContractStatistics:
     """Test contract statistics functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.get_connection')
     def test_get_contract_statistics(self, mock_get_conn, test_db):
         """Test retrieving contract statistics."""
         conn = sqlite3.connect(test_db)
@@ -521,9 +521,9 @@ class TestContractStatistics:
 class TestContractTermination:
     """Test contract termination functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager.log_activity')
     def test_terminate_contract(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test terminating a contract."""
         conn = sqlite3.connect(test_db)

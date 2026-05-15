@@ -485,7 +485,7 @@ def show_admissions_crm_gui(self):
     otherwise — same pattern as Student Records (8.117.38)."""
     opener = getattr(self, "open_in_workspace", None)
     if callable(opener):
-        from education_system.university_system.modules.domain.admissions.gui.admissions_crm_gui import AdmissionsCRMGUI
+        from education_system.university_system.modules.domain.students.admissions.gui.admissions_crm_gui import AdmissionsCRMGUI
         opener("Admissions CRM", lambda host: AdmissionsCRMGUI(host, self.auth))
         return
     launch_admissions_crm_gui(self.root, self.auth)

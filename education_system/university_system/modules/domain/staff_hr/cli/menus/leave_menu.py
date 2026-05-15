@@ -3,7 +3,7 @@ Leave Menu - Leave management CLI.
 """
 
 from datetime import datetime
-from education_system.university_system.modules.domain.staff_hr.services import LeaveManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services import LeaveManager
 
 
 def display_leave_menu(user_id: str, is_approver: bool = False,

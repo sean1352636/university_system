@@ -4,13 +4,13 @@ Staff HR Services
 Business logic for Staff HR features.
 """
 
-from education_system.university_system.modules.domain.staff_hr.services.staff_hr_service import (
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services.staff_hr_service import (
     StaffHRService,
     get_staff_hr_service,
     reset_service,
 )
 
-from education_system.university_system.modules.domain.staff_hr.services.managers import (
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers import (
     EmployeeManager,
     LeaveManager,
     TimeManager,

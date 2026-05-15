@@ -11,12 +11,20 @@ _EDU_ROOT = _SHARED_DIR.parent                                # .../education_sy
 
 AUTH_DB = _SHARED_DIR / "data" / "db_files" / "auth.db"
 
+from education_system.secondarysch_system.core.paths import PUPILS_DB as _SECONDARY_DB
+
 SYSTEM_DB_PATHS = {
-    "university": _EDU_ROOT / "university_system" / "data" / "db_files" / "student_records.db",
+    "primary":    _EDU_ROOT / "primarysch_system"   / "data" / "primary.db",
+    "school":     _SECONDARY_DB,
+    "college":    _EDU_ROOT / "sixthform_system"    / "data" / "sixthform.db",
+    "university": _EDU_ROOT / "university_system"   / "data" / "db_files" / "student_records.db",
 }
 
-SYSTEM_ORDER = ["primary", "secondary", "college", "university"]
+SYSTEM_ORDER = ["primary", "school", "college", "university"]
 
 SYSTEM_LABELS = {
+    "primary":    "Primary School",
+    "school":     "Secondary School",
+    "college":    "Sixth Form College",
     "university": "University",
 }

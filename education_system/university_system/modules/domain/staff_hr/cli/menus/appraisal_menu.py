@@ -2,7 +2,7 @@
 Appraisal Menu - Performance and goals CLI.
 """
 
-from education_system.university_system.modules.domain.staff_hr.services import PerformanceManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services import PerformanceManager
 
 
 def display_appraisal_menu(user_id: str, is_manager: bool = False) -> None:

@@ -387,7 +387,7 @@ def display_admissions_crm_menu(auth):
             choice = input("\nEnter your choice (1-8): ").strip()
             if choice in ['1', '2', '3', '4', '5', '6', '7']:
                 print(f"\n🎯 Feature available via Admissions managers")
-                print("Use: from education_system.university_system.modules.domain.admissions.services import ProspectManager")
+                print("Use: from education_system.university_system.modules.domain.students.admissions.services import ProspectManager")
             elif choice == '8':
                 break
             else:
@@ -402,7 +402,7 @@ def display_admissions_crm_menu(auth):
 def launch_admissions_crm_gui(root, auth):
     """Launch the Admissions CRM GUI - placeholder, actual import should be from GUI module"""
     try:
-        from education_system.university_system.modules.domain.admissions.gui.admissions_crm_gui import launch_admissions_crm_gui as _launch
+        from education_system.university_system.modules.domain.students.admissions.gui.admissions_crm_gui import launch_admissions_crm_gui as _launch
         _launch(root, auth)
     except ImportError as e:
         from tkinter import messagebox

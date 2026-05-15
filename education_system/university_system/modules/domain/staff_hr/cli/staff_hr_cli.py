@@ -160,7 +160,7 @@ def display_staff_hr_menu() -> None:
     is_manager = 'manager' in user_role.lower() if user_role else False
 
     # Import menu handlers
-    from education_system.university_system.modules.domain.staff_hr.cli.menus import (
+    from education_system.university_system.modules.domain.staff_comms.staff_hr.cli.menus import (
         display_profile_menu,
         display_leave_menu,
         display_time_menu,
@@ -256,7 +256,7 @@ def display_staff_hr_menu() -> None:
 def _handle_menu_selection(selected: str, user_id: str,
                            is_admin: bool, is_manager: bool) -> None:
     """Handle menu selection."""
-    from education_system.university_system.modules.domain.staff_hr.cli.menus import (
+    from education_system.university_system.modules.domain.staff_comms.staff_hr.cli.menus import (
         display_profile_menu,
         display_leave_menu,
         display_time_menu,

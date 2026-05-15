@@ -2,7 +2,7 @@
 Academic Menu - Academic staff features CLI.
 """
 
-from education_system.university_system.modules.domain.staff_hr.services import AcademicStaffManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services import AcademicStaffManager
 
 
 def display_academic_menu(user_id: str, is_admin: bool = False) -> None:

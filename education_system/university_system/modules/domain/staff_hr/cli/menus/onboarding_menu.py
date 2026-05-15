@@ -2,7 +2,7 @@
 Onboarding Menu - Employee onboarding management CLI.
 """
 
-from education_system.university_system.modules.domain.staff_hr.services import OnboardingManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services import OnboardingManager
 
 
 def display_onboarding_menu(user_id: str = None) -> None:

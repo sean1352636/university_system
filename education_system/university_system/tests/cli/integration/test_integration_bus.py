@@ -323,7 +323,7 @@ def test_feature7_appraisal_creates_merit_proposal(tmp_db):
         return 1
 
     with patch(
-        "education_system.university_system.modules.domain.staff_hr."
+        "education_system.university_system.modules.domain.staff_comms.staff_hr."
         "services.managers.payroll_manager.PayrollManager.add_allowance",
         side_effect=fake_add_allowance,
     ):
@@ -357,7 +357,7 @@ def test_feature8_cert_sweep_publishes_and_sets_kpi(tmp_db):
          "certification_id": 12},
     ]
     with patch(
-        "education_system.university_system.modules.domain.staff_hr."
+        "education_system.university_system.modules.domain.staff_comms.staff_hr."
         "services.managers.training_manager.TrainingManager.get_expiring_certs",
         return_value=rows,
     ):

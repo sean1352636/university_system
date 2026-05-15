@@ -41,6 +41,44 @@ ROLES = {
 }
 
 
+def _overlay_shared_last_login(users: List[Dict]) -> None:
+    """Replace each user's ``last_login`` with the shared-auth value.
+
+    Real logins flow through the shared auth DB, which has its own
+    ``users`` table with its own ``last_login`` column. The legacy
+    ``user_accounts.last_login`` column in the university DB is never
+    written, so without this overlay every row reads ``None``.
+
+    Mutates the supplied dicts in place; silently leaves them unchanged
+    if shared auth is unavailable.
+    """
+    if not users:
+        return
+    try:
+        from education_system.shared.auth.db import connect as _shared_connect
+    except Exception:
+        return
+    usernames = [u.get('username') for u in users if u.get('username')]
+    if not usernames:
+        return
+    try:
+        with _shared_connect() as conn:
+            placeholders = ",".join("?" for _ in usernames)
+            rows = conn.execute(
+                f"SELECT username, last_login FROM users "
+                f"WHERE username IN ({placeholders})",  # nosec B608
+                usernames,
+            ).fetchall()
+    except Exception as exc:
+        logger.debug("Shared last_login overlay skipped: %s", exc)
+        return
+    by_username = {r["username"]: r["last_login"] for r in rows}
+    for u in users:
+        ll = by_username.get(u.get('username'))
+        if ll is not None:
+            u['last_login'] = ll
+
+
 class UserManager:
     """
     Manager for user CRUD operations.
@@ -567,6 +605,12 @@ class UserManager:
                     ''')
 
                 users = [dict(row) for row in cursor.fetchall()]
+
+                # Overlay last_login from the shared auth DB. The legacy
+                # ``user_accounts.last_login`` column is never updated
+                # because real logins flow through the shared auth
+                # system, so without this it always reads ``None``.
+                _overlay_shared_last_login(users)
                 return users
 
         except sqlite3.Error as e:
@@ -618,6 +662,7 @@ class UserManager:
 
                 if user:
                     user_dict = dict(user)
+                    _overlay_shared_last_login([user_dict])
                     return user_dict
                 else:
                     print("User not found.")

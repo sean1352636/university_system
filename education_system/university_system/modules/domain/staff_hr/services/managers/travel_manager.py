@@ -467,7 +467,7 @@ class TravelManager:
 
             # Try to call ExpenseManager.create_claim()
             try:
-                from education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager import (
+                from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager import (
                     ExpenseManager,
                 )
                 claim_id = ExpenseManager.create_claim(

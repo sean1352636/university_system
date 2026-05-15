@@ -2,7 +2,7 @@
 Communication Menu - Staff communication and collaboration CLI.
 """
 
-from education_system.university_system.modules.domain.staff_hr.services import CommunicationManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services import CommunicationManager
 
 
 def display_communication_menu(user_id: str, is_admin: bool = False) -> None:

@@ -61,7 +61,7 @@ from education_system.university_system.modules.domain.student_affairs.services.
 from education_system.university_system.modules.domain.student_affairs.services.student_support.auth import set_auth as set_support_auth
 from education_system.university_system.modules.domain.academics.services.library.menu import display_library_menu
 from education_system.university_system.modules.domain.campus.facilities.services.facilities_management_core import display_facilities_management_menu
-from education_system.university_system.modules.domain.admissions.services.admissions_crm_core import display_admissions_crm_menu
+from education_system.university_system.modules.domain.students.admissions.services.admissions_crm_core import display_admissions_crm_menu
 from education_system.university_system.modules.domain.research.services.research_grants_core import display_research_grants_menu
 from education_system.university_system.modules.domain.campus.services.campus_events_core import display_campus_events_menu
 from education_system.university_system.modules.domain.finance.gui.finance_reporting.misc import display_finance_menu, set_auth as set_finance_auth
@@ -105,7 +105,7 @@ from education_system.university_system.modules.services.cli.charity_shop_cli im
 from education_system.university_system.modules.services.cli.cafe_system_cli import setup_cafe_permissions
 from education_system.university_system.modules.domain.commerce.services.takeaway.takeaway_service import setup_takeaway_permissions
 from education_system.university_system.modules.domain.commerce.services.grocery.grocery_service import setup_grocery_permissions
-from education_system.university_system.modules.domain.staff_hr.cli.staff_hr_cli import setup_staff_hr_permissions
+from education_system.university_system.modules.domain.staff_comms.staff_hr.cli.staff_hr_cli import setup_staff_hr_permissions
 from education_system.university_system.modules.domain.academics.services.office_hours.office_hours_permissions import setup_office_hours_permissions
 from education_system.university_system.modules.domain.academics.services.assignments.admin_tools.ta_permissions_setup import setup_ta_permissions
 
@@ -939,7 +939,7 @@ def display_menu():
                 display_language_menu_option()
             elif option == "hesa_export":
                 try:
-                    from education_system.university_system.modules.domain.admissions.hesa_export.cli.hesa_export_cli import display_hesa_export_menu
+                    from education_system.university_system.modules.domain.students.admissions.hesa_export.cli.hesa_export_cli import display_hesa_export_menu
                     display_hesa_export_menu(auth)
                 except ImportError as e:
                     print(f"\n❌ HESA Export CLI is not available: {e}")

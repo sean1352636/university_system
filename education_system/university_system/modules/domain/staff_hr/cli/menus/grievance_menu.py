@@ -3,8 +3,8 @@ Grievance Menu - Grievance and disciplinary management CLI.
 """
 
 from datetime import datetime
-from education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager import GrievanceManager
-from education_system.university_system.modules.domain.staff_hr.cli.validators import (
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager import GrievanceManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.cli.validators import (
     validate_date, validate_required, validate_choice, validate_integer,
     get_date_input, get_choice_input, get_required_input, get_integer_input,
     get_confirmation, ValidationError

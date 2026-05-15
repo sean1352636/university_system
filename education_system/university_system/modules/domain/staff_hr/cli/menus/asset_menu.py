@@ -2,7 +2,7 @@
 Asset Menu - Asset and equipment management CLI.
 """
 
-from education_system.university_system.modules.domain.staff_hr.services import AssetManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services import AssetManager
 
 
 def display_asset_menu(user_id: str, is_admin: bool = False) -> None:

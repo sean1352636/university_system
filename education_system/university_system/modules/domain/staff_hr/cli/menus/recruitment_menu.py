@@ -2,7 +2,7 @@
 Recruitment Menu - Job posting and applicant management CLI.
 """
 
-from education_system.university_system.modules.domain.staff_hr.services import RecruitmentManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services import RecruitmentManager
 
 
 def display_recruitment_menu(user_id: str = None) -> None:

@@ -18,8 +18,8 @@ from typing import Optional
 import json
 
 from education_system.university_system.infrastructure.auth import UserAuth
-from education_system.university_system.modules.domain.staff_hr.services.managers.curriculum_manager import CurriculumManager
-from education_system.university_system.modules.domain.staff_hr.gui.validators import (
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.curriculum_manager import CurriculumManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.gui.validators import (
     FormValidator, ValidationError, validate_entry, validate_date_entry,
     validate_currency_entry, validate_combobox, show_validation_error
 )

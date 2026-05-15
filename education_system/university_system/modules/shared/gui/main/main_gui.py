@@ -1017,7 +1017,7 @@ _NEW_FEATURE_MODULES = [
     ("lesson_planner", "Lesson Planner",
      "education_system.university_system.modules.domain.academics.course_planning.lesson_planner"),
     ("background_checker", "Background Checker",
-     "education_system.university_system.modules.domain.staff_hr.background_checks.university_bg_checker"),
+     "education_system.university_system.modules.domain.staff_comms.staff_hr.background_checks.university_bg_checker"),
     ("university_research", "Research Portal",
      "education_system.university_system.modules.domain.research.services.university_research"),
     # Cross-system ports added 2026-04 — services with their own Tk launchers.
@@ -1463,12 +1463,12 @@ UnifiedManagementGUI.show_new_feature_room_booking = show_new_feature_room_booki
 def show_new_feature_background_checker(self):
     title = "Background Checker"
     module_dotted = (
-        "education_system.university_system.modules.domain.staff_hr."
+        "education_system.university_system.modules.domain.staff_comms.staff_hr."
         "background_checks.university_bg_checker"
     )
 
     def _build(host):
-        from education_system.university_system.modules.domain.staff_hr.background_checks.university_bg_checker import BGCheckerApp
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.background_checks.university_bg_checker import BGCheckerApp
         return BGCheckerApp(host=host)
     self._embed_or_subprocess(title, module_dotted, _build)
 

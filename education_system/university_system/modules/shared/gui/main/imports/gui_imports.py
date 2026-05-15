@@ -680,7 +680,7 @@ _LAUNCHER_MAP = {
     "launch_early_warning_gui": "education_system.university_system.modules.domain.student_affairs.services.early_warning.early_warning_core",
     "launch_career_services_gui": "education_system.university_system.modules.domain.career.services.career_services_core",
     "launch_extras_gui": "education_system.shared.extras.launcher",
-    "launch_admissions_crm_gui": "education_system.university_system.modules.domain.admissions.services.admissions_crm_core",
+    "launch_admissions_crm_gui": "education_system.university_system.modules.domain.students.admissions.services.admissions_crm_core",
     "launch_predictive_analytics_gui": "education_system.university_system.modules.shared.services.analytics.predictive_analytics_gui",
     "launch_timetable_optimizer_gui": "education_system.university_system.modules.domain.academics.services.module_scheduling",
     "launch_campus_events_gui": "education_system.university_system.modules.domain.campus.services.campus_events_gui",
@@ -833,7 +833,7 @@ except ImportError as e:
 
 # Staff HR Management GUI
 try:
-    from education_system.university_system.modules.domain.staff_hr.gui.staff_hr_gui import StaffHRGUI, launch_staff_hr_gui
+    from education_system.university_system.modules.domain.staff_comms.staff_hr.gui.staff_hr_gui import StaffHRGUI, launch_staff_hr_gui
     STAFF_HR_GUI_AVAILABLE = True
 except ImportError as e:
     StaffHRGUI = None

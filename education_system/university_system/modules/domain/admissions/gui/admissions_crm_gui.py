@@ -21,7 +21,7 @@ from education_system.university_system.modules.shared.utils.i18n import (
     get_current_language_name
 )
 from education_system.university_system.modules.shared.utils.gui_language_selector import show_gui_language_selector
-from education_system.university_system.modules.domain.admissions.services.admissions_crm_core import (
+from education_system.university_system.modules.domain.students.admissions.services.admissions_crm_core import (
     ProspectManager,
     ApplicationManager,
     ReviewWorkflowManager,

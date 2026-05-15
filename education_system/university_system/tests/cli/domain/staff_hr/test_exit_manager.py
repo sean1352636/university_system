@@ -16,9 +16,9 @@ class TestExitInterviews:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -30,7 +30,7 @@ class TestExitInterviews:
 
     def test_create_exit_interview(self, mock_db):
         """Test creating an exit interview."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_cursor = MagicMock()
         mock_cursor.lastrowid = 1
@@ -52,7 +52,7 @@ class TestExitInterviews:
 
     def test_get_exit_interview(self, mock_db):
         """Test retrieving an exit interview by ID."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['interview_id', 'user_id', 'status', 'department']
@@ -71,7 +71,7 @@ class TestExitInterviews:
 
     def test_get_exit_interview_not_found(self, mock_db):
         """Test retrieving a non-existent exit interview."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_db.execute.return_value.fetchone.return_value = None
 
@@ -81,7 +81,7 @@ class TestExitInterviews:
 
     def test_get_pending_interviews(self, mock_db):
         """Test retrieving pending exit interviews."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['interview_id', 'user_id', 'status', 'scheduled_date']
@@ -99,7 +99,7 @@ class TestExitInterviews:
 
     def test_get_pending_interviews_for_interviewer(self, mock_db):
         """Test retrieving pending interviews for a specific interviewer."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_db.execute.return_value.fetchall.return_value = []
 
@@ -111,7 +111,7 @@ class TestExitInterviews:
 
     def test_update_exit_interview(self, mock_db):
         """Test updating an exit interview."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         result = ExitManager.update_exit_interview(
             1,
@@ -125,7 +125,7 @@ class TestExitInterviews:
 
     def test_update_exit_interview_no_data(self, mock_db):
         """Test updating an exit interview with no data."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         result = ExitManager.update_exit_interview(1)
 
@@ -133,7 +133,7 @@ class TestExitInterviews:
 
     def test_complete_exit_interview(self, mock_db):
         """Test completing an exit interview with feedback."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         result = ExitManager.complete_exit_interview(
             1,
@@ -150,7 +150,7 @@ class TestExitInterviews:
 
     def test_initiate_exit(self, mock_db):
         """Test initiating an exit process."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_cursor = MagicMock()
         mock_cursor.lastrowid = 1
@@ -170,7 +170,7 @@ class TestExitInterviews:
 
     def test_schedule_interview_new(self, mock_db):
         """Test scheduling a new exit interview."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_cursor = MagicMock()
         mock_cursor.lastrowid = 1
@@ -187,7 +187,7 @@ class TestExitInterviews:
 
     def test_schedule_interview_existing(self, mock_db):
         """Test scheduling an interview when one already exists."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['interview_id', 'user_id']
@@ -210,9 +210,9 @@ class TestExitChecklistTemplates:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -224,7 +224,7 @@ class TestExitChecklistTemplates:
 
     def test_get_checklist_templates(self, mock_db):
         """Test retrieving checklist templates."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['template_id', 'name', 'is_default']
@@ -241,7 +241,7 @@ class TestExitChecklistTemplates:
 
     def test_get_checklist_templates_by_department(self, mock_db):
         """Test retrieving templates filtered by department."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_db.execute.return_value.fetchall.return_value = []
 
@@ -252,7 +252,7 @@ class TestExitChecklistTemplates:
 
     def test_get_all_templates(self, mock_db):
         """Test retrieving all templates with item counts."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['template_id', 'name', 'item_count']
@@ -269,7 +269,7 @@ class TestExitChecklistTemplates:
 
     def test_create_template(self, mock_db):
         """Test creating a new checklist template."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_cursor = MagicMock()
         mock_cursor.lastrowid = 1
@@ -286,7 +286,7 @@ class TestExitChecklistTemplates:
 
     def test_add_template_item(self, mock_db):
         """Test adding an item to a template."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_cursor = MagicMock()
         mock_cursor.lastrowid = 1
@@ -305,7 +305,7 @@ class TestExitChecklistTemplates:
 
     def test_get_template_items_with_aliases(self, mock_db):
         """Test that template items include CLI-compatible aliases."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['item_id', 'task_name', 'is_mandatory', 'order_index']
@@ -326,7 +326,7 @@ class TestExitChecklistTemplates:
 
     def test_update_template(self, mock_db):
         """Test updating a checklist template."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         result = ExitManager.update_template(
             template_id=1,
@@ -338,7 +338,7 @@ class TestExitChecklistTemplates:
 
     def test_delete_template(self, mock_db):
         """Test deleting a template and its items."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         result = ExitManager.delete_template(1)
 
@@ -353,9 +353,9 @@ class TestUserExitChecklist:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -367,7 +367,7 @@ class TestUserExitChecklist:
 
     def test_create_user_checklist_from_template(self, mock_db):
         """Test creating a user checklist from a template."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_cursor = MagicMock()
         mock_cursor.lastrowid = 1
@@ -389,7 +389,7 @@ class TestUserExitChecklist:
 
     def test_get_user_checklist_with_aliases(self, mock_db):
         """Test that user checklist includes CLI-compatible aliases."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['checklist_id', 'task_name', 'is_mandatory', 'responsible_party']
@@ -409,7 +409,7 @@ class TestUserExitChecklist:
 
     def test_add_checklist_item(self, mock_db):
         """Test adding a custom checklist item for a user."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_cursor = MagicMock()
         mock_cursor.lastrowid = 1
@@ -427,7 +427,7 @@ class TestUserExitChecklist:
 
     def test_assign_checklist_item(self, mock_db):
         """Test assigning a checklist item to someone."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         result = ExitManager.assign_checklist_item(
             checklist_id=1,
@@ -440,7 +440,7 @@ class TestUserExitChecklist:
 
     def test_complete_checklist_item(self, mock_db):
         """Test completing a checklist item."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         result = ExitManager.complete_checklist_item(
             checklist_id=1,
@@ -452,7 +452,7 @@ class TestUserExitChecklist:
 
     def test_remove_checklist_item(self, mock_db):
         """Test removing a checklist item."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         result = ExitManager.remove_checklist_item(1)
 
@@ -462,7 +462,7 @@ class TestUserExitChecklist:
 
     def test_get_checklist_progress(self, mock_db):
         """Test getting checklist completion progress."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.__getitem__ = lambda self, key: {'total': 10, 'completed': 7}[key]
@@ -477,7 +477,7 @@ class TestUserExitChecklist:
 
     def test_get_checklist_progress_empty(self, mock_db):
         """Test getting progress for empty checklist."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.__getitem__ = lambda self, key: {'total': 0, 'completed': 0}[key]
@@ -489,7 +489,7 @@ class TestUserExitChecklist:
 
     def test_apply_template(self, mock_db):
         """Test applying a template to a user's exit process."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_cursor = MagicMock()
         mock_cursor.lastrowid = 1
@@ -514,9 +514,9 @@ class TestKnowledgeTransfer:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -528,7 +528,7 @@ class TestKnowledgeTransfer:
 
     def test_create_knowledge_transfer(self, mock_db):
         """Test creating a knowledge transfer record."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_cursor = MagicMock()
         mock_cursor.lastrowid = 1
@@ -547,7 +547,7 @@ class TestKnowledgeTransfer:
 
     def test_get_knowledge_transfers_departing(self, mock_db):
         """Test retrieving knowledge transfers for departing user."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['transfer_id', 'topic', 'status']
@@ -565,7 +565,7 @@ class TestKnowledgeTransfer:
 
     def test_get_knowledge_transfers_receiving(self, mock_db):
         """Test retrieving knowledge transfers for receiving user."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_db.execute.return_value.fetchall.return_value = []
 
@@ -576,7 +576,7 @@ class TestKnowledgeTransfer:
 
     def test_complete_knowledge_transfer(self, mock_db):
         """Test completing a knowledge transfer."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         result = ExitManager.complete_knowledge_transfer(
             transfer_id=1,
@@ -594,9 +594,9 @@ class TestTurnoverAnalytics:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -608,7 +608,7 @@ class TestTurnoverAnalytics:
 
     def test_calculate_turnover(self, mock_db):
         """Test calculating turnover metrics."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.__getitem__ = lambda self, key: {
@@ -631,7 +631,7 @@ class TestTurnoverAnalytics:
 
     def test_get_exit_reasons_breakdown(self, mock_db):
         """Test getting breakdown of exit reasons."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['reason_category', 'reason_for_leaving', 'count']
@@ -650,7 +650,7 @@ class TestTurnoverAnalytics:
 
     def test_get_satisfaction_trends(self, mock_db):
         """Test getting satisfaction rating trends."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['month', 'avg_overall', 'exit_count']
@@ -667,7 +667,7 @@ class TestTurnoverAnalytics:
 
     def test_get_department_turnover_comparison(self, mock_db):
         """Test comparing turnover across departments."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['department', 'exit_count', 'avg_tenure', 'avg_rating', 'recommend_pct']
@@ -686,7 +686,7 @@ class TestTurnoverAnalytics:
 
     def test_store_turnover_analytics(self, mock_db):
         """Test storing turnover analytics for reporting."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_cursor = MagicMock()
         mock_cursor.lastrowid = 1
@@ -706,7 +706,7 @@ class TestTurnoverAnalytics:
 
     def test_get_retention_recommendations(self, mock_db):
         """Test generating retention recommendations."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.__getitem__ = lambda self, key: {
@@ -724,7 +724,7 @@ class TestTurnoverAnalytics:
 
     def test_get_exit_statistics(self, mock_db):
         """Test getting overall exit statistics."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.__getitem__ = lambda self, key: {
@@ -741,7 +741,7 @@ class TestTurnoverAnalytics:
 
     def test_get_turnover_analytics(self, mock_db):
         """Test getting turnover analytics for a year."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         # Mock the calculate_turnover call
         mock_row = MagicMock()
@@ -764,7 +764,7 @@ class TestTurnoverAnalytics:
 
     def test_get_exit_reasons_summary(self, mock_db):
         """Test getting exit reasons summary."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.__getitem__ = lambda self, key: {
@@ -786,7 +786,7 @@ class TestTurnoverAnalytics:
 
     def test_get_department_turnover_report(self, mock_db):
         """Test getting department turnover report."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['department', 'exits_12m', 'avg_tenure', 'reason_for_leaving']
@@ -809,9 +809,9 @@ class TestSearchAndFiltering:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -823,7 +823,7 @@ class TestSearchAndFiltering:
 
     def test_search_exits_with_filters(self, mock_db):
         """Test searching exits with multiple filters."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['interview_id', 'user_id', 'department', 'status']
@@ -853,7 +853,7 @@ class TestSearchAndFiltering:
 
     def test_get_all_exit_interviews_with_filters(self, mock_db):
         """Test getting all exit interviews with filters."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_db.execute.return_value.fetchall.return_value = []
 
@@ -873,7 +873,7 @@ class TestSearchAndFiltering:
 
     def test_get_exit_record(self, mock_db):
         """Test getting exit record (alias method)."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.keys.return_value = ['interview_id', 'user_id']
@@ -893,9 +893,9 @@ class TestEdgeCases:
     @pytest.fixture
     def mock_db(self):
         """Set up mock database connections."""
-        with patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
-             patch('education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager.log_activity'):
+        with patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.get_connection') as mock_get, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.transaction') as mock_trans, \
+             patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager.log_activity'):
 
             mock_conn = MagicMock()
             mock_get.return_value.__enter__ = MagicMock(return_value=mock_conn)
@@ -907,7 +907,7 @@ class TestEdgeCases:
 
     def test_update_template_no_data(self, mock_db):
         """Test updating template with no data."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         result = ExitManager.update_template(1)
 
@@ -915,7 +915,7 @@ class TestEdgeCases:
 
     def test_update_checklist_item_no_data(self, mock_db):
         """Test updating checklist item with no data."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         result = ExitManager.update_checklist_item(1)
 
@@ -923,7 +923,7 @@ class TestEdgeCases:
 
     def test_retention_recommendations_no_data(self, mock_db):
         """Test retention recommendations with no exit data."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_row = MagicMock()
         mock_row.__getitem__ = lambda self, key: 0
@@ -935,7 +935,7 @@ class TestEdgeCases:
 
     def test_create_user_checklist_no_template(self, mock_db):
         """Test creating user checklist without template."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         # No default template found
         mock_db.execute.return_value.fetchone.return_value = None
@@ -950,7 +950,7 @@ class TestEdgeCases:
 
     def test_apply_template_no_interview(self, mock_db):
         """Test applying template when no interview exists."""
-        from education_system.university_system.modules.domain.staff_hr.services.managers.exit_manager import ExitManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.exit_manager import ExitManager
 
         mock_cursor = MagicMock()
         mock_cursor.lastrowid = 1

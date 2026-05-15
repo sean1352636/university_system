@@ -3,7 +3,7 @@ Time Menu - Time and attendance CLI.
 """
 
 from datetime import datetime, timedelta
-from education_system.university_system.modules.domain.staff_hr.services import TimeManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services import TimeManager
 
 
 def display_time_menu(user_id: str, is_approver: bool = False,

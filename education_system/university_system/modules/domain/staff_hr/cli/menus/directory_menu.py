@@ -2,7 +2,7 @@
 Directory Menu - Staff directory search CLI.
 """
 
-from education_system.university_system.modules.domain.staff_hr.services import EmployeeManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services import EmployeeManager
 
 
 def display_directory_menu() -> None:

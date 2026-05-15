@@ -2,7 +2,7 @@
 Training Menu - Training and certifications CLI.
 """
 
-from education_system.university_system.modules.domain.staff_hr.services import TrainingManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services import TrainingManager
 
 
 def display_training_menu(user_id: str, is_admin: bool = False) -> None:

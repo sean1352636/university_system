@@ -2,7 +2,7 @@
 
 
 def display_hesa_export_menu(auth):
-    from education_system.university_system.modules.domain.admissions.hesa_export.services.hesa_export_service import HESAExportService
+    from education_system.university_system.modules.domain.students.admissions.hesa_export.services.hesa_export_service import HESAExportService
     service = HESAExportService()
 
     while True:

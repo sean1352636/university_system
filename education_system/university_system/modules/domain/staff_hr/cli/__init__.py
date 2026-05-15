@@ -4,7 +4,7 @@ Staff HR CLI
 Command-line interface for Staff HR features.
 """
 
-from education_system.university_system.modules.domain.staff_hr.cli.staff_hr_cli import (
+from education_system.university_system.modules.domain.staff_comms.staff_hr.cli.staff_hr_cli import (
     init_staff_hr_db,
     setup_staff_hr_permissions,
     display_staff_hr_menu,

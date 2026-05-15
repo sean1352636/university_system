@@ -593,8 +593,15 @@ class UnifiedInboxPanel(tk.Frame):
                     get_db_connection,
                 )
                 conn = get_db_connection()
+                # The legacy university ``users`` table stores names
+                # as ``first_name`` + ``last_name`` (no ``display_name``
+                # column). Synthesise the display name in SQL so the
+                # rest of this method can treat it uniformly.
                 rows = conn.execute(
-                    "SELECT id, username, display_name, role FROM users "
+                    "SELECT id, username, "
+                    "TRIM(COALESCE(first_name, '') || ' ' || "
+                    "COALESCE(last_name, '')) AS display_name, role "
+                    "FROM users "
                     "WHERE COALESCE(role, '') IN ('admin', 'staff', 'teacher', 'instructor', 'student') "
                     "ORDER BY display_name, username"
                 ).fetchall()

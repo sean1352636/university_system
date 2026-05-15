@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch, MagicMock
 import os
 import tempfile
 
-from education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager import ExpenseManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager import ExpenseManager
 
 @pytest.fixture
 def test_db():
@@ -161,9 +161,9 @@ def test_db():
 class TestExpenseClaimCreation:
     """Test expense claim creation functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.log_activity')
     def test_create_expense_claim_success(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test successful expense claim creation."""
         conn = sqlite3.connect(test_db)
@@ -192,9 +192,9 @@ class TestExpenseClaimCreation:
         assert claim['status'] == 'draft'
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.log_activity')
     def test_create_mileage_claim(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test creating a mileage expense claim."""
         conn = sqlite3.connect(test_db)
@@ -223,7 +223,7 @@ class TestExpenseClaimCreation:
 class TestExpenseClaimRetrieval:
     """Test expense claim retrieval functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
     def test_get_user_claims(self, mock_get_conn, test_db):
         """Test retrieving all claims for a user."""
         conn = sqlite3.connect(test_db)
@@ -248,7 +248,7 @@ class TestExpenseClaimRetrieval:
         assert len(claims) == 2
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
     def test_get_claim_by_id(self, mock_get_conn, test_db):
         """Test retrieving a specific claim by ID."""
         conn = sqlite3.connect(test_db)
@@ -271,7 +271,7 @@ class TestExpenseClaimRetrieval:
         assert claim['amount'] == 100.00
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
     def test_search_claims_by_status(self, mock_get_conn, test_db):
         """Test searching claims by status."""
         conn = sqlite3.connect(test_db)
@@ -303,9 +303,9 @@ class TestExpenseClaimRetrieval:
 class TestExpenseApproval:
     """Test expense approval workflow."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.log_activity')
     def test_submit_claim(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test submitting an expense claim for approval."""
         conn = sqlite3.connect(test_db)
@@ -332,9 +332,9 @@ class TestExpenseApproval:
         assert claim['submitted_date'] is not None
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.log_activity')
     def test_approve_claim(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test approving an expense claim."""
         conn = sqlite3.connect(test_db)
@@ -371,9 +371,9 @@ class TestExpenseApproval:
         assert approval['decision'] == 'approved'
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.log_activity')
     def test_reject_claim(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test rejecting an expense claim."""
         conn = sqlite3.connect(test_db)
@@ -408,7 +408,7 @@ class TestExpenseApproval:
 class TestExpenseCategories:
     """Test expense category functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
     def test_get_categories(self, mock_get_conn, test_db):
         """Test retrieving expense categories."""
         conn = sqlite3.connect(test_db)
@@ -423,9 +423,9 @@ class TestExpenseCategories:
         assert any(c['name'] == 'Travel' for c in categories)
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.log_activity')
     def test_create_category(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test creating a new expense category."""
         conn = sqlite3.connect(test_db)
@@ -453,9 +453,9 @@ class TestExpenseCategories:
 class TestReimbursement:
     """Test reimbursement functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.log_activity')
     def test_process_reimbursement(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test processing a reimbursement."""
         conn = sqlite3.connect(test_db)
@@ -489,7 +489,7 @@ class TestReimbursement:
         assert reimbursement['payment_method'] == 'bank_transfer'
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
     def test_get_pending_reimbursements(self, mock_get_conn, test_db):
         """Test retrieving pending reimbursements."""
         conn = sqlite3.connect(test_db)
@@ -518,7 +518,7 @@ class TestReimbursement:
 class TestExpenseStatistics:
     """Test expense statistics functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
     def test_get_expense_statistics(self, mock_get_conn, test_db):
         """Test retrieving expense statistics."""
         conn = sqlite3.connect(test_db)
@@ -553,7 +553,7 @@ class TestExpenseStatistics:
 class TestExpensePolicy:
     """Test expense policy functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
     def test_get_active_policy(self, mock_get_conn, test_db):
         """Test retrieving active expense policy."""
         conn = sqlite3.connect(test_db)
@@ -569,7 +569,7 @@ class TestExpensePolicy:
         assert policy['mileage_rate'] == 0.45
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.expense_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.expense_manager.get_connection')
     def test_check_policy_compliance(self, mock_get_conn, test_db):
         """Test policy compliance checking."""
         conn = sqlite3.connect(test_db)

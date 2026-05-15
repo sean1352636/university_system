@@ -53,7 +53,7 @@ def _get_columns(conn, table_name):
 
 SYSTEM_LABELS = {
     "primary": "Primary School",
-    "secondary": "Secondary School",
+    "school": "Secondary School",
     "college": "Sixth Form College",
     "university": "University",
 }

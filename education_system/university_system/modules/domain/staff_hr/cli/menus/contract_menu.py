@@ -3,8 +3,8 @@ Contract Menu - Contract management CLI.
 """
 
 from datetime import datetime
-from education_system.university_system.modules.domain.staff_hr.services.managers.contract_manager import ContractManager
-from education_system.university_system.modules.domain.staff_hr.cli.validators import (
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.contract_manager import ContractManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.cli.validators import (
     validate_date, validate_required, validate_choice, validate_number,
     validate_integer, validate_confirmation, validate_user_id,
     get_date_input, get_choice_input, get_required_input, get_currency_input,

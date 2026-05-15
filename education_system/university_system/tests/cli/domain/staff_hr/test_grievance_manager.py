@@ -10,7 +10,7 @@ from unittest.mock import Mock, patch
 import os
 import tempfile
 
-from education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager import GrievanceManager
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager import GrievanceManager
 
 @pytest.fixture
 def test_db():
@@ -209,9 +209,9 @@ def test_db():
 class TestGrievanceCreation:
     """Test grievance filing functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.log_activity')
     def test_create_grievance_success(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test successful grievance creation."""
         conn = sqlite3.connect(test_db)
@@ -240,9 +240,9 @@ class TestGrievanceCreation:
         assert grievance['reference_number'] is not None
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.log_activity')
     def test_create_anonymous_grievance(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test filing an anonymous grievance."""
         conn = sqlite3.connect(test_db)
@@ -265,9 +265,9 @@ class TestGrievanceCreation:
         assert grievance['is_anonymous'] == 1
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.log_activity')
     def test_create_grievance_with_category_name(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test creating grievance with category name instead of ID."""
         conn = sqlite3.connect(test_db)
@@ -292,7 +292,7 @@ class TestGrievanceCreation:
 class TestGrievanceRetrieval:
     """Test grievance retrieval functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
     def test_get_user_grievances(self, mock_get_conn, test_db):
         """Test retrieving grievances for a user."""
         conn = sqlite3.connect(test_db)
@@ -317,7 +317,7 @@ class TestGrievanceRetrieval:
         assert len(grievances) == 2
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
     def test_search_grievances_by_status(self, mock_get_conn, test_db):
         """Test searching grievances by status."""
         conn = sqlite3.connect(test_db)
@@ -346,9 +346,9 @@ class TestGrievanceRetrieval:
 class TestGrievanceActions:
     """Test grievance action functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.log_activity')
     def test_add_action(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test adding an action to a grievance."""
         conn = sqlite3.connect(test_db)
@@ -380,9 +380,9 @@ class TestGrievanceActions:
         assert action['action_type'] == 'investigation_started'
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.log_activity')
     def test_escalate_grievance(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test escalating a grievance."""
         conn = sqlite3.connect(test_db)
@@ -417,9 +417,9 @@ class TestGrievanceActions:
 class TestGrievanceResolution:
     """Test grievance resolution functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.log_activity')
     def test_resolve_grievance(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test resolving a grievance."""
         conn = sqlite3.connect(test_db)
@@ -457,9 +457,9 @@ class TestGrievanceResolution:
 class TestDisciplinaryRecords:
     """Test disciplinary record functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.log_activity')
     def test_create_disciplinary_record(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test creating a disciplinary record."""
         conn = sqlite3.connect(test_db)
@@ -487,7 +487,7 @@ class TestDisciplinaryRecords:
         assert record['severity'] == 'minor'
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
     def test_get_user_disciplinary_history(self, mock_get_conn, test_db):
         """Test retrieving disciplinary history for a user."""
         conn = sqlite3.connect(test_db)
@@ -515,9 +515,9 @@ class TestDisciplinaryRecords:
 class TestDisciplinaryActions:
     """Test disciplinary action functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.log_activity')
     def test_create_disciplinary_action(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test creating a disciplinary action."""
         conn = sqlite3.connect(test_db)
@@ -553,9 +553,9 @@ class TestDisciplinaryActions:
 class TestAppeals:
     """Test appeal functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.transaction')
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.log_activity')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.transaction')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.log_activity')
     def test_file_appeal(self, mock_log, mock_transaction, mock_get_conn, test_db):
         """Test filing an appeal."""
         conn = sqlite3.connect(test_db)
@@ -592,7 +592,7 @@ class TestAppeals:
         assert appeal['status'] == 'submitted'
         conn.close()
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
     def test_get_pending_appeals(self, mock_get_conn, test_db):
         """Test retrieving pending appeals."""
         conn = sqlite3.connect(test_db)
@@ -626,7 +626,7 @@ class TestAppeals:
 class TestGrievanceStatistics:
     """Test grievance statistics functionality."""
 
-    @patch('education_system.university_system.modules.domain.staff_hr.services.managers.grievance_manager.get_connection')
+    @patch('education_system.university_system.modules.domain.staff_comms.staff_hr.services.managers.grievance_manager.get_connection')
     def test_get_grievance_statistics(self, mock_get_conn, test_db):
         """Test retrieving grievance statistics."""
         conn = sqlite3.connect(test_db)

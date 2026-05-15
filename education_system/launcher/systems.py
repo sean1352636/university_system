@@ -149,31 +149,49 @@ def run_university_gui(user_info=None, role=None, shared_auth=None):
 # login dialog runs.
 
 def run_sixthform_cli(user_info=None, role=None, shared_auth=None):
+    from education_system.shared import branding
+    from education_system.sixthform_system import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
     from education_system.sixthform_system.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
 def run_sixthform_gui(user_info=None, role=None, shared_auth=None):
+    from education_system.shared import branding
+    from education_system.sixthform_system import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
     from education_system.sixthform_system.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
 def run_secondarysch_cli(user_info=None, role=None, shared_auth=None):
+    from education_system.shared import branding
+    from education_system.secondarysch_system import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
     from education_system.secondarysch_system.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
 def run_secondarysch_gui(user_info=None, role=None, shared_auth=None):
+    from education_system.shared import branding
+    from education_system.secondarysch_system import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
     from education_system.secondarysch_system.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
 def run_primarysch_cli(user_info=None, role=None, shared_auth=None):
+    from education_system.shared import branding
+    from education_system.primarysch_system import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
     from education_system.primarysch_system.cli_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 
 
 def run_primarysch_gui(user_info=None, role=None, shared_auth=None):
+    from education_system.shared import branding
+    from education_system.primarysch_system import SYSTEM_NAME
+    branding.set_system_name(SYSTEM_NAME)
     from education_system.primarysch_system.gui_main import run
     run(user_info=user_info, role=role, shared_auth=shared_auth)
 

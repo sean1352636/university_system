@@ -129,7 +129,7 @@ CHATBOT_MODELS_DIR: Path = CHATBOT_DATA_DIR / "models"
 CHATBOT_CONFIG_PATH: Path = LOGGER_CONFIG_DIR / "chatbot_config.json"
 
 # QR codes directory
-QR_CODES_DIR: Path = PROJECT_ROOT / "qr_codes"
+QR_CODES_DIR: Path = DATA_DIR / "qr_codes"
 
 # Analytics directories - consolidated under data/analytics
 ANALYTICS_DIR: Path = DATA_DIR / "analytics"

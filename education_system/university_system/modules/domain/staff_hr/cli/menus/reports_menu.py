@@ -2,7 +2,7 @@
 Reports Menu - Staff HR reports and analytics CLI.
 """
 
-from education_system.university_system.modules.domain.staff_hr.services import (
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services import (
     EmployeeManager,
     LeaveManager,
     TimeManager,

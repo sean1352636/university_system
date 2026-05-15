@@ -2,7 +2,7 @@
 Admin Menu - HR Administration CLI.
 """
 
-from education_system.university_system.modules.domain.staff_hr.services import (
+from education_system.university_system.modules.domain.staff_comms.staff_hr.services import (
     AdminToolsManager, RecruitmentManager, OnboardingManager, EmployeeManager
 )
 
@@ -608,7 +608,7 @@ def _staff_reports() -> None:
         print("-" * 50)
 
     elif choice == '2':
-        from education_system.university_system.modules.domain.staff_hr.services import LeaveManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services import LeaveManager
         report = LeaveManager.get_leave_summary_report()
         print("\n" + "-" * 50)
         print("LEAVE SUMMARY")
@@ -621,7 +621,7 @@ def _staff_reports() -> None:
         print("-" * 50)
 
     elif choice == '3':
-        from education_system.university_system.modules.domain.staff_hr.services import TrainingManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services import TrainingManager
         report = TrainingManager.get_compliance_report()
         print("\n" + "-" * 50)
         print("TRAINING COMPLIANCE")
@@ -634,7 +634,7 @@ def _staff_reports() -> None:
         print("-" * 50)
 
     elif choice == '4':
-        from education_system.university_system.modules.domain.staff_hr.services import AssetManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services import AssetManager
         report = AssetManager.get_utilization_report()
         print("\n" + "-" * 50)
         print("ASSET UTILIZATION")
@@ -648,7 +648,7 @@ def _staff_reports() -> None:
         print("-" * 50)
 
     elif choice == '5':
-        from education_system.university_system.modules.domain.staff_hr.services import TimeManager
+        from education_system.university_system.modules.domain.staff_comms.staff_hr.services import TimeManager
         report = TimeManager.get_attendance_summary()
         print("\n" + "-" * 50)
         print("ATTENDANCE SUMMARY (This Month)")
