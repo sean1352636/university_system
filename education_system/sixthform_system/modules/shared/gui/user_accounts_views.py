@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
 from typing import Callable
 from education_system.sixthform_system.modules.shared import user_accounts as data
+from education_system.shared import branding
 from education_system.sixthform_system.modules.shared.user_accounts import (
     DEFAULT_ROLE,
     ROLES,
@@ -29,7 +30,7 @@ def open_user_accounts_window(parent=None, *, auth) -> None:
         return
     master = getattr(parent, "root", parent)
     win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title("User Accounts — Sixth Form System")
+    win.title(f"User Accounts — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
     nb = ttk.Notebook(win)
@@ -332,7 +333,7 @@ class NewUserDialog:
         self.win = tk.Toplevel(parent)
         self.win.title("New User")
         self.win.transient(parent)
-        self.win.grab_set()
+        self.win.after_idle(self.win.grab_set)
         self._build()
 
     def _build(self) -> None:
@@ -439,7 +440,7 @@ class EditProfileDialog:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Edit profile — {user.username}")
         self.win.transient(parent)
-        self.win.grab_set()
+        self.win.after_idle(self.win.grab_set)
         self._build()
 
     def _build(self) -> None:
@@ -490,7 +491,7 @@ class ResetPasswordDialog:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Reset password — {user.username}")
         self.win.transient(parent)
-        self.win.grab_set()
+        self.win.after_idle(self.win.grab_set)
         self._build()
 
     def _build(self) -> None:
@@ -563,7 +564,7 @@ class RolesDialog:
         self.win = tk.Toplevel(parent)
         self.win.title(f"Roles — {user.username}")
         self.win.transient(parent)
-        self.win.grab_set()
+        self.win.after_idle(self.win.grab_set)
         self._build()
 
     def _build(self) -> None:

@@ -1,10 +1,13 @@
 """Tk GUI main menu for the Primary School System.
 
-Layout mirrors `university_system` `UnifiedManagementGUI`:
+Layout mirrors `sixthform_system` and `university_system`:
 
-    row 0 — header (login/logout · switch-to-CLI · shutdown)
+    row 0 — header (logout · switch-to-CLI · switch-system · shutdown)
     row 1 — left navigation (accordion of categories) + right content area
     row 2 — status bar (status · current user · system / version)
+
+Every sidebar action is a placeholder stub — domain modules will be
+wired in later.
 """
 
 from __future__ import annotations
@@ -21,6 +24,7 @@ from education_system.primarysch_system import SYSTEM_NAME
 logger = logging.getLogger(__name__)
 
 VERSION = "0.1.0"
+FOOTER_LABEL = "Primary School"
 
 
 NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
@@ -30,98 +34,119 @@ NAV_CATEGORIES: list[tuple[str, list[tuple[str, str]]]] = [
         ("Search Pupils", "open_search_pupils"),
         ("Pupil Profile", "open_pupil_profile"),
         ("Admissions", "open_admissions"),
-        ("Year Group Management", "open_year_groups"),
+        ("Year Group Enrolment", "open_enrolment"),
+        ("Onboarding", "open_onboarding"),
+        ("Bulk Operations", "open_bulk_operations"),
+        ("Leavers", "open_leavers"),
     ]),
-    ("EYFS & Early Years", [
-        ("Nursery Register", "open_nursery"),
-        ("Reception Class", "open_reception"),
-        ("Learning Journeys", "open_learning_journeys"),
-        ("Observations", "open_observations"),
-        ("EYFS Profile", "open_eyfs_profile"),
-        ("Tapestry-style Posts", "open_tapestry"),
-    ]),
-    ("Curriculum & Lessons", [
-        ("Class Lists", "open_class_lists"),
+    ("Academic Management", [
+        ("Academic Year", "open_academic_year"),
+        ("Calendar", "open_calendar"),
+        ("Year Groups (R–6)", "open_year_groups"),
+        ("Classes", "open_classes"),
         ("Subjects", "open_subjects"),
-        ("Phonics", "open_phonics"),
-        ("Reading Levels", "open_reading_levels"),
         ("Timetable", "open_timetable"),
-        ("Lesson Planning", "open_lesson_planning"),
-        ("Homework", "open_homework"),
-        ("Cover & Supply", "open_cover"),
+        ("Attendance Register", "open_attendance"),
+        ("Lesson Plans", "open_lesson_plans"),
+        ("Cover", "open_cover"),
+        ("Homework / Reading Log", "open_homework"),
+        ("Phonics Tracking", "open_phonics"),
+        ("Reading Levels", "open_reading_levels"),
+        ("Library", "open_library"),
+        ("Clubs & Activities", "open_clubs"),
     ]),
-    ("Attendance & Registers", [
-        ("Morning Register", "open_morning_register"),
-        ("Afternoon Register", "open_afternoon_register"),
-        ("Lateness Log", "open_lateness"),
-        ("Absence Reasons", "open_absence_reasons"),
-        ("Attendance Report", "open_attendance_report"),
-    ]),
-    ("Assessment & SATs", [
+    ("Assessment & Progress", [
+        ("Assessment Records", "open_assessment"),
         ("Phonics Screening", "open_phonics_screening"),
-        ("KS1 Assessments", "open_ks1_assessments"),
+        ("Multiplication Check", "open_mtc"),
+        ("KS1 SATs", "open_ks1_sats"),
         ("KS2 SATs", "open_ks2_sats"),
-        ("Multiplication Check (Y4)", "open_y4_mtc"),
-        ("Progress Tracker", "open_progress_tracker"),
-        ("Reports to Parents", "open_parent_reports"),
+        ("EYFS Profile", "open_eyfs_profile"),
+        ("Target Setting", "open_target_setting"),
+        ("Intervention Tracking", "open_intervention_tracking"),
+        ("Early Warning", "open_early_warning"),
+        ("Observations", "open_observations"),
+        ("Pupil Reports", "open_pupil_reports"),
     ]),
-    ("Behaviour & Rewards", [
+    ("Pastoral & Wellbeing", [
+        ("Class Teachers", "open_class_teachers"),
         ("Behaviour Log", "open_behaviour"),
-        ("Reward Charts", "open_reward_charts"),
         ("House Points", "open_house_points"),
-        ("Star of the Week", "open_star_of_week"),
-        ("Playtime Incidents", "open_playtime_incidents"),
-    ]),
-    ("Safeguarding & Welfare", [
-        ("Safeguarding Log", "open_safeguarding"),
-        ("Concerns & Incidents", "open_incidents"),
-        ("Looked-After Children", "open_lac"),
+        ("Safeguarding", "open_safeguarding"),
+        ("SEND", "open_send"),
         ("Pupil Premium", "open_pupil_premium"),
-        ("Free School Meals", "open_fsm"),
-        ("Medical & First Aid", "open_medical"),
-        ("Allergies & Care Plans", "open_allergies"),
+        ("Accessibility", "open_accessibility"),
+        ("Wellbeing", "open_wellbeing"),
+        ("Pupil Support", "open_pupil_support"),
+        ("Attendance Concerns", "open_attendance_concerns"),
+        ("Absence Requests", "open_absence_requests"),
+        ("First Aid", "open_first_aid"),
+        ("Medical Records", "open_medical"),
+        ("Emergency Contacts", "open_emergency"),
+        ("Prevent Duty", "open_prevent_duty"),
+        ("Equality & Diversity", "open_equality_diversity"),
+        ("Complaints", "open_complaints"),
+        ("Feedback", "open_feedback"),
+        ("Surveys", "open_surveys"),
+        ("School Council", "open_school_council"),
+        ("Breakfast / After-School Club", "open_wraparound_care"),
+        ("Transport", "open_transport"),
     ]),
-    ("SEND & Inclusion", [
-        ("SEND Register", "open_send_register"),
-        ("EHCPs", "open_ehcps"),
-        ("Provision Map", "open_provision_map"),
-        ("Interventions", "open_interventions"),
-        ("EAL Support", "open_eal"),
-    ]),
-    ("Parents & Communication", [
+    ("Staff & Communication", [
+        ("Staff Directory", "open_staff"),
+        ("Teaching Assistants", "open_tas"),
+        ("Staff HR", "open_staff_hr"),
+        ("Staff Absence", "open_staff_absence"),
+        ("Staff Wellbeing", "open_staff_wellbeing"),
+        ("Recruitment", "open_recruitment"),
+        ("Appraisals", "open_appraisals"),
+        ("CPD", "open_cpd"),
+        ("DBS Checks", "open_dbs_checks"),
+        ("Visitors", "open_visitors"),
         ("Parent Contacts", "open_parents"),
         ("Parents' Evenings", "open_parents_evenings"),
         ("Newsletters", "open_newsletters"),
-        ("Letters Home", "open_letters"),
-        ("Messaging", "open_messaging"),
-        ("Permission Slips", "open_permission_slips"),
+        ("Announcements", "open_announcements"),
+        ("Notifications", "open_notifications"),
+        ("Activity Feed", "open_activity_feed"),
+        ("Email / Messaging", "open_messaging"),
+        ("Letter Templates", "open_letter_templates"),
+        ("Document Hub", "open_document_hub"),
+        ("Attachments", "open_attachments"),
     ]),
-    ("Staff", [
-        ("Staff Directory", "open_staff"),
-        ("Teaching Assistants", "open_tas"),
-        ("Cover Allocations", "open_cover_alloc"),
-        ("PPA Cover", "open_ppa"),
-    ]),
-    ("Clubs, Trips & Dinners", [
-        ("After-School Clubs", "open_clubs"),
-        ("Breakfast Club", "open_breakfast"),
-        ("School Trips", "open_trips"),
-        ("Trip Payments", "open_trip_payments"),
+    ("Finance", [
         ("Dinner Money", "open_dinner_money"),
-        ("Dinner Choices", "open_dinner_choices"),
-        ("Uniform", "open_uniform"),
+        ("Trips & Payments", "open_trips_payments"),
+        ("Receipts", "open_receipts"),
+        ("Expense Claims", "open_expense_claims"),
+        ("Funding", "open_funding"),
+        ("School Census", "open_census"),
     ]),
     ("Reports & Analytics", [
         ("Attendance Report", "open_report_attendance"),
-        ("Behaviour Report", "open_report_behaviour"),
-        ("Progress Tracking", "open_progress"),
-        ("Census / DfE Returns", "open_census"),
+        ("Progress Report", "open_report_progress"),
+        ("KPI Dashboard", "open_kpi_dashboard"),
+        ("Data Dashboard", "open_data_dashboard"),
+        ("Mobile Dashboard", "open_mobile_dashboard"),
+        ("Audit Reports", "open_audit_reports"),
+        ("Data Export", "open_data_export"),
         ("Custom Export", "open_export"),
     ]),
     ("System", [
         ("Change Password", "open_change_password"),
+        ("Multi-Factor Authentication", "open_mfa"),
         ("User Accounts", "open_user_accounts"),
+        ("User Management", "open_user_management"),
         ("Settings", "open_settings"),
+        ("Compliance", "open_compliance"),
+        ("Governance", "open_governance"),
+        ("Policies", "open_policies"),
+        ("GDPR", "open_gdpr"),
+        ("Risk Management", "open_risk_management"),
+        ("Health & Safety", "open_health_safety"),
+        ("Assets", "open_assets"),
+        ("Multi-Language", "open_multi_language"),
+        ("To-Do", "open_todo"),
         ("About", "open_about"),
     ]),
 ]
@@ -199,7 +224,7 @@ class PrimarySchoolMainGUI:
     def _build_nav(self, parent: ttk.Frame) -> None:
         nav = ttk.LabelFrame(parent, text="Navigation", padding=5)
         nav.grid(row=1, column=0, sticky="nsew", padx=(0, 10))
-        nav.rowconfigure(0, weight=1)
+        nav.rowconfigure(1, weight=1)
         nav.columnconfigure(0, weight=1)
 
         canvas = tk.Canvas(nav, highlightthickness=0, width=260)
@@ -216,8 +241,8 @@ class PrimarySchoolMainGUI:
             lambda e: canvas.itemconfigure(win, width=e.width),
         )
         canvas.configure(yscrollcommand=scroll.set)
-        canvas.grid(row=0, column=0, sticky="nsew")
-        scroll.grid(row=0, column=1, sticky="ns")
+        canvas.grid(row=1, column=0, sticky="nsew")
+        scroll.grid(row=1, column=1, sticky="ns")
 
         def _on_mw(event):
             canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
@@ -225,8 +250,92 @@ class PrimarySchoolMainGUI:
         canvas.bind("<Enter>", lambda _e: canvas.bind_all("<MouseWheel>", _on_mw))
         canvas.bind("<Leave>", lambda _e: canvas.unbind_all("<MouseWheel>"))
 
+        search_frame = ttk.Frame(nav)
+        search_frame.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 6))
+        search_frame.columnconfigure(0, weight=1)
+
+        search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=search_var)
+        search_entry.grid(row=0, column=0, sticky="ew")
+        self.nav_search_entry = search_entry
+
+        _PLACEHOLDER = "🔍 Search features..."
+
+        def _set_placeholder() -> None:
+            search_entry.delete(0, tk.END)
+            search_entry.insert(0, _PLACEHOLDER)
+            try:
+                search_entry.config(foreground="gray")
+            except tk.TclError:
+                pass
+
+        def _on_focus_in(_e) -> None:
+            if search_var.get() == _PLACEHOLDER:
+                search_entry.delete(0, tk.END)
+                try:
+                    search_entry.config(foreground="black")
+                except tk.TclError:
+                    pass
+
+        def _on_focus_out(_e) -> None:
+            if not search_var.get().strip():
+                _set_placeholder()
+
+        search_entry.bind("<FocusIn>", _on_focus_in)
+        search_entry.bind("<FocusOut>", _on_focus_out)
+        _set_placeholder()
+
+        try:
+            self.root.bind(
+                "<Control-k>",
+                lambda _e: (search_entry.focus_set(), search_entry.select_range(0, tk.END)),
+                add="+",
+            )
+        except tk.TclError:
+            pass
+
+        categories_holder = ttk.Frame(inner)
+        categories_holder.pack(fill="x")
         for group_label, items in NAV_CATEGORIES:
-            self._make_category(inner, group_label, items, canvas)
+            self._make_category(categories_holder, group_label, items, canvas)
+
+        results_holder = ttk.Frame(inner)
+
+        all_actions: list[tuple[str, str]] = [
+            (label, handler)
+            for _grp, items in NAV_CATEGORIES
+            for label, handler in items
+        ]
+
+        def _on_search_change(*_a) -> None:
+            for w in results_holder.winfo_children():
+                w.destroy()
+            q = search_var.get().strip().lower()
+            if not q or q == _PLACEHOLDER.lower():
+                results_holder.pack_forget()
+                categories_holder.pack(fill="x")
+            else:
+                categories_holder.pack_forget()
+                results_holder.pack(fill="x", padx=5)
+                seen: set[str] = set()
+                for label, handler in all_actions:
+                    if handler in seen:
+                        continue
+                    if q in label.lower():
+                        seen.add(handler)
+                        cmd = self._handler(handler, label)
+                        ttk.Button(results_holder, text=label,
+                                   command=cmd).pack(fill="x", pady=1)
+                if not seen:
+                    ttk.Label(results_holder, text="No matches",
+                              foreground="#888").pack(anchor="w", pady=4)
+            try:
+                inner.update_idletasks()
+                canvas.configure(scrollregion=canvas.bbox("all"))
+            except tk.TclError:
+                pass
+
+        search_var.trace_add("write", _on_search_change)
 
         inner.update_idletasks()
         canvas.configure(scrollregion=canvas.bbox("all"))
@@ -315,7 +424,7 @@ class PrimarySchoolMainGUI:
 
         right = ttk.Frame(bar, padding=(2, 4))
         right.grid(row=0, column=2, sticky="e")
-        ttk.Label(right, text="Primary School", foreground="#555").pack(side="left")
+        ttk.Label(right, text=FOOTER_LABEL, foreground="#555").pack(side="left")
         ttk.Label(right, text=" · ", foreground="#aaa").pack(side="left")
         ttk.Label(right, text=f"v{VERSION}", foreground="#555").pack(side="left")
 
@@ -328,26 +437,79 @@ class PrimarySchoolMainGUI:
     def _show_welcome(self) -> None:
         self._clear_content()
         assert self.content_frame is not None
+        root = self.content_frame
+        root.columnconfigure(0, weight=1)
+
+        now = datetime.now()
+        hour = now.hour
+        if hour < 12:
+            greet = "Good morning"
+        elif hour < 18:
+            greet = "Good afternoon"
+        else:
+            greet = "Good evening"
+        user = self.current_user_var.get()
+
+        header = ttk.Frame(root)
+        header.grid(row=0, column=0, sticky="ew", pady=(0, 12))
+        header.columnconfigure(0, weight=1)
         ttk.Label(
-            self.content_frame,
-            text=f"Welcome to {SYSTEM_NAME}",
-            font=("", 18, "bold"),
-        ).pack(anchor="w", pady=(0, 8))
+            header, text=f"{greet}, {user}",
+            font=("", 20, "bold"),
+        ).grid(row=0, column=0, sticky="w")
         ttk.Label(
-            self.content_frame,
-            text="Select a category on the left to get started.",
-            foreground="#555",
+            header,
+            text=now.strftime("%A, %d %B %Y · %H:%M"),
+            foreground="#666",
+        ).grid(row=1, column=0, sticky="w", pady=(2, 0))
+
+        kpis = [
+            ("Pupils", "—", "On roll"),
+            ("Staff", "—", "Active records"),
+            ("Classes", "—", "Reception–Year 6"),
+            ("Today's Attendance", "—", "Awaiting marks"),
+        ]
+        kpi_row = ttk.Frame(root)
+        kpi_row.grid(row=1, column=0, sticky="ew", pady=(0, 14))
+        for i in range(len(kpis)):
+            kpi_row.columnconfigure(i, weight=1, uniform="kpi")
+        for i, (label, value, hint) in enumerate(kpis):
+            tile = ttk.LabelFrame(kpi_row, padding=12)
+            tile.grid(row=0, column=i, padx=4, sticky="nsew")
+            ttk.Label(tile, text=label, foreground="#666").pack(anchor="w")
+            ttk.Label(tile, text=value, font=("", 22, "bold")).pack(
+                anchor="w", pady=(2, 0))
+            ttk.Label(tile, text=hint, foreground="#888", font=("", 9)).pack(
+                anchor="w", pady=(2, 0))
+
+        actions = ttk.LabelFrame(root, text="Quick actions", padding=8)
+        actions.grid(row=2, column=0, sticky="ew", pady=(0, 14))
+        quick = [
+            ("Add Pupil", self.open_add_pupil),
+            ("Search Pupils", self.open_search_pupils),
+            ("Take Register", lambda: self._show_stub("Attendance Register")),
+            ("Timetable", lambda: self._show_stub("Timetable")),
+            ("Behaviour Log", lambda: self._show_stub("Behaviour Log")),
+            ("Reading Levels", lambda: self._show_stub("Reading Levels")),
+        ]
+        for i, (lbl, cmd) in enumerate(quick):
+            ttk.Button(actions, text=lbl, command=cmd, style="Large.TButton").grid(
+                row=0, column=i, padx=4, pady=2, sticky="ew")
+            actions.columnconfigure(i, weight=1, uniform="qa")
+
+        info = ttk.LabelFrame(root, text="Getting started", padding=10)
+        info.grid(row=3, column=0, sticky="nsew")
+        ttk.Label(
+            info,
+            text=(
+                "Domain modules for the Primary School System have not been "
+                "wired up yet. Every sidebar action opens a placeholder — "
+                "use them as a map of the features that will land here."
+            ),
+            wraplength=720, foreground="#555", justify="left",
         ).pack(anchor="w")
-        ttk.Label(
-            self.content_frame,
-            text=f"Signed in as: {self.current_user_var.get()}",
-            foreground="#555",
-        ).pack(anchor="w", pady=(20, 0))
-        ttk.Label(
-            self.content_frame,
-            text=f"Session started: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
-            foreground="#555",
-        ).pack(anchor="w")
+
+        self.status_var.set("Ready")
 
     def _handler(self, name: str, label: str) -> Callable[[], None]:
         method = getattr(self, name, None)
@@ -397,7 +559,7 @@ class PrimarySchoolMainGUI:
 
     def _shutdown(self) -> None:
         if messagebox.askyesno(
-                "Shutdown", "Shut down the Primary School System?", parent=self.root):
+                "Shutdown", f"Shut down the {SYSTEM_NAME}?", parent=self.root):
             try:
                 self.auth.logout()
             except Exception:
@@ -412,26 +574,510 @@ class PrimarySchoolMainGUI:
             pass
         self.root.destroy()
 
+    def open_pupil_directory(self) -> None:
+        from education_system.primarysch_system.modules.domain.pupils import (
+            pupil_views,
+        )
+        pupil_views.open_directory(self)
+
+    def open_add_pupil(self) -> None:
+        from education_system.primarysch_system.modules.domain.pupils import (
+            pupil_views,
+        )
+        pupil_views.open_add_pupil(self)
+
+    def open_search_pupils(self) -> None:
+        from education_system.primarysch_system.modules.domain.pupils import (
+            pupil_views,
+        )
+        pupil_views.open_search(self)
+
+    def open_pupil_profile(self) -> None:
+        from education_system.primarysch_system.modules.domain.pupils import (
+            pupil_views,
+        )
+        pupil_views.open_profile(self)
+
+    def open_admissions(self) -> None:
+        from education_system.primarysch_system.modules.domain.admissions import (
+            admissions_views,
+        )
+        admissions_views.open_admissions(self)
+
+    def open_enrolment(self) -> None:
+        from education_system.primarysch_system.modules.domain.enrolment import (
+            enrolment_views,
+        )
+        enrolment_views.open_enrolment(self)
+
+    def open_onboarding(self) -> None:
+        from education_system.primarysch_system.modules.domain.pupils.onboarding import (
+            onboarding_views,
+        )
+        onboarding_views.open_onboarding(self)
+
+    def open_bulk_operations(self) -> None:
+        from education_system.primarysch_system.modules.domain.pupils.bulk_operations import (
+            bulk_operations_views,
+        )
+        bulk_operations_views.open_bulk_operations(self)
+
+    def open_leavers(self) -> None:
+        from education_system.primarysch_system.modules.domain.pupils.leavers import (
+            leavers_views,
+        )
+        leavers_views.open_leavers(self)
+
+    def open_classes(self) -> None:
+        from education_system.primarysch_system.modules.domain.classes import (
+            classes_views,
+        )
+        classes_views.open_classes(self)
+
+    def open_phonics(self) -> None:
+        from education_system.primarysch_system.modules.domain.phonics import (
+            phonics_views,
+        )
+        phonics_views.open_phonics(self)
+
+    def open_reading_levels(self) -> None:
+        from education_system.primarysch_system.modules.domain.reading_levels import (
+            reading_levels_views,
+        )
+        reading_levels_views.open_reading_levels(self)
+
+    def open_clubs(self) -> None:
+        from education_system.primarysch_system.modules.domain.clubs import (
+            clubs_views,
+        )
+        clubs_views.open_clubs(self)
+
+    def open_phonics_screening(self) -> None:
+        from education_system.primarysch_system.modules.domain.phonics_screening import (
+            phonics_screening_views,
+        )
+        phonics_screening_views.open_phonics_screening(self)
+
+    def open_assessment(self) -> None:
+        from education_system.primarysch_system.modules.domain.assessment import (
+            assessment_views,
+        )
+        assessment_views.open_assessment(self)
+
+    def open_mtc(self) -> None:
+        from education_system.primarysch_system.modules.domain.mtc import (
+            mtc_views,
+        )
+        mtc_views.open_mtc(self)
+
+    def open_ks1_sats(self) -> None:
+        from education_system.primarysch_system.modules.domain.ks1_sats import (
+            ks1_sats_views,
+        )
+        ks1_sats_views.open_ks1_sats(self)
+
+    def open_ks2_sats(self) -> None:
+        from education_system.primarysch_system.modules.domain.ks2_sats import (
+            ks2_sats_views,
+        )
+        ks2_sats_views.open_ks2_sats(self)
+
+    def open_eyfs_profile(self) -> None:
+        from education_system.primarysch_system.modules.domain.eyfs_profile import (
+            eyfs_profile_views,
+        )
+        eyfs_profile_views.open_eyfs_profile(self)
+
+    def open_target_setting(self) -> None:
+        from education_system.primarysch_system.modules.domain.target_setting import (
+            target_setting_views,
+        )
+        target_setting_views.open_target_setting(self)
+
+    def open_pupil_reports(self) -> None:
+        from education_system.primarysch_system.modules.domain.pupil_reports import (
+            pupil_reports_views,
+        )
+        pupil_reports_views.open_pupil_reports(self)
+
+    def open_class_teachers(self) -> None:
+        from education_system.primarysch_system.modules.domain.class_teachers import (
+            class_teachers_views,
+        )
+        class_teachers_views.open_class_teachers(self)
+
+    def open_house_points(self) -> None:
+        from education_system.primarysch_system.modules.domain.house_points import (
+            house_points_views,
+        )
+        house_points_views.open_house_points(self)
+
+    def open_medical(self) -> None:
+        from education_system.primarysch_system.modules.domain.medical_records import (
+            medical_records_views,
+        )
+        medical_records_views.open_medical(self)
+
+    def open_wraparound_care(self) -> None:
+        from education_system.primarysch_system.modules.domain.wraparound import (
+            wraparound_views,
+        )
+        wraparound_views.open_wraparound(self)
+
+    def open_tas(self) -> None:
+        from education_system.primarysch_system.modules.domain.teaching_assistants import (
+            teaching_assistants_views,
+        )
+        teaching_assistants_views.open_teaching_assistants(self)
+
+    def open_newsletters(self) -> None:
+        from education_system.primarysch_system.modules.domain.newsletters import (
+            newsletters_views,
+        )
+        newsletters_views.open_newsletters(self)
+
+    def open_dinner_money(self) -> None:
+        from education_system.primarysch_system.modules.domain.dinner_money import (
+            dinner_money_views,
+        )
+        dinner_money_views.open_dinner_money(self)
+
+    def open_report_attendance(self) -> None:
+        from education_system.primarysch_system.modules.domain.attendance_report import (
+            attendance_report_views,
+        )
+        attendance_report_views.open_attendance_report(self)
+
+    def open_report_progress(self) -> None:
+        from education_system.primarysch_system.modules.domain.progress_report import (
+            progress_report_views,
+        )
+        progress_report_views.open_progress_report(self)
+
+    def open_mfa(self) -> None:
+        from education_system.primarysch_system.modules.domain.mfa import (
+            mfa_views,
+        )
+        mfa_views.open_mfa(self)
+
+    def open_multi_language(self) -> None:
+        from education_system.shared.i18n.selector_gui import show_language_selector
+        show_language_selector(self.root)
+
+    # Pastoral
+    def open_behaviour(self) -> None:
+        from education_system.primarysch_system.modules.domain.behaviour import behaviour_views
+        behaviour_views.open_behaviour(self)
+
+    def open_safeguarding(self) -> None:
+        from education_system.primarysch_system.modules.domain.safeguarding import safeguarding_views
+        safeguarding_views.open_safeguarding(self)
+
+    def open_send(self) -> None:
+        from education_system.primarysch_system.modules.domain.send import send_views
+        send_views.open_send(self)
+
+    def open_pupil_premium(self) -> None:
+        from education_system.primarysch_system.modules.domain.pupil_premium import pupil_premium_views
+        pupil_premium_views.open_pupil_premium(self)
+
+    def open_accessibility(self) -> None:
+        from education_system.primarysch_system.modules.domain.accessibility import accessibility_views
+        accessibility_views.open_accessibility(self)
+
+    def open_wellbeing(self) -> None:
+        from education_system.primarysch_system.modules.domain.wellbeing import wellbeing_views
+        wellbeing_views.open_wellbeing(self)
+
+    def open_pupil_support(self) -> None:
+        from education_system.primarysch_system.modules.domain.pupil_support import pupil_support_views
+        pupil_support_views.open_pupil_support(self)
+
+    def open_attendance_concerns(self) -> None:
+        from education_system.primarysch_system.modules.domain.attendance_concerns import attendance_concerns_views
+        attendance_concerns_views.open_attendance_concerns(self)
+
+    def open_absence_requests(self) -> None:
+        from education_system.primarysch_system.modules.domain.absence_requests import absence_requests_views
+        absence_requests_views.open_absence_requests(self)
+
+    def open_first_aid(self) -> None:
+        from education_system.primarysch_system.modules.domain.first_aid import first_aid_views
+        first_aid_views.open_first_aid(self)
+
+    def open_emergency(self) -> None:
+        from education_system.primarysch_system.modules.domain.emergency import emergency_views
+        emergency_views.open_emergency(self)
+
+    def open_prevent_duty(self) -> None:
+        from education_system.primarysch_system.modules.domain.prevent_duty import prevent_duty_views
+        prevent_duty_views.open_prevent_duty(self)
+
+    def open_equality_diversity(self) -> None:
+        from education_system.primarysch_system.modules.domain.equality_diversity import equality_diversity_views
+        equality_diversity_views.open_equality_diversity_window(self)
+
+    def open_complaints(self) -> None:
+        from education_system.primarysch_system.modules.domain.complaints import complaints_views
+        complaints_views.open_complaints_window(self)
+
+    def open_feedback(self) -> None:
+        from education_system.primarysch_system.modules.domain.feedback import feedback_views
+        feedback_views.open_feedback_window(self)
+
+    def open_surveys(self) -> None:
+        from education_system.primarysch_system.modules.domain.surveys import surveys_views
+        surveys_views.open_surveys_window(self)
+
+    def open_school_council(self) -> None:
+        from education_system.primarysch_system.modules.domain.school_council import school_council_views
+        school_council_views.open_school_council_window(self)
+
+    def open_transport(self) -> None:
+        from education_system.primarysch_system.modules.domain.transport import transport_views
+        transport_views.open_transport_window(self)
+
+    # Academics
+    def open_academic_year(self) -> None:
+        from education_system.primarysch_system.modules.domain.academic_year import academic_year_views
+        academic_year_views.open_academic_year_window(self)
+
+    def open_calendar(self) -> None:
+        from education_system.primarysch_system.modules.domain.calendar import calendar_views
+        calendar_views.open_calendar_window(self)
+
+    def open_subjects(self) -> None:
+        from education_system.primarysch_system.modules.domain.subjects import subjects_views
+        subjects_views.open_subjects(self)
+
+    def open_timetable(self) -> None:
+        from education_system.primarysch_system.modules.domain.timetable import timetable_views
+        timetable_views.open_timetable(self)
+
+    def open_attendance(self) -> None:
+        from education_system.primarysch_system.modules.domain.attendance import attendance_views
+        attendance_views.open_attendance(self)
+
+    def open_lesson_plans(self) -> None:
+        from education_system.primarysch_system.modules.domain.lesson_plans import lesson_plans_views
+        lesson_plans_views.open_lesson_plans(self)
+
+    def open_cover(self) -> None:
+        from education_system.primarysch_system.modules.domain.cover import cover_views
+        cover_views.open_cover(self)
+
+    def open_homework(self) -> None:
+        from education_system.primarysch_system.modules.domain.homework import homework_views
+        homework_views.open_homework(self)
+
+    def open_library(self) -> None:
+        from education_system.primarysch_system.modules.domain.library import library_views
+        library_views.open_library(self)
+
+    def open_year_groups(self) -> None:
+        from education_system.primarysch_system.modules.domain.year_groups import year_groups_views
+        year_groups_views.open_year_groups(self)
+
+    # Assessment
+    def open_intervention_tracking(self) -> None:
+        from education_system.primarysch_system.modules.domain.intervention_tracking import intervention_tracking_views
+        intervention_tracking_views.open_intervention_tracking(self)
+
+    def open_early_warning(self) -> None:
+        from education_system.primarysch_system.modules.domain.early_warning import early_warning_views
+        early_warning_views.open_early_warning(self)
+
+    def open_observations(self) -> None:
+        from education_system.primarysch_system.modules.domain.observations import observations_views
+        observations_views.open_observations(self)
+
+    # Staff & comms
+    def open_staff(self) -> None:
+        from education_system.primarysch_system.modules.domain.staff import staff_views
+        staff_views.open_directory(self)
+
+    def open_staff_hr(self) -> None:
+        from education_system.primarysch_system.modules.domain.staff_hr import staff_hr_views
+        staff_hr_views.open_staff_hr_window(self)
+
+    def open_staff_absence(self) -> None:
+        from education_system.primarysch_system.modules.domain.staff_absence import staff_absence_views
+        staff_absence_views.open_staff_absence_window(self)
+
+    def open_staff_wellbeing(self) -> None:
+        from education_system.primarysch_system.modules.domain.staff_wellbeing import staff_wellbeing_views
+        staff_wellbeing_views.open_staff_wellbeing_window(self)
+
+    def open_recruitment(self) -> None:
+        from education_system.primarysch_system.modules.domain.recruitment import recruitment_views
+        recruitment_views.open_recruitment_window(self)
+
+    def open_appraisals(self) -> None:
+        from education_system.primarysch_system.modules.domain.appraisals import appraisals_views
+        appraisals_views.open_appraisals_window(self)
+
+    def open_cpd(self) -> None:
+        from education_system.primarysch_system.modules.domain.cpd import cpd_views
+        cpd_views.open_cpd_window(self)
+
+    def open_dbs_checks(self) -> None:
+        from education_system.primarysch_system.modules.domain.dbs_checks import dbs_checks_views
+        dbs_checks_views.open_dbs_checks_window(self)
+
+    def open_visitors(self) -> None:
+        from education_system.primarysch_system.modules.domain.visitors import visitors_views
+        visitors_views.open_visitors_window(self)
+
+    def open_parents(self) -> None:
+        from education_system.primarysch_system.modules.domain.parent_contacts import parent_contacts_views
+        parent_contacts_views.open_directory(self)
+
+    def open_parents_evenings(self) -> None:
+        from education_system.primarysch_system.modules.domain.parents_evenings import parents_evenings_views
+        parents_evenings_views.open_parents_evenings_window(self)
+
+    def open_announcements(self) -> None:
+        from education_system.primarysch_system.modules.domain.announcements import announcements_views
+        announcements_views.open_announcements_window(self)
+
+    def open_notifications(self) -> None:
+        from education_system.primarysch_system.modules.domain.notifications import notifications_views
+        notifications_views.open_notifications_window(self)
+
+    def open_activity_feed(self) -> None:
+        from education_system.primarysch_system.modules.domain.activity_feed import activity_feed_views
+        activity_feed_views.open_activity_feed_window(self)
+
+    def open_messaging(self) -> None:
+        from education_system.primarysch_system.modules.domain.messages import messages_views
+        messages_views.open_messages_window(self)
+
+    def open_letter_templates(self) -> None:
+        from education_system.primarysch_system.modules.domain.letter_templates import letter_templates_views
+        letter_templates_views.open_letter_templates_window(self)
+
+    def open_document_hub(self) -> None:
+        from education_system.primarysch_system.modules.domain.document_hub import document_hub_views
+        document_hub_views.open_document_hub_window(self)
+
+    def open_attachments(self) -> None:
+        from education_system.primarysch_system.modules.domain.attachments import attachments_views
+        attachments_views.open_attachments_window(self)
+
+    # Finance
+    def open_trips_payments(self) -> None:
+        from education_system.primarysch_system.modules.domain.trips import trips_views
+        trips_views.open_trips_window(self)
+
+    def open_receipts(self) -> None:
+        from education_system.primarysch_system.modules.domain.receipts import receipts_views
+        receipts_views.open_receipts_window(self)
+
+    def open_expense_claims(self) -> None:
+        from education_system.primarysch_system.modules.domain.expense_claims import expense_claims_views
+        expense_claims_views.open_expense_claims_window(self)
+
+    def open_funding(self) -> None:
+        from education_system.primarysch_system.modules.domain.funding import funding_views
+        funding_views.open_funding_window(self)
+
+    def open_census(self) -> None:
+        from education_system.primarysch_system.modules.domain.census import census_views
+        census_views.open_census_window(self)
+
+    # Reports
+    def open_kpi_dashboard(self) -> None:
+        from education_system.primarysch_system.modules.domain.kpi_dashboard import kpi_dashboard_views
+        kpi_dashboard_views.open_kpi_dashboard_window(self)
+
+    def open_data_dashboard(self) -> None:
+        from education_system.primarysch_system.modules.domain.data_dashboard import data_dashboard_views
+        data_dashboard_views.open_data_dashboard_window(self)
+
+    def open_mobile_dashboard(self) -> None:
+        from education_system.primarysch_system.modules.domain.mobile_dashboard import mobile_dashboard_views
+        mobile_dashboard_views.open_mobile_dashboard_window(self)
+
+    def open_audit_reports(self) -> None:
+        from education_system.primarysch_system.modules.domain.audit_reports import audit_reports_views
+        audit_reports_views.open_audit_reports_window(self)
+
+    def open_data_export(self) -> None:
+        from education_system.primarysch_system.modules.domain.data_export import data_export_views
+        data_export_views.open_data_export_window(self)
+
+    def open_export(self) -> None:
+        from education_system.primarysch_system.modules.domain.custom_export import custom_export_views
+        custom_export_views.open_custom_export_window(self)
+
+    # System / Governance
+    def open_compliance(self) -> None:
+        from education_system.primarysch_system.modules.domain.compliance import compliance_views
+        compliance_views.open_compliance_window(self)
+
+    def open_governance(self) -> None:
+        from education_system.primarysch_system.modules.domain.governance import governance_views
+        governance_views.open_governance_window(self)
+
+    def open_policies(self) -> None:
+        from education_system.primarysch_system.modules.domain.policies import policies_views
+        policies_views.open_policies_window(self)
+
+    def open_gdpr(self) -> None:
+        from education_system.primarysch_system.modules.domain.gdpr import gdpr_views
+        gdpr_views.open_gdpr_window(self)
+
+    def open_risk_management(self) -> None:
+        from education_system.primarysch_system.modules.domain.risk_management import risk_management_views
+        risk_management_views.open_risk_management_window(self)
+
+    def open_health_safety(self) -> None:
+        from education_system.primarysch_system.modules.domain.health_safety import health_safety_views
+        health_safety_views.open_health_safety_window(self)
+
+    def open_assets(self) -> None:
+        from education_system.primarysch_system.modules.domain.assets import assets_views
+        assets_views.open_assets_window(self)
+
+    def open_todo(self) -> None:
+        from education_system.primarysch_system.modules.domain.todo import todo_views
+        todo_views.open_todo_window(self)
+
+    def open_user_management(self) -> None:
+        from education_system.primarysch_system.modules.domain.user_management import user_management_views
+        user_management_views.open_user_management_window(self)
+
+    # Shared
+    def open_change_password(self) -> None:
+        from education_system.primarysch_system.modules.shared.gui import change_password_views
+        change_password_views.open_change_password_dialog(self.root, auth=self.auth)
+
+    def open_user_accounts(self) -> None:
+        from education_system.primarysch_system.modules.shared.gui import user_accounts_views
+        user_accounts_views.open_user_accounts_window(self.root, auth=self.auth)
+
+    def open_settings(self) -> None:
+        from education_system.primarysch_system.modules.shared.gui import settings_views
+        settings_views.open_settings_window(self.root, auth=self.auth)
+
     def open_about(self) -> None:
-        self._clear_content()
-        assert self.content_frame is not None
-        ttk.Label(self.content_frame, text="About", font=("", 16, "bold")).pack(
-            anchor="w", pady=(0, 8))
-        ttk.Label(
-            self.content_frame,
-            text=f"{SYSTEM_NAME} v{VERSION}\nPart of the Education System suite.",
-        ).pack(anchor="w")
+        from education_system.primarysch_system.modules.shared.gui import about_views
+        about_views.open_about_window(self.root, auth=self.auth)
 
 
 def run(user_info=None, role=None, shared_auth=None) -> int:
-    """Launch the GUI for an already-authenticated session."""
     if shared_auth is None or not getattr(shared_auth, "current_user", None):
+        logger.error("primarysch GUI invoked without a shared_auth session")
         raise RuntimeError(
             "primarysch_system GUI must be launched via run.py — "
             "no standalone login is available."
         )
+    cu = shared_auth.current_user or {}
+    logger.info("Primary-school GUI starting for user=%s role=%s",
+                cu.get("username"), role)
     app = PrimarySchoolMainGUI(shared_auth)
     app.root.mainloop()
+    logger.info("Primary-school GUI exited for user=%s", cu.get("username"))
     return 0
 
 

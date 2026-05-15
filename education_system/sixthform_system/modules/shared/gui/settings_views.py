@@ -7,6 +7,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable
 from education_system.sixthform_system.modules.shared import settings as data
+from education_system.shared import branding
 from education_system.sixthform_system.modules.shared.settings import (
     SettingError,
     SettingSpec,
@@ -21,7 +22,7 @@ WIN_MINSIZE = (900, 700)
 def open_settings_window(parent=None, *, auth=None) -> None:
     master = getattr(parent, "root", parent)
     win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title("Settings — Sixth Form System")
+    win.title(f"Settings — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
     SettingsForm(win, auth)

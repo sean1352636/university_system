@@ -1,0 +1,11 @@
+{
+  "template_id": "mfa_otp",
+  "description": "Sent when a user enables or signs in with email-based multi-factor authentication on the Sixth Form System. Carries a single-use 6-digit code that expires after a few minutes.",
+  "channel": "Email",
+  "category": "Security",
+  "priority": "High",
+  "from_name": "Sixth Form Security",
+  "from_address": "no-reply@sixthorm.ac.uk",
+  "subject": "Your {{system_name}} verification code: {{code}}",
+  "body": "Hi {{username}},\n\nUse the verification code below to finish signing in to {{system_name}}:\n\n    {{code}}\n\nThis code will expire in {{expiry_minutes}} minutes and can only be used once.\n\nIf you didn't ask for this code, you can safely ignore this email — your account stays locked without it. If you keep getting codes you didn't request, please change your password and tell a member of the IT or safeguarding team straight away.\n\nFor your security, never share this code with anyone — not staff, not classmates, not over the phone.\n\nThanks,\nThe {{system_name}} Security Team"
+}

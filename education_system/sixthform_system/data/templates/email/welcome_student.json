@@ -1,0 +1,11 @@
+{
+  "template_id": "welcome_student",
+  "description": "Sent automatically when a new student record is created. Lands in the student's inbox so they have their sign-in details and a starter checklist on day one.",
+  "channel": "Email",
+  "category": "General",
+  "priority": "Normal",
+  "from_name": "Sixth Form Admissions",
+  "from_address": "admissions@sixthorm.ac.uk",
+  "subject": "Welcome to {{system_name}}, {{first_name}}",
+  "body": "Hi {{first_name}},\n\nWelcome to {{system_name}}! Your student record has been created and your sixth-form account is ready to use.\n\nYour account details\n---------------------\n  Student ID:   {{student_id}}\n  Sign-in name: {{student_id}}\n  Temporary password: {{password}}\n  School email: {{email}}\n\nFor your security, please change your password the first time you sign in.\n\nYour A-Level subjects\n---------------------\n  1. {{subject_1}}\n  2. {{subject_2}}\n  3. {{subject_3}}\n\nWhat to do next\n---------------\n  - Sign in to the sixth-form portal with the details above.\n  - Open your timetable to see your lessons for the week.\n  - Read the student handbook in the Document Hub.\n  - Visit your tutor on the first morning of term.\n\nIf any of the details above look wrong, reply to this message or speak to a member of the admissions team.\n\nWe're really glad you're joining us — see you on day one!\n\nThe Admissions Team\n{{system_name}}"
+}

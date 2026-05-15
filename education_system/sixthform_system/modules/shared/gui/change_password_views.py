@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import tkinter as tk
 from tkinter import messagebox, ttk
+from education_system.shared import branding
 from education_system.sixthform_system.modules.shared.change_password import (
     ChangePasswordError,
     change_password,
@@ -29,13 +30,13 @@ class ChangePasswordDialog:
     def __init__(self, root: tk.Misc, auth) -> None:
         self.root = root
         self.auth = auth
-        root.title("Change Password — Sixth Form System")
+        root.title(f"Change Password — {branding.SYSTEM_NAME}")
         root.resizable(False, False)
         try:
             root.transient(root.master)
         except tk.TclError:
             pass
-        root.grab_set()
+        root.after_idle(root.grab_set)
         self._build()
 
     def _build(self) -> None:

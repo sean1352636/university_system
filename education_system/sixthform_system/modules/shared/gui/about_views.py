@@ -8,6 +8,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any
 from education_system.sixthform_system.modules.shared import about as data
+from education_system.shared import branding
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +19,7 @@ WIN_MINSIZE = (640, 560)
 def open_about_window(parent=None, *, auth: Any = None) -> None:
     master = getattr(parent, "root", parent)
     win = tk.Toplevel(master) if master is not None else tk.Tk()
-    win.title("About — Sixth Form System")
+    win.title(f"About — {branding.SYSTEM_NAME}")
     win.geometry(WIN_GEOMETRY)
     win.minsize(*WIN_MINSIZE)
     AboutDialog(win, auth=auth)
